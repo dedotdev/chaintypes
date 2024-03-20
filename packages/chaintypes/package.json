@@ -1,0 +1,23 @@
+{
+  "name": "@dedot/chaintypes",
+  "version": "0.0.1-alpha.28",
+  "description": "Types for substrate-based chains",
+  "author": "Thang X. Vu <thang@coongcrafts.io>",
+  "main": "src/index.ts",
+  "sideEffects": false,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json && yarn copy",
+    "clean": "rm -rf ./dist && rm -rf ./tsconfig.tsbuildinfo ./tsconfig.build.tsbuildinfo",
+    "copy": "cp -R ./src/* ./dist"
+  },
+  "dependencies": {
+    "@dedot/codecs": "0.0.1-next.70fc26c6.11",
+    "@dedot/types": "0.0.1-next.70fc26c6.11"
+  },
+  "publishConfig": {
+    "access": "public",
+    "directory": "dist"
+  },
+  "license": "Apache-2.0"
+}

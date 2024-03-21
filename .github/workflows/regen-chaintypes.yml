@@ -1,4 +1,4 @@
-name: Regenerate Chain Types
+name: regenerate chaintypes
 
 on:
   workflow_dispatch:
@@ -28,12 +28,9 @@ jobs:
           cache: 'yarn'
           registry-url: 'https://registry.npmjs.org'
       - run: yarn install --immutable
-      - name: Generate chaintypes & comit changes
+      - name: Generate chaintypes
+        run: yarn gen && yarn build
+      - name: Commit changes && publish release
         run: |
-          yarn gen && yarn build
           git add -A
-          git diff-index --quiet HEAD || git commit -m "chore: regenerate chaintypes"
-      - name: Publish release
-        run: |
-          npx lerna publish prerelease -m "chore(release): publish %s - [skip ci]" --no-private --yes
-
+          git diff-index --quiet HEAD || { git commit -m "chore: regenerate chaintypes" && npx lerna publish prerelease -m "chore(release): publish %s - [skip ci]" --no-private --yes; }

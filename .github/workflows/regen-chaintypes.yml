@@ -29,5 +29,5 @@ jobs:
       - run: yarn install --immutable
       - run: yarn gen & yarn build
       - run: |
-          npx lerna publish prerelease -m "chore(release): publish %s" --no-private --yes
+          npx lerna publish prerelease -m "chore(release): publish %s - [skip ci]" --no-private --yes
 

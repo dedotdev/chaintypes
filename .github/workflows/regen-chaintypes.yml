@@ -1,6 +1,7 @@
 name: Regenerate Chain Types
 
 on:
+  push:
   workflow_dispatch:
 
 jobs:

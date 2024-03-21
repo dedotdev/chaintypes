@@ -27,5 +27,6 @@ jobs:
           cache: 'yarn'
           registry-url: 'https://registry.npmjs.org'
       - run: yarn install --immutable
-      - run: |
-          npx lerna version prerelease --no-private --no-push --force-publish --yes
+      - run: yarn gen & yarn build
+      - run: npx lerna version prerelease --no-private --no-push --yes
+

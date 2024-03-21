@@ -28,10 +28,12 @@ jobs:
           cache: 'yarn'
           registry-url: 'https://registry.npmjs.org'
       - run: yarn install --immutable
-      - run: yarn gen & yarn build
-      - run: |
+      - name: Generate chaintypes & comit changes
+        run: |
+          yarn gen & yarn build
           git add -A
           git diff-index --quiet HEAD || git commit -m "chore: regenerate chaintypes"
-      - run: |
+      - name: Publish release
+        run: |
           npx lerna publish prerelease -m "chore(release): publish %s - [skip ci]" --no-private --yes
 

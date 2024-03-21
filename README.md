@@ -1,3 +1,5 @@
 # @dedot/chaintypes
 
-Types for substrate-based chains
+Chaintypes for Substrate-based chains
+
+⏳ Docs & instructions coming soon!

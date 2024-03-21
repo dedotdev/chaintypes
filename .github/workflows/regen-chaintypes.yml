@@ -30,7 +30,8 @@ jobs:
       - run: yarn install --immutable
       - run: yarn gen & yarn build
       - run: |
-          git add -A && git diff-index --quiet HEAD || git commit -m "chore: regenerate chaintypes"
+          git add -A
+          git diff-index --quiet HEAD || git commit -m "chore: regenerate chaintypes"
       - run: |
           npx lerna publish prerelease -m "chore(release): publish %s - [skip ci]" --no-private --yes
 

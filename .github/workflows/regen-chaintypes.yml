@@ -30,7 +30,7 @@ jobs:
       - run: yarn install --immutable
       - name: Generate chaintypes & comit changes
         run: |
-          yarn gen & yarn build
+          yarn gen && yarn build
           git add -A
           git diff-index --quiet HEAD || git commit -m "chore: regenerate chaintypes"
       - name: Publish release

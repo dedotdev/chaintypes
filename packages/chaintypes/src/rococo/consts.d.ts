@@ -37,7 +37,7 @@ export interface ChainConsts extends GenericChainConsts {
     dbWeight: SpWeightsRuntimeDbWeight;
 
     /**
-     * Get the chain's current version.
+     * Get the chain's in-code version.
      **/
     version: RuntimeVersion;
 
@@ -1118,15 +1118,6 @@ export interface ChainConsts extends GenericChainConsts {
      **/
     trafficDefaultValue: FixedU128;
 
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `ParachainsAssignmentProvider`'s constants
-   **/
-  parachainsAssignmentProvider: {
     /**
      * Generic pallet constant
      **/

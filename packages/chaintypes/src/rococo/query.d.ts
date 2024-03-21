@@ -152,6 +152,13 @@ export interface ChainStorage extends GenericChainStorage {
     extrinsicCount: GenericStorageQuery<() => number | undefined>;
 
     /**
+     * Whether all inherents have been applied.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    inherentsApplied: GenericStorageQuery<() => boolean>;
+
+    /**
      * The current weight for the block.
      *
      * @param {Callback<FrameSupportDispatchPerDispatchClass> =} callback
@@ -1971,10 +1978,8 @@ export interface ChainStorage extends GenericChainStorage {
     validatorGroups: GenericStorageQuery<() => Array<Array<PolkadotPrimitivesV6ValidatorIndex>>>;
 
     /**
-     * One entry for each availability core. Entries are `None` if the core is not currently
-     * occupied. Can be temporarily `Some` if scheduled but not occupied.
-     * The i'th parachain belongs to the i'th core, with the remaining cores all being
-     * parathread-multiplexers.
+     * One entry for each availability core. The i'th parachain belongs to the i'th core, with the
+     * remaining cores all being on demand parachain multiplexers.
      *
      * Bounded by the maximum of either of these two values:
      * * The number of parachains and parathread multiplexers
@@ -2000,7 +2005,7 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * One entry for each availability core. The `VecDeque` represents the assignments to be
      * scheduled on that core. The value contained here will not be valid after the end of
-     * a block. Runtime APIs should be used to determine scheduled cores/ for the upcoming block.
+     * a block. Runtime APIs should be used to determine scheduled cores for the upcoming block.
      *
      * @param {Callback<Array<[PolkadotPrimitivesV6CoreIndex, Array<PolkadotRuntimeParachainsSchedulerPalletParasEntry>]>> =} callback
      **/

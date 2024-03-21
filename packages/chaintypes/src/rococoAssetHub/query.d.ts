@@ -99,6 +99,13 @@ export interface ChainStorage extends GenericChainStorage {
     extrinsicCount: GenericStorageQuery<() => number | undefined>;
 
     /**
+     * Whether all inherents have been applied.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    inherentsApplied: GenericStorageQuery<() => boolean>;
+
+    /**
      * The current weight for the block.
      *
      * @param {Callback<FrameSupportDispatchPerDispatchClass> =} callback

@@ -1,0 +1,31 @@
+name: Regenerate Chain Types
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  regen-chaintypes:
+    runs-on: ubuntu-latest
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    strategy:
+      matrix:
+        node-version: [18.x]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{secrets.GH_PAT_CHAINTYPES}}
+      - name: Setup GH user
+        run: |
+          git config --global user.email "hi@coongcrafts.io"
+          git config --global user.name "debot"
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'yarn'
+          registry-url: 'https://registry.npmjs.org'
+      - run: yarn install --immutable
+      - run: |
+          npx lerna version prerelease --no-private --no-push --force-publish --yes

@@ -28,5 +28,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: yarn install --immutable
       - run: yarn gen & yarn build
-      - run: npx lerna version prerelease --no-private --no-push --yes
+      - run: |
+          git add -A && git commit -m 'test publish message'
+          npx lerna version prerelease --no-private --no-push --yes
 

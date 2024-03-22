@@ -6,6 +6,7 @@ import type {
   FrameSystemLimitsBlockWeights,
   FrameSystemLimitsBlockLength,
   SpWeightsRuntimeDbWeight,
+  PolkadotParachainPrimitivesPrimitivesId,
   SpWeightsWeightV2Weight,
   PalletNftsBitFlagsPalletFeature,
   FrameSupportPalletId,
@@ -38,7 +39,7 @@ export interface ChainConsts extends GenericChainConsts {
     dbWeight: SpWeightsRuntimeDbWeight;
 
     /**
-     * Get the chain's current version.
+     * Get the chain's in-code version.
      **/
     version: RuntimeVersion;
 
@@ -60,6 +61,11 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `ParachainSystem`'s constants
    **/
   parachainSystem: {
+    /**
+     * Returns the parachain ID we are running with.
+     **/
+    selfParaId: PolkadotParachainPrimitivesPrimitivesId;
+
     /**
      * Generic pallet constant
      **/

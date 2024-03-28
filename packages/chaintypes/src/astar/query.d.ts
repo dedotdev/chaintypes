@@ -90,14 +90,6 @@ import type {
   PalletContractsStorageContractInfo,
   PalletContractsStorageDeletionQueueManager,
   PalletDappStakingMigrationMigrationState,
-  PalletDappsStakingAccountLedger,
-  PalletDappsStakingRewardInfo,
-  PalletDappsStakingForcing,
-  PalletDappsStakingDAppInfo,
-  PalletDappsStakingEraInfo,
-  PalletDappsStakingContractStakeInfo,
-  PalletDappsStakingStakerInfo,
-  PalletDappsStakingVersion,
 } from './types';
 
 export interface ChainStorage extends GenericChainStorage {
@@ -1684,120 +1676,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletDappStakingMigrationMigrationState> =} callback
      **/
     migrationStateStorage: GenericStorageQuery<() => PalletDappStakingMigrationMigrationState>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `DappsStaking`'s storage queries
-   **/
-  dappsStaking: {
-    /**
-     * Denotes whether pallet is disabled (in maintenance mode) or not
-     *
-     * @param {Callback<boolean> =} callback
-     **/
-    palletDisabled: GenericStorageQuery<() => boolean>;
-
-    /**
-     * Denotes whether pallet decommissioning has started or not.
-     *
-     * @param {Callback<boolean> =} callback
-     **/
-    decommissionStarted: GenericStorageQuery<() => boolean>;
-
-    /**
-     * General information about the staker (non-smart-contract specific).
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<PalletDappsStakingAccountLedger> =} callback
-     **/
-    ledger: GenericStorageQuery<(arg: AccountId32Like) => PalletDappsStakingAccountLedger>;
-
-    /**
-     * The current era index.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    currentEra: GenericStorageQuery<() => number>;
-
-    /**
-     * Accumulator for block rewards during an era. It is reset at every new era
-     *
-     * @param {Callback<PalletDappsStakingRewardInfo> =} callback
-     **/
-    blockRewardAccumulator: GenericStorageQuery<() => PalletDappsStakingRewardInfo>;
-
-    /**
-     * Mode of era forcing.
-     *
-     * @param {Callback<PalletDappsStakingForcing> =} callback
-     **/
-    forceEra: GenericStorageQuery<() => PalletDappsStakingForcing>;
-
-    /**
-     * Stores the block number of when the next era starts
-     *
-     * @param {Callback<number> =} callback
-     **/
-    nextEraStartingBlock: GenericStorageQuery<() => number>;
-
-    /**
-     * Simple map where developer account points to their smart contract
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<AstarPrimitivesDappStakingSmartContract | undefined> =} callback
-     **/
-    registeredDevelopers: GenericStorageQuery<
-      (arg: AccountId32Like) => AstarPrimitivesDappStakingSmartContract | undefined
-    >;
-
-    /**
-     * Simple map where smart contract points to basic info about it (e.g. developer address, state)
-     *
-     * @param {AstarPrimitivesDappStakingSmartContract} arg
-     * @param {Callback<PalletDappsStakingDAppInfo | undefined> =} callback
-     **/
-    registeredDapps: GenericStorageQuery<
-      (arg: AstarPrimitivesDappStakingSmartContract) => PalletDappsStakingDAppInfo | undefined
-    >;
-
-    /**
-     * General information about an era like TVL, total staked value, rewards.
-     *
-     * @param {number} arg
-     * @param {Callback<PalletDappsStakingEraInfo | undefined> =} callback
-     **/
-    generalEraInfo: GenericStorageQuery<(arg: number) => PalletDappsStakingEraInfo | undefined>;
-
-    /**
-     * Staking information about contract in a particular era.
-     *
-     * @param {[AstarPrimitivesDappStakingSmartContract, number]} arg
-     * @param {Callback<PalletDappsStakingContractStakeInfo | undefined> =} callback
-     **/
-    contractEraStake: GenericStorageQuery<
-      (arg: [AstarPrimitivesDappStakingSmartContract, number]) => PalletDappsStakingContractStakeInfo | undefined
-    >;
-
-    /**
-     * Info about stakers stakes on particular contracts.
-     *
-     * @param {[AccountId32Like, AstarPrimitivesDappStakingSmartContract]} arg
-     * @param {Callback<PalletDappsStakingStakerInfo> =} callback
-     **/
-    generalStakerInfo: GenericStorageQuery<
-      (arg: [AccountId32Like, AstarPrimitivesDappStakingSmartContract]) => PalletDappsStakingStakerInfo
-    >;
-
-    /**
-     * Stores the current pallet storage version.
-     *
-     * @param {Callback<PalletDappsStakingVersion> =} callback
-     **/
-    storageVersion: GenericStorageQuery<() => PalletDappsStakingVersion>;
 
     /**
      * Generic pallet storage query

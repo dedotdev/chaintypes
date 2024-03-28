@@ -10,7 +10,6 @@ import type {
   SpWeightsWeightV2Weight,
   PalletContractsSchedule,
   PalletContractsEnvironment,
-  FrameSupportPalletId,
 } from './types';
 
 export interface ChainConsts extends GenericChainConsts {
@@ -688,89 +687,6 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `DappStakingMigration`'s constants
    **/
   dappStakingMigration: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `DappsStaking`'s constants
-   **/
-  dappsStaking: {
-    /**
-     * Number of blocks per era.
-     **/
-    blockPerEra: number;
-
-    /**
-     * Deposit that will be reserved as part of new contract registration.
-     **/
-    registerDeposit: bigint;
-
-    /**
-     * Maximum number of unique stakers per contract.
-     **/
-    maxNumberOfStakersPerContract: number;
-
-    /**
-     * Minimum amount user must have staked on contract.
-     * User can stake less if they already have the minimum staking amount staked on that particular contract.
-     **/
-    minimumStakingAmount: bigint;
-
-    /**
-     * Dapps staking pallet Id
-     **/
-    palletId: FrameSupportPalletId;
-
-    /**
-     * Minimum amount that should be left on staker account after staking.
-     * Serves as a safeguard to prevent users from locking their entire free balance.
-     **/
-    minimumRemainingAmount: bigint;
-
-    /**
-     * Max number of unlocking chunks per account Id <-> contract Id pairing.
-     * If value is zero, unlocking becomes impossible.
-     **/
-    maxUnlockingChunks: number;
-
-    /**
-     * Number of eras that need to pass until unstaked value can be withdrawn.
-     * Current era is always counted as full era (regardless how much blocks are remaining).
-     * When set to `0`, it's equal to having no unbonding period.
-     **/
-    unbondingPeriod: number;
-
-    /**
-     * Max number of unique `EraStake` values that can exist for a `(staker, contract)` pairing.
-     * When stakers claims rewards, they will either keep the number of `EraStake` values the same or they will reduce them by one.
-     * Stakers cannot add an additional `EraStake` value by calling `bond&stake` or `unbond&unstake` if they've reached the max number of values.
-     *
-     * This ensures that history doesn't grow indefinitely - if there are too many chunks, stakers should first claim their former rewards
-     * before adding additional `EraStake` values.
-     **/
-    maxEraStakeValues: number;
-
-    /**
-     * Number of eras that need to pass until dApp rewards for the unregistered contracts can be burned.
-     * Developer can still claim rewards after this period has passed, iff it hasn't been burned yet.
-     *
-     * For example, if retention is set to `2` and current era is `10`, it means that all unclaimed rewards bellow era `8` can be burned.
-     **/
-    unregisteredDappRewardRetention: number;
-
-    /**
-     * Can be used to force pallet into permanent maintenance mode.
-     **/
-    forcePalletDisabled: boolean;
-
-    /**
-     * The fee that will be charged for claiming rewards on behalf of a staker.
-     * This amount will be transferred from the staker over to the caller.
-     **/
-    delegateClaimFee: bigint;
-
     /**
      * Generic pallet constant
      **/

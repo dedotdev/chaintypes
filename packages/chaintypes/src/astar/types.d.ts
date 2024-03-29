@@ -78,8 +78,7 @@ export type AstarRuntimeRuntimeEvent =
   | { pallet: 'Contracts'; palletEvent: PalletContractsEvent }
   | { pallet: 'Sudo'; palletEvent: PalletSudoEvent }
   | { pallet: 'StaticPriceProvider'; palletEvent: PalletStaticPriceProviderEvent }
-  | { pallet: 'DappStakingMigration'; palletEvent: PalletDappStakingMigrationEvent }
-  | { pallet: 'DappsStaking'; palletEvent: PalletDappsStakingPalletEvent };
+  | { pallet: 'DappStakingMigration'; palletEvent: PalletDappStakingMigrationEvent };
 
 /**
  * Event for the System pallet.
@@ -1827,79 +1826,9 @@ export type PalletStaticPriceProviderEvent =
  **/
 export type PalletDappStakingMigrationEvent =
   /**
-   * Number of entries migrated from v2 over to v3
+   * Number of staking info entries translated
    **/
-  | { name: 'EntriesMigrated'; data: number }
-  /**
-   * Number of entries deleted from v2
-   **/
-  | { name: 'EntriesDeleted'; data: number };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletDappsStakingPalletEvent =
-  /**
-   * Account has bonded and staked funds on a smart contract.
-   **/
-  | { name: 'BondAndStake'; data: [AccountId32, AstarPrimitivesDappStakingSmartContract, bigint] }
-  /**
-   * Account has unbonded & unstaked some funds. Unbonding process begins.
-   **/
-  | { name: 'UnbondAndUnstake'; data: [AccountId32, AstarPrimitivesDappStakingSmartContract, bigint] }
-  /**
-   * Account has fully withdrawn all staked amount from an unregistered contract.
-   **/
-  | { name: 'WithdrawFromUnregistered'; data: [AccountId32, AstarPrimitivesDappStakingSmartContract, bigint] }
-  /**
-   * Account has withdrawn unbonded funds.
-   **/
-  | { name: 'Withdrawn'; data: [AccountId32, bigint] }
-  /**
-   * New contract added for staking.
-   **/
-  | { name: 'NewContract'; data: [AccountId32, AstarPrimitivesDappStakingSmartContract] }
-  /**
-   * Contract removed from dapps staking.
-   **/
-  | { name: 'ContractRemoved'; data: [AccountId32, AstarPrimitivesDappStakingSmartContract] }
-  /**
-   * New dapps staking era. Distribute era rewards to contracts.
-   **/
-  | { name: 'NewDappStakingEra'; data: number }
-  /**
-   * Reward paid to staker or developer.
-   **/
-  | { name: 'Reward'; data: [AccountId32, AstarPrimitivesDappStakingSmartContract, number, bigint] }
-  /**
-   * Maintenance mode has been enabled or disabled
-   **/
-  | { name: 'MaintenanceMode'; data: boolean }
-  /**
-   * Reward handling modified
-   **/
-  | { name: 'RewardDestination'; data: [AccountId32, PalletDappsStakingRewardDestination] }
-  /**
-   * Nomination part has been transfered from one contract to another.
-   *
-   * \(staker account, origin smart contract, amount, target smart contract\)
-   **/
-  | {
-      name: 'NominationTransfer';
-      data: [AccountId32, AstarPrimitivesDappStakingSmartContract, bigint, AstarPrimitivesDappStakingSmartContract];
-    }
-  /**
-   * Stale, unclaimed reward from an unregistered contract has been burned.
-   *
-   * \(developer account, smart contract, era, amount burned\)
-   **/
-  | { name: 'StaleRewardBurned'; data: [AccountId32, AstarPrimitivesDappStakingSmartContract, number, bigint] }
-  /**
-   * Pallet is being decommissioned.
-   **/
-  | { name: 'Decommission' };
-
-export type PalletDappsStakingRewardDestination = 'FreeBalance' | 'StakeBalance';
+  { name: 'SingularStakingInfoTranslated'; data: number };
 
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
@@ -2115,8 +2044,7 @@ export type AstarRuntimeRuntimeCall =
   | { pallet: 'Contracts'; palletCall: PalletContractsCall }
   | { pallet: 'Sudo'; palletCall: PalletSudoCall }
   | { pallet: 'StaticPriceProvider'; palletCall: PalletStaticPriceProviderCall }
-  | { pallet: 'DappStakingMigration'; palletCall: PalletDappStakingMigrationCall }
-  | { pallet: 'DappsStaking'; palletCall: PalletDappsStakingPalletCall };
+  | { pallet: 'DappStakingMigration'; palletCall: PalletDappStakingMigrationCall };
 
 export type AstarRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -2146,8 +2074,7 @@ export type AstarRuntimeRuntimeCallLike =
   | { pallet: 'Contracts'; palletCall: PalletContractsCallLike }
   | { pallet: 'Sudo'; palletCall: PalletSudoCallLike }
   | { pallet: 'StaticPriceProvider'; palletCall: PalletStaticPriceProviderCallLike }
-  | { pallet: 'DappStakingMigration'; palletCall: PalletDappStakingMigrationCallLike }
-  | { pallet: 'DappsStaking'; palletCall: PalletDappsStakingPalletCallLike };
+  | { pallet: 'DappStakingMigration'; palletCall: PalletDappStakingMigrationCallLike };
 
 /**
  * Identity pallet declaration.
@@ -4432,189 +4359,6 @@ export type PalletDappStakingMigrationCallLike =
    **/
   { name: 'Migrate'; params: { weightLimit?: SpWeightsWeightV2Weight | undefined } };
 
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletDappsStakingPalletCall =
-  /**
-   * See [`Pallet::register`].
-   **/
-  | { name: 'Register'; params: { developer: AccountId32; contractId: AstarPrimitivesDappStakingSmartContract } }
-  /**
-   * See [`Pallet::unregister`].
-   **/
-  | { name: 'Unregister'; params: { contractId: AstarPrimitivesDappStakingSmartContract } }
-  /**
-   * See [`Pallet::withdraw_from_unregistered`].
-   **/
-  | { name: 'WithdrawFromUnregistered'; params: { contractId: AstarPrimitivesDappStakingSmartContract } }
-  /**
-   * See [`Pallet::bond_and_stake`].
-   **/
-  | { name: 'BondAndStake'; params: { contractId: AstarPrimitivesDappStakingSmartContract; value: bigint } }
-  /**
-   * See [`Pallet::unbond_and_unstake`].
-   **/
-  | { name: 'UnbondAndUnstake'; params: { contractId: AstarPrimitivesDappStakingSmartContract; value: bigint } }
-  /**
-   * See [`Pallet::withdraw_unbonded`].
-   **/
-  | { name: 'WithdrawUnbonded' }
-  /**
-   * See [`Pallet::nomination_transfer`].
-   **/
-  | {
-      name: 'NominationTransfer';
-      params: {
-        originContractId: AstarPrimitivesDappStakingSmartContract;
-        value: bigint;
-        targetContractId: AstarPrimitivesDappStakingSmartContract;
-      };
-    }
-  /**
-   * See [`Pallet::claim_staker`].
-   **/
-  | { name: 'ClaimStaker'; params: { contractId: AstarPrimitivesDappStakingSmartContract } }
-  /**
-   * See [`Pallet::claim_dapp`].
-   **/
-  | { name: 'ClaimDapp'; params: { contractId: AstarPrimitivesDappStakingSmartContract; era: number } }
-  /**
-   * See [`Pallet::force_new_era`].
-   **/
-  | { name: 'ForceNewEra' }
-  /**
-   * See [`Pallet::maintenance_mode`].
-   **/
-  | { name: 'MaintenanceMode'; params: { enableMaintenance: boolean } }
-  /**
-   * See [`Pallet::set_reward_destination`].
-   **/
-  | { name: 'SetRewardDestination'; params: { rewardDestination: PalletDappsStakingRewardDestination } }
-  /**
-   * See [`Pallet::set_contract_stake_info`].
-   **/
-  | {
-      name: 'SetContractStakeInfo';
-      params: {
-        contract: AstarPrimitivesDappStakingSmartContract;
-        era: number;
-        contractStakeInfo: PalletDappsStakingContractStakeInfo;
-      };
-    }
-  /**
-   * See [`Pallet::burn_stale_reward`].
-   **/
-  | { name: 'BurnStaleReward'; params: { contractId: AstarPrimitivesDappStakingSmartContract; era: number } }
-  /**
-   * See [`Pallet::claim_staker_for`].
-   **/
-  | { name: 'ClaimStakerFor'; params: { staker: AccountId32; contractId: AstarPrimitivesDappStakingSmartContract } }
-  /**
-   * See [`Pallet::set_reward_destination_for`].
-   **/
-  | {
-      name: 'SetRewardDestinationFor';
-      params: { staker: AccountId32; rewardDestination: PalletDappsStakingRewardDestination };
-    }
-  /**
-   * See [`Pallet::decommission`].
-   **/
-  | { name: 'Decommission' };
-
-export type PalletDappsStakingPalletCallLike =
-  /**
-   * See [`Pallet::register`].
-   **/
-  | { name: 'Register'; params: { developer: AccountId32Like; contractId: AstarPrimitivesDappStakingSmartContract } }
-  /**
-   * See [`Pallet::unregister`].
-   **/
-  | { name: 'Unregister'; params: { contractId: AstarPrimitivesDappStakingSmartContract } }
-  /**
-   * See [`Pallet::withdraw_from_unregistered`].
-   **/
-  | { name: 'WithdrawFromUnregistered'; params: { contractId: AstarPrimitivesDappStakingSmartContract } }
-  /**
-   * See [`Pallet::bond_and_stake`].
-   **/
-  | { name: 'BondAndStake'; params: { contractId: AstarPrimitivesDappStakingSmartContract; value: bigint } }
-  /**
-   * See [`Pallet::unbond_and_unstake`].
-   **/
-  | { name: 'UnbondAndUnstake'; params: { contractId: AstarPrimitivesDappStakingSmartContract; value: bigint } }
-  /**
-   * See [`Pallet::withdraw_unbonded`].
-   **/
-  | { name: 'WithdrawUnbonded' }
-  /**
-   * See [`Pallet::nomination_transfer`].
-   **/
-  | {
-      name: 'NominationTransfer';
-      params: {
-        originContractId: AstarPrimitivesDappStakingSmartContract;
-        value: bigint;
-        targetContractId: AstarPrimitivesDappStakingSmartContract;
-      };
-    }
-  /**
-   * See [`Pallet::claim_staker`].
-   **/
-  | { name: 'ClaimStaker'; params: { contractId: AstarPrimitivesDappStakingSmartContract } }
-  /**
-   * See [`Pallet::claim_dapp`].
-   **/
-  | { name: 'ClaimDapp'; params: { contractId: AstarPrimitivesDappStakingSmartContract; era: number } }
-  /**
-   * See [`Pallet::force_new_era`].
-   **/
-  | { name: 'ForceNewEra' }
-  /**
-   * See [`Pallet::maintenance_mode`].
-   **/
-  | { name: 'MaintenanceMode'; params: { enableMaintenance: boolean } }
-  /**
-   * See [`Pallet::set_reward_destination`].
-   **/
-  | { name: 'SetRewardDestination'; params: { rewardDestination: PalletDappsStakingRewardDestination } }
-  /**
-   * See [`Pallet::set_contract_stake_info`].
-   **/
-  | {
-      name: 'SetContractStakeInfo';
-      params: {
-        contract: AstarPrimitivesDappStakingSmartContract;
-        era: number;
-        contractStakeInfo: PalletDappsStakingContractStakeInfo;
-      };
-    }
-  /**
-   * See [`Pallet::burn_stale_reward`].
-   **/
-  | { name: 'BurnStaleReward'; params: { contractId: AstarPrimitivesDappStakingSmartContract; era: number } }
-  /**
-   * See [`Pallet::claim_staker_for`].
-   **/
-  | { name: 'ClaimStakerFor'; params: { staker: AccountId32Like; contractId: AstarPrimitivesDappStakingSmartContract } }
-  /**
-   * See [`Pallet::set_reward_destination_for`].
-   **/
-  | {
-      name: 'SetRewardDestinationFor';
-      params: { staker: AccountId32Like; rewardDestination: PalletDappsStakingRewardDestination };
-    }
-  /**
-   * See [`Pallet::decommission`].
-   **/
-  | { name: 'Decommission' };
-
-export type PalletDappsStakingContractStakeInfo = {
-  total: bigint;
-  numberOfStakers: number;
-  contractRewardClaimed: boolean;
-};
-
 export type AstarRuntimeOriginCaller =
   | { tag: 'System'; value: FrameSupportDispatchRawOrigin }
   | { tag: 'PolkadotXcm'; value: PalletXcmOrigin }
@@ -5081,7 +4825,11 @@ export type PalletDappStakingV3UnlockingChunk = { amount: bigint; unlockBlock: n
 
 export type PalletDappStakingV3StakeAmount = { voting: bigint; buildAndEarn: bigint; era: number; period: number };
 
-export type PalletDappStakingV3SingularStakingInfo = { staked: PalletDappStakingV3StakeAmount; loyalStaker: boolean };
+export type PalletDappStakingV3SingularStakingInfo = {
+  previousStaked: PalletDappStakingV3StakeAmount;
+  staked: PalletDappStakingV3StakeAmount;
+  loyalStaker: boolean;
+};
 
 export type PalletDappStakingV3ContractStakeAmount = {
   staked: PalletDappStakingV3StakeAmount;
@@ -6223,146 +5971,9 @@ export type PalletStaticPriceProviderError =
   'ZeroPrice';
 
 export type PalletDappStakingMigrationMigrationState =
-  | 'NotInProgress'
-  | 'RegisteredDApps'
-  | 'Ledgers'
-  | 'Cleanup'
-  | 'Finished';
-
-export type PalletDappsStakingAccountLedger = {
-  locked: bigint;
-  unbondingInfo: PalletDappsStakingUnbondingInfo;
-  rewardDestination: PalletDappsStakingRewardDestination;
-};
-
-export type PalletDappsStakingUnbondingInfo = { unlockingChunks: Array<PalletDappsStakingUnlockingChunk> };
-
-export type PalletDappsStakingUnlockingChunk = { amount: bigint; unlockEra: number };
-
-export type PalletDappsStakingRewardInfo = { stakers: bigint; dapps: bigint };
-
-export type PalletDappsStakingForcing = 'NotForcing' | 'ForceNew';
-
-export type PalletDappsStakingDAppInfo = { developer: AccountId32; state: PalletDappsStakingDAppState };
-
-export type PalletDappsStakingDAppState = { tag: 'Registered' } | { tag: 'Unregistered'; value: number };
-
-export type PalletDappsStakingEraInfo = { rewards: PalletDappsStakingRewardInfo; staked: bigint; locked: bigint };
-
-export type PalletDappsStakingStakerInfo = { stakes: Array<PalletDappsStakingEraStake> };
-
-export type PalletDappsStakingEraStake = { staked: bigint; era: number };
-
-export type PalletDappsStakingVersion = 'V100' | 'V200' | 'V300' | 'V400';
-
-export type FrameSupportPalletId = FixedBytes<8>;
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletDappsStakingPalletError =
-  /**
-   * Disabled
-   **/
-  | 'Disabled'
-  /**
-   * No change in maintenance mode
-   **/
-  | 'NoMaintenanceModeChange'
-  /**
-   * Upgrade is too heavy, reduce the weight parameter.
-   **/
-  | 'UpgradeTooHeavy'
-  /**
-   * Can not stake with zero value.
-   **/
-  | 'StakingWithNoValue'
-  /**
-   * Can not stake with value less than minimum staking value
-   **/
-  | 'InsufficientValue'
-  /**
-   * Number of stakers per contract exceeded.
-   **/
-  | 'MaxNumberOfStakersExceeded'
-  /**
-   * Targets must be operated contracts
-   **/
-  | 'NotOperatedContract'
-  /**
-   * Contract isn't staked.
-   **/
-  | 'NotStakedContract'
-  /**
-   * Contract isn't unregistered.
-   **/
-  | 'NotUnregisteredContract'
-  /**
-   * Unclaimed rewards should be claimed before withdrawing stake.
-   **/
-  | 'UnclaimedRewardsRemaining'
-  /**
-   * Unstaking a contract with zero value
-   **/
-  | 'UnstakingWithNoValue'
-  /**
-   * There are no previously unbonded funds that can be unstaked and withdrawn.
-   **/
-  | 'NothingToWithdraw'
-  /**
-   * The contract is already registered by other account
-   **/
-  | 'AlreadyRegisteredContract'
-  /**
-   * This account was already used to register contract
-   **/
-  | 'AlreadyUsedDeveloperAccount'
-  /**
-   * Smart contract not owned by the account id.
-   **/
-  | 'NotOwnedContract'
-  /**
-   * Report issue on github if this is ever emitted
-   **/
-  | 'UnknownEraReward'
-  /**
-   * Report issue on github if this is ever emitted
-   **/
-  | 'UnexpectedStakeInfoEra'
-  /**
-   * Contract has too many unlocking chunks. Withdraw the existing chunks if possible
-   * or wait for current chunks to complete unlocking process to withdraw them.
-   **/
-  | 'TooManyUnlockingChunks'
-  /**
-   * Contract already claimed in this era and reward is distributed
-   **/
-  | 'AlreadyClaimedInThisEra'
-  /**
-   * Era parameter is out of bounds
-   **/
-  | 'EraOutOfBounds'
-  /**
-   * Too many active `EraStake` values for (staker, contract) pairing.
-   * Claim existing rewards to fix this problem.
-   **/
-  | 'TooManyEraStakeValues'
-  /**
-   * Account is not actively staking
-   **/
-  | 'NotActiveStaker'
-  /**
-   * Transfering nomination to the same contract
-   **/
-  | 'NominationTransferToSameContract'
-  /**
-   * Decommission is in progress so this call is not allowed.
-   **/
-  | 'DecommissionInProgress'
-  /**
-   * Delegated claim call is not allowed if both the staker & caller are the same accounts.
-   **/
-  | 'ClaimForCallerAccount';
+  | { tag: 'NotInProgress' }
+  | { tag: 'SingularStakingInfo'; value: Bytes }
+  | { tag: 'Finished' };
 
 export type SpRuntimeMultiSignature =
   | { tag: 'Ed25519'; value: SpCoreEd25519Signature }
@@ -6546,5 +6157,4 @@ export type AstarRuntimeRuntimeError =
   | { tag: 'DynamicEvmBaseFee'; value: PalletDynamicEvmBaseFeeError }
   | { tag: 'Contracts'; value: PalletContractsError }
   | { tag: 'Sudo'; value: PalletSudoError }
-  | { tag: 'StaticPriceProvider'; value: PalletStaticPriceProviderError }
-  | { tag: 'DappsStaking'; value: PalletDappsStakingPalletError };
+  | { tag: 'StaticPriceProvider'; value: PalletStaticPriceProviderError };

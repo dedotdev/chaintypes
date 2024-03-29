@@ -35,7 +35,6 @@ import type {
   EthereumLog,
   EvmCoreErrorExitReason,
   PalletContractsOrigin,
-  PalletDappsStakingRewardDestination,
 } from './types';
 
 export interface ChainEvents extends GenericChainEvents {
@@ -1710,128 +1709,9 @@ export interface ChainEvents extends GenericChainEvents {
    **/
   dappStakingMigration: {
     /**
-     * Number of entries migrated from v2 over to v3
+     * Number of staking info entries translated
      **/
-    EntriesMigrated: GenericPalletEvent<'DappStakingMigration', 'EntriesMigrated', number>;
-
-    /**
-     * Number of entries deleted from v2
-     **/
-    EntriesDeleted: GenericPalletEvent<'DappStakingMigration', 'EntriesDeleted', number>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
-   * Pallet `DappsStaking`'s events
-   **/
-  dappsStaking: {
-    /**
-     * Account has bonded and staked funds on a smart contract.
-     **/
-    BondAndStake: GenericPalletEvent<
-      'DappsStaking',
-      'BondAndStake',
-      [AccountId32, AstarPrimitivesDappStakingSmartContract, bigint]
-    >;
-
-    /**
-     * Account has unbonded & unstaked some funds. Unbonding process begins.
-     **/
-    UnbondAndUnstake: GenericPalletEvent<
-      'DappsStaking',
-      'UnbondAndUnstake',
-      [AccountId32, AstarPrimitivesDappStakingSmartContract, bigint]
-    >;
-
-    /**
-     * Account has fully withdrawn all staked amount from an unregistered contract.
-     **/
-    WithdrawFromUnregistered: GenericPalletEvent<
-      'DappsStaking',
-      'WithdrawFromUnregistered',
-      [AccountId32, AstarPrimitivesDappStakingSmartContract, bigint]
-    >;
-
-    /**
-     * Account has withdrawn unbonded funds.
-     **/
-    Withdrawn: GenericPalletEvent<'DappsStaking', 'Withdrawn', [AccountId32, bigint]>;
-
-    /**
-     * New contract added for staking.
-     **/
-    NewContract: GenericPalletEvent<
-      'DappsStaking',
-      'NewContract',
-      [AccountId32, AstarPrimitivesDappStakingSmartContract]
-    >;
-
-    /**
-     * Contract removed from dapps staking.
-     **/
-    ContractRemoved: GenericPalletEvent<
-      'DappsStaking',
-      'ContractRemoved',
-      [AccountId32, AstarPrimitivesDappStakingSmartContract]
-    >;
-
-    /**
-     * New dapps staking era. Distribute era rewards to contracts.
-     **/
-    NewDappStakingEra: GenericPalletEvent<'DappsStaking', 'NewDappStakingEra', number>;
-
-    /**
-     * Reward paid to staker or developer.
-     **/
-    Reward: GenericPalletEvent<
-      'DappsStaking',
-      'Reward',
-      [AccountId32, AstarPrimitivesDappStakingSmartContract, number, bigint]
-    >;
-
-    /**
-     * Maintenance mode has been enabled or disabled
-     **/
-    MaintenanceMode: GenericPalletEvent<'DappsStaking', 'MaintenanceMode', boolean>;
-
-    /**
-     * Reward handling modified
-     **/
-    RewardDestination: GenericPalletEvent<
-      'DappsStaking',
-      'RewardDestination',
-      [AccountId32, PalletDappsStakingRewardDestination]
-    >;
-
-    /**
-     * Nomination part has been transfered from one contract to another.
-     *
-     * \(staker account, origin smart contract, amount, target smart contract\)
-     **/
-    NominationTransfer: GenericPalletEvent<
-      'DappsStaking',
-      'NominationTransfer',
-      [AccountId32, AstarPrimitivesDappStakingSmartContract, bigint, AstarPrimitivesDappStakingSmartContract]
-    >;
-
-    /**
-     * Stale, unclaimed reward from an unregistered contract has been burned.
-     *
-     * \(developer account, smart contract, era, amount burned\)
-     **/
-    StaleRewardBurned: GenericPalletEvent<
-      'DappsStaking',
-      'StaleRewardBurned',
-      [AccountId32, AstarPrimitivesDappStakingSmartContract, number, bigint]
-    >;
-
-    /**
-     * Pallet is being decommissioned.
-     **/
-    Decommission: GenericPalletEvent<'DappsStaking', 'Decommission', null>;
+    SingularStakingInfoTranslated: GenericPalletEvent<'DappStakingMigration', 'SingularStakingInfoTranslated', number>;
 
     /**
      * Generic pallet event

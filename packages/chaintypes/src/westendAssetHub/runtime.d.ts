@@ -19,6 +19,7 @@ import type {
   SpConsensusAuraSr25519AppSr25519Public,
   SpConsensusSlotsSlot,
   SpRuntimeBlock,
+  SpRuntimeExtrinsicInclusionMode,
   SpCoreOpaqueMetadata,
   SpRuntimeTransactionValidityTransactionValidityError,
   SpInherentsInherentData,
@@ -109,12 +110,12 @@ export interface RuntimeApis extends GenericRuntimeApis {
     executeBlock: GenericRuntimeApiMethod<(block: SpRuntimeBlock) => Promise<[]>>;
 
     /**
-     * Initialize a block with the given header.
+     * Initialize a block with the given header and return the runtime executive mode.
      *
      * @callname: Core_initialize_block
      * @param {Header} header
      **/
-    initializeBlock: GenericRuntimeApiMethod<(header: Header) => Promise<[]>>;
+    initializeBlock: GenericRuntimeApiMethod<(header: Header) => Promise<SpRuntimeExtrinsicInclusionMode>>;
 
     /**
      * Generic runtime api call
@@ -578,23 +579,23 @@ export interface RuntimeApis extends GenericRuntimeApis {
    **/
   genesisBuilder: {
     /**
-     * Creates the default `GenesisConfig` and returns it as a JSON blob.
+     * Creates the default `RuntimeGenesisConfig` and returns it as a JSON blob.
      *
-     * This function instantiates the default `GenesisConfig` struct for the runtime and serializes it into a JSON
-     * blob. It returns a `Vec<u8>` containing the JSON representation of the default `GenesisConfig`.
+     * This function instantiates the default `RuntimeGenesisConfig` struct for the runtime and serializes it into a JSON
+     * blob. It returns a `Vec<u8>` containing the JSON representation of the default `RuntimeGenesisConfig`.
      *
      * @callname: GenesisBuilder_create_default_config
      **/
     createDefaultConfig: GenericRuntimeApiMethod<() => Promise<Bytes>>;
 
     /**
-     * Build `GenesisConfig` from a JSON blob not using any defaults and store it in the storage.
+     * Build `RuntimeGenesisConfig` from a JSON blob not using any defaults and store it in the storage.
      *
-     * This function deserializes the full `GenesisConfig` from the given JSON blob and puts it into the storage.
+     * This function deserializes the full `RuntimeGenesisConfig` from the given JSON blob and puts it into the storage.
      * If the provided JSON blob is incorrect or incomplete or the deserialization fails, an error is returned.
      * It is recommended to log any errors encountered during the process.
      *
-     * Please note that provided json blob must contain all `GenesisConfig` fields, no defaults will be used.
+     * Please note that provided json blob must contain all `RuntimeGenesisConfig` fields, no defaults will be used.
      *
      * @callname: GenesisBuilder_build_config
      * @param {BytesLike} json

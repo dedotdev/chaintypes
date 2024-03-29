@@ -42,6 +42,11 @@ export interface ChainErrors extends GenericChainErrors {
     CallFiltered: GenericPalletError;
 
     /**
+     * A multi-block migration is ongoing and prevents the current code from being replaced.
+     **/
+    MultiBlockMigrationsOngoing: GenericPalletError;
+
+    /**
      * No upgrade authorized.
      **/
     NothingAuthorized: GenericPalletError;

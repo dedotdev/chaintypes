@@ -12,8 +12,8 @@
     "copy": "cp -R ./src/* ./dist"
   },
   "dependencies": {
-    "@dedot/codecs": "0.0.1-next.70fc26c6.11",
-    "@dedot/types": "0.0.1-next.70fc26c6.11"
+    "@dedot/codecs": "0.0.1-alpha.30",
+    "@dedot/types": "0.0.1-alpha.30"
   },
   "publishConfig": {
     "access": "public",

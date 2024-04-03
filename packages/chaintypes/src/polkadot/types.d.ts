@@ -383,7 +383,11 @@ export type PalletStakingPalletEvent =
   /**
    * A new force era mode was set.
    **/
-  | { name: 'ForceEra'; data: { mode: PalletStakingForcing } };
+  | { name: 'ForceEra'; data: { mode: PalletStakingForcing } }
+  /**
+   * Report of a controller batch deprecation.
+   **/
+  | { name: 'ControllerBatchDeprecated'; data: { failures: number } };
 
 export type PalletStakingRewardDestination =
   | { tag: 'Staked' }

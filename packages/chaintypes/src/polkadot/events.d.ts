@@ -451,6 +451,11 @@ export interface ChainEvents extends GenericChainEvents {
     ForceEra: GenericPalletEvent<'Staking', 'ForceEra', { mode: PalletStakingForcing }>;
 
     /**
+     * Report of a controller batch deprecation.
+     **/
+    ControllerBatchDeprecated: GenericPalletEvent<'Staking', 'ControllerBatchDeprecated', { failures: number }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;

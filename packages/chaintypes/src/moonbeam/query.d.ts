@@ -784,14 +784,6 @@ export interface ChainStorage extends GenericChainStorage {
     delayedPayouts: GenericStorageQuery<(arg: number) => PalletParachainStakingDelayedPayout | undefined>;
 
     /**
-     * Total counted stake for selected candidates in the round
-     *
-     * @param {number} arg
-     * @param {Callback<bigint> =} callback
-     **/
-    staked: GenericStorageQuery<(arg: number) => bigint>;
-
-    /**
      * Inflation configuration
      *
      * @param {Callback<PalletParachainStakingInflationInflationInfo> =} callback
@@ -836,6 +828,13 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<AccountId20 | undefined> =} callback
      **/
     author: GenericStorageQuery<() => AccountId20 | undefined>;
+
+    /**
+     * Check if the inherent was included
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    inherentIncluded: GenericStorageQuery<() => boolean>;
 
     /**
      * Generic pallet storage query
@@ -1099,6 +1098,36 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletMultisigMultisig | undefined> =} callback
      **/
     multisigs: GenericStorageQuery<(arg: [AccountId20Like, FixedBytes<32>]) => PalletMultisigMultisig | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `MoonbeamLazyMigrations`'s storage queries
+   **/
+  moonbeamLazyMigrations: {
+    /**
+     * If true, it means that LocalAssets storage has been removed.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    localAssetsMigrationCompleted: GenericStorageQuery<() => boolean>;
+
+    /**
+     * If true, it means that Democracy funds have been unlocked.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    democracyLocksMigrationCompleted: GenericStorageQuery<() => boolean>;
+
+    /**
+     * The total number of suicided contracts that were removed
+     *
+     * @param {Callback<number> =} callback
+     **/
+    suicidedContractsRemoved: GenericStorageQuery<() => number>;
 
     /**
      * Generic pallet storage query
@@ -1481,112 +1510,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<[] | undefined> =} callback
      **/
     whitelistedCall: GenericStorageQuery<(arg: H256) => [] | undefined>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `CouncilCollective`'s storage queries
-   **/
-  councilCollective: {
-    /**
-     * The hashes of the active proposals.
-     *
-     * @param {Callback<Array<H256>> =} callback
-     **/
-    proposals: GenericStorageQuery<() => Array<H256>>;
-
-    /**
-     * Actual proposal for a given hash, if it's current.
-     *
-     * @param {H256} arg
-     * @param {Callback<MoonbeamRuntimeRuntimeCall | undefined> =} callback
-     **/
-    proposalOf: GenericStorageQuery<(arg: H256) => MoonbeamRuntimeRuntimeCall | undefined>;
-
-    /**
-     * Votes on a given proposal, if it is ongoing.
-     *
-     * @param {H256} arg
-     * @param {Callback<PalletCollectiveVotes | undefined> =} callback
-     **/
-    voting: GenericStorageQuery<(arg: H256) => PalletCollectiveVotes | undefined>;
-
-    /**
-     * Proposals so far.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    proposalCount: GenericStorageQuery<() => number>;
-
-    /**
-     * The current members of the collective. This is stored sorted (just by value).
-     *
-     * @param {Callback<Array<AccountId20>> =} callback
-     **/
-    members: GenericStorageQuery<() => Array<AccountId20>>;
-
-    /**
-     * The prime member that helps determine the default vote behavior in case of absentations.
-     *
-     * @param {Callback<AccountId20 | undefined> =} callback
-     **/
-    prime: GenericStorageQuery<() => AccountId20 | undefined>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `TechCommitteeCollective`'s storage queries
-   **/
-  techCommitteeCollective: {
-    /**
-     * The hashes of the active proposals.
-     *
-     * @param {Callback<Array<H256>> =} callback
-     **/
-    proposals: GenericStorageQuery<() => Array<H256>>;
-
-    /**
-     * Actual proposal for a given hash, if it's current.
-     *
-     * @param {H256} arg
-     * @param {Callback<MoonbeamRuntimeRuntimeCall | undefined> =} callback
-     **/
-    proposalOf: GenericStorageQuery<(arg: H256) => MoonbeamRuntimeRuntimeCall | undefined>;
-
-    /**
-     * Votes on a given proposal, if it is ongoing.
-     *
-     * @param {H256} arg
-     * @param {Callback<PalletCollectiveVotes | undefined> =} callback
-     **/
-    voting: GenericStorageQuery<(arg: H256) => PalletCollectiveVotes | undefined>;
-
-    /**
-     * Proposals so far.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    proposalCount: GenericStorageQuery<() => number>;
-
-    /**
-     * The current members of the collective. This is stored sorted (just by value).
-     *
-     * @param {Callback<Array<AccountId20>> =} callback
-     **/
-    members: GenericStorageQuery<() => Array<AccountId20>>;
-
-    /**
-     * The prime member that helps determine the default vote behavior in case of absentations.
-     *
-     * @param {Callback<AccountId20 | undefined> =} callback
-     **/
-    prime: GenericStorageQuery<() => AccountId20 | undefined>;
 
     /**
      * Generic pallet storage query
@@ -2245,51 +2168,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletXcmTransactorRelayIndicesRelayChainIndices> =} callback
      **/
     relayIndices: GenericStorageQuery<() => PalletXcmTransactorRelayIndicesRelayChainIndices>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `LocalAssets`'s storage queries
-   **/
-  localAssets: {
-    /**
-     * Details of an asset.
-     *
-     * @param {bigint} arg
-     * @param {Callback<PalletAssetsAssetDetails | undefined> =} callback
-     **/
-    asset: GenericStorageQuery<(arg: bigint) => PalletAssetsAssetDetails | undefined>;
-
-    /**
-     * The holdings of a specific account for a specific asset.
-     *
-     * @param {[bigint, AccountId20Like]} arg
-     * @param {Callback<PalletAssetsAssetAccount | undefined> =} callback
-     **/
-    account: GenericStorageQuery<(arg: [bigint, AccountId20Like]) => PalletAssetsAssetAccount | undefined>;
-
-    /**
-     * Approved balance transfers. First balance is the amount approved for transfer. Second
-     * is the amount of `T::Currency` reserved for storing this.
-     * First key is the asset ID, second key is the owner and third key is the delegate.
-     *
-     * @param {[bigint, AccountId20Like, AccountId20Like]} arg
-     * @param {Callback<PalletAssetsApproval | undefined> =} callback
-     **/
-    approvals: GenericStorageQuery<
-      (arg: [bigint, AccountId20Like, AccountId20Like]) => PalletAssetsApproval | undefined
-    >;
-
-    /**
-     * Metadata of an asset.
-     *
-     * @param {bigint} arg
-     * @param {Callback<PalletAssetsAssetMetadata> =} callback
-     **/
-    metadata: GenericStorageQuery<(arg: bigint) => PalletAssetsAssetMetadata>;
 
     /**
      * Generic pallet storage query

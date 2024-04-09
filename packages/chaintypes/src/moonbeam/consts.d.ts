@@ -254,6 +254,16 @@ export interface ChainConsts extends GenericChainConsts {
     minDelegation: bigint;
 
     /**
+     * Get the slot duration in milliseconds
+     **/
+    slotDuration: bigint;
+
+    /**
+     * Get the average time beetween 2 blocks in milliseconds
+     **/
+    blockTime: bigint;
+
+    /**
      * Maximum candidates
      **/
     maxCandidates: number;
@@ -484,6 +494,15 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `MoonbeamLazyMigrations`'s constants
+   **/
+  moonbeamLazyMigrations: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `EthereumChainId`'s constants
    **/
   ethereumChainId: {
@@ -689,34 +708,6 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `Whitelist`'s constants
    **/
   whitelist: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `CouncilCollective`'s constants
-   **/
-  councilCollective: {
-    /**
-     * The maximum weight of a dispatch call that can be proposed and executed.
-     **/
-    maxProposalWeight: SpWeightsWeightV2Weight;
-
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `TechCommitteeCollective`'s constants
-   **/
-  techCommitteeCollective: {
-    /**
-     * The maximum weight of a dispatch call that can be proposed and executed.
-     **/
-    maxProposalWeight: SpWeightsWeightV2Weight;
-
     /**
      * Generic pallet constant
      **/
@@ -964,54 +955,6 @@ export interface ChainConsts extends GenericChainConsts {
      * T::Weigher::weight(&msg)`.
      **/
     baseXcmWeight: SpWeightsWeightV2Weight;
-
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `LocalAssets`'s constants
-   **/
-  localAssets: {
-    /**
-     * Max number of items to destroy per `destroy_accounts` and `destroy_approvals` call.
-     *
-     * Must be configured to result in a weight that makes each call fit in a block.
-     **/
-    removeItemsLimit: number;
-
-    /**
-     * The basic amount of funds that must be reserved for an asset.
-     **/
-    assetDeposit: bigint;
-
-    /**
-     * The amount of funds that must be reserved for a non-provider asset account to be
-     * maintained.
-     **/
-    assetAccountDeposit: bigint;
-
-    /**
-     * The basic amount of funds that must be reserved when adding metadata to your asset.
-     **/
-    metadataDepositBase: bigint;
-
-    /**
-     * The additional funds that must be reserved for the number of bytes you store in your
-     * metadata.
-     **/
-    metadataDepositPerByte: bigint;
-
-    /**
-     * The amount of funds that must be reserved when creating a new approval.
-     **/
-    approvalDeposit: bigint;
-
-    /**
-     * The maximum length of a name or symbol stored on-chain.
-     **/
-    stringLimit: number;
 
     /**
      * Generic pallet constant

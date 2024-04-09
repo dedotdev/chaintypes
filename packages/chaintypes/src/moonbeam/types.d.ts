@@ -72,8 +72,6 @@ export type MoonbeamRuntimeRuntimeEvent =
   | { pallet: 'ConvictionVoting'; palletEvent: PalletConvictionVotingEvent }
   | { pallet: 'Referenda'; palletEvent: PalletReferendaEvent }
   | { pallet: 'Whitelist'; palletEvent: PalletWhitelistEvent }
-  | { pallet: 'CouncilCollective'; palletEvent: PalletCollectiveEvent }
-  | { pallet: 'TechCommitteeCollective'; palletEvent: PalletCollectiveEvent }
   | { pallet: 'TreasuryCouncilCollective'; palletEvent: PalletCollectiveEvent }
   | { pallet: 'OpenTechCommitteeCollective'; palletEvent: PalletCollectiveEvent }
   | { pallet: 'Treasury'; palletEvent: PalletTreasuryEvent }
@@ -86,7 +84,6 @@ export type MoonbeamRuntimeRuntimeEvent =
   | { pallet: 'AssetManager'; palletEvent: PalletAssetManagerEvent }
   | { pallet: 'XTokens'; palletEvent: OrmlXtokensModuleEvent }
   | { pallet: 'XcmTransactor'; palletEvent: PalletXcmTransactorEvent }
-  | { pallet: 'LocalAssets'; palletEvent: PalletAssetsEvent }
   | { pallet: 'Randomness'; palletEvent: PalletRandomnessEvent };
 
 /**
@@ -1359,6 +1356,7 @@ export type MoonbeamRuntimeRuntimeCall =
   | { pallet: 'MaintenanceMode'; palletCall: PalletMaintenanceModeCall }
   | { pallet: 'Identity'; palletCall: PalletIdentityCall }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
+  | { pallet: 'MoonbeamLazyMigrations'; palletCall: PalletMoonbeamLazyMigrationsCall }
   | { pallet: 'Evm'; palletCall: PalletEvmCall }
   | { pallet: 'Ethereum'; palletCall: PalletEthereumCall }
   | { pallet: 'Scheduler'; palletCall: PalletSchedulerCall }
@@ -1367,8 +1365,6 @@ export type MoonbeamRuntimeRuntimeCall =
   | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCall }
   | { pallet: 'Referenda'; palletCall: PalletReferendaCall }
   | { pallet: 'Whitelist'; palletCall: PalletWhitelistCall }
-  | { pallet: 'CouncilCollective'; palletCall: PalletCollectiveCall }
-  | { pallet: 'TechCommitteeCollective'; palletCall: PalletCollectiveCall }
   | { pallet: 'TreasuryCouncilCollective'; palletCall: PalletCollectiveCall }
   | { pallet: 'OpenTechCommitteeCollective'; palletCall: PalletCollectiveCall }
   | { pallet: 'Treasury'; palletCall: PalletTreasuryCall }
@@ -1379,7 +1375,6 @@ export type MoonbeamRuntimeRuntimeCall =
   | { pallet: 'AssetManager'; palletCall: PalletAssetManagerCall }
   | { pallet: 'XTokens'; palletCall: OrmlXtokensModuleCall }
   | { pallet: 'XcmTransactor'; palletCall: PalletXcmTransactorCall }
-  | { pallet: 'LocalAssets'; palletCall: PalletAssetsCall }
   | { pallet: 'EthereumXcm'; palletCall: PalletEthereumXcmCall }
   | { pallet: 'Randomness'; palletCall: PalletRandomnessCall };
 
@@ -1399,6 +1394,7 @@ export type MoonbeamRuntimeRuntimeCallLike =
   | { pallet: 'MaintenanceMode'; palletCall: PalletMaintenanceModeCallLike }
   | { pallet: 'Identity'; palletCall: PalletIdentityCallLike }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
+  | { pallet: 'MoonbeamLazyMigrations'; palletCall: PalletMoonbeamLazyMigrationsCallLike }
   | { pallet: 'Evm'; palletCall: PalletEvmCallLike }
   | { pallet: 'Ethereum'; palletCall: PalletEthereumCallLike }
   | { pallet: 'Scheduler'; palletCall: PalletSchedulerCallLike }
@@ -1407,8 +1403,6 @@ export type MoonbeamRuntimeRuntimeCallLike =
   | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCallLike }
   | { pallet: 'Referenda'; palletCall: PalletReferendaCallLike }
   | { pallet: 'Whitelist'; palletCall: PalletWhitelistCallLike }
-  | { pallet: 'CouncilCollective'; palletCall: PalletCollectiveCallLike }
-  | { pallet: 'TechCommitteeCollective'; palletCall: PalletCollectiveCallLike }
   | { pallet: 'TreasuryCouncilCollective'; palletCall: PalletCollectiveCallLike }
   | { pallet: 'OpenTechCommitteeCollective'; palletCall: PalletCollectiveCallLike }
   | { pallet: 'Treasury'; palletCall: PalletTreasuryCallLike }
@@ -1419,7 +1413,6 @@ export type MoonbeamRuntimeRuntimeCallLike =
   | { pallet: 'AssetManager'; palletCall: PalletAssetManagerCallLike }
   | { pallet: 'XTokens'; palletCall: OrmlXtokensModuleCallLike }
   | { pallet: 'XcmTransactor'; palletCall: PalletXcmTransactorCallLike }
-  | { pallet: 'LocalAssets'; palletCall: PalletAssetsCallLike }
   | { pallet: 'EthereumXcm'; palletCall: PalletEthereumXcmCallLike }
   | { pallet: 'Randomness'; palletCall: PalletRandomnessCallLike };
 
@@ -2160,8 +2153,6 @@ export type MoonbeamRuntimeOriginCaller =
   | { tag: 'System'; value: FrameSupportDispatchRawOrigin }
   | { tag: 'Ethereum'; value: PalletEthereumRawOrigin }
   | { tag: 'Origins'; value: MoonbeamRuntimeGovernanceOriginsCustomOriginsOrigin }
-  | { tag: 'CouncilCollective'; value: PalletCollectiveRawOrigin }
-  | { tag: 'TechCommitteeCollective'; value: PalletCollectiveRawOrigin }
   | { tag: 'TreasuryCouncilCollective'; value: PalletCollectiveRawOrigin }
   | { tag: 'OpenTechCommitteeCollective'; value: PalletCollectiveRawOrigin }
   | { tag: 'CumulusXcm'; value: CumulusPalletXcmOrigin }
@@ -2684,6 +2675,37 @@ export type PalletMultisigCallLike =
         callHash: FixedBytes<32>;
       };
     };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletMoonbeamLazyMigrationsCall =
+  /**
+   * See [`Pallet::clear_local_assets_storage`].
+   **/
+  | { name: 'ClearLocalAssetsStorage'; params: { limit: number } }
+  /**
+   * See [`Pallet::clear_suicided_storage`].
+   **/
+  | { name: 'ClearSuicidedStorage'; params: { addresses: Array<H160>; limit: number } }
+  /**
+   * See [`Pallet::unlock_democracy_funds`].
+   **/
+  | { name: 'UnlockDemocracyFunds'; params: { limit: number } };
+
+export type PalletMoonbeamLazyMigrationsCallLike =
+  /**
+   * See [`Pallet::clear_local_assets_storage`].
+   **/
+  | { name: 'ClearLocalAssetsStorage'; params: { limit: number } }
+  /**
+   * See [`Pallet::clear_suicided_storage`].
+   **/
+  | { name: 'ClearSuicidedStorage'; params: { addresses: Array<H160>; limit: number } }
+  /**
+   * See [`Pallet::unlock_democracy_funds`].
+   **/
+  | { name: 'UnlockDemocracyFunds'; params: { limit: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4815,7 +4837,7 @@ export type OrmlXtokensModuleCallLike =
 export type MoonbeamRuntimeXcmConfigCurrencyId =
   | { tag: 'SelfReserve' }
   | { tag: 'ForeignAsset'; value: bigint }
-  | { tag: 'LocalAssetReserve'; value: bigint }
+  | { tag: 'DeprecatedLocalAssetReserve'; value: bigint }
   | { tag: 'Erc20'; value: { contractAddress: H160 } };
 
 export type XcmVersionedMultiAsset =
@@ -6121,7 +6143,7 @@ export type PalletTransactionPaymentReleases = 'V1Ancient' | 'V2';
 
 export type PalletParachainStakingParachainBondConfig = { account: AccountId20; percent: Percent };
 
-export type PalletParachainStakingRoundInfo = { current: number; first: number; length: number };
+export type PalletParachainStakingRoundInfo = { current: number; first: number; length: number; firstSlot: bigint };
 
 export type PalletParachainStakingDelegator = {
   id: AccountId20;
@@ -6598,6 +6620,35 @@ export type PalletMultisigError =
    **/
   | 'AlreadyStored';
 
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletMoonbeamLazyMigrationsError =
+  /**
+   * There are no more storage entries to be removed
+   **/
+  | 'AllStorageEntriesHaveBeenRemoved'
+  /**
+   * The limit cannot be zero
+   **/
+  | 'LimitCannotBeZero'
+  /**
+   * The limit for unlocking funds is too high
+   **/
+  | 'UnlockLimitTooHigh'
+  /**
+   * There are no more VotingOf entries to be removed and democracy funds to be unlocked
+   **/
+  | 'AllDemocracyFundsUnlocked'
+  /**
+   * There must be at least one address
+   **/
+  | 'AddressesLengthCannotBeZero'
+  /**
+   * The contract is not corrupted (Still exist or properly suicided)
+   **/
+  | 'ContractNotCorrupted';
+
 export type PalletEvmCodeMetadata = { size: bigint; hash: H256 };
 
 /**
@@ -6652,6 +6703,10 @@ export type PalletEvmError =
    * EIP-3607,
    **/
   | 'TransactionMustComeFromEOA'
+  /**
+   * Invalid Transaction
+   **/
+  | 'InvalidTransaction'
   /**
    * Undefined error.
    **/
@@ -8018,6 +8073,7 @@ export type MoonbeamRuntimeRuntimeError =
   | { tag: 'Identity'; value: PalletIdentityError }
   | { tag: 'Migrations'; value: PalletMigrationsError }
   | { tag: 'Multisig'; value: PalletMultisigError }
+  | { tag: 'MoonbeamLazyMigrations'; value: PalletMoonbeamLazyMigrationsError }
   | { tag: 'Evm'; value: PalletEvmError }
   | { tag: 'Ethereum'; value: PalletEthereumError }
   | { tag: 'Scheduler'; value: PalletSchedulerError }
@@ -8026,8 +8082,6 @@ export type MoonbeamRuntimeRuntimeError =
   | { tag: 'ConvictionVoting'; value: PalletConvictionVotingError }
   | { tag: 'Referenda'; value: PalletReferendaError }
   | { tag: 'Whitelist'; value: PalletWhitelistError }
-  | { tag: 'CouncilCollective'; value: PalletCollectiveError }
-  | { tag: 'TechCommitteeCollective'; value: PalletCollectiveError }
   | { tag: 'TreasuryCouncilCollective'; value: PalletCollectiveError }
   | { tag: 'OpenTechCommitteeCollective'; value: PalletCollectiveError }
   | { tag: 'Treasury'; value: PalletTreasuryError }
@@ -8040,6 +8094,5 @@ export type MoonbeamRuntimeRuntimeError =
   | { tag: 'AssetManager'; value: PalletAssetManagerError }
   | { tag: 'XTokens'; value: OrmlXtokensModuleError }
   | { tag: 'XcmTransactor'; value: PalletXcmTransactorError }
-  | { tag: 'LocalAssets'; value: PalletAssetsError }
   | { tag: 'EthereumXcm'; value: PalletEthereumXcmError }
   | { tag: 'Randomness'; value: PalletRandomnessError };

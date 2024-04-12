@@ -45,19 +45,19 @@ import type {
   PalletVestingVestingInfo,
   RococoRuntimeProxyType,
   PalletMultisigTimepoint,
-  PolkadotPrimitivesV6AsyncBackingAsyncBackingParams,
-  PolkadotPrimitivesV6ExecutorParams,
-  PolkadotPrimitivesVstagingApprovalVotingParams,
+  PolkadotPrimitivesV7AsyncBackingAsyncBackingParams,
+  PolkadotPrimitivesV7ExecutorParams,
+  PolkadotPrimitivesV7ApprovalVotingParams,
   PolkadotPrimitivesVstagingSchedulerParams,
-  PolkadotPrimitivesV6InherentData,
+  PolkadotPrimitivesV7InherentData,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
-  PolkadotPrimitivesV6PvfCheckStatement,
-  PolkadotPrimitivesV6ValidatorAppSignature,
+  PolkadotPrimitivesV7PvfCheckStatement,
+  PolkadotPrimitivesV7ValidatorAppSignature,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
-  PolkadotPrimitivesV6SlashingDisputeProof,
+  PolkadotPrimitivesV7SlashingDisputeProof,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   SpRuntimeMultiSigner,
   PalletBrokerCoretimeInterfaceCoreAssignment,
@@ -693,7 +693,7 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      *
      * This will waive the transaction fee if at least all but 10% of the accounts needed to
      * be upgraded. (We let some not have to be upgraded just in order to allow for the
-     * possibililty of churn).
+     * possibility of churn).
      *
      * @param {Array<AccountId32Like>} who
      **/
@@ -5680,7 +5680,7 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      *
      * This will waive the transaction fee if at least all but 10% of the accounts needed to
      * be upgraded. (We let some not have to be upgraded just in order to allow for the
-     * possibililty of churn).
+     * possibility of churn).
      *
      * @param {Array<AccountId32Like>} who
      **/
@@ -5840,7 +5840,7 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * Set the number of coretime execution cores.
      *
-     * Note that this configuration is managed by the coretime chain. Only manually change
+     * NOTE: that this configuration is managed by the coretime chain. Only manually change
      * this, if you really know what you are doing!
      *
      * @param {number} new_
@@ -6315,14 +6315,14 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * Set the asynchronous backing parameters.
      *
-     * @param {PolkadotPrimitivesV6AsyncBackingAsyncBackingParams} new_
+     * @param {PolkadotPrimitivesV7AsyncBackingAsyncBackingParams} new_
      **/
     setAsyncBackingParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV6AsyncBackingAsyncBackingParams) => ChainSubmittableExtrinsic<{
+      (new_: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams) => ChainSubmittableExtrinsic<{
         pallet: 'Configuration';
         palletCall: {
           name: 'SetAsyncBackingParams';
-          params: { new: PolkadotPrimitivesV6AsyncBackingAsyncBackingParams };
+          params: { new: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams };
         };
       }>
     >;
@@ -6330,14 +6330,14 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * Set PVF executor parameters.
      *
-     * @param {PolkadotPrimitivesV6ExecutorParams} new_
+     * @param {PolkadotPrimitivesV7ExecutorParams} new_
      **/
     setExecutorParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV6ExecutorParams) => ChainSubmittableExtrinsic<{
+      (new_: PolkadotPrimitivesV7ExecutorParams) => ChainSubmittableExtrinsic<{
         pallet: 'Configuration';
         palletCall: {
           name: 'SetExecutorParams';
-          params: { new: PolkadotPrimitivesV6ExecutorParams };
+          params: { new: PolkadotPrimitivesV7ExecutorParams };
         };
       }>
     >;
@@ -6454,14 +6454,14 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * Set approval-voting-params.
      *
-     * @param {PolkadotPrimitivesVstagingApprovalVotingParams} new_
+     * @param {PolkadotPrimitivesV7ApprovalVotingParams} new_
      **/
     setApprovalVotingParams: GenericTxCall<
-      (new_: PolkadotPrimitivesVstagingApprovalVotingParams) => ChainSubmittableExtrinsic<{
+      (new_: PolkadotPrimitivesV7ApprovalVotingParams) => ChainSubmittableExtrinsic<{
         pallet: 'Configuration';
         palletCall: {
           name: 'SetApprovalVotingParams';
-          params: { new: PolkadotPrimitivesVstagingApprovalVotingParams };
+          params: { new: PolkadotPrimitivesV7ApprovalVotingParams };
         };
       }>
     >;
@@ -6511,14 +6511,14 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * Enter the paras inherent. This will process bitfields and backed candidates.
      *
-     * @param {PolkadotPrimitivesV6InherentData} data
+     * @param {PolkadotPrimitivesV7InherentData} data
      **/
     enter: GenericTxCall<
-      (data: PolkadotPrimitivesV6InherentData) => ChainSubmittableExtrinsic<{
+      (data: PolkadotPrimitivesV7InherentData) => ChainSubmittableExtrinsic<{
         pallet: 'ParaInherent';
         palletCall: {
           name: 'Enter';
-          params: { data: PolkadotPrimitivesV6InherentData };
+          params: { data: PolkadotPrimitivesV7InherentData };
         };
       }>
     >;
@@ -6691,18 +6691,18 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      * Includes a statement for a PVF pre-checking vote. Potentially, finalizes the vote and
      * enacts the results if that was the last vote before achieving the supermajority.
      *
-     * @param {PolkadotPrimitivesV6PvfCheckStatement} stmt
-     * @param {PolkadotPrimitivesV6ValidatorAppSignature} signature
+     * @param {PolkadotPrimitivesV7PvfCheckStatement} stmt
+     * @param {PolkadotPrimitivesV7ValidatorAppSignature} signature
      **/
     includePvfCheckStatement: GenericTxCall<
       (
-        stmt: PolkadotPrimitivesV6PvfCheckStatement,
-        signature: PolkadotPrimitivesV6ValidatorAppSignature,
+        stmt: PolkadotPrimitivesV7PvfCheckStatement,
+        signature: PolkadotPrimitivesV7ValidatorAppSignature,
       ) => ChainSubmittableExtrinsic<{
         pallet: 'Paras';
         palletCall: {
           name: 'IncludePvfCheckStatement';
-          params: { stmt: PolkadotPrimitivesV6PvfCheckStatement; signature: PolkadotPrimitivesV6ValidatorAppSignature };
+          params: { stmt: PolkadotPrimitivesV7PvfCheckStatement; signature: PolkadotPrimitivesV7ValidatorAppSignature };
         };
       }>
     >;
@@ -7055,18 +7055,18 @@ export interface ChainTx extends GenericChainTx<TxCall> {
   parasSlashing: {
     /**
      *
-     * @param {PolkadotPrimitivesV6SlashingDisputeProof} disputeProof
+     * @param {PolkadotPrimitivesV7SlashingDisputeProof} disputeProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
     reportDisputeLostUnsigned: GenericTxCall<
       (
-        disputeProof: PolkadotPrimitivesV6SlashingDisputeProof,
+        disputeProof: PolkadotPrimitivesV7SlashingDisputeProof,
         keyOwnerProof: SpSessionMembershipProof,
       ) => ChainSubmittableExtrinsic<{
         pallet: 'ParasSlashing';
         palletCall: {
           name: 'ReportDisputeLostUnsigned';
-          params: { disputeProof: PolkadotPrimitivesV6SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+          params: { disputeProof: PolkadotPrimitivesV7SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
         };
       }>
     >;
@@ -7421,6 +7421,13 @@ export interface ChainTx extends GenericChainTx<TxCall> {
 
     /**
      * Schedule a parachain upgrade.
+     *
+     * This will kick off a check of `new_code` by all validators. After the majority of the
+     * validators have reported on the validity of the code, the code will either be enacted
+     * or the upgrade will be rejected. If the code will be enacted, the current code of the
+     * parachain will be overwritten directly. This means that any PoV will be checked by this
+     * new code. The parachain itself will not be informed explictely that the validation code
+     * has changed.
      *
      * Can be called by Root, the parachain, or the parachain manager if the parachain is
      * unlocked.
@@ -7953,6 +7960,7 @@ export interface ChainTx extends GenericChainTx<TxCall> {
    **/
   xcmPallet: {
     /**
+     * WARNING: DEPRECATED. `send` will be removed after June 2024. Use `send_blob` instead.
      *
      * @param {XcmVersionedLocation} dest
      * @param {XcmVersionedXcm} message
@@ -8082,6 +8090,9 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      * the maximum amount of weight that the message could take to be executed, then no
      * execution attempt will be made.
      *
+     * WARNING: DEPRECATED. `execute` will be removed after June 2024. Use `execute_blob`
+     * instead.
+     *
      * @param {XcmVersionedXcm} message
      * @param {SpWeightsWeightV2Weight} maxWeight
      **/
@@ -8196,7 +8207,7 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      *
      * Fee payment on the destination side is made from the asset in the `assets` vector of
      * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
-     * is needed than `weight_limit`, then the operation will fail and the assets send may be
+     * is needed than `weight_limit`, then the operation will fail and the sent assets may be
      * at risk.
      *
      * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
@@ -8244,7 +8255,7 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      *
      * Fee payment on the destination side is made from the asset in the `assets` vector of
      * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
-     * is needed than `weight_limit`, then the operation will fail and the assets send may be
+     * is needed than `weight_limit`, then the operation will fail and the sent assets may be
      * at risk.
      *
      * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
@@ -8312,7 +8323,7 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      * Fee payment on the destination side is made from the asset in the `assets` vector of
      * index `fee_asset_item` (hence referred to as `fees`), up to enough to pay for
      * `weight_limit` of weight. If more weight is needed than `weight_limit`, then the
-     * operation will fail and the assets sent may be at risk.
+     * operation will fail and the sent assets may be at risk.
      *
      * `assets` (excluding `fees`) must have same reserve location or otherwise be teleportable
      * to `dest`, no limitations imposed on `fees`.
@@ -8388,6 +8399,58 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         palletCall: {
           name: 'ClaimAssets';
           params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation };
+        };
+      }>
+    >;
+
+    /**
+     * Execute an XCM from a local, signed, origin.
+     *
+     * An event is deposited indicating whether the message could be executed completely
+     * or only partially.
+     *
+     * No more than `max_weight` will be used in its attempted execution. If this is less than
+     * the maximum amount of weight that the message could take to be executed, then no
+     * execution attempt will be made.
+     *
+     * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
+     *
+     * @param {BytesLike} encodedMessage
+     * @param {SpWeightsWeightV2Weight} maxWeight
+     **/
+    executeBlob: GenericTxCall<
+      (
+        encodedMessage: BytesLike,
+        maxWeight: SpWeightsWeightV2Weight,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'XcmPallet';
+        palletCall: {
+          name: 'ExecuteBlob';
+          params: { encodedMessage: BytesLike; maxWeight: SpWeightsWeightV2Weight };
+        };
+      }>
+    >;
+
+    /**
+     * Send an XCM from a local, signed, origin.
+     *
+     * The destination, `dest`, will receive this message with a `DescendOrigin` instruction
+     * that makes the origin of the message be the origin on this system.
+     *
+     * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
+     *
+     * @param {XcmVersionedLocation} dest
+     * @param {BytesLike} encodedMessage
+     **/
+    sendBlob: GenericTxCall<
+      (
+        dest: XcmVersionedLocation,
+        encodedMessage: BytesLike,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'XcmPallet';
+        palletCall: {
+          name: 'SendBlob';
+          params: { dest: XcmVersionedLocation; encodedMessage: BytesLike };
         };
       }>
     >;

@@ -27,10 +27,10 @@ import type {
   PalletSocietyGroupParams,
   RococoRuntimeProxyType,
   PalletMultisigTimepoint,
-  PolkadotPrimitivesV6CandidateReceipt,
+  PolkadotPrimitivesV7CandidateReceipt,
   PolkadotParachainPrimitivesPrimitivesHeadData,
-  PolkadotPrimitivesV6CoreIndex,
-  PolkadotPrimitivesV6GroupIndex,
+  PolkadotPrimitivesV7CoreIndex,
+  PolkadotPrimitivesV7GroupIndex,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
@@ -1927,7 +1927,7 @@ export interface ChainEvents extends GenericChainEvents {
     Funded: GenericPalletEvent<'Nis', 'Funded', { deficit: bigint }>;
 
     /**
-     * A receipt was transfered.
+     * A receipt was transferred.
      **/
     Transferred: GenericPalletEvent<'Nis', 'Transferred', { from: AccountId32; to: AccountId32; index: number }>;
 
@@ -2080,10 +2080,10 @@ export interface ChainEvents extends GenericChainEvents {
       'ParaInclusion',
       'CandidateBacked',
       [
-        PolkadotPrimitivesV6CandidateReceipt,
+        PolkadotPrimitivesV7CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV6CoreIndex,
-        PolkadotPrimitivesV6GroupIndex,
+        PolkadotPrimitivesV7CoreIndex,
+        PolkadotPrimitivesV7GroupIndex,
       ]
     >;
 
@@ -2094,10 +2094,10 @@ export interface ChainEvents extends GenericChainEvents {
       'ParaInclusion',
       'CandidateIncluded',
       [
-        PolkadotPrimitivesV6CandidateReceipt,
+        PolkadotPrimitivesV7CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV6CoreIndex,
-        PolkadotPrimitivesV6GroupIndex,
+        PolkadotPrimitivesV7CoreIndex,
+        PolkadotPrimitivesV7GroupIndex,
       ]
     >;
 
@@ -2108,9 +2108,9 @@ export interface ChainEvents extends GenericChainEvents {
       'ParaInclusion',
       'CandidateTimedOut',
       [
-        PolkadotPrimitivesV6CandidateReceipt,
+        PolkadotPrimitivesV7CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV6CoreIndex,
+        PolkadotPrimitivesV7CoreIndex,
       ]
     >;
 
@@ -2686,7 +2686,7 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * A core has received a new assignment from the broker chain.
      **/
-    CoreAssigned: GenericPalletEvent<'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV6CoreIndex }>;
+    CoreAssigned: GenericPalletEvent<'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV7CoreIndex }>;
 
     /**
      * Generic pallet event

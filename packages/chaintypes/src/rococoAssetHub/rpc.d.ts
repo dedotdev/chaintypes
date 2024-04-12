@@ -743,4 +743,17 @@ export interface RpcCalls extends GenericRpcCalls {
 
     [method: string]: GenericRpcCall;
   };
+  transaction: {
+    /**
+     * @rpcname: transaction_unstable_broadcast
+     **/
+    unstable_broadcast: GenericRpcCall;
+
+    /**
+     * @rpcname: transaction_unstable_stop
+     **/
+    unstable_stop: GenericRpcCall;
+
+    [method: string]: GenericRpcCall;
+  };
 }

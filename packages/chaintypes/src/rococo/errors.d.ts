@@ -483,6 +483,11 @@ export interface ChainErrors extends GenericChainErrors {
     PreimageNotExist: GenericPalletError;
 
     /**
+     * The preimage is stored with a different length than the one provided.
+     **/
+    PreimageStoredWithDifferentLength: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -614,6 +619,11 @@ export interface ChainErrors extends GenericChainErrors {
      * The preimage does not exist.
      **/
     PreimageNotExist: GenericPalletError;
+
+    /**
+     * The preimage is stored with a different length than the one provided.
+     **/
+    PreimageStoredWithDifferentLength: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1530,7 +1540,7 @@ export interface ChainErrors extends GenericChainErrors {
     Throttled: GenericPalletError;
 
     /**
-     * The operation would result in a receipt worth an insignficant value.
+     * The operation would result in a receipt worth an insignificant value.
      **/
     MakesDust: GenericPalletError;
 
@@ -1637,64 +1647,14 @@ export interface ChainErrors extends GenericChainErrors {
    **/
   paraInclusion: {
     /**
-     * Validator indices are out of order or contains duplicates.
-     **/
-    UnsortedOrDuplicateValidatorIndices: GenericPalletError;
-
-    /**
-     * Dispute statement sets are out of order or contain duplicates.
-     **/
-    UnsortedOrDuplicateDisputeStatementSet: GenericPalletError;
-
-    /**
-     * Backed candidates are out of order (core index) or contain duplicates.
-     **/
-    UnsortedOrDuplicateBackedCandidates: GenericPalletError;
-
-    /**
-     * A different relay parent was provided compared to the on-chain stored one.
-     **/
-    UnexpectedRelayParent: GenericPalletError;
-
-    /**
-     * Availability bitfield has unexpected size.
-     **/
-    WrongBitfieldSize: GenericPalletError;
-
-    /**
-     * Bitfield consists of zeros only.
-     **/
-    BitfieldAllZeros: GenericPalletError;
-
-    /**
-     * Multiple bitfields submitted by same validator or validators out of order by index.
-     **/
-    BitfieldDuplicateOrUnordered: GenericPalletError;
-
-    /**
      * Validator index out of bounds.
      **/
     ValidatorIndexOutOfBounds: GenericPalletError;
 
     /**
-     * Invalid signature
-     **/
-    InvalidBitfieldSignature: GenericPalletError;
-
-    /**
      * Candidate submitted but para not scheduled.
      **/
     UnscheduledCandidate: GenericPalletError;
-
-    /**
-     * Candidate scheduled despite pending candidate already existing for the para.
-     **/
-    CandidateScheduledBeforeParaFree: GenericPalletError;
-
-    /**
-     * Scheduled cores out of order.
-     **/
-    ScheduledOutOfOrder: GenericPalletError;
 
     /**
      * Head data exceeds the configured maximum.
@@ -1780,13 +1740,6 @@ export interface ChainErrors extends GenericChainErrors {
     ParaHeadMismatch: GenericPalletError;
 
     /**
-     * A bitfield that references a freed core,
-     * either intentionally or as part of a concluded
-     * invalid dispute.
-     **/
-    BitfieldReferencesFreedCore: GenericPalletError;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1807,34 +1760,15 @@ export interface ChainErrors extends GenericChainErrors {
     InvalidParentHeader: GenericPalletError;
 
     /**
-     * Disputed candidate that was concluded invalid.
-     **/
-    CandidateConcludedInvalid: GenericPalletError;
-
-    /**
      * The data given to the inherent will result in an overweight block.
      **/
     InherentOverweight: GenericPalletError;
 
     /**
-     * The ordering of dispute statements was invalid.
+     * A candidate was filtered during inherent execution. This should have only been done
+     * during creation.
      **/
-    DisputeStatementsUnsortedOrDuplicates: GenericPalletError;
-
-    /**
-     * A dispute statement was invalid.
-     **/
-    DisputeInvalid: GenericPalletError;
-
-    /**
-     * A candidate was backed by a disabled validator
-     **/
-    BackedByDisabled: GenericPalletError;
-
-    /**
-     * A candidate was backed even though the paraid was not scheduled.
-     **/
-    BackedOnUnscheduledCore: GenericPalletError;
+    CandidatesFilteredDuringExecution: GenericPalletError;
 
     /**
      * Too many candidates supplied.
@@ -2187,12 +2121,6 @@ export interface ChainErrors extends GenericChainErrors {
    * Pallet `OnDemandAssignmentProvider`'s errors
    **/
   onDemandAssignmentProvider: {
-    /**
-     * The `ParaId` supplied to the `place_order` call is not a valid `ParaThread`, making the
-     * call is invalid.
-     **/
-    InvalidParaId: GenericPalletError;
-
     /**
      * The order queue is full, `place_order` will not continue.
      **/
@@ -2660,6 +2588,17 @@ export interface ChainErrors extends GenericChainErrors {
      * Local XCM execution incomplete.
      **/
     LocalExecutionIncomplete: GenericPalletError;
+
+    /**
+     * Could not decode XCM.
+     **/
+    UnableToDecode: GenericPalletError;
+
+    /**
+     * XCM encoded length is too large.
+     * Returned when an XCM encoded length is larger than `MaxXcmEncodedSize`.
+     **/
+    XcmTooLarge: GenericPalletError;
 
     /**
      * Generic pallet error

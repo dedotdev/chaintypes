@@ -1866,7 +1866,7 @@ export type PalletNftFractionalizationEvent =
  **/
 export type PalletAssetConversionEvent =
   /**
-   * A successful call of the `CretaPool` extrinsic will create this event.
+   * A successful call of the `CreatePool` extrinsic will create this event.
    **/
   | {
       name: 'PoolCreated';
@@ -2265,7 +2265,7 @@ export type FrameSystemError =
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV6UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV7UpgradeGoAhead | undefined;
 };
 
 export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
@@ -2278,15 +2278,15 @@ export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
 
 export type CumulusPalletParachainSystemUnincludedSegmentHrmpChannelUpdate = { msgCount: number; totalBytes: number };
 
-export type PolkadotPrimitivesV6UpgradeGoAhead = 'Abort' | 'GoAhead';
+export type PolkadotPrimitivesV7UpgradeGoAhead = 'Abort' | 'GoAhead';
 
 export type CumulusPalletParachainSystemUnincludedSegmentSegmentTracker = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   hrmpWatermark?: number | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV6UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV7UpgradeGoAhead | undefined;
 };
 
-export type PolkadotPrimitivesV6PersistedValidationData = {
+export type PolkadotPrimitivesV7PersistedValidationData = {
   parentHead: PolkadotParachainPrimitivesPrimitivesHeadData;
   relayParentNumber: number;
   relayParentStorageRoot: H256;
@@ -2295,15 +2295,15 @@ export type PolkadotPrimitivesV6PersistedValidationData = {
 
 export type PolkadotParachainPrimitivesPrimitivesHeadData = Bytes;
 
-export type PolkadotPrimitivesV6UpgradeRestriction = 'Present';
+export type PolkadotPrimitivesV7UpgradeRestriction = 'Present';
 
 export type SpTrieStorageProof = { trieNodes: Array<Bytes> };
 
 export type CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot = {
   dmqMqcHead: H256;
   relayDispatchQueueRemainingCapacity: CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity;
-  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV6AbridgedHrmpChannel]>;
-  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV6AbridgedHrmpChannel]>;
+  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV7AbridgedHrmpChannel]>;
+  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV7AbridgedHrmpChannel]>;
 };
 
 export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity = {
@@ -2311,7 +2311,7 @@ export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRema
   remainingSize: number;
 };
 
-export type PolkadotPrimitivesV6AbridgedHrmpChannel = {
+export type PolkadotPrimitivesV7AbridgedHrmpChannel = {
   maxCapacity: number;
   maxTotalSize: number;
   maxMessageSize: number;
@@ -2320,7 +2320,7 @@ export type PolkadotPrimitivesV6AbridgedHrmpChannel = {
   mqcHead?: H256 | undefined;
 };
 
-export type PolkadotPrimitivesV6AbridgedHostConfiguration = {
+export type PolkadotPrimitivesV7AbridgedHostConfiguration = {
   maxCodeSize: number;
   maxHeadDataSize: number;
   maxUpwardQueueCount: number;
@@ -2330,10 +2330,10 @@ export type PolkadotPrimitivesV6AbridgedHostConfiguration = {
   hrmpMaxMessageNumPerCandidate: number;
   validationUpgradeCooldown: number;
   validationUpgradeDelay: number;
-  asyncBackingParams: PolkadotPrimitivesV6AsyncBackingAsyncBackingParams;
+  asyncBackingParams: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams;
 };
 
-export type PolkadotPrimitivesV6AsyncBackingAsyncBackingParams = {
+export type PolkadotPrimitivesV7AsyncBackingAsyncBackingParams = {
   maxCandidateDepth: number;
   allowedAncestryLen: number;
 };
@@ -2425,7 +2425,7 @@ export type CumulusPalletParachainSystemCallLike =
   | { name: 'EnactAuthorizedUpgrade'; params: { code: BytesLike } };
 
 export type CumulusPrimitivesParachainInherentParachainInherentData = {
-  validationData: PolkadotPrimitivesV6PersistedValidationData;
+  validationData: PolkadotPrimitivesV7PersistedValidationData;
   relayChainState: SpTrieStorageProof;
   downwardMessages: Array<PolkadotCorePrimitivesInboundDownwardMessage>;
   horizontalMessages: Array<[PolkadotParachainPrimitivesPrimitivesId, Array<PolkadotCorePrimitivesInboundHrmpMessage>]>;
@@ -2609,7 +2609,7 @@ export type PalletBalancesCall =
    *
    * This will waive the transaction fee if at least all but 10% of the accounts needed to
    * be upgraded. (We let some not have to be upgraded just in order to allow for the
-   * possibililty of churn).
+   * possibility of churn).
    **/
   | { name: 'UpgradeAccounts'; params: { who: Array<AccountId32> } }
   /**
@@ -2684,7 +2684,7 @@ export type PalletBalancesCallLike =
    *
    * This will waive the transaction fee if at least all but 10% of the accounts needed to
    * be upgraded. (We let some not have to be upgraded just in order to allow for the
-   * possibililty of churn).
+   * possibility of churn).
    **/
   | { name: 'UpgradeAccounts'; params: { who: Array<AccountId32Like> } }
   /**
@@ -3009,9 +3009,7 @@ export type PalletCollatorSelectionError =
 
 export type AssetHubRococoRuntimeSessionKeys = { aura: SpConsensusAuraSr25519AppSr25519Public };
 
-export type SpConsensusAuraSr25519AppSr25519Public = SpCoreSr25519Public;
-
-export type SpCoreSr25519Public = FixedBytes<32>;
+export type SpConsensusAuraSr25519AppSr25519Public = FixedBytes<32>;
 
 export type SpCoreCryptoKeyTypeId = FixedBytes<4>;
 
@@ -3309,6 +3307,9 @@ export type PalletXcmRemoteLockedFungibleRecord = {
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
 export type PalletXcmCall =
+  /**
+   * WARNING: DEPRECATED. `send` will be removed after June 2024. Use `send_blob` instead.
+   **/
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
   /**
    * Teleport some assets from the local chain to some destination chain.
@@ -3389,6 +3390,9 @@ export type PalletXcmCall =
    * No more than `max_weight` will be used in its attempted execution. If this is less than
    * the maximum amount of weight that the message could take to be executed, then no
    * execution attempt will be made.
+   *
+   * WARNING: DEPRECATED. `execute` will be removed after June 2024. Use `execute_blob`
+   * instead.
    **/
   | { name: 'Execute'; params: { message: XcmVersionedXcm; maxWeight: SpWeightsWeightV2Weight } }
   /**
@@ -3441,7 +3445,7 @@ export type PalletXcmCall =
    *
    * Fee payment on the destination side is made from the asset in the `assets` vector of
    * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
-   * is needed than `weight_limit`, then the operation will fail and the assets send may be
+   * is needed than `weight_limit`, then the operation will fail and the sent assets may be
    * at risk.
    *
    * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
@@ -3471,7 +3475,7 @@ export type PalletXcmCall =
    *
    * Fee payment on the destination side is made from the asset in the `assets` vector of
    * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
-   * is needed than `weight_limit`, then the operation will fail and the assets send may be
+   * is needed than `weight_limit`, then the operation will fail and the sent assets may be
    * at risk.
    *
    * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
@@ -3510,7 +3514,7 @@ export type PalletXcmCall =
    * Fee payment on the destination side is made from the asset in the `assets` vector of
    * index `fee_asset_item` (hence referred to as `fees`), up to enough to pay for
    * `weight_limit` of weight. If more weight is needed than `weight_limit`, then the
-   * operation will fail and the assets sent may be at risk.
+   * operation will fail and the sent assets may be at risk.
    *
    * `assets` (excluding `fees`) must have same reserve location or otherwise be teleportable
    * to `dest`, no limitations imposed on `fees`.
@@ -3556,9 +3560,34 @@ export type PalletXcmCall =
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
    **/
-  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } };
+  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
+  /**
+   * Execute an XCM from a local, signed, origin.
+   *
+   * An event is deposited indicating whether the message could be executed completely
+   * or only partially.
+   *
+   * No more than `max_weight` will be used in its attempted execution. If this is less than
+   * the maximum amount of weight that the message could take to be executed, then no
+   * execution attempt will be made.
+   *
+   * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
+   **/
+  | { name: 'ExecuteBlob'; params: { encodedMessage: Bytes; maxWeight: SpWeightsWeightV2Weight } }
+  /**
+   * Send an XCM from a local, signed, origin.
+   *
+   * The destination, `dest`, will receive this message with a `DescendOrigin` instruction
+   * that makes the origin of the message be the origin on this system.
+   *
+   * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
+   **/
+  | { name: 'SendBlob'; params: { dest: XcmVersionedLocation; encodedMessage: Bytes } };
 
 export type PalletXcmCallLike =
+  /**
+   * WARNING: DEPRECATED. `send` will be removed after June 2024. Use `send_blob` instead.
+   **/
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
   /**
    * Teleport some assets from the local chain to some destination chain.
@@ -3639,6 +3668,9 @@ export type PalletXcmCallLike =
    * No more than `max_weight` will be used in its attempted execution. If this is less than
    * the maximum amount of weight that the message could take to be executed, then no
    * execution attempt will be made.
+   *
+   * WARNING: DEPRECATED. `execute` will be removed after June 2024. Use `execute_blob`
+   * instead.
    **/
   | { name: 'Execute'; params: { message: XcmVersionedXcm; maxWeight: SpWeightsWeightV2Weight } }
   /**
@@ -3691,7 +3723,7 @@ export type PalletXcmCallLike =
    *
    * Fee payment on the destination side is made from the asset in the `assets` vector of
    * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
-   * is needed than `weight_limit`, then the operation will fail and the assets send may be
+   * is needed than `weight_limit`, then the operation will fail and the sent assets may be
    * at risk.
    *
    * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
@@ -3721,7 +3753,7 @@ export type PalletXcmCallLike =
    *
    * Fee payment on the destination side is made from the asset in the `assets` vector of
    * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
-   * is needed than `weight_limit`, then the operation will fail and the assets send may be
+   * is needed than `weight_limit`, then the operation will fail and the sent assets may be
    * at risk.
    *
    * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
@@ -3760,7 +3792,7 @@ export type PalletXcmCallLike =
    * Fee payment on the destination side is made from the asset in the `assets` vector of
    * index `fee_asset_item` (hence referred to as `fees`), up to enough to pay for
    * `weight_limit` of weight. If more weight is needed than `weight_limit`, then the
-   * operation will fail and the assets sent may be at risk.
+   * operation will fail and the sent assets may be at risk.
    *
    * `assets` (excluding `fees`) must have same reserve location or otherwise be teleportable
    * to `dest`, no limitations imposed on `fees`.
@@ -3806,7 +3838,29 @@ export type PalletXcmCallLike =
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
    **/
-  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } };
+  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
+  /**
+   * Execute an XCM from a local, signed, origin.
+   *
+   * An event is deposited indicating whether the message could be executed completely
+   * or only partially.
+   *
+   * No more than `max_weight` will be used in its attempted execution. If this is less than
+   * the maximum amount of weight that the message could take to be executed, then no
+   * execution attempt will be made.
+   *
+   * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
+   **/
+  | { name: 'ExecuteBlob'; params: { encodedMessage: BytesLike; maxWeight: SpWeightsWeightV2Weight } }
+  /**
+   * Send an XCM from a local, signed, origin.
+   *
+   * The destination, `dest`, will receive this message with a `DescendOrigin` instruction
+   * that makes the origin of the message be the origin on this system.
+   *
+   * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
+   **/
+  | { name: 'SendBlob'; params: { dest: XcmVersionedLocation; encodedMessage: BytesLike } };
 
 export type XcmVersionedXcm =
   | { tag: 'V2'; value: XcmV2Xcm }
@@ -4116,7 +4170,16 @@ export type PalletXcmError =
   /**
    * Local XCM execution incomplete.
    **/
-  | 'LocalExecutionIncomplete';
+  | 'LocalExecutionIncomplete'
+  /**
+   * Could not decode XCM.
+   **/
+  | 'UnableToDecode'
+  /**
+   * XCM encoded length is too large.
+   * Returned when an XCM encoded length is larger than `MaxXcmEncodedSize`.
+   **/
+  | 'XcmTooLarge';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8623,15 +8686,9 @@ export type PalletNftsPreSignedMint = {
 };
 
 export type SpRuntimeMultiSignature =
-  | { tag: 'Ed25519'; value: SpCoreEd25519Signature }
-  | { tag: 'Sr25519'; value: SpCoreSr25519Signature }
-  | { tag: 'Ecdsa'; value: SpCoreEcdsaSignature };
-
-export type SpCoreEd25519Signature = FixedBytes<64>;
-
-export type SpCoreSr25519Signature = FixedBytes<64>;
-
-export type SpCoreEcdsaSignature = FixedBytes<65>;
+  | { tag: 'Ed25519'; value: FixedBytes<64> }
+  | { tag: 'Sr25519'; value: FixedBytes<64> }
+  | { tag: 'Ecdsa'; value: FixedBytes<65> };
 
 export type PalletNftsPreSignedAttributes = {
   collection: number;
@@ -11949,6 +12006,8 @@ export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
   tip: bigint;
   assetId?: StagingXcmV3MultilocationMultiLocation | undefined;
 };
+
+export type CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim = {};
 
 export type AssetHubRococoRuntimeRuntime = {};
 

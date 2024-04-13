@@ -2060,7 +2060,7 @@ export interface ChainEvents extends GenericChainEvents {
    **/
   assetConversion: {
     /**
-     * A successful call of the `CretaPool` extrinsic will create this event.
+     * A successful call of the `CreatePool` extrinsic will create this event.
      **/
     PoolCreated: GenericPalletEvent<
       'AssetConversion',

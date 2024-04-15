@@ -20,12 +20,12 @@ import type {
   FrameSystemCodeUpgradeAuthorization,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
-  PolkadotPrimitivesV6PersistedValidationData,
-  PolkadotPrimitivesV6UpgradeRestriction,
-  PolkadotPrimitivesV6UpgradeGoAhead,
+  PolkadotPrimitivesV7PersistedValidationData,
+  PolkadotPrimitivesV7UpgradeRestriction,
+  PolkadotPrimitivesV7UpgradeGoAhead,
   SpTrieStorageProof,
   CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot,
-  PolkadotPrimitivesV6AbridgedHostConfiguration,
+  PolkadotPrimitivesV7AbridgedHostConfiguration,
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
@@ -289,9 +289,9 @@ export interface ChainStorage extends GenericChainStorage {
      * This value is expected to be set only once per block and it's never stored
      * in the trie.
      *
-     * @param {Callback<PolkadotPrimitivesV6PersistedValidationData | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV7PersistedValidationData | undefined> =} callback
      **/
-    validationData: GenericStorageQuery<() => PolkadotPrimitivesV6PersistedValidationData | undefined>;
+    validationData: GenericStorageQuery<() => PolkadotPrimitivesV7PersistedValidationData | undefined>;
 
     /**
      * Were the validation data set to notify the relay chain?
@@ -318,9 +318,9 @@ export interface ChainStorage extends GenericChainStorage {
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV6UpgradeRestriction | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV7UpgradeRestriction | undefined> =} callback
      **/
-    upgradeRestrictionSignal: GenericStorageQuery<() => PolkadotPrimitivesV6UpgradeRestriction | undefined>;
+    upgradeRestrictionSignal: GenericStorageQuery<() => PolkadotPrimitivesV7UpgradeRestriction | undefined>;
 
     /**
      * Optional upgrade go-ahead signal from the relay-chain.
@@ -329,9 +329,9 @@ export interface ChainStorage extends GenericChainStorage {
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV6UpgradeGoAhead | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV7UpgradeGoAhead | undefined> =} callback
      **/
-    upgradeGoAhead: GenericStorageQuery<() => PolkadotPrimitivesV6UpgradeGoAhead | undefined>;
+    upgradeGoAhead: GenericStorageQuery<() => PolkadotPrimitivesV7UpgradeGoAhead | undefined>;
 
     /**
      * The state proof for the last relay parent block.
@@ -368,9 +368,9 @@ export interface ChainStorage extends GenericChainStorage {
      *
      * This data is also absent from the genesis.
      *
-     * @param {Callback<PolkadotPrimitivesV6AbridgedHostConfiguration | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV7AbridgedHostConfiguration | undefined> =} callback
      **/
-    hostConfiguration: GenericStorageQuery<() => PolkadotPrimitivesV6AbridgedHostConfiguration | undefined>;
+    hostConfiguration: GenericStorageQuery<() => PolkadotPrimitivesV7AbridgedHostConfiguration | undefined>;
 
     /**
      * The last downward message queue chain head we have observed.
@@ -576,6 +576,8 @@ export interface ChainStorage extends GenericChainStorage {
      * Any liquidity locks on some account balances.
      * NOTE: Should only be accessed when setting, changing and freeing a lock.
      *
+     * Use of locks is deprecated in favour of freezes. See `https://github.com/paritytech/substrate/pull/12951/`
+     *
      * @param {AccountId32Like} arg
      * @param {Callback<Array<PalletBalancesBalanceLock>> =} callback
      **/
@@ -583,6 +585,8 @@ export interface ChainStorage extends GenericChainStorage {
 
     /**
      * Named reserves on some account balances.
+     *
+     * Use of reserves is deprecated in favour of holds. See `https://github.com/paritytech/substrate/pull/12951/`
      *
      * @param {AccountId32Like} arg
      * @param {Callback<Array<PalletBalancesReserveData>> =} callback

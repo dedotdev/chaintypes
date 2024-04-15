@@ -118,11 +118,15 @@ export interface ChainConsts extends GenericChainConsts {
     /**
      * The maximum number of locks that should exist on an account.
      * Not strictly enforced, but used for weight estimation.
+     *
+     * Use of locks is deprecated in favour of freezes. See `https://github.com/paritytech/substrate/pull/12951/`
      **/
     maxLocks: number;
 
     /**
      * The maximum number of named reserves that can exist on an account.
+     *
+     * Use of reserves is deprecated in favour of holds. See `https://github.com/paritytech/substrate/pull/12951/`
      **/
     maxReserves: number;
 
@@ -211,6 +215,14 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   aura: {
     /**
+     * The slot duration Aura should run with, expressed in milliseconds.
+     * The effective value of this type should not change while the chain is running.
+     *
+     * For backwards compatibility either use [`MinimumPeriodTimesTwo`] or a const.
+     **/
+    slotDuration: bigint;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -291,12 +303,22 @@ export interface ChainConsts extends GenericChainConsts {
 
     /**
      * The amount of weight (if any) which should be provided to the message queue for
-     * servicing enqueued items.
+     * servicing enqueued items `on_initialize`.
      *
      * This may be legitimately `None` in the case that you will call
-     * `ServiceQueues::service_queues` manually.
+     * `ServiceQueues::service_queues` manually or set [`Self::IdleMaxServiceWeight`] to have
+     * it run in `on_idle`.
      **/
     serviceWeight: SpWeightsWeightV2Weight | undefined;
+
+    /**
+     * The maximum amount of weight (if any) to be used from remaining weight `on_idle` which
+     * should be provided to the message queue for servicing enqueued items `on_idle`.
+     * Useful for parachains to process messages at the same block they are received.
+     *
+     * If `None`, it will not call `ServiceQueues::service_queues` in `on_idle`.
+     **/
+    idleMaxServiceWeight: SpWeightsWeightV2Weight | undefined;
 
     /**
      * Generic pallet constant

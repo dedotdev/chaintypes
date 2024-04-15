@@ -465,6 +465,17 @@ export interface ChainErrors extends GenericChainErrors {
     LocalExecutionIncomplete: GenericPalletError;
 
     /**
+     * Could not decode XCM.
+     **/
+    UnableToDecode: GenericPalletError;
+
+    /**
+     * XCM encoded length is too large.
+     * Returned when an XCM encoded length is larger than `MaxXcmEncodedSize`.
+     **/
+    XcmTooLarge: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;

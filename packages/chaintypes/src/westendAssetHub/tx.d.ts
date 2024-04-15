@@ -539,7 +539,7 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      *
      * This will waive the transaction fee if at least all but 10% of the accounts needed to
      * be upgraded. (We let some not have to be upgraded just in order to allow for the
-     * possibililty of churn).
+     * possibility of churn).
      *
      * @param {Array<AccountId32Like>} who
      **/
@@ -956,6 +956,7 @@ export interface ChainTx extends GenericChainTx<TxCall> {
    **/
   polkadotXcm: {
     /**
+     * WARNING: DEPRECATED. `send` will be removed after June 2024. Use `send_blob` instead.
      *
      * @param {XcmVersionedLocation} dest
      * @param {XcmVersionedXcm} message
@@ -1085,6 +1086,9 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      * the maximum amount of weight that the message could take to be executed, then no
      * execution attempt will be made.
      *
+     * WARNING: DEPRECATED. `execute` will be removed after June 2024. Use `execute_blob`
+     * instead.
+     *
      * @param {XcmVersionedXcm} message
      * @param {SpWeightsWeightV2Weight} maxWeight
      **/
@@ -1199,7 +1203,7 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      *
      * Fee payment on the destination side is made from the asset in the `assets` vector of
      * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
-     * is needed than `weight_limit`, then the operation will fail and the assets send may be
+     * is needed than `weight_limit`, then the operation will fail and the sent assets may be
      * at risk.
      *
      * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
@@ -1247,7 +1251,7 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      *
      * Fee payment on the destination side is made from the asset in the `assets` vector of
      * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
-     * is needed than `weight_limit`, then the operation will fail and the assets send may be
+     * is needed than `weight_limit`, then the operation will fail and the sent assets may be
      * at risk.
      *
      * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
@@ -1315,7 +1319,7 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      * Fee payment on the destination side is made from the asset in the `assets` vector of
      * index `fee_asset_item` (hence referred to as `fees`), up to enough to pay for
      * `weight_limit` of weight. If more weight is needed than `weight_limit`, then the
-     * operation will fail and the assets sent may be at risk.
+     * operation will fail and the sent assets may be at risk.
      *
      * `assets` (excluding `fees`) must have same reserve location or otherwise be teleportable
      * to `dest`, no limitations imposed on `fees`.
@@ -1391,6 +1395,58 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         palletCall: {
           name: 'ClaimAssets';
           params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation };
+        };
+      }>
+    >;
+
+    /**
+     * Execute an XCM from a local, signed, origin.
+     *
+     * An event is deposited indicating whether the message could be executed completely
+     * or only partially.
+     *
+     * No more than `max_weight` will be used in its attempted execution. If this is less than
+     * the maximum amount of weight that the message could take to be executed, then no
+     * execution attempt will be made.
+     *
+     * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
+     *
+     * @param {BytesLike} encodedMessage
+     * @param {SpWeightsWeightV2Weight} maxWeight
+     **/
+    executeBlob: GenericTxCall<
+      (
+        encodedMessage: BytesLike,
+        maxWeight: SpWeightsWeightV2Weight,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'PolkadotXcm';
+        palletCall: {
+          name: 'ExecuteBlob';
+          params: { encodedMessage: BytesLike; maxWeight: SpWeightsWeightV2Weight };
+        };
+      }>
+    >;
+
+    /**
+     * Send an XCM from a local, signed, origin.
+     *
+     * The destination, `dest`, will receive this message with a `DescendOrigin` instruction
+     * that makes the origin of the message be the origin on this system.
+     *
+     * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
+     *
+     * @param {XcmVersionedLocation} dest
+     * @param {BytesLike} encodedMessage
+     **/
+    sendBlob: GenericTxCall<
+      (
+        dest: XcmVersionedLocation,
+        encodedMessage: BytesLike,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'PolkadotXcm';
+        palletCall: {
+          name: 'SendBlob';
+          params: { dest: XcmVersionedLocation; encodedMessage: BytesLike };
         };
       }>
     >;

@@ -679,6 +679,26 @@ export interface ChainErrors extends GenericChainErrors {
     NoMigrationPerformed: GenericPalletError;
 
     /**
+     * The contract has reached its maximum number of delegate dependencies.
+     **/
+    MaxDelegateDependenciesReached: GenericPalletError;
+
+    /**
+     * The dependency was not found in the contract's delegate dependencies.
+     **/
+    DelegateDependencyNotFound: GenericPalletError;
+
+    /**
+     * The contract already depends on the given delegate dependency.
+     **/
+    DelegateDependencyAlreadyExists: GenericPalletError;
+
+    /**
+     * Can not add a delegate dependency to the code hash of the contract itself.
+     **/
+    CannotAddSelfAsDelegateDependency: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -976,6 +996,55 @@ export interface ChainErrors extends GenericChainErrors {
      * Lenient threshold not in [0-100] range
      **/
     InvalidLenientThreshold: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Proxy`'s errors
+   **/
+  proxy: {
+    /**
+     * There are too many proxies registered or too many announcements pending.
+     **/
+    TooMany: GenericPalletError;
+
+    /**
+     * Proxy registration not found.
+     **/
+    NotFound: GenericPalletError;
+
+    /**
+     * Sender is not a proxy of the account to be proxied.
+     **/
+    NotProxy: GenericPalletError;
+
+    /**
+     * A call which is incompatible with the proxy type's filter was attempted.
+     **/
+    Unproxyable: GenericPalletError;
+
+    /**
+     * Account is already a proxy.
+     **/
+    Duplicate: GenericPalletError;
+
+    /**
+     * Call may not be made by proxy because it may escalate its privileges.
+     **/
+    NoPermission: GenericPalletError;
+
+    /**
+     * Announcement, if made at all, was made too recently.
+     **/
+    Unannounced: GenericPalletError;
+
+    /**
+     * Cannot add self as proxy.
+     **/
+    NoSelfProxy: GenericPalletError;
 
     /**
      * Generic pallet error

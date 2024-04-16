@@ -66,6 +66,8 @@ import type {
   PrimitivesBanConfig,
   PrimitivesBanInfo,
   PalletCommitteeManagementCurrentAndNextSessionValidators,
+  PalletProxyProxyDefinition,
+  PalletProxyAnnouncement,
 } from './types';
 
 export interface ChainStorage extends GenericChainStorage {
@@ -292,14 +294,17 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   timestamp: {
     /**
-     * Current time for the current block.
+     * The current time for the current block.
      *
      * @param {Callback<bigint> =} callback
      **/
     now: GenericStorageQuery<() => bigint>;
 
     /**
-     * Did the timestamp get updated in this block?
+     * Whether the timestamp has been updated in this block.
+     *
+     * This value is updated to `true` upon successful submission of a timestamp by a node.
+     * It is then checked at the end of each block execution in the `on_finalize` hook.
      *
      * @param {Callback<boolean> =} callback
      **/
@@ -550,7 +555,8 @@ export interface ChainStorage extends GenericChainStorage {
      * they wish to support.
      *
      * Note that the keys of this storage map might become non-decodable in case the
-     * [`Config::MaxNominations`] configuration is decreased. In this rare case, these nominators
+     * account's [`NominationsQuota::MaxNominations`] configuration is decreased.
+     * In this rare case, these nominators
      * are still existent in storage, their key is correct and retrievable (i.e. `contains_key`
      * indicates that they exist), but their value cannot be decoded. Therefore, the non-decodable
      * nominators will effectively not-exist, until they re-submit their preferences such that it
@@ -1471,6 +1477,32 @@ export interface ChainStorage extends GenericChainStorage {
     currentAndNextSessionValidatorsStorage: GenericStorageQuery<
       () => PalletCommitteeManagementCurrentAndNextSessionValidators
     >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Proxy`'s storage queries
+   **/
+  proxy: {
+    /**
+     * The set of account proxies. Maps the account which has delegated to the accounts
+     * which are being delegated to, together with the amount held on deposit.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[Array<PalletProxyProxyDefinition>, bigint]> =} callback
+     **/
+    proxies: GenericStorageQuery<(arg: AccountId32Like) => [Array<PalletProxyProxyDefinition>, bigint]>;
+
+    /**
+     * The announcements made by the proxy (key).
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[Array<PalletProxyAnnouncement>, bigint]> =} callback
+     **/
+    announcements: GenericStorageQuery<(arg: AccountId32Like) => [Array<PalletProxyAnnouncement>, bigint]>;
 
     /**
      * Generic pallet storage query

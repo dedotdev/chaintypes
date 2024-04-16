@@ -66,7 +66,9 @@ export type AlephRuntimeRuntimeEvent =
   | { pallet: 'Contracts'; palletEvent: PalletContractsEvent }
   | { pallet: 'NominationPools'; palletEvent: PalletNominationPoolsEvent }
   | { pallet: 'Identity'; palletEvent: PalletIdentityEvent }
-  | { pallet: 'CommitteeManagement'; palletEvent: PalletCommitteeManagementEvent };
+  | { pallet: 'CommitteeManagement'; palletEvent: PalletCommitteeManagementEvent }
+  | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
+  | { pallet: 'Operations'; palletEvent: PalletOperationsEvent };
 
 /**
  * Event for the System pallet.
@@ -254,9 +256,9 @@ export type PalletStakingPalletEvent =
    **/
   | { name: 'EraPaid'; data: { eraIndex: number; validatorPayout: bigint; remainder: bigint } }
   /**
-   * The nominator has been rewarded by this amount.
+   * The nominator has been rewarded by this amount to this destination.
    **/
-  | { name: 'Rewarded'; data: { stash: AccountId32; amount: bigint } }
+  | { name: 'Rewarded'; data: { stash: AccountId32; dest: PalletStakingRewardDestination; amount: bigint } }
   /**
    * A staker (validator or nominator) has been slashed by the given amount.
    **/
@@ -312,9 +314,24 @@ export type PalletStakingPalletEvent =
    **/
   | { name: 'ValidatorPrefsSet'; data: { stash: AccountId32; prefs: PalletStakingValidatorPrefs } }
   /**
+   * Voters size limit reached.
+   **/
+  | { name: 'SnapshotVotersSizeExceeded'; data: { size: number } }
+  /**
+   * Targets size limit reached.
+   **/
+  | { name: 'SnapshotTargetsSizeExceeded'; data: { size: number } }
+  /**
    * A new force era mode was set.
    **/
   | { name: 'ForceEra'; data: { mode: PalletStakingForcing } };
+
+export type PalletStakingRewardDestination =
+  | { tag: 'Staked' }
+  | { tag: 'Stash' }
+  | { tag: 'Controller' }
+  | { tag: 'Account'; value: AccountId32 }
+  | { tag: 'None' };
 
 export type PalletStakingValidatorPrefs = { commission: Perbill; blocked: boolean };
 
@@ -497,17 +514,41 @@ export type PalletMultisigTimepoint = { height: number; index: number };
  **/
 export type PalletSudoEvent =
   /**
-   * A sudo just took place. \[result\]
+   * A sudo call just took place.
    **/
-  | { name: 'Sudid'; data: { sudoResult: Result<[], DispatchError> } }
+  | {
+      name: 'Sudid';
+      data: {
+        /**
+         * The result of the call made by the sudo user.
+         **/
+        sudoResult: Result<[], DispatchError>;
+      };
+    }
   /**
-   * The \[sudoer\] just switched identity; the old key is supplied if one existed.
+   * The sudo key has been updated.
    **/
-  | { name: 'KeyChanged'; data: { oldSudoer?: AccountId32 | undefined } }
+  | {
+      name: 'KeyChanged';
+      data: {
+        /**
+         * The old sudo key if one was previously set.
+         **/
+        oldSudoer?: AccountId32 | undefined;
+      };
+    }
   /**
-   * A sudo just took place. \[result\]
+   * A [sudo_as](Pallet::sudo_as) call just took place.
    **/
-  | { name: 'SudoAsDone'; data: { sudoResult: Result<[], DispatchError> } };
+  | {
+      name: 'SudoAsDone';
+      data: {
+        /**
+         * The result of the call made by the sudo user.
+         **/
+        sudoResult: Result<[], DispatchError>;
+      };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -542,7 +583,7 @@ export type PalletContractsEvent =
   /**
    * Code with the specified hash has been stored.
    **/
-  | { name: 'CodeStored'; data: { codeHash: H256 } }
+  | { name: 'CodeStored'; data: { codeHash: H256; depositHeld: bigint; uploader: AccountId32 } }
   /**
    * A custom event emitted by the contract.
    **/
@@ -564,7 +605,7 @@ export type PalletContractsEvent =
   /**
    * A code with the specified hash was removed.
    **/
-  | { name: 'CodeRemoved'; data: { codeHash: H256 } }
+  | { name: 'CodeRemoved'; data: { codeHash: H256; depositReleased: bigint; remover: AccountId32 } }
   /**
    * A contract's code was updated.
    **/
@@ -633,7 +674,15 @@ export type PalletContractsEvent =
          **/
         codeHash: H256;
       };
-    };
+    }
+  /**
+   * Some funds have been transferred and held as storage deposit.
+   **/
+  | { name: 'StorageDepositTransferredAndHeld'; data: { from: AccountId32; to: AccountId32; amount: bigint } }
+  /**
+   * Some storage deposit funds have been transferred and released.
+   **/
+  | { name: 'StorageDepositTransferredAndReleased'; data: { from: AccountId32; to: AccountId32; amount: bigint } };
 
 export type PalletContractsOrigin = { tag: 'Root' } | { tag: 'Signed'; value: AccountId32 };
 
@@ -802,6 +851,52 @@ export type PrimitivesBanInfo = { reason: PrimitivesBanReason; start: number };
 
 export type PrimitivesBanReason = { tag: 'InsufficientUptime'; value: number } | { tag: 'OtherReason'; value: Bytes };
 
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletProxyEvent =
+  /**
+   * A proxy was executed correctly, with the given.
+   **/
+  | { name: 'ProxyExecuted'; data: { result: Result<[], DispatchError> } }
+  /**
+   * A pure account has been created by new proxy with given
+   * disambiguation index and proxy type.
+   **/
+  | {
+      name: 'PureCreated';
+      data: { pure: AccountId32; who: AccountId32; proxyType: AlephRuntimeProxyType; disambiguationIndex: number };
+    }
+  /**
+   * An announcement was placed to make a call in the future.
+   **/
+  | { name: 'Announced'; data: { real: AccountId32; proxy: AccountId32; callHash: H256 } }
+  /**
+   * A proxy was added.
+   **/
+  | {
+      name: 'ProxyAdded';
+      data: { delegator: AccountId32; delegatee: AccountId32; proxyType: AlephRuntimeProxyType; delay: number };
+    }
+  /**
+   * A proxy was removed.
+   **/
+  | {
+      name: 'ProxyRemoved';
+      data: { delegator: AccountId32; delegatee: AccountId32; proxyType: AlephRuntimeProxyType; delay: number };
+    };
+
+export type AlephRuntimeProxyType = 'Any' | 'NonTransfer' | 'Staking' | 'Nomination';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletOperationsEvent =
+  /**
+   * An account has fixed its consumers counter underflow
+   **/
+  { name: 'ConsumersUnderflowFixed'; data: { who: AccountId32 } };
+
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
 /**
@@ -963,7 +1058,9 @@ export type AlephRuntimeRuntimeCall =
   | { pallet: 'Contracts'; palletCall: PalletContractsCall }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
   | { pallet: 'Identity'; palletCall: PalletIdentityCall }
-  | { pallet: 'CommitteeManagement'; palletCall: PalletCommitteeManagementCall };
+  | { pallet: 'CommitteeManagement'; palletCall: PalletCommitteeManagementCall }
+  | { pallet: 'Proxy'; palletCall: PalletProxyCall }
+  | { pallet: 'Operations'; palletCall: PalletOperationsCall };
 
 export type AlephRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -982,7 +1079,9 @@ export type AlephRuntimeRuntimeCallLike =
   | { pallet: 'Contracts'; palletCall: PalletContractsCallLike }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
   | { pallet: 'Identity'; palletCall: PalletIdentityCallLike }
-  | { pallet: 'CommitteeManagement'; palletCall: PalletCommitteeManagementCallLike };
+  | { pallet: 'CommitteeManagement'; palletCall: PalletCommitteeManagementCallLike }
+  | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
+  | { pallet: 'Operations'; palletCall: PalletOperationsCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -1131,10 +1230,6 @@ export type PalletBalancesCall =
    **/
   | { name: 'TransferAllowDeath'; params: { dest: MultiAddress; value: bigint } }
   /**
-   * See [`Pallet::set_balance_deprecated`].
-   **/
-  | { name: 'SetBalanceDeprecated'; params: { who: MultiAddress; newFree: bigint; oldReserved: bigint } }
-  /**
    * See [`Pallet::force_transfer`].
    **/
   | { name: 'ForceTransfer'; params: { source: MultiAddress; dest: MultiAddress; value: bigint } }
@@ -1155,10 +1250,6 @@ export type PalletBalancesCall =
    **/
   | { name: 'UpgradeAccounts'; params: { who: Array<AccountId32> } }
   /**
-   * See [`Pallet::transfer`].
-   **/
-  | { name: 'Transfer'; params: { dest: MultiAddress; value: bigint } }
-  /**
    * See [`Pallet::force_set_balance`].
    **/
   | { name: 'ForceSetBalance'; params: { who: MultiAddress; newFree: bigint } };
@@ -1168,10 +1259,6 @@ export type PalletBalancesCallLike =
    * See [`Pallet::transfer_allow_death`].
    **/
   | { name: 'TransferAllowDeath'; params: { dest: MultiAddressLike; value: bigint } }
-  /**
-   * See [`Pallet::set_balance_deprecated`].
-   **/
-  | { name: 'SetBalanceDeprecated'; params: { who: MultiAddressLike; newFree: bigint; oldReserved: bigint } }
   /**
    * See [`Pallet::force_transfer`].
    **/
@@ -1192,10 +1279,6 @@ export type PalletBalancesCallLike =
    * See [`Pallet::upgrade_accounts`].
    **/
   | { name: 'UpgradeAccounts'; params: { who: Array<AccountId32Like> } }
-  /**
-   * See [`Pallet::transfer`].
-   **/
-  | { name: 'Transfer'; params: { dest: MultiAddressLike; value: bigint } }
   /**
    * See [`Pallet::force_set_balance`].
    **/
@@ -1435,13 +1518,6 @@ export type PalletStakingPalletCallLike =
    * See [`Pallet::set_min_commission`].
    **/
   | { name: 'SetMinCommission'; params: { new: Perbill } };
-
-export type PalletStakingRewardDestination =
-  | { tag: 'Staked' }
-  | { tag: 'Stash' }
-  | { tag: 'Controller' }
-  | { tag: 'Account'; value: AccountId32 }
-  | { tag: 'None' };
 
 export type PalletStakingPalletConfigOp = { tag: 'Noop' } | { tag: 'Set'; value: bigint } | { tag: 'Remove' };
 
@@ -2525,6 +2601,154 @@ export type PalletCommitteeManagementCallLike =
   | { name: 'SetLenientThreshold'; params: { thresholdPercent: number } };
 
 /**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletProxyCall =
+  /**
+   * See [`Pallet::proxy`].
+   **/
+  | {
+      name: 'Proxy';
+      params: { real: MultiAddress; forceProxyType?: AlephRuntimeProxyType | undefined; call: AlephRuntimeRuntimeCall };
+    }
+  /**
+   * See [`Pallet::add_proxy`].
+   **/
+  | { name: 'AddProxy'; params: { delegate: MultiAddress; proxyType: AlephRuntimeProxyType; delay: number } }
+  /**
+   * See [`Pallet::remove_proxy`].
+   **/
+  | { name: 'RemoveProxy'; params: { delegate: MultiAddress; proxyType: AlephRuntimeProxyType; delay: number } }
+  /**
+   * See [`Pallet::remove_proxies`].
+   **/
+  | { name: 'RemoveProxies' }
+  /**
+   * See [`Pallet::create_pure`].
+   **/
+  | { name: 'CreatePure'; params: { proxyType: AlephRuntimeProxyType; delay: number; index: number } }
+  /**
+   * See [`Pallet::kill_pure`].
+   **/
+  | {
+      name: 'KillPure';
+      params: {
+        spawner: MultiAddress;
+        proxyType: AlephRuntimeProxyType;
+        index: number;
+        height: number;
+        extIndex: number;
+      };
+    }
+  /**
+   * See [`Pallet::announce`].
+   **/
+  | { name: 'Announce'; params: { real: MultiAddress; callHash: H256 } }
+  /**
+   * See [`Pallet::remove_announcement`].
+   **/
+  | { name: 'RemoveAnnouncement'; params: { real: MultiAddress; callHash: H256 } }
+  /**
+   * See [`Pallet::reject_announcement`].
+   **/
+  | { name: 'RejectAnnouncement'; params: { delegate: MultiAddress; callHash: H256 } }
+  /**
+   * See [`Pallet::proxy_announced`].
+   **/
+  | {
+      name: 'ProxyAnnounced';
+      params: {
+        delegate: MultiAddress;
+        real: MultiAddress;
+        forceProxyType?: AlephRuntimeProxyType | undefined;
+        call: AlephRuntimeRuntimeCall;
+      };
+    };
+
+export type PalletProxyCallLike =
+  /**
+   * See [`Pallet::proxy`].
+   **/
+  | {
+      name: 'Proxy';
+      params: {
+        real: MultiAddressLike;
+        forceProxyType?: AlephRuntimeProxyType | undefined;
+        call: AlephRuntimeRuntimeCallLike;
+      };
+    }
+  /**
+   * See [`Pallet::add_proxy`].
+   **/
+  | { name: 'AddProxy'; params: { delegate: MultiAddressLike; proxyType: AlephRuntimeProxyType; delay: number } }
+  /**
+   * See [`Pallet::remove_proxy`].
+   **/
+  | { name: 'RemoveProxy'; params: { delegate: MultiAddressLike; proxyType: AlephRuntimeProxyType; delay: number } }
+  /**
+   * See [`Pallet::remove_proxies`].
+   **/
+  | { name: 'RemoveProxies' }
+  /**
+   * See [`Pallet::create_pure`].
+   **/
+  | { name: 'CreatePure'; params: { proxyType: AlephRuntimeProxyType; delay: number; index: number } }
+  /**
+   * See [`Pallet::kill_pure`].
+   **/
+  | {
+      name: 'KillPure';
+      params: {
+        spawner: MultiAddressLike;
+        proxyType: AlephRuntimeProxyType;
+        index: number;
+        height: number;
+        extIndex: number;
+      };
+    }
+  /**
+   * See [`Pallet::announce`].
+   **/
+  | { name: 'Announce'; params: { real: MultiAddressLike; callHash: H256 } }
+  /**
+   * See [`Pallet::remove_announcement`].
+   **/
+  | { name: 'RemoveAnnouncement'; params: { real: MultiAddressLike; callHash: H256 } }
+  /**
+   * See [`Pallet::reject_announcement`].
+   **/
+  | { name: 'RejectAnnouncement'; params: { delegate: MultiAddressLike; callHash: H256 } }
+  /**
+   * See [`Pallet::proxy_announced`].
+   **/
+  | {
+      name: 'ProxyAnnounced';
+      params: {
+        delegate: MultiAddressLike;
+        real: MultiAddressLike;
+        forceProxyType?: AlephRuntimeProxyType | undefined;
+        call: AlephRuntimeRuntimeCallLike;
+      };
+    };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletOperationsCall =
+  /**
+   * See [`Pallet::fix_accounts_consumers_underflow`].
+   **/
+  { name: 'FixAccountsConsumersUnderflow'; params: { who: AccountId32 } };
+
+export type PalletOperationsCallLike =
+  /**
+   * See [`Pallet::fix_accounts_consumers_underflow`].
+   **/
+  { name: 'FixAccountsConsumersUnderflow'; params: { who: AccountId32Like } };
+
+export type SpRuntimeBlakeTwo256 = {};
+
+/**
  * The `Error` enum of this pallet.
  **/
 export type PalletSchedulerError =
@@ -2559,7 +2783,9 @@ export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
 export type PalletBalancesIdAmount = { id: AlephRuntimeRuntimeHoldReason; amount: bigint };
 
-export type AlephRuntimeRuntimeHoldReason = null;
+export type AlephRuntimeRuntimeHoldReason = { tag: 'Contracts'; value: PalletContractsHoldReason };
+
+export type PalletContractsHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve';
 
 export type PalletBalancesIdAmount002 = { id: []; amount: bigint };
 
@@ -2949,16 +3175,14 @@ export type PalletContractsWasmCodeInfo = {
 
 export type PalletContractsStorageContractInfo = {
   trieId: Bytes;
-  depositAccount: PalletContractsStorageDepositAccount;
   codeHash: H256;
   storageBytes: number;
   storageItems: number;
   storageByteDeposit: bigint;
   storageItemDeposit: bigint;
   storageBaseDeposit: bigint;
+  delegateDependencies: Array<[H256, bigint]>;
 };
-
-export type PalletContractsStorageDepositAccount = AccountId32;
 
 export type PalletContractsStorageDeletionQueueManager = { insertCounter: number; deleteCounter: number };
 
@@ -3045,7 +3269,30 @@ export type PalletContractsScheduleHostFnWeights = {
   reentranceCount: SpWeightsWeightV2Weight;
   accountReentranceCount: SpWeightsWeightV2Weight;
   instantiationNonce: SpWeightsWeightV2Weight;
+  addDelegateDependency: SpWeightsWeightV2Weight;
+  removeDelegateDependency: SpWeightsWeightV2Weight;
 };
+
+export type PalletContractsEnvironment = {
+  accountId: PalletContractsEnvironmentType;
+  balance: PalletContractsEnvironmentTypeU128;
+  hash: PalletContractsEnvironmentTypeH256;
+  hasher: PalletContractsEnvironmentTypeBlakeTwo256;
+  timestamp: PalletContractsEnvironmentTypeU64;
+  blockNumber: PalletContractsEnvironmentTypeU32;
+};
+
+export type PalletContractsEnvironmentType = {};
+
+export type PalletContractsEnvironmentTypeU128 = {};
+
+export type PalletContractsEnvironmentTypeH256 = {};
+
+export type PalletContractsEnvironmentTypeBlakeTwo256 = {};
+
+export type PalletContractsEnvironmentTypeU64 = {};
+
+export type PalletContractsEnvironmentTypeU32 = {};
 
 /**
  * The `Error` enum of this pallet.
@@ -3191,7 +3438,23 @@ export type PalletContractsError =
   /**
    * Migrate dispatch call was attempted but no migration was performed.
    **/
-  | 'NoMigrationPerformed';
+  | 'NoMigrationPerformed'
+  /**
+   * The contract has reached its maximum number of delegate dependencies.
+   **/
+  | 'MaxDelegateDependenciesReached'
+  /**
+   * The dependency was not found in the contract's delegate dependencies.
+   **/
+  | 'DelegateDependencyNotFound'
+  /**
+   * The contract already depends on the given delegate dependency.
+   **/
+  | 'DelegateDependencyAlreadyExists'
+  /**
+   * Can not add a delegate dependency to the code hash of the contract itself.
+   **/
+  | 'CannotAddSelfAsDelegateDependency';
 
 export type PalletNominationPoolsPoolMember = {
   poolId: number;
@@ -3496,6 +3759,47 @@ export type PalletCommitteeManagementError =
    **/
   | 'InvalidLenientThreshold';
 
+export type PalletProxyProxyDefinition = { delegate: AccountId32; proxyType: AlephRuntimeProxyType; delay: number };
+
+export type PalletProxyAnnouncement = { real: AccountId32; callHash: H256; height: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletProxyError =
+  /**
+   * There are too many proxies registered or too many announcements pending.
+   **/
+  | 'TooMany'
+  /**
+   * Proxy registration not found.
+   **/
+  | 'NotFound'
+  /**
+   * Sender is not a proxy of the account to be proxied.
+   **/
+  | 'NotProxy'
+  /**
+   * A call which is incompatible with the proxy type's filter was attempted.
+   **/
+  | 'Unproxyable'
+  /**
+   * Account is already a proxy.
+   **/
+  | 'Duplicate'
+  /**
+   * Call may not be made by proxy because it may escalate its privileges.
+   **/
+  | 'NoPermission'
+  /**
+   * Announcement, if made at all, was made too recently.
+   **/
+  | 'Unannounced'
+  /**
+   * Cannot add self as proxy.
+   **/
+  | 'NoSelfProxy';
+
 export type SpRuntimeMultiSignature =
   | { tag: 'Ed25519'; value: SpCoreEd25519Signature }
   | { tag: 'Sr25519'; value: SpCoreSr25519Signature }
@@ -3643,4 +3947,5 @@ export type AlephRuntimeRuntimeError =
   | { tag: 'Contracts'; value: PalletContractsError }
   | { tag: 'NominationPools'; value: PalletNominationPoolsError }
   | { tag: 'Identity'; value: PalletIdentityError }
-  | { tag: 'CommitteeManagement'; value: PalletCommitteeManagementError };
+  | { tag: 'CommitteeManagement'; value: PalletCommitteeManagementError }
+  | { tag: 'Proxy'; value: PalletProxyError };

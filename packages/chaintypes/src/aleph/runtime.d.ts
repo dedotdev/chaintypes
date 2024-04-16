@@ -12,6 +12,7 @@ import type {
   Bytes,
   BytesLike,
   AccountId32Like,
+  AccountId32,
 } from '@dedot/codecs';
 import type {
   SpRuntimeBlock,
@@ -406,6 +407,24 @@ export interface RuntimeApis extends GenericRuntimeApis {
     >;
 
     /**
+     *
+     * @callname: AlephSessionApi_next_session_aura_authorities
+     **/
+    nextSessionAuraAuthorities: GenericRuntimeApiMethod<
+      () => Promise<Array<[AccountId32, SpConsensusAuraSr25519AppSr25519Public]>>
+    >;
+
+    /**
+     * Returns owner (`AccountId`) corresponding to an AuthorityId (in some contexts referenced
+     * also as `aleph_key` - consensus engine's part of session keys) in the current session
+     * of AlephBFT (finalisation committee).
+     *
+     * @callname: AlephSessionApi_key_owner
+     * @param {PrimitivesAppPublic} key
+     **/
+    keyOwner: GenericRuntimeApiMethod<(key: PrimitivesAppPublic) => Promise<AccountId32 | undefined>>;
+
+    /**
      * Generic runtime api call
      **/
     [method: string]: GenericRuntimeApiMethod;
@@ -439,6 +458,23 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {bigint} new_funds
      **/
     balanceToPoints: GenericRuntimeApiMethod<(poolId: number, newFunds: bigint) => Promise<bigint>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: StakingApi - 0x18ef58a3b67ba770
+   **/
+  stakingApi: {
+    /**
+     * Returns the nominations quota for a nominator with a given balance.
+     *
+     * @callname: StakingApi_nominations_quota
+     * @param {bigint} balance
+     **/
+    nominationsQuota: GenericRuntimeApiMethod<(balance: bigint) => Promise<number>>;
 
     /**
      * Generic runtime api call

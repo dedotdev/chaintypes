@@ -4,6 +4,7 @@ import type { GenericChainEvents, GenericPalletEvent } from '@dedot/types';
 import type { DispatchInfo, DispatchError, AccountId32, H256, FixedBytes, Result, Perbill, Bytes } from '@dedot/codecs';
 import type {
   FrameSupportTokensMiscBalanceStatus,
+  PalletStakingRewardDestination,
   PalletStakingValidatorPrefs,
   PalletStakingForcing,
   PrimitivesAppPublic,
@@ -15,6 +16,7 @@ import type {
   PalletNominationPoolsCommissionChangeRate,
   PrimitivesBanConfig,
   PrimitivesBanInfo,
+  AlephRuntimeProxyType,
 } from './types';
 
 export interface ChainEvents extends GenericChainEvents {
@@ -266,9 +268,13 @@ export interface ChainEvents extends GenericChainEvents {
     EraPaid: GenericPalletEvent<'Staking', 'EraPaid', { eraIndex: number; validatorPayout: bigint; remainder: bigint }>;
 
     /**
-     * The nominator has been rewarded by this amount.
+     * The nominator has been rewarded by this amount to this destination.
      **/
-    Rewarded: GenericPalletEvent<'Staking', 'Rewarded', { stash: AccountId32; amount: bigint }>;
+    Rewarded: GenericPalletEvent<
+      'Staking',
+      'Rewarded',
+      { stash: AccountId32; dest: PalletStakingRewardDestination; amount: bigint }
+    >;
 
     /**
      * A staker (validator or nominator) has been slashed by the given amount.
@@ -343,6 +349,16 @@ export interface ChainEvents extends GenericChainEvents {
       'ValidatorPrefsSet',
       { stash: AccountId32; prefs: PalletStakingValidatorPrefs }
     >;
+
+    /**
+     * Voters size limit reached.
+     **/
+    SnapshotVotersSizeExceeded: GenericPalletEvent<'Staking', 'SnapshotVotersSizeExceeded', { size: number }>;
+
+    /**
+     * Targets size limit reached.
+     **/
+    SnapshotTargetsSizeExceeded: GenericPalletEvent<'Staking', 'SnapshotTargetsSizeExceeded', { size: number }>;
 
     /**
      * A new force era mode was set.
@@ -578,19 +594,46 @@ export interface ChainEvents extends GenericChainEvents {
    **/
   sudo: {
     /**
-     * A sudo just took place. \[result\]
+     * A sudo call just took place.
      **/
-    Sudid: GenericPalletEvent<'Sudo', 'Sudid', { sudoResult: Result<[], DispatchError> }>;
+    Sudid: GenericPalletEvent<
+      'Sudo',
+      'Sudid',
+      {
+        /**
+         * The result of the call made by the sudo user.
+         **/
+        sudoResult: Result<[], DispatchError>;
+      }
+    >;
 
     /**
-     * The \[sudoer\] just switched identity; the old key is supplied if one existed.
+     * The sudo key has been updated.
      **/
-    KeyChanged: GenericPalletEvent<'Sudo', 'KeyChanged', { oldSudoer?: AccountId32 | undefined }>;
+    KeyChanged: GenericPalletEvent<
+      'Sudo',
+      'KeyChanged',
+      {
+        /**
+         * The old sudo key if one was previously set.
+         **/
+        oldSudoer?: AccountId32 | undefined;
+      }
+    >;
 
     /**
-     * A sudo just took place. \[result\]
+     * A [sudo_as](Pallet::sudo_as) call just took place.
      **/
-    SudoAsDone: GenericPalletEvent<'Sudo', 'SudoAsDone', { sudoResult: Result<[], DispatchError> }>;
+    SudoAsDone: GenericPalletEvent<
+      'Sudo',
+      'SudoAsDone',
+      {
+        /**
+         * The result of the call made by the sudo user.
+         **/
+        sudoResult: Result<[], DispatchError>;
+      }
+    >;
 
     /**
      * Generic pallet event
@@ -633,7 +676,11 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * Code with the specified hash has been stored.
      **/
-    CodeStored: GenericPalletEvent<'Contracts', 'CodeStored', { codeHash: H256 }>;
+    CodeStored: GenericPalletEvent<
+      'Contracts',
+      'CodeStored',
+      { codeHash: H256; depositHeld: bigint; uploader: AccountId32 }
+    >;
 
     /**
      * A custom event emitted by the contract.
@@ -658,7 +705,11 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * A code with the specified hash was removed.
      **/
-    CodeRemoved: GenericPalletEvent<'Contracts', 'CodeRemoved', { codeHash: H256 }>;
+    CodeRemoved: GenericPalletEvent<
+      'Contracts',
+      'CodeRemoved',
+      { codeHash: H256; depositReleased: bigint; remover: AccountId32 }
+    >;
 
     /**
      * A contract's code was updated.
@@ -733,6 +784,24 @@ export interface ChainEvents extends GenericChainEvents {
          **/
         codeHash: H256;
       }
+    >;
+
+    /**
+     * Some funds have been transferred and held as storage deposit.
+     **/
+    StorageDepositTransferredAndHeld: GenericPalletEvent<
+      'Contracts',
+      'StorageDepositTransferredAndHeld',
+      { from: AccountId32; to: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Some storage deposit funds have been transferred and released.
+     **/
+    StorageDepositTransferredAndReleased: GenericPalletEvent<
+      'Contracts',
+      'StorageDepositTransferredAndReleased',
+      { from: AccountId32; to: AccountId32; amount: bigint }
     >;
 
     /**
@@ -975,6 +1044,67 @@ export interface ChainEvents extends GenericChainEvents {
      * Validators have been banned from the committee
      **/
     BanValidators: GenericPalletEvent<'CommitteeManagement', 'BanValidators', Array<[AccountId32, PrimitivesBanInfo]>>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Proxy`'s events
+   **/
+  proxy: {
+    /**
+     * A proxy was executed correctly, with the given.
+     **/
+    ProxyExecuted: GenericPalletEvent<'Proxy', 'ProxyExecuted', { result: Result<[], DispatchError> }>;
+
+    /**
+     * A pure account has been created by new proxy with given
+     * disambiguation index and proxy type.
+     **/
+    PureCreated: GenericPalletEvent<
+      'Proxy',
+      'PureCreated',
+      { pure: AccountId32; who: AccountId32; proxyType: AlephRuntimeProxyType; disambiguationIndex: number }
+    >;
+
+    /**
+     * An announcement was placed to make a call in the future.
+     **/
+    Announced: GenericPalletEvent<'Proxy', 'Announced', { real: AccountId32; proxy: AccountId32; callHash: H256 }>;
+
+    /**
+     * A proxy was added.
+     **/
+    ProxyAdded: GenericPalletEvent<
+      'Proxy',
+      'ProxyAdded',
+      { delegator: AccountId32; delegatee: AccountId32; proxyType: AlephRuntimeProxyType; delay: number }
+    >;
+
+    /**
+     * A proxy was removed.
+     **/
+    ProxyRemoved: GenericPalletEvent<
+      'Proxy',
+      'ProxyRemoved',
+      { delegator: AccountId32; delegatee: AccountId32; proxyType: AlephRuntimeProxyType; delay: number }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Operations`'s events
+   **/
+  operations: {
+    /**
+     * An account has fixed its consumers counter underflow
+     **/
+    ConsumersUnderflowFixed: GenericPalletEvent<'Operations', 'ConsumersUnderflowFixed', { who: AccountId32 }>;
 
     /**
      * Generic pallet event

@@ -48,6 +48,7 @@ import type {
   PalletIdentityIdentityInfo,
   PalletIdentityBitFlags,
   PalletIdentityJudgement,
+  AlephRuntimeProxyType,
 } from './types';
 
 export type ChainSubmittableExtrinsic<T extends IRuntimeTxCall = AlephRuntimeRuntimeCallLike> = Extrinsic<
@@ -403,27 +404,6 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     >;
 
     /**
-     * See [`Pallet::set_balance_deprecated`].
-     *
-     * @param {MultiAddressLike} who
-     * @param {bigint} newFree
-     * @param {bigint} oldReserved
-     **/
-    setBalanceDeprecated: GenericTxCall<
-      (
-        who: MultiAddressLike,
-        newFree: bigint,
-        oldReserved: bigint,
-      ) => ChainSubmittableExtrinsic<{
-        pallet: 'Balances';
-        palletCall: {
-          name: 'SetBalanceDeprecated';
-          params: { who: MultiAddressLike; newFree: bigint; oldReserved: bigint };
-        };
-      }>
-    >;
-
-    /**
      * See [`Pallet::force_transfer`].
      *
      * @param {MultiAddressLike} source
@@ -512,25 +492,6 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         palletCall: {
           name: 'UpgradeAccounts';
           params: { who: Array<AccountId32Like> };
-        };
-      }>
-    >;
-
-    /**
-     * See [`Pallet::transfer`].
-     *
-     * @param {MultiAddressLike} dest
-     * @param {bigint} value
-     **/
-    transfer: GenericTxCall<
-      (
-        dest: MultiAddressLike,
-        value: bigint,
-      ) => ChainSubmittableExtrinsic<{
-        pallet: 'Balances';
-        palletCall: {
-          name: 'Transfer';
-          params: { dest: MultiAddressLike; value: bigint };
         };
       }>
     >;
@@ -2656,6 +2617,256 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         palletCall: {
           name: 'SetLenientThreshold';
           params: { thresholdPercent: number };
+        };
+      }>
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall>;
+  };
+  /**
+   * Pallet `Proxy`'s transaction calls
+   **/
+  proxy: {
+    /**
+     * See [`Pallet::proxy`].
+     *
+     * @param {MultiAddressLike} real
+     * @param {AlephRuntimeProxyType | undefined} forceProxyType
+     * @param {AlephRuntimeRuntimeCallLike} call
+     **/
+    proxy: GenericTxCall<
+      (
+        real: MultiAddressLike,
+        forceProxyType: AlephRuntimeProxyType | undefined,
+        call: AlephRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Proxy';
+        palletCall: {
+          name: 'Proxy';
+          params: {
+            real: MultiAddressLike;
+            forceProxyType: AlephRuntimeProxyType | undefined;
+            call: AlephRuntimeRuntimeCallLike;
+          };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::add_proxy`].
+     *
+     * @param {MultiAddressLike} delegate
+     * @param {AlephRuntimeProxyType} proxyType
+     * @param {number} delay
+     **/
+    addProxy: GenericTxCall<
+      (
+        delegate: MultiAddressLike,
+        proxyType: AlephRuntimeProxyType,
+        delay: number,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Proxy';
+        palletCall: {
+          name: 'AddProxy';
+          params: { delegate: MultiAddressLike; proxyType: AlephRuntimeProxyType; delay: number };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::remove_proxy`].
+     *
+     * @param {MultiAddressLike} delegate
+     * @param {AlephRuntimeProxyType} proxyType
+     * @param {number} delay
+     **/
+    removeProxy: GenericTxCall<
+      (
+        delegate: MultiAddressLike,
+        proxyType: AlephRuntimeProxyType,
+        delay: number,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Proxy';
+        palletCall: {
+          name: 'RemoveProxy';
+          params: { delegate: MultiAddressLike; proxyType: AlephRuntimeProxyType; delay: number };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::remove_proxies`].
+     *
+     **/
+    removeProxies: GenericTxCall<
+      () => ChainSubmittableExtrinsic<{
+        pallet: 'Proxy';
+        palletCall: {
+          name: 'RemoveProxies';
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::create_pure`].
+     *
+     * @param {AlephRuntimeProxyType} proxyType
+     * @param {number} delay
+     * @param {number} index
+     **/
+    createPure: GenericTxCall<
+      (
+        proxyType: AlephRuntimeProxyType,
+        delay: number,
+        index: number,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Proxy';
+        palletCall: {
+          name: 'CreatePure';
+          params: { proxyType: AlephRuntimeProxyType; delay: number; index: number };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::kill_pure`].
+     *
+     * @param {MultiAddressLike} spawner
+     * @param {AlephRuntimeProxyType} proxyType
+     * @param {number} index
+     * @param {number} height
+     * @param {number} extIndex
+     **/
+    killPure: GenericTxCall<
+      (
+        spawner: MultiAddressLike,
+        proxyType: AlephRuntimeProxyType,
+        index: number,
+        height: number,
+        extIndex: number,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Proxy';
+        palletCall: {
+          name: 'KillPure';
+          params: {
+            spawner: MultiAddressLike;
+            proxyType: AlephRuntimeProxyType;
+            index: number;
+            height: number;
+            extIndex: number;
+          };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::announce`].
+     *
+     * @param {MultiAddressLike} real
+     * @param {H256} callHash
+     **/
+    announce: GenericTxCall<
+      (
+        real: MultiAddressLike,
+        callHash: H256,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Proxy';
+        palletCall: {
+          name: 'Announce';
+          params: { real: MultiAddressLike; callHash: H256 };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::remove_announcement`].
+     *
+     * @param {MultiAddressLike} real
+     * @param {H256} callHash
+     **/
+    removeAnnouncement: GenericTxCall<
+      (
+        real: MultiAddressLike,
+        callHash: H256,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Proxy';
+        palletCall: {
+          name: 'RemoveAnnouncement';
+          params: { real: MultiAddressLike; callHash: H256 };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::reject_announcement`].
+     *
+     * @param {MultiAddressLike} delegate
+     * @param {H256} callHash
+     **/
+    rejectAnnouncement: GenericTxCall<
+      (
+        delegate: MultiAddressLike,
+        callHash: H256,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Proxy';
+        palletCall: {
+          name: 'RejectAnnouncement';
+          params: { delegate: MultiAddressLike; callHash: H256 };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::proxy_announced`].
+     *
+     * @param {MultiAddressLike} delegate
+     * @param {MultiAddressLike} real
+     * @param {AlephRuntimeProxyType | undefined} forceProxyType
+     * @param {AlephRuntimeRuntimeCallLike} call
+     **/
+    proxyAnnounced: GenericTxCall<
+      (
+        delegate: MultiAddressLike,
+        real: MultiAddressLike,
+        forceProxyType: AlephRuntimeProxyType | undefined,
+        call: AlephRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Proxy';
+        palletCall: {
+          name: 'ProxyAnnounced';
+          params: {
+            delegate: MultiAddressLike;
+            real: MultiAddressLike;
+            forceProxyType: AlephRuntimeProxyType | undefined;
+            call: AlephRuntimeRuntimeCallLike;
+          };
+        };
+      }>
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall>;
+  };
+  /**
+   * Pallet `Operations`'s transaction calls
+   **/
+  operations: {
+    /**
+     * See [`Pallet::fix_accounts_consumers_underflow`].
+     *
+     * @param {AccountId32Like} who
+     **/
+    fixAccountsConsumersUnderflow: GenericTxCall<
+      (who: AccountId32Like) => ChainSubmittableExtrinsic<{
+        pallet: 'Operations';
+        palletCall: {
+          name: 'FixAccountsConsumersUnderflow';
+          params: { who: AccountId32Like };
         };
       }>
     >;

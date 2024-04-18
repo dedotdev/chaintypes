@@ -23,6 +23,7 @@ import type {
   FrameSupportDispatchPerDispatchClass,
   FrameSystemEventRecord,
   FrameSystemLastRuntimeUpgradeInfo,
+  FrameSystemCodeUpgradeAuthorization,
   SpConsensusBabeAppPublic,
   SpConsensusSlotsSlot,
   SpConsensusBabeDigestsNextConfigDescriptor,
@@ -39,7 +40,9 @@ import type {
   PalletStakingValidatorPrefs,
   PalletStakingNominations,
   PalletStakingActiveEraInfo,
-  PalletStakingExposure,
+  SpStakingExposure,
+  SpStakingPagedExposureMetadata,
+  SpStakingExposurePage,
   PalletStakingEraRewardPoints,
   PalletStakingForcing,
   PalletStakingUnappliedSlash,
@@ -50,7 +53,8 @@ import type {
   SpCoreCryptoKeyTypeId,
   PalletGrandpaStoredState,
   PalletGrandpaStoredPendingChange,
-  PalletImOnlineSr25519AppSr25519Public,
+  SpConsensusGrandpaAppPublic,
+  SpAuthorityDiscoveryAppPublic,
   PalletTreasuryProposal,
   PalletTreasurySpendStatus,
   PalletConvictionVotingVoteVoting,
@@ -61,6 +65,7 @@ import type {
   PolkadotRuntimeCommonClaimsStatementKind,
   PalletIdentityRegistration,
   PalletIdentityRegistrarInfo,
+  PalletIdentityAuthorityProperties,
   PalletSocietyGroupParams,
   PalletSocietyMemberRecord,
   PalletSocietyPayoutRecord,
@@ -132,12 +137,14 @@ import type {
   PolkadotPrimitivesV6DisputeState,
   PolkadotCorePrimitivesCandidateHash,
   PolkadotPrimitivesV6SlashingPendingSlashes,
+  PolkadotRuntimeParachainsAssignerOnDemandEnqueuedOrder,
+  PolkadotRuntimeParachainsAssignerOnDemandCoreAffinityCount,
+  PolkadotRuntimeParachainsAssignerCoretimeSchedule,
+  PolkadotRuntimeParachainsAssignerCoretimeCoreDescriptor,
   PolkadotRuntimeCommonParasRegistrarParaInfo,
   PolkadotRuntimeCommonCrowdloanFundInfo,
-  PalletStateTrieMigrationMigrationTask,
-  PalletStateTrieMigrationMigrationLimits,
   PalletXcmQueryStatus,
-  XcmVersionedMultiLocation,
+  XcmVersionedLocation,
   SpWeightsWeightV2Weight,
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
@@ -286,6 +293,13 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<Phase | undefined> =} callback
      **/
     executionPhase: GenericStorageQuery<() => Phase | undefined>;
+
+    /**
+     * `Some` if a code upgrade has been authorized.
+     *
+     * @param {Callback<FrameSystemCodeUpgradeAuthorization | undefined> =} callback
+     **/
+    authorizedUpgrade: GenericStorageQuery<() => FrameSystemCodeUpgradeAuthorization | undefined>;
 
     /**
      * Generic pallet storage query
@@ -711,9 +725,9 @@ export interface ChainStorage extends GenericChainStorage {
      * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<PalletStakingRewardDestination> =} callback
+     * @param {Callback<PalletStakingRewardDestination | undefined> =} callback
      **/
-    payee: GenericStorageQuery<(arg: AccountId32Like) => PalletStakingRewardDestination>;
+    payee: GenericStorageQuery<(arg: AccountId32Like) => PalletStakingRewardDestination | undefined>;
 
     /**
      * The map from (wannabe) validator stash key to the preferences of that validator.
@@ -804,7 +818,7 @@ export interface ChainStorage extends GenericChainStorage {
     activeEra: GenericStorageQuery<() => PalletStakingActiveEraInfo | undefined>;
 
     /**
-     * The session index at which the era start for the last `HISTORY_DEPTH` eras.
+     * The session index at which the era start for the last [`Config::HistoryDepth`] eras.
      *
      * Note: This tracks the starting session (i.e. session index when era start being active)
      * for the eras in `[CurrentEra - HISTORY_DEPTH, CurrentEra]`.
@@ -819,38 +833,94 @@ export interface ChainStorage extends GenericChainStorage {
      *
      * This is keyed first by the era index to allow bulk deletion and then the stash account.
      *
-     * Is it removed after `HISTORY_DEPTH` eras.
+     * Is it removed after [`Config::HistoryDepth`] eras.
      * If stakers hasn't been set or has been removed then empty exposure is returned.
      *
+     * Note: Deprecated since v14. Use `EraInfo` instead to work with exposures.
+     *
      * @param {[number, AccountId32Like]} arg
-     * @param {Callback<PalletStakingExposure> =} callback
+     * @param {Callback<SpStakingExposure> =} callback
      **/
-    erasStakers: GenericStorageQuery<(arg: [number, AccountId32Like]) => PalletStakingExposure>;
+    erasStakers: GenericStorageQuery<(arg: [number, AccountId32Like]) => SpStakingExposure>;
+
+    /**
+     * Summary of validator exposure at a given era.
+     *
+     * This contains the total stake in support of the validator and their own stake. In addition,
+     * it can also be used to get the number of nominators backing this validator and the number of
+     * exposure pages they are divided into. The page count is useful to determine the number of
+     * pages of rewards that needs to be claimed.
+     *
+     * This is keyed first by the era index to allow bulk deletion and then the stash account.
+     * Should only be accessed through `EraInfo`.
+     *
+     * Is it removed after [`Config::HistoryDepth`] eras.
+     * If stakers hasn't been set or has been removed then empty overview is returned.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<SpStakingPagedExposureMetadata | undefined> =} callback
+     **/
+    erasStakersOverview: GenericStorageQuery<
+      (arg: [number, AccountId32Like]) => SpStakingPagedExposureMetadata | undefined
+    >;
 
     /**
      * Clipped Exposure of validator at era.
      *
+     * Note: This is deprecated, should be used as read-only and will be removed in the future.
+     * New `Exposure`s are stored in a paged manner in `ErasStakersPaged` instead.
+     *
      * This is similar to [`ErasStakers`] but number of nominators exposed is reduced to the
-     * `T::MaxNominatorRewardedPerValidator` biggest stakers.
+     * `T::MaxExposurePageSize` biggest stakers.
      * (Note: the field `total` and `own` of the exposure remains unchanged).
      * This is used to limit the i/o cost for the nominator payout.
      *
      * This is keyed fist by the era index to allow bulk deletion and then the stash account.
      *
-     * Is it removed after `HISTORY_DEPTH` eras.
+     * It is removed after [`Config::HistoryDepth`] eras.
      * If stakers hasn't been set or has been removed then empty exposure is returned.
      *
+     * Note: Deprecated since v14. Use `EraInfo` instead to work with exposures.
+     *
      * @param {[number, AccountId32Like]} arg
-     * @param {Callback<PalletStakingExposure> =} callback
+     * @param {Callback<SpStakingExposure> =} callback
      **/
-    erasStakersClipped: GenericStorageQuery<(arg: [number, AccountId32Like]) => PalletStakingExposure>;
+    erasStakersClipped: GenericStorageQuery<(arg: [number, AccountId32Like]) => SpStakingExposure>;
+
+    /**
+     * Paginated exposure of a validator at given era.
+     *
+     * This is keyed first by the era index to allow bulk deletion, then stash account and finally
+     * the page. Should only be accessed through `EraInfo`.
+     *
+     * This is cleared after [`Config::HistoryDepth`] eras.
+     *
+     * @param {[number, AccountId32Like, number]} arg
+     * @param {Callback<SpStakingExposurePage | undefined> =} callback
+     **/
+    erasStakersPaged: GenericStorageQuery<
+      (arg: [number, AccountId32Like, number]) => SpStakingExposurePage | undefined
+    >;
+
+    /**
+     * History of claimed paged rewards by era and validator.
+     *
+     * This is keyed by era and validator stash which maps to the set of page indexes which have
+     * been claimed.
+     *
+     * It is removed after [`Config::HistoryDepth`] eras.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<Array<number>> =} callback
+     **/
+    claimedRewards: GenericStorageQuery<(arg: [number, AccountId32Like]) => Array<number>>;
 
     /**
      * Similar to `ErasStakers`, this holds the preferences of validators.
      *
      * This is keyed first by the era index to allow bulk deletion and then the stash account.
      *
-     * Is it removed after `HISTORY_DEPTH` eras.
+     * Is it removed after [`Config::HistoryDepth`] eras.
      *
      * @param {[number, AccountId32Like]} arg
      * @param {Callback<PalletStakingValidatorPrefs> =} callback
@@ -858,7 +928,7 @@ export interface ChainStorage extends GenericChainStorage {
     erasValidatorPrefs: GenericStorageQuery<(arg: [number, AccountId32Like]) => PalletStakingValidatorPrefs>;
 
     /**
-     * The total validator era payout for the last `HISTORY_DEPTH` eras.
+     * The total validator era payout for the last [`Config::HistoryDepth`] eras.
      *
      * Eras that haven't finished yet or has been removed doesn't have reward.
      *
@@ -868,7 +938,7 @@ export interface ChainStorage extends GenericChainStorage {
     erasValidatorReward: GenericStorageQuery<(arg: number) => bigint | undefined>;
 
     /**
-     * Rewards for the last `HISTORY_DEPTH` eras.
+     * Rewards for the last [`Config::HistoryDepth`] eras.
      * If reward hasn't been set or has been removed then 0 reward is returned.
      *
      * @param {number} arg
@@ -877,7 +947,7 @@ export interface ChainStorage extends GenericChainStorage {
     erasRewardPoints: GenericStorageQuery<(arg: number) => PalletStakingEraRewardPoints>;
 
     /**
-     * The total amount staked for the last `HISTORY_DEPTH` eras.
+     * The total amount staked for the last [`Config::HistoryDepth`] eras.
      * If total hasn't been set or has been removed then 0 stake is returned.
      *
      * @param {number} arg
@@ -1025,6 +1095,30 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
+   * Pallet `Historical`'s storage queries
+   **/
+  historical: {
+    /**
+     * Mapping from historical session indices to session-data root hash and validator count.
+     *
+     * @param {number} arg
+     * @param {Callback<[H256, number] | undefined> =} callback
+     **/
+    historicalSessions: GenericStorageQuery<(arg: number) => [H256, number] | undefined>;
+
+    /**
+     * The range of historical sessions we store. [first, last)
+     *
+     * @param {Callback<[number, number] | undefined> =} callback
+     **/
+    storedRange: GenericStorageQuery<() => [number, number] | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
    * Pallet `Session`'s storage queries
    **/
   session: {
@@ -1148,54 +1242,34 @@ export interface ChainStorage extends GenericChainStorage {
     setIdSession: GenericStorageQuery<(arg: bigint) => number | undefined>;
 
     /**
+     * The current list of authorities.
+     *
+     * @param {Callback<Array<[SpConsensusGrandpaAppPublic, bigint]>> =} callback
+     **/
+    authorities: GenericStorageQuery<() => Array<[SpConsensusGrandpaAppPublic, bigint]>>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
   };
   /**
-   * Pallet `ImOnline`'s storage queries
+   * Pallet `AuthorityDiscovery`'s storage queries
    **/
-  imOnline: {
+  authorityDiscovery: {
     /**
-     * The block number after which it's ok to send heartbeats in the current
-     * session.
+     * Keys of the current authority set.
      *
-     * At the beginning of each session we set this to a value that should fall
-     * roughly in the middle of the session duration. The idea is to first wait for
-     * the validators to produce a block in the current session, so that the
-     * heartbeat later on will not be necessary.
-     *
-     * This value will only be used as a fallback if we fail to get a proper session
-     * progress estimate from `NextSessionRotation`, as those estimates should be
-     * more accurate then the value we calculate for `HeartbeatAfter`.
-     *
-     * @param {Callback<number> =} callback
+     * @param {Callback<Array<SpAuthorityDiscoveryAppPublic>> =} callback
      **/
-    heartbeatAfter: GenericStorageQuery<() => number>;
+    keys: GenericStorageQuery<() => Array<SpAuthorityDiscoveryAppPublic>>;
 
     /**
-     * The current set of keys that may issue a heartbeat.
+     * Keys of the next authority set.
      *
-     * @param {Callback<Array<PalletImOnlineSr25519AppSr25519Public>> =} callback
+     * @param {Callback<Array<SpAuthorityDiscoveryAppPublic>> =} callback
      **/
-    keys: GenericStorageQuery<() => Array<PalletImOnlineSr25519AppSr25519Public>>;
-
-    /**
-     * For each session index, we keep a mapping of `SessionIndex` and `AuthIndex`.
-     *
-     * @param {[number, number]} arg
-     * @param {Callback<boolean | undefined> =} callback
-     **/
-    receivedHeartbeats: GenericStorageQuery<(arg: [number, number]) => boolean | undefined>;
-
-    /**
-     * For each session index, we keep a mapping of `ValidatorId<T>` to the
-     * number of blocks authored by the given authority.
-     *
-     * @param {[number, AccountId32Like]} arg
-     * @param {Callback<number> =} callback
-     **/
-    authoredBlocks: GenericStorageQuery<(arg: [number, AccountId32Like]) => number>;
+    nextKeys: GenericStorageQuery<() => Array<SpAuthorityDiscoveryAppPublic>>;
 
     /**
      * Generic pallet storage query
@@ -1523,14 +1597,17 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   identity: {
     /**
-     * Information that is pertinent to identify the entity behind an account.
+     * Information that is pertinent to identify the entity behind an account. First item is the
+     * registration, second is the account's primary username.
      *
      * TWOX-NOTE: OK ― `AccountId` is a secure hash.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<PalletIdentityRegistration | undefined> =} callback
+     * @param {Callback<[PalletIdentityRegistration, Bytes | undefined] | undefined> =} callback
      **/
-    identityOf: GenericStorageQuery<(arg: AccountId32Like) => PalletIdentityRegistration | undefined>;
+    identityOf: GenericStorageQuery<
+      (arg: AccountId32Like) => [PalletIdentityRegistration, Bytes | undefined] | undefined
+    >;
 
     /**
      * The super-identity of an alternative "sub" identity together with its name, within that
@@ -1562,6 +1639,39 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<Array<PalletIdentityRegistrarInfo | undefined>> =} callback
      **/
     registrars: GenericStorageQuery<() => Array<PalletIdentityRegistrarInfo | undefined>>;
+
+    /**
+     * A map of the accounts who are authorized to grant usernames.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletIdentityAuthorityProperties | undefined> =} callback
+     **/
+    usernameAuthorities: GenericStorageQuery<(arg: AccountId32Like) => PalletIdentityAuthorityProperties | undefined>;
+
+    /**
+     * Reverse lookup from `username` to the `AccountId` that has registered it. The value should
+     * be a key in the `IdentityOf` map, but it may not if the user has cleared their identity.
+     *
+     * Multiple usernames may map to the same `AccountId`, but `IdentityOf` will only map to one
+     * primary username.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    accountOfUsername: GenericStorageQuery<(arg: BytesLike) => AccountId32 | undefined>;
+
+    /**
+     * Usernames that an authority has granted, but that the account controller has not confirmed
+     * that they want it. Used primarily in cases where the `AccountId` cannot provide a signature
+     * because they are a pure proxy, multisig, etc. In order to confirm it, they should call
+     * [`Call::accept_username`].
+     *
+     * First tuple item is the account and second is the acceptance deadline.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<[AccountId32, number] | undefined> =} callback
+     **/
+    pendingUsernames: GenericStorageQuery<(arg: BytesLike) => [AccountId32, number] | undefined>;
 
     /**
      * Generic pallet storage query
@@ -2027,6 +2137,7 @@ export interface ChainStorage extends GenericChainStorage {
      * Snapshot data of the round.
      *
      * This is created at the beginning of the signed phase and cleared upon calling `elect`.
+     * Note: This storage type must only be mutated through [`SnapshotWrapper`].
      *
      * @param {Callback<PalletElectionProviderMultiPhaseRoundSnapshot | undefined> =} callback
      **/
@@ -2036,6 +2147,7 @@ export interface ChainStorage extends GenericChainStorage {
      * Desired number of targets to elect for this round.
      *
      * Only exists when [`Snapshot`] is present.
+     * Note: This storage type must only be mutated through [`SnapshotWrapper`].
      *
      * @param {Callback<number | undefined> =} callback
      **/
@@ -2045,6 +2157,7 @@ export interface ChainStorage extends GenericChainStorage {
      * The metadata of the [`RoundSnapshot`]
      *
      * Only exists when [`Snapshot`] is present.
+     * Note: This storage type must only be mutated through [`SnapshotWrapper`].
      *
      * @param {Callback<PalletElectionProviderMultiPhaseSolutionOrSnapshotSize | undefined> =} callback
      **/
@@ -2706,12 +2819,10 @@ export interface ChainStorage extends GenericChainStorage {
      * `CoreState` in the runtime API. The value contained here will not be valid after the end of
      * a block. Runtime APIs should be used to determine scheduled cores/ for the upcoming block.
      *
-     * @param {Callback<Array<[PolkadotPrimitivesV6CoreIndex, Array<PolkadotRuntimeParachainsSchedulerPalletParasEntry | undefined>]>> =} callback
+     * @param {Callback<Array<[PolkadotPrimitivesV6CoreIndex, Array<PolkadotRuntimeParachainsSchedulerPalletParasEntry>]>> =} callback
      **/
     claimQueue: GenericStorageQuery<
-      () => Array<
-        [PolkadotPrimitivesV6CoreIndex, Array<PolkadotRuntimeParachainsSchedulerPalletParasEntry | undefined>]
-      >
+      () => Array<[PolkadotPrimitivesV6CoreIndex, Array<PolkadotRuntimeParachainsSchedulerPalletParasEntry>]>
     >;
 
     /**
@@ -3332,9 +3443,74 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
-   * Pallet `ParaAssignmentProvider`'s storage queries
+   * Pallet `OnDemandAssignmentProvider`'s storage queries
    **/
-  paraAssignmentProvider: {
+  onDemandAssignmentProvider: {
+    /**
+     * Keeps track of the multiplier used to calculate the current spot price for the on demand
+     * assigner.
+     *
+     * @param {Callback<FixedU128> =} callback
+     **/
+    spotTraffic: GenericStorageQuery<() => FixedU128>;
+
+    /**
+     * The order storage entry. Uses a VecDeque to be able to push to the front of the
+     * queue from the scheduler on session boundaries.
+     *
+     * @param {Callback<Array<PolkadotRuntimeParachainsAssignerOnDemandEnqueuedOrder>> =} callback
+     **/
+    onDemandQueue: GenericStorageQuery<() => Array<PolkadotRuntimeParachainsAssignerOnDemandEnqueuedOrder>>;
+
+    /**
+     * Maps a `ParaId` to `CoreIndex` and keeps track of how many assignments the scheduler has in
+     * it's lookahead. Keeping track of this affinity prevents parallel execution of the same
+     * `ParaId` on two or more `CoreIndex`es.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} arg
+     * @param {Callback<PolkadotRuntimeParachainsAssignerOnDemandCoreAffinityCount | undefined> =} callback
+     **/
+    paraIdAffinity: GenericStorageQuery<
+      (
+        arg: PolkadotParachainPrimitivesPrimitivesId,
+      ) => PolkadotRuntimeParachainsAssignerOnDemandCoreAffinityCount | undefined
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `CoretimeAssignmentProvider`'s storage queries
+   **/
+  coretimeAssignmentProvider: {
+    /**
+     * Scheduled assignment sets.
+     *
+     * Assignments as of the given block number. They will go into state once the block number is
+     * reached (and replace whatever was in there before).
+     *
+     * @param {[number, PolkadotPrimitivesV6CoreIndex]} arg
+     * @param {Callback<PolkadotRuntimeParachainsAssignerCoretimeSchedule | undefined> =} callback
+     **/
+    coreSchedules: GenericStorageQuery<
+      (arg: [number, PolkadotPrimitivesV6CoreIndex]) => PolkadotRuntimeParachainsAssignerCoretimeSchedule | undefined
+    >;
+
+    /**
+     * Assignments which are currently active.
+     *
+     * They will be picked from `PendingAssignments` once we reach the scheduled block number in
+     * `PendingAssignments`.
+     *
+     * @param {PolkadotPrimitivesV6CoreIndex} arg
+     * @param {Callback<PolkadotRuntimeParachainsAssignerCoretimeCoreDescriptor> =} callback
+     **/
+    coreDescriptors: GenericStorageQuery<
+      (arg: PolkadotPrimitivesV6CoreIndex) => PolkadotRuntimeParachainsAssignerCoretimeCoreDescriptor
+    >;
+
     /**
      * Generic pallet storage query
      **/
@@ -3507,43 +3683,6 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
-   * Pallet `StateTrieMigration`'s storage queries
-   **/
-  stateTrieMigration: {
-    /**
-     * Migration progress.
-     *
-     * This stores the snapshot of the last migrated keys. It can be set into motion and move
-     * forward by any of the means provided by this pallet.
-     *
-     * @param {Callback<PalletStateTrieMigrationMigrationTask> =} callback
-     **/
-    migrationProcess: GenericStorageQuery<() => PalletStateTrieMigrationMigrationTask>;
-
-    /**
-     * The limits that are imposed on automatic migrations.
-     *
-     * If set to None, then no automatic migration happens.
-     *
-     * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
-     **/
-    autoLimits: GenericStorageQuery<() => PalletStateTrieMigrationMigrationLimits | undefined>;
-
-    /**
-     * The maximum limits that the signed migration could use.
-     *
-     * If not set, no signed submission is allowed.
-     *
-     * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
-     **/
-    signedMigrationMaxLimits: GenericStorageQuery<() => PalletStateTrieMigrationMigrationLimits | undefined>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
    * Pallet `XcmPallet`'s storage queries
    **/
   xcmPallet: {
@@ -3565,7 +3704,7 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * The existing asset traps.
      *
-     * Key is the blake2 256 hash of (origin, versioned `MultiAssets`) pair. Value is the number of
+     * Key is the blake2 256 hash of (origin, versioned `Assets`) pair. Value is the number of
      * times this pair has been trapped (usually just 1 if it exists at all).
      *
      * @param {H256} arg
@@ -3584,28 +3723,28 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * The Latest versions that we know various locations support.
      *
-     * @param {[number, XcmVersionedMultiLocation]} arg
+     * @param {[number, XcmVersionedLocation]} arg
      * @param {Callback<number | undefined> =} callback
      **/
-    supportedVersion: GenericStorageQuery<(arg: [number, XcmVersionedMultiLocation]) => number | undefined>;
+    supportedVersion: GenericStorageQuery<(arg: [number, XcmVersionedLocation]) => number | undefined>;
 
     /**
      * All locations that we have requested version notifications from.
      *
-     * @param {[number, XcmVersionedMultiLocation]} arg
+     * @param {[number, XcmVersionedLocation]} arg
      * @param {Callback<bigint | undefined> =} callback
      **/
-    versionNotifiers: GenericStorageQuery<(arg: [number, XcmVersionedMultiLocation]) => bigint | undefined>;
+    versionNotifiers: GenericStorageQuery<(arg: [number, XcmVersionedLocation]) => bigint | undefined>;
 
     /**
      * The target locations that are subscribed to our version changes, as well as the most recent
      * of our versions we informed them of.
      *
-     * @param {[number, XcmVersionedMultiLocation]} arg
+     * @param {[number, XcmVersionedLocation]} arg
      * @param {Callback<[bigint, SpWeightsWeightV2Weight, number] | undefined> =} callback
      **/
     versionNotifyTargets: GenericStorageQuery<
-      (arg: [number, XcmVersionedMultiLocation]) => [bigint, SpWeightsWeightV2Weight, number] | undefined
+      (arg: [number, XcmVersionedLocation]) => [bigint, SpWeightsWeightV2Weight, number] | undefined
     >;
 
     /**
@@ -3613,9 +3752,9 @@ export interface ChainStorage extends GenericChainStorage {
      * the `u32` counter is the number of times that a send to the destination has been attempted,
      * which is used as a prioritization.
      *
-     * @param {Callback<Array<[XcmVersionedMultiLocation, number]>> =} callback
+     * @param {Callback<Array<[XcmVersionedLocation, number]>> =} callback
      **/
-    versionDiscoveryQueue: GenericStorageQuery<() => Array<[XcmVersionedMultiLocation, number]>>;
+    versionDiscoveryQueue: GenericStorageQuery<() => Array<[XcmVersionedLocation, number]>>;
 
     /**
      * The current migration's stage, if any.
@@ -3638,11 +3777,9 @@ export interface ChainStorage extends GenericChainStorage {
      * Fungible assets which we know are locked on this chain.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<[bigint, XcmVersionedMultiLocation]> | undefined> =} callback
+     * @param {Callback<Array<[bigint, XcmVersionedLocation]> | undefined> =} callback
      **/
-    lockedFungibles: GenericStorageQuery<
-      (arg: AccountId32Like) => Array<[bigint, XcmVersionedMultiLocation]> | undefined
-    >;
+    lockedFungibles: GenericStorageQuery<(arg: AccountId32Like) => Array<[bigint, XcmVersionedLocation]> | undefined>;
 
     /**
      * Global suspension state of the XCM executor.

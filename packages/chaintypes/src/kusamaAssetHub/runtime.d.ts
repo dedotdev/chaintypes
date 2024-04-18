@@ -2,13 +2,13 @@
 
 import type { GenericRuntimeApis, GenericRuntimeApiMethod } from '@dedot/types';
 import type {
+  H256,
   RuntimeVersion,
   Header,
   DispatchError,
   Result,
   UncheckedExtrinsicLike,
   UncheckedExtrinsic,
-  H256,
   Bytes,
   BytesLike,
   AccountId32Like,
@@ -16,6 +16,7 @@ import type {
 import type {
   SpConsensusSlotsSlotDuration,
   SpConsensusAuraSr25519AppSr25519Public,
+  SpConsensusSlotsSlot,
   SpRuntimeBlock,
   SpCoreOpaqueMetadata,
   SpRuntimeTransactionValidityTransactionValidityError,
@@ -29,7 +30,7 @@ import type {
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
   AssetHubKusamaRuntimeRuntimeCallLike,
-  XcmVersionedMultiAssets,
+  XcmVersionedAssets,
   AssetsCommonRuntimeApiFungiblesAccessError,
   CumulusPrimitivesCoreCollationInfo,
 } from './types';
@@ -54,6 +55,33 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: AuraApi_authorities
      **/
     authorities: GenericRuntimeApiMethod<() => Promise<Array<SpConsensusAuraSr25519AppSr25519Public>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: AuraUnincludedSegmentApi - 0xd7bdd8a272ca0d65
+   **/
+  auraUnincludedSegmentApi: {
+    /**
+     * Whether it is legal to extend the chain, assuming the given block is the most
+     * recently included one as-of the relay parent that will be built against, and
+     * the given slot.
+     *
+     * This should be consistent with the logic the runtime uses when validating blocks to
+     * avoid issues.
+     *
+     * When the unincluded segment is empty, i.e. `included_hash == at`, where at is the block
+     * whose state we are querying against, this must always return `true` as long as the slot
+     * is more recent than the included block itself.
+     *
+     * @callname: AuraUnincludedSegmentApi_can_build_upon
+     * @param {H256} included_hash
+     * @param {SpConsensusSlotsSlot} slot
+     **/
+    canBuildUpon: GenericRuntimeApiMethod<(includedHash: H256, slot: SpConsensusSlotsSlot) => Promise<boolean>>;
 
     /**
      * Generic runtime api call
@@ -444,13 +472,13 @@ export interface RuntimeApis extends GenericRuntimeApis {
    **/
   fungiblesApi: {
     /**
-     * Returns the list of all [`MultiAsset`] that an `AccountId` has.
+     * Returns the list of all [`Asset`] that an `AccountId` has.
      *
      * @callname: FungiblesApi_query_account_balances
      * @param {AccountId32Like} account
      **/
     queryAccountBalances: GenericRuntimeApiMethod<
-      (account: AccountId32Like) => Promise<Result<XcmVersionedMultiAssets, AssetsCommonRuntimeApiFungiblesAccessError>>
+      (account: AccountId32Like) => Promise<Result<XcmVersionedAssets, AssetsCommonRuntimeApiFungiblesAccessError>>
     >;
 
     /**

@@ -6,8 +6,10 @@ import type {
   FrameSystemLimitsBlockWeights,
   FrameSystemLimitsBlockLength,
   SpWeightsRuntimeDbWeight,
+  SpWeightsWeightV2Weight,
   PalletNftsBitFlagsPalletFeature,
   FrameSupportPalletId,
+  StagingXcmV3MultilocationMultiLocation,
 } from './types';
 
 export interface ChainConsts extends GenericChainConsts {
@@ -119,11 +121,6 @@ export interface ChainConsts extends GenericChainConsts {
     maxReserves: number;
 
     /**
-     * The maximum number of holds that can exist on an account at any time.
-     **/
-    maxHolds: number;
-
-    /**
      * The maximum number of individual freeze locks that can exist on an account at any time.
      **/
     maxFreezes: number;
@@ -138,10 +135,10 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   transactionPayment: {
     /**
-     * A fee mulitplier for `Operational` extrinsics to compute "virtual tip" to boost their
+     * A fee multiplier for `Operational` extrinsics to compute "virtual tip" to boost their
      * `priority`
      *
-     * This value is multipled by the `final_fee` to obtain a "virtual tip" that is later
+     * This value is multiplied by the `final_fee` to obtain a "virtual tip" that is later
      * added to a tip component in regular `priority` calculations.
      * It means that a `Normal` transaction can front-run a similarly-sized `Operational`
      * extrinsic (with no tip), by including a tip value greater than the virtual tip.
@@ -226,6 +223,15 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   xcmpQueue: {
     /**
+     * The maximum number of inbound XCMP channels that can be suspended simultaneously.
+     *
+     * Any further channel suspensions will fail and messages may get dropped without further
+     * notice. Choosing a high value (1000) is okay; the trade-off that is described in
+     * [`InboundXcmpSuspended`] still applies at that scale.
+     **/
+    maxInboundSuspended: number;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -261,6 +267,40 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `ToPolkadotXcmRouter`'s constants
    **/
   toPolkadotXcmRouter: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `MessageQueue`'s constants
+   **/
+  messageQueue: {
+    /**
+     * The size of the page; this implies the maximum message size which can be sent.
+     *
+     * A good value depends on the expected message sizes, their weights, the weight that is
+     * available for processing them and the maximal needed message size. The maximal message
+     * size is slightly lower than this as defined by [`MaxMessageLenOf`].
+     **/
+    heapSize: number;
+
+    /**
+     * The maximum number of stale pages (i.e. of overweight messages) allowed before culling
+     * can happen. Once there are more stale pages than this, then historical pages may be
+     * dropped, even if they contain unprocessed overweight messages.
+     **/
+    maxStale: number;
+
+    /**
+     * The amount of weight (if any) which should be provided to the message queue for
+     * servicing enqueued items.
+     *
+     * This may be legitimately `None` in the case that you will call
+     * `ServiceQueues::service_queues` manually.
+     **/
+    serviceWeight: SpWeightsWeightV2Weight | undefined;
+
     /**
      * Generic pallet constant
      **/
@@ -687,6 +727,11 @@ export interface ChainConsts extends GenericChainConsts {
     poolSetupFee: bigint;
 
     /**
+     * Asset class from [`Config::Assets`] used to pay the [`Config::PoolSetupFee`].
+     **/
+    poolSetupFeeAsset: StagingXcmV3MultilocationMultiLocation;
+
+    /**
      * A fee to withdraw the liquidity.
      **/
     liquidityWithdrawalFee: Permill;
@@ -705,11 +750,6 @@ export interface ChainConsts extends GenericChainConsts {
      * The pallet's id, used for deriving its sovereign account ID.
      **/
     palletId: FrameSupportPalletId;
-
-    /**
-     * A setting to allow creating pools with both non-native assets.
-     **/
-    allowMultiAssetPools: boolean;
 
     /**
      * Generic pallet constant

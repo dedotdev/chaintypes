@@ -20,10 +20,8 @@ import type {
   PalletStakingValidatorPrefs,
   PalletStakingForcing,
   SpConsensusGrandpaAppPublic,
-  PalletImOnlineSr25519AppSr25519Public,
-  PalletStakingExposure,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
-  XcmVersionedMultiLocation,
+  XcmVersionedLocation,
   FrameSupportPreimagesBounded,
   PalletConvictionVotingTally,
   PalletRankedCollectiveVoteRecord,
@@ -38,6 +36,7 @@ import type {
   PalletElectionProviderMultiPhasePhase,
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
+  PalletNominationPoolsCommissionClaimPermission,
   PolkadotPrimitivesV6CandidateReceipt,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotPrimitivesV6CoreIndex,
@@ -48,15 +47,13 @@ import type {
   PolkadotCorePrimitivesCandidateHash,
   PolkadotRuntimeParachainsDisputesDisputeLocation,
   PolkadotRuntimeParachainsDisputesDisputeResult,
-  PalletStateTrieMigrationMigrationCompute,
-  PalletStateTrieMigrationError,
-  XcmV3TraitsOutcome,
-  StagingXcmV3MultilocationMultiLocation,
-  XcmV3Xcm,
-  XcmV3Response,
+  StagingXcmV4TraitsOutcome,
+  StagingXcmV4Location,
+  StagingXcmV4Xcm,
+  StagingXcmV4Response,
   SpWeightsWeightV2Weight,
-  XcmVersionedMultiAssets,
-  XcmV3MultiassetMultiAssets,
+  XcmVersionedAssets,
+  StagingXcmV4AssetAssets,
   XcmV3TraitsError,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
@@ -100,6 +97,11 @@ export interface ChainEvents extends GenericChainEvents {
      * On on-chain remark happened.
      **/
     Remarked: GenericPalletEvent<'System', 'Remarked', { sender: AccountId32; hash: H256 }>;
+
+    /**
+     * An upgrade was authorized.
+     **/
+    UpgradeAuthorized: GenericPalletEvent<'System', 'UpgradeAuthorized', { codeHash: H256; checkVersion: boolean }>;
 
     /**
      * Generic pallet event
@@ -244,6 +246,11 @@ export interface ChainEvents extends GenericChainEvents {
      * Some balance was thawed.
      **/
     Thawed: GenericPalletEvent<'Balances', 'Thawed', { who: AccountId32; amount: bigint }>;
+
+    /**
+     * The `TotalIssuance` was forcefully changed.
+     **/
+    TotalIssuanceForced: GenericPalletEvent<'Balances', 'TotalIssuanceForced', { old: bigint; new: bigint }>;
 
     /**
      * Generic pallet event
@@ -447,38 +454,6 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
-   * Pallet `ImOnline`'s events
-   **/
-  imOnline: {
-    /**
-     * A new heartbeat was received from `AuthorityId`.
-     **/
-    HeartbeatReceived: GenericPalletEvent<
-      'ImOnline',
-      'HeartbeatReceived',
-      { authorityId: PalletImOnlineSr25519AppSr25519Public }
-    >;
-
-    /**
-     * At the end of the session, no offence was committed.
-     **/
-    AllGood: GenericPalletEvent<'ImOnline', 'AllGood', null>;
-
-    /**
-     * At the end of the session, at least one validator was found to be offline.
-     **/
-    SomeOffline: GenericPalletEvent<
-      'ImOnline',
-      'SomeOffline',
-      { offline: Array<[AccountId32, PalletStakingExposure]> }
-    >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
    * Pallet `Treasury`'s events
    **/
   treasury: {
@@ -541,7 +516,7 @@ export interface ChainEvents extends GenericChainEvents {
         index: number;
         assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
         amount: bigint;
-        beneficiary: XcmVersionedMultiLocation;
+        beneficiary: XcmVersionedLocation;
         validFrom: number;
         expireAt: number;
       }
@@ -669,7 +644,7 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * A deposit has been slashaed.
+     * A deposit has been slashed.
      **/
     DepositSlashed: GenericPalletEvent<
       'Referenda',
@@ -942,6 +917,15 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * The member `who` had their `AccountId` changed to `new_who`.
+     **/
+    MemberExchanged: GenericPalletEvent<
+      'FellowshipCollective',
+      'MemberExchanged',
+      { who: AccountId32; newWho: AccountId32 }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -1023,7 +1007,7 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * A deposit has been slashaed.
+     * A deposit has been slashed.
      **/
     DepositSlashed: GenericPalletEvent<
       'FellowshipReferenda',
@@ -1414,6 +1398,50 @@ export interface ChainEvents extends GenericChainEvents {
       'Identity',
       'SubIdentityRevoked',
       { sub: AccountId32; main: AccountId32; deposit: bigint }
+    >;
+
+    /**
+     * A username authority was added.
+     **/
+    AuthorityAdded: GenericPalletEvent<'Identity', 'AuthorityAdded', { authority: AccountId32 }>;
+
+    /**
+     * A username authority was removed.
+     **/
+    AuthorityRemoved: GenericPalletEvent<'Identity', 'AuthorityRemoved', { authority: AccountId32 }>;
+
+    /**
+     * A username was set for `who`.
+     **/
+    UsernameSet: GenericPalletEvent<'Identity', 'UsernameSet', { who: AccountId32; username: Bytes }>;
+
+    /**
+     * A username was queued, but `who` must accept it prior to `expiration`.
+     **/
+    UsernameQueued: GenericPalletEvent<
+      'Identity',
+      'UsernameQueued',
+      { who: AccountId32; username: Bytes; expiration: number }
+    >;
+
+    /**
+     * A queued username passed its expiration without being claimed and was removed.
+     **/
+    PreapprovalExpired: GenericPalletEvent<'Identity', 'PreapprovalExpired', { whose: AccountId32 }>;
+
+    /**
+     * A username was set as a primary and can be looked up from `who`.
+     **/
+    PrimaryUsernameSet: GenericPalletEvent<'Identity', 'PrimaryUsernameSet', { who: AccountId32; username: Bytes }>;
+
+    /**
+     * A dangling username (as in, a username corresponding to an account that has removed its
+     * identity) has been removed.
+     **/
+    DanglingUsernameRemoved: GenericPalletEvent<
+      'Identity',
+      'DanglingUsernameRemoved',
+      { who: AccountId32; username: Bytes }
     >;
 
     /**
@@ -2164,6 +2192,15 @@ export interface ChainEvents extends GenericChainEvents {
     Thawed: GenericPalletEvent<'NisCounterpartBalances', 'Thawed', { who: AccountId32; amount: bigint }>;
 
     /**
+     * The `TotalIssuance` was forcefully changed.
+     **/
+    TotalIssuanceForced: GenericPalletEvent<
+      'NisCounterpartBalances',
+      'TotalIssuanceForced',
+      { old: bigint; new: bigint }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -2313,6 +2350,15 @@ export interface ChainEvents extends GenericChainEvents {
       'NominationPools',
       'PoolCommissionChangeRateUpdated',
       { poolId: number; changeRate: PalletNominationPoolsCommissionChangeRate }
+    >;
+
+    /**
+     * Pool commission claim permission has been updated.
+     **/
+    PoolCommissionClaimPermissionUpdated: GenericPalletEvent<
+      'NominationPools',
+      'PoolCommissionClaimPermissionUpdated',
+      { poolId: number; permission?: PalletNominationPoolsCommissionClaimPermission | undefined }
     >;
 
     /**
@@ -2637,6 +2683,29 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `OnDemandAssignmentProvider`'s events
+   **/
+  onDemandAssignmentProvider: {
+    /**
+     * An order was placed at some spot price amount.
+     **/
+    OnDemandOrderPlaced: GenericPalletEvent<
+      'OnDemandAssignmentProvider',
+      'OnDemandOrderPlaced',
+      { paraId: PolkadotParachainPrimitivesPrimitivesId; spotPrice: bigint }
+    >;
+
+    /**
+     * The value of the spot traffic multiplier changed.
+     **/
+    SpotTrafficSet: GenericPalletEvent<'OnDemandAssignmentProvider', 'SpotTrafficSet', { traffic: FixedU128 }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `Registrar`'s events
    **/
   registrar: {
@@ -2849,33 +2918,18 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
-   * Pallet `StateTrieMigration`'s events
+   * Pallet `Coretime`'s events
    **/
-  stateTrieMigration: {
+  coretime: {
     /**
-     * Given number of `(top, child)` keys were migrated respectively, with the given
-     * `compute`.
+     * The broker chain has asked for revenue information for a specific block.
      **/
-    Migrated: GenericPalletEvent<
-      'StateTrieMigration',
-      'Migrated',
-      { top: number; child: number; compute: PalletStateTrieMigrationMigrationCompute }
-    >;
+    RevenueInfoRequested: GenericPalletEvent<'Coretime', 'RevenueInfoRequested', { when: number }>;
 
     /**
-     * Some account got slashed by the given amount.
+     * A core has received a new assignment from the broker chain.
      **/
-    Slashed: GenericPalletEvent<'StateTrieMigration', 'Slashed', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * The auto migration task finished.
-     **/
-    AutoMigrationFinished: GenericPalletEvent<'StateTrieMigration', 'AutoMigrationFinished', null>;
-
-    /**
-     * Migration got halted due to an error or miss-configuration.
-     **/
-    Halted: GenericPalletEvent<'StateTrieMigration', 'Halted', { error: PalletStateTrieMigrationError }>;
+    CoreAssigned: GenericPalletEvent<'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV6CoreIndex }>;
 
     /**
      * Generic pallet event
@@ -2889,7 +2943,7 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * Execution of an XCM message was attempted.
      **/
-    Attempted: GenericPalletEvent<'XcmPallet', 'Attempted', { outcome: XcmV3TraitsOutcome }>;
+    Attempted: GenericPalletEvent<'XcmPallet', 'Attempted', { outcome: StagingXcmV4TraitsOutcome }>;
 
     /**
      * A XCM message was sent.
@@ -2898,9 +2952,9 @@ export interface ChainEvents extends GenericChainEvents {
       'XcmPallet',
       'Sent',
       {
-        origin: StagingXcmV3MultilocationMultiLocation;
-        destination: StagingXcmV3MultilocationMultiLocation;
-        message: XcmV3Xcm;
+        origin: StagingXcmV4Location;
+        destination: StagingXcmV4Location;
+        message: StagingXcmV4Xcm;
         messageId: FixedBytes<32>;
       }
     >;
@@ -2913,14 +2967,18 @@ export interface ChainEvents extends GenericChainEvents {
     UnexpectedResponse: GenericPalletEvent<
       'XcmPallet',
       'UnexpectedResponse',
-      { origin: StagingXcmV3MultilocationMultiLocation; queryId: bigint }
+      { origin: StagingXcmV4Location; queryId: bigint }
     >;
 
     /**
      * Query response has been received and is ready for taking with `take_response`. There is
      * no registered notification call.
      **/
-    ResponseReady: GenericPalletEvent<'XcmPallet', 'ResponseReady', { queryId: bigint; response: XcmV3Response }>;
+    ResponseReady: GenericPalletEvent<
+      'XcmPallet',
+      'ResponseReady',
+      { queryId: bigint; response: StagingXcmV4Response }
+    >;
 
     /**
      * Query response has been received and query is removed. The registered notification has
@@ -2974,11 +3032,7 @@ export interface ChainEvents extends GenericChainEvents {
     InvalidResponder: GenericPalletEvent<
       'XcmPallet',
       'InvalidResponder',
-      {
-        origin: StagingXcmV3MultilocationMultiLocation;
-        queryId: bigint;
-        expectedLocation?: StagingXcmV3MultilocationMultiLocation | undefined;
-      }
+      { origin: StagingXcmV4Location; queryId: bigint; expectedLocation?: StagingXcmV4Location | undefined }
     >;
 
     /**
@@ -2993,7 +3047,7 @@ export interface ChainEvents extends GenericChainEvents {
     InvalidResponderVersion: GenericPalletEvent<
       'XcmPallet',
       'InvalidResponderVersion',
-      { origin: StagingXcmV3MultilocationMultiLocation; queryId: bigint }
+      { origin: StagingXcmV4Location; queryId: bigint }
     >;
 
     /**
@@ -3007,7 +3061,7 @@ export interface ChainEvents extends GenericChainEvents {
     AssetsTrapped: GenericPalletEvent<
       'XcmPallet',
       'AssetsTrapped',
-      { hash: H256; origin: StagingXcmV3MultilocationMultiLocation; assets: XcmVersionedMultiAssets }
+      { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets }
     >;
 
     /**
@@ -3018,12 +3072,7 @@ export interface ChainEvents extends GenericChainEvents {
     VersionChangeNotified: GenericPalletEvent<
       'XcmPallet',
       'VersionChangeNotified',
-      {
-        destination: StagingXcmV3MultilocationMultiLocation;
-        result: number;
-        cost: XcmV3MultiassetMultiAssets;
-        messageId: FixedBytes<32>;
-      }
+      { destination: StagingXcmV4Location; result: number; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -3033,7 +3082,7 @@ export interface ChainEvents extends GenericChainEvents {
     SupportedVersionChanged: GenericPalletEvent<
       'XcmPallet',
       'SupportedVersionChanged',
-      { location: StagingXcmV3MultilocationMultiLocation; version: number }
+      { location: StagingXcmV4Location; version: number }
     >;
 
     /**
@@ -3043,7 +3092,7 @@ export interface ChainEvents extends GenericChainEvents {
     NotifyTargetSendFail: GenericPalletEvent<
       'XcmPallet',
       'NotifyTargetSendFail',
-      { location: StagingXcmV3MultilocationMultiLocation; queryId: bigint; error: XcmV3TraitsError }
+      { location: StagingXcmV4Location; queryId: bigint; error: XcmV3TraitsError }
     >;
 
     /**
@@ -3053,7 +3102,7 @@ export interface ChainEvents extends GenericChainEvents {
     NotifyTargetMigrationFail: GenericPalletEvent<
       'XcmPallet',
       'NotifyTargetMigrationFail',
-      { location: XcmVersionedMultiLocation; queryId: bigint }
+      { location: XcmVersionedLocation; queryId: bigint }
     >;
 
     /**
@@ -3068,7 +3117,7 @@ export interface ChainEvents extends GenericChainEvents {
     InvalidQuerierVersion: GenericPalletEvent<
       'XcmPallet',
       'InvalidQuerierVersion',
-      { origin: StagingXcmV3MultilocationMultiLocation; queryId: bigint }
+      { origin: StagingXcmV4Location; queryId: bigint }
     >;
 
     /**
@@ -3080,10 +3129,10 @@ export interface ChainEvents extends GenericChainEvents {
       'XcmPallet',
       'InvalidQuerier',
       {
-        origin: StagingXcmV3MultilocationMultiLocation;
+        origin: StagingXcmV4Location;
         queryId: bigint;
-        expectedQuerier: StagingXcmV3MultilocationMultiLocation;
-        maybeActualQuerier?: StagingXcmV3MultilocationMultiLocation | undefined;
+        expectedQuerier: StagingXcmV4Location;
+        maybeActualQuerier?: StagingXcmV4Location | undefined;
       }
     >;
 
@@ -3094,11 +3143,7 @@ export interface ChainEvents extends GenericChainEvents {
     VersionNotifyStarted: GenericPalletEvent<
       'XcmPallet',
       'VersionNotifyStarted',
-      {
-        destination: StagingXcmV3MultilocationMultiLocation;
-        cost: XcmV3MultiassetMultiAssets;
-        messageId: FixedBytes<32>;
-      }
+      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -3107,11 +3152,7 @@ export interface ChainEvents extends GenericChainEvents {
     VersionNotifyRequested: GenericPalletEvent<
       'XcmPallet',
       'VersionNotifyRequested',
-      {
-        destination: StagingXcmV3MultilocationMultiLocation;
-        cost: XcmV3MultiassetMultiAssets;
-        messageId: FixedBytes<32>;
-      }
+      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -3121,11 +3162,7 @@ export interface ChainEvents extends GenericChainEvents {
     VersionNotifyUnrequested: GenericPalletEvent<
       'XcmPallet',
       'VersionNotifyUnrequested',
-      {
-        destination: StagingXcmV3MultilocationMultiLocation;
-        cost: XcmV3MultiassetMultiAssets;
-        messageId: FixedBytes<32>;
-      }
+      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -3134,7 +3171,7 @@ export interface ChainEvents extends GenericChainEvents {
     FeesPaid: GenericPalletEvent<
       'XcmPallet',
       'FeesPaid',
-      { paying: StagingXcmV3MultilocationMultiLocation; fees: XcmV3MultiassetMultiAssets }
+      { paying: StagingXcmV4Location; fees: StagingXcmV4AssetAssets }
     >;
 
     /**
@@ -3143,8 +3180,13 @@ export interface ChainEvents extends GenericChainEvents {
     AssetsClaimed: GenericPalletEvent<
       'XcmPallet',
       'AssetsClaimed',
-      { hash: H256; origin: StagingXcmV3MultilocationMultiLocation; assets: XcmVersionedMultiAssets }
+      { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets }
     >;
+
+    /**
+     * A XCM version migration finished.
+     **/
+    VersionMigrationFinished: GenericPalletEvent<'XcmPallet', 'VersionMigrationFinished', { version: number }>;
 
     /**
      * Generic pallet event
@@ -3162,8 +3204,22 @@ export interface ChainEvents extends GenericChainEvents {
       'MessageQueue',
       'ProcessingFailed',
       {
-        id: FixedBytes<32>;
+        /**
+         * The `blake2_256` hash of the message.
+         **/
+        id: H256;
+
+        /**
+         * The queue of the message.
+         **/
         origin: PolkadotRuntimeParachainsInclusionAggregateMessageOrigin;
+
+        /**
+         * The error that occurred.
+         *
+         * This error is pretty opaque. More fine-grained errors need to be emitted as events
+         * by the `MessageProcessor`.
+         **/
         error: FrameSupportMessagesProcessMessageError;
       }
     >;
@@ -3175,9 +3231,29 @@ export interface ChainEvents extends GenericChainEvents {
       'MessageQueue',
       'Processed',
       {
-        id: FixedBytes<32>;
+        /**
+         * The `blake2_256` hash of the message.
+         **/
+        id: H256;
+
+        /**
+         * The queue of the message.
+         **/
         origin: PolkadotRuntimeParachainsInclusionAggregateMessageOrigin;
+
+        /**
+         * How much weight was used to process the message.
+         **/
         weightUsed: SpWeightsWeightV2Weight;
+
+        /**
+         * Whether the message was processed.
+         *
+         * Note that this does not mean that the underlying `MessageProcessor` was internally
+         * successful. It *solely* means that the MQ pallet will treat this as a success
+         * condition and discard the message. Any internal error needs to be emitted as events
+         * by the `MessageProcessor`.
+         **/
         success: boolean;
       }
     >;
@@ -3189,9 +3265,24 @@ export interface ChainEvents extends GenericChainEvents {
       'MessageQueue',
       'OverweightEnqueued',
       {
+        /**
+         * The `blake2_256` hash of the message.
+         **/
         id: FixedBytes<32>;
+
+        /**
+         * The queue of the message.
+         **/
         origin: PolkadotRuntimeParachainsInclusionAggregateMessageOrigin;
+
+        /**
+         * The page of the message.
+         **/
         pageIndex: number;
+
+        /**
+         * The index of the message within the page.
+         **/
         messageIndex: number;
       }
     >;
@@ -3202,7 +3293,17 @@ export interface ChainEvents extends GenericChainEvents {
     PageReaped: GenericPalletEvent<
       'MessageQueue',
       'PageReaped',
-      { origin: PolkadotRuntimeParachainsInclusionAggregateMessageOrigin; index: number }
+      {
+        /**
+         * The queue of the page.
+         **/
+        origin: PolkadotRuntimeParachainsInclusionAggregateMessageOrigin;
+
+        /**
+         * The index of the page.
+         **/
+        index: number;
+      }
     >;
 
     /**
@@ -3228,6 +3329,30 @@ export interface ChainEvents extends GenericChainEvents {
       'AssetRate',
       'AssetRateUpdated',
       { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; old: FixedU128; new: FixedU128 }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `IdentityMigrator`'s events
+   **/
+  identityMigrator: {
+    /**
+     * The identity and all sub accounts were reaped for `who`.
+     **/
+    IdentityReaped: GenericPalletEvent<'IdentityMigrator', 'IdentityReaped', { who: AccountId32 }>;
+
+    /**
+     * The deposits held for `who` were updated. `identity` is the new deposit held for
+     * identity info, and `subs` is the new deposit held for the sub-accounts.
+     **/
+    DepositUpdated: GenericPalletEvent<
+      'IdentityMigrator',
+      'DepositUpdated',
+      { who: AccountId32; identity: bigint; subs: bigint }
     >;
 
     /**

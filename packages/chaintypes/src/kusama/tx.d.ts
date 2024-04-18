@@ -11,10 +11,10 @@ import type {
   MultiAddressLike,
   Extrinsic,
   BytesLike,
+  H256,
   AccountId32Like,
   Percent,
   Perbill,
-  H256,
   EthereumAddressLike,
   Data,
   FixedBytes,
@@ -28,18 +28,18 @@ import type {
   SpConsensusSlotsEquivocationProof,
   SpSessionMembershipProof,
   SpConsensusBabeDigestsNextConfigDescriptor,
+  PalletBalancesAdjustmentDirection,
   PalletStakingRewardDestination,
   PalletStakingValidatorPrefs,
   PalletStakingPalletConfigOp,
   PalletStakingPalletConfigOpU32,
   PalletStakingPalletConfigOpPercent,
   PalletStakingPalletConfigOpPerbill,
+  PalletStakingUnlockChunk,
   StagingKusamaRuntimeSessionKeys,
   SpConsensusGrandpaEquivocationProof,
-  PalletImOnlineHeartbeat,
-  PalletImOnlineSr25519AppSr25519Signature,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
-  XcmVersionedMultiLocation,
+  XcmVersionedLocation,
   PalletConvictionVotingVoteAccountVote,
   PalletConvictionVotingConviction,
   StagingKusamaRuntimeOriginCaller,
@@ -48,8 +48,7 @@ import type {
   SpWeightsWeightV2Weight,
   PolkadotRuntimeCommonClaimsEcdsaSignature,
   PolkadotRuntimeCommonClaimsStatementKind,
-  PalletIdentitySimpleIdentityInfo,
-  PalletIdentityBitFlags,
+  PalletIdentityLegacyIdentityInfo,
   PalletIdentityJudgement,
   PalletVestingVestingInfo,
   StagingKusamaRuntimeProxyType,
@@ -66,8 +65,10 @@ import type {
   PalletNominationPoolsConfigOp004,
   PalletNominationPoolsClaimPermission,
   PalletNominationPoolsCommissionChangeRate,
+  PalletNominationPoolsCommissionClaimPermission,
   PolkadotPrimitivesV6AsyncBackingAsyncBackingParams,
   PolkadotPrimitivesV6ExecutorParams,
+  PolkadotPrimitivesVstagingApprovalVotingParams,
   PolkadotPrimitivesV6InherentData,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
@@ -78,12 +79,11 @@ import type {
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
   PolkadotPrimitivesV6SlashingDisputeProof,
   SpRuntimeMultiSigner,
-  PalletStateTrieMigrationMigrationLimits,
-  PalletStateTrieMigrationMigrationTask,
-  PalletStateTrieMigrationProgress,
+  PalletBrokerCoretimeInterfaceCoreAssignment,
+  PolkadotRuntimeParachainsAssignerCoretimePartsOf57600,
   XcmVersionedXcm,
-  XcmVersionedMultiAssets,
-  StagingXcmV3MultilocationMultiLocation,
+  XcmVersionedAssets,
+  StagingXcmV4Location,
   XcmV3WeightLimit,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   SpConsensusBeefyEquivocationProof,
@@ -224,6 +224,51 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         palletCall: {
           name: 'RemarkWithEvent';
           params: { remark: BytesLike };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::authorize_upgrade`].
+     *
+     * @param {H256} codeHash
+     **/
+    authorizeUpgrade: GenericTxCall<
+      (codeHash: H256) => ChainSubmittableExtrinsic<{
+        pallet: 'System';
+        palletCall: {
+          name: 'AuthorizeUpgrade';
+          params: { codeHash: H256 };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::authorize_upgrade_without_checks`].
+     *
+     * @param {H256} codeHash
+     **/
+    authorizeUpgradeWithoutChecks: GenericTxCall<
+      (codeHash: H256) => ChainSubmittableExtrinsic<{
+        pallet: 'System';
+        palletCall: {
+          name: 'AuthorizeUpgradeWithoutChecks';
+          params: { codeHash: H256 };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::apply_authorized_upgrade`].
+     *
+     * @param {BytesLike} code
+     **/
+    applyAuthorizedUpgrade: GenericTxCall<
+      (code: BytesLike) => ChainSubmittableExtrinsic<{
+        pallet: 'System';
+        palletCall: {
+          name: 'ApplyAuthorizedUpgrade';
+          params: { code: BytesLike };
         };
       }>
     >;
@@ -544,6 +589,25 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         palletCall: {
           name: 'ForceSetBalance';
           params: { who: MultiAddressLike; newFree: bigint };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::force_adjust_total_issuance`].
+     *
+     * @param {PalletBalancesAdjustmentDirection} direction
+     * @param {bigint} delta
+     **/
+    forceAdjustTotalIssuance: GenericTxCall<
+      (
+        direction: PalletBalancesAdjustmentDirection,
+        delta: bigint,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Balances';
+        palletCall: {
+          name: 'ForceAdjustTotalIssuance';
+          params: { direction: PalletBalancesAdjustmentDirection; delta: bigint };
         };
       }>
     >;
@@ -934,14 +998,14 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * See [`Pallet::chill_other`].
      *
-     * @param {AccountId32Like} controller
+     * @param {AccountId32Like} stash
      **/
     chillOther: GenericTxCall<
-      (controller: AccountId32Like) => ChainSubmittableExtrinsic<{
+      (stash: AccountId32Like) => ChainSubmittableExtrinsic<{
         pallet: 'Staking';
         palletCall: {
           name: 'ChillOther';
-          params: { controller: AccountId32Like };
+          params: { stash: AccountId32Like };
         };
       }>
     >;
@@ -972,6 +1036,85 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         palletCall: {
           name: 'SetMinCommission';
           params: { new: Perbill };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::payout_stakers_by_page`].
+     *
+     * @param {AccountId32Like} validatorStash
+     * @param {number} era
+     * @param {number} page
+     **/
+    payoutStakersByPage: GenericTxCall<
+      (
+        validatorStash: AccountId32Like,
+        era: number,
+        page: number,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Staking';
+        palletCall: {
+          name: 'PayoutStakersByPage';
+          params: { validatorStash: AccountId32Like; era: number; page: number };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::update_payee`].
+     *
+     * @param {AccountId32Like} controller
+     **/
+    updatePayee: GenericTxCall<
+      (controller: AccountId32Like) => ChainSubmittableExtrinsic<{
+        pallet: 'Staking';
+        palletCall: {
+          name: 'UpdatePayee';
+          params: { controller: AccountId32Like };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::deprecate_controller_batch`].
+     *
+     * @param {Array<AccountId32Like>} controllers
+     **/
+    deprecateControllerBatch: GenericTxCall<
+      (controllers: Array<AccountId32Like>) => ChainSubmittableExtrinsic<{
+        pallet: 'Staking';
+        palletCall: {
+          name: 'DeprecateControllerBatch';
+          params: { controllers: Array<AccountId32Like> };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::restore_ledger`].
+     *
+     * @param {AccountId32Like} stash
+     * @param {AccountId32Like | undefined} maybeController
+     * @param {bigint | undefined} maybeTotal
+     * @param {Array<PalletStakingUnlockChunk> | undefined} maybeUnlocking
+     **/
+    restoreLedger: GenericTxCall<
+      (
+        stash: AccountId32Like,
+        maybeController: AccountId32Like | undefined,
+        maybeTotal: bigint | undefined,
+        maybeUnlocking: Array<PalletStakingUnlockChunk> | undefined,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Staking';
+        palletCall: {
+          name: 'RestoreLedger';
+          params: {
+            stash: AccountId32Like;
+            maybeController: AccountId32Like | undefined;
+            maybeTotal: bigint | undefined;
+            maybeUnlocking: Array<PalletStakingUnlockChunk> | undefined;
+          };
         };
       }>
     >;
@@ -1089,34 +1232,6 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     [callName: string]: GenericTxCall<TxCall>;
   };
   /**
-   * Pallet `ImOnline`'s transaction calls
-   **/
-  imOnline: {
-    /**
-     * See [`Pallet::heartbeat`].
-     *
-     * @param {PalletImOnlineHeartbeat} heartbeat
-     * @param {PalletImOnlineSr25519AppSr25519Signature} signature
-     **/
-    heartbeat: GenericTxCall<
-      (
-        heartbeat: PalletImOnlineHeartbeat,
-        signature: PalletImOnlineSr25519AppSr25519Signature,
-      ) => ChainSubmittableExtrinsic<{
-        pallet: 'ImOnline';
-        palletCall: {
-          name: 'Heartbeat';
-          params: { heartbeat: PalletImOnlineHeartbeat; signature: PalletImOnlineSr25519AppSr25519Signature };
-        };
-      }>
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall>;
-  };
-  /**
    * Pallet `Treasury`'s transaction calls
    **/
   treasury: {
@@ -1208,14 +1323,14 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      *
      * @param {PolkadotRuntimeCommonImplsVersionedLocatableAsset} assetKind
      * @param {bigint} amount
-     * @param {XcmVersionedMultiLocation} beneficiary
+     * @param {XcmVersionedLocation} beneficiary
      * @param {number | undefined} validFrom
      **/
     spend: GenericTxCall<
       (
         assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset,
         amount: bigint,
-        beneficiary: XcmVersionedMultiLocation,
+        beneficiary: XcmVersionedLocation,
         validFrom: number | undefined,
       ) => ChainSubmittableExtrinsic<{
         pallet: 'Treasury';
@@ -1224,7 +1339,7 @@ export interface ChainTx extends GenericChainTx<TxCall> {
           params: {
             assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
             amount: bigint;
-            beneficiary: XcmVersionedMultiLocation;
+            beneficiary: XcmVersionedLocation;
             validFrom: number | undefined;
           };
         };
@@ -1671,6 +1786,25 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         palletCall: {
           name: 'CleanupPoll';
           params: { pollIndex: number; max: number };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::exchange_member`].
+     *
+     * @param {MultiAddressLike} who
+     * @param {MultiAddressLike} newWho
+     **/
+    exchangeMember: GenericTxCall<
+      (
+        who: MultiAddressLike,
+        newWho: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'FellowshipCollective';
+        palletCall: {
+          name: 'ExchangeMember';
+          params: { who: MultiAddressLike; newWho: MultiAddressLike };
         };
       }>
     >;
@@ -2163,14 +2297,14 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * See [`Pallet::set_identity`].
      *
-     * @param {PalletIdentitySimpleIdentityInfo} info
+     * @param {PalletIdentityLegacyIdentityInfo} info
      **/
     setIdentity: GenericTxCall<
-      (info: PalletIdentitySimpleIdentityInfo) => ChainSubmittableExtrinsic<{
+      (info: PalletIdentityLegacyIdentityInfo) => ChainSubmittableExtrinsic<{
         pallet: 'Identity';
         palletCall: {
           name: 'SetIdentity';
-          params: { info: PalletIdentitySimpleIdentityInfo };
+          params: { info: PalletIdentityLegacyIdentityInfo };
         };
       }>
     >;
@@ -2279,17 +2413,17 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      * See [`Pallet::set_fields`].
      *
      * @param {number} index
-     * @param {PalletIdentityBitFlags} fields
+     * @param {bigint} fields
      **/
     setFields: GenericTxCall<
       (
         index: number,
-        fields: PalletIdentityBitFlags,
+        fields: bigint,
       ) => ChainSubmittableExtrinsic<{
         pallet: 'Identity';
         palletCall: {
           name: 'SetFields';
-          params: { index: number; fields: PalletIdentityBitFlags };
+          params: { index: number; fields: bigint };
         };
       }>
     >;
@@ -2394,6 +2528,123 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         pallet: 'Identity';
         palletCall: {
           name: 'QuitSub';
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::add_username_authority`].
+     *
+     * @param {MultiAddressLike} authority
+     * @param {BytesLike} suffix
+     * @param {number} allocation
+     **/
+    addUsernameAuthority: GenericTxCall<
+      (
+        authority: MultiAddressLike,
+        suffix: BytesLike,
+        allocation: number,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Identity';
+        palletCall: {
+          name: 'AddUsernameAuthority';
+          params: { authority: MultiAddressLike; suffix: BytesLike; allocation: number };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::remove_username_authority`].
+     *
+     * @param {MultiAddressLike} authority
+     **/
+    removeUsernameAuthority: GenericTxCall<
+      (authority: MultiAddressLike) => ChainSubmittableExtrinsic<{
+        pallet: 'Identity';
+        palletCall: {
+          name: 'RemoveUsernameAuthority';
+          params: { authority: MultiAddressLike };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::set_username_for`].
+     *
+     * @param {MultiAddressLike} who
+     * @param {BytesLike} username
+     * @param {SpRuntimeMultiSignature | undefined} signature
+     **/
+    setUsernameFor: GenericTxCall<
+      (
+        who: MultiAddressLike,
+        username: BytesLike,
+        signature: SpRuntimeMultiSignature | undefined,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Identity';
+        palletCall: {
+          name: 'SetUsernameFor';
+          params: { who: MultiAddressLike; username: BytesLike; signature: SpRuntimeMultiSignature | undefined };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::accept_username`].
+     *
+     * @param {BytesLike} username
+     **/
+    acceptUsername: GenericTxCall<
+      (username: BytesLike) => ChainSubmittableExtrinsic<{
+        pallet: 'Identity';
+        palletCall: {
+          name: 'AcceptUsername';
+          params: { username: BytesLike };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::remove_expired_approval`].
+     *
+     * @param {BytesLike} username
+     **/
+    removeExpiredApproval: GenericTxCall<
+      (username: BytesLike) => ChainSubmittableExtrinsic<{
+        pallet: 'Identity';
+        palletCall: {
+          name: 'RemoveExpiredApproval';
+          params: { username: BytesLike };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::set_primary_username`].
+     *
+     * @param {BytesLike} username
+     **/
+    setPrimaryUsername: GenericTxCall<
+      (username: BytesLike) => ChainSubmittableExtrinsic<{
+        pallet: 'Identity';
+        palletCall: {
+          name: 'SetPrimaryUsername';
+          params: { username: BytesLike };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::remove_dangling_username`].
+     *
+     * @param {BytesLike} username
+     **/
+    removeDanglingUsername: GenericTxCall<
+      (username: BytesLike) => ChainSubmittableExtrinsic<{
+        pallet: 'Identity';
+        palletCall: {
+          name: 'RemoveDanglingUsername';
+          params: { username: BytesLike };
         };
       }>
     >;
@@ -2994,6 +3245,25 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         palletCall: {
           name: 'MergeSchedules';
           params: { schedule1Index: number; schedule2Index: number };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::force_remove_vesting_schedule`].
+     *
+     * @param {MultiAddressLike} target
+     * @param {number} scheduleIndex
+     **/
+    forceRemoveVestingSchedule: GenericTxCall<
+      (
+        target: MultiAddressLike,
+        scheduleIndex: number,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Vesting';
+        palletCall: {
+          name: 'ForceRemoveVestingSchedule';
+          params: { target: MultiAddressLike; scheduleIndex: number };
         };
       }>
     >;
@@ -4259,6 +4529,25 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     >;
 
     /**
+     * See [`Pallet::force_adjust_total_issuance`].
+     *
+     * @param {PalletBalancesAdjustmentDirection} direction
+     * @param {bigint} delta
+     **/
+    forceAdjustTotalIssuance: GenericTxCall<
+      (
+        direction: PalletBalancesAdjustmentDirection,
+        delta: bigint,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'NisCounterpartBalances';
+        palletCall: {
+          name: 'ForceAdjustTotalIssuance';
+          params: { direction: PalletBalancesAdjustmentDirection; delta: bigint };
+        };
+      }>
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall>;
@@ -4754,6 +5043,25 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     >;
 
     /**
+     * See [`Pallet::set_commission_claim_permission`].
+     *
+     * @param {number} poolId
+     * @param {PalletNominationPoolsCommissionClaimPermission | undefined} permission
+     **/
+    setCommissionClaimPermission: GenericTxCall<
+      (
+        poolId: number,
+        permission: PalletNominationPoolsCommissionClaimPermission | undefined,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'NominationPools';
+        palletCall: {
+          name: 'SetCommissionClaimPermission';
+          params: { poolId: number; permission: PalletNominationPoolsCommissionClaimPermission | undefined };
+        };
+      }>
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall>;
@@ -4903,15 +5211,15 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     >;
 
     /**
-     * See [`Pallet::set_on_demand_cores`].
+     * See [`Pallet::set_coretime_cores`].
      *
      * @param {number} new_
      **/
-    setOnDemandCores: GenericTxCall<
+    setCoretimeCores: GenericTxCall<
       (new_: number) => ChainSubmittableExtrinsic<{
         pallet: 'Configuration';
         palletCall: {
-          name: 'SetOnDemandCores';
+          name: 'SetCoretimeCores';
           params: { new: number };
         };
       }>
@@ -5488,6 +5796,40 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     >;
 
     /**
+     * See [`Pallet::set_node_feature`].
+     *
+     * @param {number} index
+     * @param {boolean} value
+     **/
+    setNodeFeature: GenericTxCall<
+      (
+        index: number,
+        value: boolean,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'Configuration';
+        palletCall: {
+          name: 'SetNodeFeature';
+          params: { index: number; value: boolean };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::set_approval_voting_params`].
+     *
+     * @param {PolkadotPrimitivesVstagingApprovalVotingParams} new_
+     **/
+    setApprovalVotingParams: GenericTxCall<
+      (new_: PolkadotPrimitivesVstagingApprovalVotingParams) => ChainSubmittableExtrinsic<{
+        pallet: 'Configuration';
+        palletCall: {
+          name: 'SetApprovalVotingParams';
+          params: { new: PolkadotPrimitivesVstagingApprovalVotingParams };
+        };
+      }>
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall>;
@@ -5986,6 +6328,53 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         palletCall: {
           name: 'ReportDisputeLostUnsigned';
           params: { disputeProof: PolkadotPrimitivesV6SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+        };
+      }>
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall>;
+  };
+  /**
+   * Pallet `OnDemandAssignmentProvider`'s transaction calls
+   **/
+  onDemandAssignmentProvider: {
+    /**
+     * See [`Pallet::place_order_allow_death`].
+     *
+     * @param {bigint} maxAmount
+     * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
+     **/
+    placeOrderAllowDeath: GenericTxCall<
+      (
+        maxAmount: bigint,
+        paraId: PolkadotParachainPrimitivesPrimitivesId,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'OnDemandAssignmentProvider';
+        palletCall: {
+          name: 'PlaceOrderAllowDeath';
+          params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::place_order_keep_alive`].
+     *
+     * @param {bigint} maxAmount
+     * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
+     **/
+    placeOrderKeepAlive: GenericTxCall<
+      (
+        maxAmount: bigint,
+        paraId: PolkadotParachainPrimitivesPrimitivesId,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'OnDemandAssignmentProvider';
+        palletCall: {
+          name: 'PlaceOrderKeepAlive';
+          params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId };
         };
       }>
     >;
@@ -6528,119 +6917,52 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     [callName: string]: GenericTxCall<TxCall>;
   };
   /**
-   * Pallet `StateTrieMigration`'s transaction calls
+   * Pallet `Coretime`'s transaction calls
    **/
-  stateTrieMigration: {
+  coretime: {
     /**
-     * See [`Pallet::control_auto_migration`].
+     * See [`Pallet::request_core_count`].
      *
-     * @param {PalletStateTrieMigrationMigrationLimits | undefined} maybeConfig
+     * @param {number} count
      **/
-    controlAutoMigration: GenericTxCall<
-      (maybeConfig: PalletStateTrieMigrationMigrationLimits | undefined) => ChainSubmittableExtrinsic<{
-        pallet: 'StateTrieMigration';
+    requestCoreCount: GenericTxCall<
+      (count: number) => ChainSubmittableExtrinsic<{
+        pallet: 'Coretime';
         palletCall: {
-          name: 'ControlAutoMigration';
-          params: { maybeConfig: PalletStateTrieMigrationMigrationLimits | undefined };
+          name: 'RequestCoreCount';
+          params: { count: number };
         };
       }>
     >;
 
     /**
-     * See [`Pallet::continue_migrate`].
+     * See [`Pallet::assign_core`].
      *
-     * @param {PalletStateTrieMigrationMigrationLimits} limits
-     * @param {number} realSizeUpper
-     * @param {PalletStateTrieMigrationMigrationTask} witnessTask
+     * @param {number} core
+     * @param {number} begin
+     * @param {Array<[PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]>} assignment
+     * @param {number | undefined} endHint
      **/
-    continueMigrate: GenericTxCall<
+    assignCore: GenericTxCall<
       (
-        limits: PalletStateTrieMigrationMigrationLimits,
-        realSizeUpper: number,
-        witnessTask: PalletStateTrieMigrationMigrationTask,
+        core: number,
+        begin: number,
+        assignment: Array<
+          [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]
+        >,
+        endHint: number | undefined,
       ) => ChainSubmittableExtrinsic<{
-        pallet: 'StateTrieMigration';
+        pallet: 'Coretime';
         palletCall: {
-          name: 'ContinueMigrate';
+          name: 'AssignCore';
           params: {
-            limits: PalletStateTrieMigrationMigrationLimits;
-            realSizeUpper: number;
-            witnessTask: PalletStateTrieMigrationMigrationTask;
+            core: number;
+            begin: number;
+            assignment: Array<
+              [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]
+            >;
+            endHint: number | undefined;
           };
-        };
-      }>
-    >;
-
-    /**
-     * See [`Pallet::migrate_custom_top`].
-     *
-     * @param {Array<BytesLike>} keys
-     * @param {number} witnessSize
-     **/
-    migrateCustomTop: GenericTxCall<
-      (
-        keys: Array<BytesLike>,
-        witnessSize: number,
-      ) => ChainSubmittableExtrinsic<{
-        pallet: 'StateTrieMigration';
-        palletCall: {
-          name: 'MigrateCustomTop';
-          params: { keys: Array<BytesLike>; witnessSize: number };
-        };
-      }>
-    >;
-
-    /**
-     * See [`Pallet::migrate_custom_child`].
-     *
-     * @param {BytesLike} root
-     * @param {Array<BytesLike>} childKeys
-     * @param {number} totalSize
-     **/
-    migrateCustomChild: GenericTxCall<
-      (
-        root: BytesLike,
-        childKeys: Array<BytesLike>,
-        totalSize: number,
-      ) => ChainSubmittableExtrinsic<{
-        pallet: 'StateTrieMigration';
-        palletCall: {
-          name: 'MigrateCustomChild';
-          params: { root: BytesLike; childKeys: Array<BytesLike>; totalSize: number };
-        };
-      }>
-    >;
-
-    /**
-     * See [`Pallet::set_signed_max_limits`].
-     *
-     * @param {PalletStateTrieMigrationMigrationLimits} limits
-     **/
-    setSignedMaxLimits: GenericTxCall<
-      (limits: PalletStateTrieMigrationMigrationLimits) => ChainSubmittableExtrinsic<{
-        pallet: 'StateTrieMigration';
-        palletCall: {
-          name: 'SetSignedMaxLimits';
-          params: { limits: PalletStateTrieMigrationMigrationLimits };
-        };
-      }>
-    >;
-
-    /**
-     * See [`Pallet::force_set_progress`].
-     *
-     * @param {PalletStateTrieMigrationProgress} progressTop
-     * @param {PalletStateTrieMigrationProgress} progressChild
-     **/
-    forceSetProgress: GenericTxCall<
-      (
-        progressTop: PalletStateTrieMigrationProgress,
-        progressChild: PalletStateTrieMigrationProgress,
-      ) => ChainSubmittableExtrinsic<{
-        pallet: 'StateTrieMigration';
-        palletCall: {
-          name: 'ForceSetProgress';
-          params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
         };
       }>
     >;
@@ -6657,18 +6979,18 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * See [`Pallet::send`].
      *
-     * @param {XcmVersionedMultiLocation} dest
+     * @param {XcmVersionedLocation} dest
      * @param {XcmVersionedXcm} message
      **/
     send: GenericTxCall<
       (
-        dest: XcmVersionedMultiLocation,
+        dest: XcmVersionedLocation,
         message: XcmVersionedXcm,
       ) => ChainSubmittableExtrinsic<{
         pallet: 'XcmPallet';
         palletCall: {
           name: 'Send';
-          params: { dest: XcmVersionedMultiLocation; message: XcmVersionedXcm };
+          params: { dest: XcmVersionedLocation; message: XcmVersionedXcm };
         };
       }>
     >;
@@ -6676,25 +6998,25 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * See [`Pallet::teleport_assets`].
      *
-     * @param {XcmVersionedMultiLocation} dest
-     * @param {XcmVersionedMultiLocation} beneficiary
-     * @param {XcmVersionedMultiAssets} assets
+     * @param {XcmVersionedLocation} dest
+     * @param {XcmVersionedLocation} beneficiary
+     * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
      **/
     teleportAssets: GenericTxCall<
       (
-        dest: XcmVersionedMultiLocation,
-        beneficiary: XcmVersionedMultiLocation,
-        assets: XcmVersionedMultiAssets,
+        dest: XcmVersionedLocation,
+        beneficiary: XcmVersionedLocation,
+        assets: XcmVersionedAssets,
         feeAssetItem: number,
       ) => ChainSubmittableExtrinsic<{
         pallet: 'XcmPallet';
         palletCall: {
           name: 'TeleportAssets';
           params: {
-            dest: XcmVersionedMultiLocation;
-            beneficiary: XcmVersionedMultiLocation;
-            assets: XcmVersionedMultiAssets;
+            dest: XcmVersionedLocation;
+            beneficiary: XcmVersionedLocation;
+            assets: XcmVersionedAssets;
             feeAssetItem: number;
           };
         };
@@ -6704,25 +7026,25 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * See [`Pallet::reserve_transfer_assets`].
      *
-     * @param {XcmVersionedMultiLocation} dest
-     * @param {XcmVersionedMultiLocation} beneficiary
-     * @param {XcmVersionedMultiAssets} assets
+     * @param {XcmVersionedLocation} dest
+     * @param {XcmVersionedLocation} beneficiary
+     * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
      **/
     reserveTransferAssets: GenericTxCall<
       (
-        dest: XcmVersionedMultiLocation,
-        beneficiary: XcmVersionedMultiLocation,
-        assets: XcmVersionedMultiAssets,
+        dest: XcmVersionedLocation,
+        beneficiary: XcmVersionedLocation,
+        assets: XcmVersionedAssets,
         feeAssetItem: number,
       ) => ChainSubmittableExtrinsic<{
         pallet: 'XcmPallet';
         palletCall: {
           name: 'ReserveTransferAssets';
           params: {
-            dest: XcmVersionedMultiLocation;
-            beneficiary: XcmVersionedMultiLocation;
-            assets: XcmVersionedMultiAssets;
+            dest: XcmVersionedLocation;
+            beneficiary: XcmVersionedLocation;
+            assets: XcmVersionedAssets;
             feeAssetItem: number;
           };
         };
@@ -6751,18 +7073,18 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * See [`Pallet::force_xcm_version`].
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} location
+     * @param {StagingXcmV4Location} location
      * @param {number} version
      **/
     forceXcmVersion: GenericTxCall<
       (
-        location: StagingXcmV3MultilocationMultiLocation,
+        location: StagingXcmV4Location,
         version: number,
       ) => ChainSubmittableExtrinsic<{
         pallet: 'XcmPallet';
         palletCall: {
           name: 'ForceXcmVersion';
-          params: { location: StagingXcmV3MultilocationMultiLocation; version: number };
+          params: { location: StagingXcmV4Location; version: number };
         };
       }>
     >;
@@ -6785,14 +7107,14 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * See [`Pallet::force_subscribe_version_notify`].
      *
-     * @param {XcmVersionedMultiLocation} location
+     * @param {XcmVersionedLocation} location
      **/
     forceSubscribeVersionNotify: GenericTxCall<
-      (location: XcmVersionedMultiLocation) => ChainSubmittableExtrinsic<{
+      (location: XcmVersionedLocation) => ChainSubmittableExtrinsic<{
         pallet: 'XcmPallet';
         palletCall: {
           name: 'ForceSubscribeVersionNotify';
-          params: { location: XcmVersionedMultiLocation };
+          params: { location: XcmVersionedLocation };
         };
       }>
     >;
@@ -6800,14 +7122,14 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * See [`Pallet::force_unsubscribe_version_notify`].
      *
-     * @param {XcmVersionedMultiLocation} location
+     * @param {XcmVersionedLocation} location
      **/
     forceUnsubscribeVersionNotify: GenericTxCall<
-      (location: XcmVersionedMultiLocation) => ChainSubmittableExtrinsic<{
+      (location: XcmVersionedLocation) => ChainSubmittableExtrinsic<{
         pallet: 'XcmPallet';
         palletCall: {
           name: 'ForceUnsubscribeVersionNotify';
-          params: { location: XcmVersionedMultiLocation };
+          params: { location: XcmVersionedLocation };
         };
       }>
     >;
@@ -6815,17 +7137,17 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * See [`Pallet::limited_reserve_transfer_assets`].
      *
-     * @param {XcmVersionedMultiLocation} dest
-     * @param {XcmVersionedMultiLocation} beneficiary
-     * @param {XcmVersionedMultiAssets} assets
+     * @param {XcmVersionedLocation} dest
+     * @param {XcmVersionedLocation} beneficiary
+     * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
      * @param {XcmV3WeightLimit} weightLimit
      **/
     limitedReserveTransferAssets: GenericTxCall<
       (
-        dest: XcmVersionedMultiLocation,
-        beneficiary: XcmVersionedMultiLocation,
-        assets: XcmVersionedMultiAssets,
+        dest: XcmVersionedLocation,
+        beneficiary: XcmVersionedLocation,
+        assets: XcmVersionedAssets,
         feeAssetItem: number,
         weightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<{
@@ -6833,9 +7155,9 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         palletCall: {
           name: 'LimitedReserveTransferAssets';
           params: {
-            dest: XcmVersionedMultiLocation;
-            beneficiary: XcmVersionedMultiLocation;
-            assets: XcmVersionedMultiAssets;
+            dest: XcmVersionedLocation;
+            beneficiary: XcmVersionedLocation;
+            assets: XcmVersionedAssets;
             feeAssetItem: number;
             weightLimit: XcmV3WeightLimit;
           };
@@ -6846,17 +7168,17 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * See [`Pallet::limited_teleport_assets`].
      *
-     * @param {XcmVersionedMultiLocation} dest
-     * @param {XcmVersionedMultiLocation} beneficiary
-     * @param {XcmVersionedMultiAssets} assets
+     * @param {XcmVersionedLocation} dest
+     * @param {XcmVersionedLocation} beneficiary
+     * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
      * @param {XcmV3WeightLimit} weightLimit
      **/
     limitedTeleportAssets: GenericTxCall<
       (
-        dest: XcmVersionedMultiLocation,
-        beneficiary: XcmVersionedMultiLocation,
-        assets: XcmVersionedMultiAssets,
+        dest: XcmVersionedLocation,
+        beneficiary: XcmVersionedLocation,
+        assets: XcmVersionedAssets,
         feeAssetItem: number,
         weightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<{
@@ -6864,9 +7186,9 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         palletCall: {
           name: 'LimitedTeleportAssets';
           params: {
-            dest: XcmVersionedMultiLocation;
-            beneficiary: XcmVersionedMultiLocation;
-            assets: XcmVersionedMultiAssets;
+            dest: XcmVersionedLocation;
+            beneficiary: XcmVersionedLocation;
+            assets: XcmVersionedAssets;
             feeAssetItem: number;
             weightLimit: XcmV3WeightLimit;
           };
@@ -6885,6 +7207,56 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         palletCall: {
           name: 'ForceSuspension';
           params: { suspended: boolean };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::transfer_assets`].
+     *
+     * @param {XcmVersionedLocation} dest
+     * @param {XcmVersionedLocation} beneficiary
+     * @param {XcmVersionedAssets} assets
+     * @param {number} feeAssetItem
+     * @param {XcmV3WeightLimit} weightLimit
+     **/
+    transferAssets: GenericTxCall<
+      (
+        dest: XcmVersionedLocation,
+        beneficiary: XcmVersionedLocation,
+        assets: XcmVersionedAssets,
+        feeAssetItem: number,
+        weightLimit: XcmV3WeightLimit,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'XcmPallet';
+        palletCall: {
+          name: 'TransferAssets';
+          params: {
+            dest: XcmVersionedLocation;
+            beneficiary: XcmVersionedLocation;
+            assets: XcmVersionedAssets;
+            feeAssetItem: number;
+            weightLimit: XcmV3WeightLimit;
+          };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::claim_assets`].
+     *
+     * @param {XcmVersionedAssets} assets
+     * @param {XcmVersionedLocation} beneficiary
+     **/
+    claimAssets: GenericTxCall<
+      (
+        assets: XcmVersionedAssets,
+        beneficiary: XcmVersionedLocation,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'XcmPallet';
+        palletCall: {
+          name: 'ClaimAssets';
+          params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation };
         };
       }>
     >;
@@ -7065,6 +7437,45 @@ export interface ChainTx extends GenericChainTx<TxCall> {
         palletCall: {
           name: 'SetNewGenesis';
           params: { delayInBlocks: number };
+        };
+      }>
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall>;
+  };
+  /**
+   * Pallet `IdentityMigrator`'s transaction calls
+   **/
+  identityMigrator: {
+    /**
+     * See [`Pallet::reap_identity`].
+     *
+     * @param {AccountId32Like} who
+     **/
+    reapIdentity: GenericTxCall<
+      (who: AccountId32Like) => ChainSubmittableExtrinsic<{
+        pallet: 'IdentityMigrator';
+        palletCall: {
+          name: 'ReapIdentity';
+          params: { who: AccountId32Like };
+        };
+      }>
+    >;
+
+    /**
+     * See [`Pallet::poke_deposit`].
+     *
+     * @param {AccountId32Like} who
+     **/
+    pokeDeposit: GenericTxCall<
+      (who: AccountId32Like) => ChainSubmittableExtrinsic<{
+        pallet: 'IdentityMigrator';
+        palletCall: {
+          name: 'PokeDeposit';
+          params: { who: AccountId32Like };
         };
       }>
     >;

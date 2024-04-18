@@ -42,6 +42,16 @@ export interface ChainErrors extends GenericChainErrors {
     CallFiltered: GenericPalletError;
 
     /**
+     * No upgrade authorized.
+     **/
+    NothingAuthorized: GenericPalletError;
+
+    /**
+     * The submitted code is not authorized.
+     **/
+    Unauthorized: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -141,7 +151,7 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyReserves: GenericPalletError;
 
     /**
-     * Number of holds exceed `MaxHolds`.
+     * Number of holds exceed `VariantCountOf<T::RuntimeHoldReason>`.
      **/
     TooManyHolds: GenericPalletError;
 
@@ -149,6 +159,16 @@ export interface ChainErrors extends GenericChainErrors {
      * Number of freezes exceed `MaxFreezes`.
      **/
     TooManyFreezes: GenericPalletError;
+
+    /**
+     * The issuance cannot be modified since it is already deactivated.
+     **/
+    IssuanceDeactivated: GenericPalletError;
+
+    /**
+     * The delta cannot be zero.
+     **/
+    DeltaZero: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -205,6 +225,46 @@ export interface ChainErrors extends GenericChainErrors {
     ValidatorNotRegistered: GenericPalletError;
 
     /**
+     * Could not insert in the candidate list.
+     **/
+    InsertToCandidateListFailed: GenericPalletError;
+
+    /**
+     * Could not remove from the candidate list.
+     **/
+    RemoveFromCandidateListFailed: GenericPalletError;
+
+    /**
+     * New deposit amount would be below the minimum candidacy bond.
+     **/
+    DepositTooLow: GenericPalletError;
+
+    /**
+     * Could not update the candidate list.
+     **/
+    UpdateCandidateListFailed: GenericPalletError;
+
+    /**
+     * Deposit amount is too low to take the target's slot in the candidate list.
+     **/
+    InsufficientBond: GenericPalletError;
+
+    /**
+     * The target account to be replaced in the candidate list is not a candidate.
+     **/
+    TargetIsNotCandidate: GenericPalletError;
+
+    /**
+     * The updated deposit amount is equal to the amount already reserved.
+     **/
+    IdenticalDeposit: GenericPalletError;
+
+    /**
+     * Cannot lower candidacy bond while occupying a future collator slot in the list.
+     **/
+    InvalidUnreserve: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -248,29 +308,19 @@ export interface ChainErrors extends GenericChainErrors {
    **/
   xcmpQueue: {
     /**
-     * Failed to send XCM message.
+     * Setting the queue config failed since one of its values was invalid.
      **/
-    FailedToSend: GenericPalletError;
+    BadQueueConfig: GenericPalletError;
 
     /**
-     * Bad XCM origin.
+     * The execution is already suspended.
      **/
-    BadXcmOrigin: GenericPalletError;
+    AlreadySuspended: GenericPalletError;
 
     /**
-     * Bad XCM data.
+     * The execution is already resumed.
      **/
-    BadXcm: GenericPalletError;
-
-    /**
-     * Bad overweight index.
-     **/
-    BadOverweightIndex: GenericPalletError;
-
-    /**
-     * Provided weight is possibly not enough to execute the message.
-     **/
-    WeightOverLimit: GenericPalletError;
+    AlreadyResumed: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -304,7 +354,7 @@ export interface ChainErrors extends GenericChainErrors {
     UnweighableMessage: GenericPalletError;
 
     /**
-     * The destination `MultiLocation` provided cannot be inverted.
+     * The destination `Location` provided cannot be inverted.
      **/
     DestinationNotInvertible: GenericPalletError;
 
@@ -350,9 +400,9 @@ export interface ChainErrors extends GenericChainErrors {
     AlreadySubscribed: GenericPalletError;
 
     /**
-     * Invalid asset for the operation.
+     * Could not check-out the assets for teleportation to the destination chain.
      **/
-    InvalidAsset: GenericPalletError;
+    CannotCheckOutTeleport: GenericPalletError;
 
     /**
      * The owner does not own (all) of the asset that they wish to do the operation on.
@@ -385,32 +435,89 @@ export interface ChainErrors extends GenericChainErrors {
     InUse: GenericPalletError;
 
     /**
-     * Generic pallet error
+     * Invalid non-concrete asset.
      **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `CumulusXcm`'s errors
-   **/
-  cumulusXcm: {
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `DmpQueue`'s errors
-   **/
-  dmpQueue: {
-    /**
-     * The message index given is unknown.
-     **/
-    Unknown: GenericPalletError;
+    InvalidAssetNotConcrete: GenericPalletError;
 
     /**
-     * The amount of weight given is possibly not enough for executing the message.
+     * Invalid asset, reserve chain could not be determined for it.
      **/
-    OverLimit: GenericPalletError;
+    InvalidAssetUnknownReserve: GenericPalletError;
+
+    /**
+     * Invalid asset, do not support remote asset reserves with different fees reserves.
+     **/
+    InvalidAssetUnsupportedReserve: GenericPalletError;
+
+    /**
+     * Too many assets with different reserve locations have been attempted for transfer.
+     **/
+    TooManyReserves: GenericPalletError;
+
+    /**
+     * Local XCM execution incomplete.
+     **/
+    LocalExecutionIncomplete: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `MessageQueue`'s errors
+   **/
+  messageQueue: {
+    /**
+     * Page is not reapable because it has items remaining to be processed and is not old
+     * enough.
+     **/
+    NotReapable: GenericPalletError;
+
+    /**
+     * Page to be reaped does not exist.
+     **/
+    NoPage: GenericPalletError;
+
+    /**
+     * The referenced message could not be found.
+     **/
+    NoMessage: GenericPalletError;
+
+    /**
+     * The message was already processed and cannot be processed again.
+     **/
+    AlreadyProcessed: GenericPalletError;
+
+    /**
+     * The message is queued for future execution.
+     **/
+    Queued: GenericPalletError;
+
+    /**
+     * There is temporarily not enough weight to continue servicing messages.
+     **/
+    InsufficientWeight: GenericPalletError;
+
+    /**
+     * This message is temporarily unprocessable.
+     *
+     * Such errors are expected, but not guaranteed, to resolve themselves eventually through
+     * retrying.
+     **/
+    TemporarilyUnprocessable: GenericPalletError;
+
+    /**
+     * The queue is paused and no message can be executed from it.
+     *
+     * This can change at any time and may resolve in the future by re-trying.
+     **/
+    QueuePaused: GenericPalletError;
+
+    /**
+     * Another call is in progress and needs to finish before this call can happen.
+     **/
+    RecursiveDisallowed: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1262,14 +1369,9 @@ export interface ChainErrors extends GenericChainErrors {
    **/
   assetConversion: {
     /**
-     * Provided assets are equal.
+     * Provided asset pair is not supported for pool.
      **/
-    EqualAssets: GenericPalletError;
-
-    /**
-     * Provided asset is not supported for pool.
-     **/
-    UnsupportedAsset: GenericPalletError;
+    InvalidAssetPair: GenericPalletError;
 
     /**
      * Pool already exists.
@@ -1355,11 +1457,6 @@ export interface ChainErrors extends GenericChainErrors {
     ZeroAmount: GenericPalletError;
 
     /**
-     * Insufficient liquidity in the pool.
-     **/
-    InsufficientLiquidity: GenericPalletError;
-
-    /**
      * Calculated amount out is less than provided minimum amount.
      **/
     ProvidedMinimumNotSufficientForSwap: GenericPalletError;
@@ -1370,19 +1467,9 @@ export interface ChainErrors extends GenericChainErrors {
     ProvidedMaximumNotSufficientForSwap: GenericPalletError;
 
     /**
-     * Only pools with native on one side are valid.
-     **/
-    PoolMustContainNativeCurrency: GenericPalletError;
-
-    /**
      * The provided path must consists of 2 assets at least.
      **/
     InvalidPath: GenericPalletError;
-
-    /**
-     * It was not possible to calculate path data.
-     **/
-    PathError: GenericPalletError;
 
     /**
      * The provided path must consists of unique assets.
@@ -1395,11 +1482,9 @@ export interface ChainErrors extends GenericChainErrors {
     IncorrectPoolAssetId: GenericPalletError;
 
     /**
-     * Unable to find an element in an array/vec that should have one-to-one correspondence
-     * with another. For example, an array of assets constituting a `path` should have a
-     * corresponding array of `amounts` along the path.
+     * The destination account cannot exist with the swapped funds.
      **/
-    CorrespondenceError: GenericPalletError;
+    BelowMinimum: GenericPalletError;
 
     /**
      * Generic pallet error

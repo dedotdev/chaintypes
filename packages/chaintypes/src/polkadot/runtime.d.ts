@@ -10,6 +10,7 @@ import type {
   UncheckedExtrinsic,
   AccountId32Like,
   H256,
+  BitSequence,
   Bytes,
   BytesLike,
 } from '@dedot/codecs';
@@ -47,6 +48,7 @@ import type {
   PolkadotPrimitivesV6SlashingDisputeProof,
   PolkadotPrimitivesV6AsyncBackingBackingState,
   PolkadotPrimitivesV6AsyncBackingAsyncBackingParams,
+  PolkadotPrimitivesVstagingApprovalVotingParams,
   SpConsensusBeefyValidatorSet,
   SpConsensusBeefyEquivocationProof,
   SpConsensusBeefyOpaqueKeyOwnershipProof,
@@ -239,6 +241,15 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {bigint} balance
      **/
     nominationsQuota: GenericRuntimeApiMethod<(balance: bigint) => Promise<number>>;
+
+    /**
+     * Returns the page count of exposures for a validator in a given era.
+     *
+     * @callname: StakingApi_eras_stakers_page_count
+     * @param {number} era
+     * @param {AccountId32Like} account
+     **/
+    erasStakersPageCount: GenericRuntimeApiMethod<(era: number, account: AccountId32Like) => Promise<number>>;
 
     /**
      * Generic runtime api call
@@ -609,6 +620,21 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: ParachainHost_disabled_validators
      **/
     disabledValidators: GenericRuntimeApiMethod<() => Promise<Array<PolkadotPrimitivesV6ValidatorIndex>>>;
+
+    /**
+     * Get node features.
+     * This is a staging method! Do not use on production runtimes!
+     *
+     * @callname: ParachainHost_node_features
+     **/
+    nodeFeatures: GenericRuntimeApiMethod<() => Promise<BitSequence>>;
+
+    /**
+     * Approval voting configuration parameters
+     *
+     * @callname: ParachainHost_approval_voting_params
+     **/
+    approvalVotingParams: GenericRuntimeApiMethod<() => Promise<PolkadotPrimitivesVstagingApprovalVotingParams>>;
 
     /**
      * Generic runtime api call

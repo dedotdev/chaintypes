@@ -42,6 +42,16 @@ export interface ChainErrors extends GenericChainErrors {
     CallFiltered: GenericPalletError;
 
     /**
+     * No upgrade authorized.
+     **/
+    NothingAuthorized: GenericPalletError;
+
+    /**
+     * The submitted code is not authorized.
+     **/
+    Unauthorized: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -237,7 +247,7 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyReserves: GenericPalletError;
 
     /**
-     * Number of holds exceed `MaxHolds`.
+     * Number of holds exceed `VariantCountOf<T::RuntimeHoldReason>`.
      **/
     TooManyHolds: GenericPalletError;
 
@@ -245,6 +255,16 @@ export interface ChainErrors extends GenericChainErrors {
      * Number of freezes exceed `MaxFreezes`.
      **/
     TooManyFreezes: GenericPalletError;
+
+    /**
+     * The issuance cannot be modified since it is already deactivated.
+     **/
+    IssuanceDeactivated: GenericPalletError;
+
+    /**
+     * The delta cannot be zero.
+     **/
+    DeltaZero: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -333,6 +353,11 @@ export interface ChainErrors extends GenericChainErrors {
     AlreadyClaimed: GenericPalletError;
 
     /**
+     * No nominators exist on this page.
+     **/
+    InvalidPage: GenericPalletError;
+
+    /**
      * Incorrect previous history depth input provided.
      **/
     IncorrectHistoryDepth: GenericPalletError;
@@ -383,6 +408,16 @@ export interface ChainErrors extends GenericChainErrors {
      * Some bound is not met.
      **/
     BoundNotMet: GenericPalletError;
+
+    /**
+     * Used when attempting to use deprecated controller account logic.
+     **/
+    ControllerDeprecated: GenericPalletError;
+
+    /**
+     * Cannot reset a ledger.
+     **/
+    CannotRestoreLedger: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -463,25 +498,6 @@ export interface ChainErrors extends GenericChainErrors {
      * A given equivocation report is valid but already previously reported.
      **/
     DuplicateOffenceReport: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `ImOnline`'s errors
-   **/
-  imOnline: {
-    /**
-     * Non existent public key.
-     **/
-    InvalidKey: GenericPalletError;
-
-    /**
-     * Duplicated heartbeat.
-     **/
-    DuplicatedHeartbeat: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -885,11 +901,6 @@ export interface ChainErrors extends GenericChainErrors {
     InvalidTarget: GenericPalletError;
 
     /**
-     * Too many additional fields.
-     **/
-    TooManyFields: GenericPalletError;
-
-    /**
      * Maximum amount of registrars reached. Cannot add any more.
      **/
     TooManyRegistrars: GenericPalletError;
@@ -918,6 +929,51 @@ export interface ChainErrors extends GenericChainErrors {
      * Error that occurs when there is an issue paying for judgement.
      **/
     JudgementPaymentFailed: GenericPalletError;
+
+    /**
+     * The provided suffix is too long.
+     **/
+    InvalidSuffix: GenericPalletError;
+
+    /**
+     * The sender does not have permission to issue a username.
+     **/
+    NotUsernameAuthority: GenericPalletError;
+
+    /**
+     * The authority cannot allocate any more usernames.
+     **/
+    NoAllocation: GenericPalletError;
+
+    /**
+     * The signature on a username was not valid.
+     **/
+    InvalidSignature: GenericPalletError;
+
+    /**
+     * Setting this username requires a signature, but none was provided.
+     **/
+    RequiresSignature: GenericPalletError;
+
+    /**
+     * The username does not meet the requirements.
+     **/
+    InvalidUsername: GenericPalletError;
+
+    /**
+     * The username is already taken.
+     **/
+    UsernameTaken: GenericPalletError;
+
+    /**
+     * The requested username does not exist.
+     **/
+    NoUsername: GenericPalletError;
+
+    /**
+     * The username cannot be forcefully removed because it can still be accepted.
+     **/
+    NotExpired: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1214,6 +1270,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Submitted solution has too many winners
      **/
     TooManyWinners: GenericPalletError;
+
+    /**
+     * Sumission was prepared for a different round.
+     **/
+    PreDispatchDifferentRound: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1659,6 +1720,21 @@ export interface ChainErrors extends GenericChainErrors {
      * A dispute statement was invalid.
      **/
     DisputeInvalid: GenericPalletError;
+
+    /**
+     * A candidate was backed by a disabled validator
+     **/
+    BackedByDisabled: GenericPalletError;
+
+    /**
+     * A candidate was backed even though the paraid was not scheduled.
+     **/
+    BackedOnUnscheduledCore: GenericPalletError;
+
+    /**
+     * Too many candidates supplied.
+     **/
+    UnscheduledCandidate: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2207,6 +2283,51 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `StateTrieMigration`'s errors
+   **/
+  stateTrieMigration: {
+    /**
+     * Max signed limits not respected.
+     **/
+    MaxSignedLimits: GenericPalletError;
+
+    /**
+     * A key was longer than the configured maximum.
+     *
+     * This means that the migration halted at the current [`Progress`] and
+     * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
+     * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
+     * The value should only be increased to avoid a storage migration for the currently
+     * stored [`crate::Progress::LastKey`].
+     **/
+    KeyTooLong: GenericPalletError;
+
+    /**
+     * submitter does not have enough funds.
+     **/
+    NotEnoughFunds: GenericPalletError;
+
+    /**
+     * Bad witness data provided.
+     **/
+    BadWitness: GenericPalletError;
+
+    /**
+     * Signed migration is not allowed because the maximum limit is not set yet.
+     **/
+    SignedMigrationNotAllowed: GenericPalletError;
+
+    /**
+     * Bad child root provided.
+     **/
+    BadChildRoot: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `XcmPallet`'s errors
    **/
   xcmPallet: {
@@ -2233,7 +2354,7 @@ export interface ChainErrors extends GenericChainErrors {
     UnweighableMessage: GenericPalletError;
 
     /**
-     * The destination `MultiLocation` provided cannot be inverted.
+     * The destination `Location` provided cannot be inverted.
      **/
     DestinationNotInvertible: GenericPalletError;
 
@@ -2279,9 +2400,9 @@ export interface ChainErrors extends GenericChainErrors {
     AlreadySubscribed: GenericPalletError;
 
     /**
-     * Invalid asset for the operation.
+     * Could not check-out the assets for teleportation to the destination chain.
      **/
-    InvalidAsset: GenericPalletError;
+    CannotCheckOutTeleport: GenericPalletError;
 
     /**
      * The owner does not own (all) of the asset that they wish to do the operation on.
@@ -2312,6 +2433,31 @@ export interface ChainErrors extends GenericChainErrors {
      * The unlock operation cannot succeed because there are still consumers of the lock.
      **/
     InUse: GenericPalletError;
+
+    /**
+     * Invalid non-concrete asset.
+     **/
+    InvalidAssetNotConcrete: GenericPalletError;
+
+    /**
+     * Invalid asset, reserve chain could not be determined for it.
+     **/
+    InvalidAssetUnknownReserve: GenericPalletError;
+
+    /**
+     * Invalid asset, do not support remote asset reserves with different fees reserves.
+     **/
+    InvalidAssetUnsupportedReserve: GenericPalletError;
+
+    /**
+     * Too many assets with different reserve locations have been attempted for transfer.
+     **/
+    TooManyReserves: GenericPalletError;
+
+    /**
+     * Local XCM execution incomplete.
+     **/
+    LocalExecutionIncomplete: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2367,6 +2513,11 @@ export interface ChainErrors extends GenericChainErrors {
      * This can change at any time and may resolve in the future by re-trying.
      **/
     QueuePaused: GenericPalletError;
+
+    /**
+     * Another call is in progress and needs to finish before this call can happen.
+     **/
+    RecursiveDisallowed: GenericPalletError;
 
     /**
      * Generic pallet error

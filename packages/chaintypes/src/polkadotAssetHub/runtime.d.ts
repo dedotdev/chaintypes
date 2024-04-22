@@ -2,13 +2,13 @@
 
 import type { GenericRuntimeApis, GenericRuntimeApiMethod } from '@dedot/types';
 import type {
+  H256,
   RuntimeVersion,
   Header,
   DispatchError,
   Result,
   UncheckedExtrinsicLike,
   UncheckedExtrinsic,
-  H256,
   Bytes,
   BytesLike,
   AccountId32Like,
@@ -16,6 +16,7 @@ import type {
 import type {
   SpConsensusSlotsSlotDuration,
   SpConsensusAuraEd25519AppEd25519Public,
+  SpConsensusSlotsSlot,
   SpRuntimeBlock,
   SpCoreOpaqueMetadata,
   SpRuntimeTransactionValidityTransactionValidityError,
@@ -28,9 +29,10 @@ import type {
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
   AssetHubPolkadotRuntimeRuntimeCallLike,
-  XcmVersionedMultiAssets,
+  XcmVersionedAssets,
   AssetsCommonRuntimeApiFungiblesAccessError,
   CumulusPrimitivesCoreCollationInfo,
+  StagingXcmV3MultilocationMultiLocation,
 } from './types';
 
 export interface RuntimeApis extends GenericRuntimeApis {
@@ -53,6 +55,33 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: AuraApi_authorities
      **/
     authorities: GenericRuntimeApiMethod<() => Promise<Array<SpConsensusAuraEd25519AppEd25519Public>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: AuraUnincludedSegmentApi - 0xd7bdd8a272ca0d65
+   **/
+  auraUnincludedSegmentApi: {
+    /**
+     * Whether it is legal to extend the chain, assuming the given block is the most
+     * recently included one as-of the relay parent that will be built against, and
+     * the given slot.
+     *
+     * This should be consistent with the logic the runtime uses when validating blocks to
+     * avoid issues.
+     *
+     * When the unincluded segment is empty, i.e. `included_hash == at`, where at is the block
+     * whose state we are querying against, this must always return `true` as long as the slot
+     * is more recent than the included block itself.
+     *
+     * @callname: AuraUnincludedSegmentApi_can_build_upon
+     * @param {H256} included_hash
+     * @param {SpConsensusSlotsSlot} slot
+     **/
+    canBuildUpon: GenericRuntimeApiMethod<(includedHash: H256, slot: SpConsensusSlotsSlot) => Promise<boolean>>;
 
     /**
      * Generic runtime api call
@@ -381,13 +410,13 @@ export interface RuntimeApis extends GenericRuntimeApis {
    **/
   fungiblesApi: {
     /**
-     * Returns the list of all [`MultiAsset`] that an `AccountId` has.
+     * Returns the list of all [`Asset`] that an `AccountId` has.
      *
      * @callname: FungiblesApi_query_account_balances
      * @param {AccountId32Like} account
      **/
     queryAccountBalances: GenericRuntimeApiMethod<
-      (account: AccountId32Like) => Promise<Result<XcmVersionedMultiAssets, AssetsCommonRuntimeApiFungiblesAccessError>>
+      (account: AccountId32Like) => Promise<Result<XcmVersionedAssets, AssetsCommonRuntimeApiFungiblesAccessError>>
     >;
 
     /**
@@ -442,6 +471,71 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {BytesLike} json
      **/
     buildConfig: GenericRuntimeApiMethod<(json: BytesLike) => Promise<Result<[], string>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: AssetConversionApi - 0x8a8047a53a8277ec
+   **/
+  assetConversionApi: {
+    /**
+     * Provides a quote for [`Pallet::swap_tokens_for_exact_tokens`].
+     *
+     * Note that the price may have changed by the time the transaction is executed.
+     * (Use `amount_in_max` to control slippage.)
+     *
+     * @callname: AssetConversionApi_quote_price_tokens_for_exact_tokens
+     * @param {StagingXcmV3MultilocationMultiLocation} asset1
+     * @param {StagingXcmV3MultilocationMultiLocation} asset2
+     * @param {bigint} amount
+     * @param {boolean} include_fee
+     **/
+    quotePriceTokensForExactTokens: GenericRuntimeApiMethod<
+      (
+        asset1: StagingXcmV3MultilocationMultiLocation,
+        asset2: StagingXcmV3MultilocationMultiLocation,
+        amount: bigint,
+        includeFee: boolean,
+      ) => Promise<bigint | undefined>
+    >;
+
+    /**
+     * Provides a quote for [`Pallet::swap_exact_tokens_for_tokens`].
+     *
+     * Note that the price may have changed by the time the transaction is executed.
+     * (Use `amount_out_min` to control slippage.)
+     *
+     * @callname: AssetConversionApi_quote_price_exact_tokens_for_tokens
+     * @param {StagingXcmV3MultilocationMultiLocation} asset1
+     * @param {StagingXcmV3MultilocationMultiLocation} asset2
+     * @param {bigint} amount
+     * @param {boolean} include_fee
+     **/
+    quotePriceExactTokensForTokens: GenericRuntimeApiMethod<
+      (
+        asset1: StagingXcmV3MultilocationMultiLocation,
+        asset2: StagingXcmV3MultilocationMultiLocation,
+        amount: bigint,
+        includeFee: boolean,
+      ) => Promise<bigint | undefined>
+    >;
+
+    /**
+     * Returns the size of the liquidity pool for the given asset pair.
+     *
+     * @callname: AssetConversionApi_get_reserves
+     * @param {StagingXcmV3MultilocationMultiLocation} asset1
+     * @param {StagingXcmV3MultilocationMultiLocation} asset2
+     **/
+    getReserves: GenericRuntimeApiMethod<
+      (
+        asset1: StagingXcmV3MultilocationMultiLocation,
+        asset2: StagingXcmV3MultilocationMultiLocation,
+      ) => Promise<[bigint, bigint] | undefined>
+    >;
 
     /**
      * Generic runtime api call

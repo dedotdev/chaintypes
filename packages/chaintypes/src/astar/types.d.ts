@@ -12,7 +12,7 @@ import type {
   H160,
   Bytes,
   U256,
-  FixedU64,
+  FixedU128,
   BytesLike,
   MultiAddress,
   Data,
@@ -1819,7 +1819,7 @@ export type PalletStaticPriceProviderEvent =
   /**
    * New static native currency price has been set.
    **/
-  { name: 'PriceSet'; data: { price: FixedU64 } };
+  { name: 'PriceSet'; data: { price: FixedU128 } };
 
 /**
  * The `Event` enum of this pallet
@@ -4336,13 +4336,13 @@ export type PalletStaticPriceProviderCall =
   /**
    * See [`Pallet::force_set_price`].
    **/
-  { name: 'ForceSetPrice'; params: { price: FixedU64 } };
+  { name: 'ForceSetPrice'; params: { price: FixedU128 } };
 
 export type PalletStaticPriceProviderCallLike =
   /**
    * See [`Pallet::force_set_price`].
    **/
-  { name: 'ForceSetPrice'; params: { price: FixedU64 } };
+  { name: 'ForceSetPrice'; params: { price: FixedU128 } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.

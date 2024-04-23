@@ -11,7 +11,7 @@ import type {
   Bytes,
   H160,
   U256,
-  FixedU64,
+  FixedU128,
 } from '@dedot/codecs';
 import type {
   PalletMultisigTimepoint,
@@ -1697,7 +1697,7 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * New static native currency price has been set.
      **/
-    PriceSet: GenericPalletEvent<'StaticPriceProvider', 'PriceSet', { price: FixedU64 }>;
+    PriceSet: GenericPalletEvent<'StaticPriceProvider', 'PriceSet', { price: FixedU128 }>;
 
     /**
      * Generic pallet event

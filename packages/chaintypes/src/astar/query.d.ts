@@ -14,7 +14,6 @@ import type {
   BytesLike,
   H160,
   U256,
-  FixedU64,
 } from '@dedot/codecs';
 import type {
   FrameSystemAccountInfo,
@@ -1657,9 +1656,9 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * Current active native currency price.
      *
-     * @param {Callback<FixedU64> =} callback
+     * @param {Callback<FixedU128> =} callback
      **/
-    activePrice: GenericStorageQuery<() => FixedU64>;
+    activePrice: GenericStorageQuery<() => FixedU128>;
 
     /**
      * Generic pallet storage query

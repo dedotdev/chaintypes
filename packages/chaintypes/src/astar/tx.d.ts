@@ -17,7 +17,7 @@ import type {
   FixedBytes,
   H160,
   U256,
-  FixedU64,
+  FixedU128,
 } from '@dedot/codecs';
 import type {
   AstarRuntimeRuntimeCallLike,
@@ -3668,14 +3668,14 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     /**
      * See [`Pallet::force_set_price`].
      *
-     * @param {FixedU64} price
+     * @param {FixedU128} price
      **/
     forceSetPrice: GenericTxCall<
-      (price: FixedU64) => ChainSubmittableExtrinsic<{
+      (price: FixedU128) => ChainSubmittableExtrinsic<{
         pallet: 'StaticPriceProvider';
         palletCall: {
           name: 'ForceSetPrice';
-          params: { price: FixedU64 };
+          params: { price: FixedU128 };
         };
       }>
     >;

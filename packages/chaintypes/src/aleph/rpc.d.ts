@@ -55,6 +55,11 @@ export interface RpcCalls extends GenericRpcCalls {
      **/
     ready: GenericRpcCall;
 
+    /**
+     * @rpcname: alephNode_unstable_validatorNetworkInfo
+     **/
+    unstable_validatorNetworkInfo: GenericRpcCall;
+
     [method: string]: GenericRpcCall;
   };
   author: {
@@ -139,6 +144,11 @@ export interface RpcCalls extends GenericRpcCalls {
     unstable_call: GenericRpcCall;
 
     /**
+     * @rpcname: chainHead_unstable_continue
+     **/
+    unstable_continue: GenericRpcCall;
+
+    /**
      * @rpcname: chainHead_unstable_follow
      **/
     unstable_follow: GenericRpcCall;
@@ -154,19 +164,9 @@ export interface RpcCalls extends GenericRpcCalls {
     unstable_header: GenericRpcCall;
 
     /**
-     * @rpcname: chainHead_unstable_stopBody
+     * @rpcname: chainHead_unstable_stopOperation
      **/
-    unstable_stopBody: GenericRpcCall;
-
-    /**
-     * @rpcname: chainHead_unstable_stopCall
-     **/
-    unstable_stopCall: GenericRpcCall;
-
-    /**
-     * @rpcname: chainHead_unstable_stopStorage
-     **/
-    unstable_stopStorage: GenericRpcCall;
+    unstable_stopOperation: GenericRpcCall;
 
     /**
      * @rpcname: chainHead_unstable_storage

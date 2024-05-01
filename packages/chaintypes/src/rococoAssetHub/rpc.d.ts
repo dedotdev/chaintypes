@@ -150,49 +150,49 @@ export interface RpcCalls extends GenericRpcCalls {
   };
   chainHead: {
     /**
-     * @rpcname: chainHead_unstable_body
+     * @rpcname: chainHead_v1_body
      **/
-    unstable_body: GenericRpcCall;
+    v1_body: GenericRpcCall;
 
     /**
-     * @rpcname: chainHead_unstable_call
+     * @rpcname: chainHead_v1_call
      **/
-    unstable_call: GenericRpcCall;
+    v1_call: GenericRpcCall;
 
     /**
-     * @rpcname: chainHead_unstable_continue
+     * @rpcname: chainHead_v1_continue
      **/
-    unstable_continue: GenericRpcCall;
+    v1_continue: GenericRpcCall;
 
     /**
-     * @rpcname: chainHead_unstable_follow
+     * @rpcname: chainHead_v1_follow
      **/
-    unstable_follow: GenericRpcCall;
+    v1_follow: GenericRpcCall;
 
     /**
-     * @rpcname: chainHead_unstable_header
+     * @rpcname: chainHead_v1_header
      **/
-    unstable_header: GenericRpcCall;
+    v1_header: GenericRpcCall;
 
     /**
-     * @rpcname: chainHead_unstable_stopOperation
+     * @rpcname: chainHead_v1_stopOperation
      **/
-    unstable_stopOperation: GenericRpcCall;
+    v1_stopOperation: GenericRpcCall;
 
     /**
-     * @rpcname: chainHead_unstable_storage
+     * @rpcname: chainHead_v1_storage
      **/
-    unstable_storage: GenericRpcCall;
+    v1_storage: GenericRpcCall;
 
     /**
-     * @rpcname: chainHead_unstable_unfollow
+     * @rpcname: chainHead_v1_unfollow
      **/
-    unstable_unfollow: GenericRpcCall;
+    v1_unfollow: GenericRpcCall;
 
     /**
-     * @rpcname: chainHead_unstable_unpin
+     * @rpcname: chainHead_v1_unpin
      **/
-    unstable_unpin: GenericRpcCall;
+    v1_unpin: GenericRpcCall;
 
     [method: string]: GenericRpcCall;
   };
@@ -732,27 +732,27 @@ export interface RpcCalls extends GenericRpcCalls {
   };
   transactionWatch: {
     /**
-     * @rpcname: transactionWatch_unstable_submitAndWatch
+     * @rpcname: transactionWatch_v1_submitAndWatch
      **/
-    unstable_submitAndWatch: GenericRpcCall;
+    v1_submitAndWatch: GenericRpcCall;
 
     /**
-     * @rpcname: transactionWatch_unstable_unwatch
+     * @rpcname: transactionWatch_v1_unwatch
      **/
-    unstable_unwatch: GenericRpcCall;
+    v1_unwatch: GenericRpcCall;
 
     [method: string]: GenericRpcCall;
   };
   transaction: {
     /**
-     * @rpcname: transaction_unstable_broadcast
+     * @rpcname: transaction_v1_broadcast
      **/
-    unstable_broadcast: GenericRpcCall;
+    v1_broadcast: GenericRpcCall;
 
     /**
-     * @rpcname: transaction_unstable_stop
+     * @rpcname: transaction_v1_stop
      **/
-    unstable_stop: GenericRpcCall;
+    v1_stop: GenericRpcCall;
 
     [method: string]: GenericRpcCall;
   };

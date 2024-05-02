@@ -76,6 +76,8 @@ import type {
   StagingXcmV3MultilocationMultiLocation,
   PalletNftFractionalizationDetails,
   PalletAssetConversionPoolInfo,
+  PalletStateTrieMigrationMigrationTask,
+  PalletStateTrieMigrationMigrationLimits,
 } from './types';
 
 export interface ChainStorage extends GenericChainStorage {
@@ -1518,6 +1520,43 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<number | undefined> =} callback
      **/
     nextPoolAssetId: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `StateTrieMigration`'s storage queries
+   **/
+  stateTrieMigration: {
+    /**
+     * Migration progress.
+     *
+     * This stores the snapshot of the last migrated keys. It can be set into motion and move
+     * forward by any of the means provided by this pallet.
+     *
+     * @param {Callback<PalletStateTrieMigrationMigrationTask> =} callback
+     **/
+    migrationProcess: GenericStorageQuery<() => PalletStateTrieMigrationMigrationTask>;
+
+    /**
+     * The limits that are imposed on automatic migrations.
+     *
+     * If set to None, then no automatic migration happens.
+     *
+     * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
+     **/
+    autoLimits: GenericStorageQuery<() => PalletStateTrieMigrationMigrationLimits | undefined>;
+
+    /**
+     * The maximum limits that the signed migration could use.
+     *
+     * If not set, no signed submission is allowed.
+     *
+     * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
+     **/
+    signedMigrationMaxLimits: GenericStorageQuery<() => PalletStateTrieMigrationMigrationLimits | undefined>;
 
     /**
      * Generic pallet storage query

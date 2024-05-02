@@ -2565,11 +2565,6 @@ export interface ChainErrors extends GenericChainErrors {
     InUse: GenericPalletError;
 
     /**
-     * Invalid non-concrete asset.
-     **/
-    InvalidAssetNotConcrete: GenericPalletError;
-
-    /**
      * Invalid asset, reserve chain could not be determined for it.
      **/
     InvalidAssetUnknownReserve: GenericPalletError;
@@ -2588,17 +2583,6 @@ export interface ChainErrors extends GenericChainErrors {
      * Local XCM execution incomplete.
      **/
     LocalExecutionIncomplete: GenericPalletError;
-
-    /**
-     * Could not decode XCM.
-     **/
-    UnableToDecode: GenericPalletError;
-
-    /**
-     * XCM encoded length is too large.
-     * Returned when an XCM encoded length is larger than `MaxXcmEncodedSize`.
-     **/
-    XcmTooLarge: GenericPalletError;
 
     /**
      * Generic pallet error

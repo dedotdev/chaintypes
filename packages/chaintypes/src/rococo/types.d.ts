@@ -6,6 +6,7 @@ import type {
   DispatchInfo,
   DispatchError,
   AccountId32,
+  Perquintill,
   FixedBytes,
   Bytes,
   FixedArray,
@@ -18,7 +19,6 @@ import type {
   EthereumAddressLike,
   Data,
   FixedU128,
-  Perquintill,
   Perbill,
   BitSequence,
   Result,
@@ -58,6 +58,7 @@ export type RococoRuntimeRuntimeEvent =
   | { pallet: 'System'; palletEvent: FrameSystemEvent }
   | { pallet: 'Indices'; palletEvent: PalletIndicesEvent }
   | { pallet: 'Balances'; palletEvent: PalletBalancesEvent }
+  | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
   | { pallet: 'TransactionPayment'; palletEvent: PalletTransactionPaymentEvent }
   | { pallet: 'Offences'; palletEvent: PalletOffencesEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
@@ -260,6 +261,67 @@ export type PalletBalancesEvent =
   | { name: 'TotalIssuanceForced'; data: { old: bigint; new: bigint } };
 
 export type FrameSupportTokensMiscBalanceStatus = 'Free' | 'Reserved';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletParametersEvent =
+  /**
+   * A Parameter was set.
+   *
+   * Is also emitted when the value was not changed.
+   **/
+  {
+    name: 'Updated';
+    data: {
+      /**
+       * The key that was updated.
+       **/
+      key: RococoRuntimeRuntimeParametersKey;
+
+      /**
+       * The old value before this call.
+       **/
+      oldValue?: RococoRuntimeRuntimeParametersValue | undefined;
+
+      /**
+       * The new value after this call.
+       **/
+      newValue?: RococoRuntimeRuntimeParametersValue | undefined;
+    };
+  };
+
+export type RococoRuntimeRuntimeParametersKey =
+  | { tag: 'Nis'; value: RococoRuntimeDynamicParamsNisParametersKey }
+  | { tag: 'Preimage'; value: RococoRuntimeDynamicParamsPreimageParametersKey };
+
+export type RococoRuntimeDynamicParamsNisParametersKey =
+  | { tag: 'Target'; value: RococoRuntimeDynamicParamsNisTarget }
+  | { tag: 'MinBid'; value: RococoRuntimeDynamicParamsNisMinBid };
+
+export type RococoRuntimeDynamicParamsNisTarget = {};
+
+export type RococoRuntimeDynamicParamsNisMinBid = {};
+
+export type RococoRuntimeDynamicParamsPreimageParametersKey =
+  | { tag: 'BaseDeposit'; value: RococoRuntimeDynamicParamsPreimageBaseDeposit }
+  | { tag: 'ByteDeposit'; value: RococoRuntimeDynamicParamsPreimageByteDeposit };
+
+export type RococoRuntimeDynamicParamsPreimageBaseDeposit = {};
+
+export type RococoRuntimeDynamicParamsPreimageByteDeposit = {};
+
+export type RococoRuntimeRuntimeParametersValue =
+  | { tag: 'Nis'; value: RococoRuntimeDynamicParamsNisParametersValue }
+  | { tag: 'Preimage'; value: RococoRuntimeDynamicParamsPreimageParametersValue };
+
+export type RococoRuntimeDynamicParamsNisParametersValue =
+  | { tag: 'Target'; value: Perquintill }
+  | { tag: 'MinBid'; value: bigint };
+
+export type RococoRuntimeDynamicParamsPreimageParametersValue =
+  | { tag: 'BaseDeposit'; value: bigint }
+  | { tag: 'ByteDeposit'; value: bigint };
 
 /**
  * The `Event` enum of this pallet
@@ -878,6 +940,7 @@ export type RococoRuntimeRuntimeCall =
   | { pallet: 'Timestamp'; palletCall: PalletTimestampCall }
   | { pallet: 'Indices'; palletCall: PalletIndicesCall }
   | { pallet: 'Balances'; palletCall: PalletBalancesCall }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCall }
   | { pallet: 'Session'; palletCall: PalletSessionCall }
   | { pallet: 'Grandpa'; palletCall: PalletGrandpaCall }
   | { pallet: 'Treasury'; palletCall: PalletTreasuryCall }
@@ -933,6 +996,7 @@ export type RococoRuntimeRuntimeCallLike =
   | { pallet: 'Timestamp'; palletCall: PalletTimestampCallLike }
   | { pallet: 'Indices'; palletCall: PalletIndicesCallLike }
   | { pallet: 'Balances'; palletCall: PalletBalancesCallLike }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCallLike }
   | { pallet: 'Session'; palletCall: PalletSessionCallLike }
   | { pallet: 'Grandpa'; palletCall: PalletGrandpaCallLike }
   | { pallet: 'Treasury'; palletCall: PalletTreasuryCallLike }
@@ -1585,6 +1649,39 @@ export type PalletBalancesCallLike =
   | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } };
 
 export type PalletBalancesAdjustmentDirection = 'Increase' | 'Decrease';
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletParametersCall =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: RococoRuntimeRuntimeParameters } };
+
+export type PalletParametersCallLike =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: RococoRuntimeRuntimeParameters } };
+
+export type RococoRuntimeRuntimeParameters =
+  | { tag: 'Nis'; value: RococoRuntimeDynamicParamsNisParameters }
+  | { tag: 'Preimage'; value: RococoRuntimeDynamicParamsPreimageParameters };
+
+export type RococoRuntimeDynamicParamsNisParameters =
+  | { tag: 'Target'; value: [RococoRuntimeDynamicParamsNisTarget, Perquintill | undefined] }
+  | { tag: 'MinBid'; value: [RococoRuntimeDynamicParamsNisMinBid, bigint | undefined] };
+
+export type RococoRuntimeDynamicParamsPreimageParameters =
+  | { tag: 'BaseDeposit'; value: [RococoRuntimeDynamicParamsPreimageBaseDeposit, bigint | undefined] }
+  | { tag: 'ByteDeposit'; value: [RococoRuntimeDynamicParamsPreimageByteDeposit, bigint | undefined] };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -7246,7 +7343,17 @@ export type PolkadotRuntimeParachainsHrmpPalletCall =
   | {
       name: 'PokeChannelDeposits';
       params: { sender: PolkadotParachainPrimitivesPrimitivesId; recipient: PolkadotParachainPrimitivesPrimitivesId };
-    };
+    }
+  /**
+   * Establish a bidirectional HRMP channel between a parachain and a system chain.
+   *
+   * Arguments:
+   *
+   * - `target_system_chain`: A system chain, `ParaId`.
+   *
+   * The origin needs to be the parachain origin.
+   **/
+  | { name: 'EstablishChannelWithSystem'; params: { targetSystemChain: PolkadotParachainPrimitivesPrimitivesId } };
 
 export type PolkadotRuntimeParachainsHrmpPalletCallLike =
   /**
@@ -7382,7 +7489,17 @@ export type PolkadotRuntimeParachainsHrmpPalletCallLike =
   | {
       name: 'PokeChannelDeposits';
       params: { sender: PolkadotParachainPrimitivesPrimitivesId; recipient: PolkadotParachainPrimitivesPrimitivesId };
-    };
+    }
+  /**
+   * Establish a bidirectional HRMP channel between a parachain and a system chain.
+   *
+   * Arguments:
+   *
+   * - `target_system_chain`: A system chain, `ParaId`.
+   *
+   * The origin needs to be the parachain origin.
+   **/
+  | { name: 'EstablishChannelWithSystem'; params: { targetSystemChain: PolkadotParachainPrimitivesPrimitivesId } };
 
 export type PolkadotParachainPrimitivesPrimitivesHrmpChannelId = {
   sender: PolkadotParachainPrimitivesPrimitivesId;
@@ -7704,7 +7821,7 @@ export type PolkadotRuntimeCommonParasRegistrarPalletCall =
    * validators have reported on the validity of the code, the code will either be enacted
    * or the upgrade will be rejected. If the code will be enacted, the current code of the
    * parachain will be overwritten directly. This means that any PoV will be checked by this
-   * new code. The parachain itself will not be informed explictely that the validation code
+   * new code. The parachain itself will not be informed explicitly that the validation code
    * has changed.
    *
    * Can be called by Root, the parachain, or the parachain manager if the parachain is
@@ -7844,7 +7961,7 @@ export type PolkadotRuntimeCommonParasRegistrarPalletCallLike =
    * validators have reported on the validity of the code, the code will either be enacted
    * or the upgrade will be rejected. If the code will be enacted, the current code of the
    * parachain will be overwritten directly. This means that any PoV will be checked by this
-   * new code. The parachain itself will not be informed explictely that the validation code
+   * new code. The parachain itself will not be informed explicitly that the validation code
    * has changed.
    *
    * Can be called by Root, the parachain, or the parachain manager if the parachain is
@@ -8304,9 +8421,6 @@ export type PolkadotRuntimeParachainsAssignerCoretimePartsOf57600 = number;
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
 export type PalletXcmCall =
-  /**
-   * WARNING: DEPRECATED. `send` will be removed after June 2024. Use `send_blob` instead.
-   **/
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
   /**
    * Teleport some assets from the local chain to some destination chain.
@@ -8387,9 +8501,6 @@ export type PalletXcmCall =
    * No more than `max_weight` will be used in its attempted execution. If this is less than
    * the maximum amount of weight that the message could take to be executed, then no
    * execution attempt will be made.
-   *
-   * WARNING: DEPRECATED. `execute` will be removed after June 2024. Use `execute_blob`
-   * instead.
    **/
   | { name: 'Execute'; params: { message: XcmVersionedXcm; maxWeight: SpWeightsWeightV2Weight } }
   /**
@@ -8559,32 +8670,69 @@ export type PalletXcmCall =
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
-   * Execute an XCM from a local, signed, origin.
+   * Transfer assets from the local chain to the destination chain using explicit transfer
+   * types for assets and fees.
    *
-   * An event is deposited indicating whether the message could be executed completely
-   * or only partially.
+   * `assets` must have same reserve location or may be teleportable to `dest`. Caller must
+   * provide the `assets_transfer_type` to be used for `assets`:
+   * - `TransferType::LocalReserve`: transfer assets to sovereign account of destination
+   * chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+   * assets to `beneficiary`.
+   * - `TransferType::DestinationReserve`: burn local assets and forward a notification to
+   * `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+   * deposit them to `beneficiary`.
+   * - `TransferType::RemoteReserve(reserve)`: burn local assets, forward XCM to `reserve`
+   * chain to move reserves from this chain's SA to `dest` chain's SA, and forward another
+   * XCM to `dest` to mint and deposit reserve-based assets to `beneficiary`. Typically
+   * the remote `reserve` is Asset Hub.
+   * - `TransferType::Teleport`: burn local assets and forward XCM to `dest` chain to
+   * mint/teleport assets and deposit them to `beneficiary`.
    *
-   * No more than `max_weight` will be used in its attempted execution. If this is less than
-   * the maximum amount of weight that the message could take to be executed, then no
-   * execution attempt will be made.
+   * On the destination chain, as well as any intermediary hops, `BuyExecution` is used to
+   * buy execution using transferred `assets` identified by `remote_fees_id`.
+   * Make sure enough of the specified `remote_fees_id` asset is included in the given list
+   * of `assets`. `remote_fees_id` should be enough to pay for `weight_limit`. If more weight
+   * is needed than `weight_limit`, then the operation will fail and the sent assets may be
+   * at risk.
    *
-   * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
+   * `remote_fees_id` may use different transfer type than rest of `assets` and can be
+   * specified through `fees_transfer_type`.
+   *
+   * The caller needs to specify what should happen to the transferred assets once they reach
+   * the `dest` chain. This is done through the `custom_xcm_on_dest` parameter, which
+   * contains the instructions to execute on `dest` as a final step.
+   * This is usually as simple as:
+   * `Xcm(vec![DepositAsset { assets: Wild(AllCounted(assets.len())), beneficiary }])`,
+   * but could be something more exotic like sending the `assets` even further.
+   *
+   * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+   * - `dest`: Destination context for the assets. Will typically be `[Parent,
+   * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+   * relay to parachain, or `(parents: 2, (GlobalConsensus(..), ..))` to send from
+   * parachain across a bridge to another ecosystem destination.
+   * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+   * fee on the `dest` (and possibly reserve) chains.
+   * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
+   * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+   * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
+   * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
+   * transfer, which also determines what happens to the assets on the destination chain.
+   * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
    **/
-  | { name: 'ExecuteBlob'; params: { encodedMessage: Bytes; maxWeight: SpWeightsWeightV2Weight } }
-  /**
-   * Send an XCM from a local, signed, origin.
-   *
-   * The destination, `dest`, will receive this message with a `DescendOrigin` instruction
-   * that makes the origin of the message be the origin on this system.
-   *
-   * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
-   **/
-  | { name: 'SendBlob'; params: { dest: XcmVersionedLocation; encodedMessage: Bytes } };
+  | {
+      name: 'TransferAssetsUsingTypeAndThen';
+      params: {
+        dest: XcmVersionedLocation;
+        assets: XcmVersionedAssets;
+        assetsTransferType: StagingXcmExecutorAssetTransferTransferType;
+        remoteFeesId: XcmVersionedAssetId;
+        feesTransferType: StagingXcmExecutorAssetTransferTransferType;
+        customXcmOnDest: XcmVersionedXcm;
+        weightLimit: XcmV3WeightLimit;
+      };
+    };
 
 export type PalletXcmCallLike =
-  /**
-   * WARNING: DEPRECATED. `send` will be removed after June 2024. Use `send_blob` instead.
-   **/
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
   /**
    * Teleport some assets from the local chain to some destination chain.
@@ -8665,9 +8813,6 @@ export type PalletXcmCallLike =
    * No more than `max_weight` will be used in its attempted execution. If this is less than
    * the maximum amount of weight that the message could take to be executed, then no
    * execution attempt will be made.
-   *
-   * WARNING: DEPRECATED. `execute` will be removed after June 2024. Use `execute_blob`
-   * instead.
    **/
   | { name: 'Execute'; params: { message: XcmVersionedXcm; maxWeight: SpWeightsWeightV2Weight } }
   /**
@@ -8837,27 +8982,67 @@ export type PalletXcmCallLike =
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
-   * Execute an XCM from a local, signed, origin.
+   * Transfer assets from the local chain to the destination chain using explicit transfer
+   * types for assets and fees.
    *
-   * An event is deposited indicating whether the message could be executed completely
-   * or only partially.
+   * `assets` must have same reserve location or may be teleportable to `dest`. Caller must
+   * provide the `assets_transfer_type` to be used for `assets`:
+   * - `TransferType::LocalReserve`: transfer assets to sovereign account of destination
+   * chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+   * assets to `beneficiary`.
+   * - `TransferType::DestinationReserve`: burn local assets and forward a notification to
+   * `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+   * deposit them to `beneficiary`.
+   * - `TransferType::RemoteReserve(reserve)`: burn local assets, forward XCM to `reserve`
+   * chain to move reserves from this chain's SA to `dest` chain's SA, and forward another
+   * XCM to `dest` to mint and deposit reserve-based assets to `beneficiary`. Typically
+   * the remote `reserve` is Asset Hub.
+   * - `TransferType::Teleport`: burn local assets and forward XCM to `dest` chain to
+   * mint/teleport assets and deposit them to `beneficiary`.
    *
-   * No more than `max_weight` will be used in its attempted execution. If this is less than
-   * the maximum amount of weight that the message could take to be executed, then no
-   * execution attempt will be made.
+   * On the destination chain, as well as any intermediary hops, `BuyExecution` is used to
+   * buy execution using transferred `assets` identified by `remote_fees_id`.
+   * Make sure enough of the specified `remote_fees_id` asset is included in the given list
+   * of `assets`. `remote_fees_id` should be enough to pay for `weight_limit`. If more weight
+   * is needed than `weight_limit`, then the operation will fail and the sent assets may be
+   * at risk.
    *
-   * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
+   * `remote_fees_id` may use different transfer type than rest of `assets` and can be
+   * specified through `fees_transfer_type`.
+   *
+   * The caller needs to specify what should happen to the transferred assets once they reach
+   * the `dest` chain. This is done through the `custom_xcm_on_dest` parameter, which
+   * contains the instructions to execute on `dest` as a final step.
+   * This is usually as simple as:
+   * `Xcm(vec![DepositAsset { assets: Wild(AllCounted(assets.len())), beneficiary }])`,
+   * but could be something more exotic like sending the `assets` even further.
+   *
+   * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+   * - `dest`: Destination context for the assets. Will typically be `[Parent,
+   * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+   * relay to parachain, or `(parents: 2, (GlobalConsensus(..), ..))` to send from
+   * parachain across a bridge to another ecosystem destination.
+   * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+   * fee on the `dest` (and possibly reserve) chains.
+   * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
+   * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+   * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
+   * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
+   * transfer, which also determines what happens to the assets on the destination chain.
+   * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
    **/
-  | { name: 'ExecuteBlob'; params: { encodedMessage: BytesLike; maxWeight: SpWeightsWeightV2Weight } }
-  /**
-   * Send an XCM from a local, signed, origin.
-   *
-   * The destination, `dest`, will receive this message with a `DescendOrigin` instruction
-   * that makes the origin of the message be the origin on this system.
-   *
-   * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
-   **/
-  | { name: 'SendBlob'; params: { dest: XcmVersionedLocation; encodedMessage: BytesLike } };
+  | {
+      name: 'TransferAssetsUsingTypeAndThen';
+      params: {
+        dest: XcmVersionedLocation;
+        assets: XcmVersionedAssets;
+        assetsTransferType: StagingXcmExecutorAssetTransferTransferType;
+        remoteFeesId: XcmVersionedAssetId;
+        feesTransferType: StagingXcmExecutorAssetTransferTransferType;
+        customXcmOnDest: XcmVersionedXcm;
+        weightLimit: XcmV3WeightLimit;
+      };
+    };
 
 export type XcmVersionedXcm =
   | { tag: 'V2'; value: XcmV2Xcm }
@@ -9350,6 +9535,16 @@ export type XcmVersionedAssets =
   | { tag: 'V2'; value: XcmV2MultiassetMultiAssets }
   | { tag: 'V3'; value: XcmV3MultiassetMultiAssets }
   | { tag: 'V4'; value: StagingXcmV4AssetAssets };
+
+export type StagingXcmExecutorAssetTransferTransferType =
+  | { tag: 'Teleport' }
+  | { tag: 'LocalReserve' }
+  | { tag: 'DestinationReserve' }
+  | { tag: 'RemoteReserve'; value: XcmVersionedLocation };
+
+export type XcmVersionedAssetId =
+  | { tag: 'V3'; value: XcmV3MultiassetAssetId }
+  | { tag: 'V4'; value: StagingXcmV4AssetAssetId };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10986,7 +11181,7 @@ export type PolkadotRuntimeParachainsHrmpPalletEvent =
       };
     }
   /**
-   * An HRMP channel was opened between two system chains.
+   * An HRMP channel was opened with a system chain.
    **/
   | {
       name: 'HrmpSystemChannelOpened';
@@ -14072,10 +14267,6 @@ export type PalletXcmVersionMigrationStage =
   | { tag: 'NotifyCurrentTargets'; value?: Bytes | undefined }
   | { tag: 'MigrateAndNotifyOldTargets' };
 
-export type XcmVersionedAssetId =
-  | { tag: 'V3'; value: XcmV3MultiassetAssetId }
-  | { tag: 'V4'; value: StagingXcmV4AssetAssetId };
-
 export type PalletXcmRemoteLockedFungibleRecord = {
   amount: bigint;
   owner: XcmVersionedLocation;
@@ -14171,10 +14362,6 @@ export type PalletXcmError =
    **/
   | 'InUse'
   /**
-   * Invalid non-concrete asset.
-   **/
-  | 'InvalidAssetNotConcrete'
-  /**
    * Invalid asset, reserve chain could not be determined for it.
    **/
   | 'InvalidAssetUnknownReserve'
@@ -14189,16 +14376,7 @@ export type PalletXcmError =
   /**
    * Local XCM execution incomplete.
    **/
-  | 'LocalExecutionIncomplete'
-  /**
-   * Could not decode XCM.
-   **/
-  | 'UnableToDecode'
-  /**
-   * XCM encoded length is too large.
-   * Returned when an XCM encoded length is larger than `MaxXcmEncodedSize`.
-   **/
-  | 'XcmTooLarge';
+  | 'LocalExecutionIncomplete';
 
 /**
  * The `Error` enum of this pallet.

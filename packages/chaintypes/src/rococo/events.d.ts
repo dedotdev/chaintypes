@@ -15,6 +15,8 @@ import type {
 } from '@dedot/codecs';
 import type {
   FrameSupportTokensMiscBalanceStatus,
+  RococoRuntimeRuntimeParametersKey,
+  RococoRuntimeRuntimeParametersValue,
   SpConsensusGrandpaAppPublic,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   XcmVersionedLocation,
@@ -243,6 +245,41 @@ export interface ChainEvents extends GenericChainEvents {
      * The `TotalIssuance` was forcefully changed.
      **/
     TotalIssuanceForced: GenericPalletEvent<'Balances', 'TotalIssuanceForced', { old: bigint; new: bigint }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Parameters`'s events
+   **/
+  parameters: {
+    /**
+     * A Parameter was set.
+     *
+     * Is also emitted when the value was not changed.
+     **/
+    Updated: GenericPalletEvent<
+      'Parameters',
+      'Updated',
+      {
+        /**
+         * The key that was updated.
+         **/
+        key: RococoRuntimeRuntimeParametersKey;
+
+        /**
+         * The old value before this call.
+         **/
+        oldValue?: RococoRuntimeRuntimeParametersValue | undefined;
+
+        /**
+         * The new value after this call.
+         **/
+        newValue?: RococoRuntimeRuntimeParametersValue | undefined;
+      }
+    >;
 
     /**
      * Generic pallet event
@@ -2258,7 +2295,7 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * An HRMP channel was opened between two system chains.
+     * An HRMP channel was opened with a system chain.
      **/
     HrmpSystemChannelOpened: GenericPalletEvent<
       'Hrmp',

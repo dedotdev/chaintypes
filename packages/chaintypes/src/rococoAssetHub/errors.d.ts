@@ -440,11 +440,6 @@ export interface ChainErrors extends GenericChainErrors {
     InUse: GenericPalletError;
 
     /**
-     * Invalid non-concrete asset.
-     **/
-    InvalidAssetNotConcrete: GenericPalletError;
-
-    /**
      * Invalid asset, reserve chain could not be determined for it.
      **/
     InvalidAssetUnknownReserve: GenericPalletError;
@@ -463,17 +458,6 @@ export interface ChainErrors extends GenericChainErrors {
      * Local XCM execution incomplete.
      **/
     LocalExecutionIncomplete: GenericPalletError;
-
-    /**
-     * Could not decode XCM.
-     **/
-    UnableToDecode: GenericPalletError;
-
-    /**
-     * XCM encoded length is too large.
-     * Returned when an XCM encoded length is larger than `MaxXcmEncodedSize`.
-     **/
-    XcmTooLarge: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1501,6 +1485,80 @@ export interface ChainErrors extends GenericChainErrors {
      * The destination account cannot exist with the swapped funds.
      **/
     BelowMinimum: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `StateTrieMigration`'s errors
+   **/
+  stateTrieMigration: {
+    /**
+     * Max signed limits not respected.
+     **/
+    MaxSignedLimits: GenericPalletError;
+
+    /**
+     * A key was longer than the configured maximum.
+     *
+     * This means that the migration halted at the current [`Progress`] and
+     * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
+     * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
+     * The value should only be increased to avoid a storage migration for the currently
+     * stored [`crate::Progress::LastKey`].
+     **/
+    KeyTooLong: GenericPalletError;
+
+    /**
+     * submitter does not have enough funds.
+     **/
+    NotEnoughFunds: GenericPalletError;
+
+    /**
+     * Bad witness data provided.
+     **/
+    BadWitness: GenericPalletError;
+
+    /**
+     * Signed migration is not allowed because the maximum limit is not set yet.
+     **/
+    SignedMigrationNotAllowed: GenericPalletError;
+
+    /**
+     * Bad child root provided.
+     **/
+    BadChildRoot: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `AssetConversionMigration`'s errors
+   **/
+  assetConversionMigration: {
+    /**
+     * Provided asset pair is not supported for pool.
+     **/
+    InvalidAssetPair: GenericPalletError;
+
+    /**
+     * The pool doesn't exist.
+     **/
+    PoolNotFound: GenericPalletError;
+
+    /**
+     * Pool's balance cannot be zero.
+     **/
+    ZeroBalance: GenericPalletError;
+
+    /**
+     * Indicates a partial transfer of balance to the new account during a migration.
+     **/
+    PartialTransfer: GenericPalletError;
 
     /**
      * Generic pallet error

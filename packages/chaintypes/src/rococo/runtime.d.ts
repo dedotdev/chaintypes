@@ -668,6 +668,16 @@ export interface RuntimeApis extends GenericRuntimeApis {
     >;
 
     /**
+     * Elastic scaling support
+     *
+     * @callname: ParachainHost_candidates_pending_availability
+     * @param {PolkadotParachainPrimitivesPrimitivesId} para_id
+     **/
+    candidatesPendingAvailability: GenericRuntimeApiMethod<
+      (paraId: PolkadotParachainPrimitivesPrimitivesId) => Promise<Array<PolkadotPrimitivesV7CommittedCandidateReceipt>>
+    >;
+
+    /**
      * Generic runtime api call
      **/
     [method: string]: GenericRuntimeApiMethod;
@@ -1113,28 +1123,51 @@ export interface RuntimeApis extends GenericRuntimeApis {
    **/
   genesisBuilder: {
     /**
-     * Creates the default `RuntimeGenesisConfig` and returns it as a JSON blob.
+     * Build `RuntimeGenesisConfig` from a JSON blob not using any defaults and store it in the
+     * storage.
      *
-     * This function instantiates the default `RuntimeGenesisConfig` struct for the runtime and serializes it into a JSON
-     * blob. It returns a `Vec<u8>` containing the JSON representation of the default `RuntimeGenesisConfig`.
+     * In the case of a FRAME-based runtime, this function deserializes the full `RuntimeGenesisConfig` from the given JSON blob and
+     * puts it into the storage. If the provided JSON blob is incorrect or incomplete or the
+     * deserialization fails, an error is returned.
      *
-     * @callname: GenesisBuilder_create_default_config
-     **/
-    createDefaultConfig: GenericRuntimeApiMethod<() => Promise<Bytes>>;
-
-    /**
-     * Build `RuntimeGenesisConfig` from a JSON blob not using any defaults and store it in the storage.
+     * Please note that provided JSON blob must contain all `RuntimeGenesisConfig` fields, no
+     * defaults will be used.
      *
-     * This function deserializes the full `RuntimeGenesisConfig` from the given JSON blob and puts it into the storage.
-     * If the provided JSON blob is incorrect or incomplete or the deserialization fails, an error is returned.
-     * It is recommended to log any errors encountered during the process.
-     *
-     * Please note that provided json blob must contain all `RuntimeGenesisConfig` fields, no defaults will be used.
-     *
-     * @callname: GenesisBuilder_build_config
+     * @callname: GenesisBuilder_build_state
      * @param {BytesLike} json
      **/
-    buildConfig: GenericRuntimeApiMethod<(json: BytesLike) => Promise<Result<[], string>>>;
+    buildState: GenericRuntimeApiMethod<(json: BytesLike) => Promise<Result<[], string>>>;
+
+    /**
+     * Returns a JSON blob representation of the built-in `RuntimeGenesisConfig` identified by
+     * `id`.
+     *
+     * If `id` is `None` the function returns JSON blob representation of the default
+     * `RuntimeGenesisConfig` struct of the runtime. Implementation must provide default
+     * `RuntimeGenesisConfig`.
+     *
+     * Otherwise function returns a JSON representation of the built-in, named
+     * `RuntimeGenesisConfig` preset identified by `id`, or `None` if such preset does not
+     * exists. Returned `Vec<u8>` contains bytes of JSON blob (patch) which comprises a list of
+     * (potentially nested) key-value pairs that are intended for customizing the default
+     * runtime genesis config. The patch shall be merged (rfc7386) with the JSON representation
+     * of the default `RuntimeGenesisConfig` to create a comprehensive genesis config that can
+     * be used in `build_state` method.
+     *
+     * @callname: GenesisBuilder_get_preset
+     * @param {string | undefined} id
+     **/
+    getPreset: GenericRuntimeApiMethod<(id?: string | undefined) => Promise<Bytes | undefined>>;
+
+    /**
+     * Returns a list of identifiers for available builtin `RuntimeGenesisConfig` presets.
+     *
+     * The presets from the list can be queried with [`GenesisBuilder::get_preset`] method. If
+     * no named presets are provided by the runtime the list is empty.
+     *
+     * @callname: GenesisBuilder_preset_names
+     **/
+    presetNames: GenericRuntimeApiMethod<() => Promise<Array<string>>>;
 
     /**
      * Generic runtime api call

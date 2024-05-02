@@ -21,6 +21,8 @@ import type {
   PalletNftsAttributeNamespace,
   PalletNftsPriceWithDirection,
   PalletNftsPalletAttributes,
+  PalletStateTrieMigrationMigrationCompute,
+  PalletStateTrieMigrationError,
 } from './types';
 
 export interface ChainEvents extends GenericChainEvents {
@@ -2241,6 +2243,92 @@ export interface ChainEvents extends GenericChainEvents {
          * E.g. (A, amount_in) -> (Dot, amount_out) -> (B, amount_out)
          **/
         path: Array<[StagingXcmV3MultilocationMultiLocation, bigint]>;
+      }
+    >;
+
+    /**
+     * Pool has been touched in order to fulfill operational requirements.
+     **/
+    Touched: GenericPalletEvent<
+      'AssetConversion',
+      'Touched',
+      {
+        /**
+         * The ID of the pool.
+         **/
+        poolId: [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation];
+
+        /**
+         * The account initiating the touch.
+         **/
+        who: AccountId32;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `StateTrieMigration`'s events
+   **/
+  stateTrieMigration: {
+    /**
+     * Given number of `(top, child)` keys were migrated respectively, with the given
+     * `compute`.
+     **/
+    Migrated: GenericPalletEvent<
+      'StateTrieMigration',
+      'Migrated',
+      { top: number; child: number; compute: PalletStateTrieMigrationMigrationCompute }
+    >;
+
+    /**
+     * Some account got slashed by the given amount.
+     **/
+    Slashed: GenericPalletEvent<'StateTrieMigration', 'Slashed', { who: AccountId32; amount: bigint }>;
+
+    /**
+     * The auto migration task finished.
+     **/
+    AutoMigrationFinished: GenericPalletEvent<'StateTrieMigration', 'AutoMigrationFinished', null>;
+
+    /**
+     * Migration got halted due to an error or miss-configuration.
+     **/
+    Halted: GenericPalletEvent<'StateTrieMigration', 'Halted', { error: PalletStateTrieMigrationError }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `AssetConversionMigration`'s events
+   **/
+  assetConversionMigration: {
+    /**
+     * Indicates that a pool has been migrated to the new account ID.
+     **/
+    MigratedToNewAccount: GenericPalletEvent<
+      'AssetConversionMigration',
+      'MigratedToNewAccount',
+      {
+        /**
+         * Pool's ID.
+         **/
+        poolId: [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation];
+
+        /**
+         * Pool's prior account ID.
+         **/
+        priorAccount: AccountId32;
+
+        /**
+         * Pool's new account ID.
+         **/
+        newAccount: AccountId32;
       }
     >;
 

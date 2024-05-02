@@ -32,6 +32,8 @@ import type {
   PalletBalancesReserveData,
   PalletBalancesIdAmount,
   PalletBalancesIdAmount002,
+  RococoRuntimeRuntimeParametersValue,
+  RococoRuntimeRuntimeParametersKey,
   PalletTransactionPaymentReleases,
   SpStakingOffenceOffenceDetails,
   RococoRuntimeSessionKeys,
@@ -582,6 +584,25 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<Array<PalletBalancesIdAmount002>> =} callback
      **/
     freezes: GenericStorageQuery<(arg: AccountId32Like) => Array<PalletBalancesIdAmount002>>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Parameters`'s storage queries
+   **/
+  parameters: {
+    /**
+     * Stored parameters.
+     *
+     * @param {RococoRuntimeRuntimeParametersKey} arg
+     * @param {Callback<RococoRuntimeRuntimeParametersValue | undefined> =} callback
+     **/
+    parameters: GenericStorageQuery<
+      (arg: RococoRuntimeRuntimeParametersKey) => RococoRuntimeRuntimeParametersValue | undefined
+    >;
 
     /**
      * Generic pallet storage query

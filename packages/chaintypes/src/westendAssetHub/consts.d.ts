@@ -775,4 +775,13 @@ export interface ChainConsts extends GenericChainConsts {
      **/
     [name: string]: any;
   };
+  /**
+   * Pallet `AssetConversionMigration`'s constants
+   **/
+  assetConversionMigration: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
 }

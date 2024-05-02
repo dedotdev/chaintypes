@@ -440,11 +440,6 @@ export interface ChainErrors extends GenericChainErrors {
     InUse: GenericPalletError;
 
     /**
-     * Invalid non-concrete asset.
-     **/
-    InvalidAssetNotConcrete: GenericPalletError;
-
-    /**
      * Invalid asset, reserve chain could not be determined for it.
      **/
     InvalidAssetUnknownReserve: GenericPalletError;
@@ -463,17 +458,6 @@ export interface ChainErrors extends GenericChainErrors {
      * Local XCM execution incomplete.
      **/
     LocalExecutionIncomplete: GenericPalletError;
-
-    /**
-     * Could not decode XCM.
-     **/
-    UnableToDecode: GenericPalletError;
-
-    /**
-     * XCM encoded length is too large.
-     * Returned when an XCM encoded length is larger than `MaxXcmEncodedSize`.
-     **/
-    XcmTooLarge: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1501,6 +1485,35 @@ export interface ChainErrors extends GenericChainErrors {
      * The destination account cannot exist with the swapped funds.
      **/
     BelowMinimum: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `AssetConversionMigration`'s errors
+   **/
+  assetConversionMigration: {
+    /**
+     * Provided asset pair is not supported for pool.
+     **/
+    InvalidAssetPair: GenericPalletError;
+
+    /**
+     * The pool doesn't exist.
+     **/
+    PoolNotFound: GenericPalletError;
+
+    /**
+     * Pool's balance cannot be zero.
+     **/
+    ZeroBalance: GenericPalletError;
+
+    /**
+     * Indicates a partial transfer of balance to the new account during a migration.
+     **/
+    PartialTransfer: GenericPalletError;
 
     /**
      * Generic pallet error

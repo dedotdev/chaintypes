@@ -2245,6 +2245,58 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * Pool has been touched in order to fulfill operational requirements.
+     **/
+    Touched: GenericPalletEvent<
+      'AssetConversion',
+      'Touched',
+      {
+        /**
+         * The ID of the pool.
+         **/
+        poolId: [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation];
+
+        /**
+         * The account initiating the touch.
+         **/
+        who: AccountId32;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `AssetConversionMigration`'s events
+   **/
+  assetConversionMigration: {
+    /**
+     * Indicates that a pool has been migrated to the new account ID.
+     **/
+    MigratedToNewAccount: GenericPalletEvent<
+      'AssetConversionMigration',
+      'MigratedToNewAccount',
+      {
+        /**
+         * Pool's ID.
+         **/
+        poolId: [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation];
+
+        /**
+         * Pool's prior account ID.
+         **/
+        priorAccount: AccountId32;
+
+        /**
+         * Pool's new account ID.
+         **/
+        newAccount: AccountId32;
+      }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;

@@ -69,7 +69,8 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'ForeignAssets'; palletEvent: PalletAssetsEvent002 }
   | { pallet: 'NftFractionalization'; palletEvent: PalletNftFractionalizationEvent }
   | { pallet: 'PoolAssets'; palletEvent: PalletAssetsEvent }
-  | { pallet: 'AssetConversion'; palletEvent: PalletAssetConversionEvent };
+  | { pallet: 'AssetConversion'; palletEvent: PalletAssetConversionEvent }
+  | { pallet: 'AssetConversionMigration'; palletEvent: PalletAssetConversionOpsEvent };
 
 /**
  * Event for the System pallet.
@@ -2039,7 +2040,51 @@ export type PalletAssetConversionEvent =
          **/
         path: Array<[StagingXcmV3MultilocationMultiLocation, bigint]>;
       };
+    }
+  /**
+   * Pool has been touched in order to fulfill operational requirements.
+   **/
+  | {
+      name: 'Touched';
+      data: {
+        /**
+         * The ID of the pool.
+         **/
+        poolId: [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation];
+
+        /**
+         * The account initiating the touch.
+         **/
+        who: AccountId32;
+      };
     };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAssetConversionOpsEvent =
+  /**
+   * Indicates that a pool has been migrated to the new account ID.
+   **/
+  {
+    name: 'MigratedToNewAccount';
+    data: {
+      /**
+       * Pool's ID.
+       **/
+      poolId: [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation];
+
+      /**
+       * Pool's prior account ID.
+       **/
+      priorAccount: AccountId32;
+
+      /**
+       * Pool's new account ID.
+       **/
+      newAccount: AccountId32;
+    };
+  };
 
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
@@ -3306,9 +3351,6 @@ export type PalletXcmRemoteLockedFungibleRecord = {
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
 export type PalletXcmCall =
-  /**
-   * WARNING: DEPRECATED. `send` will be removed after June 2024. Use `send_blob` instead.
-   **/
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
   /**
    * Teleport some assets from the local chain to some destination chain.
@@ -3389,9 +3431,6 @@ export type PalletXcmCall =
    * No more than `max_weight` will be used in its attempted execution. If this is less than
    * the maximum amount of weight that the message could take to be executed, then no
    * execution attempt will be made.
-   *
-   * WARNING: DEPRECATED. `execute` will be removed after June 2024. Use `execute_blob`
-   * instead.
    **/
   | { name: 'Execute'; params: { message: XcmVersionedXcm; maxWeight: SpWeightsWeightV2Weight } }
   /**
@@ -3561,32 +3600,69 @@ export type PalletXcmCall =
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
-   * Execute an XCM from a local, signed, origin.
+   * Transfer assets from the local chain to the destination chain using explicit transfer
+   * types for assets and fees.
    *
-   * An event is deposited indicating whether the message could be executed completely
-   * or only partially.
+   * `assets` must have same reserve location or may be teleportable to `dest`. Caller must
+   * provide the `assets_transfer_type` to be used for `assets`:
+   * - `TransferType::LocalReserve`: transfer assets to sovereign account of destination
+   * chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+   * assets to `beneficiary`.
+   * - `TransferType::DestinationReserve`: burn local assets and forward a notification to
+   * `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+   * deposit them to `beneficiary`.
+   * - `TransferType::RemoteReserve(reserve)`: burn local assets, forward XCM to `reserve`
+   * chain to move reserves from this chain's SA to `dest` chain's SA, and forward another
+   * XCM to `dest` to mint and deposit reserve-based assets to `beneficiary`. Typically
+   * the remote `reserve` is Asset Hub.
+   * - `TransferType::Teleport`: burn local assets and forward XCM to `dest` chain to
+   * mint/teleport assets and deposit them to `beneficiary`.
    *
-   * No more than `max_weight` will be used in its attempted execution. If this is less than
-   * the maximum amount of weight that the message could take to be executed, then no
-   * execution attempt will be made.
+   * On the destination chain, as well as any intermediary hops, `BuyExecution` is used to
+   * buy execution using transferred `assets` identified by `remote_fees_id`.
+   * Make sure enough of the specified `remote_fees_id` asset is included in the given list
+   * of `assets`. `remote_fees_id` should be enough to pay for `weight_limit`. If more weight
+   * is needed than `weight_limit`, then the operation will fail and the sent assets may be
+   * at risk.
    *
-   * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
+   * `remote_fees_id` may use different transfer type than rest of `assets` and can be
+   * specified through `fees_transfer_type`.
+   *
+   * The caller needs to specify what should happen to the transferred assets once they reach
+   * the `dest` chain. This is done through the `custom_xcm_on_dest` parameter, which
+   * contains the instructions to execute on `dest` as a final step.
+   * This is usually as simple as:
+   * `Xcm(vec![DepositAsset { assets: Wild(AllCounted(assets.len())), beneficiary }])`,
+   * but could be something more exotic like sending the `assets` even further.
+   *
+   * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+   * - `dest`: Destination context for the assets. Will typically be `[Parent,
+   * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+   * relay to parachain, or `(parents: 2, (GlobalConsensus(..), ..))` to send from
+   * parachain across a bridge to another ecosystem destination.
+   * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+   * fee on the `dest` (and possibly reserve) chains.
+   * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
+   * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+   * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
+   * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
+   * transfer, which also determines what happens to the assets on the destination chain.
+   * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
    **/
-  | { name: 'ExecuteBlob'; params: { encodedMessage: Bytes; maxWeight: SpWeightsWeightV2Weight } }
-  /**
-   * Send an XCM from a local, signed, origin.
-   *
-   * The destination, `dest`, will receive this message with a `DescendOrigin` instruction
-   * that makes the origin of the message be the origin on this system.
-   *
-   * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
-   **/
-  | { name: 'SendBlob'; params: { dest: XcmVersionedLocation; encodedMessage: Bytes } };
+  | {
+      name: 'TransferAssetsUsingTypeAndThen';
+      params: {
+        dest: XcmVersionedLocation;
+        assets: XcmVersionedAssets;
+        assetsTransferType: StagingXcmExecutorAssetTransferTransferType;
+        remoteFeesId: XcmVersionedAssetId;
+        feesTransferType: StagingXcmExecutorAssetTransferTransferType;
+        customXcmOnDest: XcmVersionedXcm;
+        weightLimit: XcmV3WeightLimit;
+      };
+    };
 
 export type PalletXcmCallLike =
-  /**
-   * WARNING: DEPRECATED. `send` will be removed after June 2024. Use `send_blob` instead.
-   **/
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
   /**
    * Teleport some assets from the local chain to some destination chain.
@@ -3667,9 +3743,6 @@ export type PalletXcmCallLike =
    * No more than `max_weight` will be used in its attempted execution. If this is less than
    * the maximum amount of weight that the message could take to be executed, then no
    * execution attempt will be made.
-   *
-   * WARNING: DEPRECATED. `execute` will be removed after June 2024. Use `execute_blob`
-   * instead.
    **/
   | { name: 'Execute'; params: { message: XcmVersionedXcm; maxWeight: SpWeightsWeightV2Weight } }
   /**
@@ -3839,27 +3912,67 @@ export type PalletXcmCallLike =
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
-   * Execute an XCM from a local, signed, origin.
+   * Transfer assets from the local chain to the destination chain using explicit transfer
+   * types for assets and fees.
    *
-   * An event is deposited indicating whether the message could be executed completely
-   * or only partially.
+   * `assets` must have same reserve location or may be teleportable to `dest`. Caller must
+   * provide the `assets_transfer_type` to be used for `assets`:
+   * - `TransferType::LocalReserve`: transfer assets to sovereign account of destination
+   * chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+   * assets to `beneficiary`.
+   * - `TransferType::DestinationReserve`: burn local assets and forward a notification to
+   * `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+   * deposit them to `beneficiary`.
+   * - `TransferType::RemoteReserve(reserve)`: burn local assets, forward XCM to `reserve`
+   * chain to move reserves from this chain's SA to `dest` chain's SA, and forward another
+   * XCM to `dest` to mint and deposit reserve-based assets to `beneficiary`. Typically
+   * the remote `reserve` is Asset Hub.
+   * - `TransferType::Teleport`: burn local assets and forward XCM to `dest` chain to
+   * mint/teleport assets and deposit them to `beneficiary`.
    *
-   * No more than `max_weight` will be used in its attempted execution. If this is less than
-   * the maximum amount of weight that the message could take to be executed, then no
-   * execution attempt will be made.
+   * On the destination chain, as well as any intermediary hops, `BuyExecution` is used to
+   * buy execution using transferred `assets` identified by `remote_fees_id`.
+   * Make sure enough of the specified `remote_fees_id` asset is included in the given list
+   * of `assets`. `remote_fees_id` should be enough to pay for `weight_limit`. If more weight
+   * is needed than `weight_limit`, then the operation will fail and the sent assets may be
+   * at risk.
    *
-   * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
+   * `remote_fees_id` may use different transfer type than rest of `assets` and can be
+   * specified through `fees_transfer_type`.
+   *
+   * The caller needs to specify what should happen to the transferred assets once they reach
+   * the `dest` chain. This is done through the `custom_xcm_on_dest` parameter, which
+   * contains the instructions to execute on `dest` as a final step.
+   * This is usually as simple as:
+   * `Xcm(vec![DepositAsset { assets: Wild(AllCounted(assets.len())), beneficiary }])`,
+   * but could be something more exotic like sending the `assets` even further.
+   *
+   * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+   * - `dest`: Destination context for the assets. Will typically be `[Parent,
+   * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+   * relay to parachain, or `(parents: 2, (GlobalConsensus(..), ..))` to send from
+   * parachain across a bridge to another ecosystem destination.
+   * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+   * fee on the `dest` (and possibly reserve) chains.
+   * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
+   * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+   * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
+   * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
+   * transfer, which also determines what happens to the assets on the destination chain.
+   * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
    **/
-  | { name: 'ExecuteBlob'; params: { encodedMessage: BytesLike; maxWeight: SpWeightsWeightV2Weight } }
-  /**
-   * Send an XCM from a local, signed, origin.
-   *
-   * The destination, `dest`, will receive this message with a `DescendOrigin` instruction
-   * that makes the origin of the message be the origin on this system.
-   *
-   * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
-   **/
-  | { name: 'SendBlob'; params: { dest: XcmVersionedLocation; encodedMessage: BytesLike } };
+  | {
+      name: 'TransferAssetsUsingTypeAndThen';
+      params: {
+        dest: XcmVersionedLocation;
+        assets: XcmVersionedAssets;
+        assetsTransferType: StagingXcmExecutorAssetTransferTransferType;
+        remoteFeesId: XcmVersionedAssetId;
+        feesTransferType: StagingXcmExecutorAssetTransferTransferType;
+        customXcmOnDest: XcmVersionedXcm;
+        weightLimit: XcmV3WeightLimit;
+      };
+    };
 
 export type XcmVersionedXcm =
   | { tag: 'V2'; value: XcmV2Xcm }
@@ -4063,6 +4176,12 @@ export type XcmV3MultiassetWildMultiAsset =
 
 export type XcmV3MultiassetWildFungibility = 'Fungible' | 'NonFungible';
 
+export type StagingXcmExecutorAssetTransferTransferType =
+  | { tag: 'Teleport' }
+  | { tag: 'LocalReserve' }
+  | { tag: 'DestinationReserve' }
+  | { tag: 'RemoteReserve'; value: XcmVersionedLocation };
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -4151,10 +4270,6 @@ export type PalletXcmError =
    **/
   | 'InUse'
   /**
-   * Invalid non-concrete asset.
-   **/
-  | 'InvalidAssetNotConcrete'
-  /**
    * Invalid asset, reserve chain could not be determined for it.
    **/
   | 'InvalidAssetUnknownReserve'
@@ -4169,16 +4284,7 @@ export type PalletXcmError =
   /**
    * Local XCM execution incomplete.
    **/
-  | 'LocalExecutionIncomplete'
-  /**
-   * Could not decode XCM.
-   **/
-  | 'UnableToDecode'
-  /**
-   * XCM encoded length is too large.
-   * Returned when an XCM encoded length is larger than `MaxXcmEncodedSize`.
-   **/
-  | 'XcmTooLarge';
+  | 'LocalExecutionIncomplete';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4546,7 +4652,8 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'ForeignAssets'; palletCall: PalletAssetsCall002 }
   | { pallet: 'NftFractionalization'; palletCall: PalletNftFractionalizationCall }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCall003 }
-  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall };
+  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall }
+  | { pallet: 'AssetConversionMigration'; palletCall: PalletAssetConversionOpsCall };
 
 export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -4570,7 +4677,8 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'ForeignAssets'; palletCall: PalletAssetsCallLike002 }
   | { pallet: 'NftFractionalization'; palletCall: PalletNftFractionalizationCallLike }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCallLike003 }
-  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike };
+  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike }
+  | { pallet: 'AssetConversionMigration'; palletCall: PalletAssetConversionOpsCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11164,6 +11272,23 @@ export type PalletAssetConversionCall =
         sendTo: AccountId32;
         keepAlive: boolean;
       };
+    }
+  /**
+   * Touch an existing pool to fulfill prerequisites before providing liquidity, such as
+   * ensuring that the pool's accounts are in place. It is typically useful when a pool
+   * creator removes the pool's accounts and does not provide a liquidity. This action may
+   * involve holding assets from the caller as a deposit for creating the pool's accounts.
+   *
+   * The origin must be Signed.
+   *
+   * - `asset1`: The asset ID of an existing pool with a pair (asset1, asset2).
+   * - `asset2`: The asset ID of an existing pool with a pair (asset1, asset2).
+   *
+   * Emits `Touched` event when successful.
+   **/
+  | {
+      name: 'Touch';
+      params: { asset1: StagingXcmV3MultilocationMultiLocation; asset2: StagingXcmV3MultilocationMultiLocation };
     };
 
 export type PalletAssetConversionCallLike =
@@ -11256,7 +11381,51 @@ export type PalletAssetConversionCallLike =
         sendTo: AccountId32Like;
         keepAlive: boolean;
       };
+    }
+  /**
+   * Touch an existing pool to fulfill prerequisites before providing liquidity, such as
+   * ensuring that the pool's accounts are in place. It is typically useful when a pool
+   * creator removes the pool's accounts and does not provide a liquidity. This action may
+   * involve holding assets from the caller as a deposit for creating the pool's accounts.
+   *
+   * The origin must be Signed.
+   *
+   * - `asset1`: The asset ID of an existing pool with a pair (asset1, asset2).
+   * - `asset2`: The asset ID of an existing pool with a pair (asset1, asset2).
+   *
+   * Emits `Touched` event when successful.
+   **/
+  | {
+      name: 'Touch';
+      params: { asset1: StagingXcmV3MultilocationMultiLocation; asset2: StagingXcmV3MultilocationMultiLocation };
     };
+
+/**
+ * Pallet's callable functions.
+ **/
+export type PalletAssetConversionOpsCall =
+  /**
+   * Migrates an existing pool to a new account ID derivation method for a given asset pair.
+   * If the migration is successful, transaction fees are refunded to the caller.
+   *
+   * Must be signed.
+   **/
+  {
+    name: 'MigrateToNewAccount';
+    params: { asset1: StagingXcmV3MultilocationMultiLocation; asset2: StagingXcmV3MultilocationMultiLocation };
+  };
+
+export type PalletAssetConversionOpsCallLike =
+  /**
+   * Migrates an existing pool to a new account ID derivation method for a given asset pair.
+   * If the migration is successful, transaction fees are refunded to the caller.
+   *
+   * Must be signed.
+   **/
+  {
+    name: 'MigrateToNewAccount';
+    params: { asset1: StagingXcmV3MultilocationMultiLocation; asset2: StagingXcmV3MultilocationMultiLocation };
+  };
 
 export type AssetHubWestendRuntimeOriginCaller =
   | { tag: 'System'; value: FrameSupportDispatchRawOrigin }
@@ -11987,6 +12156,27 @@ export type PalletAssetConversionError =
    **/
   | 'BelowMinimum';
 
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletAssetConversionOpsError =
+  /**
+   * Provided asset pair is not supported for pool.
+   **/
+  | 'InvalidAssetPair'
+  /**
+   * The pool doesn't exist.
+   **/
+  | 'PoolNotFound'
+  /**
+   * Pool's balance cannot be zero.
+   **/
+  | 'ZeroBalance'
+  /**
+   * Indicates a partial transfer of balance to the new account during a migration.
+   **/
+  | 'PartialTransfer';
+
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
 export type FrameSystemExtensionsCheckSpecVersion = {};
@@ -12098,4 +12288,5 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { tag: 'ForeignAssets'; value: PalletAssetsError }
   | { tag: 'NftFractionalization'; value: PalletNftFractionalizationError }
   | { tag: 'PoolAssets'; value: PalletAssetsError }
-  | { tag: 'AssetConversion'; value: PalletAssetConversionError };
+  | { tag: 'AssetConversion'; value: PalletAssetConversionError }
+  | { tag: 'AssetConversionMigration'; value: PalletAssetConversionOpsError };

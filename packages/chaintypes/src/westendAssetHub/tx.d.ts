@@ -21,6 +21,8 @@ import type {
   SpWeightsWeightV2Weight,
   StagingXcmV4Location,
   XcmV3WeightLimit,
+  StagingXcmExecutorAssetTransferTransferType,
+  XcmVersionedAssetId,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   AssetHubWestendRuntimeOriginCaller,
   PalletMultisigTimepoint,
@@ -956,7 +958,6 @@ export interface ChainTx extends GenericChainTx<TxCall> {
    **/
   polkadotXcm: {
     /**
-     * WARNING: DEPRECATED. `send` will be removed after June 2024. Use `send_blob` instead.
      *
      * @param {XcmVersionedLocation} dest
      * @param {XcmVersionedXcm} message
@@ -1085,9 +1086,6 @@ export interface ChainTx extends GenericChainTx<TxCall> {
      * No more than `max_weight` will be used in its attempted execution. If this is less than
      * the maximum amount of weight that the message could take to be executed, then no
      * execution attempt will be made.
-     *
-     * WARNING: DEPRECATED. `execute` will be removed after June 2024. Use `execute_blob`
-     * instead.
      *
      * @param {XcmVersionedXcm} message
      * @param {SpWeightsWeightV2Weight} maxWeight
@@ -1400,53 +1398,85 @@ export interface ChainTx extends GenericChainTx<TxCall> {
     >;
 
     /**
-     * Execute an XCM from a local, signed, origin.
+     * Transfer assets from the local chain to the destination chain using explicit transfer
+     * types for assets and fees.
      *
-     * An event is deposited indicating whether the message could be executed completely
-     * or only partially.
+     * `assets` must have same reserve location or may be teleportable to `dest`. Caller must
+     * provide the `assets_transfer_type` to be used for `assets`:
+     * - `TransferType::LocalReserve`: transfer assets to sovereign account of destination
+     * chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+     * assets to `beneficiary`.
+     * - `TransferType::DestinationReserve`: burn local assets and forward a notification to
+     * `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+     * deposit them to `beneficiary`.
+     * - `TransferType::RemoteReserve(reserve)`: burn local assets, forward XCM to `reserve`
+     * chain to move reserves from this chain's SA to `dest` chain's SA, and forward another
+     * XCM to `dest` to mint and deposit reserve-based assets to `beneficiary`. Typically
+     * the remote `reserve` is Asset Hub.
+     * - `TransferType::Teleport`: burn local assets and forward XCM to `dest` chain to
+     * mint/teleport assets and deposit them to `beneficiary`.
      *
-     * No more than `max_weight` will be used in its attempted execution. If this is less than
-     * the maximum amount of weight that the message could take to be executed, then no
-     * execution attempt will be made.
+     * On the destination chain, as well as any intermediary hops, `BuyExecution` is used to
+     * buy execution using transferred `assets` identified by `remote_fees_id`.
+     * Make sure enough of the specified `remote_fees_id` asset is included in the given list
+     * of `assets`. `remote_fees_id` should be enough to pay for `weight_limit`. If more weight
+     * is needed than `weight_limit`, then the operation will fail and the sent assets may be
+     * at risk.
      *
-     * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
+     * `remote_fees_id` may use different transfer type than rest of `assets` and can be
+     * specified through `fees_transfer_type`.
      *
-     * @param {BytesLike} encodedMessage
-     * @param {SpWeightsWeightV2Weight} maxWeight
-     **/
-    executeBlob: GenericTxCall<
-      (
-        encodedMessage: BytesLike,
-        maxWeight: SpWeightsWeightV2Weight,
-      ) => ChainSubmittableExtrinsic<{
-        pallet: 'PolkadotXcm';
-        palletCall: {
-          name: 'ExecuteBlob';
-          params: { encodedMessage: BytesLike; maxWeight: SpWeightsWeightV2Weight };
-        };
-      }>
-    >;
-
-    /**
-     * Send an XCM from a local, signed, origin.
+     * The caller needs to specify what should happen to the transferred assets once they reach
+     * the `dest` chain. This is done through the `custom_xcm_on_dest` parameter, which
+     * contains the instructions to execute on `dest` as a final step.
+     * This is usually as simple as:
+     * `Xcm(vec![DepositAsset { assets: Wild(AllCounted(assets.len())), beneficiary }])`,
+     * but could be something more exotic like sending the `assets` even further.
      *
-     * The destination, `dest`, will receive this message with a `DescendOrigin` instruction
-     * that makes the origin of the message be the origin on this system.
-     *
-     * The message is passed in encoded. It needs to be decodable as a [`VersionedXcm`].
+     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+     * - `dest`: Destination context for the assets. Will typically be `[Parent,
+     * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+     * relay to parachain, or `(parents: 2, (GlobalConsensus(..), ..))` to send from
+     * parachain across a bridge to another ecosystem destination.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     * fee on the `dest` (and possibly reserve) chains.
+     * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
+     * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+     * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
+     * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
+     * transfer, which also determines what happens to the assets on the destination chain.
+     * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
      *
      * @param {XcmVersionedLocation} dest
-     * @param {BytesLike} encodedMessage
+     * @param {XcmVersionedAssets} assets
+     * @param {StagingXcmExecutorAssetTransferTransferType} assetsTransferType
+     * @param {XcmVersionedAssetId} remoteFeesId
+     * @param {StagingXcmExecutorAssetTransferTransferType} feesTransferType
+     * @param {XcmVersionedXcm} customXcmOnDest
+     * @param {XcmV3WeightLimit} weightLimit
      **/
-    sendBlob: GenericTxCall<
+    transferAssetsUsingTypeAndThen: GenericTxCall<
       (
         dest: XcmVersionedLocation,
-        encodedMessage: BytesLike,
+        assets: XcmVersionedAssets,
+        assetsTransferType: StagingXcmExecutorAssetTransferTransferType,
+        remoteFeesId: XcmVersionedAssetId,
+        feesTransferType: StagingXcmExecutorAssetTransferTransferType,
+        customXcmOnDest: XcmVersionedXcm,
+        weightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<{
         pallet: 'PolkadotXcm';
         palletCall: {
-          name: 'SendBlob';
-          params: { dest: XcmVersionedLocation; encodedMessage: BytesLike };
+          name: 'TransferAssetsUsingTypeAndThen';
+          params: {
+            dest: XcmVersionedLocation;
+            assets: XcmVersionedAssets;
+            assetsTransferType: StagingXcmExecutorAssetTransferTransferType;
+            remoteFeesId: XcmVersionedAssetId;
+            feesTransferType: StagingXcmExecutorAssetTransferTransferType;
+            customXcmOnDest: XcmVersionedXcm;
+            weightLimit: XcmV3WeightLimit;
+          };
         };
       }>
     >;
@@ -7875,6 +7905,66 @@ export interface ChainTx extends GenericChainTx<TxCall> {
             sendTo: AccountId32Like;
             keepAlive: boolean;
           };
+        };
+      }>
+    >;
+
+    /**
+     * Touch an existing pool to fulfill prerequisites before providing liquidity, such as
+     * ensuring that the pool's accounts are in place. It is typically useful when a pool
+     * creator removes the pool's accounts and does not provide a liquidity. This action may
+     * involve holding assets from the caller as a deposit for creating the pool's accounts.
+     *
+     * The origin must be Signed.
+     *
+     * - `asset1`: The asset ID of an existing pool with a pair (asset1, asset2).
+     * - `asset2`: The asset ID of an existing pool with a pair (asset1, asset2).
+     *
+     * Emits `Touched` event when successful.
+     *
+     * @param {StagingXcmV3MultilocationMultiLocation} asset1
+     * @param {StagingXcmV3MultilocationMultiLocation} asset2
+     **/
+    touch: GenericTxCall<
+      (
+        asset1: StagingXcmV3MultilocationMultiLocation,
+        asset2: StagingXcmV3MultilocationMultiLocation,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'AssetConversion';
+        palletCall: {
+          name: 'Touch';
+          params: { asset1: StagingXcmV3MultilocationMultiLocation; asset2: StagingXcmV3MultilocationMultiLocation };
+        };
+      }>
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall>;
+  };
+  /**
+   * Pallet `AssetConversionMigration`'s transaction calls
+   **/
+  assetConversionMigration: {
+    /**
+     * Migrates an existing pool to a new account ID derivation method for a given asset pair.
+     * If the migration is successful, transaction fees are refunded to the caller.
+     *
+     * Must be signed.
+     *
+     * @param {StagingXcmV3MultilocationMultiLocation} asset1
+     * @param {StagingXcmV3MultilocationMultiLocation} asset2
+     **/
+    migrateToNewAccount: GenericTxCall<
+      (
+        asset1: StagingXcmV3MultilocationMultiLocation,
+        asset2: StagingXcmV3MultilocationMultiLocation,
+      ) => ChainSubmittableExtrinsic<{
+        pallet: 'AssetConversionMigration';
+        palletCall: {
+          name: 'MigrateToNewAccount';
+          params: { asset1: StagingXcmV3MultilocationMultiLocation; asset2: StagingXcmV3MultilocationMultiLocation };
         };
       }>
     >;

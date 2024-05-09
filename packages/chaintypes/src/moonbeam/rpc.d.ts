@@ -39,6 +39,44 @@ import type {
 } from '@dedot/codecs';
 
 export interface RpcCalls extends GenericRpcCalls {
+  archive: {
+    /**
+     * @rpcname: archive_unstable_body
+     **/
+    unstable_body: GenericRpcCall;
+
+    /**
+     * @rpcname: archive_unstable_call
+     **/
+    unstable_call: GenericRpcCall;
+
+    /**
+     * @rpcname: archive_unstable_finalizedHeight
+     **/
+    unstable_finalizedHeight: GenericRpcCall;
+
+    /**
+     * @rpcname: archive_unstable_genesisHash
+     **/
+    unstable_genesisHash: GenericRpcCall;
+
+    /**
+     * @rpcname: archive_unstable_hashByHeight
+     **/
+    unstable_hashByHeight: GenericRpcCall;
+
+    /**
+     * @rpcname: archive_unstable_header
+     **/
+    unstable_header: GenericRpcCall;
+
+    /**
+     * @rpcname: archive_unstable_storage
+     **/
+    unstable_storage: GenericRpcCall;
+
+    [method: string]: GenericRpcCall;
+  };
   author: {
     /**
      * Checks if the keystore has private keys for the given public key and key type. Returns `true` if a private key could be found.
@@ -129,11 +167,6 @@ export interface RpcCalls extends GenericRpcCalls {
      * @rpcname: chainHead_unstable_follow
      **/
     unstable_follow: GenericRpcCall;
-
-    /**
-     * @rpcname: chainHead_unstable_genesisHash
-     **/
-    unstable_genesisHash: GenericRpcCall;
 
     /**
      * @rpcname: chainHead_unstable_header
@@ -304,6 +337,24 @@ export interface RpcCalls extends GenericRpcCalls {
     getStorageSize: GenericRpcCall<
       (childStorageKey: PrefixedStorageKey, key: StorageKey, at?: BlockHash) => Promise<Option<number>>
     >;
+
+    [method: string]: GenericRpcCall;
+  };
+  debug: {
+    /**
+     * @rpcname: debug_traceBlockByHash
+     **/
+    traceBlockByHash: GenericRpcCall;
+
+    /**
+     * @rpcname: debug_traceBlockByNumber
+     **/
+    traceBlockByNumber: GenericRpcCall;
+
+    /**
+     * @rpcname: debug_traceTransaction
+     **/
+    traceTransaction: GenericRpcCall;
 
     [method: string]: GenericRpcCall;
   };
@@ -942,16 +993,42 @@ export interface RpcCalls extends GenericRpcCalls {
 
     [method: string]: GenericRpcCall;
   };
-  transaction: {
+  trace: {
     /**
-     * @rpcname: transaction_unstable_submitAndWatch
+     * @rpcname: trace_filter
+     **/
+    filter: GenericRpcCall;
+
+    [method: string]: GenericRpcCall;
+  };
+  transactionWatch: {
+    /**
+     * @rpcname: transactionWatch_unstable_submitAndWatch
      **/
     unstable_submitAndWatch: GenericRpcCall;
 
     /**
-     * @rpcname: transaction_unstable_unwatch
+     * @rpcname: transactionWatch_unstable_unwatch
      **/
     unstable_unwatch: GenericRpcCall;
+
+    [method: string]: GenericRpcCall;
+  };
+  txpool: {
+    /**
+     * @rpcname: txpool_content
+     **/
+    content: GenericRpcCall;
+
+    /**
+     * @rpcname: txpool_inspect
+     **/
+    inspect: GenericRpcCall;
+
+    /**
+     * @rpcname: txpool_status
+     **/
+    status: GenericRpcCall;
 
     [method: string]: GenericRpcCall;
   };

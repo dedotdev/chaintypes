@@ -340,6 +340,24 @@ export interface RpcCalls extends GenericRpcCalls {
 
     [method: string]: GenericRpcCall;
   };
+  debug: {
+    /**
+     * @rpcname: debug_traceBlockByHash
+     **/
+    traceBlockByHash: GenericRpcCall;
+
+    /**
+     * @rpcname: debug_traceBlockByNumber
+     **/
+    traceBlockByNumber: GenericRpcCall;
+
+    /**
+     * @rpcname: debug_traceTransaction
+     **/
+    traceTransaction: GenericRpcCall;
+
+    [method: string]: GenericRpcCall;
+  };
   eth: {
     /**
      * @rpcname: eth_accounts
@@ -975,6 +993,14 @@ export interface RpcCalls extends GenericRpcCalls {
 
     [method: string]: GenericRpcCall;
   };
+  trace: {
+    /**
+     * @rpcname: trace_filter
+     **/
+    filter: GenericRpcCall;
+
+    [method: string]: GenericRpcCall;
+  };
   transactionWatch: {
     /**
      * @rpcname: transactionWatch_unstable_submitAndWatch
@@ -985,6 +1011,24 @@ export interface RpcCalls extends GenericRpcCalls {
      * @rpcname: transactionWatch_unstable_unwatch
      **/
     unstable_unwatch: GenericRpcCall;
+
+    [method: string]: GenericRpcCall;
+  };
+  txpool: {
+    /**
+     * @rpcname: txpool_content
+     **/
+    content: GenericRpcCall;
+
+    /**
+     * @rpcname: txpool_inspect
+     **/
+    inspect: GenericRpcCall;
+
+    /**
+     * @rpcname: txpool_status
+     **/
+    status: GenericRpcCall;
 
     [method: string]: GenericRpcCall;
   };

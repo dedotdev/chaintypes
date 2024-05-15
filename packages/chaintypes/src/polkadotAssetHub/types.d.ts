@@ -19,7 +19,7 @@ import type {
   Era,
   Header,
   UncheckedExtrinsic,
-} from '@dedot/codecs';
+} from 'dedot/codecs';
 
 export type FrameSystemAccountInfo = {
   nonce: number;

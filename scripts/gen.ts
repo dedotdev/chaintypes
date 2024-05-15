@@ -11,14 +11,21 @@ async function run() {
 
     if (endpoint) {
       console.log(`Generate types for ${chain} via endpoint ${endpoint}`);
-      await generateTypesFromEndpoint(chain, endpoint[0], OUT_DIR);
+      await generateTypesFromEndpoint(chain, endpoint[0], OUT_DIR, undefined, true);
     } else if (staticData) {
       const { metadataHex = '0x', rpcMethods = [] } = staticData;
       console.log(`Generate types for ${chain} via raw data`);
       const metadata = $Metadata.tryDecode(metadataHex);
       const runtimeVersion = getRuntimeVersion(metadata);
+      const runtimeApis = runtimeVersion.apis.reduce(
+        (o, [name, version]) => {
+          o[name] = version;
+          return o;
+        },
+        {} as Record<string, number>,
+      )
 
-      await generateTypes(chain, metadata.latest, rpcMethods, runtimeVersion.apis, OUT_DIR);
+      await generateTypes(chain, metadata.latest, rpcMethods, runtimeApis, OUT_DIR, undefined, true);
     }
   }
 

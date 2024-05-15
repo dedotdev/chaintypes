@@ -26,7 +26,7 @@ import type {
   FixedI64,
   Era,
   UncheckedExtrinsic,
-} from '@dedot/codecs';
+} from 'dedot/codecs';
 
 export type FrameSystemAccountInfo = {
   nonce: number;

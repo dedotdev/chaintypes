@@ -27,12 +27,12 @@ import type {
   PalletProxyAnnouncement,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
-  PolkadotPrimitivesV5PersistedValidationData,
-  PolkadotPrimitivesV5UpgradeRestriction,
-  PolkadotPrimitivesV5UpgradeGoAhead,
+  PolkadotPrimitivesV6PersistedValidationData,
+  PolkadotPrimitivesV6UpgradeRestriction,
+  PolkadotPrimitivesV6UpgradeGoAhead,
   SpTrieStorageProof,
   CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot,
-  PolkadotPrimitivesV5AbridgedHostConfiguration,
+  PolkadotPrimitivesV6AbridgedHostConfiguration,
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
@@ -65,6 +65,11 @@ import type {
   PalletAssetsAssetAccount,
   PalletAssetsApproval,
   PalletAssetsAssetMetadata,
+  PalletPriceAggregatorValueAggregator,
+  PalletPriceAggregatorCircularBuffer,
+  OrmlOracleModuleTimestampedValue,
+  AstarPrimitivesOracleCurrencyId,
+  OrmlUtilitiesOrderedSet,
   PalletCollatorSelectionCandidateInfo,
   AstarRuntimeSessionKeys,
   SpCoreCryptoKeyTypeId,
@@ -74,10 +79,10 @@ import type {
   CumulusPalletXcmpQueueOutboundChannelDetails,
   CumulusPalletXcmpQueueQueueConfigData,
   PalletXcmQueryStatus,
-  StagingXcmVersionedMultiLocation,
+  XcmVersionedMultiLocation,
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
-  StagingXcmVersionedAssetId,
+  XcmVersionedAssetId,
   CumulusPalletDmpQueueConfigData,
   CumulusPalletDmpQueuePageIndexData,
   PalletEvmCodeMetadata,
@@ -88,7 +93,6 @@ import type {
   PalletContractsWasmCodeInfo,
   PalletContractsStorageContractInfo,
   PalletContractsStorageDeletionQueueManager,
-  PalletDappStakingMigrationMigrationState,
 } from './types';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
@@ -288,14 +292,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   timestamp: {
     /**
-     * Current time for the current block.
+     * The current time for the current block.
      *
      * @param {Callback<bigint> =} callback
      **/
     now: GenericStorageQuery<Rv, () => bigint>;
 
     /**
-     * Did the timestamp get updated in this block?
+     * Whether the timestamp has been updated in this block.
+     *
+     * This value is updated to `true` upon successful submission of a timestamp by a node.
+     * It is then checked at the end of each block execution in the `on_finalize` hook.
      *
      * @param {Callback<boolean> =} callback
      **/
@@ -379,7 +386,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
 
     /**
      * Storage field that keeps track of bandwidth used by the unincluded segment along with the
-     * latest the latest HRMP watermark. Used for limiting the acceptance of new blocks with
+     * latest HRMP watermark. Used for limiting the acceptance of new blocks with
      * respect to relay chain constraints.
      *
      * @param {Callback<CumulusPalletParachainSystemUnincludedSegmentSegmentTracker | undefined> =} callback
@@ -417,9 +424,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * This value is expected to be set only once per block and it's never stored
      * in the trie.
      *
-     * @param {Callback<PolkadotPrimitivesV5PersistedValidationData | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV6PersistedValidationData | undefined> =} callback
      **/
-    validationData: GenericStorageQuery<Rv, () => PolkadotPrimitivesV5PersistedValidationData | undefined>;
+    validationData: GenericStorageQuery<Rv, () => PolkadotPrimitivesV6PersistedValidationData | undefined>;
 
     /**
      * Were the validation data set to notify the relay chain?
@@ -430,6 +437,8 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
 
     /**
      * The relay chain block number associated with the last parachain block.
+     *
+     * This is updated in `on_finalize`.
      *
      * @param {Callback<number> =} callback
      **/
@@ -444,9 +453,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV5UpgradeRestriction | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV6UpgradeRestriction | undefined> =} callback
      **/
-    upgradeRestrictionSignal: GenericStorageQuery<Rv, () => PolkadotPrimitivesV5UpgradeRestriction | undefined>;
+    upgradeRestrictionSignal: GenericStorageQuery<Rv, () => PolkadotPrimitivesV6UpgradeRestriction | undefined>;
 
     /**
      * Optional upgrade go-ahead signal from the relay-chain.
@@ -455,9 +464,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV5UpgradeGoAhead | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV6UpgradeGoAhead | undefined> =} callback
      **/
-    upgradeGoAhead: GenericStorageQuery<Rv, () => PolkadotPrimitivesV5UpgradeGoAhead | undefined>;
+    upgradeGoAhead: GenericStorageQuery<Rv, () => PolkadotPrimitivesV6UpgradeGoAhead | undefined>;
 
     /**
      * The state proof for the last relay parent block.
@@ -495,9 +504,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      *
      * This data is also absent from the genesis.
      *
-     * @param {Callback<PolkadotPrimitivesV5AbridgedHostConfiguration | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV6AbridgedHostConfiguration | undefined> =} callback
      **/
-    hostConfiguration: GenericStorageQuery<Rv, () => PolkadotPrimitivesV5AbridgedHostConfiguration | undefined>;
+    hostConfiguration: GenericStorageQuery<Rv, () => PolkadotPrimitivesV6AbridgedHostConfiguration | undefined>;
 
     /**
      * The last downward message queue chain head we have observed.
@@ -564,6 +573,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<Array<Bytes>> =} callback
      **/
     pendingUpwardMessages: GenericStorageQuery<Rv, () => Array<Bytes>>;
+
+    /**
+     * The factor to multiply the base delivery fee by for UMP.
+     *
+     * @param {Callback<FixedU128> =} callback
+     **/
+    upwardDeliveryFeeFactor: GenericStorageQuery<Rv, () => FixedU128>;
 
     /**
      * The number of HRMP messages we observed in `on_initialize` and thus used that number for
@@ -994,6 +1010,99 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
+   * Pallet `PriceAggregator`'s storage queries
+   **/
+  priceAggregator: {
+    /**
+     * Storage for the accumulated native currency price in the current block.
+     *
+     * @param {Callback<Array<FixedU128>> =} callback
+     **/
+    currentBlockValues: GenericStorageQuery<Rv, () => Array<FixedU128>>;
+
+    /**
+     * Used to store the aggregated processed block values during some time period.
+     *
+     * @param {Callback<PalletPriceAggregatorValueAggregator> =} callback
+     **/
+    intermediateValueAggregator: GenericStorageQuery<Rv, () => PalletPriceAggregatorValueAggregator>;
+
+    /**
+     * Used to store aggregated intermediate values for some time period.
+     *
+     * @param {Callback<PalletPriceAggregatorCircularBuffer> =} callback
+     **/
+    valuesCircularBuffer: GenericStorageQuery<Rv, () => PalletPriceAggregatorCircularBuffer>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Oracle`'s storage queries
+   **/
+  oracle: {
+    /**
+     * Raw values for each oracle operators
+     *
+     * @param {[AccountId32Like, AstarPrimitivesOracleCurrencyId]} arg
+     * @param {Callback<OrmlOracleModuleTimestampedValue | undefined> =} callback
+     **/
+    rawValues: GenericStorageQuery<
+      Rv,
+      (arg: [AccountId32Like, AstarPrimitivesOracleCurrencyId]) => OrmlOracleModuleTimestampedValue | undefined,
+      [AccountId32, AstarPrimitivesOracleCurrencyId]
+    >;
+
+    /**
+     * Up to date combined value from Raw Values
+     *
+     * @param {AstarPrimitivesOracleCurrencyId} arg
+     * @param {Callback<OrmlOracleModuleTimestampedValue | undefined> =} callback
+     **/
+    values: GenericStorageQuery<
+      Rv,
+      (arg: AstarPrimitivesOracleCurrencyId) => OrmlOracleModuleTimestampedValue | undefined,
+      AstarPrimitivesOracleCurrencyId
+    >;
+
+    /**
+     * If an oracle operator has fed a value in this block
+     *
+     * @param {Callback<OrmlUtilitiesOrderedSet> =} callback
+     **/
+    hasDispatched: GenericStorageQuery<Rv, () => OrmlUtilitiesOrderedSet>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `OracleMembership`'s storage queries
+   **/
+  oracleMembership: {
+    /**
+     * The current membership, stored as an ordered Vec.
+     *
+     * @param {Callback<Array<AccountId32>> =} callback
+     **/
+    members: GenericStorageQuery<Rv, () => Array<AccountId32>>;
+
+    /**
+     * The current prime member, if one exists.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    prime: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
    * Pallet `Authorship`'s storage queries
    **/
   authorship: {
@@ -1293,6 +1402,18 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     queueSuspended: GenericStorageQuery<Rv, () => boolean>;
 
     /**
+     * The factor to multiply the base delivery fee by.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} arg
+     * @param {Callback<FixedU128> =} callback
+     **/
+    deliveryFeeFactor: GenericStorageQuery<
+      Rv,
+      (arg: PolkadotParachainPrimitivesPrimitivesId) => FixedU128,
+      PolkadotParachainPrimitivesPrimitivesId
+    >;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -1338,38 +1459,38 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * The Latest versions that we know various locations support.
      *
-     * @param {[number, StagingXcmVersionedMultiLocation]} arg
+     * @param {[number, XcmVersionedMultiLocation]} arg
      * @param {Callback<number | undefined> =} callback
      **/
     supportedVersion: GenericStorageQuery<
       Rv,
-      (arg: [number, StagingXcmVersionedMultiLocation]) => number | undefined,
-      [number, StagingXcmVersionedMultiLocation]
+      (arg: [number, XcmVersionedMultiLocation]) => number | undefined,
+      [number, XcmVersionedMultiLocation]
     >;
 
     /**
      * All locations that we have requested version notifications from.
      *
-     * @param {[number, StagingXcmVersionedMultiLocation]} arg
+     * @param {[number, XcmVersionedMultiLocation]} arg
      * @param {Callback<bigint | undefined> =} callback
      **/
     versionNotifiers: GenericStorageQuery<
       Rv,
-      (arg: [number, StagingXcmVersionedMultiLocation]) => bigint | undefined,
-      [number, StagingXcmVersionedMultiLocation]
+      (arg: [number, XcmVersionedMultiLocation]) => bigint | undefined,
+      [number, XcmVersionedMultiLocation]
     >;
 
     /**
      * The target locations that are subscribed to our version changes, as well as the most recent
      * of our versions we informed them of.
      *
-     * @param {[number, StagingXcmVersionedMultiLocation]} arg
+     * @param {[number, XcmVersionedMultiLocation]} arg
      * @param {Callback<[bigint, SpWeightsWeightV2Weight, number] | undefined> =} callback
      **/
     versionNotifyTargets: GenericStorageQuery<
       Rv,
-      (arg: [number, StagingXcmVersionedMultiLocation]) => [bigint, SpWeightsWeightV2Weight, number] | undefined,
-      [number, StagingXcmVersionedMultiLocation]
+      (arg: [number, XcmVersionedMultiLocation]) => [bigint, SpWeightsWeightV2Weight, number] | undefined,
+      [number, XcmVersionedMultiLocation]
     >;
 
     /**
@@ -1377,9 +1498,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * the `u32` counter is the number of times that a send to the destination has been attempted,
      * which is used as a prioritization.
      *
-     * @param {Callback<Array<[StagingXcmVersionedMultiLocation, number]>> =} callback
+     * @param {Callback<Array<[XcmVersionedMultiLocation, number]>> =} callback
      **/
-    versionDiscoveryQueue: GenericStorageQuery<Rv, () => Array<[StagingXcmVersionedMultiLocation, number]>>;
+    versionDiscoveryQueue: GenericStorageQuery<Rv, () => Array<[XcmVersionedMultiLocation, number]>>;
 
     /**
      * The current migration's stage, if any.
@@ -1391,24 +1512,24 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * Fungible assets which we know are locked on a remote chain.
      *
-     * @param {[number, AccountId32Like, StagingXcmVersionedAssetId]} arg
+     * @param {[number, AccountId32Like, XcmVersionedAssetId]} arg
      * @param {Callback<PalletXcmRemoteLockedFungibleRecord | undefined> =} callback
      **/
     remoteLockedFungibles: GenericStorageQuery<
       Rv,
-      (arg: [number, AccountId32Like, StagingXcmVersionedAssetId]) => PalletXcmRemoteLockedFungibleRecord | undefined,
-      [number, AccountId32, StagingXcmVersionedAssetId]
+      (arg: [number, AccountId32Like, XcmVersionedAssetId]) => PalletXcmRemoteLockedFungibleRecord | undefined,
+      [number, AccountId32, XcmVersionedAssetId]
     >;
 
     /**
      * Fungible assets which we know are locked on this chain.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<[bigint, StagingXcmVersionedMultiLocation]> | undefined> =} callback
+     * @param {Callback<Array<[bigint, XcmVersionedMultiLocation]> | undefined> =} callback
      **/
     lockedFungibles: GenericStorageQuery<
       Rv,
-      (arg: AccountId32Like) => Array<[bigint, StagingXcmVersionedMultiLocation]> | undefined,
+      (arg: AccountId32Like) => Array<[bigint, XcmVersionedMultiLocation]> | undefined,
       AccountId32
     >;
 
@@ -1480,22 +1601,22 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * like transferring an asset from this chain to another.
      *
      * @param {bigint} arg
-     * @param {Callback<StagingXcmVersionedMultiLocation | undefined> =} callback
+     * @param {Callback<XcmVersionedMultiLocation | undefined> =} callback
      **/
-    assetIdToLocation: GenericStorageQuery<Rv, (arg: bigint) => StagingXcmVersionedMultiLocation | undefined, bigint>;
+    assetIdToLocation: GenericStorageQuery<Rv, (arg: bigint) => XcmVersionedMultiLocation | undefined, bigint>;
 
     /**
      * Mapping from an asset type to an asset id.
      * Can be used when receiving a multilocation XCM message to retrieve
      * the corresponding asset in which tokens should me minted.
      *
-     * @param {StagingXcmVersionedMultiLocation} arg
+     * @param {XcmVersionedMultiLocation} arg
      * @param {Callback<bigint | undefined> =} callback
      **/
     assetLocationToId: GenericStorageQuery<
       Rv,
-      (arg: StagingXcmVersionedMultiLocation) => bigint | undefined,
-      StagingXcmVersionedMultiLocation
+      (arg: XcmVersionedMultiLocation) => bigint | undefined,
+      XcmVersionedMultiLocation
     >;
 
     /**
@@ -1504,13 +1625,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      *
      * Not all asset types are supported for payment. If value exists here, it means it is supported.
      *
-     * @param {StagingXcmVersionedMultiLocation} arg
+     * @param {XcmVersionedMultiLocation} arg
      * @param {Callback<bigint | undefined> =} callback
      **/
     assetLocationUnitsPerSecond: GenericStorageQuery<
       Rv,
-      (arg: StagingXcmVersionedMultiLocation) => bigint | undefined,
-      StagingXcmVersionedMultiLocation
+      (arg: XcmVersionedMultiLocation) => bigint | undefined,
+      XcmVersionedMultiLocation
     >;
 
     /**
@@ -1721,38 +1842,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<AccountId32 | undefined> =} callback
      **/
     key: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
-   * Pallet `StaticPriceProvider`'s storage queries
-   **/
-  staticPriceProvider: {
-    /**
-     * Current active native currency price.
-     *
-     * @param {Callback<FixedU128> =} callback
-     **/
-    activePrice: GenericStorageQuery<Rv, () => FixedU128>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
-   * Pallet `DappStakingMigration`'s storage queries
-   **/
-  dappStakingMigration: {
-    /**
-     * Used to store the current migration state.
-     *
-     * @param {Callback<PalletDappStakingMigrationMigrationState> =} callback
-     **/
-    migrationStateStorage: GenericStorageQuery<Rv, () => PalletDappStakingMigrationMigrationState>;
 
     /**
      * Generic pallet storage query

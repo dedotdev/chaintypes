@@ -9,9 +9,9 @@ import type {
   Result,
   FixedBytes,
   Bytes,
+  FixedU128,
   H160,
   U256,
-  FixedU128,
 } from 'dedot/codecs';
 import type {
   PalletMultisigTimepoint,
@@ -22,16 +22,17 @@ import type {
   PalletDappStakingV3Subperiod,
   AstarPrimitivesDappStakingSmartContract,
   PalletDappStakingV3ForcingType,
-  StagingXcmV3TraitsError,
+  AstarPrimitivesOracleCurrencyId,
+  XcmV3TraitsError,
   PolkadotParachainPrimitivesPrimitivesId,
-  StagingXcmV3TraitsOutcome,
+  XcmV3TraitsOutcome,
   StagingXcmV3MultilocationMultiLocation,
-  StagingXcmV3Xcm,
-  StagingXcmV3Response,
-  StagingXcmVersionedMultiAssets,
-  StagingXcmV3MultiassetMultiAssets,
-  StagingXcmVersionedMultiLocation,
-  StagingXcmV3MultiassetMultiAsset,
+  XcmV3Xcm,
+  XcmV3Response,
+  XcmVersionedMultiAssets,
+  XcmV3MultiassetMultiAssets,
+  XcmVersionedMultiLocation,
+  XcmV3MultiassetMultiAsset,
   EthereumLog,
   EvmCoreErrorExitReason,
   PalletContractsOrigin,
@@ -922,6 +923,78 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
+   * Pallet `PriceAggregator`'s events
+   **/
+  priceAggregator: {
+    /**
+     * New average native currency value has been calculated and pushed into the moving average buffer.
+     **/
+    AverageAggregatedValue: GenericPalletEvent<Rv, 'PriceAggregator', 'AverageAggregatedValue', { value: FixedU128 }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Oracle`'s events
+   **/
+  oracle: {
+    /**
+     * New feed data is submitted.
+     **/
+    NewFeedData: GenericPalletEvent<
+      Rv,
+      'Oracle',
+      'NewFeedData',
+      { sender: AccountId32; values: Array<[AstarPrimitivesOracleCurrencyId, FixedU128]> }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `OracleMembership`'s events
+   **/
+  oracleMembership: {
+    /**
+     * The given member was added; see the transaction for who.
+     **/
+    MemberAdded: GenericPalletEvent<Rv, 'OracleMembership', 'MemberAdded', undefined>;
+
+    /**
+     * The given member was removed; see the transaction for who.
+     **/
+    MemberRemoved: GenericPalletEvent<Rv, 'OracleMembership', 'MemberRemoved', undefined>;
+
+    /**
+     * Two members were swapped; see the transaction for who.
+     **/
+    MembersSwapped: GenericPalletEvent<Rv, 'OracleMembership', 'MembersSwapped', undefined>;
+
+    /**
+     * The membership was reset; see the transaction for who the new set is.
+     **/
+    MembersReset: GenericPalletEvent<Rv, 'OracleMembership', 'MembersReset', undefined>;
+
+    /**
+     * One of the members' keys changed.
+     **/
+    KeyChanged: GenericPalletEvent<Rv, 'OracleMembership', 'KeyChanged', undefined>;
+
+    /**
+     * Phantom member, never used.
+     **/
+    Dummy: GenericPalletEvent<Rv, 'OracleMembership', 'Dummy', undefined>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
    * Pallet `CollatorSelection`'s events
    **/
   collatorSelection: {
@@ -976,7 +1049,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       {
         messageHash: FixedBytes<32>;
         messageId: FixedBytes<32>;
-        error: StagingXcmV3TraitsError;
+        error: XcmV3TraitsError;
         weight: SpWeightsWeightV2Weight;
       }
     >;
@@ -1033,7 +1106,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * Execution of an XCM message was attempted.
      **/
-    Attempted: GenericPalletEvent<Rv, 'PolkadotXcm', 'Attempted', { outcome: StagingXcmV3TraitsOutcome }>;
+    Attempted: GenericPalletEvent<Rv, 'PolkadotXcm', 'Attempted', { outcome: XcmV3TraitsOutcome }>;
 
     /**
      * A XCM message was sent.
@@ -1045,7 +1118,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       {
         origin: StagingXcmV3MultilocationMultiLocation;
         destination: StagingXcmV3MultilocationMultiLocation;
-        message: StagingXcmV3Xcm;
+        message: XcmV3Xcm;
         messageId: FixedBytes<32>;
       }
     >;
@@ -1066,12 +1139,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * Query response has been received and is ready for taking with `take_response`. There is
      * no registered notification call.
      **/
-    ResponseReady: GenericPalletEvent<
-      Rv,
-      'PolkadotXcm',
-      'ResponseReady',
-      { queryId: bigint; response: StagingXcmV3Response }
-    >;
+    ResponseReady: GenericPalletEvent<Rv, 'PolkadotXcm', 'ResponseReady', { queryId: bigint; response: XcmV3Response }>;
 
     /**
      * Query response has been received and query is removed. The registered notification has
@@ -1169,7 +1237,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'AssetsTrapped',
-      { hash: H256; origin: StagingXcmV3MultilocationMultiLocation; assets: StagingXcmVersionedMultiAssets }
+      { hash: H256; origin: StagingXcmV3MultilocationMultiLocation; assets: XcmVersionedMultiAssets }
     >;
 
     /**
@@ -1184,7 +1252,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       {
         destination: StagingXcmV3MultilocationMultiLocation;
         result: number;
-        cost: StagingXcmV3MultiassetMultiAssets;
+        cost: XcmV3MultiassetMultiAssets;
         messageId: FixedBytes<32>;
       }
     >;
@@ -1208,7 +1276,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'NotifyTargetSendFail',
-      { location: StagingXcmV3MultilocationMultiLocation; queryId: bigint; error: StagingXcmV3TraitsError }
+      { location: StagingXcmV3MultilocationMultiLocation; queryId: bigint; error: XcmV3TraitsError }
     >;
 
     /**
@@ -1219,7 +1287,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'NotifyTargetMigrationFail',
-      { location: StagingXcmVersionedMultiLocation; queryId: bigint }
+      { location: XcmVersionedMultiLocation; queryId: bigint }
     >;
 
     /**
@@ -1265,7 +1333,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'VersionNotifyStarted',
       {
         destination: StagingXcmV3MultilocationMultiLocation;
-        cost: StagingXcmV3MultiassetMultiAssets;
+        cost: XcmV3MultiassetMultiAssets;
         messageId: FixedBytes<32>;
       }
     >;
@@ -1279,7 +1347,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'VersionNotifyRequested',
       {
         destination: StagingXcmV3MultilocationMultiLocation;
-        cost: StagingXcmV3MultiassetMultiAssets;
+        cost: XcmV3MultiassetMultiAssets;
         messageId: FixedBytes<32>;
       }
     >;
@@ -1294,7 +1362,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'VersionNotifyUnrequested',
       {
         destination: StagingXcmV3MultilocationMultiLocation;
-        cost: StagingXcmV3MultiassetMultiAssets;
+        cost: XcmV3MultiassetMultiAssets;
         messageId: FixedBytes<32>;
       }
     >;
@@ -1306,7 +1374,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'FeesPaid',
-      { paying: StagingXcmV3MultilocationMultiLocation; fees: StagingXcmV3MultiassetMultiAssets }
+      { paying: StagingXcmV3MultilocationMultiLocation; fees: XcmV3MultiassetMultiAssets }
     >;
 
     /**
@@ -1316,7 +1384,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'AssetsClaimed',
-      { hash: H256; origin: StagingXcmV3MultilocationMultiLocation; assets: StagingXcmVersionedMultiAssets }
+      { hash: H256; origin: StagingXcmV3MultilocationMultiLocation; assets: XcmVersionedMultiAssets }
     >;
 
     /**
@@ -1344,12 +1412,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * Downward message executed with the given outcome.
      * \[ id, outcome \]
      **/
-    ExecutedDownward: GenericPalletEvent<
-      Rv,
-      'CumulusXcm',
-      'ExecutedDownward',
-      [FixedBytes<32>, StagingXcmV3TraitsOutcome]
-    >;
+    ExecutedDownward: GenericPalletEvent<Rv, 'CumulusXcm', 'ExecutedDownward', [FixedBytes<32>, XcmV3TraitsOutcome]>;
 
     /**
      * Generic pallet event
@@ -1377,7 +1440,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'DmpQueue',
       'ExecutedDownward',
-      { messageHash: FixedBytes<32>; messageId: FixedBytes<32>; outcome: StagingXcmV3TraitsOutcome }
+      { messageHash: FixedBytes<32>; messageId: FixedBytes<32>; outcome: XcmV3TraitsOutcome }
     >;
 
     /**
@@ -1441,7 +1504,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcAssetConfig',
       'AssetRegistered',
-      { assetLocation: StagingXcmVersionedMultiLocation; assetId: bigint }
+      { assetLocation: XcmVersionedMultiLocation; assetId: bigint }
     >;
 
     /**
@@ -1451,7 +1514,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcAssetConfig',
       'UnitsPerSecondChanged',
-      { assetLocation: StagingXcmVersionedMultiLocation; unitsPerSecond: bigint }
+      { assetLocation: XcmVersionedMultiLocation; unitsPerSecond: bigint }
     >;
 
     /**
@@ -1461,11 +1524,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcAssetConfig',
       'AssetLocationChanged',
-      {
-        previousAssetLocation: StagingXcmVersionedMultiLocation;
-        assetId: bigint;
-        newAssetLocation: StagingXcmVersionedMultiLocation;
-      }
+      { previousAssetLocation: XcmVersionedMultiLocation; assetId: bigint; newAssetLocation: XcmVersionedMultiLocation }
     >;
 
     /**
@@ -1475,7 +1534,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcAssetConfig',
       'SupportedAssetRemoved',
-      { assetLocation: StagingXcmVersionedMultiLocation }
+      { assetLocation: XcmVersionedMultiLocation }
     >;
 
     /**
@@ -1485,7 +1544,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcAssetConfig',
       'AssetRemoved',
-      { assetLocation: StagingXcmVersionedMultiLocation; assetId: bigint }
+      { assetLocation: XcmVersionedMultiLocation; assetId: bigint }
     >;
 
     /**
@@ -1506,8 +1565,8 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'TransferredMultiAssets',
       {
         sender: AccountId32;
-        assets: StagingXcmV3MultiassetMultiAssets;
-        fee: StagingXcmV3MultiassetMultiAsset;
+        assets: XcmV3MultiassetMultiAssets;
+        fee: XcmV3MultiassetMultiAsset;
         dest: StagingXcmV3MultilocationMultiLocation;
       }
     >;
@@ -1767,51 +1826,48 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
    **/
   sudo: {
     /**
-     * A sudo just took place. \[result\]
+     * A sudo call just took place.
      **/
-    Sudid: GenericPalletEvent<Rv, 'Sudo', 'Sudid', { sudoResult: Result<[], DispatchError> }>;
-
-    /**
-     * The \[sudoer\] just switched identity; the old key is supplied if one existed.
-     **/
-    KeyChanged: GenericPalletEvent<Rv, 'Sudo', 'KeyChanged', { oldSudoer?: AccountId32 | undefined }>;
-
-    /**
-     * A sudo just took place. \[result\]
-     **/
-    SudoAsDone: GenericPalletEvent<Rv, 'Sudo', 'SudoAsDone', { sudoResult: Result<[], DispatchError> }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
-   * Pallet `StaticPriceProvider`'s events
-   **/
-  staticPriceProvider: {
-    /**
-     * New static native currency price has been set.
-     **/
-    PriceSet: GenericPalletEvent<Rv, 'StaticPriceProvider', 'PriceSet', { price: FixedU128 }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
-   * Pallet `DappStakingMigration`'s events
-   **/
-  dappStakingMigration: {
-    /**
-     * Number of staking info entries translated
-     **/
-    SingularStakingInfoTranslated: GenericPalletEvent<
+    Sudid: GenericPalletEvent<
       Rv,
-      'DappStakingMigration',
-      'SingularStakingInfoTranslated',
-      number
+      'Sudo',
+      'Sudid',
+      {
+        /**
+         * The result of the call made by the sudo user.
+         **/
+        sudoResult: Result<[], DispatchError>;
+      }
+    >;
+
+    /**
+     * The sudo key has been updated.
+     **/
+    KeyChanged: GenericPalletEvent<
+      Rv,
+      'Sudo',
+      'KeyChanged',
+      {
+        /**
+         * The old sudo key if one was previously set.
+         **/
+        oldSudoer?: AccountId32 | undefined;
+      }
+    >;
+
+    /**
+     * A [sudo_as](Pallet::sudo_as) call just took place.
+     **/
+    SudoAsDone: GenericPalletEvent<
+      Rv,
+      'Sudo',
+      'SudoAsDone',
+      {
+        /**
+         * The result of the call made by the sudo user.
+         **/
+        sudoResult: Result<[], DispatchError>;
+      }
     >;
 
     /**

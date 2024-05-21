@@ -744,6 +744,49 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `Oracle`'s errors
+   **/
+  oracle: {
+    /**
+     * Sender does not have permission
+     **/
+    NoPermission: GenericPalletError<Rv>;
+
+    /**
+     * Feeder has already feeded at this block
+     **/
+    AlreadyFeeded: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `OracleMembership`'s errors
+   **/
+  oracleMembership: {
+    /**
+     * Already a member.
+     **/
+    AlreadyMember: GenericPalletError<Rv>;
+
+    /**
+     * Not a member.
+     **/
+    NotMember: GenericPalletError<Rv>;
+
+    /**
+     * Too many members.
+     **/
+    TooManyMembers: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `CollatorSelection`'s errors
    **/
   collatorSelection: {
@@ -1186,9 +1229,14 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     GasLimitTooHigh: GenericPalletError<Rv>;
 
     /**
-     * Undefined error.
+     * The chain id is invalid.
      **/
-    Undefined: GenericPalletError<Rv>;
+    InvalidChainId: GenericPalletError<Rv>;
+
+    /**
+     * the signature is invalid.
+     **/
+    InvalidSignature: GenericPalletError<Rv>;
 
     /**
      * EVM reentrancy
@@ -1199,6 +1247,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * EIP-3607,
      **/
     TransactionMustComeFromEOA: GenericPalletError<Rv>;
+
+    /**
+     * Undefined error.
+     **/
+    Undefined: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1446,20 +1499,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Sender must be the Sudo account
      **/
     RequireSudo: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
-   * Pallet `StaticPriceProvider`'s errors
-   **/
-  staticPriceProvider: {
-    /**
-     * Zero is invalid value for the price (hopefully).
-     **/
-    ZeroPrice: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

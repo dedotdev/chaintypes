@@ -282,6 +282,39 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
+   * @runtimeapi: GenesisBuilder - 0xfbc577b9d747efd6
+   **/
+  genesisBuilder: {
+    /**
+     * Creates the default `GenesisConfig` and returns it as a JSON blob.
+     *
+     * This function instantiates the default `GenesisConfig` struct for the runtime and serializes it into a JSON
+     * blob. It returns a `Vec<u8>` containing the JSON representation of the default `GenesisConfig`.
+     *
+     * @callname: GenesisBuilder_create_default_config
+     **/
+    createDefaultConfig: GenericRuntimeApiMethod<Rv, () => Promise<Bytes>>;
+
+    /**
+     * Build `GenesisConfig` from a JSON blob not using any defaults and store it in the storage.
+     *
+     * This function deserializes the full `GenesisConfig` from the given JSON blob and puts it into the storage.
+     * If the provided JSON blob is incorrect or incomplete or the deserialization fails, an error is returned.
+     * It is recommended to log any errors encountered during the process.
+     *
+     * Please note that provided json blob must contain all `GenesisConfig` fields, no defaults will be used.
+     *
+     * @callname: GenesisBuilder_build_config
+     * @param {BytesLike} json
+     **/
+    buildConfig: GenericRuntimeApiMethod<Rv, (json: BytesLike) => Promise<Result<[], string>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
    * @runtimeapi: AccountNonceApi - 0xbc9d89904f5b923f
    **/
   accountNonceApi: {
@@ -307,12 +340,14 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: DebugRuntimeApi_trace_transaction
      * @param {Array<FpSelfContainedUncheckedExtrinsic>} extrinsics
      * @param {EthereumTransactionTransactionV2} transaction
+     * @param {Header} header
      **/
     traceTransaction: GenericRuntimeApiMethod<
       Rv,
       (
         extrinsics: Array<FpSelfContainedUncheckedExtrinsic>,
         transaction: EthereumTransactionTransactionV2,
+        header: Header,
       ) => Promise<Result<[], DispatchError>>
     >;
 
@@ -321,12 +356,14 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: DebugRuntimeApi_trace_block
      * @param {Array<FpSelfContainedUncheckedExtrinsic>} extrinsics
      * @param {Array<H256>} known_transactions
+     * @param {Header} header
      **/
     traceBlock: GenericRuntimeApiMethod<
       Rv,
       (
         extrinsics: Array<FpSelfContainedUncheckedExtrinsic>,
         knownTransactions: Array<H256>,
+        header: Header,
       ) => Promise<Result<[], DispatchError>>
     >;
 

@@ -9,7 +9,7 @@ import type {
   SpWeightsWeightV2Weight,
   PalletReferendaTrackInfo,
   FrameSupportPalletId,
-  StagingXcmV3MultilocationMultiLocation,
+  StagingXcmV4Location,
 } from './types';
 
 export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<Rv> {
@@ -130,11 +130,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     maxReserves: number;
 
     /**
-     * The maximum number of holds that can exist on an account at any time.
-     **/
-    maxHolds: number;
-
-    /**
      * The maximum number of individual freeze locks that can exist on an account at any time.
      **/
     maxFreezes: number;
@@ -149,10 +144,10 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   transactionPayment: {
     /**
-     * A fee mulitplier for `Operational` extrinsics to compute "virtual tip" to boost their
+     * A fee multiplier for `Operational` extrinsics to compute "virtual tip" to boost their
      * `priority`
      *
-     * This value is multipled by the `final_fee` to obtain a "virtual tip" that is later
+     * This value is multiplied by the `final_fee` to obtain a "virtual tip" that is later
      * added to a tip component in regular `priority` calculations.
      * It means that a `Normal` transaction can front-run a similarly-sized `Operational`
      * extrinsic (with no tip), by including a tip value greater than the virtual tip.
@@ -406,14 +401,14 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   identity: {
     /**
-     * The amount held on deposit for a registered identity
+     * The amount held on deposit for a registered identity.
      **/
     basicDeposit: bigint;
 
     /**
-     * The amount held on deposit per additional field for a registered identity.
+     * The amount held on deposit per encoded byte for a registered identity.
      **/
-    fieldDeposit: bigint;
+    byteDeposit: bigint;
 
     /**
      * The amount held on deposit for a registered subaccount. This should account for the fact
@@ -428,16 +423,25 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     maxSubAccounts: number;
 
     /**
-     * Maximum number of additional fields that may be stored in an ID. Needed to bound the I/O
-     * required to access an identity, but can be pretty high.
-     **/
-    maxAdditionalFields: number;
-
-    /**
      * Maxmimum number of registrars allowed in the system. Needed to bound the complexity
      * of, e.g., updating judgements.
      **/
     maxRegistrars: number;
+
+    /**
+     * The number of blocks within which a username grant must be accepted.
+     **/
+    pendingUsernameExpiration: number;
+
+    /**
+     * The maximum length of a suffix.
+     **/
+    maxSuffixLength: number;
+
+    /**
+     * The maximum length of a username, including its suffix and any system-added delimiters.
+     **/
+    maxUsernameLength: number;
 
     /**
      * Generic pallet constant
@@ -546,87 +550,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * higher limit under `runtime-benchmarks` feature.
      **/
     maxScheduledPerBlock: number;
-
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `Democracy`'s constants
-   **/
-  democracy: {
-    /**
-     * The period between a proposal being approved and enacted.
-     *
-     * It should generally be a little more than the unstake period to ensure that
-     * voting stakers have an opportunity to remove themselves from the system in the case
-     * where they are on the losing side of a vote.
-     **/
-    enactmentPeriod: number;
-
-    /**
-     * How often (in blocks) new public referenda are launched.
-     **/
-    launchPeriod: number;
-
-    /**
-     * How often (in blocks) to check for new votes.
-     **/
-    votingPeriod: number;
-
-    /**
-     * The minimum period of vote locking.
-     *
-     * It should be no shorter than enactment period to ensure that in the case of an approval,
-     * those successful voters are locked into the consequences that their votes entail.
-     **/
-    voteLockingPeriod: number;
-
-    /**
-     * The minimum amount to be used as a deposit for a public referendum proposal.
-     **/
-    minimumDeposit: bigint;
-
-    /**
-     * Indicator for whether an emergency origin is even allowed to happen. Some chains may
-     * want to set this permanently to `false`, others may want to condition it on things such
-     * as an upgrade having happened recently.
-     **/
-    instantAllowed: boolean;
-
-    /**
-     * Minimum voting period allowed for a fast-track referendum.
-     **/
-    fastTrackVotingPeriod: number;
-
-    /**
-     * Period in blocks where an external proposal may not be re-submitted after being vetoed.
-     **/
-    cooloffPeriod: number;
-
-    /**
-     * The maximum number of votes for an account.
-     *
-     * Also used to compute weight, an overly big value can
-     * lead to extrinsic with very big weight: see `delegate` for instance.
-     **/
-    maxVotes: number;
-
-    /**
-     * The maximum number of public proposals that can exist at any time.
-     **/
-    maxProposals: number;
-
-    /**
-     * The maximum number of deposits a public proposal may have at any time.
-     **/
-    maxDeposits: number;
-
-    /**
-     * The maximum number of items which can be blacklisted.
-     **/
-    maxBlacklisted: number;
 
     /**
      * Generic pallet constant
@@ -825,6 +748,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   xcmpQueue: {
     /**
+     * The maximum number of inbound XCMP channels that can be suspended simultaneously.
+     *
+     * Any further channel suspensions will fail and messages may get dropped without further
+     * notice. Choosing a high value (1000) is okay; the trade-off that is described in
+     * [`InboundXcmpSuspended`] still applies at that scale.
+     **/
+    maxInboundSuspended: number;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -909,11 +841,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   assetManager: {
     /**
-     * The basic amount of funds that must be reserved for a local asset.
-     **/
-    localAssetDeposit: bigint;
-
-    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -925,7 +852,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     /**
      * Self chain location.
      **/
-    selfLocation: StagingXcmV3MultilocationMultiLocation;
+    selfLocation: StagingXcmV4Location;
 
     /**
      * Base XCM weight.
@@ -947,7 +874,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     /**
      * Self chain location.
      **/
-    selfLocation: StagingXcmV3MultilocationMultiLocation;
+    selfLocation: StagingXcmV4Location;
 
     /**
      *
@@ -974,6 +901,66 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    * Pallet `Erc20XcmBridge`'s constants
    **/
   erc20XcmBridge: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `MessageQueue`'s constants
+   **/
+  messageQueue: {
+    /**
+     * The size of the page; this implies the maximum message size which can be sent.
+     *
+     * A good value depends on the expected message sizes, their weights, the weight that is
+     * available for processing them and the maximal needed message size. The maximal message
+     * size is slightly lower than this as defined by [`MaxMessageLenOf`].
+     **/
+    heapSize: number;
+
+    /**
+     * The maximum number of stale pages (i.e. of overweight messages) allowed before culling
+     * can happen. Once there are more stale pages than this, then historical pages may be
+     * dropped, even if they contain unprocessed overweight messages.
+     **/
+    maxStale: number;
+
+    /**
+     * The amount of weight (if any) which should be provided to the message queue for
+     * servicing enqueued items.
+     *
+     * This may be legitimately `None` in the case that you will call
+     * `ServiceQueues::service_queues` manually.
+     **/
+    serviceWeight: SpWeightsWeightV2Weight | undefined;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `RelayStorageRoots`'s constants
+   **/
+  relayStorageRoots: {
+    /**
+     * Limit the number of relay storage roots that will be stored.
+     * This limit applies to the number of items, not to their age. Decreasing the value of
+     * `MaxStorageRoots` is a breaking change and needs a migration to clean the
+     * `RelayStorageRoots` mapping.
+     **/
+    maxStorageRoots: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `PrecompileBenchmarks`'s constants
+   **/
+  precompileBenchmarks: {
     /**
      * Generic pallet constant
      **/

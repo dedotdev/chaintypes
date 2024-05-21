@@ -22,6 +22,7 @@ import type {
   FrameSupportDispatchPerDispatchClass,
   FrameSystemEventRecord,
   FrameSystemLastRuntimeUpgradeInfo,
+  FrameSystemCodeUpgradeAuthorization,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
   PolkadotPrimitivesV6PersistedValidationData,
@@ -34,7 +35,6 @@ import type {
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
   SpWeightsWeightV2Weight,
-  CumulusPalletParachainSystemCodeUpgradeAuthorization,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
@@ -60,6 +60,7 @@ import type {
   PalletProxyAnnouncement,
   PalletIdentityRegistration,
   PalletIdentityRegistrarInfo,
+  PalletIdentityAuthorityProperties,
   PalletMultisigMultisig,
   PalletEvmCodeMetadata,
   EthereumTransactionTransactionV2,
@@ -67,11 +68,6 @@ import type {
   EthereumReceiptReceiptV3,
   EthereumBlock,
   PalletSchedulerScheduled,
-  FrameSupportPreimagesBounded,
-  PalletDemocracyReferendumInfo,
-  PalletDemocracyVoteVoting,
-  PalletDemocracyVoteThreshold,
-  PalletDemocracyMetadataOwner,
   PalletPreimageOldRequestStatus,
   PalletPreimageRequestStatus,
   PalletConvictionVotingVoteVoting,
@@ -81,13 +77,11 @@ import type {
   PalletTreasuryProposal,
   PalletTreasurySpendStatus,
   PalletCrowdloanRewardsRewardInfo,
-  CumulusPalletXcmpQueueInboundChannelDetails,
   CumulusPalletXcmpQueueOutboundChannelDetails,
   CumulusPalletXcmpQueueQueueConfigData,
-  CumulusPalletDmpQueueConfigData,
-  CumulusPalletDmpQueuePageIndexData,
+  CumulusPalletDmpQueueMigrationState,
   PalletXcmQueryStatus,
-  XcmVersionedMultiLocation,
+  XcmVersionedLocation,
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
@@ -96,10 +90,12 @@ import type {
   PalletAssetsApproval,
   PalletAssetsAssetMetadata,
   MoonbeamRuntimeXcmConfigAssetType,
-  PalletAssetManagerAssetInfo,
   PalletXcmTransactorRemoteTransactInfoWithMaxWeight,
-  StagingXcmV3MultilocationMultiLocation,
+  StagingXcmV4Location,
   PalletXcmTransactorRelayIndicesRelayChainIndices,
+  PalletMessageQueueBookState,
+  CumulusPrimitivesCoreAggregateMessageOrigin,
+  PalletMessageQueuePage,
   PalletRandomnessRequestState,
   PalletRandomnessRandomnessResult,
   PalletRandomnessRequestType,
@@ -241,6 +237,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<Phase | undefined> =} callback
      **/
     executionPhase: GenericStorageQuery<Rv, () => Phase | undefined>;
+
+    /**
+     * `Some` if a code upgrade has been authorized.
+     *
+     * @param {Callback<FrameSystemCodeUpgradeAuthorization | undefined> =} callback
+     **/
+    authorizedUpgrade: GenericStorageQuery<Rv, () => FrameSystemCodeUpgradeAuthorization | undefined>;
 
     /**
      * Generic pallet storage query
@@ -483,13 +486,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<SpWeightsWeightV2Weight | undefined> =} callback
      **/
     reservedDmpWeightOverride: GenericStorageQuery<Rv, () => SpWeightsWeightV2Weight | undefined>;
-
-    /**
-     * The next authorized upgrade, if there is one.
-     *
-     * @param {Callback<CumulusPalletParachainSystemCodeUpgradeAuthorization | undefined> =} callback
-     **/
-    authorizedUpgrade: GenericStorageQuery<Rv, () => CumulusPalletParachainSystemCodeUpgradeAuthorization | undefined>;
 
     /**
      * A custom head data that should be returned as result of `validate_block`.
@@ -1060,14 +1056,19 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   identity: {
     /**
-     * Information that is pertinent to identify the entity behind an account.
+     * Information that is pertinent to identify the entity behind an account. First item is the
+     * registration, second is the account's primary username.
      *
      * TWOX-NOTE: OK ― `AccountId` is a secure hash.
      *
      * @param {AccountId20Like} arg
-     * @param {Callback<PalletIdentityRegistration | undefined> =} callback
+     * @param {Callback<[PalletIdentityRegistration, Bytes | undefined] | undefined> =} callback
      **/
-    identityOf: GenericStorageQuery<Rv, (arg: AccountId20Like) => PalletIdentityRegistration | undefined, AccountId20>;
+    identityOf: GenericStorageQuery<
+      Rv,
+      (arg: AccountId20Like) => [PalletIdentityRegistration, Bytes | undefined] | undefined,
+      AccountId20
+    >;
 
     /**
      * The super-identity of an alternative "sub" identity together with its name, within that
@@ -1099,6 +1100,43 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<Array<PalletIdentityRegistrarInfo | undefined>> =} callback
      **/
     registrars: GenericStorageQuery<Rv, () => Array<PalletIdentityRegistrarInfo | undefined>>;
+
+    /**
+     * A map of the accounts who are authorized to grant usernames.
+     *
+     * @param {AccountId20Like} arg
+     * @param {Callback<PalletIdentityAuthorityProperties | undefined> =} callback
+     **/
+    usernameAuthorities: GenericStorageQuery<
+      Rv,
+      (arg: AccountId20Like) => PalletIdentityAuthorityProperties | undefined,
+      AccountId20
+    >;
+
+    /**
+     * Reverse lookup from `username` to the `AccountId` that has registered it. The value should
+     * be a key in the `IdentityOf` map, but it may not if the user has cleared their identity.
+     *
+     * Multiple usernames may map to the same `AccountId`, but `IdentityOf` will only map to one
+     * primary username.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<AccountId20 | undefined> =} callback
+     **/
+    accountOfUsername: GenericStorageQuery<Rv, (arg: BytesLike) => AccountId20 | undefined, Bytes>;
+
+    /**
+     * Usernames that an authority has granted, but that the account controller has not confirmed
+     * that they want it. Used primarily in cases where the `AccountId` cannot provide a signature
+     * because they are a pure proxy, multisig, etc. In order to confirm it, they should call
+     * [`Call::accept_username`].
+     *
+     * First tuple item is the account and second is the acceptance deadline.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<[AccountId20, number] | undefined> =} callback
+     **/
+    pendingUsernames: GenericStorageQuery<Rv, (arg: BytesLike) => [AccountId20, number] | undefined, Bytes>;
 
     /**
      * Generic pallet storage query
@@ -1169,13 +1207,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<boolean> =} callback
      **/
     localAssetsMigrationCompleted: GenericStorageQuery<Rv, () => boolean>;
-
-    /**
-     * If true, it means that Democracy funds have been unlocked.
-     *
-     * @param {Callback<boolean> =} callback
-     **/
-    democracyLocksMigrationCompleted: GenericStorageQuery<Rv, () => boolean>;
 
     /**
      * The total number of suicided contracts that were removed
@@ -1317,130 +1348,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<[number, number] | undefined> =} callback
      **/
     lookup: GenericStorageQuery<Rv, (arg: FixedBytes<32>) => [number, number] | undefined, FixedBytes<32>>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
-   * Pallet `Democracy`'s storage queries
-   **/
-  democracy: {
-    /**
-     * The number of (public) proposals that have been made so far.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    publicPropCount: GenericStorageQuery<Rv, () => number>;
-
-    /**
-     * The public proposals. Unsorted. The second item is the proposal.
-     *
-     * @param {Callback<Array<[number, FrameSupportPreimagesBounded, AccountId20]>> =} callback
-     **/
-    publicProps: GenericStorageQuery<Rv, () => Array<[number, FrameSupportPreimagesBounded, AccountId20]>>;
-
-    /**
-     * Those who have locked a deposit.
-     *
-     * TWOX-NOTE: Safe, as increasing integer keys are safe.
-     *
-     * @param {number} arg
-     * @param {Callback<[Array<AccountId20>, bigint] | undefined> =} callback
-     **/
-    depositOf: GenericStorageQuery<Rv, (arg: number) => [Array<AccountId20>, bigint] | undefined, number>;
-
-    /**
-     * The next free referendum index, aka the number of referenda started so far.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    referendumCount: GenericStorageQuery<Rv, () => number>;
-
-    /**
-     * The lowest referendum index representing an unbaked referendum. Equal to
-     * `ReferendumCount` if there isn't a unbaked referendum.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    lowestUnbaked: GenericStorageQuery<Rv, () => number>;
-
-    /**
-     * Information concerning any given referendum.
-     *
-     * TWOX-NOTE: SAFE as indexes are not under an attacker’s control.
-     *
-     * @param {number} arg
-     * @param {Callback<PalletDemocracyReferendumInfo | undefined> =} callback
-     **/
-    referendumInfoOf: GenericStorageQuery<Rv, (arg: number) => PalletDemocracyReferendumInfo | undefined, number>;
-
-    /**
-     * All votes for a particular voter. We store the balance for the number of votes that we
-     * have recorded. The second item is the total amount of delegations, that will be added.
-     *
-     * TWOX-NOTE: SAFE as `AccountId`s are crypto hashes anyway.
-     *
-     * @param {AccountId20Like} arg
-     * @param {Callback<PalletDemocracyVoteVoting> =} callback
-     **/
-    votingOf: GenericStorageQuery<Rv, (arg: AccountId20Like) => PalletDemocracyVoteVoting, AccountId20>;
-
-    /**
-     * True if the last referendum tabled was submitted externally. False if it was a public
-     * proposal.
-     *
-     * @param {Callback<boolean> =} callback
-     **/
-    lastTabledWasExternal: GenericStorageQuery<Rv, () => boolean>;
-
-    /**
-     * The referendum to be tabled whenever it would be valid to table an external proposal.
-     * This happens when a referendum needs to be tabled and one of two conditions are met:
-     * - `LastTabledWasExternal` is `false`; or
-     * - `PublicProps` is empty.
-     *
-     * @param {Callback<[FrameSupportPreimagesBounded, PalletDemocracyVoteThreshold] | undefined> =} callback
-     **/
-    nextExternal: GenericStorageQuery<
-      Rv,
-      () => [FrameSupportPreimagesBounded, PalletDemocracyVoteThreshold] | undefined
-    >;
-
-    /**
-     * A record of who vetoed what. Maps proposal hash to a possible existent block number
-     * (until when it may not be resubmitted) and who vetoed it.
-     *
-     * @param {H256} arg
-     * @param {Callback<[number, Array<AccountId20>] | undefined> =} callback
-     **/
-    blacklist: GenericStorageQuery<Rv, (arg: H256) => [number, Array<AccountId20>] | undefined, H256>;
-
-    /**
-     * Record of all proposals that have been subject to emergency cancellation.
-     *
-     * @param {H256} arg
-     * @param {Callback<boolean> =} callback
-     **/
-    cancellations: GenericStorageQuery<Rv, (arg: H256) => boolean, H256>;
-
-    /**
-     * General information concerning any proposal or referendum.
-     * The `Hash` refers to the preimage of the `Preimages` provider which can be a JSON
-     * dump or IPFS hash of a JSON file.
-     *
-     * Consider a garbage collection for a metadata of finished referendums to `unrequest` (remove)
-     * large preimages.
-     *
-     * @param {PalletDemocracyMetadataOwner} arg
-     * @param {Callback<H256 | undefined> =} callback
-     **/
-    metadataOf: GenericStorageQuery<
-      Rv,
-      (arg: PalletDemocracyMetadataOwner) => H256 | undefined,
-      PalletDemocracyMetadataOwner
-    >;
 
     /**
      * Generic pallet storage query
@@ -1820,23 +1727,18 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   xcmpQueue: {
     /**
-     * Status of the inbound XCMP channels.
+     * The suspended inbound XCMP channels. All others are not suspended.
      *
-     * @param {Callback<Array<CumulusPalletXcmpQueueInboundChannelDetails>> =} callback
-     **/
-    inboundXcmpStatus: GenericStorageQuery<Rv, () => Array<CumulusPalletXcmpQueueInboundChannelDetails>>;
-
-    /**
-     * Inbound aggregate XCMP messages. It can only be one per ParaId/block.
+     * This is a `StorageValue` instead of a `StorageMap` since we expect multiple reads per block
+     * to different keys with a one byte payload. The access to `BoundedBTreeSet` will be cached
+     * within the block and therefore only included once in the proof size.
      *
-     * @param {[PolkadotParachainPrimitivesPrimitivesId, number]} arg
-     * @param {Callback<Bytes> =} callback
+     * NOTE: The PoV benchmarking cannot know this and will over-estimate, but the actual proof
+     * will be smaller.
+     *
+     * @param {Callback<Array<PolkadotParachainPrimitivesPrimitivesId>> =} callback
      **/
-    inboundXcmpMessages: GenericStorageQuery<
-      Rv,
-      (arg: [PolkadotParachainPrimitivesPrimitivesId, number]) => Bytes,
-      [PolkadotParachainPrimitivesPrimitivesId, number]
-    >;
+    inboundXcmpSuspended: GenericStorageQuery<Rv, () => Array<PolkadotParachainPrimitivesPrimitivesId>>;
 
     /**
      * The non-empty XCMP channels in order of becoming non-empty, and the index of the first
@@ -1882,36 +1784,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     queueConfig: GenericStorageQuery<Rv, () => CumulusPalletXcmpQueueQueueConfigData>;
 
     /**
-     * The messages that exceeded max individual message weight budget.
-     *
-     * These message stay in this storage map until they are manually dispatched via
-     * `service_overweight`.
-     *
-     * @param {bigint} arg
-     * @param {Callback<[PolkadotParachainPrimitivesPrimitivesId, number, Bytes] | undefined> =} callback
-     **/
-    overweight: GenericStorageQuery<
-      Rv,
-      (arg: bigint) => [PolkadotParachainPrimitivesPrimitivesId, number, Bytes] | undefined,
-      bigint
-    >;
-
-    /**
-     * Counter for the related counted storage map
-     *
-     * @param {Callback<number> =} callback
-     **/
-    counterForOverweight: GenericStorageQuery<Rv, () => number>;
-
-    /**
-     * The number of overweight messages ever recorded in `Overweight`. Also doubles as the next
-     * available free overweight index.
-     *
-     * @param {Callback<bigint> =} callback
-     **/
-    overweightCount: GenericStorageQuery<Rv, () => bigint>;
-
-    /**
      * Whether or not the XCMP queue is suspended from executing incoming XCMs or not.
      *
      * @param {Callback<boolean> =} callback
@@ -1940,41 +1812,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   dmpQueue: {
     /**
-     * The configuration.
+     * The migration state of this pallet.
      *
-     * @param {Callback<CumulusPalletDmpQueueConfigData> =} callback
+     * @param {Callback<CumulusPalletDmpQueueMigrationState> =} callback
      **/
-    configuration: GenericStorageQuery<Rv, () => CumulusPalletDmpQueueConfigData>;
-
-    /**
-     * The page index.
-     *
-     * @param {Callback<CumulusPalletDmpQueuePageIndexData> =} callback
-     **/
-    pageIndex: GenericStorageQuery<Rv, () => CumulusPalletDmpQueuePageIndexData>;
-
-    /**
-     * The queue pages.
-     *
-     * @param {number} arg
-     * @param {Callback<Array<[number, Bytes]>> =} callback
-     **/
-    pages: GenericStorageQuery<Rv, (arg: number) => Array<[number, Bytes]>, number>;
-
-    /**
-     * The overweight messages.
-     *
-     * @param {bigint} arg
-     * @param {Callback<[number, Bytes] | undefined> =} callback
-     **/
-    overweight: GenericStorageQuery<Rv, (arg: bigint) => [number, Bytes] | undefined, bigint>;
-
-    /**
-     * Counter for the related counted storage map
-     *
-     * @param {Callback<number> =} callback
-     **/
-    counterForOverweight: GenericStorageQuery<Rv, () => number>;
+    migrationStatus: GenericStorageQuery<Rv, () => CumulusPalletDmpQueueMigrationState>;
 
     /**
      * Generic pallet storage query
@@ -2003,7 +1845,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * The existing asset traps.
      *
-     * Key is the blake2 256 hash of (origin, versioned `MultiAssets`) pair. Value is the number of
+     * Key is the blake2 256 hash of (origin, versioned `Assets`) pair. Value is the number of
      * times this pair has been trapped (usually just 1 if it exists at all).
      *
      * @param {H256} arg
@@ -2022,38 +1864,38 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * The Latest versions that we know various locations support.
      *
-     * @param {[number, XcmVersionedMultiLocation]} arg
+     * @param {[number, XcmVersionedLocation]} arg
      * @param {Callback<number | undefined> =} callback
      **/
     supportedVersion: GenericStorageQuery<
       Rv,
-      (arg: [number, XcmVersionedMultiLocation]) => number | undefined,
-      [number, XcmVersionedMultiLocation]
+      (arg: [number, XcmVersionedLocation]) => number | undefined,
+      [number, XcmVersionedLocation]
     >;
 
     /**
      * All locations that we have requested version notifications from.
      *
-     * @param {[number, XcmVersionedMultiLocation]} arg
+     * @param {[number, XcmVersionedLocation]} arg
      * @param {Callback<bigint | undefined> =} callback
      **/
     versionNotifiers: GenericStorageQuery<
       Rv,
-      (arg: [number, XcmVersionedMultiLocation]) => bigint | undefined,
-      [number, XcmVersionedMultiLocation]
+      (arg: [number, XcmVersionedLocation]) => bigint | undefined,
+      [number, XcmVersionedLocation]
     >;
 
     /**
      * The target locations that are subscribed to our version changes, as well as the most recent
      * of our versions we informed them of.
      *
-     * @param {[number, XcmVersionedMultiLocation]} arg
+     * @param {[number, XcmVersionedLocation]} arg
      * @param {Callback<[bigint, SpWeightsWeightV2Weight, number] | undefined> =} callback
      **/
     versionNotifyTargets: GenericStorageQuery<
       Rv,
-      (arg: [number, XcmVersionedMultiLocation]) => [bigint, SpWeightsWeightV2Weight, number] | undefined,
-      [number, XcmVersionedMultiLocation]
+      (arg: [number, XcmVersionedLocation]) => [bigint, SpWeightsWeightV2Weight, number] | undefined,
+      [number, XcmVersionedLocation]
     >;
 
     /**
@@ -2061,9 +1903,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * the `u32` counter is the number of times that a send to the destination has been attempted,
      * which is used as a prioritization.
      *
-     * @param {Callback<Array<[XcmVersionedMultiLocation, number]>> =} callback
+     * @param {Callback<Array<[XcmVersionedLocation, number]>> =} callback
      **/
-    versionDiscoveryQueue: GenericStorageQuery<Rv, () => Array<[XcmVersionedMultiLocation, number]>>;
+    versionDiscoveryQueue: GenericStorageQuery<Rv, () => Array<[XcmVersionedLocation, number]>>;
 
     /**
      * The current migration's stage, if any.
@@ -2088,11 +1930,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Fungible assets which we know are locked on this chain.
      *
      * @param {AccountId20Like} arg
-     * @param {Callback<Array<[bigint, XcmVersionedMultiLocation]> | undefined> =} callback
+     * @param {Callback<Array<[bigint, XcmVersionedLocation]> | undefined> =} callback
      **/
     lockedFungibles: GenericStorageQuery<
       Rv,
-      (arg: AccountId20Like) => Array<[bigint, XcmVersionedMultiLocation]> | undefined,
+      (arg: AccountId20Like) => Array<[bigint, XcmVersionedLocation]> | undefined,
       AccountId20
     >;
 
@@ -2203,28 +2045,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     >;
 
     /**
-     * Stores the counter of the number of local assets that have been
-     * created so far
-     * This value can be used to salt the creation of an assetId, e.g.,
-     * by hashing it. This is particularly useful for cases like moonbeam
-     * where letting users choose their assetId would result in collision
-     * in the evm side.
-     *
-     * @param {Callback<bigint> =} callback
-     **/
-    localAssetCounter: GenericStorageQuery<Rv, () => bigint>;
-
-    /**
-     * Local asset deposits, a mapping from assetId to a struct
-     * holding the creator (from which the deposit was reserved) and
-     * the deposit amount
-     *
-     * @param {bigint} arg
-     * @param {Callback<PalletAssetManagerAssetInfo | undefined> =} callback
-     **/
-    localAssetDeposit: GenericStorageQuery<Rv, (arg: bigint) => PalletAssetManagerAssetInfo | undefined, bigint>;
-
-    /**
      *
      * @param {Callback<Array<MoonbeamRuntimeXcmConfigAssetType>> =} callback
      **/
@@ -2259,30 +2079,30 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     indexToAccount: GenericStorageQuery<Rv, (arg: number) => AccountId20 | undefined, number>;
 
     /**
-     * Stores the transact info of a MultiLocation. This defines how much extra weight we need to
+     * Stores the transact info of a Location. This defines how much extra weight we need to
      * add when we want to transact in the destination chain and maximum amount of weight allowed
      * by the destination chain
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} arg
+     * @param {StagingXcmV4Location} arg
      * @param {Callback<PalletXcmTransactorRemoteTransactInfoWithMaxWeight | undefined> =} callback
      **/
     transactInfoWithWeightLimit: GenericStorageQuery<
       Rv,
-      (arg: StagingXcmV3MultilocationMultiLocation) => PalletXcmTransactorRemoteTransactInfoWithMaxWeight | undefined,
-      StagingXcmV3MultilocationMultiLocation
+      (arg: StagingXcmV4Location) => PalletXcmTransactorRemoteTransactInfoWithMaxWeight | undefined,
+      StagingXcmV4Location
     >;
 
     /**
      * Stores the fee per second for an asset in its reserve chain. This allows us to convert
      * from weight to fee
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} arg
+     * @param {StagingXcmV4Location} arg
      * @param {Callback<bigint | undefined> =} callback
      **/
     destinationAssetFeePerSecond: GenericStorageQuery<
       Rv,
-      (arg: StagingXcmV3MultilocationMultiLocation) => bigint | undefined,
-      StagingXcmV3MultilocationMultiLocation
+      (arg: StagingXcmV4Location) => bigint | undefined,
+      StagingXcmV4Location
     >;
 
     /**
@@ -2314,6 +2134,71 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<boolean> =} callback
      **/
     ethereumXcmSuspended: GenericStorageQuery<Rv, () => boolean>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `MessageQueue`'s storage queries
+   **/
+  messageQueue: {
+    /**
+     * The index of the first and last (non-empty) pages.
+     *
+     * @param {CumulusPrimitivesCoreAggregateMessageOrigin} arg
+     * @param {Callback<PalletMessageQueueBookState> =} callback
+     **/
+    bookStateFor: GenericStorageQuery<
+      Rv,
+      (arg: CumulusPrimitivesCoreAggregateMessageOrigin) => PalletMessageQueueBookState,
+      CumulusPrimitivesCoreAggregateMessageOrigin
+    >;
+
+    /**
+     * The origin at which we should begin servicing.
+     *
+     * @param {Callback<CumulusPrimitivesCoreAggregateMessageOrigin | undefined> =} callback
+     **/
+    serviceHead: GenericStorageQuery<Rv, () => CumulusPrimitivesCoreAggregateMessageOrigin | undefined>;
+
+    /**
+     * The map of page indices to pages.
+     *
+     * @param {[CumulusPrimitivesCoreAggregateMessageOrigin, number]} arg
+     * @param {Callback<PalletMessageQueuePage | undefined> =} callback
+     **/
+    pages: GenericStorageQuery<
+      Rv,
+      (arg: [CumulusPrimitivesCoreAggregateMessageOrigin, number]) => PalletMessageQueuePage | undefined,
+      [CumulusPrimitivesCoreAggregateMessageOrigin, number]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `RelayStorageRoots`'s storage queries
+   **/
+  relayStorageRoots: {
+    /**
+     * Map of relay block number to relay storage root
+     *
+     * @param {number} arg
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    relayStorageRoot: GenericStorageQuery<Rv, (arg: number) => H256 | undefined, number>;
+
+    /**
+     * List of all the keys in `RelayStorageRoot`.
+     * Used to remove the oldest key without having to iterate over all of them.
+     *
+     * @param {Callback<Array<number>> =} callback
+     **/
+    relayStorageRootKeys: GenericStorageQuery<Rv, () => Array<number>>;
 
     /**
      * Generic pallet storage query

@@ -42,6 +42,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CallFiltered: GenericPalletError<Rv>;
 
     /**
+     * No upgrade authorized.
+     **/
+    NothingAuthorized: GenericPalletError<Rv>;
+
+    /**
+     * The submitted code is not authorized.
+     **/
+    Unauthorized: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -141,7 +151,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     TooManyReserves: GenericPalletError<Rv>;
 
     /**
-     * Number of holds exceed `MaxHolds`.
+     * Number of holds exceed `VariantCountOf<T::RuntimeHoldReason>`.
      **/
     TooManyHolds: GenericPalletError<Rv>;
 
@@ -149,6 +159,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Number of freezes exceed `MaxFreezes`.
      **/
     TooManyFreezes: GenericPalletError<Rv>;
+
+    /**
+     * The issuance cannot be modified since it is already deactivated.
+     **/
+    IssuanceDeactivated: GenericPalletError<Rv>;
+
+    /**
+     * The delta cannot be zero.
+     **/
+    DeltaZero: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -490,11 +510,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     InvalidTarget: GenericPalletError<Rv>;
 
     /**
-     * Too many additional fields.
-     **/
-    TooManyFields: GenericPalletError<Rv>;
-
-    /**
      * Maximum amount of registrars reached. Cannot add any more.
      **/
     TooManyRegistrars: GenericPalletError<Rv>;
@@ -523,6 +538,51 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Error that occurs when there is an issue paying for judgement.
      **/
     JudgementPaymentFailed: GenericPalletError<Rv>;
+
+    /**
+     * The provided suffix is too long.
+     **/
+    InvalidSuffix: GenericPalletError<Rv>;
+
+    /**
+     * The sender does not have permission to issue a username.
+     **/
+    NotUsernameAuthority: GenericPalletError<Rv>;
+
+    /**
+     * The authority cannot allocate any more usernames.
+     **/
+    NoAllocation: GenericPalletError<Rv>;
+
+    /**
+     * The signature on a username was not valid.
+     **/
+    InvalidSignature: GenericPalletError<Rv>;
+
+    /**
+     * Setting this username requires a signature, but none was provided.
+     **/
+    RequiresSignature: GenericPalletError<Rv>;
+
+    /**
+     * The username does not meet the requirements.
+     **/
+    InvalidUsername: GenericPalletError<Rv>;
+
+    /**
+     * The username is already taken.
+     **/
+    UsernameTaken: GenericPalletError<Rv>;
+
+    /**
+     * The requested username does not exist.
+     **/
+    NoUsername: GenericPalletError<Rv>;
+
+    /**
+     * The username cannot be forcefully removed because it can still be accepted.
+     **/
+    NotExpired: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -650,6 +710,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The limit cannot be zero
      **/
     LimitCannotBeZero: GenericPalletError<Rv>;
+
+    /**
+     * The maximum number of assets cannot be zero
+     **/
+    MaxAssetsCannotBeZero: GenericPalletError<Rv>;
 
     /**
      * The limit for unlocking funds is too high
@@ -802,136 +867,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Attempt to use a non-named function on a named task.
      **/
     Named: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
-   * Pallet `Democracy`'s errors
-   **/
-  democracy: {
-    /**
-     * Value too low
-     **/
-    ValueLow: GenericPalletError<Rv>;
-
-    /**
-     * Proposal does not exist
-     **/
-    ProposalMissing: GenericPalletError<Rv>;
-
-    /**
-     * Cannot cancel the same proposal twice
-     **/
-    AlreadyCanceled: GenericPalletError<Rv>;
-
-    /**
-     * Proposal already made
-     **/
-    DuplicateProposal: GenericPalletError<Rv>;
-
-    /**
-     * Proposal still blacklisted
-     **/
-    ProposalBlacklisted: GenericPalletError<Rv>;
-
-    /**
-     * Next external proposal not simple majority
-     **/
-    NotSimpleMajority: GenericPalletError<Rv>;
-
-    /**
-     * Invalid hash
-     **/
-    InvalidHash: GenericPalletError<Rv>;
-
-    /**
-     * No external proposal
-     **/
-    NoProposal: GenericPalletError<Rv>;
-
-    /**
-     * Identity may not veto a proposal twice
-     **/
-    AlreadyVetoed: GenericPalletError<Rv>;
-
-    /**
-     * Vote given for invalid referendum
-     **/
-    ReferendumInvalid: GenericPalletError<Rv>;
-
-    /**
-     * No proposals waiting
-     **/
-    NoneWaiting: GenericPalletError<Rv>;
-
-    /**
-     * The given account did not vote on the referendum.
-     **/
-    NotVoter: GenericPalletError<Rv>;
-
-    /**
-     * The actor has no permission to conduct the action.
-     **/
-    NoPermission: GenericPalletError<Rv>;
-
-    /**
-     * The account is already delegating.
-     **/
-    AlreadyDelegating: GenericPalletError<Rv>;
-
-    /**
-     * Too high a balance was provided that the account cannot afford.
-     **/
-    InsufficientFunds: GenericPalletError<Rv>;
-
-    /**
-     * The account is not currently delegating.
-     **/
-    NotDelegating: GenericPalletError<Rv>;
-
-    /**
-     * The account currently has votes attached to it and the operation cannot succeed until
-     * these are removed, either through `unvote` or `reap_vote`.
-     **/
-    VotesExist: GenericPalletError<Rv>;
-
-    /**
-     * The instant referendum origin is currently disallowed.
-     **/
-    InstantNotAllowed: GenericPalletError<Rv>;
-
-    /**
-     * Delegation to oneself makes no sense.
-     **/
-    Nonsense: GenericPalletError<Rv>;
-
-    /**
-     * Invalid upper bound.
-     **/
-    WrongUpperBound: GenericPalletError<Rv>;
-
-    /**
-     * Maximum number of votes reached.
-     **/
-    MaxVotesReached: GenericPalletError<Rv>;
-
-    /**
-     * Maximum number of items reached.
-     **/
-    TooMany: GenericPalletError<Rv>;
-
-    /**
-     * Voting period too low
-     **/
-    VotingPeriodLow: GenericPalletError<Rv>;
-
-    /**
-     * The preimage does not exist.
-     **/
-    PreimageNotExist: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1457,57 +1392,19 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
    **/
   xcmpQueue: {
     /**
-     * Failed to send XCM message.
+     * Setting the queue config failed since one of its values was invalid.
      **/
-    FailedToSend: GenericPalletError<Rv>;
+    BadQueueConfig: GenericPalletError<Rv>;
 
     /**
-     * Bad XCM origin.
+     * The execution is already suspended.
      **/
-    BadXcmOrigin: GenericPalletError<Rv>;
+    AlreadySuspended: GenericPalletError<Rv>;
 
     /**
-     * Bad XCM data.
+     * The execution is already resumed.
      **/
-    BadXcm: GenericPalletError<Rv>;
-
-    /**
-     * Bad overweight index.
-     **/
-    BadOverweightIndex: GenericPalletError<Rv>;
-
-    /**
-     * Provided weight is possibly not enough to execute the message.
-     **/
-    WeightOverLimit: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
-   * Pallet `CumulusXcm`'s errors
-   **/
-  cumulusXcm: {
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
-   * Pallet `DmpQueue`'s errors
-   **/
-  dmpQueue: {
-    /**
-     * The message index given is unknown.
-     **/
-    Unknown: GenericPalletError<Rv>;
-
-    /**
-     * The amount of weight given is possibly not enough for executing the message.
-     **/
-    OverLimit: GenericPalletError<Rv>;
+    AlreadyResumed: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1541,7 +1438,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     UnweighableMessage: GenericPalletError<Rv>;
 
     /**
-     * The destination `MultiLocation` provided cannot be inverted.
+     * The destination `Location` provided cannot be inverted.
      **/
     DestinationNotInvertible: GenericPalletError<Rv>;
 
@@ -1587,9 +1484,9 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     AlreadySubscribed: GenericPalletError<Rv>;
 
     /**
-     * Invalid asset for the operation.
+     * Could not check-out the assets for teleportation to the destination chain.
      **/
-    InvalidAsset: GenericPalletError<Rv>;
+    CannotCheckOutTeleport: GenericPalletError<Rv>;
 
     /**
      * The owner does not own (all) of the asset that they wish to do the operation on.
@@ -1620,6 +1517,31 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The unlock operation cannot succeed because there are still consumers of the lock.
      **/
     InUse: GenericPalletError<Rv>;
+
+    /**
+     * Invalid non-concrete asset.
+     **/
+    InvalidAssetNotConcrete: GenericPalletError<Rv>;
+
+    /**
+     * Invalid asset, reserve chain could not be determined for it.
+     **/
+    InvalidAssetUnknownReserve: GenericPalletError<Rv>;
+
+    /**
+     * Invalid asset, do not support remote asset reserves with different fees reserves.
+     **/
+    InvalidAssetUnsupportedReserve: GenericPalletError<Rv>;
+
+    /**
+     * Too many assets with different reserve locations have been attempted for transfer.
+     **/
+    TooManyReserves: GenericPalletError<Rv>;
+
+    /**
+     * Local XCM execution incomplete.
+     **/
+    LocalExecutionIncomplete: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1802,12 +1724,12 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     InvalidAncestry: GenericPalletError<Rv>;
 
     /**
-     * The MultiAsset is invalid.
+     * The Asset is invalid.
      **/
     InvalidAsset: GenericPalletError<Rv>;
 
     /**
-     * The destination `MultiLocation` provided cannot be inverted.
+     * The destination `Location` provided cannot be inverted.
      **/
     DestinationNotInvertible: GenericPalletError<Rv>;
 
@@ -1839,7 +1761,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     TooManyAssetsBeingSent: GenericPalletError<Rv>;
 
     /**
-     * The specified index does not exist in a MultiAssets struct.
+     * The specified index does not exist in a Assets struct.
      **/
     AssetIndexNonExistent: GenericPalletError<Rv>;
 
@@ -1849,9 +1771,9 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     FeeNotEnough: GenericPalletError<Rv>;
 
     /**
-     * Not supported MultiLocation
+     * Not supported Location
      **/
-    NotSupportedMultiLocation: GenericPalletError<Rv>;
+    NotSupportedLocation: GenericPalletError<Rv>;
 
     /**
      * MinXcmFee not registered for certain reserve location
@@ -1908,6 +1830,77 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Xcm to Ethereum execution is suspended
      **/
     EthereumXcmExecutionSuspended: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `MessageQueue`'s errors
+   **/
+  messageQueue: {
+    /**
+     * Page is not reapable because it has items remaining to be processed and is not old
+     * enough.
+     **/
+    NotReapable: GenericPalletError<Rv>;
+
+    /**
+     * Page to be reaped does not exist.
+     **/
+    NoPage: GenericPalletError<Rv>;
+
+    /**
+     * The referenced message could not be found.
+     **/
+    NoMessage: GenericPalletError<Rv>;
+
+    /**
+     * The message was already processed and cannot be processed again.
+     **/
+    AlreadyProcessed: GenericPalletError<Rv>;
+
+    /**
+     * The message is queued for future execution.
+     **/
+    Queued: GenericPalletError<Rv>;
+
+    /**
+     * There is temporarily not enough weight to continue servicing messages.
+     **/
+    InsufficientWeight: GenericPalletError<Rv>;
+
+    /**
+     * This message is temporarily unprocessable.
+     *
+     * Such errors are expected, but not guaranteed, to resolve themselves eventually through
+     * retrying.
+     **/
+    TemporarilyUnprocessable: GenericPalletError<Rv>;
+
+    /**
+     * The queue is paused and no message can be executed from it.
+     *
+     * This can change at any time and may resolve in the future by re-trying.
+     **/
+    QueuePaused: GenericPalletError<Rv>;
+
+    /**
+     * Another call is in progress and needs to finish before this call can happen.
+     **/
+    RecursiveDisallowed: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `PrecompileBenchmarks`'s errors
+   **/
+  precompileBenchmarks: {
+    BenchmarkError: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

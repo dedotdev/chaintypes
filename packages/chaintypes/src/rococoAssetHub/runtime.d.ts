@@ -33,6 +33,13 @@ import type {
   AssetHubRococoRuntimeRuntimeCallLike,
   XcmVersionedAssets,
   AssetsCommonRuntimeApiFungiblesAccessError,
+  XcmVersionedAssetId,
+  XcmFeePaymentRuntimeApiFeesError,
+  XcmVersionedXcm,
+  XcmVersionedLocation,
+  XcmFeePaymentRuntimeApiDryRunExtrinsicDryRunEffects,
+  XcmFeePaymentRuntimeApiDryRunError,
+  XcmFeePaymentRuntimeApiDryRunXcmDryRunEffects,
   CumulusPrimitivesCoreCollationInfo,
 } from './types';
 
@@ -493,6 +500,124 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     queryAccountBalances: GenericRuntimeApiMethod<
       Rv,
       (account: AccountId32Like) => Promise<Result<XcmVersionedAssets, AssetsCommonRuntimeApiFungiblesAccessError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: XcmPaymentApi - 0x6ff52ee858e6c5bd
+   **/
+  xcmPaymentApi: {
+    /**
+     * Returns a list of acceptable payment assets.
+     *
+     * # Arguments
+     *
+     * * `xcm_version`: Version.
+     *
+     * @callname: XcmPaymentApi_query_acceptable_payment_assets
+     * @param {number} xcm_version
+     **/
+    queryAcceptablePaymentAssets: GenericRuntimeApiMethod<
+      Rv,
+      (xcmVersion: number) => Promise<Result<Array<XcmVersionedAssetId>, XcmFeePaymentRuntimeApiFeesError>>
+    >;
+
+    /**
+     * Returns a weight needed to execute a XCM.
+     *
+     * # Arguments
+     *
+     * * `message`: `VersionedXcm`.
+     *
+     * @callname: XcmPaymentApi_query_xcm_weight
+     * @param {XcmVersionedXcm} message
+     **/
+    queryXcmWeight: GenericRuntimeApiMethod<
+      Rv,
+      (message: XcmVersionedXcm) => Promise<Result<SpWeightsWeightV2Weight, XcmFeePaymentRuntimeApiFeesError>>
+    >;
+
+    /**
+     * Converts a weight into a fee for the specified `AssetId`.
+     *
+     * # Arguments
+     *
+     * * `weight`: convertible `Weight`.
+     * * `asset`: `VersionedAssetId`.
+     *
+     * @callname: XcmPaymentApi_query_weight_to_asset_fee
+     * @param {SpWeightsWeightV2Weight} weight
+     * @param {XcmVersionedAssetId} asset
+     **/
+    queryWeightToAssetFee: GenericRuntimeApiMethod<
+      Rv,
+      (
+        weight: SpWeightsWeightV2Weight,
+        asset: XcmVersionedAssetId,
+      ) => Promise<Result<bigint, XcmFeePaymentRuntimeApiFeesError>>
+    >;
+
+    /**
+     * Get delivery fees for sending a specific `message` to a `destination`.
+     * These always come in a specific asset, defined by the chain.
+     *
+     * # Arguments
+     * * `message`: The message that'll be sent, necessary because most delivery fees are based on the
+     * size of the message.
+     * * `destination`: The destination to send the message to. Different destinations may use
+     * different senders that charge different fees.
+     *
+     * @callname: XcmPaymentApi_query_delivery_fees
+     * @param {XcmVersionedLocation} destination
+     * @param {XcmVersionedXcm} message
+     **/
+    queryDeliveryFees: GenericRuntimeApiMethod<
+      Rv,
+      (
+        destination: XcmVersionedLocation,
+        message: XcmVersionedXcm,
+      ) => Promise<Result<XcmVersionedAssets, XcmFeePaymentRuntimeApiFeesError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: XcmDryRunApi - 0x12cbf43724c82779
+   **/
+  xcmDryRunApi: {
+    /**
+     * Dry run extrinsic.
+     *
+     * @callname: XcmDryRunApi_dry_run_extrinsic
+     * @param {UncheckedExtrinsicLike} extrinsic
+     **/
+    dryRunExtrinsic: GenericRuntimeApiMethod<
+      Rv,
+      (
+        extrinsic: UncheckedExtrinsicLike,
+      ) => Promise<Result<XcmFeePaymentRuntimeApiDryRunExtrinsicDryRunEffects, XcmFeePaymentRuntimeApiDryRunError>>
+    >;
+
+    /**
+     * Dry run XCM program
+     *
+     * @callname: XcmDryRunApi_dry_run_xcm
+     * @param {XcmVersionedLocation} origin_location
+     * @param {XcmVersionedXcm} xcm
+     **/
+    dryRunXcm: GenericRuntimeApiMethod<
+      Rv,
+      (
+        originLocation: XcmVersionedLocation,
+        xcm: XcmVersionedXcm,
+      ) => Promise<Result<XcmFeePaymentRuntimeApiDryRunXcmDryRunEffects, XcmFeePaymentRuntimeApiDryRunError>>
     >;
 
     /**

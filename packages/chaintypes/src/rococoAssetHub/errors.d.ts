@@ -1492,51 +1492,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
-   * Pallet `StateTrieMigration`'s errors
-   **/
-  stateTrieMigration: {
-    /**
-     * Max signed limits not respected.
-     **/
-    MaxSignedLimits: GenericPalletError<Rv>;
-
-    /**
-     * A key was longer than the configured maximum.
-     *
-     * This means that the migration halted at the current [`Progress`] and
-     * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
-     * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
-     * The value should only be increased to avoid a storage migration for the currently
-     * stored [`crate::Progress::LastKey`].
-     **/
-    KeyTooLong: GenericPalletError<Rv>;
-
-    /**
-     * submitter does not have enough funds.
-     **/
-    NotEnoughFunds: GenericPalletError<Rv>;
-
-    /**
-     * Bad witness data provided.
-     **/
-    BadWitness: GenericPalletError<Rv>;
-
-    /**
-     * Signed migration is not allowed because the maximum limit is not set yet.
-     **/
-    SignedMigrationNotAllowed: GenericPalletError<Rv>;
-
-    /**
-     * Bad child root provided.
-     **/
-    BadChildRoot: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
    * Pallet `AssetConversionMigration`'s errors
    **/
   assetConversionMigration: {

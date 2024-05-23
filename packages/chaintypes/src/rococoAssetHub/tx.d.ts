@@ -46,9 +46,6 @@ import type {
   PalletNftsPreSignedMint,
   PalletNftsPreSignedAttributes,
   StagingXcmV3MultilocationMultiLocation,
-  PalletStateTrieMigrationMigrationLimits,
-  PalletStateTrieMigrationMigrationTask,
-  PalletStateTrieMigrationProgress,
 } from './types';
 
 export type ChainSubmittableExtrinsic<
@@ -698,6 +695,35 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ForceAdjustTotalIssuance';
             params: { direction: PalletBalancesAdjustmentDirection; delta: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Burn the specified liquid free balance from the origin account.
+     *
+     * If the origin's account ends up below the existential deposit as a result
+     * of the burn and `keep_alive` is false, the account will be reaped.
+     *
+     * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+     * this `burn` operation will reduce total issuance by the amount _burned_.
+     *
+     * @param {bigint} value
+     * @param {boolean} keepAlive
+     **/
+    burn: GenericTxCall<
+      Rv,
+      (
+        value: bigint,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Balances';
+          palletCall: {
+            name: 'Burn';
+            params: { value: bigint; keepAlive: boolean };
           };
         }
       >
@@ -8939,191 +8965,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'Touch';
             params: { asset1: StagingXcmV3MultilocationMultiLocation; asset2: StagingXcmV3MultilocationMultiLocation };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
-   * Pallet `StateTrieMigration`'s transaction calls
-   **/
-  stateTrieMigration: {
-    /**
-     * Control the automatic migration.
-     *
-     * The dispatch origin of this call must be [`Config::ControlOrigin`].
-     *
-     * @param {PalletStateTrieMigrationMigrationLimits | undefined} maybeConfig
-     **/
-    controlAutoMigration: GenericTxCall<
-      Rv,
-      (maybeConfig: PalletStateTrieMigrationMigrationLimits | undefined) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'ControlAutoMigration';
-            params: { maybeConfig: PalletStateTrieMigrationMigrationLimits | undefined };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Continue the migration for the given `limits`.
-     *
-     * The dispatch origin of this call can be any signed account.
-     *
-     * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
-     * Upon successful execution, the transaction fee is returned.
-     *
-     * The (potentially over-estimated) of the byte length of all the data read must be
-     * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
-     * that executing the current `MigrationTask` with the given `limits` will not exceed
-     * `real_size_upper` bytes of read data.
-     *
-     * The `witness_task` is merely a helper to prevent the caller from being slashed or
-     * generally trigger a migration that they do not intend. This parameter is just a message
-     * from caller, saying that they believed `witness_task` was the last state of the
-     * migration, and they only wish for their transaction to do anything, if this assumption
-     * holds. In case `witness_task` does not match, the transaction fails.
-     *
-     * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
-     * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
-     * `size` limit can always be overwritten.
-     *
-     * @param {PalletStateTrieMigrationMigrationLimits} limits
-     * @param {number} realSizeUpper
-     * @param {PalletStateTrieMigrationMigrationTask} witnessTask
-     **/
-    continueMigrate: GenericTxCall<
-      Rv,
-      (
-        limits: PalletStateTrieMigrationMigrationLimits,
-        realSizeUpper: number,
-        witnessTask: PalletStateTrieMigrationMigrationTask,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'ContinueMigrate';
-            params: {
-              limits: PalletStateTrieMigrationMigrationLimits;
-              realSizeUpper: number;
-              witnessTask: PalletStateTrieMigrationMigrationTask;
-            };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Migrate the list of top keys by iterating each of them one by one.
-     *
-     * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-     * should only be used in case any keys are leftover due to a bug.
-     *
-     * @param {Array<BytesLike>} keys
-     * @param {number} witnessSize
-     **/
-    migrateCustomTop: GenericTxCall<
-      Rv,
-      (
-        keys: Array<BytesLike>,
-        witnessSize: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'MigrateCustomTop';
-            params: { keys: Array<BytesLike>; witnessSize: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Migrate the list of child keys by iterating each of them one by one.
-     *
-     * All of the given child keys must be present under one `child_root`.
-     *
-     * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-     * should only be used in case any keys are leftover due to a bug.
-     *
-     * @param {BytesLike} root
-     * @param {Array<BytesLike>} childKeys
-     * @param {number} totalSize
-     **/
-    migrateCustomChild: GenericTxCall<
-      Rv,
-      (
-        root: BytesLike,
-        childKeys: Array<BytesLike>,
-        totalSize: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'MigrateCustomChild';
-            params: { root: BytesLike; childKeys: Array<BytesLike>; totalSize: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Set the maximum limit of the signed migration.
-     *
-     * @param {PalletStateTrieMigrationMigrationLimits} limits
-     **/
-    setSignedMaxLimits: GenericTxCall<
-      Rv,
-      (limits: PalletStateTrieMigrationMigrationLimits) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'SetSignedMaxLimits';
-            params: { limits: PalletStateTrieMigrationMigrationLimits };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Forcefully set the progress the running migration.
-     *
-     * This is only useful in one case: the next key to migrate is too big to be migrated with
-     * a signed account, in a parachain context, and we simply want to skip it. A reasonable
-     * example of this would be `:code:`, which is both very expensive to migrate, and commonly
-     * used, so probably it is already migrated.
-     *
-     * In case you mess things up, you can also, in principle, use this to reset the migration
-     * process.
-     *
-     * @param {PalletStateTrieMigrationProgress} progressTop
-     * @param {PalletStateTrieMigrationProgress} progressChild
-     **/
-    forceSetProgress: GenericTxCall<
-      Rv,
-      (
-        progressTop: PalletStateTrieMigrationProgress,
-        progressChild: PalletStateTrieMigrationProgress,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'ForceSetProgress';
-            params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
           };
         }
       >

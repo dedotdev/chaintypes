@@ -125,6 +125,7 @@ import type {
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
+  StagingXcmV4Xcm,
   SpConsensusBeefyEcdsaCryptoPublic,
   SpConsensusBeefyMmrBeefyAuthoritySet,
   PolkadotRuntimeCommonAssignedSlotsParachainTemporarySlot,
@@ -3265,6 +3266,31 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<boolean> =} callback
      **/
     xcmExecutionSuspended: GenericStorageQuery<Rv, () => boolean>;
+
+    /**
+     * Whether or not incoming XCMs (both executed locally and received) should be recorded.
+     * Only one XCM program will be recorded at a time.
+     * This is meant to be used in runtime APIs, and it's advised it stays false
+     * for all other use cases, so as to not degrade regular performance.
+     *
+     * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
+     * implementation in the XCM executor configuration.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    shouldRecordXcm: GenericStorageQuery<Rv, () => boolean>;
+
+    /**
+     * If [`ShouldRecordXcm`] is set to true, then the last XCM program executed locally
+     * will be stored here.
+     * Runtime APIs can fetch the XCM that was executed by accessing this value.
+     *
+     * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
+     * implementation in the XCM executor configuration.
+     *
+     * @param {Callback<StagingXcmV4Xcm | undefined> =} callback
+     **/
+    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV4Xcm | undefined>;
 
     /**
      * Generic pallet storage query

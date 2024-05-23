@@ -1252,7 +1252,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   coretime: {
     /**
-     * The ParaId of the broker system parachain.
+     * The ParaId of the coretime chain.
      **/
     brokerId: number;
 

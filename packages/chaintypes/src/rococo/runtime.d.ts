@@ -5,8 +5,8 @@ import type {
   RuntimeVersion,
   Header,
   Result,
-  DispatchError,
   UncheckedExtrinsicLike,
+  DispatchError,
   UncheckedExtrinsic,
   H256,
   BitSequence,
@@ -18,11 +18,14 @@ import type {
   SpRuntimeBlock,
   SpRuntimeExtrinsicInclusionMode,
   XcmVersionedAssetId,
-  XcmFeePaymentRuntimeApiError,
+  XcmFeePaymentRuntimeApiFeesError,
   SpWeightsWeightV2Weight,
   XcmVersionedXcm,
   XcmVersionedAssets,
   XcmVersionedLocation,
+  XcmFeePaymentRuntimeApiDryRunExtrinsicDryRunEffects,
+  XcmFeePaymentRuntimeApiDryRunError,
+  XcmFeePaymentRuntimeApiDryRunXcmDryRunEffects,
   SpCoreOpaqueMetadata,
   SpRuntimeTransactionValidityTransactionValidityError,
   SpInherentsInherentData,
@@ -58,12 +61,12 @@ import type {
   PolkadotPrimitivesV7ApprovalVotingParams,
   PolkadotPrimitivesV7CoreIndex,
   SpConsensusBeefyValidatorSet,
-  SpConsensusBeefyEquivocationProof,
+  SpConsensusBeefyDoubleVotingProof,
   SpConsensusBeefyOpaqueKeyOwnershipProof,
   SpConsensusBeefyEcdsaCryptoPublic,
   SpMmrPrimitivesError,
   SpMmrPrimitivesEncodableOpaqueLeaf,
-  SpMmrPrimitivesProof,
+  SpMmrPrimitivesLeafProof,
   SpConsensusGrandpaAppPublic,
   SpConsensusGrandpaEquivocationProof,
   SpConsensusGrandpaOpaqueKeyOwnershipProof,
@@ -129,7 +132,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     queryAcceptablePaymentAssets: GenericRuntimeApiMethod<
       Rv,
-      (xcmVersion: number) => Promise<Result<Array<XcmVersionedAssetId>, XcmFeePaymentRuntimeApiError>>
+      (xcmVersion: number) => Promise<Result<Array<XcmVersionedAssetId>, XcmFeePaymentRuntimeApiFeesError>>
     >;
 
     /**
@@ -144,7 +147,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     queryXcmWeight: GenericRuntimeApiMethod<
       Rv,
-      (message: XcmVersionedXcm) => Promise<Result<SpWeightsWeightV2Weight, XcmFeePaymentRuntimeApiError>>
+      (message: XcmVersionedXcm) => Promise<Result<SpWeightsWeightV2Weight, XcmFeePaymentRuntimeApiFeesError>>
     >;
 
     /**
@@ -164,7 +167,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       (
         weight: SpWeightsWeightV2Weight,
         asset: XcmVersionedAssetId,
-      ) => Promise<Result<bigint, XcmFeePaymentRuntimeApiError>>
+      ) => Promise<Result<bigint, XcmFeePaymentRuntimeApiFeesError>>
     >;
 
     /**
@@ -186,7 +189,44 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       (
         destination: XcmVersionedLocation,
         message: XcmVersionedXcm,
-      ) => Promise<Result<XcmVersionedAssets, XcmFeePaymentRuntimeApiError>>
+      ) => Promise<Result<XcmVersionedAssets, XcmFeePaymentRuntimeApiFeesError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: XcmDryRunApi - 0x12cbf43724c82779
+   **/
+  xcmDryRunApi: {
+    /**
+     * Dry run extrinsic.
+     *
+     * @callname: XcmDryRunApi_dry_run_extrinsic
+     * @param {UncheckedExtrinsicLike} extrinsic
+     **/
+    dryRunExtrinsic: GenericRuntimeApiMethod<
+      Rv,
+      (
+        extrinsic: UncheckedExtrinsicLike,
+      ) => Promise<Result<XcmFeePaymentRuntimeApiDryRunExtrinsicDryRunEffects, XcmFeePaymentRuntimeApiDryRunError>>
+    >;
+
+    /**
+     * Dry run XCM program
+     *
+     * @callname: XcmDryRunApi_dry_run_xcm
+     * @param {XcmVersionedLocation} origin_location
+     * @param {XcmVersionedXcm} xcm
+     **/
+    dryRunXcm: GenericRuntimeApiMethod<
+      Rv,
+      (
+        originLocation: XcmVersionedLocation,
+        xcm: XcmVersionedXcm,
+      ) => Promise<Result<XcmFeePaymentRuntimeApiDryRunXcmDryRunEffects, XcmFeePaymentRuntimeApiDryRunError>>
     >;
 
     /**
@@ -739,13 +779,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * hardcoded to return `None`). Only useful in an offchain context.
      *
      * @callname: BeefyApi_submit_report_equivocation_unsigned_extrinsic
-     * @param {SpConsensusBeefyEquivocationProof} equivocation_proof
+     * @param {SpConsensusBeefyDoubleVotingProof} equivocation_proof
      * @param {SpConsensusBeefyOpaqueKeyOwnershipProof} key_owner_proof
      **/
     submitReportEquivocationUnsignedExtrinsic: GenericRuntimeApiMethod<
       Rv,
       (
-        equivocationProof: SpConsensusBeefyEquivocationProof,
+        equivocationProof: SpConsensusBeefyDoubleVotingProof,
         keyOwnerProof: SpConsensusBeefyOpaqueKeyOwnershipProof,
       ) => Promise<[] | undefined>
     >;
@@ -811,7 +851,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       (
         blockNumbers: Array<number>,
         bestKnownBlockNumber?: number | undefined,
-      ) => Promise<Result<[Array<SpMmrPrimitivesEncodableOpaqueLeaf>, SpMmrPrimitivesProof], SpMmrPrimitivesError>>
+      ) => Promise<Result<[Array<SpMmrPrimitivesEncodableOpaqueLeaf>, SpMmrPrimitivesLeafProof], SpMmrPrimitivesError>>
     >;
 
     /**
@@ -819,17 +859,17 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * Note this function will use on-chain MMR root hash and check if the proof matches the hash.
      * Note, the leaves should be sorted such that corresponding leaves and leaf indices have the
-     * same position in both the `leaves` vector and the `leaf_indices` vector contained in the [Proof]
+     * same position in both the `leaves` vector and the `leaf_indices` vector contained in the [LeafProof]
      *
      * @callname: MmrApi_verify_proof
      * @param {Array<SpMmrPrimitivesEncodableOpaqueLeaf>} leaves
-     * @param {SpMmrPrimitivesProof} proof
+     * @param {SpMmrPrimitivesLeafProof} proof
      **/
     verifyProof: GenericRuntimeApiMethod<
       Rv,
       (
         leaves: Array<SpMmrPrimitivesEncodableOpaqueLeaf>,
-        proof: SpMmrPrimitivesProof,
+        proof: SpMmrPrimitivesLeafProof,
       ) => Promise<Result<[], SpMmrPrimitivesError>>
     >;
 
@@ -840,19 +880,19 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * proof is verified against given MMR root hash.
      *
      * Note, the leaves should be sorted such that corresponding leaves and leaf indices have the
-     * same position in both the `leaves` vector and the `leaf_indices` vector contained in the [Proof]
+     * same position in both the `leaves` vector and the `leaf_indices` vector contained in the [LeafProof]
      *
      * @callname: MmrApi_verify_proof_stateless
      * @param {H256} root
      * @param {Array<SpMmrPrimitivesEncodableOpaqueLeaf>} leaves
-     * @param {SpMmrPrimitivesProof} proof
+     * @param {SpMmrPrimitivesLeafProof} proof
      **/
     verifyProofStateless: GenericRuntimeApiMethod<
       Rv,
       (
         root: H256,
         leaves: Array<SpMmrPrimitivesEncodableOpaqueLeaf>,
-        proof: SpMmrPrimitivesProof,
+        proof: SpMmrPrimitivesLeafProof,
       ) => Promise<Result<[], SpMmrPrimitivesError>>
     >;
 

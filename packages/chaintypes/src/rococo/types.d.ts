@@ -1571,7 +1571,17 @@ export type PalletBalancesCall =
    *
    * # Example
    **/
-  | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } };
+  | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } }
+  /**
+   * Burn the specified liquid free balance from the origin account.
+   *
+   * If the origin's account ends up below the existential deposit as a result
+   * of the burn and `keep_alive` is false, the account will be reaped.
+   *
+   * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+   * this `burn` operation will reduce total issuance by the amount _burned_.
+   **/
+  | { name: 'Burn'; params: { value: bigint; keepAlive: boolean } };
 
 export type PalletBalancesCallLike =
   /**
@@ -1646,7 +1656,17 @@ export type PalletBalancesCallLike =
    *
    * # Example
    **/
-  | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } };
+  | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } }
+  /**
+   * Burn the specified liquid free balance from the origin account.
+   *
+   * If the origin's account ends up below the existential deposit as a result
+   * of the burn and `keep_alive` is false, the account will be reaped.
+   *
+   * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+   * this `burn` operation will reduce total issuance by the amount _burned_.
+   **/
+  | { name: 'Burn'; params: { value: bigint; keepAlive: boolean } };
 
 export type PalletBalancesAdjustmentDirection = 'Increase' | 'Decrease';
 
@@ -8361,13 +8381,21 @@ export type SpRuntimeMultiSigner =
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
 export type PolkadotRuntimeParachainsCoretimePalletCall =
+  /**
+   * Request the configuration to be updated with the specified number of cores. Warning:
+   * Since this only schedules a configuration update, it takes two sessions to come into
+   * effect.
+   *
+   * - `origin`: Root or the Coretime Chain
+   * - `count`: total number of cores
+   **/
   | { name: 'RequestCoreCount'; params: { count: number } }
   /**
    * Receive instructions from the `ExternalBrokerOrigin`, detailing how a specific core is
    * to be used.
    *
    * Parameters:
-   * -`origin`: The `ExternalBrokerOrigin`, assumed to be the Broker system parachain.
+   * -`origin`: The `ExternalBrokerOrigin`, assumed to be the coretime chain.
    * -`core`: The core that should be scheduled.
    * -`begin`: The starting blockheight of the instruction.
    * -`assignment`: How the blockspace should be utilised.
@@ -8386,13 +8414,21 @@ export type PolkadotRuntimeParachainsCoretimePalletCall =
     };
 
 export type PolkadotRuntimeParachainsCoretimePalletCallLike =
+  /**
+   * Request the configuration to be updated with the specified number of cores. Warning:
+   * Since this only schedules a configuration update, it takes two sessions to come into
+   * effect.
+   *
+   * - `origin`: Root or the Coretime Chain
+   * - `count`: total number of cores
+   **/
   | { name: 'RequestCoreCount'; params: { count: number } }
   /**
    * Receive instructions from the `ExternalBrokerOrigin`, detailing how a specific core is
    * to be used.
    *
    * Parameters:
-   * -`origin`: The `ExternalBrokerOrigin`, assumed to be the Broker system parachain.
+   * -`origin`: The `ExternalBrokerOrigin`, assumed to be the coretime chain.
    * -`core`: The core that should be scheduled.
    * -`begin`: The starting blockheight of the instruction.
    * -`assignment`: How the blockspace should be utilised.
@@ -9558,7 +9594,7 @@ export type PalletBeefyCall =
    **/
   | {
       name: 'ReportEquivocation';
-      params: { equivocationProof: SpConsensusBeefyEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
+      params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
    * Report voter equivocation/misbehavior. This method will verify the
@@ -9573,7 +9609,7 @@ export type PalletBeefyCall =
    **/
   | {
       name: 'ReportEquivocationUnsigned';
-      params: { equivocationProof: SpConsensusBeefyEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
+      params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
    * Reset BEEFY consensus by setting a new BEEFY genesis at `delay_in_blocks` blocks in the
@@ -9592,7 +9628,7 @@ export type PalletBeefyCallLike =
    **/
   | {
       name: 'ReportEquivocation';
-      params: { equivocationProof: SpConsensusBeefyEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
+      params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
    * Report voter equivocation/misbehavior. This method will verify the
@@ -9607,7 +9643,7 @@ export type PalletBeefyCallLike =
    **/
   | {
       name: 'ReportEquivocationUnsigned';
-      params: { equivocationProof: SpConsensusBeefyEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
+      params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
    * Reset BEEFY consensus by setting a new BEEFY genesis at `delay_in_blocks` blocks in the
@@ -9617,7 +9653,7 @@ export type PalletBeefyCallLike =
    **/
   | { name: 'SetNewGenesis'; params: { delayInBlocks: number } };
 
-export type SpConsensusBeefyEquivocationProof = {
+export type SpConsensusBeefyDoubleVotingProof = {
   first: SpConsensusBeefyVoteMessage;
   second: SpConsensusBeefyVoteMessage;
 };
@@ -11342,7 +11378,8 @@ export type FrameSupportMessagesProcessMessageError =
   | { tag: 'Corrupt' }
   | { tag: 'Unsupported' }
   | { tag: 'Overweight'; value: SpWeightsWeightV2Weight }
-  | { tag: 'Yield' };
+  | { tag: 'Yield' }
+  | { tag: 'StackLimitReached' };
 
 /**
  * The `Event` enum of this pallet
@@ -14519,13 +14556,28 @@ export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrin
 
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 
-export type XcmFeePaymentRuntimeApiError =
+export type XcmFeePaymentRuntimeApiFeesError =
   | 'Unimplemented'
   | 'VersionedConversionFailed'
   | 'WeightNotComputable'
   | 'UnhandledXcmVersion'
   | 'AssetNotFound'
   | 'Unroutable';
+
+export type XcmFeePaymentRuntimeApiDryRunExtrinsicDryRunEffects = {
+  executionResult: Result<[], DispatchError>;
+  emittedEvents: Array<RococoRuntimeRuntimeEvent>;
+  localXcm?: XcmVersionedXcm | undefined;
+  forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
+};
+
+export type XcmFeePaymentRuntimeApiDryRunError = 'Unimplemented' | 'VersionedConversionFailed' | 'InvalidExtrinsic';
+
+export type XcmFeePaymentRuntimeApiDryRunXcmDryRunEffects = {
+  executionResult: StagingXcmV4TraitsOutcome;
+  emittedEvents: Array<RococoRuntimeRuntimeEvent>;
+  forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
+};
 
 export type SpCoreOpaqueMetadata = Bytes;
 
@@ -14688,7 +14740,7 @@ export type SpMmrPrimitivesError =
 
 export type SpMmrPrimitivesEncodableOpaqueLeaf = Bytes;
 
-export type SpMmrPrimitivesProof = { leafIndices: Array<bigint>; leafCount: bigint; items: Array<H256> };
+export type SpMmrPrimitivesLeafProof = { leafIndices: Array<bigint>; leafCount: bigint; items: Array<H256> };
 
 export type SpConsensusGrandpaOpaqueKeyOwnershipProof = Bytes;
 

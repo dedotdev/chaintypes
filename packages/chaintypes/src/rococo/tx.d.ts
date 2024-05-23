@@ -74,7 +74,7 @@ import type {
   XcmV3WeightLimit,
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
-  SpConsensusBeefyEquivocationProof,
+  SpConsensusBeefyDoubleVotingProof,
   PolkadotRuntimeParachainsParasParaGenesisArgs,
   PolkadotRuntimeCommonAssignedSlotsSlotLeasePeriodStart,
   PalletStateTrieMigrationMigrationLimits,
@@ -866,6 +866,35 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ForceAdjustTotalIssuance';
             params: { direction: PalletBalancesAdjustmentDirection; delta: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Burn the specified liquid free balance from the origin account.
+     *
+     * If the origin's account ends up below the existential deposit as a result
+     * of the burn and `keep_alive` is false, the account will be reaped.
+     *
+     * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+     * this `burn` operation will reduce total issuance by the amount _burned_.
+     *
+     * @param {bigint} value
+     * @param {boolean} keepAlive
+     **/
+    burn: GenericTxCall<
+      Rv,
+      (
+        value: bigint,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Balances';
+          palletCall: {
+            name: 'Burn';
+            params: { value: bigint; keepAlive: boolean };
           };
         }
       >
@@ -6610,6 +6639,35 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Burn the specified liquid free balance from the origin account.
+     *
+     * If the origin's account ends up below the existential deposit as a result
+     * of the burn and `keep_alive` is false, the account will be reaped.
+     *
+     * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+     * this `burn` operation will reduce total issuance by the amount _burned_.
+     *
+     * @param {bigint} value
+     * @param {boolean} keepAlive
+     **/
+    burn: GenericTxCall<
+      Rv,
+      (
+        value: bigint,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NisCounterpartBalances';
+          palletCall: {
+            name: 'Burn';
+            params: { value: bigint; keepAlive: boolean };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -9192,6 +9250,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   coretime: {
     /**
+     * Request the configuration to be updated with the specified number of cores. Warning:
+     * Since this only schedules a configuration update, it takes two sessions to come into
+     * effect.
+     *
+     * - `origin`: Root or the Coretime Chain
+     * - `count`: total number of cores
      *
      * @param {number} count
      **/
@@ -9214,7 +9278,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * to be used.
      *
      * Parameters:
-     * -`origin`: The `ExternalBrokerOrigin`, assumed to be the Broker system parachain.
+     * -`origin`: The `ExternalBrokerOrigin`, assumed to be the coretime chain.
      * -`core`: The core that should be scheduled.
      * -`begin`: The starting blockheight of the instruction.
      * -`assignment`: How the blockspace should be utilised.
@@ -9857,13 +9921,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * against the extracted offender. If both are valid, the offence
      * will be reported.
      *
-     * @param {SpConsensusBeefyEquivocationProof} equivocationProof
+     * @param {SpConsensusBeefyDoubleVotingProof} equivocationProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
     reportEquivocation: GenericTxCall<
       Rv,
       (
-        equivocationProof: SpConsensusBeefyEquivocationProof,
+        equivocationProof: SpConsensusBeefyDoubleVotingProof,
         keyOwnerProof: SpSessionMembershipProof,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -9871,7 +9935,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Beefy';
           palletCall: {
             name: 'ReportEquivocation';
-            params: { equivocationProof: SpConsensusBeefyEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
+            params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
           };
         }
       >
@@ -9888,13 +9952,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * if the block author is defined it will be defined as the equivocation
      * reporter.
      *
-     * @param {SpConsensusBeefyEquivocationProof} equivocationProof
+     * @param {SpConsensusBeefyDoubleVotingProof} equivocationProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
     reportEquivocationUnsigned: GenericTxCall<
       Rv,
       (
-        equivocationProof: SpConsensusBeefyEquivocationProof,
+        equivocationProof: SpConsensusBeefyDoubleVotingProof,
         keyOwnerProof: SpSessionMembershipProof,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -9902,7 +9966,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Beefy';
           palletCall: {
             name: 'ReportEquivocationUnsigned';
-            params: { equivocationProof: SpConsensusBeefyEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
+            params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
           };
         }
       >

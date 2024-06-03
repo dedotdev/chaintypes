@@ -176,6 +176,41 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `Vesting`'s errors
+   **/
+  vesting: {
+    /**
+     * The account given is not vesting.
+     **/
+    NotVesting: GenericPalletError<Rv>;
+
+    /**
+     * The account already has `MaxVestingSchedules` count of schedules and thus
+     * cannot add another one. Consider merging existing schedules in order to add another.
+     **/
+    AtMaxVestingSchedules: GenericPalletError<Rv>;
+
+    /**
+     * Amount being transferred is too low to create a vesting schedule.
+     **/
+    AmountLow: GenericPalletError<Rv>;
+
+    /**
+     * An index was out of bounds of the vesting schedules.
+     **/
+    ScheduleIndexOutOfBounds: GenericPalletError<Rv>;
+
+    /**
+     * Failed to create a new schedule because some parameter was invalid.
+     **/
+    InvalidScheduleParams: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `CollatorSelection`'s errors
    **/
   collatorSelection: {

@@ -54,12 +54,12 @@ export type AssetHubKusamaRuntimeRuntimeEvent =
   | { pallet: 'Balances'; palletEvent: PalletBalancesEvent }
   | { pallet: 'TransactionPayment'; palletEvent: PalletTransactionPaymentEvent }
   | { pallet: 'AssetTxPayment'; palletEvent: PalletAssetConversionTxPaymentEvent }
+  | { pallet: 'Vesting'; palletEvent: PalletVestingEvent }
   | { pallet: 'CollatorSelection'; palletEvent: PalletCollatorSelectionEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
   | { pallet: 'PolkadotXcm'; palletEvent: PalletXcmEvent }
   | { pallet: 'CumulusXcm'; palletEvent: CumulusPalletXcmEvent }
-  | { pallet: 'DmpQueue'; palletEvent: CumulusPalletDmpQueueEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
   | { pallet: 'Utility'; palletEvent: PalletUtilityEvent }
   | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
@@ -341,6 +341,20 @@ export type XcmV3JunctionBodyPart =
   | { tag: 'Fraction'; value: { nom: number; denom: number } }
   | { tag: 'AtLeastProportion'; value: { nom: number; denom: number } }
   | { tag: 'MoreThanProportion'; value: { nom: number; denom: number } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletVestingEvent =
+  /**
+   * The amount vested has been updated. This could indicate a change in funds available.
+   * The balance given is the amount which is left unvested (and thus locked).
+   **/
+  | { name: 'VestingUpdated'; data: { account: AccountId32; unvested: bigint } }
+  /**
+   * An \[account\] has become fully vested.
+   **/
+  | { name: 'VestingCompleted'; data: { account: AccountId32 } };
 
 /**
  * The `Event` enum of this pallet
@@ -957,59 +971,6 @@ export type CumulusPalletXcmEvent =
    * \[ id, outcome \]
    **/
   | { name: 'ExecutedDownward'; data: [FixedBytes<32>, StagingXcmV4TraitsOutcome] };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type CumulusPalletDmpQueueEvent =
-  /**
-   * The export of pages started.
-   **/
-  | { name: 'StartedExport' }
-  /**
-   * The export of a page completed.
-   **/
-  | { name: 'Exported'; data: { page: number } }
-  /**
-   * The export of a page failed.
-   *
-   * This should never be emitted.
-   **/
-  | { name: 'ExportFailed'; data: { page: number } }
-  /**
-   * The export of pages completed.
-   **/
-  | { name: 'CompletedExport' }
-  /**
-   * The export of overweight messages started.
-   **/
-  | { name: 'StartedOverweightExport' }
-  /**
-   * The export of an overweight message completed.
-   **/
-  | { name: 'ExportedOverweight'; data: { index: bigint } }
-  /**
-   * The export of an overweight message failed.
-   *
-   * This should never be emitted.
-   **/
-  | { name: 'ExportOverweightFailed'; data: { index: bigint } }
-  /**
-   * The export of overweight messages completed.
-   **/
-  | { name: 'CompletedOverweightExport' }
-  /**
-   * The cleanup of remaining pallet storage started.
-   **/
-  | { name: 'StartedCleanup' }
-  /**
-   * Some debris was cleaned up.
-   **/
-  | { name: 'CleanedSome'; data: { keysRemoved: number } }
-  /**
-   * The cleanup of remaining pallet storage completed.
-   **/
-  | { name: 'Completed'; data: { error: boolean } };
 
 /**
  * The `Event` enum of this pallet
@@ -2599,6 +2560,97 @@ export type PalletBalancesError =
 
 export type PalletTransactionPaymentReleases = 'V1Ancient' | 'V2';
 
+export type PalletVestingVestingInfo = { locked: bigint; perBlock: bigint; startingBlock: number };
+
+export type PalletVestingReleases = 'V0' | 'V1';
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletVestingCall =
+  /**
+   * See [`Pallet::vest`].
+   **/
+  | { name: 'Vest' }
+  /**
+   * See [`Pallet::vest_other`].
+   **/
+  | { name: 'VestOther'; params: { target: MultiAddress } }
+  /**
+   * See [`Pallet::vested_transfer`].
+   **/
+  | { name: 'VestedTransfer'; params: { target: MultiAddress; schedule: PalletVestingVestingInfo } }
+  /**
+   * See [`Pallet::force_vested_transfer`].
+   **/
+  | {
+      name: 'ForceVestedTransfer';
+      params: { source: MultiAddress; target: MultiAddress; schedule: PalletVestingVestingInfo };
+    }
+  /**
+   * See [`Pallet::merge_schedules`].
+   **/
+  | { name: 'MergeSchedules'; params: { schedule1Index: number; schedule2Index: number } }
+  /**
+   * See [`Pallet::force_remove_vesting_schedule`].
+   **/
+  | { name: 'ForceRemoveVestingSchedule'; params: { target: MultiAddress; scheduleIndex: number } };
+
+export type PalletVestingCallLike =
+  /**
+   * See [`Pallet::vest`].
+   **/
+  | { name: 'Vest' }
+  /**
+   * See [`Pallet::vest_other`].
+   **/
+  | { name: 'VestOther'; params: { target: MultiAddressLike } }
+  /**
+   * See [`Pallet::vested_transfer`].
+   **/
+  | { name: 'VestedTransfer'; params: { target: MultiAddressLike; schedule: PalletVestingVestingInfo } }
+  /**
+   * See [`Pallet::force_vested_transfer`].
+   **/
+  | {
+      name: 'ForceVestedTransfer';
+      params: { source: MultiAddressLike; target: MultiAddressLike; schedule: PalletVestingVestingInfo };
+    }
+  /**
+   * See [`Pallet::merge_schedules`].
+   **/
+  | { name: 'MergeSchedules'; params: { schedule1Index: number; schedule2Index: number } }
+  /**
+   * See [`Pallet::force_remove_vesting_schedule`].
+   **/
+  | { name: 'ForceRemoveVestingSchedule'; params: { target: MultiAddressLike; scheduleIndex: number } };
+
+/**
+ * Error for the vesting pallet.
+ **/
+export type PalletVestingError =
+  /**
+   * The account given is not vesting.
+   **/
+  | 'NotVesting'
+  /**
+   * The account already has `MaxVestingSchedules` count of schedules and thus
+   * cannot add another one. Consider merging existing schedules in order to add another.
+   **/
+  | 'AtMaxVestingSchedules'
+  /**
+   * Amount being transferred is too low to create a vesting schedule.
+   **/
+  | 'AmountLow'
+  /**
+   * An index was out of bounds of the vesting schedules.
+   **/
+  | 'ScheduleIndexOutOfBounds'
+  /**
+   * Failed to create a new schedule because some parameter was invalid.
+   **/
+  | 'InvalidScheduleParams';
+
 export type PalletCollatorSelectionCandidateInfo = { who: AccountId32; deposit: bigint };
 
 /**
@@ -3075,7 +3127,22 @@ export type PalletXcmCall =
   /**
    * See [`Pallet::claim_assets`].
    **/
-  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } };
+  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
+  /**
+   * See [`Pallet::transfer_assets_using_type_and_then`].
+   **/
+  | {
+      name: 'TransferAssetsUsingTypeAndThen';
+      params: {
+        dest: XcmVersionedLocation;
+        assets: XcmVersionedAssets;
+        assetsTransferType: StagingXcmExecutorAssetTransferTransferType;
+        remoteFeesId: XcmVersionedAssetId;
+        feesTransferType: StagingXcmExecutorAssetTransferTransferType;
+        customXcmOnDest: XcmVersionedXcm;
+        weightLimit: XcmV3WeightLimit;
+      };
+    };
 
 export type PalletXcmCallLike =
   /**
@@ -3172,7 +3239,22 @@ export type PalletXcmCallLike =
   /**
    * See [`Pallet::claim_assets`].
    **/
-  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } };
+  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
+  /**
+   * See [`Pallet::transfer_assets_using_type_and_then`].
+   **/
+  | {
+      name: 'TransferAssetsUsingTypeAndThen';
+      params: {
+        dest: XcmVersionedLocation;
+        assets: XcmVersionedAssets;
+        assetsTransferType: StagingXcmExecutorAssetTransferTransferType;
+        remoteFeesId: XcmVersionedAssetId;
+        feesTransferType: StagingXcmExecutorAssetTransferTransferType;
+        customXcmOnDest: XcmVersionedXcm;
+        weightLimit: XcmV3WeightLimit;
+      };
+    };
 
 export type XcmVersionedXcm =
   | { tag: 'V2'; value: XcmV2Xcm }
@@ -3376,6 +3458,12 @@ export type XcmV3MultiassetWildMultiAsset =
 
 export type XcmV3MultiassetWildFungibility = 'Fungible' | 'NonFungible';
 
+export type StagingXcmExecutorAssetTransferTransferType =
+  | { tag: 'Teleport' }
+  | { tag: 'LocalReserve' }
+  | { tag: 'DestinationReserve' }
+  | { tag: 'RemoteReserve'; value: XcmVersionedLocation };
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -3490,22 +3578,6 @@ export type PalletXcmError =
 export type CumulusPalletXcmCall = null;
 
 export type CumulusPalletXcmCallLike = null;
-
-export type CumulusPalletDmpQueueMigrationState =
-  | { tag: 'NotStarted' }
-  | { tag: 'StartedExport'; value: { nextBeginUsed: number } }
-  | { tag: 'CompletedExport' }
-  | { tag: 'StartedOverweightExport'; value: { nextOverweightIndex: bigint } }
-  | { tag: 'CompletedOverweightExport' }
-  | { tag: 'StartedCleanup'; value: { cursor?: Bytes | undefined } }
-  | { tag: 'Completed' };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type CumulusPalletDmpQueueCall = null;
-
-export type CumulusPalletDmpQueueCallLike = null;
 
 export type BpXcmBridgeHubRouterBridgeState = { deliveryFeeFactor: FixedU128; isCongested: boolean };
 
@@ -3700,12 +3772,12 @@ export type AssetHubKusamaRuntimeRuntimeCall =
   | { pallet: 'Timestamp'; palletCall: PalletTimestampCall }
   | { pallet: 'ParachainInfo'; palletCall: StagingParachainInfoCall }
   | { pallet: 'Balances'; palletCall: PalletBalancesCall }
+  | { pallet: 'Vesting'; palletCall: PalletVestingCall }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCall }
   | { pallet: 'Session'; palletCall: PalletSessionCall }
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCall }
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCall }
   | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCall }
-  | { pallet: 'DmpQueue'; palletCall: CumulusPalletDmpQueueCall }
   | { pallet: 'ToPolkadotXcmRouter'; palletCall: PalletXcmBridgeHubRouterCall }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
   | { pallet: 'Utility'; palletCall: PalletUtilityCall }
@@ -3725,12 +3797,12 @@ export type AssetHubKusamaRuntimeRuntimeCallLike =
   | { pallet: 'Timestamp'; palletCall: PalletTimestampCallLike }
   | { pallet: 'ParachainInfo'; palletCall: StagingParachainInfoCallLike }
   | { pallet: 'Balances'; palletCall: PalletBalancesCallLike }
+  | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCallLike }
   | { pallet: 'Session'; palletCall: PalletSessionCallLike }
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCallLike }
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCallLike }
   | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCallLike }
-  | { pallet: 'DmpQueue'; palletCall: CumulusPalletDmpQueueCallLike }
   | { pallet: 'ToPolkadotXcmRouter'; palletCall: PalletXcmBridgeHubRouterCallLike }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
   | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
@@ -6814,6 +6886,7 @@ export type AssetHubKusamaRuntimeRuntimeError =
   | { tag: 'System'; value: FrameSystemError }
   | { tag: 'ParachainSystem'; value: CumulusPalletParachainSystemError }
   | { tag: 'Balances'; value: PalletBalancesError }
+  | { tag: 'Vesting'; value: PalletVestingError }
   | { tag: 'CollatorSelection'; value: PalletCollatorSelectionError }
   | { tag: 'Session'; value: PalletSessionError }
   | { tag: 'XcmpQueue'; value: CumulusPalletXcmpQueueError }

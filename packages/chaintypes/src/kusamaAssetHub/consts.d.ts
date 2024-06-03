@@ -174,6 +174,21 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
+   * Pallet `Vesting`'s constants
+   **/
+  vesting: {
+    /**
+     * The minimum amount transferred to call `vested_transfer`.
+     **/
+    minVestedTransfer: bigint;
+    maxVestingSchedules: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Authorship`'s constants
    **/
   authorship: {
@@ -249,15 +264,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    * Pallet `CumulusXcm`'s constants
    **/
   cumulusXcm: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `DmpQueue`'s constants
-   **/
-  dmpQueue: {
     /**
      * Generic pallet constant
      **/

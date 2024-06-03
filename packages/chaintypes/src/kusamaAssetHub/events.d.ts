@@ -299,6 +299,26 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
+   * Pallet `Vesting`'s events
+   **/
+  vesting: {
+    /**
+     * The amount vested has been updated. This could indicate a change in funds available.
+     * The balance given is the amount which is left unvested (and thus locked).
+     **/
+    VestingUpdated: GenericPalletEvent<Rv, 'Vesting', 'VestingUpdated', { account: AccountId32; unvested: bigint }>;
+
+    /**
+     * An \[account\] has become fully vested.
+     **/
+    VestingCompleted: GenericPalletEvent<Rv, 'Vesting', 'VestingCompleted', { account: AccountId32 }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
    * Pallet `CollatorSelection`'s events
    **/
   collatorSelection: {
@@ -725,74 +745,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ExecutedDownward',
       [FixedBytes<32>, StagingXcmV4TraitsOutcome]
     >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
-   * Pallet `DmpQueue`'s events
-   **/
-  dmpQueue: {
-    /**
-     * The export of pages started.
-     **/
-    StartedExport: GenericPalletEvent<Rv, 'DmpQueue', 'StartedExport', null>;
-
-    /**
-     * The export of a page completed.
-     **/
-    Exported: GenericPalletEvent<Rv, 'DmpQueue', 'Exported', { page: number }>;
-
-    /**
-     * The export of a page failed.
-     *
-     * This should never be emitted.
-     **/
-    ExportFailed: GenericPalletEvent<Rv, 'DmpQueue', 'ExportFailed', { page: number }>;
-
-    /**
-     * The export of pages completed.
-     **/
-    CompletedExport: GenericPalletEvent<Rv, 'DmpQueue', 'CompletedExport', null>;
-
-    /**
-     * The export of overweight messages started.
-     **/
-    StartedOverweightExport: GenericPalletEvent<Rv, 'DmpQueue', 'StartedOverweightExport', null>;
-
-    /**
-     * The export of an overweight message completed.
-     **/
-    ExportedOverweight: GenericPalletEvent<Rv, 'DmpQueue', 'ExportedOverweight', { index: bigint }>;
-
-    /**
-     * The export of an overweight message failed.
-     *
-     * This should never be emitted.
-     **/
-    ExportOverweightFailed: GenericPalletEvent<Rv, 'DmpQueue', 'ExportOverweightFailed', { index: bigint }>;
-
-    /**
-     * The export of overweight messages completed.
-     **/
-    CompletedOverweightExport: GenericPalletEvent<Rv, 'DmpQueue', 'CompletedOverweightExport', null>;
-
-    /**
-     * The cleanup of remaining pallet storage started.
-     **/
-    StartedCleanup: GenericPalletEvent<Rv, 'DmpQueue', 'StartedCleanup', null>;
-
-    /**
-     * Some debris was cleaned up.
-     **/
-    CleanedSome: GenericPalletEvent<Rv, 'DmpQueue', 'CleanedSome', { keysRemoved: number }>;
-
-    /**
-     * The cleanup of remaining pallet storage completed.
-     **/
-    Completed: GenericPalletEvent<Rv, 'DmpQueue', 'Completed', { error: boolean }>;
 
     /**
      * Generic pallet event

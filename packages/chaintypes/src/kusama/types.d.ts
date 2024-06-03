@@ -5442,7 +5442,22 @@ export type PalletXcmCall =
   /**
    * See [`Pallet::claim_assets`].
    **/
-  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } };
+  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
+  /**
+   * See [`Pallet::transfer_assets_using_type_and_then`].
+   **/
+  | {
+      name: 'TransferAssetsUsingTypeAndThen';
+      params: {
+        dest: XcmVersionedLocation;
+        assets: XcmVersionedAssets;
+        assetsTransferType: StagingXcmExecutorAssetTransferTransferType;
+        remoteFeesId: XcmVersionedAssetId;
+        feesTransferType: StagingXcmExecutorAssetTransferTransferType;
+        customXcmOnDest: XcmVersionedXcm;
+        weightLimit: XcmV3WeightLimit;
+      };
+    };
 
 export type PalletXcmCallLike =
   /**
@@ -5539,7 +5554,22 @@ export type PalletXcmCallLike =
   /**
    * See [`Pallet::claim_assets`].
    **/
-  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } };
+  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
+  /**
+   * See [`Pallet::transfer_assets_using_type_and_then`].
+   **/
+  | {
+      name: 'TransferAssetsUsingTypeAndThen';
+      params: {
+        dest: XcmVersionedLocation;
+        assets: XcmVersionedAssets;
+        assetsTransferType: StagingXcmExecutorAssetTransferTransferType;
+        remoteFeesId: XcmVersionedAssetId;
+        feesTransferType: StagingXcmExecutorAssetTransferTransferType;
+        customXcmOnDest: XcmVersionedXcm;
+        weightLimit: XcmV3WeightLimit;
+      };
+    };
 
 export type XcmVersionedXcm =
   | { tag: 'V2'; value: XcmV2Xcm }
@@ -6032,6 +6062,16 @@ export type XcmVersionedAssets =
   | { tag: 'V2'; value: XcmV2MultiassetMultiAssets }
   | { tag: 'V3'; value: XcmV3MultiassetMultiAssets }
   | { tag: 'V4'; value: StagingXcmV4AssetAssets };
+
+export type StagingXcmExecutorAssetTransferTransferType =
+  | { tag: 'Teleport' }
+  | { tag: 'LocalReserve' }
+  | { tag: 'DestinationReserve' }
+  | { tag: 'RemoteReserve'; value: XcmVersionedLocation };
+
+export type XcmVersionedAssetId =
+  | { tag: 'V3'; value: XcmV3MultiassetAssetId }
+  | { tag: 'V4'; value: StagingXcmV4AssetAssetId };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10873,10 +10913,6 @@ export type PalletXcmVersionMigrationStage =
   | { tag: 'MigrateVersionNotifiers' }
   | { tag: 'NotifyCurrentTargets'; value?: Bytes | undefined }
   | { tag: 'MigrateAndNotifyOldTargets' };
-
-export type XcmVersionedAssetId =
-  | { tag: 'V3'; value: XcmV3MultiassetAssetId }
-  | { tag: 'V4'; value: StagingXcmV4AssetAssetId };
 
 export type PalletXcmRemoteLockedFungibleRecord = {
   amount: bigint;

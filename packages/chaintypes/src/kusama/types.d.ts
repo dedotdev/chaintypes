@@ -4768,7 +4768,11 @@ export type PolkadotRuntimeParachainsHrmpPalletCall =
   | {
       name: 'PokeChannelDeposits';
       params: { sender: PolkadotParachainPrimitivesPrimitivesId; recipient: PolkadotParachainPrimitivesPrimitivesId };
-    };
+    }
+  /**
+   * See [`Pallet::establish_channel_with_system`].
+   **/
+  | { name: 'EstablishChannelWithSystem'; params: { targetSystemChain: PolkadotParachainPrimitivesPrimitivesId } };
 
 export type PolkadotRuntimeParachainsHrmpPalletCallLike =
   /**
@@ -4837,7 +4841,11 @@ export type PolkadotRuntimeParachainsHrmpPalletCallLike =
   | {
       name: 'PokeChannelDeposits';
       params: { sender: PolkadotParachainPrimitivesPrimitivesId; recipient: PolkadotParachainPrimitivesPrimitivesId };
-    };
+    }
+  /**
+   * See [`Pallet::establish_channel_with_system`].
+   **/
+  | { name: 'EstablishChannelWithSystem'; params: { targetSystemChain: PolkadotParachainPrimitivesPrimitivesId } };
 
 export type PolkadotParachainPrimitivesPrimitivesHrmpChannelId = {
   sender: PolkadotParachainPrimitivesPrimitivesId;
@@ -7498,7 +7506,7 @@ export type PolkadotRuntimeParachainsHrmpPalletEvent =
       };
     }
   /**
-   * An HRMP channel was opened between two system chains.
+   * An HRMP channel was opened with a system chain.
    **/
   | {
       name: 'HrmpSystemChannelOpened';
@@ -11150,6 +11158,10 @@ export type FrameSystemExtensionsCheckNonce = number;
 export type FrameSystemExtensionsCheckWeight = {};
 
 export type PalletTransactionPaymentChargeTransactionPayment = bigint;
+
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
+
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
 export type StagingKusamaRuntimeRuntime = {};
 

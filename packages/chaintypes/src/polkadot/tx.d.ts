@@ -90,6 +90,8 @@ import type {
   XcmVersionedAssets,
   StagingXcmV4Location,
   XcmV3WeightLimit,
+  StagingXcmExecutorAssetTransferTransferType,
+  XcmVersionedAssetId,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   SpConsensusBeefyEquivocationProof,
 } from './types';
@@ -7481,6 +7483,47 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ClaimAssets';
             params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::transfer_assets_using_type_and_then`].
+     *
+     * @param {XcmVersionedLocation} dest
+     * @param {XcmVersionedAssets} assets
+     * @param {StagingXcmExecutorAssetTransferTransferType} assetsTransferType
+     * @param {XcmVersionedAssetId} remoteFeesId
+     * @param {StagingXcmExecutorAssetTransferTransferType} feesTransferType
+     * @param {XcmVersionedXcm} customXcmOnDest
+     * @param {XcmV3WeightLimit} weightLimit
+     **/
+    transferAssetsUsingTypeAndThen: GenericTxCall<
+      Rv,
+      (
+        dest: XcmVersionedLocation,
+        assets: XcmVersionedAssets,
+        assetsTransferType: StagingXcmExecutorAssetTransferTransferType,
+        remoteFeesId: XcmVersionedAssetId,
+        feesTransferType: StagingXcmExecutorAssetTransferTransferType,
+        customXcmOnDest: XcmVersionedXcm,
+        weightLimit: XcmV3WeightLimit,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'XcmPallet';
+          palletCall: {
+            name: 'TransferAssetsUsingTypeAndThen';
+            params: {
+              dest: XcmVersionedLocation;
+              assets: XcmVersionedAssets;
+              assetsTransferType: StagingXcmExecutorAssetTransferTransferType;
+              remoteFeesId: XcmVersionedAssetId;
+              feesTransferType: StagingXcmExecutorAssetTransferTransferType;
+              customXcmOnDest: XcmVersionedXcm;
+              weightLimit: XcmV3WeightLimit;
+            };
           };
         }
       >

@@ -36,6 +36,8 @@ import type {
   PalletBalancesIdAmount,
   PalletBalancesIdAmount002,
   PalletTransactionPaymentReleases,
+  PalletVestingVestingInfo,
+  PalletVestingReleases,
   PalletCollatorSelectionCandidateInfo,
   AssetHubPolkadotRuntimeSessionKeys,
   SpCoreCryptoKeyTypeId,
@@ -48,7 +50,6 @@ import type {
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
-  CumulusPalletDmpQueueMigrationState,
   BpXcmBridgeHubRouterBridgeState,
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
@@ -628,6 +629,36 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
+   * Pallet `Vesting`'s storage queries
+   **/
+  vesting: {
+    /**
+     * Information regarding the vesting of a given account.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<Array<PalletVestingVestingInfo> | undefined> =} callback
+     **/
+    vesting: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => Array<PalletVestingVestingInfo> | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Storage version of the pallet.
+     *
+     * New networks start with latest version, as determined by the genesis build.
+     *
+     * @param {Callback<PalletVestingReleases> =} callback
+     **/
+    storageVersion: GenericStorageQuery<Rv, () => PalletVestingReleases>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
    * Pallet `Authorship`'s storage queries
    **/
   authorship: {
@@ -1030,22 +1061,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<boolean> =} callback
      **/
     xcmExecutionSuspended: GenericStorageQuery<Rv, () => boolean>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
-   * Pallet `DmpQueue`'s storage queries
-   **/
-  dmpQueue: {
-    /**
-     * The migration state of this pallet.
-     *
-     * @param {Callback<CumulusPalletDmpQueueMigrationState> =} callback
-     **/
-    migrationStatus: GenericStorageQuery<Rv, () => CumulusPalletDmpQueueMigrationState>;
 
     /**
      * Generic pallet storage query

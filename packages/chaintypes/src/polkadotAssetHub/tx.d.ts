@@ -19,6 +19,7 @@ import type {
   FrameSystemEventRecord,
   CumulusPrimitivesParachainInherentParachainInherentData,
   PalletBalancesAdjustmentDirection,
+  PalletVestingVestingInfo,
   AssetHubPolkadotRuntimeSessionKeys,
   XcmVersionedLocation,
   XcmVersionedXcm,
@@ -26,6 +27,8 @@ import type {
   SpWeightsWeightV2Weight,
   StagingXcmV4Location,
   XcmV3WeightLimit,
+  StagingXcmExecutorAssetTransferTransferType,
+  XcmVersionedAssetId,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   AssetHubPolkadotRuntimeOriginCaller,
   PalletMultisigTimepoint,
@@ -586,6 +589,145 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ForceAdjustTotalIssuance';
             params: { direction: PalletBalancesAdjustmentDirection; delta: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Vesting`'s transaction calls
+   **/
+  vesting: {
+    /**
+     * See [`Pallet::vest`].
+     *
+     **/
+    vest: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Vesting';
+          palletCall: {
+            name: 'Vest';
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::vest_other`].
+     *
+     * @param {MultiAddressLike} target
+     **/
+    vestOther: GenericTxCall<
+      Rv,
+      (target: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Vesting';
+          palletCall: {
+            name: 'VestOther';
+            params: { target: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::vested_transfer`].
+     *
+     * @param {MultiAddressLike} target
+     * @param {PalletVestingVestingInfo} schedule
+     **/
+    vestedTransfer: GenericTxCall<
+      Rv,
+      (
+        target: MultiAddressLike,
+        schedule: PalletVestingVestingInfo,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Vesting';
+          palletCall: {
+            name: 'VestedTransfer';
+            params: { target: MultiAddressLike; schedule: PalletVestingVestingInfo };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::force_vested_transfer`].
+     *
+     * @param {MultiAddressLike} source
+     * @param {MultiAddressLike} target
+     * @param {PalletVestingVestingInfo} schedule
+     **/
+    forceVestedTransfer: GenericTxCall<
+      Rv,
+      (
+        source: MultiAddressLike,
+        target: MultiAddressLike,
+        schedule: PalletVestingVestingInfo,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Vesting';
+          palletCall: {
+            name: 'ForceVestedTransfer';
+            params: { source: MultiAddressLike; target: MultiAddressLike; schedule: PalletVestingVestingInfo };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::merge_schedules`].
+     *
+     * @param {number} schedule1Index
+     * @param {number} schedule2Index
+     **/
+    mergeSchedules: GenericTxCall<
+      Rv,
+      (
+        schedule1Index: number,
+        schedule2Index: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Vesting';
+          palletCall: {
+            name: 'MergeSchedules';
+            params: { schedule1Index: number; schedule2Index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::force_remove_vesting_schedule`].
+     *
+     * @param {MultiAddressLike} target
+     * @param {number} scheduleIndex
+     **/
+    forceRemoveVestingSchedule: GenericTxCall<
+      Rv,
+      (
+        target: MultiAddressLike,
+        scheduleIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Vesting';
+          palletCall: {
+            name: 'ForceRemoveVestingSchedule';
+            params: { target: MultiAddressLike; scheduleIndex: number };
           };
         }
       >
@@ -1267,6 +1409,47 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * See [`Pallet::transfer_assets_using_type_and_then`].
+     *
+     * @param {XcmVersionedLocation} dest
+     * @param {XcmVersionedAssets} assets
+     * @param {StagingXcmExecutorAssetTransferTransferType} assetsTransferType
+     * @param {XcmVersionedAssetId} remoteFeesId
+     * @param {StagingXcmExecutorAssetTransferTransferType} feesTransferType
+     * @param {XcmVersionedXcm} customXcmOnDest
+     * @param {XcmV3WeightLimit} weightLimit
+     **/
+    transferAssetsUsingTypeAndThen: GenericTxCall<
+      Rv,
+      (
+        dest: XcmVersionedLocation,
+        assets: XcmVersionedAssets,
+        assetsTransferType: StagingXcmExecutorAssetTransferTransferType,
+        remoteFeesId: XcmVersionedAssetId,
+        feesTransferType: StagingXcmExecutorAssetTransferTransferType,
+        customXcmOnDest: XcmVersionedXcm,
+        weightLimit: XcmV3WeightLimit,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'TransferAssetsUsingTypeAndThen';
+            params: {
+              dest: XcmVersionedLocation;
+              assets: XcmVersionedAssets;
+              assetsTransferType: StagingXcmExecutorAssetTransferTransferType;
+              remoteFeesId: XcmVersionedAssetId;
+              feesTransferType: StagingXcmExecutorAssetTransferTransferType;
+              customXcmOnDest: XcmVersionedXcm;
+              weightLimit: XcmV3WeightLimit;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -1275,15 +1458,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    * Pallet `CumulusXcm`'s transaction calls
    **/
   cumulusXcm: {
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
-   * Pallet `DmpQueue`'s transaction calls
-   **/
-  dmpQueue: {
     /**
      * Generic pallet tx call
      **/

@@ -1147,13 +1147,22 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     nominationsQuota: GenericRuntimeApiMethod<Rv, (balance: bigint) => Promise<number>>;
 
     /**
-     * Returns the page count of exposures for a validator in a given era.
+     * Returns the page count of exposures for a validator `account` in a given era.
      *
      * @callname: StakingApi_eras_stakers_page_count
      * @param {number} era
      * @param {AccountId32Like} account
      **/
     erasStakersPageCount: GenericRuntimeApiMethod<Rv, (era: number, account: AccountId32Like) => Promise<number>>;
+
+    /**
+     * Returns true if validator `account` has pages to be claimed for the given era.
+     *
+     * @callname: StakingApi_pending_rewards
+     * @param {number} era
+     * @param {AccountId32Like} account
+     **/
+    pendingRewards: GenericRuntimeApiMethod<Rv, (era: number, account: AccountId32Like) => Promise<boolean>>;
 
     /**
      * Generic runtime api call

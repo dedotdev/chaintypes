@@ -6812,6 +6812,10 @@ export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
   assetId?: StagingXcmV3MultilocationMultiLocation | undefined;
 };
 
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
+
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
+
 export type AssetHubKusamaRuntimeRuntime = {};
 
 export type SpConsensusSlotsSlotDuration = bigint;

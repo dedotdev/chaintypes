@@ -12198,6 +12198,10 @@ export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
 
 export type CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim = {};
 
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
+
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
+
 export type AssetHubWestendRuntimeRuntime = {};
 
 export type SpConsensusSlotsSlotDuration = bigint;

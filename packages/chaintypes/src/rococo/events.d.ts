@@ -2606,19 +2606,19 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
    **/
   onDemandAssignmentProvider: {
     /**
-     * An order was placed at some spot price amount.
+     * An order was placed at some spot price amount by orderer ordered_by
      **/
     OnDemandOrderPlaced: GenericPalletEvent<
       Rv,
       'OnDemandAssignmentProvider',
       'OnDemandOrderPlaced',
-      { paraId: PolkadotParachainPrimitivesPrimitivesId; spotPrice: bigint }
+      { paraId: PolkadotParachainPrimitivesPrimitivesId; spotPrice: bigint; orderedBy: AccountId32 }
     >;
 
     /**
-     * The value of the spot traffic multiplier changed.
+     * The value of the spot price has likely changed
      **/
-    SpotTrafficSet: GenericPalletEvent<Rv, 'OnDemandAssignmentProvider', 'SpotTrafficSet', { traffic: FixedU128 }>;
+    SpotPriceSet: GenericPalletEvent<Rv, 'OnDemandAssignmentProvider', 'SpotPriceSet', { spotPrice: bigint }>;
 
     /**
      * Generic pallet event

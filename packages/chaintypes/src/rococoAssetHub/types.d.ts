@@ -692,7 +692,7 @@ export type StagingXcmV4Instruction =
     }
   | {
       tag: 'Transact';
-      value: { originKind: XcmV2OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
+      value: { originKind: XcmV3OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
     }
   | { tag: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
   | { tag: 'HrmpChannelAccepted'; value: { recipient: number } }
@@ -800,7 +800,7 @@ export type XcmV3MaybeErrorCode =
   | { tag: 'Error'; value: Bytes }
   | { tag: 'TruncatedError'; value: Bytes };
 
-export type XcmV2OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
+export type XcmV3OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
 
 export type XcmDoubleEncoded = { encoded: Bytes };
 
@@ -3296,7 +3296,15 @@ export type CumulusPalletXcmpQueueError =
   /**
    * The execution is already resumed.
    **/
-  | 'AlreadyResumed';
+  | 'AlreadyResumed'
+  /**
+   * There are too many active outbound channels.
+   **/
+  | 'TooManyActiveOutboundChannels'
+  /**
+   * The message is too big.
+   **/
+  | 'TooBig';
 
 export type PalletXcmQueryStatus =
   | {
@@ -4083,6 +4091,8 @@ export type XcmV2Instruction =
   | { tag: 'SubscribeVersion'; value: { queryId: bigint; maxResponseWeight: bigint } }
   | { tag: 'UnsubscribeVersion' };
 
+export type XcmV2OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
+
 export type XcmV2MultiassetMultiAssetFilter =
   | { tag: 'Definite'; value: XcmV2MultiassetMultiAssets }
   | { tag: 'Wild'; value: XcmV2MultiassetWildMultiAsset };
@@ -4120,7 +4130,7 @@ export type XcmV3Instruction =
     }
   | {
       tag: 'Transact';
-      value: { originKind: XcmV2OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
+      value: { originKind: XcmV3OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
     }
   | { tag: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
   | { tag: 'HrmpChannelAccepted'; value: { recipient: number } }
@@ -12235,6 +12245,10 @@ export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
 
 export type CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim = {};
 
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
+
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
+
 export type AssetHubRococoRuntimeRuntime = {};
 
 export type SpConsensusSlotsSlotDuration = bigint;
@@ -12304,14 +12318,24 @@ export type XcmFeePaymentRuntimeApiFeesError =
   | 'AssetNotFound'
   | 'Unroutable';
 
-export type XcmFeePaymentRuntimeApiDryRunExtrinsicDryRunEffects = {
-  executionResult: Result<[], DispatchError>;
+export type XcmFeePaymentRuntimeApiDryRunCallDryRunEffects = {
+  executionResult: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
   emittedEvents: Array<AssetHubRococoRuntimeRuntimeEvent>;
   localXcm?: XcmVersionedXcm | undefined;
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };
 
-export type XcmFeePaymentRuntimeApiDryRunError = 'Unimplemented' | 'VersionedConversionFailed' | 'InvalidExtrinsic';
+export type FrameSupportDispatchPostDispatchInfo = {
+  actualWeight?: SpWeightsWeightV2Weight | undefined;
+  paysFee: FrameSupportDispatchPays;
+};
+
+export type SpRuntimeDispatchErrorWithPostInfo = {
+  postInfo: FrameSupportDispatchPostDispatchInfo;
+  error: DispatchError;
+};
+
+export type XcmFeePaymentRuntimeApiDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
 
 export type XcmFeePaymentRuntimeApiDryRunXcmDryRunEffects = {
   executionResult: StagingXcmV4TraitsOutcome;

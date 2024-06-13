@@ -7654,12 +7654,11 @@ export type PolkadotRuntimeParachainsAssignerOnDemandPalletCall =
    *
    * Errors:
    * - `InsufficientBalance`: from the Currency implementation
-   * - `InvalidParaId`
    * - `QueueFull`
    * - `SpotPriceHigherThanMaxAmount`
    *
    * Events:
-   * - `SpotOrderPlaced`
+   * - `OnDemandOrderPlaced`
    **/
   | { name: 'PlaceOrderAllowDeath'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } }
   /**
@@ -7673,12 +7672,11 @@ export type PolkadotRuntimeParachainsAssignerOnDemandPalletCall =
    *
    * Errors:
    * - `InsufficientBalance`: from the Currency implementation
-   * - `InvalidParaId`
    * - `QueueFull`
    * - `SpotPriceHigherThanMaxAmount`
    *
    * Events:
-   * - `SpotOrderPlaced`
+   * - `OnDemandOrderPlaced`
    **/
   | { name: 'PlaceOrderKeepAlive'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } };
 
@@ -7694,12 +7692,11 @@ export type PolkadotRuntimeParachainsAssignerOnDemandPalletCallLike =
    *
    * Errors:
    * - `InsufficientBalance`: from the Currency implementation
-   * - `InvalidParaId`
    * - `QueueFull`
    * - `SpotPriceHigherThanMaxAmount`
    *
    * Events:
-   * - `SpotOrderPlaced`
+   * - `OnDemandOrderPlaced`
    **/
   | { name: 'PlaceOrderAllowDeath'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } }
   /**
@@ -7713,12 +7710,11 @@ export type PolkadotRuntimeParachainsAssignerOnDemandPalletCallLike =
    *
    * Errors:
    * - `InsufficientBalance`: from the Currency implementation
-   * - `InvalidParaId`
    * - `QueueFull`
    * - `SpotPriceHigherThanMaxAmount`
    *
    * Events:
-   * - `SpotOrderPlaced`
+   * - `OnDemandOrderPlaced`
    **/
   | { name: 'PlaceOrderKeepAlive'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } };
 
@@ -9248,7 +9244,7 @@ export type XcmV3Instruction =
     }
   | {
       tag: 'Transact';
-      value: { originKind: XcmV2OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
+      value: { originKind: XcmV3OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
     }
   | { tag: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
   | { tag: 'HrmpChannelAccepted'; value: { recipient: number } }
@@ -9403,6 +9399,8 @@ export type XcmV3MaybeErrorCode =
   | { tag: 'Error'; value: Bytes }
   | { tag: 'TruncatedError'; value: Bytes };
 
+export type XcmV3OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
+
 export type XcmV3QueryResponseInfo = {
   destination: StagingXcmV3MultilocationMultiLocation;
   queryId: bigint;
@@ -9445,7 +9443,7 @@ export type StagingXcmV4Instruction =
     }
   | {
       tag: 'Transact';
-      value: { originKind: XcmV2OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
+      value: { originKind: XcmV3OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
     }
   | { tag: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
   | { tag: 'HrmpChannelAccepted'; value: { recipient: number } }
@@ -11386,13 +11384,16 @@ export type FrameSupportMessagesProcessMessageError =
  **/
 export type PolkadotRuntimeParachainsAssignerOnDemandPalletEvent =
   /**
-   * An order was placed at some spot price amount.
+   * An order was placed at some spot price amount by orderer ordered_by
    **/
-  | { name: 'OnDemandOrderPlaced'; data: { paraId: PolkadotParachainPrimitivesPrimitivesId; spotPrice: bigint } }
+  | {
+      name: 'OnDemandOrderPlaced';
+      data: { paraId: PolkadotParachainPrimitivesPrimitivesId; spotPrice: bigint; orderedBy: AccountId32 };
+    }
   /**
-   * The value of the spot traffic multiplier changed.
+   * The value of the spot price has likely changed
    **/
-  | { name: 'SpotTrafficSet'; data: { traffic: FixedU128 } };
+  | { name: 'SpotPriceSet'; data: { spotPrice: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -14568,14 +14569,14 @@ export type XcmFeePaymentRuntimeApiFeesError =
   | 'AssetNotFound'
   | 'Unroutable';
 
-export type XcmFeePaymentRuntimeApiDryRunExtrinsicDryRunEffects = {
-  executionResult: Result<[], DispatchError>;
+export type XcmFeePaymentRuntimeApiDryRunCallDryRunEffects = {
+  executionResult: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
   emittedEvents: Array<RococoRuntimeRuntimeEvent>;
   localXcm?: XcmVersionedXcm | undefined;
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };
 
-export type XcmFeePaymentRuntimeApiDryRunError = 'Unimplemented' | 'VersionedConversionFailed' | 'InvalidExtrinsic';
+export type XcmFeePaymentRuntimeApiDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
 
 export type XcmFeePaymentRuntimeApiDryRunXcmDryRunEffects = {
   executionResult: StagingXcmV4TraitsOutcome;
@@ -14728,7 +14729,7 @@ export type PolkadotPrimitivesV7AsyncBackingCandidatePendingAvailability = {
 
 export type SpConsensusBeefyValidatorSet = { validators: Array<SpConsensusBeefyEcdsaCryptoPublic>; id: bigint };
 
-export type SpConsensusBeefyOpaqueKeyOwnershipProof = Bytes;
+export type SpRuntimeOpaqueValue = Bytes;
 
 export type SpMmrPrimitivesError =
   | 'InvalidNumericOp'
@@ -14745,8 +14746,6 @@ export type SpMmrPrimitivesError =
 export type SpMmrPrimitivesEncodableOpaqueLeaf = Bytes;
 
 export type SpMmrPrimitivesLeafProof = { leafIndices: Array<bigint>; leafCount: bigint; items: Array<H256> };
-
-export type SpConsensusGrandpaOpaqueKeyOwnershipProof = Bytes;
 
 export type SpConsensusBabeBabeConfiguration = {
   slotDuration: bigint;

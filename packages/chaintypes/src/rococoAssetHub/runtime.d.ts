@@ -37,8 +37,9 @@ import type {
   XcmFeePaymentRuntimeApiFeesError,
   XcmVersionedXcm,
   XcmVersionedLocation,
-  XcmFeePaymentRuntimeApiDryRunExtrinsicDryRunEffects,
+  XcmFeePaymentRuntimeApiDryRunCallDryRunEffects,
   XcmFeePaymentRuntimeApiDryRunError,
+  AssetHubRococoRuntimeOriginCaller,
   XcmFeePaymentRuntimeApiDryRunXcmDryRunEffects,
   CumulusPrimitivesCoreCollationInfo,
 } from './types';
@@ -589,26 +590,28 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
-   * @runtimeapi: XcmDryRunApi - 0x12cbf43724c82779
+   * @runtimeapi: DryRunApi - 0x91b1c8b16328eb92
    **/
-  xcmDryRunApi: {
+  dryRunApi: {
     /**
-     * Dry run extrinsic.
+     * Dry run call.
      *
-     * @callname: XcmDryRunApi_dry_run_extrinsic
-     * @param {UncheckedExtrinsicLike} extrinsic
+     * @callname: DryRunApi_dry_run_call
+     * @param {AssetHubRococoRuntimeOriginCaller} origin
+     * @param {AssetHubRococoRuntimeRuntimeCallLike} call
      **/
-    dryRunExtrinsic: GenericRuntimeApiMethod<
+    dryRunCall: GenericRuntimeApiMethod<
       Rv,
       (
-        extrinsic: UncheckedExtrinsicLike,
-      ) => Promise<Result<XcmFeePaymentRuntimeApiDryRunExtrinsicDryRunEffects, XcmFeePaymentRuntimeApiDryRunError>>
+        origin: AssetHubRococoRuntimeOriginCaller,
+        call: AssetHubRococoRuntimeRuntimeCallLike,
+      ) => Promise<Result<XcmFeePaymentRuntimeApiDryRunCallDryRunEffects, XcmFeePaymentRuntimeApiDryRunError>>
     >;
 
     /**
      * Dry run XCM program
      *
-     * @callname: XcmDryRunApi_dry_run_xcm
+     * @callname: DryRunApi_dry_run_xcm
      * @param {XcmVersionedLocation} origin_location
      * @param {XcmVersionedXcm} xcm
      **/

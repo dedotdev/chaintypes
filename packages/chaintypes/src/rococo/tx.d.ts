@@ -8408,12 +8408,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Errors:
      * - `InsufficientBalance`: from the Currency implementation
-     * - `InvalidParaId`
      * - `QueueFull`
      * - `SpotPriceHigherThanMaxAmount`
      *
      * Events:
-     * - `SpotOrderPlaced`
+     * - `OnDemandOrderPlaced`
      *
      * @param {bigint} maxAmount
      * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
@@ -8446,12 +8445,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Errors:
      * - `InsufficientBalance`: from the Currency implementation
-     * - `InvalidParaId`
      * - `QueueFull`
      * - `SpotPriceHigherThanMaxAmount`
      *
      * Events:
-     * - `SpotOrderPlaced`
+     * - `OnDemandOrderPlaced`
      *
      * @param {bigint} maxAmount
      * @param {PolkadotParachainPrimitivesPrimitivesId} paraId

@@ -328,6 +328,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     AlreadyResumed: GenericPalletError<Rv>;
 
     /**
+     * There are too many active outbound channels.
+     **/
+    TooManyActiveOutboundChannels: GenericPalletError<Rv>;
+
+    /**
+     * The message is too big.
+     **/
+    TooBig: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;

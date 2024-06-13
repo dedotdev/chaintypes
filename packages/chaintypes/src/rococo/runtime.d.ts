@@ -5,8 +5,8 @@ import type {
   RuntimeVersion,
   Header,
   Result,
-  UncheckedExtrinsicLike,
   DispatchError,
+  UncheckedExtrinsicLike,
   UncheckedExtrinsic,
   H256,
   BitSequence,
@@ -23,8 +23,10 @@ import type {
   XcmVersionedXcm,
   XcmVersionedAssets,
   XcmVersionedLocation,
-  XcmFeePaymentRuntimeApiDryRunExtrinsicDryRunEffects,
+  XcmFeePaymentRuntimeApiDryRunCallDryRunEffects,
   XcmFeePaymentRuntimeApiDryRunError,
+  RococoRuntimeOriginCaller,
+  RococoRuntimeRuntimeCallLike,
   XcmFeePaymentRuntimeApiDryRunXcmDryRunEffects,
   SpCoreOpaqueMetadata,
   SpRuntimeTransactionValidityTransactionValidityError,
@@ -62,14 +64,13 @@ import type {
   PolkadotPrimitivesV7CoreIndex,
   SpConsensusBeefyValidatorSet,
   SpConsensusBeefyDoubleVotingProof,
-  SpConsensusBeefyOpaqueKeyOwnershipProof,
+  SpRuntimeOpaqueValue,
   SpConsensusBeefyEcdsaCryptoPublic,
   SpMmrPrimitivesError,
   SpMmrPrimitivesEncodableOpaqueLeaf,
   SpMmrPrimitivesLeafProof,
   SpConsensusGrandpaAppPublic,
   SpConsensusGrandpaEquivocationProof,
-  SpConsensusGrandpaOpaqueKeyOwnershipProof,
   SpConsensusBabeBabeConfiguration,
   SpConsensusSlotsSlot,
   SpConsensusBabeEpoch,
@@ -198,26 +199,28 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
-   * @runtimeapi: XcmDryRunApi - 0x12cbf43724c82779
+   * @runtimeapi: DryRunApi - 0x91b1c8b16328eb92
    **/
-  xcmDryRunApi: {
+  dryRunApi: {
     /**
-     * Dry run extrinsic.
+     * Dry run call.
      *
-     * @callname: XcmDryRunApi_dry_run_extrinsic
-     * @param {UncheckedExtrinsicLike} extrinsic
+     * @callname: DryRunApi_dry_run_call
+     * @param {RococoRuntimeOriginCaller} origin
+     * @param {RococoRuntimeRuntimeCallLike} call
      **/
-    dryRunExtrinsic: GenericRuntimeApiMethod<
+    dryRunCall: GenericRuntimeApiMethod<
       Rv,
       (
-        extrinsic: UncheckedExtrinsicLike,
-      ) => Promise<Result<XcmFeePaymentRuntimeApiDryRunExtrinsicDryRunEffects, XcmFeePaymentRuntimeApiDryRunError>>
+        origin: RococoRuntimeOriginCaller,
+        call: RococoRuntimeRuntimeCallLike,
+      ) => Promise<Result<XcmFeePaymentRuntimeApiDryRunCallDryRunEffects, XcmFeePaymentRuntimeApiDryRunError>>
     >;
 
     /**
      * Dry run XCM program
      *
-     * @callname: XcmDryRunApi_dry_run_xcm
+     * @callname: DryRunApi_dry_run_xcm
      * @param {XcmVersionedLocation} origin_location
      * @param {XcmVersionedXcm} xcm
      **/
@@ -780,13 +783,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: BeefyApi_submit_report_equivocation_unsigned_extrinsic
      * @param {SpConsensusBeefyDoubleVotingProof} equivocation_proof
-     * @param {SpConsensusBeefyOpaqueKeyOwnershipProof} key_owner_proof
+     * @param {SpRuntimeOpaqueValue} key_owner_proof
      **/
     submitReportEquivocationUnsignedExtrinsic: GenericRuntimeApiMethod<
       Rv,
       (
         equivocationProof: SpConsensusBeefyDoubleVotingProof,
-        keyOwnerProof: SpConsensusBeefyOpaqueKeyOwnershipProof,
+        keyOwnerProof: SpRuntimeOpaqueValue,
       ) => Promise<[] | undefined>
     >;
 
@@ -809,10 +812,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     generateKeyOwnershipProof: GenericRuntimeApiMethod<
       Rv,
-      (
-        setId: bigint,
-        authorityId: SpConsensusBeefyEcdsaCryptoPublic,
-      ) => Promise<SpConsensusBeefyOpaqueKeyOwnershipProof | undefined>
+      (setId: bigint, authorityId: SpConsensusBeefyEcdsaCryptoPublic) => Promise<SpRuntimeOpaqueValue | undefined>
     >;
 
     /**
@@ -929,13 +929,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: GrandpaApi_submit_report_equivocation_unsigned_extrinsic
      * @param {SpConsensusGrandpaEquivocationProof} equivocation_proof
-     * @param {SpConsensusGrandpaOpaqueKeyOwnershipProof} key_owner_proof
+     * @param {SpRuntimeOpaqueValue} key_owner_proof
      **/
     submitReportEquivocationUnsignedExtrinsic: GenericRuntimeApiMethod<
       Rv,
       (
         equivocationProof: SpConsensusGrandpaEquivocationProof,
-        keyOwnerProof: SpConsensusGrandpaOpaqueKeyOwnershipProof,
+        keyOwnerProof: SpRuntimeOpaqueValue,
       ) => Promise<[] | undefined>
     >;
 
@@ -958,10 +958,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     generateKeyOwnershipProof: GenericRuntimeApiMethod<
       Rv,
-      (
-        setId: bigint,
-        authorityId: SpConsensusGrandpaAppPublic,
-      ) => Promise<SpConsensusGrandpaOpaqueKeyOwnershipProof | undefined>
+      (setId: bigint, authorityId: SpConsensusGrandpaAppPublic) => Promise<SpRuntimeOpaqueValue | undefined>
     >;
 
     /**

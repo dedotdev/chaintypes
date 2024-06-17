@@ -48,6 +48,7 @@ import type {
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
+  StagingXcmV4Xcm,
   BpXcmBridgeHubRouterBridgeState,
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
@@ -76,6 +77,8 @@ import type {
   StagingXcmV3MultilocationMultiLocation,
   PalletNftFractionalizationDetails,
   PalletAssetConversionPoolInfo,
+  PalletStateTrieMigrationMigrationTask,
+  PalletStateTrieMigrationMigrationLimits,
 } from './types';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
@@ -1043,6 +1046,31 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     xcmExecutionSuspended: GenericStorageQuery<Rv, () => boolean>;
 
     /**
+     * Whether or not incoming XCMs (both executed locally and received) should be recorded.
+     * Only one XCM program will be recorded at a time.
+     * This is meant to be used in runtime APIs, and it's advised it stays false
+     * for all other use cases, so as to not degrade regular performance.
+     *
+     * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
+     * implementation in the XCM executor configuration.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    shouldRecordXcm: GenericStorageQuery<Rv, () => boolean>;
+
+    /**
+     * If [`ShouldRecordXcm`] is set to true, then the last XCM program executed locally
+     * will be stored here.
+     * Runtime APIs can fetch the XCM that was executed by accessing this value.
+     *
+     * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
+     * implementation in the XCM executor configuration.
+     *
+     * @param {Callback<StagingXcmV4Xcm | undefined> =} callback
+     **/
+    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV4Xcm | undefined>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -1647,6 +1675,43 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<number | undefined> =} callback
      **/
     nextPoolAssetId: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `StateTrieMigration`'s storage queries
+   **/
+  stateTrieMigration: {
+    /**
+     * Migration progress.
+     *
+     * This stores the snapshot of the last migrated keys. It can be set into motion and move
+     * forward by any of the means provided by this pallet.
+     *
+     * @param {Callback<PalletStateTrieMigrationMigrationTask> =} callback
+     **/
+    migrationProcess: GenericStorageQuery<Rv, () => PalletStateTrieMigrationMigrationTask>;
+
+    /**
+     * The limits that are imposed on automatic migrations.
+     *
+     * If set to None, then no automatic migration happens.
+     *
+     * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
+     **/
+    autoLimits: GenericStorageQuery<Rv, () => PalletStateTrieMigrationMigrationLimits | undefined>;
+
+    /**
+     * The maximum limits that the signed migration could use.
+     *
+     * If not set, no signed submission is allowed.
+     *
+     * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
+     **/
+    signedMigrationMaxLimits: GenericStorageQuery<Rv, () => PalletStateTrieMigrationMigrationLimits | undefined>;
 
     /**
      * Generic pallet storage query

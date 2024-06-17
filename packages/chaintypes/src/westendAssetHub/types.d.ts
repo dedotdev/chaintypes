@@ -70,6 +70,7 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'NftFractionalization'; palletEvent: PalletNftFractionalizationEvent }
   | { pallet: 'PoolAssets'; palletEvent: PalletAssetsEvent }
   | { pallet: 'AssetConversion'; palletEvent: PalletAssetConversionEvent }
+  | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent }
   | { pallet: 'AssetConversionMigration'; palletEvent: PalletAssetConversionOpsEvent };
 
 /**
@@ -692,7 +693,7 @@ export type StagingXcmV4Instruction =
     }
   | {
       tag: 'Transact';
-      value: { originKind: XcmV2OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
+      value: { originKind: XcmV3OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
     }
   | { tag: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
   | { tag: 'HrmpChannelAccepted'; value: { recipient: number } }
@@ -800,7 +801,7 @@ export type XcmV3MaybeErrorCode =
   | { tag: 'Error'; value: Bytes }
   | { tag: 'TruncatedError'; value: Bytes };
 
-export type XcmV2OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
+export type XcmV3OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
 
 export type XcmDoubleEncoded = { encoded: Bytes };
 
@@ -1076,7 +1077,8 @@ export type FrameSupportMessagesProcessMessageError =
   | { tag: 'Corrupt' }
   | { tag: 'Unsupported' }
   | { tag: 'Overweight'; value: SpWeightsWeightV2Weight }
-  | { tag: 'Yield' };
+  | { tag: 'Yield' }
+  | { tag: 'StackLimitReached' };
 
 /**
  * The `Event` enum of this pallet
@@ -1318,7 +1320,15 @@ export type PalletAssetsEvent =
   /**
    * Some account `who` was blocked.
    **/
-  | { name: 'Blocked'; data: { assetId: number; who: AccountId32 } };
+  | { name: 'Blocked'; data: { assetId: number; who: AccountId32 } }
+  /**
+   * Some assets were deposited (e.g. for transaction fees).
+   **/
+  | { name: 'Deposited'; data: { assetId: number; who: AccountId32; amount: bigint } }
+  /**
+   * Some assets were withdrawn from the account (e.g. for transaction fees).
+   **/
+  | { name: 'Withdrawn'; data: { assetId: number; who: AccountId32; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -1844,7 +1854,15 @@ export type PalletAssetsEvent002 =
   /**
    * Some account `who` was blocked.
    **/
-  | { name: 'Blocked'; data: { assetId: StagingXcmV3MultilocationMultiLocation; who: AccountId32 } };
+  | { name: 'Blocked'; data: { assetId: StagingXcmV3MultilocationMultiLocation; who: AccountId32 } }
+  /**
+   * Some assets were deposited (e.g. for transaction fees).
+   **/
+  | { name: 'Deposited'; data: { assetId: StagingXcmV3MultilocationMultiLocation; who: AccountId32; amount: bigint } }
+  /**
+   * Some assets were withdrawn from the account (e.g. for transaction fees).
+   **/
+  | { name: 'Withdrawn'; data: { assetId: StagingXcmV3MultilocationMultiLocation; who: AccountId32; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -2058,6 +2076,65 @@ export type PalletAssetConversionEvent =
         who: AccountId32;
       };
     };
+
+/**
+ * Inner events of this pallet.
+ **/
+export type PalletStateTrieMigrationEvent =
+  /**
+   * Given number of `(top, child)` keys were migrated respectively, with the given
+   * `compute`.
+   **/
+  | { name: 'Migrated'; data: { top: number; child: number; compute: PalletStateTrieMigrationMigrationCompute } }
+  /**
+   * Some account got slashed by the given amount.
+   **/
+  | { name: 'Slashed'; data: { who: AccountId32; amount: bigint } }
+  /**
+   * The auto migration task finished.
+   **/
+  | { name: 'AutoMigrationFinished' }
+  /**
+   * Migration got halted due to an error or miss-configuration.
+   **/
+  | { name: 'Halted'; data: { error: PalletStateTrieMigrationError } };
+
+export type PalletStateTrieMigrationMigrationCompute = 'Signed' | 'Auto';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletStateTrieMigrationError =
+  /**
+   * Max signed limits not respected.
+   **/
+  | 'MaxSignedLimits'
+  /**
+   * A key was longer than the configured maximum.
+   *
+   * This means that the migration halted at the current [`Progress`] and
+   * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
+   * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
+   * The value should only be increased to avoid a storage migration for the currently
+   * stored [`crate::Progress::LastKey`].
+   **/
+  | 'KeyTooLong'
+  /**
+   * submitter does not have enough funds.
+   **/
+  | 'NotEnoughFunds'
+  /**
+   * Bad witness data provided.
+   **/
+  | 'BadWitness'
+  /**
+   * Signed migration is not allowed because the maximum limit is not set yet.
+   **/
+  | 'SignedMigrationNotAllowed'
+  /**
+   * Bad child root provided.
+   **/
+  | 'BadChildRoot';
 
 /**
  * The `Event` enum of this pallet
@@ -2584,12 +2661,13 @@ export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
 export type PalletBalancesIdAmount = { id: AssetHubWestendRuntimeRuntimeHoldReason; amount: bigint };
 
-export type AssetHubWestendRuntimeRuntimeHoldReason = {
-  tag: 'NftFractionalization';
-  value: PalletNftFractionalizationHoldReason;
-};
+export type AssetHubWestendRuntimeRuntimeHoldReason =
+  | { tag: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
+  | { tag: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason };
 
 export type PalletNftFractionalizationHoldReason = 'Fractionalized';
+
+export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
 
 export type PalletBalancesIdAmount002 = { id: []; amount: bigint };
 
@@ -2669,7 +2747,17 @@ export type PalletBalancesCall =
    *
    * # Example
    **/
-  | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } };
+  | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } }
+  /**
+   * Burn the specified liquid free balance from the origin account.
+   *
+   * If the origin's account ends up below the existential deposit as a result
+   * of the burn and `keep_alive` is false, the account will be reaped.
+   *
+   * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+   * this `burn` operation will reduce total issuance by the amount _burned_.
+   **/
+  | { name: 'Burn'; params: { value: bigint; keepAlive: boolean } };
 
 export type PalletBalancesCallLike =
   /**
@@ -2744,7 +2832,17 @@ export type PalletBalancesCallLike =
    *
    * # Example
    **/
-  | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } };
+  | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } }
+  /**
+   * Burn the specified liquid free balance from the origin account.
+   *
+   * If the origin's account ends up below the existential deposit as a result
+   * of the burn and `keep_alive` is false, the account will be reaped.
+   *
+   * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+   * this `burn` operation will reduce total issuance by the amount _burned_.
+   **/
+  | { name: 'Burn'; params: { value: bigint; keepAlive: boolean } };
 
 export type PalletBalancesAdjustmentDirection = 'Increase' | 'Decrease';
 
@@ -3259,7 +3357,15 @@ export type CumulusPalletXcmpQueueError =
   /**
    * The execution is already resumed.
    **/
-  | 'AlreadyResumed';
+  | 'AlreadyResumed'
+  /**
+   * There are too many active outbound channels.
+   **/
+  | 'TooManyActiveOutboundChannels'
+  /**
+   * The message is too big.
+   **/
+  | 'TooBig';
 
 export type PalletXcmQueryStatus =
   | {
@@ -4046,6 +4152,8 @@ export type XcmV2Instruction =
   | { tag: 'SubscribeVersion'; value: { queryId: bigint; maxResponseWeight: bigint } }
   | { tag: 'UnsubscribeVersion' };
 
+export type XcmV2OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
+
 export type XcmV2MultiassetMultiAssetFilter =
   | { tag: 'Definite'; value: XcmV2MultiassetMultiAssets }
   | { tag: 'Wild'; value: XcmV2MultiassetWildMultiAsset };
@@ -4083,7 +4191,7 @@ export type XcmV3Instruction =
     }
   | {
       tag: 'Transact';
-      value: { originKind: XcmV2OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
+      value: { originKind: XcmV3OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
     }
   | { tag: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
   | { tag: 'HrmpChannelAccepted'; value: { recipient: number } }
@@ -4653,6 +4761,7 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'NftFractionalization'; palletCall: PalletNftFractionalizationCall }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCall003 }
   | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall }
+  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall }
   | { pallet: 'AssetConversionMigration'; palletCall: PalletAssetConversionOpsCall };
 
 export type AssetHubWestendRuntimeRuntimeCallLike =
@@ -4678,6 +4787,7 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'NftFractionalization'; palletCall: PalletNftFractionalizationCallLike }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCallLike003 }
   | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike }
+  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike }
   | { pallet: 'AssetConversionMigration'; palletCall: PalletAssetConversionOpsCallLike };
 
 /**
@@ -11401,6 +11511,172 @@ export type PalletAssetConversionCallLike =
     };
 
 /**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletStateTrieMigrationCall =
+  /**
+   * Control the automatic migration.
+   *
+   * The dispatch origin of this call must be [`Config::ControlOrigin`].
+   **/
+  | { name: 'ControlAutoMigration'; params: { maybeConfig?: PalletStateTrieMigrationMigrationLimits | undefined } }
+  /**
+   * Continue the migration for the given `limits`.
+   *
+   * The dispatch origin of this call can be any signed account.
+   *
+   * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
+   * Upon successful execution, the transaction fee is returned.
+   *
+   * The (potentially over-estimated) of the byte length of all the data read must be
+   * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
+   * that executing the current `MigrationTask` with the given `limits` will not exceed
+   * `real_size_upper` bytes of read data.
+   *
+   * The `witness_task` is merely a helper to prevent the caller from being slashed or
+   * generally trigger a migration that they do not intend. This parameter is just a message
+   * from caller, saying that they believed `witness_task` was the last state of the
+   * migration, and they only wish for their transaction to do anything, if this assumption
+   * holds. In case `witness_task` does not match, the transaction fails.
+   *
+   * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
+   * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
+   * `size` limit can always be overwritten.
+   **/
+  | {
+      name: 'ContinueMigrate';
+      params: {
+        limits: PalletStateTrieMigrationMigrationLimits;
+        realSizeUpper: number;
+        witnessTask: PalletStateTrieMigrationMigrationTask;
+      };
+    }
+  /**
+   * Migrate the list of top keys by iterating each of them one by one.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomTop'; params: { keys: Array<Bytes>; witnessSize: number } }
+  /**
+   * Migrate the list of child keys by iterating each of them one by one.
+   *
+   * All of the given child keys must be present under one `child_root`.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomChild'; params: { root: Bytes; childKeys: Array<Bytes>; totalSize: number } }
+  /**
+   * Set the maximum limit of the signed migration.
+   **/
+  | { name: 'SetSignedMaxLimits'; params: { limits: PalletStateTrieMigrationMigrationLimits } }
+  /**
+   * Forcefully set the progress the running migration.
+   *
+   * This is only useful in one case: the next key to migrate is too big to be migrated with
+   * a signed account, in a parachain context, and we simply want to skip it. A reasonable
+   * example of this would be `:code:`, which is both very expensive to migrate, and commonly
+   * used, so probably it is already migrated.
+   *
+   * In case you mess things up, you can also, in principle, use this to reset the migration
+   * process.
+   **/
+  | {
+      name: 'ForceSetProgress';
+      params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
+    };
+
+export type PalletStateTrieMigrationCallLike =
+  /**
+   * Control the automatic migration.
+   *
+   * The dispatch origin of this call must be [`Config::ControlOrigin`].
+   **/
+  | { name: 'ControlAutoMigration'; params: { maybeConfig?: PalletStateTrieMigrationMigrationLimits | undefined } }
+  /**
+   * Continue the migration for the given `limits`.
+   *
+   * The dispatch origin of this call can be any signed account.
+   *
+   * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
+   * Upon successful execution, the transaction fee is returned.
+   *
+   * The (potentially over-estimated) of the byte length of all the data read must be
+   * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
+   * that executing the current `MigrationTask` with the given `limits` will not exceed
+   * `real_size_upper` bytes of read data.
+   *
+   * The `witness_task` is merely a helper to prevent the caller from being slashed or
+   * generally trigger a migration that they do not intend. This parameter is just a message
+   * from caller, saying that they believed `witness_task` was the last state of the
+   * migration, and they only wish for their transaction to do anything, if this assumption
+   * holds. In case `witness_task` does not match, the transaction fails.
+   *
+   * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
+   * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
+   * `size` limit can always be overwritten.
+   **/
+  | {
+      name: 'ContinueMigrate';
+      params: {
+        limits: PalletStateTrieMigrationMigrationLimits;
+        realSizeUpper: number;
+        witnessTask: PalletStateTrieMigrationMigrationTask;
+      };
+    }
+  /**
+   * Migrate the list of top keys by iterating each of them one by one.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomTop'; params: { keys: Array<BytesLike>; witnessSize: number } }
+  /**
+   * Migrate the list of child keys by iterating each of them one by one.
+   *
+   * All of the given child keys must be present under one `child_root`.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomChild'; params: { root: BytesLike; childKeys: Array<BytesLike>; totalSize: number } }
+  /**
+   * Set the maximum limit of the signed migration.
+   **/
+  | { name: 'SetSignedMaxLimits'; params: { limits: PalletStateTrieMigrationMigrationLimits } }
+  /**
+   * Forcefully set the progress the running migration.
+   *
+   * This is only useful in one case: the next key to migrate is too big to be migrated with
+   * a signed account, in a parachain context, and we simply want to skip it. A reasonable
+   * example of this would be `:code:`, which is both very expensive to migrate, and commonly
+   * used, so probably it is already migrated.
+   *
+   * In case you mess things up, you can also, in principle, use this to reset the migration
+   * process.
+   **/
+  | {
+      name: 'ForceSetProgress';
+      params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
+    };
+
+export type PalletStateTrieMigrationMigrationLimits = { size: number; item: number };
+
+export type PalletStateTrieMigrationMigrationTask = {
+  progressTop: PalletStateTrieMigrationProgress;
+  progressChild: PalletStateTrieMigrationProgress;
+  size: number;
+  topItems: number;
+  childItems: number;
+};
+
+export type PalletStateTrieMigrationProgress =
+  | { tag: 'ToStart' }
+  | { tag: 'LastKey'; value: Bytes }
+  | { tag: 'Complete' };
+
+/**
  * Pallet's callable functions.
  **/
 export type PalletAssetConversionOpsCall =
@@ -12261,6 +12537,39 @@ export type PalletTransactionPaymentFeeDetails = {
 
 export type PalletTransactionPaymentInclusionFee = { baseFee: bigint; lenFee: bigint; adjustedWeightFee: bigint };
 
+export type XcmFeePaymentRuntimeApiFeesError =
+  | 'Unimplemented'
+  | 'VersionedConversionFailed'
+  | 'WeightNotComputable'
+  | 'UnhandledXcmVersion'
+  | 'AssetNotFound'
+  | 'Unroutable';
+
+export type XcmFeePaymentRuntimeApiDryRunCallDryRunEffects = {
+  executionResult: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
+  emittedEvents: Array<AssetHubWestendRuntimeRuntimeEvent>;
+  localXcm?: XcmVersionedXcm | undefined;
+  forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
+};
+
+export type FrameSupportDispatchPostDispatchInfo = {
+  actualWeight?: SpWeightsWeightV2Weight | undefined;
+  paysFee: FrameSupportDispatchPays;
+};
+
+export type SpRuntimeDispatchErrorWithPostInfo = {
+  postInfo: FrameSupportDispatchPostDispatchInfo;
+  error: DispatchError;
+};
+
+export type XcmFeePaymentRuntimeApiDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
+
+export type XcmFeePaymentRuntimeApiDryRunXcmDryRunEffects = {
+  executionResult: StagingXcmV4TraitsOutcome;
+  emittedEvents: Array<AssetHubWestendRuntimeRuntimeEvent>;
+  forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
+};
+
 export type AssetsCommonRuntimeApiFungiblesAccessError = 'AssetIdConversionFailed' | 'AmountToBalanceConversionFailed';
 
 export type CumulusPrimitivesCoreCollationInfo = {
@@ -12293,4 +12602,5 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { tag: 'NftFractionalization'; value: PalletNftFractionalizationError }
   | { tag: 'PoolAssets'; value: PalletAssetsError }
   | { tag: 'AssetConversion'; value: PalletAssetConversionError }
+  | { tag: 'StateTrieMigration'; value: PalletStateTrieMigrationError }
   | { tag: 'AssetConversionMigration'; value: PalletAssetConversionOpsError };

@@ -21,6 +21,8 @@ import type {
   PalletNftsAttributeNamespace,
   PalletNftsPriceWithDirection,
   PalletNftsPalletAttributes,
+  PalletStateTrieMigrationMigrationCompute,
+  PalletStateTrieMigrationError,
 } from './types';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -1169,6 +1171,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Blocked: GenericPalletEvent<Rv, 'Assets', 'Blocked', { assetId: number; who: AccountId32 }>;
 
     /**
+     * Some assets were deposited (e.g. for transaction fees).
+     **/
+    Deposited: GenericPalletEvent<Rv, 'Assets', 'Deposited', { assetId: number; who: AccountId32; amount: bigint }>;
+
+    /**
+     * Some assets were withdrawn from the account (e.g. for transaction fees).
+     **/
+    Withdrawn: GenericPalletEvent<Rv, 'Assets', 'Withdrawn', { assetId: number; who: AccountId32; amount: bigint }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -2003,6 +2015,26 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * Some assets were deposited (e.g. for transaction fees).
+     **/
+    Deposited: GenericPalletEvent<
+      Rv,
+      'ForeignAssets',
+      'Deposited',
+      { assetId: StagingXcmV3MultilocationMultiLocation; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Some assets were withdrawn from the account (e.g. for transaction fees).
+     **/
+    Withdrawn: GenericPalletEvent<
+      Rv,
+      'ForeignAssets',
+      'Withdrawn',
+      { assetId: StagingXcmV3MultilocationMultiLocation; who: AccountId32; amount: bigint }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -2215,6 +2247,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * Some account `who` was blocked.
      **/
     Blocked: GenericPalletEvent<Rv, 'PoolAssets', 'Blocked', { assetId: number; who: AccountId32 }>;
+
+    /**
+     * Some assets were deposited (e.g. for transaction fees).
+     **/
+    Deposited: GenericPalletEvent<Rv, 'PoolAssets', 'Deposited', { assetId: number; who: AccountId32; amount: bigint }>;
+
+    /**
+     * Some assets were withdrawn from the account (e.g. for transaction fees).
+     **/
+    Withdrawn: GenericPalletEvent<Rv, 'PoolAssets', 'Withdrawn', { assetId: number; who: AccountId32; amount: bigint }>;
 
     /**
      * Generic pallet event
@@ -2434,6 +2476,41 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
         who: AccountId32;
       }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `StateTrieMigration`'s events
+   **/
+  stateTrieMigration: {
+    /**
+     * Given number of `(top, child)` keys were migrated respectively, with the given
+     * `compute`.
+     **/
+    Migrated: GenericPalletEvent<
+      Rv,
+      'StateTrieMigration',
+      'Migrated',
+      { top: number; child: number; compute: PalletStateTrieMigrationMigrationCompute }
+    >;
+
+    /**
+     * Some account got slashed by the given amount.
+     **/
+    Slashed: GenericPalletEvent<Rv, 'StateTrieMigration', 'Slashed', { who: AccountId32; amount: bigint }>;
+
+    /**
+     * The auto migration task finished.
+     **/
+    AutoMigrationFinished: GenericPalletEvent<Rv, 'StateTrieMigration', 'AutoMigrationFinished', null>;
+
+    /**
+     * Migration got halted due to an error or miss-configuration.
+     **/
+    Halted: GenericPalletEvent<Rv, 'StateTrieMigration', 'Halted', { error: PalletStateTrieMigrationError }>;
 
     /**
      * Generic pallet event

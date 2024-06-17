@@ -250,6 +250,27 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     maxInboundSuspended: number;
 
     /**
+     * Maximal number of outbound XCMP channels that can have messages queued at the same time.
+     *
+     * If this is reached, then no further messages can be sent to channels that do not yet
+     * have a message queued. This should be set to the expected maximum of outbound channels
+     * which is determined by [`Self::ChannelInfo`]. It is important to set this large enough,
+     * since otherwise the congestion control protocol will not work as intended and messages
+     * may be dropped. This value increases the PoV and should therefore not be picked too
+     * high. Governance needs to pay attention to not open more channels than this value.
+     **/
+    maxActiveOutboundChannels: number;
+
+    /**
+     * The maximal page size for HRMP message pages.
+     *
+     * A lower limit can be set dynamically, but this is the hard-limit for the PoV worst case
+     * benchmarking. The limit for the size of a message is slightly below this, since some
+     * overhead is incurred for encoding the format.
+     **/
+    maxPageSize: number;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -769,6 +790,40 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * The pallet's id, used for deriving its sovereign account ID.
      **/
     palletId: FrameSupportPalletId;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `StateTrieMigration`'s constants
+   **/
+  stateTrieMigration: {
+    /**
+     * Maximal number of bytes that a key can have.
+     *
+     * FRAME itself does not limit the key length.
+     * The concrete value must therefore depend on your storage usage.
+     * A [`frame_support::storage::StorageNMap`] for example can have an arbitrary number of
+     * keys which are then hashed and concatenated, resulting in arbitrarily long keys.
+     *
+     * Use the *state migration RPC* to retrieve the length of the longest key in your
+     * storage: <https://github.com/paritytech/substrate/issues/11642>
+     *
+     * The migration will halt with a `Halted` event if this value is too small.
+     * Since there is no real penalty from over-estimating, it is advised to use a large
+     * value. The default is 512 byte.
+     *
+     * Some key lengths for reference:
+     * - [`frame_support::storage::StorageValue`]: 32 byte
+     * - [`frame_support::storage::StorageMap`]: 64 byte
+     * - [`frame_support::storage::StorageDoubleMap`]: 96 byte
+     *
+     * For more info see
+     * <https://www.shawntabrizi.com/blog/substrate/querying-substrate-storage-via-rpc/>
+     **/
+    maxKeyLen: number;
 
     /**
      * Generic pallet constant

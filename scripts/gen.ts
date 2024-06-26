@@ -1,6 +1,6 @@
 import { generateTypes, generateTypesFromEndpoint } from '@dedot/codegen';
-import { $Metadata, Metadata, PortableRegistry, RuntimeVersion } from '@dedot/codecs';
-import { ConstantExecutor, Dedot } from 'dedot';
+import { $Metadata, Metadata, PortableRegistry, RuntimeVersion } from 'dedot/codecs';
+import { ConstantExecutor, DedotClient } from 'dedot';
 import { networks } from './networks';
 
 const OUT_DIR: string = './packages/chaintypes/src';
@@ -40,7 +40,7 @@ const getRuntimeVersion = (metadata: Metadata): RuntimeVersion => {
   const executor = new ConstantExecutor({
     registry,
     metadataLatest: metadata.latest,
-  } as unknown as Dedot);
+  } as unknown as DedotClient);
 
   return executor.execute('system', 'version') as RuntimeVersion;
 };

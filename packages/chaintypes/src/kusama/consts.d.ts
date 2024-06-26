@@ -552,58 +552,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
-   * Pallet `Identity`'s constants
-   **/
-  identity: {
-    /**
-     * The amount held on deposit for a registered identity.
-     **/
-    basicDeposit: bigint;
-
-    /**
-     * The amount held on deposit per encoded byte for a registered identity.
-     **/
-    byteDeposit: bigint;
-
-    /**
-     * The amount held on deposit for a registered subaccount. This should account for the fact
-     * that one storage item's value will increase by the size of an account ID, and there will
-     * be another trie item whose value is the size of an account ID plus 32 bytes.
-     **/
-    subAccountDeposit: bigint;
-
-    /**
-     * The maximum number of sub-accounts allowed per identified account.
-     **/
-    maxSubAccounts: number;
-
-    /**
-     * Maxmimum number of registrars allowed in the system. Needed to bound the complexity
-     * of, e.g., updating judgements.
-     **/
-    maxRegistrars: number;
-
-    /**
-     * The number of blocks within which a username grant must be accepted.
-     **/
-    pendingUsernameExpiration: number;
-
-    /**
-     * The maximum length of a suffix.
-     **/
-    maxSuffixLength: number;
-
-    /**
-     * The maximum length of a username, including its suffix and any system-added delimiters.
-     **/
-    maxUsernameLength: number;
-
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
    * Pallet `Society`'s constants
    **/
   society: {
@@ -1561,15 +1509,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    * Pallet `BeefyMmrLeaf`'s constants
    **/
   beefyMmrLeaf: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `IdentityMigrator`'s constants
-   **/
-  identityMigrator: {
     /**
      * Generic pallet constant
      **/

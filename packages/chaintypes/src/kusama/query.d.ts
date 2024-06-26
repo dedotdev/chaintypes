@@ -15,7 +15,6 @@ import type {
   BytesLike,
   EthereumAddress,
   EthereumAddressLike,
-  Data,
   FixedArray,
 } from 'dedot/codecs';
 import type {
@@ -63,9 +62,6 @@ import type {
   PalletRankedCollectiveVoteRecord,
   PalletReferendaReferendumInfoTally,
   PolkadotRuntimeCommonClaimsStatementKind,
-  PalletIdentityRegistration,
-  PalletIdentityRegistrarInfo,
-  PalletIdentityAuthorityProperties,
   PalletSocietyGroupParams,
   PalletSocietyMemberRecord,
   PalletSocietyPayoutRecord,
@@ -1650,98 +1646,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<EthereumAddress | undefined> =} callback
      **/
     preclaims: GenericStorageQuery<Rv, (arg: AccountId32Like) => EthereumAddress | undefined, AccountId32>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
-   * Pallet `Identity`'s storage queries
-   **/
-  identity: {
-    /**
-     * Information that is pertinent to identify the entity behind an account. First item is the
-     * registration, second is the account's primary username.
-     *
-     * TWOX-NOTE: OK ― `AccountId` is a secure hash.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<[PalletIdentityRegistration, Bytes | undefined] | undefined> =} callback
-     **/
-    identityOf: GenericStorageQuery<
-      Rv,
-      (arg: AccountId32Like) => [PalletIdentityRegistration, Bytes | undefined] | undefined,
-      AccountId32
-    >;
-
-    /**
-     * The super-identity of an alternative "sub" identity together with its name, within that
-     * context. If the account is not some other account's sub-identity, then just `None`.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<[AccountId32, Data] | undefined> =} callback
-     **/
-    superOf: GenericStorageQuery<Rv, (arg: AccountId32Like) => [AccountId32, Data] | undefined, AccountId32>;
-
-    /**
-     * Alternative "sub" identities of this account.
-     *
-     * The first item is the deposit, the second is a vector of the accounts.
-     *
-     * TWOX-NOTE: OK ― `AccountId` is a secure hash.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<[bigint, Array<AccountId32>]> =} callback
-     **/
-    subsOf: GenericStorageQuery<Rv, (arg: AccountId32Like) => [bigint, Array<AccountId32>], AccountId32>;
-
-    /**
-     * The set of registrars. Not expected to get very big as can only be added through a
-     * special origin (likely a council motion).
-     *
-     * The index into this can be cast to `RegistrarIndex` to get a valid value.
-     *
-     * @param {Callback<Array<PalletIdentityRegistrarInfo | undefined>> =} callback
-     **/
-    registrars: GenericStorageQuery<Rv, () => Array<PalletIdentityRegistrarInfo | undefined>>;
-
-    /**
-     * A map of the accounts who are authorized to grant usernames.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<PalletIdentityAuthorityProperties | undefined> =} callback
-     **/
-    usernameAuthorities: GenericStorageQuery<
-      Rv,
-      (arg: AccountId32Like) => PalletIdentityAuthorityProperties | undefined,
-      AccountId32
-    >;
-
-    /**
-     * Reverse lookup from `username` to the `AccountId` that has registered it. The value should
-     * be a key in the `IdentityOf` map, but it may not if the user has cleared their identity.
-     *
-     * Multiple usernames may map to the same `AccountId`, but `IdentityOf` will only map to one
-     * primary username.
-     *
-     * @param {BytesLike} arg
-     * @param {Callback<AccountId32 | undefined> =} callback
-     **/
-    accountOfUsername: GenericStorageQuery<Rv, (arg: BytesLike) => AccountId32 | undefined, Bytes>;
-
-    /**
-     * Usernames that an authority has granted, but that the account controller has not confirmed
-     * that they want it. Used primarily in cases where the `AccountId` cannot provide a signature
-     * because they are a pure proxy, multisig, etc. In order to confirm it, they should call
-     * [`Call::accept_username`].
-     *
-     * First tuple item is the account and second is the acceptance deadline.
-     *
-     * @param {BytesLike} arg
-     * @param {Callback<[AccountId32, number] | undefined> =} callback
-     **/
-    pendingUsernames: GenericStorageQuery<Rv, (arg: BytesLike) => [AccountId32, number] | undefined, Bytes>;
 
     /**
      * Generic pallet storage query

@@ -18,7 +18,6 @@ import type {
   Percent,
   EthereumAddress,
   EthereumAddressLike,
-  Data,
   PerU16,
   Perquintill,
   BitSequence,
@@ -74,7 +73,6 @@ export type StagingKusamaRuntimeRuntimeEvent =
   | { pallet: 'Whitelist'; palletEvent: PalletWhitelistEvent }
   | { pallet: 'Claims'; palletEvent: PolkadotRuntimeCommonClaimsPalletEvent }
   | { pallet: 'Utility'; palletEvent: PalletUtilityEvent }
-  | { pallet: 'Identity'; palletEvent: PalletIdentityEvent }
   | { pallet: 'Society'; palletEvent: PalletSocietyEvent }
   | { pallet: 'Recovery'; palletEvent: PalletRecoveryEvent }
   | { pallet: 'Vesting'; palletEvent: PalletVestingEvent }
@@ -102,8 +100,7 @@ export type StagingKusamaRuntimeRuntimeEvent =
   | { pallet: 'Coretime'; palletEvent: PolkadotRuntimeParachainsCoretimePalletEvent }
   | { pallet: 'XcmPallet'; palletEvent: PalletXcmEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
-  | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
-  | { pallet: 'IdentityMigrator'; palletEvent: PolkadotRuntimeCommonIdentityMigratorPalletEvent };
+  | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent };
 
 /**
  * Event for the System pallet.
@@ -1009,7 +1006,6 @@ export type StagingKusamaRuntimeRuntimeCall =
   | { pallet: 'Whitelist'; palletCall: PalletWhitelistCall }
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCall }
   | { pallet: 'Utility'; palletCall: PalletUtilityCall }
-  | { pallet: 'Identity'; palletCall: PalletIdentityCall }
   | { pallet: 'Society'; palletCall: PalletSocietyCall }
   | { pallet: 'Recovery'; palletCall: PalletRecoveryCall }
   | { pallet: 'Vesting'; palletCall: PalletVestingCall }
@@ -1043,8 +1039,7 @@ export type StagingKusamaRuntimeRuntimeCall =
   | { pallet: 'XcmPallet'; palletCall: PalletXcmCall }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
-  | { pallet: 'Beefy'; palletCall: PalletBeefyCall }
-  | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCall };
+  | { pallet: 'Beefy'; palletCall: PalletBeefyCall };
 
 export type StagingKusamaRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -1063,7 +1058,6 @@ export type StagingKusamaRuntimeRuntimeCallLike =
   | { pallet: 'Whitelist'; palletCall: PalletWhitelistCallLike }
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCallLike }
   | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
-  | { pallet: 'Identity'; palletCall: PalletIdentityCallLike }
   | { pallet: 'Society'; palletCall: PalletSocietyCallLike }
   | { pallet: 'Recovery'; palletCall: PalletRecoveryCallLike }
   | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
@@ -1097,8 +1091,7 @@ export type StagingKusamaRuntimeRuntimeCallLike =
   | { pallet: 'XcmPallet'; palletCall: PalletXcmCallLike }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
-  | { pallet: 'Beefy'; palletCall: PalletBeefyCallLike }
-  | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCallLike };
+  | { pallet: 'Beefy'; palletCall: PalletBeefyCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2383,231 +2376,6 @@ export type PalletUtilityCallLike =
   | { name: 'WithWeight'; params: { call: StagingKusamaRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } };
 
 /**
- * Identity pallet declaration.
- **/
-export type PalletIdentityCall =
-  /**
-   * See [`Pallet::add_registrar`].
-   **/
-  | { name: 'AddRegistrar'; params: { account: MultiAddress } }
-  /**
-   * See [`Pallet::set_identity`].
-   **/
-  | { name: 'SetIdentity'; params: { info: PalletIdentityLegacyIdentityInfo } }
-  /**
-   * See [`Pallet::set_subs`].
-   **/
-  | { name: 'SetSubs'; params: { subs: Array<[AccountId32, Data]> } }
-  /**
-   * See [`Pallet::clear_identity`].
-   **/
-  | { name: 'ClearIdentity' }
-  /**
-   * See [`Pallet::request_judgement`].
-   **/
-  | { name: 'RequestJudgement'; params: { regIndex: number; maxFee: bigint } }
-  /**
-   * See [`Pallet::cancel_request`].
-   **/
-  | { name: 'CancelRequest'; params: { regIndex: number } }
-  /**
-   * See [`Pallet::set_fee`].
-   **/
-  | { name: 'SetFee'; params: { index: number; fee: bigint } }
-  /**
-   * See [`Pallet::set_account_id`].
-   **/
-  | { name: 'SetAccountId'; params: { index: number; new: MultiAddress } }
-  /**
-   * See [`Pallet::set_fields`].
-   **/
-  | { name: 'SetFields'; params: { index: number; fields: bigint } }
-  /**
-   * See [`Pallet::provide_judgement`].
-   **/
-  | {
-      name: 'ProvideJudgement';
-      params: { regIndex: number; target: MultiAddress; judgement: PalletIdentityJudgement; identity: H256 };
-    }
-  /**
-   * See [`Pallet::kill_identity`].
-   **/
-  | { name: 'KillIdentity'; params: { target: MultiAddress } }
-  /**
-   * See [`Pallet::add_sub`].
-   **/
-  | { name: 'AddSub'; params: { sub: MultiAddress; data: Data } }
-  /**
-   * See [`Pallet::rename_sub`].
-   **/
-  | { name: 'RenameSub'; params: { sub: MultiAddress; data: Data } }
-  /**
-   * See [`Pallet::remove_sub`].
-   **/
-  | { name: 'RemoveSub'; params: { sub: MultiAddress } }
-  /**
-   * See [`Pallet::quit_sub`].
-   **/
-  | { name: 'QuitSub' }
-  /**
-   * See [`Pallet::add_username_authority`].
-   **/
-  | { name: 'AddUsernameAuthority'; params: { authority: MultiAddress; suffix: Bytes; allocation: number } }
-  /**
-   * See [`Pallet::remove_username_authority`].
-   **/
-  | { name: 'RemoveUsernameAuthority'; params: { authority: MultiAddress } }
-  /**
-   * See [`Pallet::set_username_for`].
-   **/
-  | {
-      name: 'SetUsernameFor';
-      params: { who: MultiAddress; username: Bytes; signature?: SpRuntimeMultiSignature | undefined };
-    }
-  /**
-   * See [`Pallet::accept_username`].
-   **/
-  | { name: 'AcceptUsername'; params: { username: Bytes } }
-  /**
-   * See [`Pallet::remove_expired_approval`].
-   **/
-  | { name: 'RemoveExpiredApproval'; params: { username: Bytes } }
-  /**
-   * See [`Pallet::set_primary_username`].
-   **/
-  | { name: 'SetPrimaryUsername'; params: { username: Bytes } }
-  /**
-   * See [`Pallet::remove_dangling_username`].
-   **/
-  | { name: 'RemoveDanglingUsername'; params: { username: Bytes } };
-
-export type PalletIdentityCallLike =
-  /**
-   * See [`Pallet::add_registrar`].
-   **/
-  | { name: 'AddRegistrar'; params: { account: MultiAddressLike } }
-  /**
-   * See [`Pallet::set_identity`].
-   **/
-  | { name: 'SetIdentity'; params: { info: PalletIdentityLegacyIdentityInfo } }
-  /**
-   * See [`Pallet::set_subs`].
-   **/
-  | { name: 'SetSubs'; params: { subs: Array<[AccountId32Like, Data]> } }
-  /**
-   * See [`Pallet::clear_identity`].
-   **/
-  | { name: 'ClearIdentity' }
-  /**
-   * See [`Pallet::request_judgement`].
-   **/
-  | { name: 'RequestJudgement'; params: { regIndex: number; maxFee: bigint } }
-  /**
-   * See [`Pallet::cancel_request`].
-   **/
-  | { name: 'CancelRequest'; params: { regIndex: number } }
-  /**
-   * See [`Pallet::set_fee`].
-   **/
-  | { name: 'SetFee'; params: { index: number; fee: bigint } }
-  /**
-   * See [`Pallet::set_account_id`].
-   **/
-  | { name: 'SetAccountId'; params: { index: number; new: MultiAddressLike } }
-  /**
-   * See [`Pallet::set_fields`].
-   **/
-  | { name: 'SetFields'; params: { index: number; fields: bigint } }
-  /**
-   * See [`Pallet::provide_judgement`].
-   **/
-  | {
-      name: 'ProvideJudgement';
-      params: { regIndex: number; target: MultiAddressLike; judgement: PalletIdentityJudgement; identity: H256 };
-    }
-  /**
-   * See [`Pallet::kill_identity`].
-   **/
-  | { name: 'KillIdentity'; params: { target: MultiAddressLike } }
-  /**
-   * See [`Pallet::add_sub`].
-   **/
-  | { name: 'AddSub'; params: { sub: MultiAddressLike; data: Data } }
-  /**
-   * See [`Pallet::rename_sub`].
-   **/
-  | { name: 'RenameSub'; params: { sub: MultiAddressLike; data: Data } }
-  /**
-   * See [`Pallet::remove_sub`].
-   **/
-  | { name: 'RemoveSub'; params: { sub: MultiAddressLike } }
-  /**
-   * See [`Pallet::quit_sub`].
-   **/
-  | { name: 'QuitSub' }
-  /**
-   * See [`Pallet::add_username_authority`].
-   **/
-  | { name: 'AddUsernameAuthority'; params: { authority: MultiAddressLike; suffix: BytesLike; allocation: number } }
-  /**
-   * See [`Pallet::remove_username_authority`].
-   **/
-  | { name: 'RemoveUsernameAuthority'; params: { authority: MultiAddressLike } }
-  /**
-   * See [`Pallet::set_username_for`].
-   **/
-  | {
-      name: 'SetUsernameFor';
-      params: { who: MultiAddressLike; username: BytesLike; signature?: SpRuntimeMultiSignature | undefined };
-    }
-  /**
-   * See [`Pallet::accept_username`].
-   **/
-  | { name: 'AcceptUsername'; params: { username: BytesLike } }
-  /**
-   * See [`Pallet::remove_expired_approval`].
-   **/
-  | { name: 'RemoveExpiredApproval'; params: { username: BytesLike } }
-  /**
-   * See [`Pallet::set_primary_username`].
-   **/
-  | { name: 'SetPrimaryUsername'; params: { username: BytesLike } }
-  /**
-   * See [`Pallet::remove_dangling_username`].
-   **/
-  | { name: 'RemoveDanglingUsername'; params: { username: BytesLike } };
-
-export type PalletIdentityLegacyIdentityInfo = {
-  additional: Array<[Data, Data]>;
-  display: Data;
-  legal: Data;
-  web: Data;
-  riot: Data;
-  email: Data;
-  pgpFingerprint?: FixedBytes<20> | undefined;
-  image: Data;
-  twitter: Data;
-};
-
-export type PalletIdentityJudgement =
-  | { type: 'Unknown' }
-  | { type: 'FeePaid'; value: bigint }
-  | { type: 'Reasonable' }
-  | { type: 'KnownGood' }
-  | { type: 'OutOfDate' }
-  | { type: 'LowQuality' }
-  | { type: 'Erroneous' };
-
-export type SpRuntimeMultiSignature =
-  | { type: 'Ed25519'; value: SpCoreEd25519Signature }
-  | { type: 'Sr25519'; value: SpCoreSr25519Signature }
-  | { type: 'Ecdsa'; value: SpCoreEcdsaSignature };
-
-export type SpCoreSr25519Signature = FixedBytes<64>;
-
-export type SpCoreEcdsaSignature = FixedBytes<65>;
-
-/**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
 export type PalletSocietyCall =
@@ -3211,7 +2979,6 @@ export type StagingKusamaRuntimeProxyType =
   | 'NonTransfer'
   | 'Governance'
   | 'Staking'
-  | 'IdentityJudgement'
   | 'CancelProxy'
   | 'Auction'
   | 'Society'
@@ -4482,6 +4249,8 @@ export type PolkadotPrimitivesV6ValidatorIndex = number;
 
 export type PolkadotPrimitivesV6ValidatorAppSignature = SpCoreSr25519Signature;
 
+export type SpCoreSr25519Signature = FixedBytes<64>;
+
 export type PolkadotPrimitivesV6BackedCandidate = {
   candidate: PolkadotPrimitivesV6CommittedCandidateReceipt;
   validityVotes: Array<PolkadotPrimitivesV6ValidityAttestation>;
@@ -5320,6 +5089,13 @@ export type SpRuntimeMultiSigner =
   | { type: 'Ed25519'; value: SpCoreEd25519Public }
   | { type: 'Sr25519'; value: SpCoreSr25519Public }
   | { type: 'Ecdsa'; value: SpCoreEcdsaPublic };
+
+export type SpRuntimeMultiSignature =
+  | { type: 'Ed25519'; value: SpCoreEd25519Signature }
+  | { type: 'Sr25519'; value: SpCoreSr25519Signature }
+  | { type: 'Ecdsa'; value: SpCoreEcdsaSignature };
+
+export type SpCoreEcdsaSignature = FixedBytes<65>;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -6256,29 +6032,6 @@ export type SpConsensusBeefyCommitment = {
 
 export type SpConsensusBeefyPayload = Array<[FixedBytes<2>, Bytes]>;
 
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PolkadotRuntimeCommonIdentityMigratorPalletCall =
-  /**
-   * See [`Pallet::reap_identity`].
-   **/
-  | { name: 'ReapIdentity'; params: { who: AccountId32 } }
-  /**
-   * See [`Pallet::poke_deposit`].
-   **/
-  | { name: 'PokeDeposit'; params: { who: AccountId32 } };
-
-export type PolkadotRuntimeCommonIdentityMigratorPalletCallLike =
-  /**
-   * See [`Pallet::reap_identity`].
-   **/
-  | { name: 'ReapIdentity'; params: { who: AccountId32Like } }
-  /**
-   * See [`Pallet::poke_deposit`].
-   **/
-  | { name: 'PokeDeposit'; params: { who: AccountId32Like } };
-
 export type SpRuntimeBlakeTwo256 = {};
 
 export type PalletConvictionVotingTally = { ayes: bigint; nays: bigint; support: bigint };
@@ -6669,81 +6422,6 @@ export type PalletUtilityEvent =
    * A call was dispatched.
    **/
   | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletIdentityEvent =
-  /**
-   * A name was set or reset (which will remove all judgements).
-   **/
-  | { name: 'IdentitySet'; data: { who: AccountId32 } }
-  /**
-   * A name was cleared, and the given balance returned.
-   **/
-  | { name: 'IdentityCleared'; data: { who: AccountId32; deposit: bigint } }
-  /**
-   * A name was removed and the given balance slashed.
-   **/
-  | { name: 'IdentityKilled'; data: { who: AccountId32; deposit: bigint } }
-  /**
-   * A judgement was asked from a registrar.
-   **/
-  | { name: 'JudgementRequested'; data: { who: AccountId32; registrarIndex: number } }
-  /**
-   * A judgement request was retracted.
-   **/
-  | { name: 'JudgementUnrequested'; data: { who: AccountId32; registrarIndex: number } }
-  /**
-   * A judgement was given by a registrar.
-   **/
-  | { name: 'JudgementGiven'; data: { target: AccountId32; registrarIndex: number } }
-  /**
-   * A registrar was added.
-   **/
-  | { name: 'RegistrarAdded'; data: { registrarIndex: number } }
-  /**
-   * A sub-identity was added to an identity and the deposit paid.
-   **/
-  | { name: 'SubIdentityAdded'; data: { sub: AccountId32; main: AccountId32; deposit: bigint } }
-  /**
-   * A sub-identity was removed from an identity and the deposit freed.
-   **/
-  | { name: 'SubIdentityRemoved'; data: { sub: AccountId32; main: AccountId32; deposit: bigint } }
-  /**
-   * A sub-identity was cleared, and the given deposit repatriated from the
-   * main identity account to the sub-identity account.
-   **/
-  | { name: 'SubIdentityRevoked'; data: { sub: AccountId32; main: AccountId32; deposit: bigint } }
-  /**
-   * A username authority was added.
-   **/
-  | { name: 'AuthorityAdded'; data: { authority: AccountId32 } }
-  /**
-   * A username authority was removed.
-   **/
-  | { name: 'AuthorityRemoved'; data: { authority: AccountId32 } }
-  /**
-   * A username was set for `who`.
-   **/
-  | { name: 'UsernameSet'; data: { who: AccountId32; username: Bytes } }
-  /**
-   * A username was queued, but `who` must accept it prior to `expiration`.
-   **/
-  | { name: 'UsernameQueued'; data: { who: AccountId32; username: Bytes; expiration: number } }
-  /**
-   * A queued username passed its expiration without being claimed and was removed.
-   **/
-  | { name: 'PreapprovalExpired'; data: { whose: AccountId32 } }
-  /**
-   * A username was set as a primary and can be looked up from `who`.
-   **/
-  | { name: 'PrimaryUsernameSet'; data: { who: AccountId32; username: Bytes } }
-  /**
-   * A dangling username (as in, a username corresponding to an account that has removed its
-   * identity) has been removed.
-   **/
-  | { name: 'DanglingUsernameRemoved'; data: { who: AccountId32; username: Bytes } };
 
 /**
  * The `Event` enum of this pallet
@@ -8055,20 +7733,6 @@ export type PalletAssetRateEvent =
       data: { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; old: FixedU128; new: FixedU128 };
     };
 
-/**
- * The `Event` enum of this pallet
- **/
-export type PolkadotRuntimeCommonIdentityMigratorPalletEvent =
-  /**
-   * The identity and all sub accounts were reaped for `who`.
-   **/
-  | { name: 'IdentityReaped'; data: { who: AccountId32 } }
-  /**
-   * The deposits held for `who` were updated. `identity` is the new deposit held for
-   * identity info, and `subs` is the new deposit held for the sub-accounts.
-   **/
-  | { name: 'DepositUpdated'; data: { who: AccountId32; identity: bigint; subs: bigint } };
-
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
 export type FrameSystemCodeUpgradeAuthorization = { codeHash: H256; checkVersion: boolean };
@@ -8904,125 +8568,6 @@ export type PalletUtilityError =
    * Too many calls batched.
    **/
   'TooManyCalls';
-
-export type PalletIdentityRegistration = {
-  judgements: Array<[number, PalletIdentityJudgement]>;
-  deposit: bigint;
-  info: PalletIdentityLegacyIdentityInfo;
-};
-
-export type PalletIdentityRegistrarInfo = { account: AccountId32; fee: bigint; fields: bigint };
-
-export type PalletIdentityAuthorityProperties = { suffix: Bytes; allocation: number };
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletIdentityError =
-  /**
-   * Too many subs-accounts.
-   **/
-  | 'TooManySubAccounts'
-  /**
-   * Account isn't found.
-   **/
-  | 'NotFound'
-  /**
-   * Account isn't named.
-   **/
-  | 'NotNamed'
-  /**
-   * Empty index.
-   **/
-  | 'EmptyIndex'
-  /**
-   * Fee is changed.
-   **/
-  | 'FeeChanged'
-  /**
-   * No identity found.
-   **/
-  | 'NoIdentity'
-  /**
-   * Sticky judgement.
-   **/
-  | 'StickyJudgement'
-  /**
-   * Judgement given.
-   **/
-  | 'JudgementGiven'
-  /**
-   * Invalid judgement.
-   **/
-  | 'InvalidJudgement'
-  /**
-   * The index is invalid.
-   **/
-  | 'InvalidIndex'
-  /**
-   * The target is invalid.
-   **/
-  | 'InvalidTarget'
-  /**
-   * Maximum amount of registrars reached. Cannot add any more.
-   **/
-  | 'TooManyRegistrars'
-  /**
-   * Account ID is already named.
-   **/
-  | 'AlreadyClaimed'
-  /**
-   * Sender is not a sub-account.
-   **/
-  | 'NotSub'
-  /**
-   * Sub-account isn't owned by sender.
-   **/
-  | 'NotOwned'
-  /**
-   * The provided judgement was for a different identity.
-   **/
-  | 'JudgementForDifferentIdentity'
-  /**
-   * Error that occurs when there is an issue paying for judgement.
-   **/
-  | 'JudgementPaymentFailed'
-  /**
-   * The provided suffix is too long.
-   **/
-  | 'InvalidSuffix'
-  /**
-   * The sender does not have permission to issue a username.
-   **/
-  | 'NotUsernameAuthority'
-  /**
-   * The authority cannot allocate any more usernames.
-   **/
-  | 'NoAllocation'
-  /**
-   * The signature on a username was not valid.
-   **/
-  | 'InvalidSignature'
-  /**
-   * Setting this username requires a signature, but none was provided.
-   **/
-  | 'RequiresSignature'
-  /**
-   * The username does not meet the requirements.
-   **/
-  | 'InvalidUsername'
-  /**
-   * The username is already taken.
-   **/
-  | 'UsernameTaken'
-  /**
-   * The requested username does not exist.
-   **/
-  | 'NoUsername'
-  /**
-   * The username cannot be forcefully removed because it can still be accepted.
-   **/
-  | 'NotExpired';
 
 export type PalletSocietyMemberRecord = {
   rank: number;
@@ -11406,7 +10951,6 @@ export type StagingKusamaRuntimeRuntimeError =
   | { pallet: 'Whitelist'; palletError: PalletWhitelistError }
   | { pallet: 'Claims'; palletError: PolkadotRuntimeCommonClaimsPalletError }
   | { pallet: 'Utility'; palletError: PalletUtilityError }
-  | { pallet: 'Identity'; palletError: PalletIdentityError }
   | { pallet: 'Society'; palletError: PalletSocietyError }
   | { pallet: 'Recovery'; palletError: PalletRecoveryError }
   | { pallet: 'Vesting'; palletError: PalletVestingError }

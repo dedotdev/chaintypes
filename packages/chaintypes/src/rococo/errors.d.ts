@@ -278,11 +278,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
    **/
   treasury: {
     /**
-     * Proposer's balance is too low.
-     **/
-    InsufficientProposersBalance: GenericPalletError<Rv>;
-
-    /**
      * No proposal, bounty or spend at that index.
      **/
     InvalidIndex: GenericPalletError<Rv>;
@@ -545,6 +540,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The new member to exchange is the same as the old member
      **/
     SameMember: GenericPalletError<Rv>;
+
+    /**
+     * The max member count for the rank has been reached.
+     **/
+    TooManyMembers: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1355,6 +1355,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Too few hashes were requested to be upgraded (i.e. zero).
      **/
     TooFew: GenericPalletError<Rv>;
+
+    /**
+     * No ticket with a cost was returned by [`Config::Consideration`] to store the preimage.
+     **/
+    NoCost: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -2451,6 +2456,17 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The paraid making the call is not the coretime brokerage system parachain.
      **/
     NotBroker: GenericPalletError<Rv>;
+
+    /**
+     * Requested revenue information `when` parameter was in the future from the current
+     * block height.
+     **/
+    RequestedFutureRevenue: GenericPalletError<Rv>;
+
+    /**
+     * Failed to transfer assets to the coretime chain
+     **/
+    AssetTransferFailed: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

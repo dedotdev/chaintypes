@@ -378,10 +378,6 @@ export type SpConsensusGrandpaAppPublic = FixedBytes<32>;
  **/
 export type PalletTreasuryEvent =
   /**
-   * New proposal.
-   **/
-  | { name: 'Proposed'; data: { proposalIndex: number } }
-  /**
    * We have ended a spend period and will now allocate funds.
    **/
   | { name: 'Spending'; data: { budgetRemaining: bigint } }
@@ -389,10 +385,6 @@ export type PalletTreasuryEvent =
    * Some funds have been allocated.
    **/
   | { name: 'Awarded'; data: { proposalIndex: number; award: bigint; account: AccountId32 } }
-  /**
-   * A proposal was rejected; funds were slashed.
-   **/
-  | { name: 'Rejected'; data: { proposalIndex: number; slashed: bigint } }
   /**
    * Some of our funds have been burnt.
    **/
@@ -1903,63 +1895,6 @@ export type FinalityGrandpaPrecommit = { targetHash: H256; targetNumber: number 
  **/
 export type PalletTreasuryCall =
   /**
-   * Put forward a suggestion for spending.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be signed.
-   *
-   * ## Details
-   * A deposit proportional to the value is reserved and slashed if the proposal is rejected.
-   * It is returned once the proposal is awarded.
-   *
-   * ### Complexity
-   * - O(1)
-   *
-   * ## Events
-   *
-   * Emits [`Event::Proposed`] if successful.
-   **/
-  | { name: 'ProposeSpend'; params: { value: bigint; beneficiary: MultiAddress } }
-  /**
-   * Reject a proposed spend.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::RejectOrigin`].
-   *
-   * ## Details
-   * The original deposit will be slashed.
-   *
-   * ### Complexity
-   * - O(1)
-   *
-   * ## Events
-   *
-   * Emits [`Event::Rejected`] if successful.
-   **/
-  | { name: 'RejectProposal'; params: { proposalId: number } }
-  /**
-   * Approve a proposal.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::ApproveOrigin`].
-   *
-   * ## Details
-   *
-   * At a later time, the proposal will be allocated to the beneficiary and the original
-   * deposit will be returned.
-   *
-   * ### Complexity
-   * - O(1).
-   *
-   * ## Events
-   *
-   * No events are emitted from this dispatch.
-   **/
-  | { name: 'ApproveProposal'; params: { proposalId: number } }
-  /**
    * Propose and approve a spend of treasury funds.
    *
    * ## Dispatch Origin
@@ -2045,7 +1980,7 @@ export type PalletTreasuryCall =
    *
    * ## Dispatch Origin
    *
-   * Must be signed.
+   * Must be signed
    *
    * ## Details
    *
@@ -2105,63 +2040,6 @@ export type PalletTreasuryCall =
   | { name: 'VoidSpend'; params: { index: number } };
 
 export type PalletTreasuryCallLike =
-  /**
-   * Put forward a suggestion for spending.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be signed.
-   *
-   * ## Details
-   * A deposit proportional to the value is reserved and slashed if the proposal is rejected.
-   * It is returned once the proposal is awarded.
-   *
-   * ### Complexity
-   * - O(1)
-   *
-   * ## Events
-   *
-   * Emits [`Event::Proposed`] if successful.
-   **/
-  | { name: 'ProposeSpend'; params: { value: bigint; beneficiary: MultiAddressLike } }
-  /**
-   * Reject a proposed spend.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::RejectOrigin`].
-   *
-   * ## Details
-   * The original deposit will be slashed.
-   *
-   * ### Complexity
-   * - O(1)
-   *
-   * ## Events
-   *
-   * Emits [`Event::Rejected`] if successful.
-   **/
-  | { name: 'RejectProposal'; params: { proposalId: number } }
-  /**
-   * Approve a proposal.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::ApproveOrigin`].
-   *
-   * ## Details
-   *
-   * At a later time, the proposal will be allocated to the beneficiary and the original
-   * deposit will be returned.
-   *
-   * ### Complexity
-   * - O(1).
-   *
-   * ## Events
-   *
-   * No events are emitted from this dispatch.
-   **/
-  | { name: 'ApproveProposal'; params: { proposalId: number } }
   /**
    * Propose and approve a spend of treasury funds.
    *
@@ -2248,7 +2126,7 @@ export type PalletTreasuryCallLike =
    *
    * ## Dispatch Origin
    *
-   * Must be signed.
+   * Must be signed
    *
    * ## Details
    *
@@ -8394,6 +8272,13 @@ export type PolkadotRuntimeParachainsCoretimePalletCall =
    **/
   | { name: 'RequestCoreCount'; params: { count: number } }
   /**
+   * Request to claim the instantaneous coretime sales revenue starting from the block it was
+   * last claimed until and up to the block specified. The claimed amount value is sent back
+   * to the Coretime chain in a `notify_revenue` message. At the same time, the amount is
+   * teleported to the Coretime chain.
+   **/
+  | { name: 'RequestRevenueAt'; params: { when: number } }
+  /**
    * Receive instructions from the `ExternalBrokerOrigin`, detailing how a specific core is
    * to be used.
    *
@@ -8426,6 +8311,13 @@ export type PolkadotRuntimeParachainsCoretimePalletCallLike =
    * - `count`: total number of cores
    **/
   | { name: 'RequestCoreCount'; params: { count: number } }
+  /**
+   * Request to claim the instantaneous coretime sales revenue starting from the block it was
+   * last claimed until and up to the block specified. The claimed amount value is sent back
+   * to the Coretime chain in a `notify_revenue` message. At the same time, the amount is
+   * teleported to the Coretime chain.
+   **/
+  | { name: 'RequestRevenueAt'; params: { when: number } }
   /**
    * Receive instructions from the `ExternalBrokerOrigin`, detailing how a specific core is
    * to be used.
@@ -8752,7 +8644,7 @@ export type PalletXcmCall =
    * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
    * fee on the `dest` (and possibly reserve) chains.
    * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
-   * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+   * - `remote_fees_id`: One of the included `assets` to be used to pay fees.
    * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
    * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
    * transfer, which also determines what happens to the assets on the destination chain.
@@ -9064,7 +8956,7 @@ export type PalletXcmCallLike =
    * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
    * fee on the `dest` (and possibly reserve) chains.
    * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
-   * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+   * - `remote_fees_id`: One of the included `assets` to be used to pay fees.
    * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
    * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
    * transfer, which also determines what happens to the assets on the destination chain.
@@ -12057,7 +11949,7 @@ export type PalletBalancesReasons = 'Fee' | 'Misc' | 'All';
 
 export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
-export type PalletBalancesIdAmount = { id: RococoRuntimeRuntimeHoldReason; amount: bigint };
+export type FrameSupportTokensMiscIdAmount = { id: RococoRuntimeRuntimeHoldReason; amount: bigint };
 
 export type RococoRuntimeRuntimeHoldReason =
   | { type: 'Preimage'; value: PalletPreimageHoldReason }
@@ -12070,7 +11962,7 @@ export type PalletNisHoldReason = 'NftReceipt';
 
 export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
 
-export type PalletBalancesIdAmount002 = { id: []; amount: bigint };
+export type FrameSupportTokensMiscIdAmount002 = { id: []; amount: bigint };
 
 /**
  * The `Error` enum of this pallet.
@@ -12226,10 +12118,6 @@ export type FrameSupportPalletId = FixedBytes<8>;
  * Error for the treasury pallet.
  **/
 export type PalletTreasuryError =
-  /**
-   * Proposer's balance is too low.
-   **/
-  | 'InsufficientProposersBalance'
   /**
    * No proposal, bounty or spend at that index.
    **/
@@ -12501,7 +12389,11 @@ export type PalletRankedCollectiveError =
   /**
    * The new member to exchange is the same as the old member
    **/
-  | 'SameMember';
+  | 'SameMember'
+  /**
+   * The max member count for the rank has been reached.
+   **/
+  | 'TooManyMembers';
 
 export type PalletReferendaReferendumInfoTally =
   | { type: 'Ongoing'; value: PalletReferendaReferendumStatusTally }
@@ -13175,7 +13067,11 @@ export type PalletPreimageError =
   /**
    * Too few hashes were requested to be upgraded (i.e. zero).
    **/
-  | 'TooFew';
+  | 'TooFew'
+  /**
+   * No ticket with a cost was returned by [`Config::Consideration`] to store the preimage.
+   **/
+  | 'NoCost';
 
 /**
  * The `Error` enum of this pallet.
@@ -13959,29 +13855,29 @@ export type PalletMessageQueueError =
    **/
   | 'RecursiveDisallowed';
 
-export type PolkadotRuntimeParachainsAssignerOnDemandCoreAffinityCount = {
+export type PolkadotRuntimeParachainsAssignerOnDemandTypesCoreAffinityCount = {
   coreIndex: PolkadotPrimitivesV7CoreIndex;
   count: number;
 };
 
-export type PolkadotRuntimeParachainsAssignerOnDemandQueueStatusType = {
+export type PolkadotRuntimeParachainsAssignerOnDemandTypesQueueStatusType = {
   traffic: FixedU128;
-  nextIndex: PolkadotRuntimeParachainsAssignerOnDemandQueueIndex;
-  smallestIndex: PolkadotRuntimeParachainsAssignerOnDemandQueueIndex;
+  nextIndex: PolkadotRuntimeParachainsAssignerOnDemandTypesQueueIndex;
+  smallestIndex: PolkadotRuntimeParachainsAssignerOnDemandTypesQueueIndex;
   freedIndices: BinaryHeap;
 };
 
-export type PolkadotRuntimeParachainsAssignerOnDemandQueueIndex = number;
+export type PolkadotRuntimeParachainsAssignerOnDemandTypesQueueIndex = number;
 
-export type BinaryHeap = Array<PolkadotRuntimeParachainsAssignerOnDemandReverseQueueIndex>;
+export type BinaryHeap = Array<PolkadotRuntimeParachainsAssignerOnDemandTypesReverseQueueIndex>;
 
-export type PolkadotRuntimeParachainsAssignerOnDemandReverseQueueIndex = number;
+export type PolkadotRuntimeParachainsAssignerOnDemandTypesReverseQueueIndex = number;
 
-export type BinaryHeapEnqueuedOrder = Array<PolkadotRuntimeParachainsAssignerOnDemandEnqueuedOrder>;
+export type BinaryHeapEnqueuedOrder = Array<PolkadotRuntimeParachainsAssignerOnDemandTypesEnqueuedOrder>;
 
-export type PolkadotRuntimeParachainsAssignerOnDemandEnqueuedOrder = {
+export type PolkadotRuntimeParachainsAssignerOnDemandTypesEnqueuedOrder = {
   paraId: PolkadotParachainPrimitivesPrimitivesId;
-  idx: PolkadotRuntimeParachainsAssignerOnDemandQueueIndex;
+  idx: PolkadotRuntimeParachainsAssignerOnDemandTypesQueueIndex;
 };
 
 /**
@@ -14292,7 +14188,16 @@ export type PolkadotRuntimeParachainsCoretimePalletError =
   /**
    * The paraid making the call is not the coretime brokerage system parachain.
    **/
-  'NotBroker';
+  | 'NotBroker'
+  /**
+   * Requested revenue information `when` parameter was in the future from the current
+   * block height.
+   **/
+  | 'RequestedFutureRevenue'
+  /**
+   * Failed to transfer assets to the coretime chain
+   **/
+  | 'AssetTransferFailed';
 
 export type PalletXcmQueryStatus =
   | {
@@ -14574,7 +14479,7 @@ export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrin
 
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 
-export type XcmFeePaymentRuntimeApiFeesError =
+export type XcmRuntimeApisFeesError =
   | 'Unimplemented'
   | 'VersionedConversionFailed'
   | 'WeightNotComputable'
@@ -14582,20 +14487,22 @@ export type XcmFeePaymentRuntimeApiFeesError =
   | 'AssetNotFound'
   | 'Unroutable';
 
-export type XcmFeePaymentRuntimeApiDryRunCallDryRunEffects = {
+export type XcmRuntimeApisDryRunCallDryRunEffects = {
   executionResult: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
   emittedEvents: Array<RococoRuntimeRuntimeEvent>;
   localXcm?: XcmVersionedXcm | undefined;
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };
 
-export type XcmFeePaymentRuntimeApiDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
+export type XcmRuntimeApisDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
 
-export type XcmFeePaymentRuntimeApiDryRunXcmDryRunEffects = {
+export type XcmRuntimeApisDryRunXcmDryRunEffects = {
   executionResult: StagingXcmV4TraitsOutcome;
   emittedEvents: Array<RococoRuntimeRuntimeEvent>;
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };
+
+export type XcmRuntimeApisConversionsError = 'Unsupported' | 'VersionedConversionFailed';
 
 export type SpCoreOpaqueMetadata = Bytes;
 

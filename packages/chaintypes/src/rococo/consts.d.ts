@@ -9,6 +9,7 @@ import type {
   FrameSupportPalletId,
   PalletReferendaTrackInfo,
   SpWeightsWeightV2Weight,
+  StagingXcmV4Junctions,
 } from './types';
 
 export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<Rv> {
@@ -285,22 +286,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    * Pallet `Treasury`'s constants
    **/
   treasury: {
-    /**
-     * Fraction of a proposal's value that should be bonded in order to place the proposal.
-     * An accepted proposal gets these back. A rejected proposal does not.
-     **/
-    proposalBond: Permill;
-
-    /**
-     * Minimum amount of funds that should be placed in a deposit for making a proposal.
-     **/
-    proposalBondMinimum: bigint;
-
-    /**
-     * Maximum amount of funds that should be placed in a deposit for making a proposal.
-     **/
-    proposalBondMaximum: bigint | undefined;
-
     /**
      * Period between successive spends.
      **/
@@ -1146,6 +1131,17 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     trafficDefaultValue: FixedU128;
 
     /**
+     * The maximum number of blocks some historical revenue
+     * information stored for.
+     **/
+    maxHistoricalRevenue: number;
+
+    /**
+     * Identifier for the internal revenue balance.
+     **/
+    palletId: FrameSupportPalletId;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -1255,6 +1251,11 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * The ParaId of the coretime chain.
      **/
     brokerId: number;
+
+    /**
+     * The coretime chain pot location.
+     **/
+    brokerPotLocation: StagingXcmV4Junctions;
 
     /**
      * Generic pallet constant

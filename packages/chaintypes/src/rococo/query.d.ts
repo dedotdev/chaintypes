@@ -30,8 +30,8 @@ import type {
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
-  PalletBalancesIdAmount,
-  PalletBalancesIdAmount002,
+  FrameSupportTokensMiscIdAmount,
+  FrameSupportTokensMiscIdAmount002,
   RococoRuntimeRuntimeParametersValue,
   RococoRuntimeRuntimeParametersKey,
   PalletTransactionPaymentReleases,
@@ -112,8 +112,8 @@ import type {
   PalletMessageQueueBookState,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   PalletMessageQueuePage,
-  PolkadotRuntimeParachainsAssignerOnDemandCoreAffinityCount,
-  PolkadotRuntimeParachainsAssignerOnDemandQueueStatusType,
+  PolkadotRuntimeParachainsAssignerOnDemandTypesCoreAffinityCount,
+  PolkadotRuntimeParachainsAssignerOnDemandTypesQueueStatusType,
   BinaryHeapEnqueuedOrder,
   PolkadotRuntimeParachainsAssignerCoretimeSchedule,
   PolkadotRuntimeParachainsAssignerCoretimeCoreDescriptor,
@@ -574,17 +574,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Holds on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<PalletBalancesIdAmount>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
      **/
-    holds: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<PalletBalancesIdAmount>, AccountId32>;
+    holds: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount>, AccountId32>;
 
     /**
      * Freeze locks on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<PalletBalancesIdAmount002>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount002>> =} callback
      **/
-    freezes: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<PalletBalancesIdAmount002>, AccountId32>;
+    freezes: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount002>, AccountId32>;
 
     /**
      * Generic pallet storage query
@@ -1905,17 +1905,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Holds on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<PalletBalancesIdAmount>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
      **/
-    holds: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<PalletBalancesIdAmount>, AccountId32>;
+    holds: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount>, AccountId32>;
 
     /**
      * Freeze locks on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<PalletBalancesIdAmount002>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount002>> =} callback
      **/
-    freezes: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<PalletBalancesIdAmount002>, AccountId32>;
+    freezes: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount002>, AccountId32>;
 
     /**
      * Generic pallet storage query
@@ -2887,22 +2887,22 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * `ParaId` on two or more `CoreIndex`es.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} arg
-     * @param {Callback<PolkadotRuntimeParachainsAssignerOnDemandCoreAffinityCount | undefined> =} callback
+     * @param {Callback<PolkadotRuntimeParachainsAssignerOnDemandTypesCoreAffinityCount | undefined> =} callback
      **/
     paraIdAffinity: GenericStorageQuery<
       Rv,
       (
         arg: PolkadotParachainPrimitivesPrimitivesId,
-      ) => PolkadotRuntimeParachainsAssignerOnDemandCoreAffinityCount | undefined,
+      ) => PolkadotRuntimeParachainsAssignerOnDemandTypesCoreAffinityCount | undefined,
       PolkadotParachainPrimitivesPrimitivesId
     >;
 
     /**
      * Overall status of queue (both free + affinity entries)
      *
-     * @param {Callback<PolkadotRuntimeParachainsAssignerOnDemandQueueStatusType> =} callback
+     * @param {Callback<PolkadotRuntimeParachainsAssignerOnDemandTypesQueueStatusType> =} callback
      **/
-    queueStatus: GenericStorageQuery<Rv, () => PolkadotRuntimeParachainsAssignerOnDemandQueueStatusType>;
+    queueStatus: GenericStorageQuery<Rv, () => PolkadotRuntimeParachainsAssignerOnDemandTypesQueueStatusType>;
 
     /**
      * Priority queue for all orders which don't yet (or not any more) have any core affinity.
@@ -2922,6 +2922,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       (arg: PolkadotPrimitivesV7CoreIndex) => BinaryHeapEnqueuedOrder,
       PolkadotPrimitivesV7CoreIndex
     >;
+
+    /**
+     * Keeps track of accumulated revenue from on demand order sales.
+     *
+     * @param {Callback<Array<bigint>> =} callback
+     **/
+    revenue: GenericStorageQuery<Rv, () => Array<bigint>>;
 
     /**
      * Generic pallet storage query

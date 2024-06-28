@@ -1109,112 +1109,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   treasury: {
     /**
-     * Put forward a suggestion for spending.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be signed.
-     *
-     * ## Details
-     * A deposit proportional to the value is reserved and slashed if the proposal is rejected.
-     * It is returned once the proposal is awarded.
-     *
-     * ### Complexity
-     * - O(1)
-     *
-     * ## Events
-     *
-     * Emits [`Event::Proposed`] if successful.
-     *
-     * @param {bigint} value
-     * @param {MultiAddressLike} beneficiary
-     **/
-    proposeSpend: GenericTxCall<
-      Rv,
-      (
-        value: bigint,
-        beneficiary: MultiAddressLike,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'ProposeSpend';
-            params: { value: bigint; beneficiary: MultiAddressLike };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Reject a proposed spend.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be [`Config::RejectOrigin`].
-     *
-     * ## Details
-     * The original deposit will be slashed.
-     *
-     * ### Complexity
-     * - O(1)
-     *
-     * ## Events
-     *
-     * Emits [`Event::Rejected`] if successful.
-     *
-     * @param {number} proposalId
-     **/
-    rejectProposal: GenericTxCall<
-      Rv,
-      (proposalId: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'RejectProposal';
-            params: { proposalId: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Approve a proposal.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be [`Config::ApproveOrigin`].
-     *
-     * ## Details
-     *
-     * At a later time, the proposal will be allocated to the beneficiary and the original
-     * deposit will be returned.
-     *
-     * ### Complexity
-     * - O(1).
-     *
-     * ## Events
-     *
-     * No events are emitted from this dispatch.
-     *
-     * @param {number} proposalId
-     **/
-    approveProposal: GenericTxCall<
-      Rv,
-      (proposalId: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'ApproveProposal';
-            params: { proposalId: number };
-          };
-        }
-      >
-    >;
-
-    /**
      * Propose and approve a spend of treasury funds.
      *
      * ## Dispatch Origin
@@ -1354,7 +1248,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * ## Dispatch Origin
      *
-     * Must be signed.
+     * Must be signed
      *
      * ## Details
      *
@@ -9272,6 +9166,28 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Request to claim the instantaneous coretime sales revenue starting from the block it was
+     * last claimed until and up to the block specified. The claimed amount value is sent back
+     * to the Coretime chain in a `notify_revenue` message. At the same time, the amount is
+     * teleported to the Coretime chain.
+     *
+     * @param {number} when
+     **/
+    requestRevenueAt: GenericTxCall<
+      Rv,
+      (when: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Coretime';
+          palletCall: {
+            name: 'RequestRevenueAt';
+            params: { when: number };
+          };
+        }
+      >
+    >;
+
+    /**
      * Receive instructions from the `ExternalBrokerOrigin`, detailing how a specific core is
      * to be used.
      *
@@ -9860,7 +9776,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
      * fee on the `dest` (and possibly reserve) chains.
      * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
-     * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+     * - `remote_fees_id`: One of the included `assets` to be used to pay fees.
      * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
      * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
      * transfer, which also determines what happens to the assets on the destination chain.

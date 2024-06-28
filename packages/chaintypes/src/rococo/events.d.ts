@@ -374,11 +374,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
    **/
   treasury: {
     /**
-     * New proposal.
-     **/
-    Proposed: GenericPalletEvent<Rv, 'Treasury', 'Proposed', { proposalIndex: number }>;
-
-    /**
      * We have ended a spend period and will now allocate funds.
      **/
     Spending: GenericPalletEvent<Rv, 'Treasury', 'Spending', { budgetRemaining: bigint }>;
@@ -392,11 +387,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Awarded',
       { proposalIndex: number; award: bigint; account: AccountId32 }
     >;
-
-    /**
-     * A proposal was rejected; funds were slashed.
-     **/
-    Rejected: GenericPalletEvent<Rv, 'Treasury', 'Rejected', { proposalIndex: number; slashed: bigint }>;
 
     /**
      * Some of our funds have been burnt.

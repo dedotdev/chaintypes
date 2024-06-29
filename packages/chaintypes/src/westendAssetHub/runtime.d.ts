@@ -32,15 +32,16 @@ import type {
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
   XcmVersionedAssetId,
-  XcmFeePaymentRuntimeApiFeesError,
+  XcmRuntimeApisFeesError,
   XcmVersionedXcm,
   XcmVersionedAssets,
   XcmVersionedLocation,
-  XcmFeePaymentRuntimeApiDryRunCallDryRunEffects,
-  XcmFeePaymentRuntimeApiDryRunError,
+  XcmRuntimeApisDryRunCallDryRunEffects,
+  XcmRuntimeApisDryRunError,
   AssetHubWestendRuntimeOriginCaller,
   AssetHubWestendRuntimeRuntimeCallLike,
-  XcmFeePaymentRuntimeApiDryRunXcmDryRunEffects,
+  XcmRuntimeApisDryRunXcmDryRunEffects,
+  XcmRuntimeApisConversionsError,
   AssetsCommonRuntimeApiFungiblesAccessError,
   CumulusPrimitivesCoreCollationInfo,
 } from './types';
@@ -528,7 +529,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     queryAcceptablePaymentAssets: GenericRuntimeApiMethod<
       Rv,
-      (xcmVersion: number) => Promise<Result<Array<XcmVersionedAssetId>, XcmFeePaymentRuntimeApiFeesError>>
+      (xcmVersion: number) => Promise<Result<Array<XcmVersionedAssetId>, XcmRuntimeApisFeesError>>
     >;
 
     /**
@@ -543,7 +544,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     queryXcmWeight: GenericRuntimeApiMethod<
       Rv,
-      (message: XcmVersionedXcm) => Promise<Result<SpWeightsWeightV2Weight, XcmFeePaymentRuntimeApiFeesError>>
+      (message: XcmVersionedXcm) => Promise<Result<SpWeightsWeightV2Weight, XcmRuntimeApisFeesError>>
     >;
 
     /**
@@ -560,10 +561,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     queryWeightToAssetFee: GenericRuntimeApiMethod<
       Rv,
-      (
-        weight: SpWeightsWeightV2Weight,
-        asset: XcmVersionedAssetId,
-      ) => Promise<Result<bigint, XcmFeePaymentRuntimeApiFeesError>>
+      (weight: SpWeightsWeightV2Weight, asset: XcmVersionedAssetId) => Promise<Result<bigint, XcmRuntimeApisFeesError>>
     >;
 
     /**
@@ -585,7 +583,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       (
         destination: XcmVersionedLocation,
         message: XcmVersionedXcm,
-      ) => Promise<Result<XcmVersionedAssets, XcmFeePaymentRuntimeApiFeesError>>
+      ) => Promise<Result<XcmVersionedAssets, XcmRuntimeApisFeesError>>
     >;
 
     /**
@@ -609,7 +607,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       (
         origin: AssetHubWestendRuntimeOriginCaller,
         call: AssetHubWestendRuntimeRuntimeCallLike,
-      ) => Promise<Result<XcmFeePaymentRuntimeApiDryRunCallDryRunEffects, XcmFeePaymentRuntimeApiDryRunError>>
+      ) => Promise<Result<XcmRuntimeApisDryRunCallDryRunEffects, XcmRuntimeApisDryRunError>>
     >;
 
     /**
@@ -624,7 +622,27 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       (
         originLocation: XcmVersionedLocation,
         xcm: XcmVersionedXcm,
-      ) => Promise<Result<XcmFeePaymentRuntimeApiDryRunXcmDryRunEffects, XcmFeePaymentRuntimeApiDryRunError>>
+      ) => Promise<Result<XcmRuntimeApisDryRunXcmDryRunEffects, XcmRuntimeApisDryRunError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: LocationToAccountApi - 0x9ffb505aa738d69c
+   **/
+  locationToAccountApi: {
+    /**
+     * Converts `Location` to `AccountId`.
+     *
+     * @callname: LocationToAccountApi_convert_location
+     * @param {XcmVersionedLocation} location
+     **/
+    convertLocation: GenericRuntimeApiMethod<
+      Rv,
+      (location: XcmVersionedLocation) => Promise<Result<AccountId32, XcmRuntimeApisConversionsError>>
     >;
 
     /**

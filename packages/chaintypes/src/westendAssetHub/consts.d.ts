@@ -797,6 +797,33 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
+   * Pallet `AssetsFreezer`'s constants
+   **/
+  assetsFreezer: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `ForeignAssetsFreezer`'s constants
+   **/
+  foreignAssetsFreezer: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `PoolAssetsFreezer`'s constants
+   **/
+  poolAssetsFreezer: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `StateTrieMigration`'s constants
    **/
   stateTrieMigration: {

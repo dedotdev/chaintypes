@@ -784,6 +784,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CallbackFailed: GenericPalletError<Rv>;
 
     /**
+     * The asset ID must be equal to the [`NextAssetId`].
+     **/
+    BadAssetId: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1229,6 +1234,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CallbackFailed: GenericPalletError<Rv>;
 
     /**
+     * The asset ID must be equal to the [`NextAssetId`].
+     **/
+    BadAssetId: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1370,6 +1380,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CallbackFailed: GenericPalletError<Rv>;
 
     /**
+     * The asset ID must be equal to the [`NextAssetId`].
+     **/
+    BadAssetId: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1495,6 +1510,48 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The destination account cannot exist with the swapped funds.
      **/
     BelowMinimum: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `AssetsFreezer`'s errors
+   **/
+  assetsFreezer: {
+    /**
+     * Number of freezes on an account would exceed `MaxFreezes`.
+     **/
+    TooManyFreezes: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `ForeignAssetsFreezer`'s errors
+   **/
+  foreignAssetsFreezer: {
+    /**
+     * Number of freezes on an account would exceed `MaxFreezes`.
+     **/
+    TooManyFreezes: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `PoolAssetsFreezer`'s errors
+   **/
+  poolAssetsFreezer: {
+    /**
+     * Number of freezes on an account would exceed `MaxFreezes`.
+     **/
+    TooManyFreezes: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

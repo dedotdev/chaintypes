@@ -70,6 +70,9 @@ export type AssetHubRococoRuntimeRuntimeEvent =
   | { pallet: 'NftFractionalization'; palletEvent: PalletNftFractionalizationEvent }
   | { pallet: 'PoolAssets'; palletEvent: PalletAssetsEvent }
   | { pallet: 'AssetConversion'; palletEvent: PalletAssetConversionEvent }
+  | { pallet: 'AssetsFreezer'; palletEvent: PalletAssetsFreezerEvent }
+  | { pallet: 'ForeignAssetsFreezer'; palletEvent: PalletAssetsFreezerEvent002 }
+  | { pallet: 'PoolAssetsFreezer'; palletEvent: PalletAssetsFreezerEvent }
   | { pallet: 'AssetConversionMigration'; palletEvent: PalletAssetConversionOpsEvent };
 
 /**
@@ -2083,6 +2086,20 @@ export type PalletAssetConversionEvent =
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletAssetsFreezerEvent =
+  | { name: 'Frozen'; data: { who: AccountId32; assetId: number; amount: bigint } }
+  | { name: 'Thawed'; data: { who: AccountId32; assetId: number; amount: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAssetsFreezerEvent002 =
+  | { name: 'Frozen'; data: { who: AccountId32; assetId: StagingXcmV3MultilocationMultiLocation; amount: bigint } }
+  | { name: 'Thawed'; data: { who: AccountId32; assetId: StagingXcmV3MultilocationMultiLocation; amount: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PalletAssetConversionOpsEvent =
   /**
    * Indicates that a pool has been migrated to the new account ID.
@@ -2603,7 +2620,7 @@ export type PalletBalancesReasons = 'Fee' | 'Misc' | 'All';
 
 export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
-export type PalletBalancesIdAmount = { id: AssetHubRococoRuntimeRuntimeHoldReason; amount: bigint };
+export type FrameSupportTokensMiscIdAmount = { id: AssetHubRococoRuntimeRuntimeHoldReason; amount: bigint };
 
 export type AssetHubRococoRuntimeRuntimeHoldReason = {
   type: 'NftFractionalization';
@@ -2612,7 +2629,7 @@ export type AssetHubRococoRuntimeRuntimeHoldReason = {
 
 export type PalletNftFractionalizationHoldReason = 'Fractionalized';
 
-export type PalletBalancesIdAmount002 = { id: []; amount: bigint };
+export type FrameSupportTokensMiscIdAmount002 = { id: []; amount: bigint };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3692,7 +3709,7 @@ export type PalletXcmCall =
    * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
    * fee on the `dest` (and possibly reserve) chains.
    * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
-   * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+   * - `remote_fees_id`: One of the included `assets` to be used to pay fees.
    * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
    * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
    * transfer, which also determines what happens to the assets on the destination chain.
@@ -4004,7 +4021,7 @@ export type PalletXcmCallLike =
    * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
    * fee on the `dest` (and possibly reserve) chains.
    * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
-   * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+   * - `remote_fees_id`: One of the included `assets` to be used to pay fees.
    * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
    * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
    * transfer, which also determines what happens to the assets on the destination chain.
@@ -5389,7 +5406,7 @@ export type PalletAssetsCall =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -5410,7 +5427,7 @@ export type PalletAssetsCall =
    * Unlike `create`, no funds are reserved.
    *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -5928,7 +5945,7 @@ export type PalletAssetsCallLike =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -5949,7 +5966,7 @@ export type PalletAssetsCallLike =
    * Unlike `create`, no funds are reserved.
    *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -8877,7 +8894,7 @@ export type PalletAssetsCall002 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -8898,7 +8915,7 @@ export type PalletAssetsCall002 =
    * Unlike `create`, no funds are reserved.
    *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -9461,7 +9478,7 @@ export type PalletAssetsCallLike002 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -9485,7 +9502,7 @@ export type PalletAssetsCallLike002 =
    * Unlike `create`, no funds are reserved.
    *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -10162,7 +10179,7 @@ export type PalletAssetsCall003 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -10183,7 +10200,7 @@ export type PalletAssetsCall003 =
    * Unlike `create`, no funds are reserved.
    *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -10701,7 +10718,7 @@ export type PalletAssetsCallLike003 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -10722,7 +10739,7 @@ export type PalletAssetsCallLike003 =
    * Unlike `create`, no funds are reserved.
    *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -11756,7 +11773,11 @@ export type PalletAssetsError =
   /**
    * Callback action resulted in error
    **/
-  | 'CallbackFailed';
+  | 'CallbackFailed'
+  /**
+   * The asset ID must be equal to the [`NextAssetId`].
+   **/
+  | 'BadAssetId';
 
 export type PalletUniquesCollectionDetails = {
   owner: AccountId32;
@@ -12216,6 +12237,22 @@ export type PalletAssetConversionError =
    **/
   | 'BelowMinimum';
 
+export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
+  id: AssetHubRococoRuntimeRuntimeFreezeReason;
+  amount: bigint;
+};
+
+export type AssetHubRococoRuntimeRuntimeFreezeReason = null;
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletAssetsFreezerError =
+  /**
+   * Number of freezes on an account would exceed `MaxFreezes`.
+   **/
+  'TooManyFreezes';
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -12323,7 +12360,7 @@ export type PalletTransactionPaymentInclusionFee = { baseFee: bigint; lenFee: bi
 
 export type AssetsCommonRuntimeApiFungiblesAccessError = 'AssetIdConversionFailed' | 'AmountToBalanceConversionFailed';
 
-export type XcmFeePaymentRuntimeApiFeesError =
+export type XcmRuntimeApisFeesError =
   | 'Unimplemented'
   | 'VersionedConversionFailed'
   | 'WeightNotComputable'
@@ -12331,7 +12368,7 @@ export type XcmFeePaymentRuntimeApiFeesError =
   | 'AssetNotFound'
   | 'Unroutable';
 
-export type XcmFeePaymentRuntimeApiDryRunCallDryRunEffects = {
+export type XcmRuntimeApisDryRunCallDryRunEffects = {
   executionResult: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
   emittedEvents: Array<AssetHubRococoRuntimeRuntimeEvent>;
   localXcm?: XcmVersionedXcm | undefined;
@@ -12348,13 +12385,15 @@ export type SpRuntimeDispatchErrorWithPostInfo = {
   error: DispatchError;
 };
 
-export type XcmFeePaymentRuntimeApiDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
+export type XcmRuntimeApisDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
 
-export type XcmFeePaymentRuntimeApiDryRunXcmDryRunEffects = {
+export type XcmRuntimeApisDryRunXcmDryRunEffects = {
   executionResult: StagingXcmV4TraitsOutcome;
   emittedEvents: Array<AssetHubRococoRuntimeRuntimeEvent>;
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };
+
+export type XcmRuntimeApisConversionsError = 'Unsupported' | 'VersionedConversionFailed';
 
 export type CumulusPrimitivesCoreCollationInfo = {
   upwardMessages: Array<Bytes>;
@@ -12386,4 +12425,7 @@ export type AssetHubRococoRuntimeRuntimeError =
   | { pallet: 'NftFractionalization'; palletError: PalletNftFractionalizationError }
   | { pallet: 'PoolAssets'; palletError: PalletAssetsError }
   | { pallet: 'AssetConversion'; palletError: PalletAssetConversionError }
+  | { pallet: 'AssetsFreezer'; palletError: PalletAssetsFreezerError }
+  | { pallet: 'ForeignAssetsFreezer'; palletError: PalletAssetsFreezerError }
+  | { pallet: 'PoolAssetsFreezer'; palletError: PalletAssetsFreezerError }
   | { pallet: 'AssetConversionMigration'; palletError: PalletAssetConversionOpsError };

@@ -2483,6 +2483,62 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
+   * Pallet `AssetsFreezer`'s events
+   **/
+  assetsFreezer: {
+    Frozen: GenericPalletEvent<Rv, 'AssetsFreezer', 'Frozen', { who: AccountId32; assetId: number; amount: bigint }>;
+    Thawed: GenericPalletEvent<Rv, 'AssetsFreezer', 'Thawed', { who: AccountId32; assetId: number; amount: bigint }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `ForeignAssetsFreezer`'s events
+   **/
+  foreignAssetsFreezer: {
+    Frozen: GenericPalletEvent<
+      Rv,
+      'ForeignAssetsFreezer',
+      'Frozen',
+      { who: AccountId32; assetId: StagingXcmV3MultilocationMultiLocation; amount: bigint }
+    >;
+    Thawed: GenericPalletEvent<
+      Rv,
+      'ForeignAssetsFreezer',
+      'Thawed',
+      { who: AccountId32; assetId: StagingXcmV3MultilocationMultiLocation; amount: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `PoolAssetsFreezer`'s events
+   **/
+  poolAssetsFreezer: {
+    Frozen: GenericPalletEvent<
+      Rv,
+      'PoolAssetsFreezer',
+      'Frozen',
+      { who: AccountId32; assetId: number; amount: bigint }
+    >;
+    Thawed: GenericPalletEvent<
+      Rv,
+      'PoolAssetsFreezer',
+      'Thawed',
+      { who: AccountId32; assetId: number; amount: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
    * Pallet `StateTrieMigration`'s events
    **/
   stateTrieMigration: {

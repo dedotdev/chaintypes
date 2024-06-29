@@ -33,8 +33,8 @@ import type {
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
-  PalletBalancesIdAmount,
-  PalletBalancesIdAmount002,
+  FrameSupportTokensMiscIdAmount,
+  FrameSupportTokensMiscIdAmount002,
   PalletTransactionPaymentReleases,
   PalletCollatorSelectionCandidateInfo,
   AssetHubWestendRuntimeSessionKeys,
@@ -77,6 +77,7 @@ import type {
   StagingXcmV3MultilocationMultiLocation,
   PalletNftFractionalizationDetails,
   PalletAssetConversionPoolInfo,
+  FrameSupportTokensMiscIdAmountRuntimeFreezeReason,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationMigrationLimits,
 } from './types';
@@ -603,17 +604,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Holds on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<PalletBalancesIdAmount>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
      **/
-    holds: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<PalletBalancesIdAmount>, AccountId32>;
+    holds: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount>, AccountId32>;
 
     /**
      * Freeze locks on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<PalletBalancesIdAmount002>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount002>> =} callback
      **/
-    freezes: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<PalletBalancesIdAmount002>, AccountId32>;
+    freezes: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount002>, AccountId32>;
 
     /**
      * Generic pallet storage query
@@ -1239,6 +1240,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     metadata: GenericStorageQuery<Rv, (arg: number) => PalletAssetsAssetMetadata, number>;
 
     /**
+     * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
+     * item has no effect.
+     *
+     * This can be useful for setting up constraints for IDs of the new assets. For example, by
+     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
+     * auto-increment model can be applied to all new asset IDs.
+     *
+     * The initial next asset ID can be set using the [`GenesisConfig`] or the
+     * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    nextAssetId: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -1573,6 +1589,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     >;
 
     /**
+     * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
+     * item has no effect.
+     *
+     * This can be useful for setting up constraints for IDs of the new assets. For example, by
+     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
+     * auto-increment model can be applied to all new asset IDs.
+     *
+     * The initial next asset ID can be set using the [`GenesisConfig`] or the
+     * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
+     *
+     * @param {Callback<StagingXcmV3MultilocationMultiLocation | undefined> =} callback
+     **/
+    nextAssetId: GenericStorageQuery<Rv, () => StagingXcmV3MultilocationMultiLocation | undefined>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -1645,6 +1676,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     metadata: GenericStorageQuery<Rv, (arg: number) => PalletAssetsAssetMetadata, number>;
 
     /**
+     * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
+     * item has no effect.
+     *
+     * This can be useful for setting up constraints for IDs of the new assets. For example, by
+     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
+     * auto-increment model can be applied to all new asset IDs.
+     *
+     * The initial next asset ID can be set using the [`GenesisConfig`] or the
+     * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    nextAssetId: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -1675,6 +1721,107 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<number | undefined> =} callback
      **/
     nextPoolAssetId: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `AssetsFreezer`'s storage queries
+   **/
+  assetsFreezer: {
+    /**
+     * A map that stores freezes applied on an account for a given AssetId.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>> =} callback
+     **/
+    freezes: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like]) => Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>,
+      [number, AccountId32]
+    >;
+
+    /**
+     * A map that stores the current total frozen balance for every account on a given AssetId.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    frozenBalances: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like]) => bigint | undefined,
+      [number, AccountId32]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `ForeignAssetsFreezer`'s storage queries
+   **/
+  foreignAssetsFreezer: {
+    /**
+     * A map that stores freezes applied on an account for a given AssetId.
+     *
+     * @param {[StagingXcmV3MultilocationMultiLocation, AccountId32Like]} arg
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>> =} callback
+     **/
+    freezes: GenericStorageQuery<
+      Rv,
+      (
+        arg: [StagingXcmV3MultilocationMultiLocation, AccountId32Like],
+      ) => Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>,
+      [StagingXcmV3MultilocationMultiLocation, AccountId32]
+    >;
+
+    /**
+     * A map that stores the current total frozen balance for every account on a given AssetId.
+     *
+     * @param {[StagingXcmV3MultilocationMultiLocation, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    frozenBalances: GenericStorageQuery<
+      Rv,
+      (arg: [StagingXcmV3MultilocationMultiLocation, AccountId32Like]) => bigint | undefined,
+      [StagingXcmV3MultilocationMultiLocation, AccountId32]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `PoolAssetsFreezer`'s storage queries
+   **/
+  poolAssetsFreezer: {
+    /**
+     * A map that stores freezes applied on an account for a given AssetId.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>> =} callback
+     **/
+    freezes: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like]) => Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>,
+      [number, AccountId32]
+    >;
+
+    /**
+     * A map that stores the current total frozen balance for every account on a given AssetId.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    frozenBalances: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like]) => bigint | undefined,
+      [number, AccountId32]
+    >;
 
     /**
      * Generic pallet storage query

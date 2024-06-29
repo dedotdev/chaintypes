@@ -1687,7 +1687,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
      * fee on the `dest` (and possibly reserve) chains.
      * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
-     * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+     * - `remote_fees_id`: One of the included `assets` to be used to pay fees.
      * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
      * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
      * transfer, which also determines what happens to the assets on the destination chain.
@@ -2665,7 +2665,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset.
+     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -2707,7 +2707,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Unlike `create`, no funds are reserved.
      *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset.
+     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.
@@ -6287,7 +6287,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset.
+     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -6329,7 +6329,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Unlike `create`, no funds are reserved.
      *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset.
+     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.
@@ -7584,7 +7584,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset.
+     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -7626,7 +7626,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Unlike `create`, no funds are reserved.
      *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset.
+     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.

@@ -94,7 +94,8 @@ export type PolkadotRuntimeRuntimeEvent =
   | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent }
   | { pallet: 'XcmPallet'; palletEvent: PalletXcmEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
-  | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent };
+  | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
+  | { pallet: 'IdentityMigrator'; palletEvent: PolkadotRuntimeCommonIdentityMigratorPalletEvent };
 
 /**
  * Event for the System pallet.
@@ -1076,7 +1077,8 @@ export type PolkadotRuntimeRuntimeCall =
   | { pallet: 'XcmPallet'; palletCall: PalletXcmCall }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
-  | { pallet: 'Beefy'; palletCall: PalletBeefyCall };
+  | { pallet: 'Beefy'; palletCall: PalletBeefyCall }
+  | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCall };
 
 export type PolkadotRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -1122,7 +1124,8 @@ export type PolkadotRuntimeRuntimeCallLike =
   | { pallet: 'XcmPallet'; palletCall: PalletXcmCallLike }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
-  | { pallet: 'Beefy'; palletCall: PalletBeefyCallLike };
+  | { pallet: 'Beefy'; palletCall: PalletBeefyCallLike }
+  | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5862,6 +5865,29 @@ export type SpConsensusBeefyCommitment = {
 
 export type SpConsensusBeefyPayload = Array<[FixedBytes<2>, Bytes]>;
 
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PolkadotRuntimeCommonIdentityMigratorPalletCall =
+  /**
+   * See [`Pallet::reap_identity`].
+   **/
+  | { name: 'ReapIdentity'; params: { who: AccountId32 } }
+  /**
+   * See [`Pallet::poke_deposit`].
+   **/
+  | { name: 'PokeDeposit'; params: { who: AccountId32 } };
+
+export type PolkadotRuntimeCommonIdentityMigratorPalletCallLike =
+  /**
+   * See [`Pallet::reap_identity`].
+   **/
+  | { name: 'ReapIdentity'; params: { who: AccountId32Like } }
+  /**
+   * See [`Pallet::poke_deposit`].
+   **/
+  | { name: 'PokeDeposit'; params: { who: AccountId32Like } };
+
 export type SpRuntimeBlakeTwo256 = {};
 
 export type PalletConvictionVotingTally = { ayes: bigint; nays: bigint; support: bigint };
@@ -7091,6 +7117,20 @@ export type PalletAssetRateEvent =
       name: 'AssetRateUpdated';
       data: { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; old: FixedU128; new: FixedU128 };
     };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PolkadotRuntimeCommonIdentityMigratorPalletEvent =
+  /**
+   * The identity and all sub accounts were reaped for `who`.
+   **/
+  | { name: 'IdentityReaped'; data: { who: AccountId32 } }
+  /**
+   * The deposits held for `who` were updated. `identity` is the new deposit held for
+   * identity info, and `subs` is the new deposit held for the sub-accounts.
+   **/
+  | { name: 'DepositUpdated'; data: { who: AccountId32; identity: bigint; subs: bigint } };
 
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 

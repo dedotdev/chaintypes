@@ -1310,4 +1310,13 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      **/
     [name: string]: any;
   };
+  /**
+   * Pallet `IdentityMigrator`'s constants
+   **/
+  identityMigrator: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
 }

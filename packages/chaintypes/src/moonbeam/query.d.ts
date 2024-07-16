@@ -56,6 +56,7 @@ import type {
   PalletAuthorMappingRegistrationInfo,
   NimbusPrimitivesNimbusCryptoPublic,
   PalletMoonbeamOrbitersCollatorPoolInfo,
+  SpConsensusSlotsSlot,
   PalletProxyProxyDefinition,
   PalletProxyAnnouncement,
   PalletIdentityRegistration,
@@ -1002,6 +1003,24 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
+   * Pallet `AsyncBacking`'s storage queries
+   **/
+  asyncBacking: {
+    /**
+     * First tuple element is the highest slot that has been seen in the history of this chain.
+     * Second tuple element is the number of authored blocks so far.
+     * This is a strictly-increasing value if T::AllowMultipleBlocksPerSlot = false.
+     *
+     * @param {Callback<[SpConsensusSlotsSlot, number] | undefined> =} callback
+     **/
+    slotInfo: GenericStorageQuery<Rv, () => [SpConsensusSlotsSlot, number] | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
    * Pallet `Proxy`'s storage queries
    **/
   proxy: {
@@ -1201,13 +1220,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    * Pallet `MoonbeamLazyMigrations`'s storage queries
    **/
   moonbeamLazyMigrations: {
-    /**
-     * If true, it means that LocalAssets storage has been removed.
-     *
-     * @param {Callback<boolean> =} callback
-     **/
-    localAssetsMigrationCompleted: GenericStorageQuery<Rv, () => boolean>;
-
     /**
      * The total number of suicided contracts that were removed
      *

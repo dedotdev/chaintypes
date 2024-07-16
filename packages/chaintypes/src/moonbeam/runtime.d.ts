@@ -368,6 +368,36 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     >;
 
     /**
+     *
+     * @callname: DebugRuntimeApi_trace_call
+     * @param {Header} header
+     * @param {H160} from
+     * @param {H160} to
+     * @param {BytesLike} data
+     * @param {U256} value
+     * @param {U256} gas_limit
+     * @param {U256 | undefined} max_fee_per_gas
+     * @param {U256 | undefined} max_priority_fee_per_gas
+     * @param {U256 | undefined} nonce
+     * @param {Array<[H160, Array<H256>]> | undefined} access_list
+     **/
+    traceCall: GenericRuntimeApiMethod<
+      Rv,
+      (
+        header: Header,
+        from: H160,
+        to: H160,
+        data: BytesLike,
+        value: U256,
+        gasLimit: U256,
+        maxFeePerGas?: U256 | undefined,
+        maxPriorityFeePerGas?: U256 | undefined,
+        nonce?: U256 | undefined,
+        accessList?: Array<[H160, Array<H256>]> | undefined,
+      ) => Promise<Result<[], DispatchError>>
+    >;
+
+    /**
      * Generic runtime api call
      **/
     [method: string]: GenericRuntimeApiMethod<Rv>;

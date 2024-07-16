@@ -322,6 +322,21 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
+   * Pallet `AsyncBacking`'s constants
+   **/
+  asyncBacking: {
+    /**
+     * Purely informative, but used by mocking tools like chospticks to allow knowing how to mock
+     * blocks
+     **/
+    expectedBlockTime: bigint;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Utility`'s constants
    **/
   utility: {

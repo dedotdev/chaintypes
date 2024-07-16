@@ -2671,29 +2671,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   moonbeamLazyMigrations: {
     /**
-     * See [`Pallet::clear_local_assets_storage`].
-     *
-     * @param {number} maxAssets
-     * @param {number} limit
-     **/
-    clearLocalAssetsStorage: GenericTxCall<
-      Rv,
-      (
-        maxAssets: number,
-        limit: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'MoonbeamLazyMigrations';
-          palletCall: {
-            name: 'ClearLocalAssetsStorage';
-            params: { maxAssets: number; limit: number };
-          };
-        }
-      >
-    >;
-
-    /**
      * See [`Pallet::clear_suicided_storage`].
      *
      * @param {Array<H160>} addresses

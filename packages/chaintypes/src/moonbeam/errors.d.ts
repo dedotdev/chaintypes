@@ -702,29 +702,9 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
    **/
   moonbeamLazyMigrations: {
     /**
-     * There are no more storage entries to be removed
-     **/
-    AllStorageEntriesHaveBeenRemoved: GenericPalletError<Rv>;
-
-    /**
      * The limit cannot be zero
      **/
     LimitCannotBeZero: GenericPalletError<Rv>;
-
-    /**
-     * The maximum number of assets cannot be zero
-     **/
-    MaxAssetsCannotBeZero: GenericPalletError<Rv>;
-
-    /**
-     * The limit for unlocking funds is too high
-     **/
-    UnlockLimitTooHigh: GenericPalletError<Rv>;
-
-    /**
-     * There are no more VotingOf entries to be removed and democracy funds to be unlocked
-     **/
-    AllDemocracyFundsUnlocked: GenericPalletError<Rv>;
 
     /**
      * There must be at least one address

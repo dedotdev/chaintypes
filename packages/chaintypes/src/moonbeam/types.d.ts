@@ -2681,23 +2681,15 @@ export type PalletMultisigCallLike =
  **/
 export type PalletMoonbeamLazyMigrationsCall =
   /**
-   * See [`Pallet::clear_local_assets_storage`].
-   **/
-  | { name: 'ClearLocalAssetsStorage'; params: { maxAssets: number; limit: number } }
-  /**
    * See [`Pallet::clear_suicided_storage`].
    **/
-  | { name: 'ClearSuicidedStorage'; params: { addresses: Array<H160>; limit: number } };
+  { name: 'ClearSuicidedStorage'; params: { addresses: Array<H160>; limit: number } };
 
 export type PalletMoonbeamLazyMigrationsCallLike =
   /**
-   * See [`Pallet::clear_local_assets_storage`].
-   **/
-  | { name: 'ClearLocalAssetsStorage'; params: { maxAssets: number; limit: number } }
-  /**
    * See [`Pallet::clear_suicided_storage`].
    **/
-  | { name: 'ClearSuicidedStorage'; params: { addresses: Array<H160>; limit: number } };
+  { name: 'ClearSuicidedStorage'; params: { addresses: Array<H160>; limit: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -6507,6 +6499,8 @@ export type PalletMoonbeamOrbitersError =
    **/
   | 'OrbiterStillInAPool';
 
+export type SpConsensusSlotsSlot = bigint;
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -6783,25 +6777,9 @@ export type PalletMultisigError =
  **/
 export type PalletMoonbeamLazyMigrationsError =
   /**
-   * There are no more storage entries to be removed
-   **/
-  | 'AllStorageEntriesHaveBeenRemoved'
-  /**
    * The limit cannot be zero
    **/
   | 'LimitCannotBeZero'
-  /**
-   * The maximum number of assets cannot be zero
-   **/
-  | 'MaxAssetsCannotBeZero'
-  /**
-   * The limit for unlocking funds is too high
-   **/
-  | 'UnlockLimitTooHigh'
-  /**
-   * There are no more VotingOf entries to be removed and democracy funds to be unlocked
-   **/
-  | 'AllDemocracyFundsUnlocked'
   /**
    * There must be at least one address
    **/
@@ -8071,8 +8049,6 @@ export type SpRuntimeTransactionValidityUnknownTransaction =
   | { type: 'CannotLookup' }
   | { type: 'NoUnsignedValidator' }
   | { type: 'Custom'; value: number };
-
-export type SpConsensusSlotsSlot = bigint;
 
 export type SpRuntimeBlock = { header: Header; extrinsics: Array<FpSelfContainedUncheckedExtrinsic> };
 

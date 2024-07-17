@@ -55,7 +55,19 @@ export const networks: NetworkInfo[] = [
     endpoint: ['wss://aleph-zero.api.onfinality.io/public-ws'],
   },
   {
+    chain: 'westend',
+    endpoint: ['wss://westend-rpc.dwellir.com'],
+  },
+  {
     chain: 'westendAssetHub',
     endpoint: ['wss://westend-asset-hub-rpc.polkadot.io'],
+  },
+  {
+    chain: 'westendPeople',
+    endpoint: ['wss://people-westend-rpc.dwellir.com'],
+  },
+  {
+    chain: 'paseo',
+    endpoint: ['wss://pas-rpc.stakeworld.io'],
   },
 ];

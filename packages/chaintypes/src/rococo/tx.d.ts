@@ -9,8 +9,7 @@ import type {
   RpcVersion,
   RpcV2,
   ISubmittableExtrinsicLegacy,
-  TransactionStatusLegacy,
-  TransactionStatusV2,
+  TransactionEvent,
 } from 'dedot/types';
 import type {
   MultiAddressLike,
@@ -87,8 +86,8 @@ export type ChainSubmittableExtrinsic<
   T extends IRuntimeTxCall = RococoRuntimeRuntimeCallLike,
 > = Extrinsic<MultiAddressLike, T, SpRuntimeMultiSignature, any[]> &
   (Rv extends RpcV2
-    ? ISubmittableExtrinsic<ISubmittableResult<FrameSystemEventRecord, TransactionStatusV2>>
-    : ISubmittableExtrinsicLegacy<ISubmittableResult<FrameSystemEventRecord, TransactionStatusLegacy>>);
+    ? ISubmittableExtrinsic<ISubmittableResult<FrameSystemEventRecord, TransactionEvent>>
+    : ISubmittableExtrinsicLegacy<ISubmittableResult<FrameSystemEventRecord, TransactionEvent>>);
 
 export type TxCall<Rv extends RpcVersion> = (...args: any[]) => ChainSubmittableExtrinsic<Rv>;
 

@@ -6312,6 +6312,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * See [`Pallet::establish_channel_with_system`].
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} targetSystemChain
+     **/
+    establishChannelWithSystem: GenericTxCall<
+      Rv,
+      (targetSystemChain: PolkadotParachainPrimitivesPrimitivesId) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hrmp';
+          palletCall: {
+            name: 'EstablishChannelWithSystem';
+            params: { targetSystemChain: PolkadotParachainPrimitivesPrimitivesId };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;

@@ -1984,7 +1984,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
-     * An HRMP channel was opened between two system chains.
+     * An HRMP channel was opened with a system chain.
      **/
     HrmpSystemChannelOpened: GenericPalletEvent<
       Rv,

@@ -8,4 +8,7 @@ export type { AlephApi } from './aleph';
 export type { PolkadotAssetHubApi } from './polkadotAssetHub';
 export type { RococoApi } from './rococo';
 export type { RococoAssetHubApi } from './rococoAssetHub';
+export type { WestendApi } from './westend';
+export type { WestendPeopleApi } from './westendPeople';
 export type { WestendAssetHubApi } from './westendAssetHub';
+export type { PaseoApi } from './paseo';

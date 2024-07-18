@@ -9,7 +9,7 @@ import type {
   RpcVersion,
   RpcV2,
   ISubmittableExtrinsicLegacy,
-  TransactionEvent,
+  TxStatus,
 } from 'dedot/types';
 import type {
   MultiAddressLike,
@@ -60,8 +60,8 @@ export type ChainSubmittableExtrinsic<
   T extends IRuntimeTxCall = AlephRuntimeRuntimeCallLike,
 > = Extrinsic<MultiAddressLike, T, SpRuntimeMultiSignature, any[]> &
   (Rv extends RpcV2
-    ? ISubmittableExtrinsic<ISubmittableResult<FrameSystemEventRecord, TransactionEvent>>
-    : ISubmittableExtrinsicLegacy<ISubmittableResult<FrameSystemEventRecord, TransactionEvent>>);
+    ? ISubmittableExtrinsic<ISubmittableResult<FrameSystemEventRecord, TxStatus>>
+    : ISubmittableExtrinsicLegacy<ISubmittableResult<FrameSystemEventRecord, TxStatus>>);
 
 export type TxCall<Rv extends RpcVersion> = (...args: any[]) => ChainSubmittableExtrinsic<Rv>;
 

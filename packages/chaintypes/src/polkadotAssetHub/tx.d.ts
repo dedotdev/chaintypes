@@ -9,7 +9,7 @@ import type {
   RpcVersion,
   RpcV2,
   ISubmittableExtrinsicLegacy,
-  TransactionEvent,
+  TxStatus,
 } from 'dedot/types';
 import type { MultiAddressLike, Extrinsic, BytesLike, H256, AccountId32Like, FixedBytes } from 'dedot/codecs';
 import type {
@@ -53,8 +53,8 @@ export type ChainSubmittableExtrinsic<
   T extends IRuntimeTxCall = AssetHubPolkadotRuntimeRuntimeCallLike,
 > = Extrinsic<MultiAddressLike, T, SpRuntimeMultiSignature, any[]> &
   (Rv extends RpcV2
-    ? ISubmittableExtrinsic<ISubmittableResult<FrameSystemEventRecord, TransactionEvent>>
-    : ISubmittableExtrinsicLegacy<ISubmittableResult<FrameSystemEventRecord, TransactionEvent>>);
+    ? ISubmittableExtrinsic<ISubmittableResult<FrameSystemEventRecord, TxStatus>>
+    : ISubmittableExtrinsicLegacy<ISubmittableResult<FrameSystemEventRecord, TxStatus>>);
 
 export type TxCall<Rv extends RpcVersion> = (...args: any[]) => ChainSubmittableExtrinsic<Rv>;
 

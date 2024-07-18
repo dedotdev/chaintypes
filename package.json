@@ -20,7 +20,7 @@
     "gen": "npx ts-node ./scripts/gen.ts"
   },
   "devDependencies": {
-    "@dedot/codegen": "0.0.1-alpha.40",
+    "@dedot/codegen": "0.0.1-alpha.41",
     "@polkadot/types-support": "^12.1.1",
     "@trivago/prettier-plugin-sort-imports": "^4.1.1",
     "husky": "^8.0.3",

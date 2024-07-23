@@ -32,7 +32,7 @@ export const networks: NetworkInfo[] = [
   },
   {
     chain: 'moonbeam',
-    endpoint: ['wss://moonbeam.api.onfinality.io/public-ws'],
+    endpoint: ['wss://wss.api.moonbeam.network'],
   },
   {
     chain: 'polkadotAssetHub',
@@ -56,7 +56,7 @@ export const networks: NetworkInfo[] = [
   },
   {
     chain: 'westend',
-    endpoint: ['wss://westend-rpc.dwellir.com'],
+    endpoint: ['wss://westend-rpc.polkadot.io'],
   },
   {
     chain: 'westendAssetHub',

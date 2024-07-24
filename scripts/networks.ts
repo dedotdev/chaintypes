@@ -52,7 +52,7 @@ export const networks: NetworkInfo[] = [
   },
   {
     chain: 'aleph',
-    endpoint: ['wss://aleph-zero.api.onfinality.io/public-ws'],
+    endpoint: ['wss://ws.azero.dev'],
   },
   {
     chain: 'westend',

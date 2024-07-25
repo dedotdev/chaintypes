@@ -33,4 +33,4 @@ jobs:
       - name: Commit changes && publish release
         run: |
           git add -A
-          git diff-index --quiet HEAD || { git commit -m "chore: regenerate chaintypes" && npx lerna publish prerelease -m "chore(release): publish %s - [skip ci]" --no-private --yes; }
+          git diff-index --quiet HEAD || { git commit -m "chore: regenerate chaintypes" && npx lerna publish minor -m "chore(release): publish %s - [skip ci]" --no-private --yes; }

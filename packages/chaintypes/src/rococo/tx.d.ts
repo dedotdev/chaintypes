@@ -73,6 +73,8 @@ import type {
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
   SpConsensusBeefyDoubleVotingProof,
+  SpConsensusBeefyForkVotingProof,
+  SpConsensusBeefyFutureBlockVotingProof,
   PolkadotRuntimeParachainsParasParaGenesisArgs,
   PolkadotRuntimeCommonAssignedSlotsSlotLeasePeriodStart,
   PalletStateTrieMigrationMigrationLimits,
@@ -9836,7 +9838,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {SpConsensusBeefyDoubleVotingProof} equivocationProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
-    reportEquivocation: GenericTxCall<
+    reportDoubleVoting: GenericTxCall<
       Rv,
       (
         equivocationProof: SpConsensusBeefyDoubleVotingProof,
@@ -9846,7 +9848,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         {
           pallet: 'Beefy';
           palletCall: {
-            name: 'ReportEquivocation';
+            name: 'ReportDoubleVoting';
             params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
           };
         }
@@ -9867,7 +9869,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {SpConsensusBeefyDoubleVotingProof} equivocationProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
-    reportEquivocationUnsigned: GenericTxCall<
+    reportDoubleVotingUnsigned: GenericTxCall<
       Rv,
       (
         equivocationProof: SpConsensusBeefyDoubleVotingProof,
@@ -9877,7 +9879,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         {
           pallet: 'Beefy';
           palletCall: {
-            name: 'ReportEquivocationUnsigned';
+            name: 'ReportDoubleVotingUnsigned';
             params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
           };
         }
@@ -9901,6 +9903,122 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SetNewGenesis';
             params: { delayInBlocks: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Report fork voting equivocation. This method will verify the equivocation proof
+     * and validate the given key ownership proof against the extracted offender.
+     * If both are valid, the offence will be reported.
+     *
+     * @param {SpConsensusBeefyForkVotingProof} equivocationProof
+     * @param {SpSessionMembershipProof} keyOwnerProof
+     **/
+    reportForkVoting: GenericTxCall<
+      Rv,
+      (
+        equivocationProof: SpConsensusBeefyForkVotingProof,
+        keyOwnerProof: SpSessionMembershipProof,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'ReportForkVoting';
+            params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Report fork voting equivocation. This method will verify the equivocation proof
+     * and validate the given key ownership proof against the extracted offender.
+     * If both are valid, the offence will be reported.
+     *
+     * This extrinsic must be called unsigned and it is expected that only
+     * block authors will call it (validated in `ValidateUnsigned`), as such
+     * if the block author is defined it will be defined as the equivocation
+     * reporter.
+     *
+     * @param {SpConsensusBeefyForkVotingProof} equivocationProof
+     * @param {SpSessionMembershipProof} keyOwnerProof
+     **/
+    reportForkVotingUnsigned: GenericTxCall<
+      Rv,
+      (
+        equivocationProof: SpConsensusBeefyForkVotingProof,
+        keyOwnerProof: SpSessionMembershipProof,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'ReportForkVotingUnsigned';
+            params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Report future block voting equivocation. This method will verify the equivocation proof
+     * and validate the given key ownership proof against the extracted offender.
+     * If both are valid, the offence will be reported.
+     *
+     * @param {SpConsensusBeefyFutureBlockVotingProof} equivocationProof
+     * @param {SpSessionMembershipProof} keyOwnerProof
+     **/
+    reportFutureBlockVoting: GenericTxCall<
+      Rv,
+      (
+        equivocationProof: SpConsensusBeefyFutureBlockVotingProof,
+        keyOwnerProof: SpSessionMembershipProof,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'ReportFutureBlockVoting';
+            params: {
+              equivocationProof: SpConsensusBeefyFutureBlockVotingProof;
+              keyOwnerProof: SpSessionMembershipProof;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Report future block voting equivocation. This method will verify the equivocation proof
+     * and validate the given key ownership proof against the extracted offender.
+     * If both are valid, the offence will be reported.
+     *
+     * This extrinsic must be called unsigned and it is expected that only
+     * block authors will call it (validated in `ValidateUnsigned`), as such
+     * if the block author is defined it will be defined as the equivocation
+     * reporter.
+     *
+     * @param {SpConsensusBeefyFutureBlockVotingProof} equivocationProof
+     * @param {SpSessionMembershipProof} keyOwnerProof
+     **/
+    reportFutureBlockVotingUnsigned: GenericTxCall<
+      Rv,
+      (
+        equivocationProof: SpConsensusBeefyFutureBlockVotingProof,
+        keyOwnerProof: SpSessionMembershipProof,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'ReportFutureBlockVotingUnsigned';
+            params: {
+              equivocationProof: SpConsensusBeefyFutureBlockVotingProof;
+              keyOwnerProof: SpSessionMembershipProof;
+            };
           };
         }
       >

@@ -2615,9 +2615,24 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     InvalidKeyOwnershipProof: GenericPalletError<Rv>;
 
     /**
-     * An equivocation proof provided as part of an equivocation report is invalid.
+     * A double voting proof provided as part of an equivocation report is invalid.
      **/
-    InvalidEquivocationProof: GenericPalletError<Rv>;
+    InvalidDoubleVotingProof: GenericPalletError<Rv>;
+
+    /**
+     * A fork voting proof provided as part of an equivocation report is invalid.
+     **/
+    InvalidForkVotingProof: GenericPalletError<Rv>;
+
+    /**
+     * A future block voting proof provided as part of an equivocation report is invalid.
+     **/
+    InvalidFutureBlockVotingProof: GenericPalletError<Rv>;
+
+    /**
+     * The session of the equivocation proof is invalid
+     **/
+    InvalidEquivocationProofSession: GenericPalletError<Rv>;
 
     /**
      * A given equivocation report is valid but already previously reported.

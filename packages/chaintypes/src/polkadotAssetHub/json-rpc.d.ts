@@ -41,6 +41,7 @@ export type ChainJsonRpcApis<Rv extends RpcVersion> = Pick<
   | 'childstate_getStorageEntries'
   | 'childstate_getStorageHash'
   | 'childstate_getStorageSize'
+  | 'dev_getBlockStats'
   | 'offchain_localStorageGet'
   | 'offchain_localStorageSet'
   | 'payment_queryFeeDetails'

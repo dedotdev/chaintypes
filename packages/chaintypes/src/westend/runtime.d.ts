@@ -654,8 +654,8 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     validatorSet: GenericRuntimeApiMethod<Rv, () => Promise<SpConsensusBeefyValidatorSet | undefined>>;
 
     /**
-     * Submits an unsigned extrinsic to report an equivocation. The caller
-     * must provide the equivocation proof and a key ownership proof
+     * Submits an unsigned extrinsic to report a double voting equivocation. The caller
+     * must provide the double voting proof and a key ownership proof
      * (should be obtained using `generate_key_ownership_proof`). The
      * extrinsic will be unsigned and should only be accepted for local
      * authorship (not to be broadcast to the network). This method returns
@@ -663,11 +663,11 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * reporting is disabled for the given runtime (i.e. this method is
      * hardcoded to return `None`). Only useful in an offchain context.
      *
-     * @callname: BeefyApi_submit_report_equivocation_unsigned_extrinsic
+     * @callname: BeefyApi_submit_report_double_voting_unsigned_extrinsic
      * @param {SpConsensusBeefyDoubleVotingProof} equivocation_proof
      * @param {SpRuntimeOpaqueValue} key_owner_proof
      **/
-    submitReportEquivocationUnsignedExtrinsic: GenericRuntimeApiMethod<
+    submitReportDoubleVotingUnsignedExtrinsic: GenericRuntimeApiMethod<
       Rv,
       (
         equivocationProof: SpConsensusBeefyDoubleVotingProof,

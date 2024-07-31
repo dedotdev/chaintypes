@@ -10722,7 +10722,7 @@ export type PalletBeefyCall =
    * will be reported.
    **/
   | {
-      name: 'ReportEquivocation';
+      name: 'ReportDoubleVoting';
       params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
@@ -10737,7 +10737,7 @@ export type PalletBeefyCall =
    * reporter.
    **/
   | {
-      name: 'ReportEquivocationUnsigned';
+      name: 'ReportDoubleVotingUnsigned';
       params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
@@ -10746,7 +10746,53 @@ export type PalletBeefyCall =
    *
    * Note: `delay_in_blocks` has to be at least 1.
    **/
-  | { name: 'SetNewGenesis'; params: { delayInBlocks: number } };
+  | { name: 'SetNewGenesis'; params: { delayInBlocks: number } }
+  /**
+   * Report fork voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   **/
+  | {
+      name: 'ReportForkVoting';
+      params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Report fork voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   *
+   * This extrinsic must be called unsigned and it is expected that only
+   * block authors will call it (validated in `ValidateUnsigned`), as such
+   * if the block author is defined it will be defined as the equivocation
+   * reporter.
+   **/
+  | {
+      name: 'ReportForkVotingUnsigned';
+      params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Report future block voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   **/
+  | {
+      name: 'ReportFutureBlockVoting';
+      params: { equivocationProof: SpConsensusBeefyFutureBlockVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Report future block voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   *
+   * This extrinsic must be called unsigned and it is expected that only
+   * block authors will call it (validated in `ValidateUnsigned`), as such
+   * if the block author is defined it will be defined as the equivocation
+   * reporter.
+   **/
+  | {
+      name: 'ReportFutureBlockVotingUnsigned';
+      params: { equivocationProof: SpConsensusBeefyFutureBlockVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    };
 
 export type PalletBeefyCallLike =
   /**
@@ -10756,7 +10802,7 @@ export type PalletBeefyCallLike =
    * will be reported.
    **/
   | {
-      name: 'ReportEquivocation';
+      name: 'ReportDoubleVoting';
       params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
@@ -10771,7 +10817,7 @@ export type PalletBeefyCallLike =
    * reporter.
    **/
   | {
-      name: 'ReportEquivocationUnsigned';
+      name: 'ReportDoubleVotingUnsigned';
       params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
@@ -10780,7 +10826,53 @@ export type PalletBeefyCallLike =
    *
    * Note: `delay_in_blocks` has to be at least 1.
    **/
-  | { name: 'SetNewGenesis'; params: { delayInBlocks: number } };
+  | { name: 'SetNewGenesis'; params: { delayInBlocks: number } }
+  /**
+   * Report fork voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   **/
+  | {
+      name: 'ReportForkVoting';
+      params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Report fork voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   *
+   * This extrinsic must be called unsigned and it is expected that only
+   * block authors will call it (validated in `ValidateUnsigned`), as such
+   * if the block author is defined it will be defined as the equivocation
+   * reporter.
+   **/
+  | {
+      name: 'ReportForkVotingUnsigned';
+      params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Report future block voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   **/
+  | {
+      name: 'ReportFutureBlockVoting';
+      params: { equivocationProof: SpConsensusBeefyFutureBlockVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    }
+  /**
+   * Report future block voting equivocation. This method will verify the equivocation proof
+   * and validate the given key ownership proof against the extracted offender.
+   * If both are valid, the offence will be reported.
+   *
+   * This extrinsic must be called unsigned and it is expected that only
+   * block authors will call it (validated in `ValidateUnsigned`), as such
+   * if the block author is defined it will be defined as the equivocation
+   * reporter.
+   **/
+  | {
+      name: 'ReportFutureBlockVotingUnsigned';
+      params: { equivocationProof: SpConsensusBeefyFutureBlockVotingProof; keyOwnerProof: SpSessionMembershipProof };
+    };
 
 export type SpConsensusBeefyDoubleVotingProof = {
   first: SpConsensusBeefyVoteMessage;
@@ -10802,6 +10894,21 @@ export type SpConsensusBeefyCommitment = {
 };
 
 export type SpConsensusBeefyPayload = Array<[FixedBytes<2>, Bytes]>;
+
+export type SpConsensusBeefyForkVotingProof = {
+  vote: SpConsensusBeefyVoteMessage;
+  ancestryProof: SpMmrPrimitivesAncestryProof;
+  header: Header;
+};
+
+export type SpMmrPrimitivesAncestryProof = {
+  prevPeaks: Array<H256>;
+  prevLeafCount: bigint;
+  leafCount: bigint;
+  items: Array<[bigint, H256]>;
+};
+
+export type SpConsensusBeefyFutureBlockVotingProof = { vote: SpConsensusBeefyVoteMessage };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -14460,9 +14567,21 @@ export type PalletBeefyError =
    **/
   | 'InvalidKeyOwnershipProof'
   /**
-   * An equivocation proof provided as part of an equivocation report is invalid.
+   * A double voting proof provided as part of an equivocation report is invalid.
    **/
-  | 'InvalidEquivocationProof'
+  | 'InvalidDoubleVotingProof'
+  /**
+   * A fork voting proof provided as part of an equivocation report is invalid.
+   **/
+  | 'InvalidForkVotingProof'
+  /**
+   * A future block voting proof provided as part of an equivocation report is invalid.
+   **/
+  | 'InvalidFutureBlockVotingProof'
+  /**
+   * The session of the equivocation proof is invalid
+   **/
+  | 'InvalidEquivocationProofSession'
   /**
    * A given equivocation report is valid but already previously reported.
    **/

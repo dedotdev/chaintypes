@@ -24,7 +24,7 @@
     "@dedot/codegen": "^0.3.0",
     "@polkadot/types-support": "^12.1.1",
     "@trivago/prettier-plugin-sort-imports": "^4.1.1",
-    "husky": "^8.0.3",
+    "husky": "^9.1.4",
     "lerna": "^7.4.2",
     "prettier": "^3.0.3",
     "prettier-plugin-organize-imports": "^3.2.3",

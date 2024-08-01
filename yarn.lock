@@ -892,16 +892,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/types-support@npm:^12.1.1":
-  version: 12.1.1
-  resolution: "@polkadot/types-support@npm:12.1.1"
-  dependencies:
-    "@polkadot/util": "npm:^12.6.2"
-    tslib: "npm:^2.6.2"
-  checksum: 10/4344714eb60ddfece6af0ff4b71c8a36fffa432eedd64ac9eedd7be98bcde5475e3e2565641350742db376533a751d3fc32f80258f37e6e271c5272a3709f868
-  languageName: node
-  linkType: hard
-
 "@polkadot/types-support@npm:^12.2.3":
   version: 12.2.3
   resolution: "@polkadot/types-support@npm:12.2.3"
@@ -909,21 +899,6 @@ __metadata:
     "@polkadot/util": "npm:^13.0.2"
     tslib: "npm:^2.6.2"
   checksum: 10/26f38d1d9385f367e307c29b038f71403796d276bd30a96d89f7c925dd4cd1a00385841854efd65fdfa077aa0d7711070c8112ce12ae3d82cb11942c093a5256
-  languageName: node
-  linkType: hard
-
-"@polkadot/util@npm:^12.6.2":
-  version: 12.6.2
-  resolution: "@polkadot/util@npm:12.6.2"
-  dependencies:
-    "@polkadot/x-bigint": "npm:12.6.2"
-    "@polkadot/x-global": "npm:12.6.2"
-    "@polkadot/x-textdecoder": "npm:12.6.2"
-    "@polkadot/x-textencoder": "npm:12.6.2"
-    "@types/bn.js": "npm:^5.1.5"
-    bn.js: "npm:^5.2.1"
-    tslib: "npm:^2.6.2"
-  checksum: 10/b7a3c2be417d670fc64d0642818cadbf041cbcfae830f2ee45fc2496e86c8e11c385854b733504a7d6a6391066fd0ef544a1748f0f8809215c37a5c0ff64571d
   languageName: node
   linkType: hard
 
@@ -942,16 +917,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/x-bigint@npm:12.6.2":
-  version: 12.6.2
-  resolution: "@polkadot/x-bigint@npm:12.6.2"
-  dependencies:
-    "@polkadot/x-global": "npm:12.6.2"
-    tslib: "npm:^2.6.2"
-  checksum: 10/8a9533ba955d06213e3810d48e95618186cc832375f82d8b52376a99d7c8f9fdd01ffb9c35495522aec8c28d18ca5ef6c8feeec9770b83ebb64cded4cd3b7e27
-  languageName: node
-  linkType: hard
-
 "@polkadot/x-bigint@npm:13.0.2":
   version: 13.0.2
   resolution: "@polkadot/x-bigint@npm:13.0.2"
@@ -959,15 +924,6 @@ __metadata:
     "@polkadot/x-global": "npm:13.0.2"
     tslib: "npm:^2.6.2"
   checksum: 10/6c8d198f8982ae9de78a301e1beb0d38e627ba3c6aac149a385c5f753f39dc7201761bc02ce45881b50e7cf50a883edc8f179abc50532b2b094538c388bbc146
-  languageName: node
-  linkType: hard
-
-"@polkadot/x-global@npm:12.6.2":
-  version: 12.6.2
-  resolution: "@polkadot/x-global@npm:12.6.2"
-  dependencies:
-    tslib: "npm:^2.6.2"
-  checksum: 10/9159bd77e099f734f7c48ba3e37a886ba376c50066b664ee52caf0bf8eb0399b762ca08404ef6470c22e4d20e9fc8c5e0a87026efcbbd0f21ea5504b0e33d587
   languageName: node
   linkType: hard
 
@@ -980,16 +936,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/x-textdecoder@npm:12.6.2":
-  version: 12.6.2
-  resolution: "@polkadot/x-textdecoder@npm:12.6.2"
-  dependencies:
-    "@polkadot/x-global": "npm:12.6.2"
-    tslib: "npm:^2.6.2"
-  checksum: 10/ba8ebe34cce1445a78d4eb744c8cfcf068cebfaf6c8efca23e1cdb037e8769cb2738b77b7266e3f86cd2459bb3eb87744f9518cba76e76fca609a16e6b84789e
-  languageName: node
-  linkType: hard
-
 "@polkadot/x-textdecoder@npm:13.0.2":
   version: 13.0.2
   resolution: "@polkadot/x-textdecoder@npm:13.0.2"
@@ -997,16 +943,6 @@ __metadata:
     "@polkadot/x-global": "npm:13.0.2"
     tslib: "npm:^2.6.2"
   checksum: 10/31f378a8d9b3f3963b94fd87320100a754d1381eaf4687f58d28f9de0df24acc99d80ce707ff0d2d0b4ca3477d12ac8506f7cc502fde2b08fb30867f7a7553c1
-  languageName: node
-  linkType: hard
-
-"@polkadot/x-textencoder@npm:12.6.2":
-  version: 12.6.2
-  resolution: "@polkadot/x-textencoder@npm:12.6.2"
-  dependencies:
-    "@polkadot/x-global": "npm:12.6.2"
-    tslib: "npm:^2.6.2"
-  checksum: 10/b2e721d19660f7bcf3995d695fac5d78d4bc8c5fd0632ec0735eb20dd9b4b79fad1ce7dfe7ade202c4ace5cd2d6b8ac663bb4dca273afa050f73cf1e99498f82
   languageName: node
   linkType: hard
 
@@ -2091,7 +2027,7 @@ __metadata:
   resolution: "dedot.dev@workspace:."
   dependencies:
     "@dedot/codegen": "npm:^0.3.0"
-    "@polkadot/types-support": "npm:^12.1.1"
+    "@polkadot/types-support": "npm:^12.2.3"
     "@trivago/prettier-plugin-sort-imports": "npm:^4.1.1"
     husky: "npm:^8.0.3"
     lerna: "npm:^7.4.2"

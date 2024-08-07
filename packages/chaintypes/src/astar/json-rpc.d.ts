@@ -5,6 +5,13 @@ import type { JsonRpcApis } from 'dedot/types/json-rpc';
 
 export type ChainJsonRpcApis<Rv extends RpcVersion> = Pick<
   JsonRpcApis,
+  | 'archive_unstable_body'
+  | 'archive_unstable_call'
+  | 'archive_unstable_finalizedHeight'
+  | 'archive_unstable_genesisHash'
+  | 'archive_unstable_hashByHeight'
+  | 'archive_unstable_header'
+  | 'archive_unstable_storage'
   | 'author_hasKey'
   | 'author_hasSessionKeys'
   | 'author_insertKey'
@@ -17,7 +24,6 @@ export type ChainJsonRpcApis<Rv extends RpcVersion> = Pick<
   | 'chainHead_unstable_call'
   | 'chainHead_unstable_continue'
   | 'chainHead_unstable_follow'
-  | 'chainHead_unstable_genesisHash'
   | 'chainHead_unstable_header'
   | 'chainHead_unstable_stopOperation'
   | 'chainHead_unstable_storage'
@@ -123,8 +129,7 @@ export type ChainJsonRpcApis<Rv extends RpcVersion> = Pick<
   | 'system_syncState'
   | 'system_unstable_networkState'
   | 'system_version'
-  | 'transaction_unstable_submitAndWatch'
-  | 'transaction_unstable_unwatch'
+  | 'transactionWatch_unstable_submitAndWatch'
   | 'web3_clientVersion'
   | 'web3_sha3'
 > &

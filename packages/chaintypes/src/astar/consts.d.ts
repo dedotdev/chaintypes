@@ -6,10 +6,12 @@ import type {
   FrameSystemLimitsBlockWeights,
   FrameSystemLimitsBlockLength,
   SpWeightsRuntimeDbWeight,
-  StagingXcmV3MultilocationMultiLocation,
+  PolkadotParachainPrimitivesPrimitivesId,
+  StagingXcmV4Location,
   SpWeightsWeightV2Weight,
   PalletContractsSchedule,
   PalletContractsEnvironment,
+  PalletContractsApiVersion,
 } from './types';
 
 export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<Rv> {
@@ -38,7 +40,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     dbWeight: SpWeightsRuntimeDbWeight;
 
     /**
-     * Get the chain's current version.
+     * Get the chain's in-code version.
      **/
     version: RuntimeVersion;
 
@@ -75,14 +77,14 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   identity: {
     /**
-     * The amount held on deposit for a registered identity
+     * The amount held on deposit for a registered identity.
      **/
     basicDeposit: bigint;
 
     /**
-     * The amount held on deposit per additional field for a registered identity.
+     * The amount held on deposit per encoded byte for a registered identity.
      **/
-    fieldDeposit: bigint;
+    byteDeposit: bigint;
 
     /**
      * The amount held on deposit for a registered subaccount. This should account for the fact
@@ -97,16 +99,25 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     maxSubAccounts: number;
 
     /**
-     * Maximum number of additional fields that may be stored in an ID. Needed to bound the I/O
-     * required to access an identity, but can be pretty high.
-     **/
-    maxAdditionalFields: number;
-
-    /**
      * Maxmimum number of registrars allowed in the system. Needed to bound the complexity
      * of, e.g., updating judgements.
      **/
     maxRegistrars: number;
+
+    /**
+     * The number of blocks within which a username grant must be accepted.
+     **/
+    pendingUsernameExpiration: number;
+
+    /**
+     * The maximum length of a suffix.
+     **/
+    maxSuffixLength: number;
+
+    /**
+     * The maximum length of a username, including its suffix and any system-added delimiters.
+     **/
+    maxUsernameLength: number;
 
     /**
      * Generic pallet constant
@@ -220,6 +231,11 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   parachainSystem: {
     /**
+     * Returns the parachain ID we are running with.
+     **/
+    selfParaId: PolkadotParachainPrimitivesPrimitivesId;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -238,10 +254,10 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   transactionPayment: {
     /**
-     * A fee mulitplier for `Operational` extrinsics to compute "virtual tip" to boost their
+     * A fee multiplier for `Operational` extrinsics to compute "virtual tip" to boost their
      * `priority`
      *
-     * This value is multipled by the `final_fee` to obtain a "virtual tip" that is later
+     * This value is multiplied by the `final_fee` to obtain a "virtual tip" that is later
      * added to a tip component in regular `priority` calculations.
      * It means that a `Normal` transaction can front-run a similarly-sized `Operational`
      * extrinsic (with no tip), by including a tip value greater than the virtual tip.
@@ -293,11 +309,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * The maximum number of named reserves that can exist on an account.
      **/
     maxReserves: number;
-
-    /**
-     * The maximum number of holds that can exist on an account at any time.
-     **/
-    maxHolds: number;
 
     /**
      * The maximum number of individual freeze locks that can exist on an account at any time.
@@ -562,6 +573,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   xcmpQueue: {
     /**
+     * The maximum number of inbound XCMP channels that can be suspended simultaneously.
+     *
+     * Any further channel suspensions will fail and messages may get dropped without further
+     * notice. Choosing a high value (1000) is okay; the trade-off that is described in
+     * [`InboundXcmpSuspended`] still applies at that scale.
+     **/
+    maxInboundSuspended: number;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -609,7 +629,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     /**
      * Self chain location.
      **/
-    selfLocation: StagingXcmV3MultilocationMultiLocation;
+    selfLocation: StagingXcmV4Location;
 
     /**
      * Base XCM weight.
@@ -618,6 +638,45 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * T::Weigher::weight(&msg)`.
      **/
     baseXcmWeight: SpWeightsWeightV2Weight;
+
+    /**
+     * The id of the RateLimiter.
+     **/
+    rateLimiterId: [];
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `MessageQueue`'s constants
+   **/
+  messageQueue: {
+    /**
+     * The size of the page; this implies the maximum message size which can be sent.
+     *
+     * A good value depends on the expected message sizes, their weights, the weight that is
+     * available for processing them and the maximal needed message size. The maximal message
+     * size is slightly lower than this as defined by [`MaxMessageLenOf`].
+     **/
+    heapSize: number;
+
+    /**
+     * The maximum number of stale pages (i.e. of overweight messages) allowed before culling
+     * can happen. Once there are more stale pages than this, then historical pages may be
+     * dropped, even if they contain unprocessed overweight messages.
+     **/
+    maxStale: number;
+
+    /**
+     * The amount of weight (if any) which should be provided to the message queue for
+     * servicing enqueued items.
+     *
+     * This may be legitimately `None` in the case that you will call
+     * `ServiceQueues::service_queues` manually.
+     **/
+    serviceWeight: SpWeightsWeightV2Weight | undefined;
 
     /**
      * Generic pallet constant
@@ -685,7 +744,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
 
     /**
      * The percentage of the storage deposit that should be held for using a code hash.
-     * Instantiating a contract, or calling [`chain_extension::Ext::add_delegate_dependency`]
+     * Instantiating a contract, or calling [`chain_extension::Ext::lock_delegate_dependency`]
      * protects the code from being removed. In order to prevent abuse these actions are
      * protected with a percentage of the code deposit.
      **/
@@ -707,7 +766,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
 
     /**
      * The maximum number of delegate_dependencies that a contract can lock with
-     * [`chain_extension::Ext::add_delegate_dependency`].
+     * [`chain_extension::Ext::lock_delegate_dependency`].
      **/
     maxDelegateDependencies: number;
 
@@ -736,6 +795,13 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * its type appears in the metadata. Only valid value is `()`.
      **/
     environment: PalletContractsEnvironment;
+
+    /**
+     * The version of the HostFn APIs that are available in the runtime.
+     *
+     * Only valid value is `()`.
+     **/
+    apiVersion: PalletContractsApiVersion;
 
     /**
      * Generic pallet constant

@@ -14,9 +14,9 @@ import type {
   MultiAddressLike,
   Extrinsic,
   BytesLike,
+  H256,
   AccountId32Like,
   Data,
-  H256,
   FixedBytes,
   FixedU128,
   H160,
@@ -28,24 +28,25 @@ import type {
   FrameSystemEventRecord,
   AstarRuntimeOriginCaller,
   SpWeightsWeightV2Weight,
-  PalletIdentitySimpleIdentityInfo,
-  PalletIdentityBitFlags,
+  PalletIdentityLegacyIdentityInfo,
   PalletIdentityJudgement,
   PalletMultisigTimepoint,
   AstarRuntimeProxyType,
   CumulusPrimitivesParachainInherentParachainInherentData,
+  PalletBalancesAdjustmentDirection,
   PalletVestingVestingInfo,
   PalletInflationInflationParameters,
   AstarPrimitivesDappStakingSmartContract,
   PalletDappStakingV3ForcingType,
   AstarPrimitivesOracleCurrencyId,
   AstarRuntimeSessionKeys,
-  XcmVersionedMultiLocation,
+  XcmVersionedLocation,
   XcmVersionedXcm,
-  XcmVersionedMultiAssets,
-  StagingXcmV3MultilocationMultiLocation,
+  XcmVersionedAssets,
+  StagingXcmV4Location,
   XcmV3WeightLimit,
-  XcmVersionedMultiAsset,
+  XcmVersionedAsset,
+  CumulusPrimitivesCoreAggregateMessageOrigin,
   EthereumTransactionTransactionV2,
   PalletContractsWasmDeterminism,
 } from './types';
@@ -66,7 +67,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   system: {
     /**
-     * See [`Pallet::remark`].
+     * Make some on-chain remark.
+     *
+     * Can be executed by every `origin`.
      *
      * @param {BytesLike} remark
      **/
@@ -85,7 +88,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_heap_pages`].
+     * Set the number of pages in the WebAssembly environment's heap.
      *
      * @param {bigint} pages
      **/
@@ -104,7 +107,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_code`].
+     * Set the new runtime code.
      *
      * @param {BytesLike} code
      **/
@@ -123,7 +126,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_code_without_checks`].
+     * Set the new runtime code without doing any checks of the given `code`.
+     *
+     * Note that runtime upgrades will not run if this is called with a not-increasing spec
+     * version!
      *
      * @param {BytesLike} code
      **/
@@ -142,7 +148,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_storage`].
+     * Set some items of storage.
      *
      * @param {Array<[BytesLike, BytesLike]>} items
      **/
@@ -161,7 +167,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::kill_storage`].
+     * Kill some items from storage.
      *
      * @param {Array<BytesLike>} keys
      **/
@@ -180,7 +186,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::kill_prefix`].
+     * Kill all storage items with a key that starts with the given prefix.
+     *
+     * **NOTE:** We rely on the Root origin to provide us the number of subkeys under
+     * the prefix we are removing to accurately calculate the weight of this function.
      *
      * @param {BytesLike} prefix
      * @param {number} subkeys
@@ -203,7 +212,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remark_with_event`].
+     * Make some on-chain remark and emit event.
      *
      * @param {BytesLike} remark
      **/
@@ -222,6 +231,81 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
+     * later.
+     *
+     * This call requires Root origin.
+     *
+     * @param {H256} codeHash
+     **/
+    authorizeUpgrade: GenericTxCall<
+      Rv,
+      (codeHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'System';
+          palletCall: {
+            name: 'AuthorizeUpgrade';
+            params: { codeHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
+     * later.
+     *
+     * WARNING: This authorizes an upgrade that will take place without any safety checks, for
+     * example that the spec name remains the same and that the version number increases. Not
+     * recommended for normal use. Use `authorize_upgrade` instead.
+     *
+     * This call requires Root origin.
+     *
+     * @param {H256} codeHash
+     **/
+    authorizeUpgradeWithoutChecks: GenericTxCall<
+      Rv,
+      (codeHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'System';
+          palletCall: {
+            name: 'AuthorizeUpgradeWithoutChecks';
+            params: { codeHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
+     *
+     * If the authorization required a version check, this call will ensure the spec name
+     * remains unchanged and that the spec version has increased.
+     *
+     * Depending on the runtime's `OnSetCode` configuration, this function may directly apply
+     * the new `code` in the same block or attempt to schedule the upgrade.
+     *
+     * All origins are allowed.
+     *
+     * @param {BytesLike} code
+     **/
+    applyAuthorizedUpgrade: GenericTxCall<
+      Rv,
+      (code: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'System';
+          palletCall: {
+            name: 'ApplyAuthorizedUpgrade';
+            params: { code: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -231,7 +315,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   utility: {
     /**
-     * See [`Pallet::batch`].
+     * Send a batch of dispatch calls.
+     *
+     * May be called from any origin except `None`.
+     *
+     * - `calls`: The calls to be dispatched from the same origin. The number of call must not
+     * exceed the constant: `batched_calls_limit` (available in constant metadata).
+     *
+     * If origin is root then the calls are dispatched without checking origin filter. (This
+     * includes bypassing `frame_system::Config::BaseCallFilter`).
+     *
+     * ## Complexity
+     * - O(C) where C is the number of calls to be batched.
+     *
+     * This will return `Ok` in all circumstances. To determine the success of the batch, an
+     * event is deposited. If a call failed and the batch was interrupted, then the
+     * `BatchInterrupted` event is deposited, along with the number of successful calls made
+     * and the error of the failed call. If all were successful, then the `BatchCompleted`
+     * event is deposited.
      *
      * @param {Array<AstarRuntimeRuntimeCallLike>} calls
      **/
@@ -250,7 +351,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::as_derivative`].
+     * Send a call through an indexed pseudonym of the sender.
+     *
+     * Filter from origin are passed along. The call will be dispatched with an origin which
+     * use the same filter as the origin of this call.
+     *
+     * NOTE: If you need to ensure that any account-based filtering is not honored (i.e.
+     * because you expect `proxy` to have been used prior in the call stack and you do not want
+     * the call restrictions to apply to any sub-accounts), then use `as_multi_threshold_1`
+     * in the Multisig pallet instead.
+     *
+     * NOTE: Prior to version *12, this was called `as_limited_sub`.
+     *
+     * The dispatch origin for this call must be _Signed_.
      *
      * @param {number} index
      * @param {AstarRuntimeRuntimeCallLike} call
@@ -273,7 +386,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::batch_all`].
+     * Send a batch of dispatch calls and atomically execute them.
+     * The whole transaction will rollback and fail if any of the calls failed.
+     *
+     * May be called from any origin except `None`.
+     *
+     * - `calls`: The calls to be dispatched from the same origin. The number of call must not
+     * exceed the constant: `batched_calls_limit` (available in constant metadata).
+     *
+     * If origin is root then the calls are dispatched without checking origin filter. (This
+     * includes bypassing `frame_system::Config::BaseCallFilter`).
+     *
+     * ## Complexity
+     * - O(C) where C is the number of calls to be batched.
      *
      * @param {Array<AstarRuntimeRuntimeCallLike>} calls
      **/
@@ -292,7 +417,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::dispatch_as`].
+     * Dispatches a function call with a provided origin.
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * ## Complexity
+     * - O(1).
      *
      * @param {AstarRuntimeOriginCaller} asOrigin
      * @param {AstarRuntimeRuntimeCallLike} call
@@ -315,7 +445,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_batch`].
+     * Send a batch of dispatch calls.
+     * Unlike `batch`, it allows errors and won't interrupt.
+     *
+     * May be called from any origin except `None`.
+     *
+     * - `calls`: The calls to be dispatched from the same origin. The number of call must not
+     * exceed the constant: `batched_calls_limit` (available in constant metadata).
+     *
+     * If origin is root then the calls are dispatch without checking origin filter. (This
+     * includes bypassing `frame_system::Config::BaseCallFilter`).
+     *
+     * ## Complexity
+     * - O(C) where C is the number of calls to be batched.
      *
      * @param {Array<AstarRuntimeRuntimeCallLike>} calls
      **/
@@ -334,7 +476,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::with_weight`].
+     * Dispatch a function call with a specified weight.
+     *
+     * This function does not check the weight of the call, and instead allows the
+     * Root origin to specify the weight of the call.
+     *
+     * The dispatch origin for this call must be _Root_.
      *
      * @param {AstarRuntimeRuntimeCallLike} call
      * @param {SpWeightsWeightV2Weight} weight
@@ -366,7 +513,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   identity: {
     /**
-     * See [`Pallet::add_registrar`].
+     * Add a registrar to the system.
+     *
+     * The dispatch origin for this call must be `T::RegistrarOrigin`.
+     *
+     * - `account`: the account of the registrar.
+     *
+     * Emits `RegistrarAdded` if successful.
      *
      * @param {MultiAddressLike} account
      **/
@@ -385,26 +538,43 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_identity`].
+     * Set an account's identity information and reserve the appropriate deposit.
      *
-     * @param {PalletIdentitySimpleIdentityInfo} info
+     * If the account already has identity information, the deposit is taken as part payment
+     * for the new deposit.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `info`: The identity information.
+     *
+     * Emits `IdentitySet` if successful.
+     *
+     * @param {PalletIdentityLegacyIdentityInfo} info
      **/
     setIdentity: GenericTxCall<
       Rv,
-      (info: PalletIdentitySimpleIdentityInfo) => ChainSubmittableExtrinsic<
+      (info: PalletIdentityLegacyIdentityInfo) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Identity';
           palletCall: {
             name: 'SetIdentity';
-            params: { info: PalletIdentitySimpleIdentityInfo };
+            params: { info: PalletIdentityLegacyIdentityInfo };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::set_subs`].
+     * Set the sub-accounts of the sender.
+     *
+     * Payment: Any aggregate balance reserved by previous `set_subs` calls will be returned
+     * and an amount `SubAccountDeposit` will be reserved for each item in `subs`.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must have a registered
+     * identity.
+     *
+     * - `subs`: The identity's (new) sub-accounts.
      *
      * @param {Array<[AccountId32Like, Data]>} subs
      **/
@@ -423,7 +593,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::clear_identity`].
+     * Clear an account's identity info and all sub-accounts and return all deposits.
+     *
+     * Payment: All reserved balances on the account are returned.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must have a registered
+     * identity.
+     *
+     * Emits `IdentityCleared` if successful.
      *
      **/
     clearIdentity: GenericTxCall<
@@ -440,7 +617,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::request_judgement`].
+     * Request a judgement from a registrar.
+     *
+     * Payment: At most `max_fee` will be reserved for payment to the registrar if judgement
+     * given.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must have a
+     * registered identity.
+     *
+     * - `reg_index`: The index of the registrar whose judgement is requested.
+     * - `max_fee`: The maximum fee that may be paid. This should just be auto-populated as:
+     *
+     * ```nocompile
+     * Self::registrars().get(reg_index).unwrap().fee
+     * ```
+     *
+     * Emits `JudgementRequested` if successful.
      *
      * @param {number} regIndex
      * @param {bigint} maxFee
@@ -463,7 +655,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cancel_request`].
+     * Cancel a previous request.
+     *
+     * Payment: A previously reserved deposit is returned on success.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must have a
+     * registered identity.
+     *
+     * - `reg_index`: The index of the registrar whose judgement is no longer requested.
+     *
+     * Emits `JudgementUnrequested` if successful.
      *
      * @param {number} regIndex
      **/
@@ -482,7 +683,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_fee`].
+     * Set the fee required for a judgement to be requested from a registrar.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must be the account
+     * of the registrar whose index is `index`.
+     *
+     * - `index`: the index of the registrar whose fee is to be set.
+     * - `fee`: the new fee.
      *
      * @param {number} index
      * @param {bigint} fee
@@ -505,7 +712,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_account_id`].
+     * Change the account associated with a registrar.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must be the account
+     * of the registrar whose index is `index`.
+     *
+     * - `index`: the index of the registrar whose fee is to be set.
+     * - `new`: the new account ID.
      *
      * @param {number} index
      * @param {MultiAddressLike} new_
@@ -528,30 +741,50 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_fields`].
+     * Set the field information for a registrar.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must be the account
+     * of the registrar whose index is `index`.
+     *
+     * - `index`: the index of the registrar whose fee is to be set.
+     * - `fields`: the fields that the registrar concerns themselves with.
      *
      * @param {number} index
-     * @param {PalletIdentityBitFlags} fields
+     * @param {bigint} fields
      **/
     setFields: GenericTxCall<
       Rv,
       (
         index: number,
-        fields: PalletIdentityBitFlags,
+        fields: bigint,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Identity';
           palletCall: {
             name: 'SetFields';
-            params: { index: number; fields: PalletIdentityBitFlags };
+            params: { index: number; fields: bigint };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::provide_judgement`].
+     * Provide a judgement for an account's identity.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must be the account
+     * of the registrar whose index is `reg_index`.
+     *
+     * - `reg_index`: the index of the registrar whose judgement is being made.
+     * - `target`: the account whose identity the judgement is upon. This must be an account
+     * with a registered identity.
+     * - `judgement`: the judgement of the registrar of index `reg_index` about `target`.
+     * - `identity`: The hash of the [`IdentityInformationProvider`] for that the judgement is
+     * provided.
+     *
+     * Note: Judgements do not apply to a username.
+     *
+     * Emits `JudgementGiven` if successful.
      *
      * @param {number} regIndex
      * @param {MultiAddressLike} target
@@ -578,7 +811,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::kill_identity`].
+     * Remove an account's identity and sub-account information and slash the deposits.
+     *
+     * Payment: Reserved balances from `set_subs` and `set_identity` are slashed and handled by
+     * `Slash`. Verification request deposits are not returned; they should be cancelled
+     * manually using `cancel_request`.
+     *
+     * The dispatch origin for this call must match `T::ForceOrigin`.
+     *
+     * - `target`: the account whose identity the judgement is upon. This must be an account
+     * with a registered identity.
+     *
+     * Emits `IdentityKilled` if successful.
      *
      * @param {MultiAddressLike} target
      **/
@@ -597,7 +841,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::add_sub`].
+     * Add the given account to the sender's subs.
+     *
+     * Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated
+     * to the sender.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must have a registered
+     * sub identity of `sub`.
      *
      * @param {MultiAddressLike} sub
      * @param {Data} data
@@ -620,7 +870,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::rename_sub`].
+     * Alter the associated name of the given sub-account.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must have a registered
+     * sub identity of `sub`.
      *
      * @param {MultiAddressLike} sub
      * @param {Data} data
@@ -643,7 +896,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_sub`].
+     * Remove the given account from the sender's subs.
+     *
+     * Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated
+     * to the sender.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must have a registered
+     * sub identity of `sub`.
      *
      * @param {MultiAddressLike} sub
      **/
@@ -662,7 +921,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::quit_sub`].
+     * Remove the sender as a sub-account.
+     *
+     * Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated
+     * to the sender (*not* the original depositor).
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must have a registered
+     * super-identity.
+     *
+     * NOTE: This should not normally be used, but is provided in the case that the non-
+     * controller of an account is maliciously registered as a sub-account.
      *
      **/
     quitSub: GenericTxCall<
@@ -679,6 +947,166 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Add an `AccountId` with permission to grant usernames with a given `suffix` appended.
+     *
+     * The authority can grant up to `allocation` usernames. To top up their allocation, they
+     * should just issue (or request via governance) a new `add_username_authority` call.
+     *
+     * @param {MultiAddressLike} authority
+     * @param {BytesLike} suffix
+     * @param {number} allocation
+     **/
+    addUsernameAuthority: GenericTxCall<
+      Rv,
+      (
+        authority: MultiAddressLike,
+        suffix: BytesLike,
+        allocation: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'AddUsernameAuthority';
+            params: { authority: MultiAddressLike; suffix: BytesLike; allocation: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove `authority` from the username authorities.
+     *
+     * @param {MultiAddressLike} authority
+     **/
+    removeUsernameAuthority: GenericTxCall<
+      Rv,
+      (authority: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'RemoveUsernameAuthority';
+            params: { authority: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the username for `who`. Must be called by a username authority.
+     *
+     * The authority must have an `allocation`. Users can either pre-sign their usernames or
+     * accept them later.
+     *
+     * Usernames must:
+     * - Only contain lowercase ASCII characters or digits.
+     * - When combined with the suffix of the issuing authority be _less than_ the
+     * `MaxUsernameLength`.
+     *
+     * @param {MultiAddressLike} who
+     * @param {BytesLike} username
+     * @param {SpRuntimeMultiSignature | undefined} signature
+     **/
+    setUsernameFor: GenericTxCall<
+      Rv,
+      (
+        who: MultiAddressLike,
+        username: BytesLike,
+        signature: SpRuntimeMultiSignature | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'SetUsernameFor';
+            params: { who: MultiAddressLike; username: BytesLike; signature: SpRuntimeMultiSignature | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Accept a given username that an `authority` granted. The call must include the full
+     * username, as in `username.suffix`.
+     *
+     * @param {BytesLike} username
+     **/
+    acceptUsername: GenericTxCall<
+      Rv,
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'AcceptUsername';
+            params: { username: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove an expired username approval. The username was approved by an authority but never
+     * accepted by the user and must now be beyond its expiration. The call must include the
+     * full username, as in `username.suffix`.
+     *
+     * @param {BytesLike} username
+     **/
+    removeExpiredApproval: GenericTxCall<
+      Rv,
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'RemoveExpiredApproval';
+            params: { username: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set a given username as the primary. The username should include the suffix.
+     *
+     * @param {BytesLike} username
+     **/
+    setPrimaryUsername: GenericTxCall<
+      Rv,
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'SetPrimaryUsername';
+            params: { username: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a username that corresponds to an account with no identity. Exists when a user
+     * gets a username but then calls `clear_identity`.
+     *
+     * @param {BytesLike} username
+     **/
+    removeDanglingUsername: GenericTxCall<
+      Rv,
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'RemoveDanglingUsername';
+            params: { username: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -688,7 +1116,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   timestamp: {
     /**
-     * See [`Pallet::set`].
+     * Set the current time.
+     *
+     * This call should be invoked exactly once per block. It will panic at the finalization
+     * phase, if this call hasn't been invoked by that time.
+     *
+     * The timestamp should be greater than the previous one by the amount specified by
+     * [`Config::MinimumPeriod`].
+     *
+     * The dispatch origin for this call must be _None_.
+     *
+     * This dispatch class is _Mandatory_ to ensure it gets executed in the block. Be aware
+     * that changing the complexity of this call could result exhausting the resources in a
+     * block to execute any other calls.
+     *
+     * ## Complexity
+     * - `O(1)` (Note that implementations of `OnTimestampSet` must also be `O(1)`)
+     * - 1 storage read and 1 storage mutation (codec `O(1)` because of `DidUpdate::take` in
+     * `on_finalize`)
+     * - 1 event handler `on_timestamp_set`. Must be `O(1)`.
      *
      * @param {bigint} now
      **/
@@ -716,7 +1162,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   multisig: {
     /**
-     * See [`Pallet::as_multi_threshold_1`].
+     * Immediately dispatch a multi-signature call using a single approval from the caller.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `other_signatories`: The accounts (other than the sender) who are part of the
+     * multi-signature, but do not participate in the approval process.
+     * - `call`: The call to be executed.
+     *
+     * Result is equivalent to the dispatched result.
+     *
+     * ## Complexity
+     * O(Z + C) where Z is the length of the call and C its execution weight.
      *
      * @param {Array<AccountId32Like>} otherSignatories
      * @param {AstarRuntimeRuntimeCallLike} call
@@ -739,7 +1196,45 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::as_multi`].
+     * Register approval for a dispatch to be made from a deterministic composite account if
+     * approved by a total of `threshold - 1` of `other_signatories`.
+     *
+     * If there are enough, then dispatch the call.
+     *
+     * Payment: `DepositBase` will be reserved if this is the first approval, plus
+     * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
+     * is cancelled.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `threshold`: The total number of approvals for this dispatch before it is executed.
+     * - `other_signatories`: The accounts (other than the sender) who can approve this
+     * dispatch. May not be empty.
+     * - `maybe_timepoint`: If this is the first approval, then this must be `None`. If it is
+     * not the first approval, then it must be `Some`, with the timepoint (block number and
+     * transaction index) of the first approval transaction.
+     * - `call`: The call to be executed.
+     *
+     * NOTE: Unless this is the final approval, you will generally want to use
+     * `approve_as_multi` instead, since it only requires a hash of the call.
+     *
+     * Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise
+     * on success, result is `Ok` and the result from the interior call, if it was executed,
+     * may be found in the deposited `MultisigExecuted` event.
+     *
+     * ## Complexity
+     * - `O(S + Z + Call)`.
+     * - Up to one balance-reserve or unreserve operation.
+     * - One passthrough operation, one insert, both `O(S)` where `S` is the number of
+     * signatories. `S` is capped by `MaxSignatories`, with weight being proportional.
+     * - One call encode & hash, both of complexity `O(Z)` where `Z` is tx-len.
+     * - One encode & hash, both of complexity `O(S)`.
+     * - Up to one binary search and insert (`O(logS + S)`).
+     * - I/O: 1 read `O(S)`, up to 1 mutate `O(S)`. Up to one remove.
+     * - One event.
+     * - The weight of the `call`.
+     * - Storage: inserts one item, value size bounded by `MaxSignatories`, with a deposit
+     * taken for its lifetime of `DepositBase + threshold * DepositFactor`.
      *
      * @param {number} threshold
      * @param {Array<AccountId32Like>} otherSignatories
@@ -774,7 +1269,36 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::approve_as_multi`].
+     * Register approval for a dispatch to be made from a deterministic composite account if
+     * approved by a total of `threshold - 1` of `other_signatories`.
+     *
+     * Payment: `DepositBase` will be reserved if this is the first approval, plus
+     * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
+     * is cancelled.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `threshold`: The total number of approvals for this dispatch before it is executed.
+     * - `other_signatories`: The accounts (other than the sender) who can approve this
+     * dispatch. May not be empty.
+     * - `maybe_timepoint`: If this is the first approval, then this must be `None`. If it is
+     * not the first approval, then it must be `Some`, with the timepoint (block number and
+     * transaction index) of the first approval transaction.
+     * - `call_hash`: The hash of the call to be executed.
+     *
+     * NOTE: If this is the final approval, you will want to use `as_multi` instead.
+     *
+     * ## Complexity
+     * - `O(S)`.
+     * - Up to one balance-reserve or unreserve operation.
+     * - One passthrough operation, one insert, both `O(S)` where `S` is the number of
+     * signatories. `S` is capped by `MaxSignatories`, with weight being proportional.
+     * - One encode & hash, both of complexity `O(S)`.
+     * - Up to one binary search and insert (`O(logS + S)`).
+     * - I/O: 1 read `O(S)`, up to 1 mutate `O(S)`. Up to one remove.
+     * - One event.
+     * - Storage: inserts one item, value size bounded by `MaxSignatories`, with a deposit
+     * taken for its lifetime of `DepositBase + threshold * DepositFactor`.
      *
      * @param {number} threshold
      * @param {Array<AccountId32Like>} otherSignatories
@@ -809,7 +1333,27 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cancel_as_multi`].
+     * Cancel a pre-existing, on-going multisig transaction. Any deposit reserved previously
+     * for this operation will be unreserved on success.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `threshold`: The total number of approvals for this dispatch before it is executed.
+     * - `other_signatories`: The accounts (other than the sender) who can approve this
+     * dispatch. May not be empty.
+     * - `timepoint`: The timepoint (block number and transaction index) of the first approval
+     * transaction for this dispatch.
+     * - `call_hash`: The hash of the call to be executed.
+     *
+     * ## Complexity
+     * - `O(S)`.
+     * - Up to one balance-reserve or unreserve operation.
+     * - One passthrough operation, one insert, both `O(S)` where `S` is the number of
+     * signatories. `S` is capped by `MaxSignatories`, with weight being proportional.
+     * - One encode & hash, both of complexity `O(S)`.
+     * - One event.
+     * - I/O: 1 read `O(S)`, one remove.
+     * - Storage: removes one item.
      *
      * @param {number} threshold
      * @param {Array<AccountId32Like>} otherSignatories
@@ -850,7 +1394,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   proxy: {
     /**
-     * See [`Pallet::proxy`].
+     * Dispatch the given `call` from an account that the sender is authorised for through
+     * `add_proxy`.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `real`: The account that the proxy will make a call on behalf of.
+     * - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
+     * - `call`: The call to be made by the `real` account.
      *
      * @param {MultiAddressLike} real
      * @param {AstarRuntimeProxyType | undefined} forceProxyType
@@ -879,7 +1431,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::add_proxy`].
+     * Register a proxy account for the sender that is able to make calls on its behalf.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `proxy`: The account that the `caller` would like to make a proxy.
+     * - `proxy_type`: The permissions allowed for this proxy account.
+     * - `delay`: The announcement period required of the initial proxy. Will generally be
+     * zero.
      *
      * @param {MultiAddressLike} delegate
      * @param {AstarRuntimeProxyType} proxyType
@@ -904,7 +1464,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_proxy`].
+     * Unregister a proxy account for the sender.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `proxy`: The account that the `caller` would like to remove as a proxy.
+     * - `proxy_type`: The permissions currently enabled for the removed proxy account.
      *
      * @param {MultiAddressLike} delegate
      * @param {AstarRuntimeProxyType} proxyType
@@ -929,7 +1495,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_proxies`].
+     * Unregister all proxy accounts for the sender.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * WARNING: This may be called on accounts created by `pure`, however if done, then
+     * the unreserved fees will be inaccessible. **All access to this account will be lost.**
      *
      **/
     removeProxies: GenericTxCall<
@@ -946,7 +1517,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::create_pure`].
+     * Spawn a fresh new account that is guaranteed to be otherwise inaccessible, and
+     * initialize it with a proxy of `proxy_type` for `origin` sender.
+     *
+     * Requires a `Signed` origin.
+     *
+     * - `proxy_type`: The type of the proxy that the sender will be registered as over the
+     * new account. This will almost always be the most permissive `ProxyType` possible to
+     * allow for maximum flexibility.
+     * - `index`: A disambiguation index, in case this is called multiple times in the same
+     * transaction (e.g. with `utility::batch`). Unless you're using `batch` you probably just
+     * want to use `0`.
+     * - `delay`: The announcement period required of the initial proxy. Will generally be
+     * zero.
+     *
+     * Fails with `Duplicate` if this has already been called in this transaction, from the
+     * same sender, with the same parameters.
+     *
+     * Fails if there are insufficient funds to pay for deposit.
      *
      * @param {AstarRuntimeProxyType} proxyType
      * @param {number} delay
@@ -971,7 +1559,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::kill_pure`].
+     * Removes a previously spawned pure proxy.
+     *
+     * WARNING: **All access to this account will be lost.** Any funds held in it will be
+     * inaccessible.
+     *
+     * Requires a `Signed` origin, and the sender account must have been created by a call to
+     * `pure` with corresponding parameters.
+     *
+     * - `spawner`: The account that originally called `pure` to create this account.
+     * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+     * - `proxy_type`: The proxy type originally passed to `pure`.
+     * - `height`: The height of the chain when the call to `pure` was processed.
+     * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+     *
+     * Fails with `NoPermission` in case the caller is not a previously created pure
+     * account whose `pure` call has corresponding parameters.
      *
      * @param {MultiAddressLike} spawner
      * @param {AstarRuntimeProxyType} proxyType
@@ -1006,7 +1609,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::announce`].
+     * Publish the hash of a proxy-call that will be made in the future.
+     *
+     * This must be called some number of blocks before the corresponding `proxy` is attempted
+     * if the delay associated with the proxy relationship is greater than zero.
+     *
+     * No more than `MaxPending` announcements may be made at any one time.
+     *
+     * This will take a deposit of `AnnouncementDepositFactor` as well as
+     * `AnnouncementDepositBase` if there are no other pending announcements.
+     *
+     * The dispatch origin for this call must be _Signed_ and a proxy of `real`.
+     *
+     * Parameters:
+     * - `real`: The account that the proxy will make a call on behalf of.
+     * - `call_hash`: The hash of the call to be made by the `real` account.
      *
      * @param {MultiAddressLike} real
      * @param {H256} callHash
@@ -1029,7 +1646,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_announcement`].
+     * Remove a given announcement.
+     *
+     * May be called by a proxy account to remove a call they previously announced and return
+     * the deposit.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `real`: The account that the proxy will make a call on behalf of.
+     * - `call_hash`: The hash of the call to be made by the `real` account.
      *
      * @param {MultiAddressLike} real
      * @param {H256} callHash
@@ -1052,7 +1678,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::reject_announcement`].
+     * Remove the given announcement of a delegate.
+     *
+     * May be called by a target (proxied) account to remove a call that one of their delegates
+     * (`delegate`) has announced they want to execute. The deposit is returned.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `delegate`: The account that previously announced the call.
+     * - `call_hash`: The hash of the call to be made.
      *
      * @param {MultiAddressLike} delegate
      * @param {H256} callHash
@@ -1075,7 +1710,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::proxy_announced`].
+     * Dispatch the given `call` from an account that the sender is authorized for through
+     * `add_proxy`.
+     *
+     * Removes any corresponding announcement(s).
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `real`: The account that the proxy will make a call on behalf of.
+     * - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
+     * - `call`: The call to be made by the `real` account.
      *
      * @param {MultiAddressLike} delegate
      * @param {MultiAddressLike} real
@@ -1116,7 +1761,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   parachainSystem: {
     /**
-     * See [`Pallet::set_validation_data`].
+     * Set the current validation data.
+     *
+     * This should be invoked exactly once per block. It will panic at the finalization
+     * phase if the call was not invoked.
+     *
+     * The dispatch origin for this call must be `Inherent`
+     *
+     * As a side effect, this function upgrades the current validation function
+     * if the appropriate time has come.
      *
      * @param {CumulusPrimitivesParachainInherentParachainInherentData} data
      **/
@@ -1135,7 +1788,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::sudo_send_upward_message`].
      *
      * @param {BytesLike} message
      **/
@@ -1154,7 +1806,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::authorize_upgrade`].
+     * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
+     * later.
+     *
+     * The `check_version` parameter sets a boolean flag for whether or not the runtime's spec
+     * version and name should be verified on upgrade. Since the authorization only has a hash,
+     * it cannot actually perform the verification.
+     *
+     * This call requires Root origin.
      *
      * @param {H256} codeHash
      * @param {boolean} checkVersion
@@ -1177,7 +1836,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::enact_authorized_upgrade`].
+     * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
+     *
+     * If the authorization required a version check, this call will ensure the spec name
+     * remains unchanged and that the spec version has increased.
+     *
+     * Note that this function will not apply the new `code`, but only attempt to schedule the
+     * upgrade with the Relay Chain.
+     *
+     * All origins are allowed.
      *
      * @param {BytesLike} code
      **/
@@ -1214,7 +1881,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   balances: {
     /**
-     * See [`Pallet::transfer_allow_death`].
+     * Transfer some liquid free balance to another account.
+     *
+     * `transfer_allow_death` will set the `FreeBalance` of the sender and receiver.
+     * If the sender's account is below the existential deposit as a result
+     * of the transfer, the account will be reaped.
+     *
+     * The dispatch origin for this call must be `Signed` by the transactor.
      *
      * @param {MultiAddressLike} dest
      * @param {bigint} value
@@ -1237,7 +1910,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_transfer`].
+     * Exactly as `transfer_allow_death`, except the origin must be root and the source account
+     * may be specified.
      *
      * @param {MultiAddressLike} source
      * @param {MultiAddressLike} dest
@@ -1262,7 +1936,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_keep_alive`].
+     * Same as the [`transfer_allow_death`] call, but with a check that the transfer will not
+     * kill the origin account.
+     *
+     * 99% of the time you want [`transfer_allow_death`] instead.
+     *
+     * [`transfer_allow_death`]: struct.Pallet.html#method.transfer
      *
      * @param {MultiAddressLike} dest
      * @param {bigint} value
@@ -1285,7 +1964,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_all`].
+     * Transfer the entire transferable balance from the caller account.
+     *
+     * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+     * any locked, reserved, or existential deposits (when `keep_alive` is `true`), will not be
+     * transferred by this function. To ensure that this function results in a killed account,
+     * you might need to prepare the account by removing any reference counters, storage
+     * deposits, etc...
+     *
+     * The dispatch origin of this call must be Signed.
+     *
+     * - `dest`: The recipient of the transfer.
+     * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+     * of the funds the account has, causing the sender account to be killed (false), or
+     * transfer everything except at least the existential deposit, which will guarantee to
+     * keep the sender account alive (true).
      *
      * @param {MultiAddressLike} dest
      * @param {boolean} keepAlive
@@ -1308,7 +2001,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_unreserve`].
+     * Unreserve some balance from a user by force.
+     *
+     * Can only be called by ROOT.
      *
      * @param {MultiAddressLike} who
      * @param {bigint} amount
@@ -1331,7 +2026,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::upgrade_accounts`].
+     * Upgrade a specified account.
+     *
+     * - `origin`: Must be `Signed`.
+     * - `who`: The account to be upgraded.
+     *
+     * This will waive the transaction fee if at least all but 10% of the accounts needed to
+     * be upgraded. (We let some not have to be upgraded just in order to allow for the
+     * possibililty of churn).
      *
      * @param {Array<AccountId32Like>} who
      **/
@@ -1350,7 +2052,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_set_balance`].
+     * Set the regular balance of a given account.
+     *
+     * The dispatch origin for this call is `root`.
      *
      * @param {MultiAddressLike} who
      * @param {bigint} newFree
@@ -1373,7 +2077,33 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::burn`].
+     * Adjust the total issuance in a saturating way.
+     *
+     * Can only be called by root and always needs a positive `delta`.
+     *
+     * # Example
+     *
+     * @param {PalletBalancesAdjustmentDirection} direction
+     * @param {bigint} delta
+     **/
+    forceAdjustTotalIssuance: GenericTxCall<
+      Rv,
+      (
+        direction: PalletBalancesAdjustmentDirection,
+        delta: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Balances';
+          palletCall: {
+            name: 'ForceAdjustTotalIssuance';
+            params: { direction: PalletBalancesAdjustmentDirection; delta: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
      *
      * @param {bigint} value
      * @param {boolean} ignorable
@@ -1405,7 +2135,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   vesting: {
     /**
-     * See [`Pallet::vest`].
+     * Unlock any vested funds of the sender account.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must have funds still
+     * locked under this pallet.
+     *
+     * Emits either `VestingCompleted` or `VestingUpdated`.
+     *
+     * ## Complexity
+     * - `O(1)`.
      *
      **/
     vest: GenericTxCall<
@@ -1422,7 +2160,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::vest_other`].
+     * Unlock any vested funds of a `target` account.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `target`: The account whose vested funds should be unlocked. Must have funds still
+     * locked under this pallet.
+     *
+     * Emits either `VestingCompleted` or `VestingUpdated`.
+     *
+     * ## Complexity
+     * - `O(1)`.
      *
      * @param {MultiAddressLike} target
      **/
@@ -1441,7 +2189,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::vested_transfer`].
+     * Create a vested transfer.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `target`: The account receiving the vested funds.
+     * - `schedule`: The vesting schedule attached to the transfer.
+     *
+     * Emits `VestingCreated`.
+     *
+     * NOTE: This will unlock all schedules through the current block.
+     *
+     * ## Complexity
+     * - `O(1)`.
      *
      * @param {MultiAddressLike} target
      * @param {PalletVestingVestingInfo} schedule
@@ -1464,7 +2224,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_vested_transfer`].
+     * Force a vested transfer.
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * - `source`: The account whose funds should be transferred.
+     * - `target`: The account that should be transferred the vested funds.
+     * - `schedule`: The vesting schedule attached to the transfer.
+     *
+     * Emits `VestingCreated`.
+     *
+     * NOTE: This will unlock all schedules through the current block.
+     *
+     * ## Complexity
+     * - `O(1)`.
      *
      * @param {MultiAddressLike} source
      * @param {MultiAddressLike} target
@@ -1489,7 +2262,27 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::merge_schedules`].
+     * Merge two vesting schedules together, creating a new vesting schedule that unlocks over
+     * the highest possible start and end blocks. If both schedules have already started the
+     * current block will be used as the schedule start; with the caveat that if one schedule
+     * is finished by the current block, the other will be treated as the new merged schedule,
+     * unmodified.
+     *
+     * NOTE: If `schedule1_index == schedule2_index` this is a no-op.
+     * NOTE: This will unlock all schedules through the current block prior to merging.
+     * NOTE: If both schedules have ended by the current block, no new schedule will be created
+     * and both will be removed.
+     *
+     * Merged schedule attributes:
+     * - `starting_block`: `MAX(schedule1.starting_block, scheduled2.starting_block,
+     * current_block)`.
+     * - `ending_block`: `MAX(schedule1.ending_block, schedule2.ending_block)`.
+     * - `locked`: `schedule1.locked_at(current_block) + schedule2.locked_at(current_block)`.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `schedule1_index`: index of the first schedule to merge.
+     * - `schedule2_index`: index of the second schedule to merge.
      *
      * @param {number} schedule1Index
      * @param {number} schedule2Index
@@ -1512,6 +2305,34 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Force remove a vesting schedule
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * - `target`: An account that has a vesting schedule
+     * - `schedule_index`: The vesting schedule index that should be removed
+     *
+     * @param {MultiAddressLike} target
+     * @param {number} scheduleIndex
+     **/
+    forceRemoveVestingSchedule: GenericTxCall<
+      Rv,
+      (
+        target: MultiAddressLike,
+        scheduleIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Vesting';
+          palletCall: {
+            name: 'ForceRemoveVestingSchedule';
+            params: { target: MultiAddressLike; scheduleIndex: number };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -1521,7 +2342,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   inflation: {
     /**
-     * See [`Pallet::force_set_inflation_params`].
+     * Used to force-set the inflation parameters.
+     * The parameters must be valid, all parts summing up to one whole (100%), otherwise the call will fail.
+     *
+     * Must be called by `root` origin.
+     *
+     * Purpose of the call is testing & handling unforeseen circumstances.
      *
      * @param {PalletInflationInflationParameters} params
      **/
@@ -1540,7 +2366,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_inflation_recalculation`].
+     * Used to force inflation recalculation.
+     * This is done in the same way as it would be done in an appropriate block, but this call forces it.
+     *
+     * Must be called by `root` origin.
+     *
+     * Purpose of the call is testing & handling unforeseen circumstances.
      *
      * @param {number} nextEra
      **/
@@ -1568,7 +2399,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   dappStaking: {
     /**
-     * See [`Pallet::unbond_and_unstake`].
+     * Wrapper around _legacy-like_ `unbond_and_unstake`.
+     *
+     * Used to support legacy Ledger users so they can start the unlocking process for their funds.
      *
      * @param {AstarPrimitivesDappStakingSmartContract} contractId
      * @param {bigint} value
@@ -1591,7 +2424,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::withdraw_unbonded`].
+     * Wrapper around _legacy-like_ `withdraw_unbonded`.
+     *
+     * Used to support legacy Ledger users so they can reclaim unlocked chunks back into
+     * their _transferable_ free balance.
      *
      **/
     withdrawUnbonded: GenericTxCall<
@@ -1608,7 +2444,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::maintenance_mode`].
+     * Used to enable or disable maintenance mode.
+     * Can only be called by manager origin.
      *
      * @param {boolean} enabled
      **/
@@ -1627,7 +2464,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::register`].
+     * Used to register a new contract for dApp staking.
+     *
+     * If successful, smart contract will be assigned a simple, unique numerical identifier.
+     * Owner is set to be initial beneficiary & manager of the dApp.
      *
      * @param {AccountId32Like} owner
      * @param {AstarPrimitivesDappStakingSmartContract} smartContract
@@ -1650,7 +2490,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_dapp_reward_beneficiary`].
+     * Used to modify the reward beneficiary account for a dApp.
+     *
+     * Caller has to be dApp owner.
+     * If set to `None`, rewards will be deposited to the dApp owner.
+     * After this call, all existing & future rewards will be paid out to the beneficiary.
      *
      * @param {AstarPrimitivesDappStakingSmartContract} smartContract
      * @param {AccountId32Like | undefined} beneficiary
@@ -1676,7 +2520,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_dapp_owner`].
+     * Used to change dApp owner.
+     *
+     * Can be called by dApp owner or dApp staking manager origin.
+     * This is useful in two cases:
+     * 1. when the dApp owner account is compromised, manager can change the owner to a new account
+     * 2. if project wants to transfer ownership to a new account (DAO, multisig, etc.).
      *
      * @param {AstarPrimitivesDappStakingSmartContract} smartContract
      * @param {AccountId32Like} newOwner
@@ -1699,7 +2548,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::unregister`].
+     * Unregister dApp from dApp staking protocol, making it ineligible for future rewards.
+     * This doesn't remove the dApp completely from the system just yet, but it can no longer be used for staking.
+     *
+     * Can be called by dApp staking manager origin.
      *
      * @param {AstarPrimitivesDappStakingSmartContract} smartContract
      **/
@@ -1718,7 +2570,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::lock`].
+     * Locks additional funds into dApp staking.
+     *
+     * In case caller account doesn't have sufficient balance to cover the specified amount, everything is locked.
+     * After adjustment, lock amount must be greater than zero and in total must be equal or greater than the minimum locked amount.
+     *
+     * Locked amount can immediately be used for staking.
      *
      * @param {bigint} amount
      **/
@@ -1737,7 +2594,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::unlock`].
+     * Attempts to start the unlocking process for the specified amount.
+     *
+     * Only the amount that isn't actively used for staking can be unlocked.
+     * If the amount is greater than the available amount for unlocking, everything is unlocked.
+     * If the remaining locked amount would take the account below the minimum locked amount, everything is unlocked.
      *
      * @param {bigint} amount
      **/
@@ -1756,7 +2617,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::claim_unlocked`].
+     * Claims all of fully unlocked chunks, removing the lock from them.
      *
      **/
     claimUnlocked: GenericTxCall<
@@ -1773,7 +2634,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::relock_unlocking`].
      *
      **/
     relockUnlocking: GenericTxCall<
@@ -1790,7 +2650,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::stake`].
+     * Stake the specified amount on a smart contract.
+     * The precise `amount` specified **must** be available for staking.
+     * The total amount staked on a dApp must be greater than the minimum required value.
+     *
+     * Depending on the period type, appropriate stake amount will be updated. During `Voting` subperiod, `voting` stake amount is updated,
+     * and same for `Build&Earn` subperiod.
+     *
+     * Staked amount is only eligible for rewards from the next era onwards.
      *
      * @param {AstarPrimitivesDappStakingSmartContract} smartContract
      * @param {bigint} amount
@@ -1813,7 +2680,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::unstake`].
+     * Unstake the specified amount from a smart contract.
+     * The `amount` specified **must** not exceed what's staked, otherwise the call will fail.
+     *
+     * If unstaking the specified `amount` would take staker below the minimum stake threshold, everything is unstaked.
+     *
+     * Depending on the period type, appropriate stake amount will be updated.
+     * In case amount is unstaked during `Voting` subperiod, the `voting` amount is reduced.
+     * In case amount is unstaked during `Build&Earn` subperiod, first the `build_and_earn` is reduced,
+     * and any spillover is subtracted from the `voting` amount.
      *
      * @param {AstarPrimitivesDappStakingSmartContract} smartContract
      * @param {bigint} amount
@@ -1836,7 +2711,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::claim_staker_rewards`].
+     * Claims some staker rewards, if user has any.
+     * In the case of a successful call, at least one era will be claimed, with the possibility of multiple claims happening.
      *
      **/
     claimStakerRewards: GenericTxCall<
@@ -1853,7 +2729,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::claim_bonus_reward`].
+     * Used to claim bonus reward for a smart contract, if eligible.
      *
      * @param {AstarPrimitivesDappStakingSmartContract} smartContract
      **/
@@ -1872,7 +2748,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::claim_dapp_reward`].
+     * Used to claim dApp reward for the specified era.
      *
      * @param {AstarPrimitivesDappStakingSmartContract} smartContract
      * @param {number} era
@@ -1895,7 +2771,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::unstake_from_unregistered`].
+     * Used to unstake funds from a contract that was unregistered after an account staked on it.
+     * This is required if staker wants to re-stake these funds on another active contract during the ongoing period.
      *
      * @param {AstarPrimitivesDappStakingSmartContract} smartContract
      **/
@@ -1914,7 +2791,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cleanup_expired_entries`].
+     * Cleanup expired stake entries for the contract.
+     *
+     * Entry is considered to be expired if:
+     * 1. It's from a past period & the account wasn't a loyal staker, meaning there's no claimable bonus reward.
+     * 2. It's from a period older than the oldest claimable period, regardless whether the account was loyal or not.
      *
      **/
     cleanupExpiredEntries: GenericTxCall<
@@ -1931,7 +2812,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force`].
+     * Used to force a change of era or subperiod.
+     * The effect isn't immediate but will happen on the next block.
+     *
+     * Used for testing purposes, when we want to force an era change, or a subperiod change.
+     * Not intended to be used in production, except in case of unforeseen circumstances.
+     *
+     * Can only be called by the root origin.
      *
      * @param {PalletDappStakingV3ForcingType} forcingType
      **/
@@ -1950,7 +2837,59 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::fix_account`].
+     * Claims some staker rewards for the specified account, if they have any.
+     * In the case of a successful call, at least one era will be claimed, with the possibility of multiple claims happening.
+     *
+     * @param {AccountId32Like} account
+     **/
+    claimStakerRewardsFor: GenericTxCall<
+      Rv,
+      (account: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'DappStaking';
+          palletCall: {
+            name: 'ClaimStakerRewardsFor';
+            params: { account: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Used to claim bonus reward for a smart contract on behalf of the specified account, if eligible.
+     *
+     * @param {AccountId32Like} account
+     * @param {AstarPrimitivesDappStakingSmartContract} smartContract
+     **/
+    claimBonusRewardFor: GenericTxCall<
+      Rv,
+      (
+        account: AccountId32Like,
+        smartContract: AstarPrimitivesDappStakingSmartContract,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'DappStaking';
+          palletCall: {
+            name: 'ClaimBonusRewardFor';
+            params: { account: AccountId32Like; smartContract: AstarPrimitivesDappStakingSmartContract };
+          };
+        }
+      >
+    >;
+
+    /**
+     * A call used to fix accounts with inconsistent state, where frozen balance is actually higher than what's available.
+     *
+     * The approach is as simple as possible:
+     * 1. Caller provides an account to fix.
+     * 2. If account is eligible for the fix, all unlocking chunks are modified to be claimable immediately.
+     * 3. The `claim_unlocked` call is executed using the provided account as the origin.
+     * 4. All states are updated accordingly, and the account is no longer in an inconsistent state.
+     *
+     * The benchmarked weight of the `claim_unlocked` call is used as a base, and additional overestimated weight is added.
+     * Call doesn't touch any storage items that aren't already touched by the `claim_unlocked` call, hence the simplified approach.
      *
      * @param {AccountId32Like} account
      **/
@@ -1978,7 +2917,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   assets: {
     /**
-     * See [`Pallet::create`].
+     * Issue a new class of fungible assets from a public origin.
+     *
+     * This new asset class has no assets initially and its owner is the origin.
+     *
+     * The origin must conform to the configured `CreateOrigin` and have sufficient funds free.
+     *
+     * Funds of sender are reserved by `AssetDeposit`.
+     *
+     * Parameters:
+     * - `id`: The identifier of the new asset. This must not be currently in use to identify
+     * an existing asset.
+     * - `admin`: The admin of this class of assets. The admin is the initial address of each
+     * member of the asset class's admin team.
+     * - `min_balance`: The minimum balance of this new asset that any single account must
+     * have. If an account's balance is reduced below this, then it collapses to zero.
+     *
+     * Emits `Created` event when successful.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      * @param {MultiAddressLike} admin
@@ -2003,7 +2960,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_create`].
+     * Issue a new class of fungible assets from a privileged origin.
+     *
+     * This new asset class has no assets initially.
+     *
+     * The origin must conform to `ForceOrigin`.
+     *
+     * Unlike `create`, no funds are reserved.
+     *
+     * - `id`: The identifier of the new asset. This must not be currently in use to identify
+     * an existing asset.
+     * - `owner`: The owner of this class of assets. The owner has full superuser permissions
+     * over this asset, but may later change and configure the permissions using
+     * `transfer_ownership` and `set_team`.
+     * - `min_balance`: The minimum balance of this new asset that any single account must
+     * have. If an account's balance is reduced below this, then it collapses to zero.
+     *
+     * Emits `ForceCreated` event when successful.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      * @param {MultiAddressLike} owner
@@ -2030,7 +3005,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::start_destroy`].
+     * Start the process of destroying a fungible asset class.
+     *
+     * `start_destroy` is the first in a series of extrinsics that should be called, to allow
+     * destruction of an asset class.
+     *
+     * The origin must conform to `ForceOrigin` or must be `Signed` by the asset's `owner`.
+     *
+     * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+     * asset.
+     *
+     * The asset class must be frozen before calling `start_destroy`.
      *
      * @param {bigint} id
      **/
@@ -2049,7 +3034,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::destroy_accounts`].
+     * Destroy all accounts associated with a given asset.
+     *
+     * `destroy_accounts` should only be called after `start_destroy` has been called, and the
+     * asset is in a `Destroying` state.
+     *
+     * Due to weight restrictions, this function may need to be called multiple times to fully
+     * destroy all accounts. It will destroy `RemoveItemsLimit` accounts at a time.
+     *
+     * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+     * asset.
+     *
+     * Each call emits the `Event::DestroyedAccounts` event.
      *
      * @param {bigint} id
      **/
@@ -2068,7 +3064,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::destroy_approvals`].
+     * Destroy all approvals associated with a given asset up to the max (T::RemoveItemsLimit).
+     *
+     * `destroy_approvals` should only be called after `start_destroy` has been called, and the
+     * asset is in a `Destroying` state.
+     *
+     * Due to weight restrictions, this function may need to be called multiple times to fully
+     * destroy all approvals. It will destroy `RemoveItemsLimit` approvals at a time.
+     *
+     * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+     * asset.
+     *
+     * Each call emits the `Event::DestroyedApprovals` event.
      *
      * @param {bigint} id
      **/
@@ -2087,7 +3094,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::finish_destroy`].
+     * Complete destroying asset and unreserve currency.
+     *
+     * `finish_destroy` should only be called after `start_destroy` has been called, and the
+     * asset is in a `Destroying` state. All accounts or approvals should be destroyed before
+     * hand.
+     *
+     * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+     * asset.
+     *
+     * Each successful call emits the `Event::Destroyed` event.
      *
      * @param {bigint} id
      **/
@@ -2106,7 +3122,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::mint`].
+     * Mint assets of a particular class.
+     *
+     * The origin must be Signed and the sender must be the Issuer of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to have some amount minted.
+     * - `beneficiary`: The account to be credited with the minted assets.
+     * - `amount`: The amount of the asset to be minted.
+     *
+     * Emits `Issued` event when successful.
+     *
+     * Weight: `O(1)`
+     * Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
      *
      * @param {bigint} id
      * @param {MultiAddressLike} beneficiary
@@ -2131,7 +3158,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::burn`].
+     * Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
+     *
+     * Origin must be Signed and the sender should be the Manager of the asset `id`.
+     *
+     * Bails with `NoAccount` if the `who` is already dead.
+     *
+     * - `id`: The identifier of the asset to have some amount burned.
+     * - `who`: The account to be debited from.
+     * - `amount`: The maximum amount by which `who`'s balance should be reduced.
+     *
+     * Emits `Burned` with the actual amount burned. If this takes the balance to below the
+     * minimum for the asset, then the amount burned is increased to take it to zero.
+     *
+     * Weight: `O(1)`
+     * Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
      *
      * @param {bigint} id
      * @param {MultiAddressLike} who
@@ -2156,7 +3197,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer`].
+     * Move some assets from the sender account to another.
+     *
+     * Origin must be Signed.
+     *
+     * - `id`: The identifier of the asset to have some amount transferred.
+     * - `target`: The account to be credited.
+     * - `amount`: The amount by which the sender's balance of assets should be reduced and
+     * `target`'s balance increased. The amount actually transferred may be slightly greater in
+     * the case that the transfer would otherwise take the sender balance above zero but below
+     * the minimum balance. Must be greater than zero.
+     *
+     * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+     * to below the minimum for the asset, then the amount transferred is increased to take it
+     * to zero.
+     *
+     * Weight: `O(1)`
+     * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
+     * `target`.
      *
      * @param {bigint} id
      * @param {MultiAddressLike} target
@@ -2181,7 +3239,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_keep_alive`].
+     * Move some assets from the sender account to another, keeping the sender account alive.
+     *
+     * Origin must be Signed.
+     *
+     * - `id`: The identifier of the asset to have some amount transferred.
+     * - `target`: The account to be credited.
+     * - `amount`: The amount by which the sender's balance of assets should be reduced and
+     * `target`'s balance increased. The amount actually transferred may be slightly greater in
+     * the case that the transfer would otherwise take the sender balance above zero but below
+     * the minimum balance. Must be greater than zero.
+     *
+     * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+     * to below the minimum for the asset, then the amount transferred is increased to take it
+     * to zero.
+     *
+     * Weight: `O(1)`
+     * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
+     * `target`.
      *
      * @param {bigint} id
      * @param {MultiAddressLike} target
@@ -2206,7 +3281,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_transfer`].
+     * Move some assets from one account to another.
+     *
+     * Origin must be Signed and the sender should be the Admin of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to have some amount transferred.
+     * - `source`: The account to be debited.
+     * - `dest`: The account to be credited.
+     * - `amount`: The amount by which the `source`'s balance of assets should be reduced and
+     * `dest`'s balance increased. The amount actually transferred may be slightly greater in
+     * the case that the transfer would otherwise take the `source` balance above zero but
+     * below the minimum balance. Must be greater than zero.
+     *
+     * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+     * to below the minimum for the asset, then the amount transferred is increased to take it
+     * to zero.
+     *
+     * Weight: `O(1)`
+     * Modes: Pre-existence of `dest`; Post-existence of `source`; Account pre-existence of
+     * `dest`.
      *
      * @param {bigint} id
      * @param {MultiAddressLike} source
@@ -2233,7 +3326,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::freeze`].
+     * Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
+     * must already exist as an entry in `Account`s of the asset. If you want to freeze an
+     * account that does not have an entry, use `touch_other` first.
+     *
+     * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be frozen.
+     * - `who`: The account to be frozen.
+     *
+     * Emits `Frozen`.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      * @param {MultiAddressLike} who
@@ -2256,7 +3360,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::thaw`].
+     * Allow unprivileged transfers to and from an account again.
+     *
+     * Origin must be Signed and the sender should be the Admin of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be frozen.
+     * - `who`: The account to be unfrozen.
+     *
+     * Emits `Thawed`.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      * @param {MultiAddressLike} who
@@ -2279,7 +3392,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::freeze_asset`].
+     * Disallow further unprivileged transfers for the asset class.
+     *
+     * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be frozen.
+     *
+     * Emits `Frozen`.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      **/
@@ -2298,7 +3419,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::thaw_asset`].
+     * Allow unprivileged transfers for the asset again.
+     *
+     * Origin must be Signed and the sender should be the Admin of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be thawed.
+     *
+     * Emits `Thawed`.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      **/
@@ -2317,7 +3446,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_ownership`].
+     * Change the Owner of an asset.
+     *
+     * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * - `id`: The identifier of the asset.
+     * - `owner`: The new Owner of this asset.
+     *
+     * Emits `OwnerChanged`.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      * @param {MultiAddressLike} owner
@@ -2340,7 +3478,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_team`].
+     * Change the Issuer, Admin and Freezer of an asset.
+     *
+     * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be frozen.
+     * - `issuer`: The new Issuer of this asset.
+     * - `admin`: The new Admin of this asset.
+     * - `freezer`: The new Freezer of this asset.
+     *
+     * Emits `TeamChanged`.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      * @param {MultiAddressLike} issuer
@@ -2367,7 +3516,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_metadata`].
+     * Set the metadata for an asset.
+     *
+     * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * Funds of sender are reserved according to the formula:
+     * `MetadataDepositBase + MetadataDepositPerByte * (name.len + symbol.len)` taking into
+     * account any already reserved funds.
+     *
+     * - `id`: The identifier of the asset to update.
+     * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+     * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+     * - `decimals`: The number of decimals this asset uses to represent one unit.
+     *
+     * Emits `MetadataSet`.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      * @param {BytesLike} name
@@ -2394,7 +3558,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::clear_metadata`].
+     * Clear the metadata for an asset.
+     *
+     * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * Any deposit is freed for the asset owner.
+     *
+     * - `id`: The identifier of the asset to clear.
+     *
+     * Emits `MetadataCleared`.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      **/
@@ -2413,7 +3587,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_set_metadata`].
+     * Force the metadata for an asset to some value.
+     *
+     * Origin must be ForceOrigin.
+     *
+     * Any deposit is left alone.
+     *
+     * - `id`: The identifier of the asset to update.
+     * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+     * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+     * - `decimals`: The number of decimals this asset uses to represent one unit.
+     *
+     * Emits `MetadataSet`.
+     *
+     * Weight: `O(N + S)` where N and S are the length of the name and symbol respectively.
      *
      * @param {bigint} id
      * @param {BytesLike} name
@@ -2442,7 +3629,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_clear_metadata`].
+     * Clear the metadata for an asset.
+     *
+     * Origin must be ForceOrigin.
+     *
+     * Any deposit is returned.
+     *
+     * - `id`: The identifier of the asset to clear.
+     *
+     * Emits `MetadataCleared`.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      **/
@@ -2461,7 +3658,28 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_asset_status`].
+     * Alter the attributes of a given asset.
+     *
+     * Origin must be `ForceOrigin`.
+     *
+     * - `id`: The identifier of the asset.
+     * - `owner`: The new Owner of this asset.
+     * - `issuer`: The new Issuer of this asset.
+     * - `admin`: The new Admin of this asset.
+     * - `freezer`: The new Freezer of this asset.
+     * - `min_balance`: The minimum balance of this new asset that any single account must
+     * have. If an account's balance is reduced below this, then it collapses to zero.
+     * - `is_sufficient`: Whether a non-zero balance of this asset is deposit of sufficient
+     * value to account for the state bloat associated with its balance storage. If set to
+     * `true`, then non-zero balances may be stored without a `consumer` reference (and thus
+     * an ED in the Balances pallet or whatever else is used to control user-account state
+     * growth).
+     * - `is_frozen`: Whether this asset class is frozen except for permissioned/admin
+     * instructions.
+     *
+     * Emits `AssetStatusChanged` with the identity of the asset.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      * @param {MultiAddressLike} owner
@@ -2505,7 +3723,26 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::approve_transfer`].
+     * Approve an amount of asset for transfer by a delegated third-party account.
+     *
+     * Origin must be Signed.
+     *
+     * Ensures that `ApprovalDeposit` worth of `Currency` is reserved from signing account
+     * for the purpose of holding the approval. If some non-zero amount of assets is already
+     * approved from signing account to `delegate`, then it is topped up or unreserved to
+     * meet the right value.
+     *
+     * NOTE: The signing account does not need to own `amount` of assets at the point of
+     * making this call.
+     *
+     * - `id`: The identifier of the asset.
+     * - `delegate`: The account to delegate permission to transfer asset.
+     * - `amount`: The amount of asset that may be transferred by `delegate`. If there is
+     * already an approval in place, then this acts additively.
+     *
+     * Emits `ApprovedTransfer` on success.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      * @param {MultiAddressLike} delegate
@@ -2530,7 +3767,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cancel_approval`].
+     * Cancel all of some asset approved for delegated transfer by a third-party account.
+     *
+     * Origin must be Signed and there must be an approval in place between signer and
+     * `delegate`.
+     *
+     * Unreserves any deposit previously reserved by `approve_transfer` for the approval.
+     *
+     * - `id`: The identifier of the asset.
+     * - `delegate`: The account delegated permission to transfer asset.
+     *
+     * Emits `ApprovalCancelled` on success.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      * @param {MultiAddressLike} delegate
@@ -2553,7 +3802,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_cancel_approval`].
+     * Cancel all of some asset approved for delegated transfer by a third-party account.
+     *
+     * Origin must be either ForceOrigin or Signed origin with the signer being the Admin
+     * account of the asset `id`.
+     *
+     * Unreserves any deposit previously reserved by `approve_transfer` for the approval.
+     *
+     * - `id`: The identifier of the asset.
+     * - `delegate`: The account delegated permission to transfer asset.
+     *
+     * Emits `ApprovalCancelled` on success.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      * @param {MultiAddressLike} owner
@@ -2578,7 +3839,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_approved`].
+     * Transfer some asset balance from a previously delegated account to some third-party
+     * account.
+     *
+     * Origin must be Signed and there must be an approval in place by the `owner` to the
+     * signer.
+     *
+     * If the entire amount approved for transfer is transferred, then any deposit previously
+     * reserved by `approve_transfer` is unreserved.
+     *
+     * - `id`: The identifier of the asset.
+     * - `owner`: The account which previously approved for a transfer of at least `amount` and
+     * from which the asset balance will be withdrawn.
+     * - `destination`: The account to which the asset balance of `amount` will be transferred.
+     * - `amount`: The amount of assets to transfer.
+     *
+     * Emits `TransferredApproved` on success.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      * @param {MultiAddressLike} owner
@@ -2605,7 +3883,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::touch`].
+     * Create an asset account for non-provider assets.
+     *
+     * A deposit will be taken from the signer account.
+     *
+     * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+     * to be taken.
+     * - `id`: The identifier of the asset for the account to be created.
+     *
+     * Emits `Touched` event when successful.
      *
      * @param {bigint} id
      **/
@@ -2624,7 +3910,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::refund`].
+     * Return the deposit (if any) of an asset account or a consumer reference (if any) of an
+     * account.
+     *
+     * The origin must be Signed.
+     *
+     * - `id`: The identifier of the asset for which the caller would like the deposit
+     * refunded.
+     * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
+     *
+     * Emits `Refunded` event when successful.
      *
      * @param {bigint} id
      * @param {boolean} allowBurn
@@ -2647,7 +3942,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_min_balance`].
+     * Sets the minimum balance of an asset.
+     *
+     * Only works if there aren't any accounts that are holding the asset or if
+     * the new value of `min_balance` is less than the old one.
+     *
+     * Origin must be Signed and the sender has to be the Owner of the
+     * asset `id`.
+     *
+     * - `id`: The identifier of the asset.
+     * - `min_balance`: The new value of `min_balance`.
+     *
+     * Emits `AssetMinBalanceChanged` event when successful.
      *
      * @param {bigint} id
      * @param {bigint} minBalance
@@ -2670,7 +3976,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::touch_other`].
+     * Create an asset account for `who`.
+     *
+     * A deposit will be taken from the signer account.
+     *
+     * - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
+     * must have sufficient funds for a deposit to be taken.
+     * - `id`: The identifier of the asset for the account to be created.
+     * - `who`: The account to be created.
+     *
+     * Emits `Touched` event when successful.
      *
      * @param {bigint} id
      * @param {MultiAddressLike} who
@@ -2693,7 +4008,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::refund_other`].
+     * Return the deposit (if any) of a target asset account. Useful if you are the depositor.
+     *
+     * The origin must be Signed and either the account owner, depositor, or asset `Admin`. In
+     * order to burn a non-zero balance of the asset, the caller must be the account and should
+     * use `refund`.
+     *
+     * - `id`: The identifier of the asset for the account holding a deposit.
+     * - `who`: The account to refund.
+     *
+     * Emits `Refunded` event when successful.
      *
      * @param {bigint} id
      * @param {MultiAddressLike} who
@@ -2716,7 +4040,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::block`].
+     * Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
+     *
+     * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+     *
+     * - `id`: The identifier of the account's asset.
+     * - `who`: The account to be unblocked.
+     *
+     * Emits `Blocked`.
+     *
+     * Weight: `O(1)`
      *
      * @param {bigint} id
      * @param {MultiAddressLike} who
@@ -2748,7 +4081,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   oracle: {
     /**
-     * See [`Pallet::feed_values`].
+     * Feed the external value.
+     *
+     * Require authorized operator.
      *
      * @param {Array<[AstarPrimitivesOracleCurrencyId, FixedU128]>} values
      **/
@@ -2776,7 +4111,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   oracleMembership: {
     /**
-     * See [`Pallet::add_member`].
+     * Add a member `who` to the set.
+     *
+     * May only be called from `T::AddOrigin`.
      *
      * @param {MultiAddressLike} who
      **/
@@ -2795,7 +4132,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_member`].
+     * Remove a member `who` from the set.
+     *
+     * May only be called from `T::RemoveOrigin`.
      *
      * @param {MultiAddressLike} who
      **/
@@ -2814,7 +4153,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::swap_member`].
+     * Swap out one member `remove` for another `add`.
+     *
+     * May only be called from `T::SwapOrigin`.
+     *
+     * Prime membership is *not* passed from `remove` to `add`, if extant.
      *
      * @param {MultiAddressLike} remove
      * @param {MultiAddressLike} add
@@ -2837,7 +4180,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::reset_members`].
+     * Change the membership to a new set, disregarding the existing membership. Be nice and
+     * pass `members` pre-sorted.
+     *
+     * May only be called from `T::ResetOrigin`.
      *
      * @param {Array<AccountId32Like>} members
      **/
@@ -2856,7 +4202,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::change_key`].
+     * Swap out the sending member for some other key `new`.
+     *
+     * May only be called from `Signed` origin of a current member.
+     *
+     * Prime membership is passed from the origin account to `new`, if extant.
      *
      * @param {MultiAddressLike} new_
      **/
@@ -2875,7 +4225,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_prime`].
+     * Set the prime member. Must be a current member.
+     *
+     * May only be called from `T::PrimeOrigin`.
      *
      * @param {MultiAddressLike} who
      **/
@@ -2894,7 +4246,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::clear_prime`].
+     * Remove the prime member if it exists.
+     *
+     * May only be called from `T::PrimeOrigin`.
      *
      **/
     clearPrime: GenericTxCall<
@@ -2920,7 +4274,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   collatorSelection: {
     /**
-     * See [`Pallet::set_invulnerables`].
+     * Set the list of invulnerable (fixed) collators.
      *
      * @param {Array<AccountId32Like>} new_
      **/
@@ -2939,7 +4293,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_desired_candidates`].
+     * Set the ideal number of collators (not including the invulnerables).
+     * If lowering this number, then the number of running collators could be higher than this figure.
+     * Aside from that edge case, there should be no other way to have more collators than the desired number.
      *
      * @param {number} max
      **/
@@ -2958,7 +4314,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_candidacy_bond`].
+     * Set the candidacy bond amount.
      *
      * @param {bigint} bond
      **/
@@ -2977,7 +4333,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::register_as_candidate`].
+     * Register this account as a collator candidate. The account must (a) already have
+     * registered session keys and (b) be able to reserve the `CandidacyBond`.
+     *
+     * This call is not available to `Invulnerable` collators.
      *
      **/
     registerAsCandidate: GenericTxCall<
@@ -2994,7 +4353,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::leave_intent`].
+     * Deregister `origin` as a collator candidate. Note that the collator can only leave on
+     * session change. The `CandidacyBond` will start un-bonding process.
+     *
+     * This call will fail if the total number of candidates would drop below `MinCandidates`.
+     *
+     * This call is not available to `Invulnerable` collators.
      *
      **/
     leaveIntent: GenericTxCall<
@@ -3011,6 +4375,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Withdraw `CandidacyBond` after un-bonding period has finished.
+     * This call will fail called during un-bonding or if there's no `CandidacyBound` reserved.
+     *
+     **/
+    withdrawBond: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CollatorSelection';
+          palletCall: {
+            name: 'WithdrawBond';
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -3020,7 +4402,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   session: {
     /**
-     * See [`Pallet::set_keys`].
+     * Sets the session key(s) of the function caller to `keys`.
+     * Allows an account to set its session key prior to becoming a validator.
+     * This doesn't take effect until the next session.
+     *
+     * The dispatch origin of this function must be signed.
+     *
+     * ## Complexity
+     * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
+     * fixed.
      *
      * @param {AstarRuntimeSessionKeys} keys
      * @param {BytesLike} proof
@@ -3043,7 +4433,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::purge_keys`].
+     * Removes any session key(s) of the function caller.
+     *
+     * This doesn't take effect until the next session.
+     *
+     * The dispatch origin of this function must be Signed and the account must be either be
+     * convertible to a validator ID using the chain's typical addressing system (this usually
+     * means being a controller account) or directly convertible into a validator ID (which
+     * usually means being a stash account).
+     *
+     * ## Complexity
+     * - `O(1)` in number of key types. Actual cost depends on the number of length of
+     * `T::Keys::key_ids()` which is fixed.
      *
      **/
     purgeKeys: GenericTxCall<
@@ -3069,30 +4470,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   xcmpQueue: {
     /**
-     * See [`Pallet::service_overweight`].
+     * Suspends all XCM executions for the XCMP queue, regardless of the sender's origin.
      *
-     * @param {bigint} index
-     * @param {SpWeightsWeightV2Weight} weightLimit
-     **/
-    serviceOverweight: GenericTxCall<
-      Rv,
-      (
-        index: bigint,
-        weightLimit: SpWeightsWeightV2Weight,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'XcmpQueue';
-          palletCall: {
-            name: 'ServiceOverweight';
-            params: { index: bigint; weightLimit: SpWeightsWeightV2Weight };
-          };
-        }
-      >
-    >;
-
-    /**
-     * See [`Pallet::suspend_xcm_execution`].
+     * - `origin`: Must pass `ControllerOrigin`.
      *
      **/
     suspendXcmExecution: GenericTxCall<
@@ -3109,7 +4489,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::resume_xcm_execution`].
+     * Resumes all XCM executions for the XCMP queue.
+     *
+     * Note that this function doesn't change the status of the in/out bound channels.
+     *
+     * - `origin`: Must pass `ControllerOrigin`.
      *
      **/
     resumeXcmExecution: GenericTxCall<
@@ -3126,7 +4510,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::update_suspend_threshold`].
+     * Overwrites the number of pages which must be in the queue for the other side to be
+     * told to suspend their sending.
+     *
+     * - `origin`: Must pass `Root`.
+     * - `new`: Desired value for `QueueConfigData.suspend_value`
      *
      * @param {number} new_
      **/
@@ -3145,7 +4533,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::update_drop_threshold`].
+     * Overwrites the number of pages which must be in the queue after which we drop any
+     * further messages from the channel.
+     *
+     * - `origin`: Must pass `Root`.
+     * - `new`: Desired value for `QueueConfigData.drop_threshold`
      *
      * @param {number} new_
      **/
@@ -3164,7 +4556,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::update_resume_threshold`].
+     * Overwrites the number of pages which the queue must be reduced to before it signals
+     * that message sending may recommence after it has been suspended.
+     *
+     * - `origin`: Must pass `Root`.
+     * - `new`: Desired value for `QueueConfigData.resume_threshold`
      *
      * @param {number} new_
      **/
@@ -3183,63 +4579,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::update_threshold_weight`].
-     *
-     * @param {SpWeightsWeightV2Weight} new_
-     **/
-    updateThresholdWeight: GenericTxCall<
-      Rv,
-      (new_: SpWeightsWeightV2Weight) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'XcmpQueue';
-          palletCall: {
-            name: 'UpdateThresholdWeight';
-            params: { new: SpWeightsWeightV2Weight };
-          };
-        }
-      >
-    >;
-
-    /**
-     * See [`Pallet::update_weight_restrict_decay`].
-     *
-     * @param {SpWeightsWeightV2Weight} new_
-     **/
-    updateWeightRestrictDecay: GenericTxCall<
-      Rv,
-      (new_: SpWeightsWeightV2Weight) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'XcmpQueue';
-          palletCall: {
-            name: 'UpdateWeightRestrictDecay';
-            params: { new: SpWeightsWeightV2Weight };
-          };
-        }
-      >
-    >;
-
-    /**
-     * See [`Pallet::update_xcmp_max_individual_weight`].
-     *
-     * @param {SpWeightsWeightV2Weight} new_
-     **/
-    updateXcmpMaxIndividualWeight: GenericTxCall<
-      Rv,
-      (new_: SpWeightsWeightV2Weight) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'XcmpQueue';
-          palletCall: {
-            name: 'UpdateXcmpMaxIndividualWeight';
-            params: { new: SpWeightsWeightV2Weight };
-          };
-        }
-      >
-    >;
-
-    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -3249,15 +4588,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   polkadotXcm: {
     /**
-     * See [`Pallet::send`].
      *
-     * @param {XcmVersionedMultiLocation} dest
+     * @param {XcmVersionedLocation} dest
      * @param {XcmVersionedXcm} message
      **/
     send: GenericTxCall<
       Rv,
       (
-        dest: XcmVersionedMultiLocation,
+        dest: XcmVersionedLocation,
         message: XcmVersionedXcm,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3265,26 +4603,43 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'Send';
-            params: { dest: XcmVersionedMultiLocation; message: XcmVersionedXcm };
+            params: { dest: XcmVersionedLocation; message: XcmVersionedXcm };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::teleport_assets`].
+     * Teleport some assets from the local chain to some destination chain.
      *
-     * @param {XcmVersionedMultiLocation} dest
-     * @param {XcmVersionedMultiLocation} beneficiary
-     * @param {XcmVersionedMultiAssets} assets
+     * **This function is deprecated: Use `limited_teleport_assets` instead.**
+     *
+     * Fee payment on the destination side is made from the asset in the `assets` vector of
+     * index `fee_asset_item`. The weight limit for fees is not provided and thus is unlimited,
+     * with all fees taken as needed from the asset.
+     *
+     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+     * - `dest`: Destination context for the assets. Will typically be `[Parent,
+     * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+     * relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     * generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     * fee on the `dest` chain.
+     * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
+     * fees.
+     *
+     * @param {XcmVersionedLocation} dest
+     * @param {XcmVersionedLocation} beneficiary
+     * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
      **/
     teleportAssets: GenericTxCall<
       Rv,
       (
-        dest: XcmVersionedMultiLocation,
-        beneficiary: XcmVersionedMultiLocation,
-        assets: XcmVersionedMultiAssets,
+        dest: XcmVersionedLocation,
+        beneficiary: XcmVersionedLocation,
+        assets: XcmVersionedAssets,
         feeAssetItem: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3293,9 +4648,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'TeleportAssets';
             params: {
-              dest: XcmVersionedMultiLocation;
-              beneficiary: XcmVersionedMultiLocation;
-              assets: XcmVersionedMultiAssets;
+              dest: XcmVersionedLocation;
+              beneficiary: XcmVersionedLocation;
+              assets: XcmVersionedAssets;
               feeAssetItem: number;
             };
           };
@@ -3304,19 +4659,48 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::reserve_transfer_assets`].
+     * Transfer some assets from the local chain to the destination chain through their local,
+     * destination or remote reserve.
      *
-     * @param {XcmVersionedMultiLocation} dest
-     * @param {XcmVersionedMultiLocation} beneficiary
-     * @param {XcmVersionedMultiAssets} assets
+     * `assets` must have same reserve location and may not be teleportable to `dest`.
+     * - `assets` have local reserve: transfer assets to sovereign account of destination
+     * chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+     * assets to `beneficiary`.
+     * - `assets` have destination reserve: burn local assets and forward a notification to
+     * `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+     * deposit them to `beneficiary`.
+     * - `assets` have remote reserve: burn local assets, forward XCM to reserve chain to move
+     * reserves from this chain's SA to `dest` chain's SA, and forward another XCM to `dest`
+     * to mint and deposit reserve-based assets to `beneficiary`.
+     *
+     * **This function is deprecated: Use `limited_reserve_transfer_assets` instead.**
+     *
+     * Fee payment on the destination side is made from the asset in the `assets` vector of
+     * index `fee_asset_item`. The weight limit for fees is not provided and thus is unlimited,
+     * with all fees taken as needed from the asset.
+     *
+     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+     * - `dest`: Destination context for the assets. Will typically be `[Parent,
+     * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+     * relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     * generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     * fee on the `dest` (and possibly reserve) chains.
+     * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
+     * fees.
+     *
+     * @param {XcmVersionedLocation} dest
+     * @param {XcmVersionedLocation} beneficiary
+     * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
      **/
     reserveTransferAssets: GenericTxCall<
       Rv,
       (
-        dest: XcmVersionedMultiLocation,
-        beneficiary: XcmVersionedMultiLocation,
-        assets: XcmVersionedMultiAssets,
+        dest: XcmVersionedLocation,
+        beneficiary: XcmVersionedLocation,
+        assets: XcmVersionedAssets,
         feeAssetItem: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3325,9 +4709,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ReserveTransferAssets';
             params: {
-              dest: XcmVersionedMultiLocation;
-              beneficiary: XcmVersionedMultiLocation;
-              assets: XcmVersionedMultiAssets;
+              dest: XcmVersionedLocation;
+              beneficiary: XcmVersionedLocation;
+              assets: XcmVersionedAssets;
               feeAssetItem: number;
             };
           };
@@ -3336,7 +4720,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::execute`].
+     * Execute an XCM message from a local, signed, origin.
+     *
+     * An event is deposited indicating whether `msg` could be executed completely or only
+     * partially.
+     *
+     * No more than `max_weight` will be used in its attempted execution. If this is less than
+     * the maximum amount of weight that the message could take to be executed, then no
+     * execution attempt will be made.
      *
      * @param {XcmVersionedXcm} message
      * @param {SpWeightsWeightV2Weight} maxWeight
@@ -3359,15 +4750,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_xcm_version`].
+     * Extoll that a particular destination can be communicated with through a particular
+     * version of XCM.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} location
+     * - `origin`: Must be an origin specified by AdminOrigin.
+     * - `location`: The destination that is being described.
+     * - `xcm_version`: The latest version of XCM that `location` supports.
+     *
+     * @param {StagingXcmV4Location} location
      * @param {number} version
      **/
     forceXcmVersion: GenericTxCall<
       Rv,
       (
-        location: StagingXcmV3MultilocationMultiLocation,
+        location: StagingXcmV4Location,
         version: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3375,14 +4771,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'ForceXcmVersion';
-            params: { location: StagingXcmV3MultilocationMultiLocation; version: number };
+            params: { location: StagingXcmV4Location; version: number };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::force_default_xcm_version`].
+     * Set a safe XCM version (the version that XCM should be encoded with if the most recent
+     * version a destination can accept is unknown).
+     *
+     * - `origin`: Must be an origin specified by AdminOrigin.
+     * - `maybe_xcm_version`: The default XCM encoding version, or `None` to disable.
      *
      * @param {number | undefined} maybeXcmVersion
      **/
@@ -3401,58 +4801,95 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_subscribe_version_notify`].
+     * Ask a location to notify us regarding their XCM version and any changes to it.
      *
-     * @param {XcmVersionedMultiLocation} location
+     * - `origin`: Must be an origin specified by AdminOrigin.
+     * - `location`: The location to which we should subscribe for XCM version notifications.
+     *
+     * @param {XcmVersionedLocation} location
      **/
     forceSubscribeVersionNotify: GenericTxCall<
       Rv,
-      (location: XcmVersionedMultiLocation) => ChainSubmittableExtrinsic<
+      (location: XcmVersionedLocation) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'ForceSubscribeVersionNotify';
-            params: { location: XcmVersionedMultiLocation };
+            params: { location: XcmVersionedLocation };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::force_unsubscribe_version_notify`].
+     * Require that a particular destination should no longer notify us regarding any XCM
+     * version changes.
      *
-     * @param {XcmVersionedMultiLocation} location
+     * - `origin`: Must be an origin specified by AdminOrigin.
+     * - `location`: The location to which we are currently subscribed for XCM version
+     * notifications which we no longer desire.
+     *
+     * @param {XcmVersionedLocation} location
      **/
     forceUnsubscribeVersionNotify: GenericTxCall<
       Rv,
-      (location: XcmVersionedMultiLocation) => ChainSubmittableExtrinsic<
+      (location: XcmVersionedLocation) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'ForceUnsubscribeVersionNotify';
-            params: { location: XcmVersionedMultiLocation };
+            params: { location: XcmVersionedLocation };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::limited_reserve_transfer_assets`].
+     * Transfer some assets from the local chain to the destination chain through their local,
+     * destination or remote reserve.
      *
-     * @param {XcmVersionedMultiLocation} dest
-     * @param {XcmVersionedMultiLocation} beneficiary
-     * @param {XcmVersionedMultiAssets} assets
+     * `assets` must have same reserve location and may not be teleportable to `dest`.
+     * - `assets` have local reserve: transfer assets to sovereign account of destination
+     * chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+     * assets to `beneficiary`.
+     * - `assets` have destination reserve: burn local assets and forward a notification to
+     * `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+     * deposit them to `beneficiary`.
+     * - `assets` have remote reserve: burn local assets, forward XCM to reserve chain to move
+     * reserves from this chain's SA to `dest` chain's SA, and forward another XCM to `dest`
+     * to mint and deposit reserve-based assets to `beneficiary`.
+     *
+     * Fee payment on the destination side is made from the asset in the `assets` vector of
+     * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
+     * is needed than `weight_limit`, then the operation will fail and the assets send may be
+     * at risk.
+     *
+     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+     * - `dest`: Destination context for the assets. Will typically be `[Parent,
+     * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+     * relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     * generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     * fee on the `dest` (and possibly reserve) chains.
+     * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
+     * fees.
+     * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
+     *
+     * @param {XcmVersionedLocation} dest
+     * @param {XcmVersionedLocation} beneficiary
+     * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
      * @param {XcmV3WeightLimit} weightLimit
      **/
     limitedReserveTransferAssets: GenericTxCall<
       Rv,
       (
-        dest: XcmVersionedMultiLocation,
-        beneficiary: XcmVersionedMultiLocation,
-        assets: XcmVersionedMultiAssets,
+        dest: XcmVersionedLocation,
+        beneficiary: XcmVersionedLocation,
+        assets: XcmVersionedAssets,
         feeAssetItem: number,
         weightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<
@@ -3462,9 +4899,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'LimitedReserveTransferAssets';
             params: {
-              dest: XcmVersionedMultiLocation;
-              beneficiary: XcmVersionedMultiLocation;
-              assets: XcmVersionedMultiAssets;
+              dest: XcmVersionedLocation;
+              beneficiary: XcmVersionedLocation;
+              assets: XcmVersionedAssets;
               feeAssetItem: number;
               weightLimit: XcmV3WeightLimit;
             };
@@ -3474,20 +4911,37 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::limited_teleport_assets`].
+     * Teleport some assets from the local chain to some destination chain.
      *
-     * @param {XcmVersionedMultiLocation} dest
-     * @param {XcmVersionedMultiLocation} beneficiary
-     * @param {XcmVersionedMultiAssets} assets
+     * Fee payment on the destination side is made from the asset in the `assets` vector of
+     * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
+     * is needed than `weight_limit`, then the operation will fail and the assets send may be
+     * at risk.
+     *
+     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+     * - `dest`: Destination context for the assets. Will typically be `[Parent,
+     * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+     * relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     * generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     * fee on the `dest` chain.
+     * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
+     * fees.
+     * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
+     *
+     * @param {XcmVersionedLocation} dest
+     * @param {XcmVersionedLocation} beneficiary
+     * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
      * @param {XcmV3WeightLimit} weightLimit
      **/
     limitedTeleportAssets: GenericTxCall<
       Rv,
       (
-        dest: XcmVersionedMultiLocation,
-        beneficiary: XcmVersionedMultiLocation,
-        assets: XcmVersionedMultiAssets,
+        dest: XcmVersionedLocation,
+        beneficiary: XcmVersionedLocation,
+        assets: XcmVersionedAssets,
         feeAssetItem: number,
         weightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<
@@ -3497,9 +4951,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'LimitedTeleportAssets';
             params: {
-              dest: XcmVersionedMultiLocation;
-              beneficiary: XcmVersionedMultiLocation;
-              assets: XcmVersionedMultiAssets;
+              dest: XcmVersionedLocation;
+              beneficiary: XcmVersionedLocation;
+              assets: XcmVersionedAssets;
               feeAssetItem: number;
               weightLimit: XcmV3WeightLimit;
             };
@@ -3509,7 +4963,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_suspension`].
+     * Set or unset the global suspension state of the XCM executor.
+     *
+     * - `origin`: Must be an origin specified by AdminOrigin.
+     * - `suspended`: `true` to suspend, `false` to resume.
      *
      * @param {boolean} suspended
      **/
@@ -3522,6 +4979,101 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ForceSuspension';
             params: { suspended: boolean };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Transfer some assets from the local chain to the destination chain through their local,
+     * destination or remote reserve, or through teleports.
+     *
+     * Fee payment on the destination side is made from the asset in the `assets` vector of
+     * index `fee_asset_item` (hence referred to as `fees`), up to enough to pay for
+     * `weight_limit` of weight. If more weight is needed than `weight_limit`, then the
+     * operation will fail and the assets sent may be at risk.
+     *
+     * `assets` (excluding `fees`) must have same reserve location or otherwise be teleportable
+     * to `dest`, no limitations imposed on `fees`.
+     * - for local reserve: transfer assets to sovereign account of destination chain and
+     * forward a notification XCM to `dest` to mint and deposit reserve-based assets to
+     * `beneficiary`.
+     * - for destination reserve: burn local assets and forward a notification to `dest` chain
+     * to withdraw the reserve assets from this chain's sovereign account and deposit them
+     * to `beneficiary`.
+     * - for remote reserve: burn local assets, forward XCM to reserve chain to move reserves
+     * from this chain's SA to `dest` chain's SA, and forward another XCM to `dest` to mint
+     * and deposit reserve-based assets to `beneficiary`.
+     * - for teleports: burn local assets and forward XCM to `dest` chain to mint/teleport
+     * assets and deposit them to `beneficiary`.
+     *
+     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+     * - `dest`: Destination context for the assets. Will typically be `X2(Parent,
+     * Parachain(..))` to send from parachain to parachain, or `X1(Parachain(..))` to send
+     * from relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     * generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     * fee on the `dest` (and possibly reserve) chains.
+     * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
+     * fees.
+     * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
+     *
+     * @param {XcmVersionedLocation} dest
+     * @param {XcmVersionedLocation} beneficiary
+     * @param {XcmVersionedAssets} assets
+     * @param {number} feeAssetItem
+     * @param {XcmV3WeightLimit} weightLimit
+     **/
+    transferAssets: GenericTxCall<
+      Rv,
+      (
+        dest: XcmVersionedLocation,
+        beneficiary: XcmVersionedLocation,
+        assets: XcmVersionedAssets,
+        feeAssetItem: number,
+        weightLimit: XcmV3WeightLimit,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'TransferAssets';
+            params: {
+              dest: XcmVersionedLocation;
+              beneficiary: XcmVersionedLocation;
+              assets: XcmVersionedAssets;
+              feeAssetItem: number;
+              weightLimit: XcmV3WeightLimit;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Claims assets trapped on this pallet because of leftover assets during XCM execution.
+     *
+     * - `origin`: Anyone can call this extrinsic.
+     * - `assets`: The exact assets that were trapped. Use the version to specify what version
+     * was the latest when they were trapped.
+     * - `beneficiary`: The location/account where the claimed assets will be deposited.
+     *
+     * @param {XcmVersionedAssets} assets
+     * @param {XcmVersionedLocation} beneficiary
+     **/
+    claimAssets: GenericTxCall<
+      Rv,
+      (
+        assets: XcmVersionedAssets,
+        beneficiary: XcmVersionedLocation,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'ClaimAssets';
+            params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation };
           };
         }
       >
@@ -3546,29 +5098,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   dmpQueue: {
     /**
-     * See [`Pallet::service_overweight`].
-     *
-     * @param {bigint} index
-     * @param {SpWeightsWeightV2Weight} weightLimit
-     **/
-    serviceOverweight: GenericTxCall<
-      Rv,
-      (
-        index: bigint,
-        weightLimit: SpWeightsWeightV2Weight,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'DmpQueue';
-          palletCall: {
-            name: 'ServiceOverweight';
-            params: { index: bigint; weightLimit: SpWeightsWeightV2Weight };
-          };
-        }
-      >
-    >;
-
-    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -3578,15 +5107,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   xcAssetConfig: {
     /**
-     * See [`Pallet::register_asset_location`].
+     * Register new asset location to asset Id mapping.
      *
-     * @param {XcmVersionedMultiLocation} assetLocation
+     * This makes the asset eligible for XCM interaction.
+     *
+     * @param {XcmVersionedLocation} assetLocation
      * @param {bigint} assetId
      **/
     registerAssetLocation: GenericTxCall<
       Rv,
       (
-        assetLocation: XcmVersionedMultiLocation,
+        assetLocation: XcmVersionedLocation,
         assetId: bigint,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3594,22 +5125,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'XcAssetConfig';
           palletCall: {
             name: 'RegisterAssetLocation';
-            params: { assetLocation: XcmVersionedMultiLocation; assetId: bigint };
+            params: { assetLocation: XcmVersionedLocation; assetId: bigint };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::set_asset_units_per_second`].
+     * Change the amount of units we are charging per execution second
+     * for a given AssetLocation.
      *
-     * @param {XcmVersionedMultiLocation} assetLocation
+     * @param {XcmVersionedLocation} assetLocation
      * @param {bigint} unitsPerSecond
      **/
     setAssetUnitsPerSecond: GenericTxCall<
       Rv,
       (
-        assetLocation: XcmVersionedMultiLocation,
+        assetLocation: XcmVersionedLocation,
         unitsPerSecond: bigint,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3617,22 +5149,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'XcAssetConfig';
           palletCall: {
             name: 'SetAssetUnitsPerSecond';
-            params: { assetLocation: XcmVersionedMultiLocation; unitsPerSecond: bigint };
+            params: { assetLocation: XcmVersionedLocation; unitsPerSecond: bigint };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::change_existing_asset_location`].
+     * Change the xcm type mapping for a given asset Id.
+     * The new asset type will inherit old `units per second` value.
      *
-     * @param {XcmVersionedMultiLocation} newAssetLocation
+     * @param {XcmVersionedLocation} newAssetLocation
      * @param {bigint} assetId
      **/
     changeExistingAssetLocation: GenericTxCall<
       Rv,
       (
-        newAssetLocation: XcmVersionedMultiLocation,
+        newAssetLocation: XcmVersionedLocation,
         assetId: bigint,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3640,33 +5173,35 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'XcAssetConfig';
           palletCall: {
             name: 'ChangeExistingAssetLocation';
-            params: { newAssetLocation: XcmVersionedMultiLocation; assetId: bigint };
+            params: { newAssetLocation: XcmVersionedLocation; assetId: bigint };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::remove_payment_asset`].
+     * Removes asset from the set of supported payment assets.
      *
-     * @param {XcmVersionedMultiLocation} assetLocation
+     * The asset can still be interacted with via XCM but it cannot be used to pay for execution time.
+     *
+     * @param {XcmVersionedLocation} assetLocation
      **/
     removePaymentAsset: GenericTxCall<
       Rv,
-      (assetLocation: XcmVersionedMultiLocation) => ChainSubmittableExtrinsic<
+      (assetLocation: XcmVersionedLocation) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'XcAssetConfig';
           palletCall: {
             name: 'RemovePaymentAsset';
-            params: { assetLocation: XcmVersionedMultiLocation };
+            params: { assetLocation: XcmVersionedLocation };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::remove_asset`].
+     * Removes all information related to asset, removing it from XCM support.
      *
      * @param {bigint} assetId
      **/
@@ -3694,11 +5229,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   xTokens: {
     /**
-     * See [`Pallet::transfer`].
+     * Transfer native currencies.
+     *
+     * `dest_weight_limit` is the weight for XCM execution on the dest
+     * chain, and it would be charged from the transferred assets. If set
+     * below requirements, the execution may fail and assets wouldn't be
+     * received.
+     *
+     * It's a no-op if any error on local XCM execution or message sending.
+     * Note sending assets out per se doesn't guarantee they would be
+     * received. Receiving depends on if the XCM message could be delivered
+     * by the network, and if the receiving chain would handle
+     * messages correctly.
      *
      * @param {bigint} currencyId
      * @param {bigint} amount
-     * @param {XcmVersionedMultiLocation} dest
+     * @param {XcmVersionedLocation} dest
      * @param {XcmV3WeightLimit} destWeightLimit
      **/
     transfer: GenericTxCall<
@@ -3706,7 +5252,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       (
         currencyId: bigint,
         amount: bigint,
-        dest: XcmVersionedMultiLocation,
+        dest: XcmVersionedLocation,
         destWeightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3717,7 +5263,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
             params: {
               currencyId: bigint;
               amount: bigint;
-              dest: XcmVersionedMultiLocation;
+              dest: XcmVersionedLocation;
               destWeightLimit: XcmV3WeightLimit;
             };
           };
@@ -3726,17 +5272,28 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_multiasset`].
+     * Transfer `Asset`.
      *
-     * @param {XcmVersionedMultiAsset} asset
-     * @param {XcmVersionedMultiLocation} dest
+     * `dest_weight_limit` is the weight for XCM execution on the dest
+     * chain, and it would be charged from the transferred assets. If set
+     * below requirements, the execution may fail and assets wouldn't be
+     * received.
+     *
+     * It's a no-op if any error on local XCM execution or message sending.
+     * Note sending assets out per se doesn't guarantee they would be
+     * received. Receiving depends on if the XCM message could be delivered
+     * by the network, and if the receiving chain would handle
+     * messages correctly.
+     *
+     * @param {XcmVersionedAsset} asset
+     * @param {XcmVersionedLocation} dest
      * @param {XcmV3WeightLimit} destWeightLimit
      **/
     transferMultiasset: GenericTxCall<
       Rv,
       (
-        asset: XcmVersionedMultiAsset,
-        dest: XcmVersionedMultiLocation,
+        asset: XcmVersionedAsset,
+        dest: XcmVersionedLocation,
         destWeightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3744,23 +5301,39 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'XTokens';
           palletCall: {
             name: 'TransferMultiasset';
-            params: {
-              asset: XcmVersionedMultiAsset;
-              dest: XcmVersionedMultiLocation;
-              destWeightLimit: XcmV3WeightLimit;
-            };
+            params: { asset: XcmVersionedAsset; dest: XcmVersionedLocation; destWeightLimit: XcmV3WeightLimit };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::transfer_with_fee`].
+     * Transfer native currencies specifying the fee and amount as
+     * separate.
+     *
+     * `dest_weight_limit` is the weight for XCM execution on the dest
+     * chain, and it would be charged from the transferred assets. If set
+     * below requirements, the execution may fail and assets wouldn't be
+     * received.
+     *
+     * `fee` is the amount to be spent to pay for execution in destination
+     * chain. Both fee and amount will be subtracted form the callers
+     * balance.
+     *
+     * If `fee` is not high enough to cover for the execution costs in the
+     * destination chain, then the assets will be trapped in the
+     * destination chain
+     *
+     * It's a no-op if any error on local XCM execution or message sending.
+     * Note sending assets out per se doesn't guarantee they would be
+     * received. Receiving depends on if the XCM message could be delivered
+     * by the network, and if the receiving chain would handle
+     * messages correctly.
      *
      * @param {bigint} currencyId
      * @param {bigint} amount
      * @param {bigint} fee
-     * @param {XcmVersionedMultiLocation} dest
+     * @param {XcmVersionedLocation} dest
      * @param {XcmV3WeightLimit} destWeightLimit
      **/
     transferWithFee: GenericTxCall<
@@ -3769,7 +5342,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         currencyId: bigint,
         amount: bigint,
         fee: bigint,
-        dest: XcmVersionedMultiLocation,
+        dest: XcmVersionedLocation,
         destWeightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3781,7 +5354,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               currencyId: bigint;
               amount: bigint;
               fee: bigint;
-              dest: XcmVersionedMultiLocation;
+              dest: XcmVersionedLocation;
               destWeightLimit: XcmV3WeightLimit;
             };
           };
@@ -3790,19 +5363,39 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_multiasset_with_fee`].
+     * Transfer `Asset` specifying the fee and amount as separate.
      *
-     * @param {XcmVersionedMultiAsset} asset
-     * @param {XcmVersionedMultiAsset} fee
-     * @param {XcmVersionedMultiLocation} dest
+     * `dest_weight_limit` is the weight for XCM execution on the dest
+     * chain, and it would be charged from the transferred assets. If set
+     * below requirements, the execution may fail and assets wouldn't be
+     * received.
+     *
+     * `fee` is the Asset to be spent to pay for execution in
+     * destination chain. Both fee and amount will be subtracted form the
+     * callers balance For now we only accept fee and asset having the same
+     * `Location` id.
+     *
+     * If `fee` is not high enough to cover for the execution costs in the
+     * destination chain, then the assets will be trapped in the
+     * destination chain
+     *
+     * It's a no-op if any error on local XCM execution or message sending.
+     * Note sending assets out per se doesn't guarantee they would be
+     * received. Receiving depends on if the XCM message could be delivered
+     * by the network, and if the receiving chain would handle
+     * messages correctly.
+     *
+     * @param {XcmVersionedAsset} asset
+     * @param {XcmVersionedAsset} fee
+     * @param {XcmVersionedLocation} dest
      * @param {XcmV3WeightLimit} destWeightLimit
      **/
     transferMultiassetWithFee: GenericTxCall<
       Rv,
       (
-        asset: XcmVersionedMultiAsset,
-        fee: XcmVersionedMultiAsset,
-        dest: XcmVersionedMultiLocation,
+        asset: XcmVersionedAsset,
+        fee: XcmVersionedAsset,
+        dest: XcmVersionedLocation,
         destWeightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3811,9 +5404,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'TransferMultiassetWithFee';
             params: {
-              asset: XcmVersionedMultiAsset;
-              fee: XcmVersionedMultiAsset;
-              dest: XcmVersionedMultiLocation;
+              asset: XcmVersionedAsset;
+              fee: XcmVersionedAsset;
+              dest: XcmVersionedLocation;
               destWeightLimit: XcmV3WeightLimit;
             };
           };
@@ -3822,11 +5415,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_multicurrencies`].
+     * Transfer several currencies specifying the item to be used as fee
+     *
+     * `dest_weight_limit` is the weight for XCM execution on the dest
+     * chain, and it would be charged from the transferred assets. If set
+     * below requirements, the execution may fail and assets wouldn't be
+     * received.
+     *
+     * `fee_item` is index of the currencies tuple that we want to use for
+     * payment
+     *
+     * It's a no-op if any error on local XCM execution or message sending.
+     * Note sending assets out per se doesn't guarantee they would be
+     * received. Receiving depends on if the XCM message could be delivered
+     * by the network, and if the receiving chain would handle
+     * messages correctly.
      *
      * @param {Array<[bigint, bigint]>} currencies
      * @param {number} feeItem
-     * @param {XcmVersionedMultiLocation} dest
+     * @param {XcmVersionedLocation} dest
      * @param {XcmV3WeightLimit} destWeightLimit
      **/
     transferMulticurrencies: GenericTxCall<
@@ -3834,7 +5441,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       (
         currencies: Array<[bigint, bigint]>,
         feeItem: number,
-        dest: XcmVersionedMultiLocation,
+        dest: XcmVersionedLocation,
         destWeightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3845,7 +5452,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
             params: {
               currencies: Array<[bigint, bigint]>;
               feeItem: number;
-              dest: XcmVersionedMultiLocation;
+              dest: XcmVersionedLocation;
               destWeightLimit: XcmV3WeightLimit;
             };
           };
@@ -3854,19 +5461,33 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_multiassets`].
+     * Transfer several `Asset` specifying the item to be used as fee
      *
-     * @param {XcmVersionedMultiAssets} assets
+     * `dest_weight_limit` is the weight for XCM execution on the dest
+     * chain, and it would be charged from the transferred assets. If set
+     * below requirements, the execution may fail and assets wouldn't be
+     * received.
+     *
+     * `fee_item` is index of the Assets that we want to use for
+     * payment
+     *
+     * It's a no-op if any error on local XCM execution or message sending.
+     * Note sending assets out per se doesn't guarantee they would be
+     * received. Receiving depends on if the XCM message could be delivered
+     * by the network, and if the receiving chain would handle
+     * messages correctly.
+     *
+     * @param {XcmVersionedAssets} assets
      * @param {number} feeItem
-     * @param {XcmVersionedMultiLocation} dest
+     * @param {XcmVersionedLocation} dest
      * @param {XcmV3WeightLimit} destWeightLimit
      **/
     transferMultiassets: GenericTxCall<
       Rv,
       (
-        assets: XcmVersionedMultiAssets,
+        assets: XcmVersionedAssets,
         feeItem: number,
-        dest: XcmVersionedMultiLocation,
+        dest: XcmVersionedLocation,
         destWeightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3875,10 +5496,86 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'TransferMultiassets';
             params: {
-              assets: XcmVersionedMultiAssets;
+              assets: XcmVersionedAssets;
               feeItem: number;
-              dest: XcmVersionedMultiLocation;
+              dest: XcmVersionedLocation;
               destWeightLimit: XcmV3WeightLimit;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `MessageQueue`'s transaction calls
+   **/
+  messageQueue: {
+    /**
+     * Remove a page which has no more messages remaining to be processed or is stale.
+     *
+     * @param {CumulusPrimitivesCoreAggregateMessageOrigin} messageOrigin
+     * @param {number} pageIndex
+     **/
+    reapPage: GenericTxCall<
+      Rv,
+      (
+        messageOrigin: CumulusPrimitivesCoreAggregateMessageOrigin,
+        pageIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MessageQueue';
+          palletCall: {
+            name: 'ReapPage';
+            params: { messageOrigin: CumulusPrimitivesCoreAggregateMessageOrigin; pageIndex: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Execute an overweight message.
+     *
+     * Temporary processing errors will be propagated whereas permanent errors are treated
+     * as success condition.
+     *
+     * - `origin`: Must be `Signed`.
+     * - `message_origin`: The origin from which the message to be executed arrived.
+     * - `page`: The page in the queue in which the message to be executed is sitting.
+     * - `index`: The index into the queue of the message to be executed.
+     * - `weight_limit`: The maximum amount of weight allowed to be consumed in the execution
+     * of the message.
+     *
+     * Benchmark complexity considerations: O(index + weight_limit).
+     *
+     * @param {CumulusPrimitivesCoreAggregateMessageOrigin} messageOrigin
+     * @param {number} page
+     * @param {number} index
+     * @param {SpWeightsWeightV2Weight} weightLimit
+     **/
+    executeOverweight: GenericTxCall<
+      Rv,
+      (
+        messageOrigin: CumulusPrimitivesCoreAggregateMessageOrigin,
+        page: number,
+        index: number,
+        weightLimit: SpWeightsWeightV2Weight,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MessageQueue';
+          palletCall: {
+            name: 'ExecuteOverweight';
+            params: {
+              messageOrigin: CumulusPrimitivesCoreAggregateMessageOrigin;
+              page: number;
+              index: number;
+              weightLimit: SpWeightsWeightV2Weight;
             };
           };
         }
@@ -3895,7 +5592,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   evm: {
     /**
-     * See [`Pallet::withdraw`].
+     * Withdraw balance from EVM into currency/balances pallet.
      *
      * @param {H160} address
      * @param {bigint} value
@@ -3918,7 +5615,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::call`].
+     * Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
      *
      * @param {H160} source
      * @param {H160} target
@@ -3965,7 +5662,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::create`].
+     * Issue an EVM create operation. This is similar to a contract creation transaction in
+     * Ethereum.
      *
      * @param {H160} source
      * @param {BytesLike} init
@@ -4009,7 +5707,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::create2`].
+     * Issue an EVM create2 operation.
      *
      * @param {H160} source
      * @param {BytesLike} init
@@ -4065,7 +5763,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   ethereum: {
     /**
-     * See [`Pallet::transact`].
+     * Transact an Ethereum transaction.
      *
      * @param {EthereumTransactionTransactionV2} transaction
      **/
@@ -4093,7 +5791,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   dynamicEvmBaseFee: {
     /**
-     * See [`Pallet::set_base_fee_per_gas`].
+     * `root-only` extrinsic to set the `base_fee_per_gas` value manually.
+     * The specified value has to respect min & max limits configured in the runtime.
      *
      * @param {U256} fee
      **/
@@ -4121,7 +5820,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   contracts: {
     /**
-     * See [`Pallet::call_old_weight`].
+     * Deprecated version if [`Self::call`] for use in an in-storage `Call`.
      *
      * @param {MultiAddressLike} dest
      * @param {bigint} value
@@ -4156,7 +5855,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::instantiate_with_code_old_weight`].
+     * Deprecated version if [`Self::instantiate_with_code`] for use in an in-storage `Call`.
      *
      * @param {bigint} value
      * @param {bigint} gasLimit
@@ -4194,7 +5893,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::instantiate_old_weight`].
+     * Deprecated version if [`Self::instantiate`] for use in an in-storage `Call`.
      *
      * @param {bigint} value
      * @param {bigint} gasLimit
@@ -4232,7 +5931,30 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::upload_code`].
+     * Upload new `code` without instantiating a contract from it.
+     *
+     * If the code does not already exist a deposit is reserved from the caller
+     * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
+     * depends on the size of the supplied `code`.
+     *
+     * If the code already exists in storage it will still return `Ok` and upgrades
+     * the in storage version to the current
+     * [`InstructionWeights::version`](InstructionWeights).
+     *
+     * - `determinism`: If this is set to any other value but [`Determinism::Enforced`] then
+     * the only way to use this code is to delegate call into it from an offchain execution.
+     * Set to [`Determinism::Enforced`] if in doubt.
+     *
+     * # Note
+     *
+     * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
+     * To avoid this situation a constructor could employ access control so that it can
+     * only be instantiated by permissioned entities. The same is true when uploading
+     * through [`Self::instantiate_with_code`].
+     *
+     * Use [`Determinism::Relaxed`] exclusively for non-deterministic code. If the uploaded
+     * code is deterministic, specifying [`Determinism::Relaxed`] will be disregarded and
+     * result in higher gas costs.
      *
      * @param {BytesLike} code
      * @param {bigint | undefined} storageDepositLimit
@@ -4261,7 +5983,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_code`].
+     * Remove the code stored under `code_hash` and refund the deposit to its owner.
+     *
+     * A code can only be removed by its original uploader (its owner) and only if it is
+     * not used by any contract.
      *
      * @param {H256} codeHash
      **/
@@ -4280,7 +6005,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_code`].
+     * Privileged function that changes the code of an existing contract.
+     *
+     * This takes care of updating refcounts and all other necessary operations. Returns
+     * an error if either the `code_hash` or `dest` do not exist.
+     *
+     * # Note
+     *
+     * This does **not** change the address of the contract in question. This means
+     * that the contract address is no longer derived from its code hash after calling
+     * this dispatchable.
      *
      * @param {MultiAddressLike} dest
      * @param {H256} codeHash
@@ -4303,7 +6037,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::call`].
+     * Makes a call to an account, optionally transferring some balance.
+     *
+     * # Parameters
+     *
+     * * `dest`: Address of the contract to call.
+     * * `value`: The balance to transfer from the `origin` to `dest`.
+     * * `gas_limit`: The gas limit enforced when executing the constructor.
+     * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
+     * caller to pay for the storage consumed.
+     * * `data`: The input data to pass to the contract.
+     *
+     * * If the account is a smart-contract account, the associated code will be
+     * executed and any value will be transferred.
+     * * If the account is a regular account, any value will be transferred.
+     * * If no account exists and the call value is not less than `existential_deposit`,
+     * a regular account will be created and any value will be transferred.
      *
      * @param {MultiAddressLike} dest
      * @param {bigint} value
@@ -4338,7 +6087,31 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::instantiate_with_code`].
+     * Instantiates a new contract from the supplied `code` optionally transferring
+     * some balance.
+     *
+     * This dispatchable has the same effect as calling [`Self::upload_code`] +
+     * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
+     * also check the documentation of [`Self::upload_code`].
+     *
+     * # Parameters
+     *
+     * * `value`: The balance to transfer from the `origin` to the newly created contract.
+     * * `gas_limit`: The gas limit enforced when executing the constructor.
+     * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
+     * from the caller to pay for the storage consumed.
+     * * `code`: The contract code to deploy in raw bytes.
+     * * `data`: The input data to pass to the contract constructor.
+     * * `salt`: Used for the address derivation. See [`Pallet::contract_address`].
+     *
+     * Instantiation is executed as follows:
+     *
+     * - The supplied `code` is deployed, and a `code_hash` is created for that code.
+     * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
+     * - The destination address is computed based on the sender, code_hash and the salt.
+     * - The smart-contract account is created at the computed address.
+     * - The `value` is transferred to the new account.
+     * - The `deploy` function is executed in the context of the newly-created account.
      *
      * @param {bigint} value
      * @param {SpWeightsWeightV2Weight} gasLimit
@@ -4376,7 +6149,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::instantiate`].
+     * Instantiates a contract from a previously deployed wasm binary.
+     *
+     * This function is identical to [`Self::instantiate_with_code`] but without the
+     * code deployment step. Instead, the `code_hash` of an on-chain deployed wasm binary
+     * must be supplied.
      *
      * @param {bigint} value
      * @param {SpWeightsWeightV2Weight} gasLimit
@@ -4414,7 +6191,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::migrate`].
+     * When a migration is in progress, this dispatchable can be used to run migration steps.
+     * Calls that contribute to advancing the migration have their fees waived, as it's helpful
+     * for the chain. Note that while the migration is in progress, the pallet will also
+     * leverage the `on_idle` hooks to run migration steps.
      *
      * @param {SpWeightsWeightV2Weight} weightLimit
      **/
@@ -4442,7 +6222,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   sudo: {
     /**
-     * See [`Pallet::sudo`].
+     * Authenticates the sudo key and dispatches a function call with `Root` origin.
      *
      * @param {AstarRuntimeRuntimeCallLike} call
      **/
@@ -4461,7 +6241,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::sudo_unchecked_weight`].
+     * Authenticates the sudo key and dispatches a function call with `Root` origin.
+     * This function does not check the weight of the call, and instead allows the
+     * Sudo user to specify the weight of the call.
+     *
+     * The dispatch origin for this call must be _Signed_.
      *
      * @param {AstarRuntimeRuntimeCallLike} call
      * @param {SpWeightsWeightV2Weight} weight
@@ -4484,7 +6268,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_key`].
+     * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
+     * key.
      *
      * @param {MultiAddressLike} new_
      **/
@@ -4503,7 +6288,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::sudo_as`].
+     * Authenticates the sudo key and dispatches a function call with `Signed` origin from
+     * a given account.
+     *
+     * The dispatch origin for this call must be _Signed_.
      *
      * @param {MultiAddressLike} who
      * @param {AstarRuntimeRuntimeCallLike} call
@@ -4520,6 +6308,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SudoAs';
             params: { who: MultiAddressLike; call: AstarRuntimeRuntimeCallLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Permanently removes the sudo key.
+     *
+     * **This cannot be un-done.**
+     *
+     **/
+    removeKey: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Sudo';
+          palletCall: {
+            name: 'RemoveKey';
           };
         }
       >

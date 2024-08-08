@@ -9,9 +9,9 @@ import type {
   Digest,
   Phase,
   Data,
+  BytesLike,
   FixedBytes,
   FixedU128,
-  BytesLike,
   H160,
   U256,
 } from 'dedot/codecs';
@@ -20,8 +20,10 @@ import type {
   FrameSupportDispatchPerDispatchClass,
   FrameSystemEventRecord,
   FrameSystemLastRuntimeUpgradeInfo,
+  FrameSystemCodeUpgradeAuthorization,
   PalletIdentityRegistration,
   PalletIdentityRegistrarInfo,
+  PalletIdentityAuthorityProperties,
   PalletMultisigMultisig,
   PalletProxyProxyDefinition,
   PalletProxyAnnouncement,
@@ -37,7 +39,6 @@ import type {
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
   SpWeightsWeightV2Weight,
-  CumulusPalletParachainSystemCodeUpgradeAuthorization,
   PalletTransactionPaymentReleases,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
@@ -75,16 +76,17 @@ import type {
   SpCoreCryptoKeyTypeId,
   SpConsensusAuraSr25519AppSr25519Public,
   SpConsensusSlotsSlot,
-  CumulusPalletXcmpQueueInboundChannelDetails,
   CumulusPalletXcmpQueueOutboundChannelDetails,
   CumulusPalletXcmpQueueQueueConfigData,
   PalletXcmQueryStatus,
-  XcmVersionedMultiLocation,
+  XcmVersionedLocation,
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
-  CumulusPalletDmpQueueConfigData,
-  CumulusPalletDmpQueuePageIndexData,
+  CumulusPalletDmpQueueMigrationState,
+  PalletMessageQueueBookState,
+  CumulusPrimitivesCoreAggregateMessageOrigin,
+  PalletMessageQueuePage,
   PalletEvmCodeMetadata,
   EthereumTransactionTransactionV2,
   FpRpcTransactionStatus,
@@ -114,6 +116,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<number | undefined> =} callback
      **/
     extrinsicCount: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Whether all inherents have been applied.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    inherentsApplied: GenericStorageQuery<Rv, () => boolean>;
 
     /**
      * The current weight for the block.
@@ -233,6 +242,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     executionPhase: GenericStorageQuery<Rv, () => Phase | undefined>;
 
     /**
+     * `Some` if a code upgrade has been authorized.
+     *
+     * @param {Callback<FrameSystemCodeUpgradeAuthorization | undefined> =} callback
+     **/
+    authorizedUpgrade: GenericStorageQuery<Rv, () => FrameSystemCodeUpgradeAuthorization | undefined>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -242,14 +258,19 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   identity: {
     /**
-     * Information that is pertinent to identify the entity behind an account.
+     * Information that is pertinent to identify the entity behind an account. First item is the
+     * registration, second is the account's primary username.
      *
      * TWOX-NOTE: OK ― `AccountId` is a secure hash.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<PalletIdentityRegistration | undefined> =} callback
+     * @param {Callback<[PalletIdentityRegistration, Bytes | undefined] | undefined> =} callback
      **/
-    identityOf: GenericStorageQuery<Rv, (arg: AccountId32Like) => PalletIdentityRegistration | undefined, AccountId32>;
+    identityOf: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => [PalletIdentityRegistration, Bytes | undefined] | undefined,
+      AccountId32
+    >;
 
     /**
      * The super-identity of an alternative "sub" identity together with its name, within that
@@ -281,6 +302,43 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<Array<PalletIdentityRegistrarInfo | undefined>> =} callback
      **/
     registrars: GenericStorageQuery<Rv, () => Array<PalletIdentityRegistrarInfo | undefined>>;
+
+    /**
+     * A map of the accounts who are authorized to grant usernames.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletIdentityAuthorityProperties | undefined> =} callback
+     **/
+    usernameAuthorities: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => PalletIdentityAuthorityProperties | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Reverse lookup from `username` to the `AccountId` that has registered it. The value should
+     * be a key in the `IdentityOf` map, but it may not if the user has cleared their identity.
+     *
+     * Multiple usernames may map to the same `AccountId`, but `IdentityOf` will only map to one
+     * primary username.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    accountOfUsername: GenericStorageQuery<Rv, (arg: BytesLike) => AccountId32 | undefined, Bytes>;
+
+    /**
+     * Usernames that an authority has granted, but that the account controller has not confirmed
+     * that they want it. Used primarily in cases where the `AccountId` cannot provide a signature
+     * because they are a pure proxy, multisig, etc. In order to confirm it, they should call
+     * [`Call::accept_username`].
+     *
+     * First tuple item is the account and second is the acceptance deadline.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<[AccountId32, number] | undefined> =} callback
+     **/
+    pendingUsernames: GenericStorageQuery<Rv, (arg: BytesLike) => [AccountId32, number] | undefined, Bytes>;
 
     /**
      * Generic pallet storage query
@@ -604,13 +662,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<SpWeightsWeightV2Weight | undefined> =} callback
      **/
     reservedDmpWeightOverride: GenericStorageQuery<Rv, () => SpWeightsWeightV2Weight | undefined>;
-
-    /**
-     * The next authorized upgrade, if there is one.
-     *
-     * @param {Callback<CumulusPalletParachainSystemCodeUpgradeAuthorization | undefined> =} callback
-     **/
-    authorizedUpgrade: GenericStorageQuery<Rv, () => CumulusPalletParachainSystemCodeUpgradeAuthorization | undefined>;
 
     /**
      * A custom head data that should be returned as result of `validate_block`.
@@ -1137,6 +1188,14 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     candidates: GenericStorageQuery<Rv, () => Array<PalletCollatorSelectionCandidateInfo>>;
 
     /**
+     * Candidates who initiated leave intent or kicked.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[number, bigint]> =} callback
+     **/
+    nonCandidates: GenericStorageQuery<Rv, (arg: AccountId32Like) => [number, bigint], AccountId32>;
+
+    /**
      * Last block authored by collator.
      *
      * @param {AccountId32Like} arg
@@ -1303,23 +1362,18 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   xcmpQueue: {
     /**
-     * Status of the inbound XCMP channels.
+     * The suspended inbound XCMP channels. All others are not suspended.
      *
-     * @param {Callback<Array<CumulusPalletXcmpQueueInboundChannelDetails>> =} callback
-     **/
-    inboundXcmpStatus: GenericStorageQuery<Rv, () => Array<CumulusPalletXcmpQueueInboundChannelDetails>>;
-
-    /**
-     * Inbound aggregate XCMP messages. It can only be one per ParaId/block.
+     * This is a `StorageValue` instead of a `StorageMap` since we expect multiple reads per block
+     * to different keys with a one byte payload. The access to `BoundedBTreeSet` will be cached
+     * within the block and therefore only included once in the proof size.
      *
-     * @param {[PolkadotParachainPrimitivesPrimitivesId, number]} arg
-     * @param {Callback<Bytes> =} callback
+     * NOTE: The PoV benchmarking cannot know this and will over-estimate, but the actual proof
+     * will be smaller.
+     *
+     * @param {Callback<Array<PolkadotParachainPrimitivesPrimitivesId>> =} callback
      **/
-    inboundXcmpMessages: GenericStorageQuery<
-      Rv,
-      (arg: [PolkadotParachainPrimitivesPrimitivesId, number]) => Bytes,
-      [PolkadotParachainPrimitivesPrimitivesId, number]
-    >;
+    inboundXcmpSuspended: GenericStorageQuery<Rv, () => Array<PolkadotParachainPrimitivesPrimitivesId>>;
 
     /**
      * The non-empty XCMP channels in order of becoming non-empty, and the index of the first
@@ -1363,36 +1417,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<CumulusPalletXcmpQueueQueueConfigData> =} callback
      **/
     queueConfig: GenericStorageQuery<Rv, () => CumulusPalletXcmpQueueQueueConfigData>;
-
-    /**
-     * The messages that exceeded max individual message weight budget.
-     *
-     * These message stay in this storage map until they are manually dispatched via
-     * `service_overweight`.
-     *
-     * @param {bigint} arg
-     * @param {Callback<[PolkadotParachainPrimitivesPrimitivesId, number, Bytes] | undefined> =} callback
-     **/
-    overweight: GenericStorageQuery<
-      Rv,
-      (arg: bigint) => [PolkadotParachainPrimitivesPrimitivesId, number, Bytes] | undefined,
-      bigint
-    >;
-
-    /**
-     * Counter for the related counted storage map
-     *
-     * @param {Callback<number> =} callback
-     **/
-    counterForOverweight: GenericStorageQuery<Rv, () => number>;
-
-    /**
-     * The number of overweight messages ever recorded in `Overweight`. Also doubles as the next
-     * available free overweight index.
-     *
-     * @param {Callback<bigint> =} callback
-     **/
-    overweightCount: GenericStorageQuery<Rv, () => bigint>;
 
     /**
      * Whether or not the XCMP queue is suspended from executing incoming XCMs or not.
@@ -1440,7 +1464,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * The existing asset traps.
      *
-     * Key is the blake2 256 hash of (origin, versioned `MultiAssets`) pair. Value is the number of
+     * Key is the blake2 256 hash of (origin, versioned `Assets`) pair. Value is the number of
      * times this pair has been trapped (usually just 1 if it exists at all).
      *
      * @param {H256} arg
@@ -1459,38 +1483,38 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * The Latest versions that we know various locations support.
      *
-     * @param {[number, XcmVersionedMultiLocation]} arg
+     * @param {[number, XcmVersionedLocation]} arg
      * @param {Callback<number | undefined> =} callback
      **/
     supportedVersion: GenericStorageQuery<
       Rv,
-      (arg: [number, XcmVersionedMultiLocation]) => number | undefined,
-      [number, XcmVersionedMultiLocation]
+      (arg: [number, XcmVersionedLocation]) => number | undefined,
+      [number, XcmVersionedLocation]
     >;
 
     /**
      * All locations that we have requested version notifications from.
      *
-     * @param {[number, XcmVersionedMultiLocation]} arg
+     * @param {[number, XcmVersionedLocation]} arg
      * @param {Callback<bigint | undefined> =} callback
      **/
     versionNotifiers: GenericStorageQuery<
       Rv,
-      (arg: [number, XcmVersionedMultiLocation]) => bigint | undefined,
-      [number, XcmVersionedMultiLocation]
+      (arg: [number, XcmVersionedLocation]) => bigint | undefined,
+      [number, XcmVersionedLocation]
     >;
 
     /**
      * The target locations that are subscribed to our version changes, as well as the most recent
      * of our versions we informed them of.
      *
-     * @param {[number, XcmVersionedMultiLocation]} arg
+     * @param {[number, XcmVersionedLocation]} arg
      * @param {Callback<[bigint, SpWeightsWeightV2Weight, number] | undefined> =} callback
      **/
     versionNotifyTargets: GenericStorageQuery<
       Rv,
-      (arg: [number, XcmVersionedMultiLocation]) => [bigint, SpWeightsWeightV2Weight, number] | undefined,
-      [number, XcmVersionedMultiLocation]
+      (arg: [number, XcmVersionedLocation]) => [bigint, SpWeightsWeightV2Weight, number] | undefined,
+      [number, XcmVersionedLocation]
     >;
 
     /**
@@ -1498,9 +1522,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * the `u32` counter is the number of times that a send to the destination has been attempted,
      * which is used as a prioritization.
      *
-     * @param {Callback<Array<[XcmVersionedMultiLocation, number]>> =} callback
+     * @param {Callback<Array<[XcmVersionedLocation, number]>> =} callback
      **/
-    versionDiscoveryQueue: GenericStorageQuery<Rv, () => Array<[XcmVersionedMultiLocation, number]>>;
+    versionDiscoveryQueue: GenericStorageQuery<Rv, () => Array<[XcmVersionedLocation, number]>>;
 
     /**
      * The current migration's stage, if any.
@@ -1525,11 +1549,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Fungible assets which we know are locked on this chain.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<[bigint, XcmVersionedMultiLocation]> | undefined> =} callback
+     * @param {Callback<Array<[bigint, XcmVersionedLocation]> | undefined> =} callback
      **/
     lockedFungibles: GenericStorageQuery<
       Rv,
-      (arg: AccountId32Like) => Array<[bigint, XcmVersionedMultiLocation]> | undefined,
+      (arg: AccountId32Like) => Array<[bigint, XcmVersionedLocation]> | undefined,
       AccountId32
     >;
 
@@ -1550,41 +1574,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   dmpQueue: {
     /**
-     * The configuration.
+     * The migration state of this pallet.
      *
-     * @param {Callback<CumulusPalletDmpQueueConfigData> =} callback
+     * @param {Callback<CumulusPalletDmpQueueMigrationState> =} callback
      **/
-    configuration: GenericStorageQuery<Rv, () => CumulusPalletDmpQueueConfigData>;
-
-    /**
-     * The page index.
-     *
-     * @param {Callback<CumulusPalletDmpQueuePageIndexData> =} callback
-     **/
-    pageIndex: GenericStorageQuery<Rv, () => CumulusPalletDmpQueuePageIndexData>;
-
-    /**
-     * The queue pages.
-     *
-     * @param {number} arg
-     * @param {Callback<Array<[number, Bytes]>> =} callback
-     **/
-    pages: GenericStorageQuery<Rv, (arg: number) => Array<[number, Bytes]>, number>;
-
-    /**
-     * The overweight messages.
-     *
-     * @param {bigint} arg
-     * @param {Callback<[number, Bytes] | undefined> =} callback
-     **/
-    overweight: GenericStorageQuery<Rv, (arg: bigint) => [number, Bytes] | undefined, bigint>;
-
-    /**
-     * Counter for the related counted storage map
-     *
-     * @param {Callback<number> =} callback
-     **/
-    counterForOverweight: GenericStorageQuery<Rv, () => number>;
+    migrationStatus: GenericStorageQuery<Rv, () => CumulusPalletDmpQueueMigrationState>;
 
     /**
      * Generic pallet storage query
@@ -1601,23 +1595,19 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * like transferring an asset from this chain to another.
      *
      * @param {bigint} arg
-     * @param {Callback<XcmVersionedMultiLocation | undefined> =} callback
+     * @param {Callback<XcmVersionedLocation | undefined> =} callback
      **/
-    assetIdToLocation: GenericStorageQuery<Rv, (arg: bigint) => XcmVersionedMultiLocation | undefined, bigint>;
+    assetIdToLocation: GenericStorageQuery<Rv, (arg: bigint) => XcmVersionedLocation | undefined, bigint>;
 
     /**
      * Mapping from an asset type to an asset id.
      * Can be used when receiving a multilocation XCM message to retrieve
      * the corresponding asset in which tokens should me minted.
      *
-     * @param {XcmVersionedMultiLocation} arg
+     * @param {XcmVersionedLocation} arg
      * @param {Callback<bigint | undefined> =} callback
      **/
-    assetLocationToId: GenericStorageQuery<
-      Rv,
-      (arg: XcmVersionedMultiLocation) => bigint | undefined,
-      XcmVersionedMultiLocation
-    >;
+    assetLocationToId: GenericStorageQuery<Rv, (arg: XcmVersionedLocation) => bigint | undefined, XcmVersionedLocation>;
 
     /**
      * Stores the units per second for local execution for a AssetLocation.
@@ -1625,13 +1615,53 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      *
      * Not all asset types are supported for payment. If value exists here, it means it is supported.
      *
-     * @param {XcmVersionedMultiLocation} arg
+     * @param {XcmVersionedLocation} arg
      * @param {Callback<bigint | undefined> =} callback
      **/
     assetLocationUnitsPerSecond: GenericStorageQuery<
       Rv,
-      (arg: XcmVersionedMultiLocation) => bigint | undefined,
-      XcmVersionedMultiLocation
+      (arg: XcmVersionedLocation) => bigint | undefined,
+      XcmVersionedLocation
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `MessageQueue`'s storage queries
+   **/
+  messageQueue: {
+    /**
+     * The index of the first and last (non-empty) pages.
+     *
+     * @param {CumulusPrimitivesCoreAggregateMessageOrigin} arg
+     * @param {Callback<PalletMessageQueueBookState> =} callback
+     **/
+    bookStateFor: GenericStorageQuery<
+      Rv,
+      (arg: CumulusPrimitivesCoreAggregateMessageOrigin) => PalletMessageQueueBookState,
+      CumulusPrimitivesCoreAggregateMessageOrigin
+    >;
+
+    /**
+     * The origin at which we should begin servicing.
+     *
+     * @param {Callback<CumulusPrimitivesCoreAggregateMessageOrigin | undefined> =} callback
+     **/
+    serviceHead: GenericStorageQuery<Rv, () => CumulusPrimitivesCoreAggregateMessageOrigin | undefined>;
+
+    /**
+     * The map of page indices to pages.
+     *
+     * @param {[CumulusPrimitivesCoreAggregateMessageOrigin, number]} arg
+     * @param {Callback<PalletMessageQueuePage | undefined> =} callback
+     **/
+    pages: GenericStorageQuery<
+      Rv,
+      (arg: [CumulusPrimitivesCoreAggregateMessageOrigin, number]) => PalletMessageQueuePage | undefined,
+      [CumulusPrimitivesCoreAggregateMessageOrigin, number]
     >;
 
     /**

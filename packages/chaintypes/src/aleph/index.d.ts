@@ -21,6 +21,10 @@ export interface VersionedAlephApi<Rv extends RpcVersion> extends GenericSubstra
   tx: ChainTx<Rv>;
 }
 
+/**
+ * @name: AlephApi
+ * @specVersion: 73
+ **/
 export interface AlephApi {
   legacy: VersionedAlephApi<RpcLegacy>;
   v2: VersionedAlephApi<RpcV2>;

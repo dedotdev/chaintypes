@@ -21,6 +21,10 @@ export interface VersionedMoonbeamApi<Rv extends RpcVersion> extends GenericSubs
   tx: ChainTx<Rv>;
 }
 
+/**
+ * @name: MoonbeamApi
+ * @specVersion: 3001
+ **/
 export interface MoonbeamApi {
   legacy: VersionedMoonbeamApi<RpcLegacy>;
   v2: VersionedMoonbeamApi<RpcV2>;

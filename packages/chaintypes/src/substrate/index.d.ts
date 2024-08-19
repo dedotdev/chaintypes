@@ -21,6 +21,10 @@ export interface VersionedSubstrateApi<Rv extends RpcVersion> extends GenericSub
   tx: ChainTx<Rv>;
 }
 
+/**
+ * @name: SubstrateApi
+ * @specVersion: 268
+ **/
 export interface SubstrateApi {
   legacy: VersionedSubstrateApi<RpcLegacy>;
   v2: VersionedSubstrateApi<RpcV2>;

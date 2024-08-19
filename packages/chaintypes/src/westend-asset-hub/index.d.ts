@@ -21,6 +21,10 @@ export interface VersionedWestendAssetHubApi<Rv extends RpcVersion> extends Gene
   tx: ChainTx<Rv>;
 }
 
+/**
+ * @name: WestendAssetHubApi
+ * @specVersion: 1015000
+ **/
 export interface WestendAssetHubApi {
   legacy: VersionedWestendAssetHubApi<RpcLegacy>;
   v2: VersionedWestendAssetHubApi<RpcV2>;

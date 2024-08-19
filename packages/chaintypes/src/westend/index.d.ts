@@ -21,6 +21,10 @@ export interface VersionedWestendApi<Rv extends RpcVersion> extends GenericSubst
   tx: ChainTx<Rv>;
 }
 
+/**
+ * @name: WestendApi
+ * @specVersion: 1015000
+ **/
 export interface WestendApi {
   legacy: VersionedWestendApi<RpcLegacy>;
   v2: VersionedWestendApi<RpcV2>;

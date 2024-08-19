@@ -21,6 +21,10 @@ export interface VersionedPolkadotApi<Rv extends RpcVersion> extends GenericSubs
   tx: ChainTx<Rv>;
 }
 
+/**
+ * @name: PolkadotApi
+ * @specVersion: 1002007
+ **/
 export interface PolkadotApi {
   legacy: VersionedPolkadotApi<RpcLegacy>;
   v2: VersionedPolkadotApi<RpcV2>;

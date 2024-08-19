@@ -21,6 +21,10 @@ export interface VersionedRococoAssetHubApi<Rv extends RpcVersion> extends Gener
   tx: ChainTx<Rv>;
 }
 
+/**
+ * @name: RococoAssetHubApi
+ * @specVersion: 1015000
+ **/
 export interface RococoAssetHubApi {
   legacy: VersionedRococoAssetHubApi<RpcLegacy>;
   v2: VersionedRococoAssetHubApi<RpcV2>;

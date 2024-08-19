@@ -21,6 +21,10 @@ export interface VersionedWestendPeopleApi<Rv extends RpcVersion> extends Generi
   tx: ChainTx<Rv>;
 }
 
+/**
+ * @name: WestendPeopleApi
+ * @specVersion: 1015000
+ **/
 export interface WestendPeopleApi {
   legacy: VersionedWestendPeopleApi<RpcLegacy>;
   v2: VersionedWestendPeopleApi<RpcV2>;

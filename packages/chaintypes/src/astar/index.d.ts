@@ -21,6 +21,10 @@ export interface VersionedAstarApi<Rv extends RpcVersion> extends GenericSubstra
   tx: ChainTx<Rv>;
 }
 
+/**
+ * @name: AstarApi
+ * @specVersion: 92
+ **/
 export interface AstarApi {
   legacy: VersionedAstarApi<RpcLegacy>;
   v2: VersionedAstarApi<RpcV2>;

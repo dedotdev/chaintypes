@@ -21,6 +21,10 @@ export interface VersionedPaseoApi<Rv extends RpcVersion> extends GenericSubstra
   tx: ChainTx<Rv>;
 }
 
+/**
+ * @name: PaseoApi
+ * @specVersion: 1002005
+ **/
 export interface PaseoApi {
   legacy: VersionedPaseoApi<RpcLegacy>;
   v2: VersionedPaseoApi<RpcV2>;

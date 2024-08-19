@@ -21,6 +21,10 @@ export interface VersionedRococoApi<Rv extends RpcVersion> extends GenericSubstr
   tx: ChainTx<Rv>;
 }
 
+/**
+ * @name: RococoApi
+ * @specVersion: 1015000
+ **/
 export interface RococoApi {
   legacy: VersionedRococoApi<RpcLegacy>;
   v2: VersionedRococoApi<RpcV2>;

@@ -2818,4 +2818,29 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      **/
     [prop: string]: GenericPalletEvent<Rv>;
   };
+  /**
+   * Pallet `IdentityMigrator`'s events
+   **/
+  identityMigrator: {
+    /**
+     * The identity and all sub accounts were reaped for `who`.
+     **/
+    IdentityReaped: GenericPalletEvent<Rv, 'IdentityMigrator', 'IdentityReaped', { who: AccountId32 }>;
+
+    /**
+     * The deposits held for `who` were updated. `identity` is the new deposit held for
+     * identity info, and `subs` is the new deposit held for the sub-accounts.
+     **/
+    DepositUpdated: GenericPalletEvent<
+      Rv,
+      'IdentityMigrator',
+      'DepositUpdated',
+      { who: AccountId32; identity: bigint; subs: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
 }

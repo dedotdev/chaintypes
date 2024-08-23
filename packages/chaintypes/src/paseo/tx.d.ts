@@ -8021,4 +8021,51 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
+  /**
+   * Pallet `IdentityMigrator`'s transaction calls
+   **/
+  identityMigrator: {
+    /**
+     * See [`Pallet::reap_identity`].
+     *
+     * @param {AccountId32Like} who
+     **/
+    reapIdentity: GenericTxCall<
+      Rv,
+      (who: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'IdentityMigrator';
+          palletCall: {
+            name: 'ReapIdentity';
+            params: { who: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::poke_deposit`].
+     *
+     * @param {AccountId32Like} who
+     **/
+    pokeDeposit: GenericTxCall<
+      Rv,
+      (who: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'IdentityMigrator';
+          palletCall: {
+            name: 'PokeDeposit';
+            params: { who: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
 }

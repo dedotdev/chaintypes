@@ -20,6 +20,7 @@ import type {
   MultiAddressLike,
   AccountId32Like,
   Permill,
+  Perbill,
   Era,
   Header,
   UncheckedExtrinsic,
@@ -73,7 +74,6 @@ export type AstarRuntimeRuntimeEvent =
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
   | { pallet: 'PolkadotXcm'; palletEvent: PalletXcmEvent }
   | { pallet: 'CumulusXcm'; palletEvent: CumulusPalletXcmEvent }
-  | { pallet: 'DmpQueue'; palletEvent: CumulusPalletDmpQueueEvent }
   | { pallet: 'XcAssetConfig'; palletEvent: PalletXcAssetConfigEvent }
   | { pallet: 'XTokens'; palletEvent: OrmlXtokensModuleEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
@@ -1466,59 +1466,6 @@ export type CumulusPalletXcmEvent =
 /**
  * The `Event` enum of this pallet
  **/
-export type CumulusPalletDmpQueueEvent =
-  /**
-   * The export of pages started.
-   **/
-  | { name: 'StartedExport' }
-  /**
-   * The export of a page completed.
-   **/
-  | { name: 'Exported'; data: { page: number } }
-  /**
-   * The export of a page failed.
-   *
-   * This should never be emitted.
-   **/
-  | { name: 'ExportFailed'; data: { page: number } }
-  /**
-   * The export of pages completed.
-   **/
-  | { name: 'CompletedExport' }
-  /**
-   * The export of overweight messages started.
-   **/
-  | { name: 'StartedOverweightExport' }
-  /**
-   * The export of an overweight message completed.
-   **/
-  | { name: 'ExportedOverweight'; data: { index: bigint } }
-  /**
-   * The export of an overweight message failed.
-   *
-   * This should never be emitted.
-   **/
-  | { name: 'ExportOverweightFailed'; data: { index: bigint } }
-  /**
-   * The export of overweight messages completed.
-   **/
-  | { name: 'CompletedOverweightExport' }
-  /**
-   * The cleanup of remaining pallet storage started.
-   **/
-  | { name: 'StartedCleanup' }
-  /**
-   * Some debris was cleaned up.
-   **/
-  | { name: 'CleanedSome'; data: { keysRemoved: number } }
-  /**
-   * The cleanup of remaining pallet storage completed.
-   **/
-  | { name: 'Completed'; data: { error: boolean } };
-
-/**
- * The `Event` enum of this pallet
- **/
 export type PalletXcAssetConfigEvent =
   /**
    * Registed mapping between asset type and asset Id.
@@ -2371,7 +2318,6 @@ export type AstarRuntimeRuntimeCall =
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCall }
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCall }
   | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCall }
-  | { pallet: 'DmpQueue'; palletCall: CumulusPalletDmpQueueCall }
   | { pallet: 'XcAssetConfig'; palletCall: PalletXcAssetConfigCall }
   | { pallet: 'XTokens'; palletCall: OrmlXtokensModuleCall }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
@@ -2402,7 +2348,6 @@ export type AstarRuntimeRuntimeCallLike =
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCallLike }
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCallLike }
   | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCallLike }
-  | { pallet: 'DmpQueue'; palletCall: CumulusPalletDmpQueueCallLike }
   | { pallet: 'XcAssetConfig'; palletCall: PalletXcAssetConfigCallLike }
   | { pallet: 'XTokens'; palletCall: OrmlXtokensModuleCallLike }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
@@ -2901,15 +2846,9 @@ export type PalletIdentityJudgement =
   | { type: 'Erroneous' };
 
 export type SpRuntimeMultiSignature =
-  | { type: 'Ed25519'; value: SpCoreEd25519Signature }
-  | { type: 'Sr25519'; value: SpCoreSr25519Signature }
-  | { type: 'Ecdsa'; value: SpCoreEcdsaSignature };
-
-export type SpCoreEd25519Signature = FixedBytes<64>;
-
-export type SpCoreSr25519Signature = FixedBytes<64>;
-
-export type SpCoreEcdsaSignature = FixedBytes<65>;
+  | { type: 'Ed25519'; value: FixedBytes<64> }
+  | { type: 'Sr25519'; value: FixedBytes<64> }
+  | { type: 'Ecdsa'; value: FixedBytes<65> };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3665,13 +3604,13 @@ export type CumulusPalletParachainSystemCallLike =
   | { name: 'EnactAuthorizedUpgrade'; params: { code: BytesLike } };
 
 export type CumulusPrimitivesParachainInherentParachainInherentData = {
-  validationData: PolkadotPrimitivesV6PersistedValidationData;
+  validationData: PolkadotPrimitivesV7PersistedValidationData;
   relayChainState: SpTrieStorageProof;
   downwardMessages: Array<PolkadotCorePrimitivesInboundDownwardMessage>;
   horizontalMessages: Array<[PolkadotParachainPrimitivesPrimitivesId, Array<PolkadotCorePrimitivesInboundHrmpMessage>]>;
 };
 
-export type PolkadotPrimitivesV6PersistedValidationData = {
+export type PolkadotPrimitivesV7PersistedValidationData = {
   parentHead: PolkadotParachainPrimitivesPrimitivesHeadData;
   relayParentNumber: number;
   relayParentStorageRoot: H256;
@@ -3753,7 +3692,7 @@ export type PalletBalancesCall =
    *
    * This will waive the transaction fee if at least all but 10% of the accounts needed to
    * be upgraded. (We let some not have to be upgraded just in order to allow for the
-   * possibililty of churn).
+   * possibility of churn).
    **/
   | { name: 'UpgradeAccounts'; params: { who: Array<AccountId32> } }
   /**
@@ -3829,7 +3768,7 @@ export type PalletBalancesCallLike =
    *
    * This will waive the transaction fee if at least all but 10% of the accounts needed to
    * be upgraded. (We let some not have to be upgraded just in order to allow for the
-   * possibililty of churn).
+   * possibility of churn).
    **/
   | { name: 'UpgradeAccounts'; params: { who: Array<AccountId32Like> } }
   /**
@@ -5674,7 +5613,12 @@ export type PalletCollatorSelectionCall =
    * Withdraw `CandidacyBond` after un-bonding period has finished.
    * This call will fail called during un-bonding or if there's no `CandidacyBound` reserved.
    **/
-  | { name: 'WithdrawBond' };
+  | { name: 'WithdrawBond' }
+  /**
+   * Set slash destination.
+   * Use `Some` to deposit slashed balance into destination or `None` to burn it.
+   **/
+  | { name: 'SetSlashDestination'; params: { destination?: AccountId32 | undefined } };
 
 export type PalletCollatorSelectionCallLike =
   /**
@@ -5711,7 +5655,12 @@ export type PalletCollatorSelectionCallLike =
    * Withdraw `CandidacyBond` after un-bonding period has finished.
    * This call will fail called during un-bonding or if there's no `CandidacyBound` reserved.
    **/
-  | { name: 'WithdrawBond' };
+  | { name: 'WithdrawBond' }
+  /**
+   * Set slash destination.
+   * Use `Some` to deposit slashed balance into destination or `None` to burn it.
+   **/
+  | { name: 'SetSlashDestination'; params: { destination?: AccountId32Like | undefined } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5776,9 +5725,7 @@ export type PalletSessionCallLike =
 
 export type AstarRuntimeSessionKeys = { aura: SpConsensusAuraSr25519AppSr25519Public };
 
-export type SpConsensusAuraSr25519AppSr25519Public = SpCoreSr25519Public;
-
-export type SpCoreSr25519Public = FixedBytes<32>;
+export type SpConsensusAuraSr25519AppSr25519Public = FixedBytes<32>;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5999,7 +5946,7 @@ export type PalletXcmCall =
    *
    * Fee payment on the destination side is made from the asset in the `assets` vector of
    * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
-   * is needed than `weight_limit`, then the operation will fail and the assets send may be
+   * is needed than `weight_limit`, then the operation will fail and the sent assets may be
    * at risk.
    *
    * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
@@ -6029,7 +5976,7 @@ export type PalletXcmCall =
    *
    * Fee payment on the destination side is made from the asset in the `assets` vector of
    * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
-   * is needed than `weight_limit`, then the operation will fail and the assets send may be
+   * is needed than `weight_limit`, then the operation will fail and the sent assets may be
    * at risk.
    *
    * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
@@ -6068,7 +6015,7 @@ export type PalletXcmCall =
    * Fee payment on the destination side is made from the asset in the `assets` vector of
    * index `fee_asset_item` (hence referred to as `fees`), up to enough to pay for
    * `weight_limit` of weight. If more weight is needed than `weight_limit`, then the
-   * operation will fail and the assets sent may be at risk.
+   * operation will fail and the sent assets may be at risk.
    *
    * `assets` (excluding `fees`) must have same reserve location or otherwise be teleportable
    * to `dest`, no limitations imposed on `fees`.
@@ -6114,7 +6061,69 @@ export type PalletXcmCall =
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
    **/
-  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } };
+  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
+  /**
+   * Transfer assets from the local chain to the destination chain using explicit transfer
+   * types for assets and fees.
+   *
+   * `assets` must have same reserve location or may be teleportable to `dest`. Caller must
+   * provide the `assets_transfer_type` to be used for `assets`:
+   * - `TransferType::LocalReserve`: transfer assets to sovereign account of destination
+   * chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+   * assets to `beneficiary`.
+   * - `TransferType::DestinationReserve`: burn local assets and forward a notification to
+   * `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+   * deposit them to `beneficiary`.
+   * - `TransferType::RemoteReserve(reserve)`: burn local assets, forward XCM to `reserve`
+   * chain to move reserves from this chain's SA to `dest` chain's SA, and forward another
+   * XCM to `dest` to mint and deposit reserve-based assets to `beneficiary`. Typically
+   * the remote `reserve` is Asset Hub.
+   * - `TransferType::Teleport`: burn local assets and forward XCM to `dest` chain to
+   * mint/teleport assets and deposit them to `beneficiary`.
+   *
+   * On the destination chain, as well as any intermediary hops, `BuyExecution` is used to
+   * buy execution using transferred `assets` identified by `remote_fees_id`.
+   * Make sure enough of the specified `remote_fees_id` asset is included in the given list
+   * of `assets`. `remote_fees_id` should be enough to pay for `weight_limit`. If more weight
+   * is needed than `weight_limit`, then the operation will fail and the sent assets may be
+   * at risk.
+   *
+   * `remote_fees_id` may use different transfer type than rest of `assets` and can be
+   * specified through `fees_transfer_type`.
+   *
+   * The caller needs to specify what should happen to the transferred assets once they reach
+   * the `dest` chain. This is done through the `custom_xcm_on_dest` parameter, which
+   * contains the instructions to execute on `dest` as a final step.
+   * This is usually as simple as:
+   * `Xcm(vec![DepositAsset { assets: Wild(AllCounted(assets.len())), beneficiary }])`,
+   * but could be something more exotic like sending the `assets` even further.
+   *
+   * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+   * - `dest`: Destination context for the assets. Will typically be `[Parent,
+   * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+   * relay to parachain, or `(parents: 2, (GlobalConsensus(..), ..))` to send from
+   * parachain across a bridge to another ecosystem destination.
+   * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+   * fee on the `dest` (and possibly reserve) chains.
+   * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
+   * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+   * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
+   * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
+   * transfer, which also determines what happens to the assets on the destination chain.
+   * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
+   **/
+  | {
+      name: 'TransferAssetsUsingTypeAndThen';
+      params: {
+        dest: XcmVersionedLocation;
+        assets: XcmVersionedAssets;
+        assetsTransferType: StagingXcmExecutorAssetTransferTransferType;
+        remoteFeesId: XcmVersionedAssetId;
+        feesTransferType: StagingXcmExecutorAssetTransferTransferType;
+        customXcmOnDest: XcmVersionedXcm;
+        weightLimit: XcmV3WeightLimit;
+      };
+    };
 
 export type PalletXcmCallLike =
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
@@ -6249,7 +6258,7 @@ export type PalletXcmCallLike =
    *
    * Fee payment on the destination side is made from the asset in the `assets` vector of
    * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
-   * is needed than `weight_limit`, then the operation will fail and the assets send may be
+   * is needed than `weight_limit`, then the operation will fail and the sent assets may be
    * at risk.
    *
    * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
@@ -6279,7 +6288,7 @@ export type PalletXcmCallLike =
    *
    * Fee payment on the destination side is made from the asset in the `assets` vector of
    * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
-   * is needed than `weight_limit`, then the operation will fail and the assets send may be
+   * is needed than `weight_limit`, then the operation will fail and the sent assets may be
    * at risk.
    *
    * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
@@ -6318,7 +6327,7 @@ export type PalletXcmCallLike =
    * Fee payment on the destination side is made from the asset in the `assets` vector of
    * index `fee_asset_item` (hence referred to as `fees`), up to enough to pay for
    * `weight_limit` of weight. If more weight is needed than `weight_limit`, then the
-   * operation will fail and the assets sent may be at risk.
+   * operation will fail and the sent assets may be at risk.
    *
    * `assets` (excluding `fees`) must have same reserve location or otherwise be teleportable
    * to `dest`, no limitations imposed on `fees`.
@@ -6364,7 +6373,69 @@ export type PalletXcmCallLike =
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
    **/
-  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } };
+  | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
+  /**
+   * Transfer assets from the local chain to the destination chain using explicit transfer
+   * types for assets and fees.
+   *
+   * `assets` must have same reserve location or may be teleportable to `dest`. Caller must
+   * provide the `assets_transfer_type` to be used for `assets`:
+   * - `TransferType::LocalReserve`: transfer assets to sovereign account of destination
+   * chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+   * assets to `beneficiary`.
+   * - `TransferType::DestinationReserve`: burn local assets and forward a notification to
+   * `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+   * deposit them to `beneficiary`.
+   * - `TransferType::RemoteReserve(reserve)`: burn local assets, forward XCM to `reserve`
+   * chain to move reserves from this chain's SA to `dest` chain's SA, and forward another
+   * XCM to `dest` to mint and deposit reserve-based assets to `beneficiary`. Typically
+   * the remote `reserve` is Asset Hub.
+   * - `TransferType::Teleport`: burn local assets and forward XCM to `dest` chain to
+   * mint/teleport assets and deposit them to `beneficiary`.
+   *
+   * On the destination chain, as well as any intermediary hops, `BuyExecution` is used to
+   * buy execution using transferred `assets` identified by `remote_fees_id`.
+   * Make sure enough of the specified `remote_fees_id` asset is included in the given list
+   * of `assets`. `remote_fees_id` should be enough to pay for `weight_limit`. If more weight
+   * is needed than `weight_limit`, then the operation will fail and the sent assets may be
+   * at risk.
+   *
+   * `remote_fees_id` may use different transfer type than rest of `assets` and can be
+   * specified through `fees_transfer_type`.
+   *
+   * The caller needs to specify what should happen to the transferred assets once they reach
+   * the `dest` chain. This is done through the `custom_xcm_on_dest` parameter, which
+   * contains the instructions to execute on `dest` as a final step.
+   * This is usually as simple as:
+   * `Xcm(vec![DepositAsset { assets: Wild(AllCounted(assets.len())), beneficiary }])`,
+   * but could be something more exotic like sending the `assets` even further.
+   *
+   * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+   * - `dest`: Destination context for the assets. Will typically be `[Parent,
+   * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+   * relay to parachain, or `(parents: 2, (GlobalConsensus(..), ..))` to send from
+   * parachain across a bridge to another ecosystem destination.
+   * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+   * fee on the `dest` (and possibly reserve) chains.
+   * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
+   * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+   * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
+   * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
+   * transfer, which also determines what happens to the assets on the destination chain.
+   * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
+   **/
+  | {
+      name: 'TransferAssetsUsingTypeAndThen';
+      params: {
+        dest: XcmVersionedLocation;
+        assets: XcmVersionedAssets;
+        assetsTransferType: StagingXcmExecutorAssetTransferTransferType;
+        remoteFeesId: XcmVersionedAssetId;
+        feesTransferType: StagingXcmExecutorAssetTransferTransferType;
+        customXcmOnDest: XcmVersionedXcm;
+        weightLimit: XcmV3WeightLimit;
+      };
+    };
 
 export type XcmVersionedXcm =
   | { type: 'V2'; value: XcmV2Xcm }
@@ -6625,19 +6696,22 @@ export type XcmV3MultiassetWildMultiAsset =
 
 export type XcmV3MultiassetWildFungibility = 'Fungible' | 'NonFungible';
 
+export type StagingXcmExecutorAssetTransferTransferType =
+  | { type: 'Teleport' }
+  | { type: 'LocalReserve' }
+  | { type: 'DestinationReserve' }
+  | { type: 'RemoteReserve'; value: XcmVersionedLocation };
+
+export type XcmVersionedAssetId =
+  | { type: 'V3'; value: XcmV3MultiassetAssetId }
+  | { type: 'V4'; value: StagingXcmV4AssetAssetId };
+
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
 export type CumulusPalletXcmCall = null;
 
 export type CumulusPalletXcmCallLike = null;
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type CumulusPalletDmpQueueCall = null;
-
-export type CumulusPalletDmpQueueCallLike = null;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -7988,7 +8062,7 @@ export type PalletProxyError =
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV6UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV7UpgradeGoAhead | undefined;
 };
 
 export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
@@ -8001,21 +8075,21 @@ export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
 
 export type CumulusPalletParachainSystemUnincludedSegmentHrmpChannelUpdate = { msgCount: number; totalBytes: number };
 
-export type PolkadotPrimitivesV6UpgradeGoAhead = 'Abort' | 'GoAhead';
+export type PolkadotPrimitivesV7UpgradeGoAhead = 'Abort' | 'GoAhead';
 
 export type CumulusPalletParachainSystemUnincludedSegmentSegmentTracker = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   hrmpWatermark?: number | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV6UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV7UpgradeGoAhead | undefined;
 };
 
-export type PolkadotPrimitivesV6UpgradeRestriction = 'Present';
+export type PolkadotPrimitivesV7UpgradeRestriction = 'Present';
 
 export type CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot = {
   dmqMqcHead: H256;
   relayDispatchQueueRemainingCapacity: CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity;
-  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV6AbridgedHrmpChannel]>;
-  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV6AbridgedHrmpChannel]>;
+  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV7AbridgedHrmpChannel]>;
+  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV7AbridgedHrmpChannel]>;
 };
 
 export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity = {
@@ -8023,7 +8097,7 @@ export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRema
   remainingSize: number;
 };
 
-export type PolkadotPrimitivesV6AbridgedHrmpChannel = {
+export type PolkadotPrimitivesV7AbridgedHrmpChannel = {
   maxCapacity: number;
   maxTotalSize: number;
   maxMessageSize: number;
@@ -8032,7 +8106,7 @@ export type PolkadotPrimitivesV6AbridgedHrmpChannel = {
   mqcHead?: H256 | undefined;
 };
 
-export type PolkadotPrimitivesV6AbridgedHostConfiguration = {
+export type PolkadotPrimitivesV7AbridgedHostConfiguration = {
   maxCodeSize: number;
   maxHeadDataSize: number;
   maxUpwardQueueCount: number;
@@ -8042,10 +8116,10 @@ export type PolkadotPrimitivesV6AbridgedHostConfiguration = {
   hrmpMaxMessageNumPerCandidate: number;
   validationUpgradeCooldown: number;
   validationUpgradeDelay: number;
-  asyncBackingParams: PolkadotPrimitivesV6AsyncBackingAsyncBackingParams;
+  asyncBackingParams: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams;
 };
 
-export type PolkadotPrimitivesV6AsyncBackingAsyncBackingParams = {
+export type PolkadotPrimitivesV7AsyncBackingAsyncBackingParams = {
   maxCandidateDepth: number;
   allowedAncestryLen: number;
 };
@@ -8271,14 +8345,13 @@ export type PalletDappStakingV3TierParameters = {
 };
 
 export type PalletDappStakingV3TierThreshold =
-  | { type: 'FixedTvlAmount'; value: { amount: bigint } }
-  | { type: 'DynamicTvlAmount'; value: { amount: bigint; minimumAmount: bigint } };
+  | { type: 'FixedPercentage'; value: { requiredPercentage: Perbill } }
+  | { type: 'DynamicPercentage'; value: { percentage: Perbill; minimumRequiredPercentage: Perbill } };
 
 export type PalletDappStakingV3TiersConfiguration = {
-  numberOfSlots: number;
   slotsPerTier: Array<number>;
   rewardPortion: Array<Permill>;
-  tierThresholds: Array<PalletDappStakingV3TierThreshold>;
+  tierThresholds: Array<bigint>;
 };
 
 export type PalletDappStakingV3DAppTierRewards = {
@@ -8757,10 +8830,6 @@ export type PalletXcmVersionMigrationStage =
   | { type: 'NotifyCurrentTargets'; value?: Bytes | undefined }
   | { type: 'MigrateAndNotifyOldTargets' };
 
-export type XcmVersionedAssetId =
-  | { type: 'V3'; value: XcmV3MultiassetAssetId }
-  | { type: 'V4'; value: StagingXcmV4AssetAssetId };
-
 export type PalletXcmRemoteLockedFungibleRecord = {
   amount: bigint;
   owner: XcmVersionedLocation;
@@ -8856,10 +8925,6 @@ export type PalletXcmError =
    **/
   | 'InUse'
   /**
-   * Invalid non-concrete asset.
-   **/
-  | 'InvalidAssetNotConcrete'
-  /**
    * Invalid asset, reserve chain could not be determined for it.
    **/
   | 'InvalidAssetUnknownReserve'
@@ -8875,15 +8940,6 @@ export type PalletXcmError =
    * Local XCM execution incomplete.
    **/
   | 'LocalExecutionIncomplete';
-
-export type CumulusPalletDmpQueueMigrationState =
-  | { type: 'NotStarted' }
-  | { type: 'StartedExport'; value: { nextBeginUsed: number } }
-  | { type: 'CompletedExport' }
-  | { type: 'StartedOverweightExport'; value: { nextOverweightIndex: bigint } }
-  | { type: 'CompletedOverweightExport' }
-  | { type: 'StartedCleanup'; value: { cursor?: Bytes | undefined } }
-  | { type: 'Completed' };
 
 /**
  * The `Error` enum of this pallet.
@@ -9457,7 +9513,7 @@ export type PalletContractsError =
    **/
   | 'CodeRejected'
   /**
-   * An indetermistic code was used in a context where this is not permitted.
+   * An indeterministic code was used in a context where this is not permitted.
    **/
   | 'Indeterministic'
   /**
@@ -9645,6 +9701,14 @@ export type PalletContractsPrimitivesInstantiateReturnValue = {
 export type PalletContractsPrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
 
 export type PalletContractsPrimitivesContractAccessError = 'DoesntExist' | 'KeyDecodingFailed' | 'MigrationInProgress';
+
+export type XcmFeePaymentRuntimeApiError =
+  | 'Unimplemented'
+  | 'VersionedConversionFailed'
+  | 'WeightNotComputable'
+  | 'UnhandledXcmVersion'
+  | 'AssetNotFound'
+  | 'Unroutable';
 
 export type AstarRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }

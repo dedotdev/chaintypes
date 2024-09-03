@@ -1091,11 +1091,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     InUse: GenericPalletError<Rv>;
 
     /**
-     * Invalid non-concrete asset.
-     **/
-    InvalidAssetNotConcrete: GenericPalletError<Rv>;
-
-    /**
      * Invalid asset, reserve chain could not be determined for it.
      **/
     InvalidAssetUnknownReserve: GenericPalletError<Rv>;
@@ -1589,7 +1584,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CodeRejected: GenericPalletError<Rv>;
 
     /**
-     * An indetermistic code was used in a context where this is not permitted.
+     * An indeterministic code was used in a context where this is not permitted.
      **/
     Indeterministic: GenericPalletError<Rv>;
 

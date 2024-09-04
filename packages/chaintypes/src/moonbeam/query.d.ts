@@ -25,12 +25,12 @@ import type {
   FrameSystemCodeUpgradeAuthorization,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
-  PolkadotPrimitivesV6PersistedValidationData,
-  PolkadotPrimitivesV6UpgradeRestriction,
-  PolkadotPrimitivesV6UpgradeGoAhead,
+  PolkadotPrimitivesV7PersistedValidationData,
+  PolkadotPrimitivesV7UpgradeRestriction,
+  PolkadotPrimitivesV7UpgradeGoAhead,
   SpTrieStorageProof,
   CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot,
-  PolkadotPrimitivesV6AbridgedHostConfiguration,
+  PolkadotPrimitivesV7AbridgedHostConfiguration,
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
@@ -69,6 +69,7 @@ import type {
   EthereumReceiptReceiptV3,
   EthereumBlock,
   PalletSchedulerScheduled,
+  PalletSchedulerRetryConfig,
   PalletPreimageOldRequestStatus,
   PalletPreimageRequestStatus,
   PalletConvictionVotingVoteVoting,
@@ -121,6 +122,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<number | undefined> =} callback
      **/
     extrinsicCount: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Whether all inherents have been applied.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    inherentsApplied: GenericStorageQuery<Rv, () => boolean>;
 
     /**
      * The current weight for the block.
@@ -307,9 +315,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * This value is expected to be set only once per block and it's never stored
      * in the trie.
      *
-     * @param {Callback<PolkadotPrimitivesV6PersistedValidationData | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV7PersistedValidationData | undefined> =} callback
      **/
-    validationData: GenericStorageQuery<Rv, () => PolkadotPrimitivesV6PersistedValidationData | undefined>;
+    validationData: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7PersistedValidationData | undefined>;
 
     /**
      * Were the validation data set to notify the relay chain?
@@ -336,9 +344,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV6UpgradeRestriction | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV7UpgradeRestriction | undefined> =} callback
      **/
-    upgradeRestrictionSignal: GenericStorageQuery<Rv, () => PolkadotPrimitivesV6UpgradeRestriction | undefined>;
+    upgradeRestrictionSignal: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7UpgradeRestriction | undefined>;
 
     /**
      * Optional upgrade go-ahead signal from the relay-chain.
@@ -347,9 +355,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV6UpgradeGoAhead | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV7UpgradeGoAhead | undefined> =} callback
      **/
-    upgradeGoAhead: GenericStorageQuery<Rv, () => PolkadotPrimitivesV6UpgradeGoAhead | undefined>;
+    upgradeGoAhead: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7UpgradeGoAhead | undefined>;
 
     /**
      * The state proof for the last relay parent block.
@@ -387,9 +395,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      *
      * This data is also absent from the genesis.
      *
-     * @param {Callback<PolkadotPrimitivesV6AbridgedHostConfiguration | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV7AbridgedHostConfiguration | undefined> =} callback
      **/
-    hostConfiguration: GenericStorageQuery<Rv, () => PolkadotPrimitivesV6AbridgedHostConfiguration | undefined>;
+    hostConfiguration: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7AbridgedHostConfiguration | undefined>;
 
     /**
      * The last downward message queue chain head we have observed.
@@ -605,6 +613,8 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Any liquidity locks on some account balances.
      * NOTE: Should only be accessed when setting, changing and freeing a lock.
      *
+     * Use of locks is deprecated in favour of freezes. See `https://github.com/paritytech/substrate/pull/12951/`
+     *
      * @param {AccountId20Like} arg
      * @param {Callback<Array<PalletBalancesBalanceLock>> =} callback
      **/
@@ -612,6 +622,8 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
 
     /**
      * Named reserves on some account balances.
+     *
+     * Use of reserves is deprecated in favour of holds. See `https://github.com/paritytech/substrate/pull/12951/`
      *
      * @param {AccountId20Like} arg
      * @param {Callback<Array<PalletBalancesReserveData>> =} callback
@@ -1351,6 +1363,18 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     agenda: GenericStorageQuery<Rv, (arg: number) => Array<PalletSchedulerScheduled | undefined>, number>;
 
     /**
+     * Retry configurations for items to be executed, indexed by task address.
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<PalletSchedulerRetryConfig | undefined> =} callback
+     **/
+    retries: GenericStorageQuery<
+      Rv,
+      (arg: [number, number]) => PalletSchedulerRetryConfig | undefined,
+      [number, number]
+    >;
+
+    /**
      * Lookup from a name to the block number and index of the task.
      *
      * For v3 -> v4 the previously unbounded identities are Blake2-256 hashed to form the v4
@@ -1544,7 +1568,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     members: GenericStorageQuery<Rv, () => Array<AccountId20>>;
 
     /**
-     * The prime member that helps determine the default vote behavior in case of absentations.
+     * The prime member that helps determine the default vote behavior in case of abstentions.
      *
      * @param {Callback<AccountId20 | undefined> =} callback
      **/
@@ -1597,7 +1621,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     members: GenericStorageQuery<Rv, () => Array<AccountId20>>;
 
     /**
-     * The prime member that helps determine the default vote behavior in case of absentations.
+     * The prime member that helps determine the default vote behavior in case of abstentions.
      *
      * @param {Callback<AccountId20 | undefined> =} callback
      **/

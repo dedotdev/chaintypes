@@ -1253,6 +1253,26 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * Set a retry configuration for some task.
+     **/
+    RetrySet: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetrySet',
+      { task: [number, number]; id?: FixedBytes<32> | undefined; period: number; retries: number }
+    >;
+
+    /**
+     * Cancel a retry configuration for some task.
+     **/
+    RetryCancelled: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetryCancelled',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
      * The call for the provided hash was not found so the task has been aborted.
      **/
     CallUnavailable: GenericPalletEvent<
@@ -1269,6 +1289,17 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'Scheduler',
       'PeriodicFailed',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
+     * The given task was unable to be retried since the agenda is full at that block or there
+     * was not enough weight to reschedule it.
+     **/
+    RetryFailed: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetryFailed',
       { task: [number, number]; id?: FixedBytes<32> | undefined }
     >;
 
@@ -2589,10 +2620,10 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * Changed the xcm type mapping for a given asset id
      **/
-    ForeignAssetTypeChanged: GenericPalletEvent<
+    ForeignAssetXcmLocationChanged: GenericPalletEvent<
       Rv,
       'AssetManager',
-      'ForeignAssetTypeChanged',
+      'ForeignAssetXcmLocationChanged',
       { assetId: bigint; newAssetType: MoonbeamRuntimeXcmConfigAssetType }
     >;
 
@@ -2754,6 +2785,20 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'HrmpManagementSent',
       { action: PalletXcmTransactorHrmpOperation }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `EthereumXcm`'s events
+   **/
+  ethereumXcm: {
+    /**
+     * Ethereum transaction executed from XCM
+     **/
+    ExecutedFromXcm: GenericPalletEvent<Rv, 'EthereumXcm', 'ExecutedFromXcm', { xcmMsgHash: H256; ethTxHash: H256 }>;
 
     /**
      * Generic pallet event

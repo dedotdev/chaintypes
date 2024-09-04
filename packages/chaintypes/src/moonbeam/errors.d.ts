@@ -42,6 +42,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CallFiltered: GenericPalletError<Rv>;
 
     /**
+     * A multi-block migration is ongoing and prevents the current code from being replaced.
+     **/
+    MultiBlockMigrationsOngoing: GenericPalletError<Rv>;
+
+    /**
      * No upgrade authorized.
      **/
     NothingAuthorized: GenericPalletError<Rv>;
@@ -786,11 +791,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     TransactionMustComeFromEOA: GenericPalletError<Rv>;
 
     /**
-     * Invalid Transaction
-     **/
-    InvalidTransaction: GenericPalletError<Rv>;
-
-    /**
      * Undefined error.
      **/
     Undefined: GenericPalletError<Rv>;
@@ -933,7 +933,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
 
     /**
      * The account currently has votes attached to it and the operation cannot succeed until
-     * these are removed, either through `unvote` or `reap_vote`.
+     * these are removed through `remove_vote`.
      **/
     AlreadyVoting: GenericPalletError<Rv>;
 
@@ -1040,6 +1040,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The preimage does not exist.
      **/
     PreimageNotExist: GenericPalletError<Rv>;
+
+    /**
+     * The preimage is stored with a different length than the one provided.
+     **/
+    PreimageStoredWithDifferentLength: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1499,11 +1504,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     InUse: GenericPalletError<Rv>;
 
     /**
-     * Invalid non-concrete asset.
-     **/
-    InvalidAssetNotConcrete: GenericPalletError<Rv>;
-
-    /**
      * Invalid asset, reserve chain could not be determined for it.
      **/
     InvalidAssetUnknownReserve: GenericPalletError<Rv>;
@@ -1759,6 +1759,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * MinXcmFee not registered for certain reserve location
      **/
     MinXcmFeeNotDefined: GenericPalletError<Rv>;
+
+    /**
+     * Asset transfer is limited by RateLimiter.
+     **/
+    RateLimited: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

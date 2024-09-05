@@ -42,6 +42,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CallFiltered: GenericPalletError<Rv>;
 
     /**
+     * A multi-block migration is ongoing and prevents the current code from being replaced.
+     **/
+    MultiBlockMigrationsOngoing: GenericPalletError<Rv>;
+
+    /**
      * No upgrade authorized.
      **/
     NothingAuthorized: GenericPalletError<Rv>;
@@ -337,6 +342,21 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CannotRestoreLedger: GenericPalletError<Rv>;
 
     /**
+     * Provided reward destination is not allowed.
+     **/
+    RewardDestinationRestricted: GenericPalletError<Rv>;
+
+    /**
+     * Not enough funds available to withdraw.
+     **/
+    NotEnoughFunds: GenericPalletError<Rv>;
+
+    /**
+     * Operation not allowed for virtual stakers.
+     **/
+    VirtualStakerNotAllowed: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -425,11 +445,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
    * Pallet `Treasury`'s errors
    **/
   treasury: {
-    /**
-     * Proposer's balance is too low.
-     **/
-    InsufficientProposersBalance: GenericPalletError<Rv>;
-
     /**
      * No proposal, bounty or spend at that index.
      **/
@@ -522,7 +537,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
 
     /**
      * The account currently has votes attached to it and the operation cannot succeed until
-     * these are removed, either through `unvote` or `reap_vote`.
+     * these are removed through `remove_vote`.
      **/
     AlreadyVoting: GenericPalletError<Rv>;
 
@@ -631,6 +646,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     PreimageNotExist: GenericPalletError<Rv>;
 
     /**
+     * The preimage is stored with a different length than the one provided.
+     **/
+    PreimageStoredWithDifferentLength: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -688,6 +708,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The new member to exchange is the same as the old member
      **/
     SameMember: GenericPalletError<Rv>;
+
+    /**
+     * The max member count for the rank has been reached.
+     **/
+    TooManyMembers: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -762,6 +787,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The preimage does not exist.
      **/
     PreimageNotExist: GenericPalletError<Rv>;
+
+    /**
+     * The preimage is stored with a different length than the one provided.
+     **/
+    PreimageStoredWithDifferentLength: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1356,6 +1386,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     TooFew: GenericPalletError<Rv>;
 
     /**
+     * No ticket with a cost was returned by [`Config::Consideration`] to store the preimage.
+     **/
+    NoCost: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1524,7 +1559,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     TooManyWinners: GenericPalletError<Rv>;
 
     /**
-     * Sumission was prepared for a different round.
+     * Submission was prepared for a different round.
      **/
     PreDispatchDifferentRound: GenericPalletError<Rv>;
 
@@ -1599,7 +1634,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     Throttled: GenericPalletError<Rv>;
 
     /**
-     * The operation would result in a receipt worth an insignficant value.
+     * The operation would result in a receipt worth an insignificant value.
      **/
     MakesDust: GenericPalletError<Rv>;
 
@@ -1874,6 +1909,26 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NothingToAdjust: GenericPalletError<Rv>;
 
     /**
+     * No slash pending that can be applied to the member.
+     **/
+    NothingToSlash: GenericPalletError<Rv>;
+
+    /**
+     * The pool or member delegation has already migrated to delegate stake.
+     **/
+    AlreadyMigrated: GenericPalletError<Rv>;
+
+    /**
+     * The pool or member delegation has not migrated yet to delegate stake.
+     **/
+    NotMigrated: GenericPalletError<Rv>;
+
+    /**
+     * This call is not allowed in the current state of the pallet.
+     **/
+    NotSupported: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1938,64 +1993,14 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
    **/
   paraInclusion: {
     /**
-     * Validator indices are out of order or contains duplicates.
-     **/
-    UnsortedOrDuplicateValidatorIndices: GenericPalletError<Rv>;
-
-    /**
-     * Dispute statement sets are out of order or contain duplicates.
-     **/
-    UnsortedOrDuplicateDisputeStatementSet: GenericPalletError<Rv>;
-
-    /**
-     * Backed candidates are out of order (core index) or contain duplicates.
-     **/
-    UnsortedOrDuplicateBackedCandidates: GenericPalletError<Rv>;
-
-    /**
-     * A different relay parent was provided compared to the on-chain stored one.
-     **/
-    UnexpectedRelayParent: GenericPalletError<Rv>;
-
-    /**
-     * Availability bitfield has unexpected size.
-     **/
-    WrongBitfieldSize: GenericPalletError<Rv>;
-
-    /**
-     * Bitfield consists of zeros only.
-     **/
-    BitfieldAllZeros: GenericPalletError<Rv>;
-
-    /**
-     * Multiple bitfields submitted by same validator or validators out of order by index.
-     **/
-    BitfieldDuplicateOrUnordered: GenericPalletError<Rv>;
-
-    /**
      * Validator index out of bounds.
      **/
     ValidatorIndexOutOfBounds: GenericPalletError<Rv>;
 
     /**
-     * Invalid signature
-     **/
-    InvalidBitfieldSignature: GenericPalletError<Rv>;
-
-    /**
      * Candidate submitted but para not scheduled.
      **/
     UnscheduledCandidate: GenericPalletError<Rv>;
-
-    /**
-     * Candidate scheduled despite pending candidate already existing for the para.
-     **/
-    CandidateScheduledBeforeParaFree: GenericPalletError<Rv>;
-
-    /**
-     * Scheduled cores out of order.
-     **/
-    ScheduledOutOfOrder: GenericPalletError<Rv>;
 
     /**
      * Head data exceeds the configured maximum.
@@ -2081,13 +2086,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ParaHeadMismatch: GenericPalletError<Rv>;
 
     /**
-     * A bitfield that references a freed core,
-     * either intentionally or as part of a concluded
-     * invalid dispute.
-     **/
-    BitfieldReferencesFreedCore: GenericPalletError<Rv>;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -2108,34 +2106,15 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     InvalidParentHeader: GenericPalletError<Rv>;
 
     /**
-     * Disputed candidate that was concluded invalid.
-     **/
-    CandidateConcludedInvalid: GenericPalletError<Rv>;
-
-    /**
      * The data given to the inherent will result in an overweight block.
      **/
     InherentOverweight: GenericPalletError<Rv>;
 
     /**
-     * The ordering of dispute statements was invalid.
+     * A candidate was filtered during inherent execution. This should have only been done
+     * during creation.
      **/
-    DisputeStatementsUnsortedOrDuplicates: GenericPalletError<Rv>;
-
-    /**
-     * A dispute statement was invalid.
-     **/
-    DisputeInvalid: GenericPalletError<Rv>;
-
-    /**
-     * A candidate was backed by a disabled validator
-     **/
-    BackedByDisabled: GenericPalletError<Rv>;
-
-    /**
-     * A candidate was backed even though the paraid was not scheduled.
-     **/
-    BackedOnUnscheduledCore: GenericPalletError<Rv>;
+    CandidatesFilteredDuringExecution: GenericPalletError<Rv>;
 
     /**
      * Too many candidates supplied.
@@ -2210,6 +2189,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Parachain cannot currently schedule a code upgrade.
      **/
     CannotUpgradeCode: GenericPalletError<Rv>;
+
+    /**
+     * Invalid validation code size.
+     **/
+    InvalidCode: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -2424,12 +2408,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
    **/
   onDemandAssignmentProvider: {
     /**
-     * The `ParaId` supplied to the `place_order` call is not a valid `ParaThread`, making the
-     * call is invalid.
-     **/
-    InvalidParaId: GenericPalletError<Rv>;
-
-    /**
      * The order queue is full, `place_order` will not continue.
      **/
     QueueFull: GenericPalletError<Rv>;
@@ -2548,9 +2526,9 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NotReserved: GenericPalletError<Rv>;
 
     /**
-     * Registering parachain with empty code is not allowed.
+     * The validation code is invalid.
      **/
-    EmptyCode: GenericPalletError<Rv>;
+    InvalidCode: GenericPalletError<Rv>;
 
     /**
      * Cannot perform a parachain slot / lifecycle swap. Check that the state of both paras
@@ -2761,6 +2739,17 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NotBroker: GenericPalletError<Rv>;
 
     /**
+     * Requested revenue information `when` parameter was in the future from the current
+     * block height.
+     **/
+    RequestedFutureRevenue: GenericPalletError<Rv>;
+
+    /**
+     * Failed to transfer assets to the coretime chain
+     **/
+    AssetTransferFailed: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -2873,11 +2862,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     InUse: GenericPalletError<Rv>;
 
     /**
-     * Invalid non-concrete asset.
-     **/
-    InvalidAssetNotConcrete: GenericPalletError<Rv>;
-
-    /**
      * Invalid asset, reserve chain could not be determined for it.
      **/
     InvalidAssetUnknownReserve: GenericPalletError<Rv>;
@@ -2975,6 +2959,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The given asset ID already has an assigned conversion rate and cannot be re-created.
      **/
     AlreadyExists: GenericPalletError<Rv>;
+
+    /**
+     * Overflow ocurred when calculating the inverse rate.
+     **/
+    Overflow: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

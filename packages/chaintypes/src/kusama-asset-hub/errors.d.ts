@@ -42,6 +42,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CallFiltered: GenericPalletError<Rv>;
 
     /**
+     * A multi-block migration is ongoing and prevents the current code from being replaced.
+     **/
+    MultiBlockMigrationsOngoing: GenericPalletError<Rv>;
+
+    /**
      * No upgrade authorized.
      **/
     NothingAuthorized: GenericPalletError<Rv>;
@@ -358,6 +363,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     AlreadyResumed: GenericPalletError<Rv>;
 
     /**
+     * There are too many active outbound channels.
+     **/
+    TooManyActiveOutboundChannels: GenericPalletError<Rv>;
+
+    /**
+     * The message is too big.
+     **/
+    TooBig: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -468,11 +483,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The unlock operation cannot succeed because there are still consumers of the lock.
      **/
     InUse: GenericPalletError<Rv>;
-
-    /**
-     * Invalid non-concrete asset.
-     **/
-    InvalidAssetNotConcrete: GenericPalletError<Rv>;
 
     /**
      * Invalid asset, reserve chain could not be determined for it.
@@ -807,6 +817,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Callback action resulted in error
      **/
     CallbackFailed: GenericPalletError<Rv>;
+
+    /**
+     * The asset ID must be equal to the [`NextAssetId`].
+     **/
+    BadAssetId: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1254,6 +1269,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CallbackFailed: GenericPalletError<Rv>;
 
     /**
+     * The asset ID must be equal to the [`NextAssetId`].
+     **/
+    BadAssetId: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1393,6 +1413,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Callback action resulted in error
      **/
     CallbackFailed: GenericPalletError<Rv>;
+
+    /**
+     * The asset ID must be equal to the [`NextAssetId`].
+     **/
+    BadAssetId: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

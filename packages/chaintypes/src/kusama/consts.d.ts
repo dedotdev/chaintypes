@@ -9,6 +9,7 @@ import type {
   FrameSupportPalletId,
   PalletReferendaTrackInfo,
   SpWeightsWeightV2Weight,
+  StagingXcmV4Junctions,
 } from './types';
 
 export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<Rv> {
@@ -37,7 +38,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     dbWeight: SpWeightsRuntimeDbWeight;
 
     /**
-     * Get the chain's current version.
+     * Get the chain's in-code version.
      **/
     version: RuntimeVersion;
 
@@ -142,11 +143,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     /**
      * The maximum number of locks that should exist on an account.
      * Not strictly enforced, but used for weight estimation.
+     *
+     * Use of locks is deprecated in favour of freezes. See `https://github.com/paritytech/substrate/pull/12951/`
      **/
     maxLocks: number;
 
     /**
      * The maximum number of named reserves that can exist on an account.
+     *
+     * Use of reserves is deprecated in favour of holds. See `https://github.com/paritytech/substrate/pull/12951/`
      **/
     maxReserves: number;
 
@@ -353,22 +358,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   treasury: {
     /**
-     * Fraction of a proposal's value that should be bonded in order to place the proposal.
-     * An accepted proposal gets these back. A rejected proposal does not.
-     **/
-    proposalBond: Permill;
-
-    /**
-     * Minimum amount of funds that should be placed in a deposit for making a proposal.
-     **/
-    proposalBondMinimum: bigint;
-
-    /**
-     * Maximum amount of funds that should be placed in a deposit for making a proposal.
-     **/
-    proposalBondMaximum: bigint | undefined;
-
-    /**
      * Period between successive spends.
      **/
     spendPeriod: number;
@@ -521,6 +510,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    * Pallet `Whitelist`'s constants
    **/
   whitelist: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `Parameters`'s constants
+   **/
+  parameters: {
     /**
      * Generic pallet constant
      **/
@@ -867,16 +865,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   electionProviderMultiPhase: {
     /**
-     * Duration of the unsigned phase.
-     **/
-    unsignedPhase: number;
-
-    /**
-     * Duration of the signed phase.
-     **/
-    signedPhase: number;
-
-    /**
      * The minimum amount of improvement to the solution score that defines a solution as
      * "better" in the Signed phase.
      **/
@@ -1047,11 +1035,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     /**
      * The maximum number of locks that should exist on an account.
      * Not strictly enforced, but used for weight estimation.
+     *
+     * Use of locks is deprecated in favour of freezes. See `https://github.com/paritytech/substrate/pull/12951/`
      **/
     maxLocks: number;
 
     /**
      * The maximum number of named reserves that can exist on an account.
+     *
+     * Use of reserves is deprecated in favour of holds. See `https://github.com/paritytech/substrate/pull/12951/`
      **/
     maxReserves: number;
 
@@ -1300,6 +1292,17 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     trafficDefaultValue: FixedU128;
 
     /**
+     * The maximum number of blocks some historical revenue
+     * information stored for.
+     **/
+    maxHistoricalRevenue: number;
+
+    /**
+     * Identifier for the internal revenue balance.
+     **/
+    palletId: FrameSupportPalletId;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -1406,9 +1409,14 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   coretime: {
     /**
-     * The ParaId of the broker system parachain.
+     * The ParaId of the coretime chain.
      **/
     brokerId: number;
+
+    /**
+     * The coretime chain pot location.
+     **/
+    brokerPotLocation: StagingXcmV4Junctions;
 
     /**
      * Generic pallet constant
@@ -1446,12 +1454,22 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
 
     /**
      * The amount of weight (if any) which should be provided to the message queue for
-     * servicing enqueued items.
+     * servicing enqueued items `on_initialize`.
      *
      * This may be legitimately `None` in the case that you will call
-     * `ServiceQueues::service_queues` manually.
+     * `ServiceQueues::service_queues` manually or set [`Self::IdleMaxServiceWeight`] to have
+     * it run in `on_idle`.
      **/
     serviceWeight: SpWeightsWeightV2Weight | undefined;
+
+    /**
+     * The maximum amount of weight (if any) to be used from remaining weight `on_idle` which
+     * should be provided to the message queue for servicing enqueued items `on_idle`.
+     * Useful for parachains to process messages at the same block they are received.
+     *
+     * If `None`, it will not call `ServiceQueues::service_queues` in `on_idle`.
+     **/
+    idleMaxServiceWeight: SpWeightsWeightV2Weight | undefined;
 
     /**
      * Generic pallet constant

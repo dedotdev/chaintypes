@@ -28,6 +28,8 @@ import type {
   PalletRankedCollectiveTally,
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
+  StagingKusamaRuntimeRuntimeParametersKey,
+  StagingKusamaRuntimeRuntimeParametersValue,
   PalletSocietyGroupParams,
   StagingKusamaRuntimeProxyType,
   PalletMultisigTimepoint,
@@ -37,10 +39,10 @@ import type {
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
-  PolkadotPrimitivesV6CandidateReceipt,
+  PolkadotPrimitivesV7CandidateReceipt,
   PolkadotParachainPrimitivesPrimitivesHeadData,
-  PolkadotPrimitivesV6CoreIndex,
-  PolkadotPrimitivesV6GroupIndex,
+  PolkadotPrimitivesV7CoreIndex,
+  PolkadotPrimitivesV7GroupIndex,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
@@ -480,11 +482,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
    **/
   treasury: {
     /**
-     * New proposal.
-     **/
-    Proposed: GenericPalletEvent<Rv, 'Treasury', 'Proposed', { proposalIndex: number }>;
-
-    /**
      * We have ended a spend period and will now allocate funds.
      **/
     Spending: GenericPalletEvent<Rv, 'Treasury', 'Spending', { budgetRemaining: bigint }>;
@@ -498,11 +495,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Awarded',
       { proposalIndex: number; award: bigint; account: AccountId32 }
     >;
-
-    /**
-     * A proposal was rejected; funds were slashed.
-     **/
-    Rejected: GenericPalletEvent<Rv, 'Treasury', 'Rejected', { proposalIndex: number; slashed: bigint }>;
 
     /**
      * Some of our funds have been burnt.
@@ -1337,6 +1329,42 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
+   * Pallet `Parameters`'s events
+   **/
+  parameters: {
+    /**
+     * A Parameter was set.
+     *
+     * Is also emitted when the value was not changed.
+     **/
+    Updated: GenericPalletEvent<
+      Rv,
+      'Parameters',
+      'Updated',
+      {
+        /**
+         * The key that was updated.
+         **/
+        key: StagingKusamaRuntimeRuntimeParametersKey;
+
+        /**
+         * The old value before this call.
+         **/
+        oldValue?: StagingKusamaRuntimeRuntimeParametersValue | undefined;
+
+        /**
+         * The new value after this call.
+         **/
+        newValue?: StagingKusamaRuntimeRuntimeParametersValue | undefined;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
    * Pallet `Claims`'s events
    **/
   claims: {
@@ -1606,6 +1634,26 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * Set a retry configuration for some task.
+     **/
+    RetrySet: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetrySet',
+      { task: [number, number]; id?: FixedBytes<32> | undefined; period: number; retries: number }
+    >;
+
+    /**
+     * Cancel a retry configuration for some task.
+     **/
+    RetryCancelled: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetryCancelled',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
      * The call for the provided hash was not found so the task has been aborted.
      **/
     CallUnavailable: GenericPalletEvent<
@@ -1622,6 +1670,17 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'Scheduler',
       'PeriodicFailed',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
+     * The given task was unable to be retried since the agenda is full at that block or there
+     * was not enough weight to reschedule it.
+     **/
+    RetryFailed: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetryFailed',
       { task: [number, number]; id?: FixedBytes<32> | undefined }
     >;
 
@@ -1885,7 +1944,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * A solution was stored with the given compute.
      *
      * The `origin` indicates the origin of the solution. If `origin` is `Some(AccountId)`,
-     * the stored solution was submited in the signed phase by a miner with the `AccountId`.
+     * the stored solution was submitted in the signed phase by a miner with the `AccountId`.
      * Otherwise, the solution was stored either during the unsigned phase or by
      * `T::ForceOrigin`. The `bool` is `true` when a previous solution was ejected to make
      * room for this one.
@@ -2038,7 +2097,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Funded: GenericPalletEvent<Rv, 'Nis', 'Funded', { deficit: bigint }>;
 
     /**
-     * A receipt was transfered.
+     * A receipt was transferred.
      **/
     Transferred: GenericPalletEvent<Rv, 'Nis', 'Transferred', { from: AccountId32; to: AccountId32; index: number }>;
 
@@ -2443,10 +2502,10 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateBacked',
       [
-        PolkadotPrimitivesV6CandidateReceipt,
+        PolkadotPrimitivesV7CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV6CoreIndex,
-        PolkadotPrimitivesV6GroupIndex,
+        PolkadotPrimitivesV7CoreIndex,
+        PolkadotPrimitivesV7GroupIndex,
       ]
     >;
 
@@ -2458,10 +2517,10 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateIncluded',
       [
-        PolkadotPrimitivesV6CandidateReceipt,
+        PolkadotPrimitivesV7CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV6CoreIndex,
-        PolkadotPrimitivesV6GroupIndex,
+        PolkadotPrimitivesV7CoreIndex,
+        PolkadotPrimitivesV7GroupIndex,
       ]
     >;
 
@@ -2473,9 +2532,9 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateTimedOut',
       [
-        PolkadotPrimitivesV6CandidateReceipt,
+        PolkadotPrimitivesV7CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV6CoreIndex,
+        PolkadotPrimitivesV7CoreIndex,
       ]
     >;
 
@@ -2709,19 +2768,19 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
    **/
   onDemandAssignmentProvider: {
     /**
-     * An order was placed at some spot price amount.
+     * An order was placed at some spot price amount by orderer ordered_by
      **/
     OnDemandOrderPlaced: GenericPalletEvent<
       Rv,
       'OnDemandAssignmentProvider',
       'OnDemandOrderPlaced',
-      { paraId: PolkadotParachainPrimitivesPrimitivesId; spotPrice: bigint }
+      { paraId: PolkadotParachainPrimitivesPrimitivesId; spotPrice: bigint; orderedBy: AccountId32 }
     >;
 
     /**
-     * The value of the spot traffic multiplier changed.
+     * The value of the spot price has likely changed
      **/
-    SpotTrafficSet: GenericPalletEvent<Rv, 'OnDemandAssignmentProvider', 'SpotTrafficSet', { traffic: FixedU128 }>;
+    SpotPriceSet: GenericPalletEvent<Rv, 'OnDemandAssignmentProvider', 'SpotPriceSet', { spotPrice: bigint }>;
 
     /**
      * Generic pallet event
@@ -2976,7 +3035,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * A core has received a new assignment from the broker chain.
      **/
-    CoreAssigned: GenericPalletEvent<Rv, 'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV6CoreIndex }>;
+    CoreAssigned: GenericPalletEvent<Rv, 'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV7CoreIndex }>;
 
     /**
      * Generic pallet event

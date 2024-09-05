@@ -1189,6 +1189,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Blocked: GenericPalletEvent<Rv, 'Assets', 'Blocked', { assetId: number; who: AccountId32 }>;
 
     /**
+     * Some assets were deposited (e.g. for transaction fees).
+     **/
+    Deposited: GenericPalletEvent<Rv, 'Assets', 'Deposited', { assetId: number; who: AccountId32; amount: bigint }>;
+
+    /**
+     * Some assets were withdrawn from the account (e.g. for transaction fees).
+     **/
+    Withdrawn: GenericPalletEvent<Rv, 'Assets', 'Withdrawn', { assetId: number; who: AccountId32; amount: bigint }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -2023,6 +2033,26 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * Some assets were deposited (e.g. for transaction fees).
+     **/
+    Deposited: GenericPalletEvent<
+      Rv,
+      'ForeignAssets',
+      'Deposited',
+      { assetId: StagingXcmV3MultilocationMultiLocation; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Some assets were withdrawn from the account (e.g. for transaction fees).
+     **/
+    Withdrawn: GenericPalletEvent<
+      Rv,
+      'ForeignAssets',
+      'Withdrawn',
+      { assetId: StagingXcmV3MultilocationMultiLocation; who: AccountId32; amount: bigint }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -2237,6 +2267,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Blocked: GenericPalletEvent<Rv, 'PoolAssets', 'Blocked', { assetId: number; who: AccountId32 }>;
 
     /**
+     * Some assets were deposited (e.g. for transaction fees).
+     **/
+    Deposited: GenericPalletEvent<Rv, 'PoolAssets', 'Deposited', { assetId: number; who: AccountId32; amount: bigint }>;
+
+    /**
+     * Some assets were withdrawn from the account (e.g. for transaction fees).
+     **/
+    Withdrawn: GenericPalletEvent<Rv, 'PoolAssets', 'Withdrawn', { assetId: number; who: AccountId32; amount: bigint }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -2246,7 +2286,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
    **/
   assetConversion: {
     /**
-     * A successful call of the `CretaPool` extrinsic will create this event.
+     * A successful call of the `CreatePool` extrinsic will create this event.
      **/
     PoolCreated: GenericPalletEvent<
       Rv,
@@ -2432,6 +2472,26 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
          * E.g. (A, amount_in) -> (Dot, amount_out) -> (B, amount_out)
          **/
         path: Array<[StagingXcmV3MultilocationMultiLocation, bigint]>;
+      }
+    >;
+
+    /**
+     * Pool has been touched in order to fulfill operational requirements.
+     **/
+    Touched: GenericPalletEvent<
+      Rv,
+      'AssetConversion',
+      'Touched',
+      {
+        /**
+         * The ID of the pool.
+         **/
+        poolId: [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation];
+
+        /**
+         * The account initiating the touch.
+         **/
+        who: AccountId32;
       }
     >;
 

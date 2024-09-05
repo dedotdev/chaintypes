@@ -48,6 +48,7 @@ import type {
   FrameSupportPreimagesBounded,
   FrameSupportScheduleDispatchTime,
   SpWeightsWeightV2Weight,
+  StagingKusamaRuntimeRuntimeParameters,
   PolkadotRuntimeCommonClaimsEcdsaSignature,
   PolkadotRuntimeCommonClaimsStatementKind,
   PalletVestingVestingInfo,
@@ -66,18 +67,19 @@ import type {
   PalletNominationPoolsClaimPermission,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
-  PolkadotPrimitivesV6AsyncBackingAsyncBackingParams,
-  PolkadotPrimitivesV6ExecutorParams,
-  PolkadotPrimitivesVstagingApprovalVotingParams,
-  PolkadotPrimitivesV6InherentData,
+  PolkadotPrimitivesV7AsyncBackingAsyncBackingParams,
+  PolkadotPrimitivesV7ExecutorParams,
+  PolkadotPrimitivesV7ApprovalVotingParams,
+  PolkadotPrimitivesVstagingSchedulerParams,
+  PolkadotPrimitivesV7InherentData,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
-  PolkadotPrimitivesV6PvfCheckStatement,
-  PolkadotPrimitivesV6ValidatorAppSignature,
+  PolkadotPrimitivesV7PvfCheckStatement,
+  PolkadotPrimitivesV7ValidatorAppSignature,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
-  PolkadotPrimitivesV6SlashingDisputeProof,
+  PolkadotPrimitivesV7SlashingDisputeProof,
   SpRuntimeMultiSigner,
   PalletBrokerCoretimeInterfaceCoreAssignment,
   PolkadotRuntimeParachainsAssignerCoretimePartsOf57600,
@@ -88,7 +90,7 @@ import type {
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
-  SpConsensusBeefyEquivocationProof,
+  SpConsensusBeefyDoubleVotingProof,
 } from './types';
 
 export type ChainSubmittableExtrinsic<
@@ -107,7 +109,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   system: {
     /**
-     * See [`Pallet::remark`].
+     * Make some on-chain remark.
+     *
+     * Can be executed by every `origin`.
      *
      * @param {BytesLike} remark
      **/
@@ -126,7 +130,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_heap_pages`].
+     * Set the number of pages in the WebAssembly environment's heap.
      *
      * @param {bigint} pages
      **/
@@ -145,7 +149,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_code`].
+     * Set the new runtime code.
      *
      * @param {BytesLike} code
      **/
@@ -164,7 +168,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_code_without_checks`].
+     * Set the new runtime code without doing any checks of the given `code`.
+     *
+     * Note that runtime upgrades will not run if this is called with a not-increasing spec
+     * version!
      *
      * @param {BytesLike} code
      **/
@@ -183,7 +190,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_storage`].
+     * Set some items of storage.
      *
      * @param {Array<[BytesLike, BytesLike]>} items
      **/
@@ -202,7 +209,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::kill_storage`].
+     * Kill some items from storage.
      *
      * @param {Array<BytesLike>} keys
      **/
@@ -221,7 +228,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::kill_prefix`].
+     * Kill all storage items with a key that starts with the given prefix.
+     *
+     * **NOTE:** We rely on the Root origin to provide us the number of subkeys under
+     * the prefix we are removing to accurately calculate the weight of this function.
      *
      * @param {BytesLike} prefix
      * @param {number} subkeys
@@ -244,7 +254,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remark_with_event`].
+     * Make some on-chain remark and emit event.
      *
      * @param {BytesLike} remark
      **/
@@ -263,7 +273,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::authorize_upgrade`].
+     * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
+     * later.
+     *
+     * This call requires Root origin.
      *
      * @param {H256} codeHash
      **/
@@ -282,7 +295,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::authorize_upgrade_without_checks`].
+     * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
+     * later.
+     *
+     * WARNING: This authorizes an upgrade that will take place without any safety checks, for
+     * example that the spec name remains the same and that the version number increases. Not
+     * recommended for normal use. Use `authorize_upgrade` instead.
+     *
+     * This call requires Root origin.
      *
      * @param {H256} codeHash
      **/
@@ -301,7 +321,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::apply_authorized_upgrade`].
+     * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
+     *
+     * If the authorization required a version check, this call will ensure the spec name
+     * remains unchanged and that the spec version has increased.
+     *
+     * Depending on the runtime's `OnSetCode` configuration, this function may directly apply
+     * the new `code` in the same block or attempt to schedule the upgrade.
+     *
+     * All origins are allowed.
      *
      * @param {BytesLike} code
      **/
@@ -329,7 +357,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   babe: {
     /**
-     * See [`Pallet::report_equivocation`].
+     * Report authority equivocation/misbehavior. This method will verify
+     * the equivocation proof and validate the given key ownership proof
+     * against the extracted offender. If both are valid, the offence will
+     * be reported.
      *
      * @param {SpConsensusSlotsEquivocationProof} equivocationProof
      * @param {SpSessionMembershipProof} keyOwnerProof
@@ -352,7 +383,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::report_equivocation_unsigned`].
+     * Report authority equivocation/misbehavior. This method will verify
+     * the equivocation proof and validate the given key ownership proof
+     * against the extracted offender. If both are valid, the offence will
+     * be reported.
+     * This extrinsic must be called unsigned and it is expected that only
+     * block authors will call it (validated in `ValidateUnsigned`), as such
+     * if the block author is defined it will be defined as the equivocation
+     * reporter.
      *
      * @param {SpConsensusSlotsEquivocationProof} equivocationProof
      * @param {SpSessionMembershipProof} keyOwnerProof
@@ -375,7 +413,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::plan_config_change`].
+     * Plan an epoch config change. The epoch config change is recorded and will be enacted on
+     * the next call to `enact_epoch_change`. The config will be activated one epoch after.
+     * Multiple calls to this method will replace any existing planned config change that had
+     * not been enacted yet.
      *
      * @param {SpConsensusBabeDigestsNextConfigDescriptor} config
      **/
@@ -403,7 +444,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   timestamp: {
     /**
-     * See [`Pallet::set`].
+     * Set the current time.
+     *
+     * This call should be invoked exactly once per block. It will panic at the finalization
+     * phase, if this call hasn't been invoked by that time.
+     *
+     * The timestamp should be greater than the previous one by the amount specified by
+     * [`Config::MinimumPeriod`].
+     *
+     * The dispatch origin for this call must be _None_.
+     *
+     * This dispatch class is _Mandatory_ to ensure it gets executed in the block. Be aware
+     * that changing the complexity of this call could result exhausting the resources in a
+     * block to execute any other calls.
+     *
+     * ## Complexity
+     * - `O(1)` (Note that implementations of `OnTimestampSet` must also be `O(1)`)
+     * - 1 storage read and 1 storage mutation (codec `O(1)` because of `DidUpdate::take` in
+     * `on_finalize`)
+     * - 1 event handler `on_timestamp_set`. Must be `O(1)`.
      *
      * @param {bigint} now
      **/
@@ -431,7 +490,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   indices: {
     /**
-     * See [`Pallet::claim`].
+     * Assign an previously unassigned index.
+     *
+     * Payment: `Deposit` is reserved from the sender account.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `index`: the index to be claimed. This must not be in use.
+     *
+     * Emits `IndexAssigned` if successful.
+     *
+     * ## Complexity
+     * - `O(1)`.
      *
      * @param {number} index
      **/
@@ -450,7 +520,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer`].
+     * Assign an index already owned by the sender to another account. The balance reservation
+     * is effectively transferred to the new account.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `index`: the index to be re-assigned. This must be owned by the sender.
+     * - `new`: the new owner of the index. This function is a no-op if it is equal to sender.
+     *
+     * Emits `IndexAssigned` if successful.
+     *
+     * ## Complexity
+     * - `O(1)`.
      *
      * @param {MultiAddressLike} new_
      * @param {number} index
@@ -473,7 +554,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::free`].
+     * Free up an index owned by the sender.
+     *
+     * Payment: Any previous deposit placed for the index is unreserved in the sender account.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must own the index.
+     *
+     * - `index`: the index to be freed. This must be owned by the sender.
+     *
+     * Emits `IndexFreed` if successful.
+     *
+     * ## Complexity
+     * - `O(1)`.
      *
      * @param {number} index
      **/
@@ -492,7 +584,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_transfer`].
+     * Force an index to an account. This doesn't require a deposit. If the index is already
+     * held, then any deposit is reimbursed to its current owner.
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * - `index`: the index to be (re-)assigned.
+     * - `new`: the new owner of the index. This function is a no-op if it is equal to sender.
+     * - `freeze`: if set to `true`, will freeze the index so it cannot be transferred.
+     *
+     * Emits `IndexAssigned` if successful.
+     *
+     * ## Complexity
+     * - `O(1)`.
      *
      * @param {MultiAddressLike} new_
      * @param {number} index
@@ -517,7 +621,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::freeze`].
+     * Freeze an index so it will always point to the sender account. This consumes the
+     * deposit.
+     *
+     * The dispatch origin for this call must be _Signed_ and the signing account must have a
+     * non-frozen account `index`.
+     *
+     * - `index`: the index to be frozen in place.
+     *
+     * Emits `IndexFrozen` if successful.
+     *
+     * ## Complexity
+     * - `O(1)`.
      *
      * @param {number} index
      **/
@@ -545,7 +660,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   balances: {
     /**
-     * See [`Pallet::transfer_allow_death`].
+     * Transfer some liquid free balance to another account.
+     *
+     * `transfer_allow_death` will set the `FreeBalance` of the sender and receiver.
+     * If the sender's account is below the existential deposit as a result
+     * of the transfer, the account will be reaped.
+     *
+     * The dispatch origin for this call must be `Signed` by the transactor.
      *
      * @param {MultiAddressLike} dest
      * @param {bigint} value
@@ -568,7 +689,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_transfer`].
+     * Exactly as `transfer_allow_death`, except the origin must be root and the source account
+     * may be specified.
      *
      * @param {MultiAddressLike} source
      * @param {MultiAddressLike} dest
@@ -593,7 +715,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_keep_alive`].
+     * Same as the [`transfer_allow_death`] call, but with a check that the transfer will not
+     * kill the origin account.
+     *
+     * 99% of the time you want [`transfer_allow_death`] instead.
+     *
+     * [`transfer_allow_death`]: struct.Pallet.html#method.transfer
      *
      * @param {MultiAddressLike} dest
      * @param {bigint} value
@@ -616,7 +743,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_all`].
+     * Transfer the entire transferable balance from the caller account.
+     *
+     * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+     * any locked, reserved, or existential deposits (when `keep_alive` is `true`), will not be
+     * transferred by this function. To ensure that this function results in a killed account,
+     * you might need to prepare the account by removing any reference counters, storage
+     * deposits, etc...
+     *
+     * The dispatch origin of this call must be Signed.
+     *
+     * - `dest`: The recipient of the transfer.
+     * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+     * of the funds the account has, causing the sender account to be killed (false), or
+     * transfer everything except at least the existential deposit, which will guarantee to
+     * keep the sender account alive (true).
      *
      * @param {MultiAddressLike} dest
      * @param {boolean} keepAlive
@@ -639,7 +780,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_unreserve`].
+     * Unreserve some balance from a user by force.
+     *
+     * Can only be called by ROOT.
      *
      * @param {MultiAddressLike} who
      * @param {bigint} amount
@@ -662,7 +805,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::upgrade_accounts`].
+     * Upgrade a specified account.
+     *
+     * - `origin`: Must be `Signed`.
+     * - `who`: The account to be upgraded.
+     *
+     * This will waive the transaction fee if at least all but 10% of the accounts needed to
+     * be upgraded. (We let some not have to be upgraded just in order to allow for the
+     * possibility of churn).
      *
      * @param {Array<AccountId32Like>} who
      **/
@@ -681,7 +831,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_set_balance`].
+     * Set the regular balance of a given account.
+     *
+     * The dispatch origin for this call is `root`.
      *
      * @param {MultiAddressLike} who
      * @param {bigint} newFree
@@ -704,7 +856,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_adjust_total_issuance`].
+     * Adjust the total issuance in a saturating way.
+     *
+     * Can only be called by root and always needs a positive `delta`.
+     *
+     * # Example
      *
      * @param {PalletBalancesAdjustmentDirection} direction
      * @param {bigint} delta
@@ -727,6 +883,35 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Burn the specified liquid free balance from the origin account.
+     *
+     * If the origin's account ends up below the existential deposit as a result
+     * of the burn and `keep_alive` is false, the account will be reaped.
+     *
+     * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+     * this `burn` operation will reduce total issuance by the amount _burned_.
+     *
+     * @param {bigint} value
+     * @param {boolean} keepAlive
+     **/
+    burn: GenericTxCall<
+      Rv,
+      (
+        value: bigint,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Balances';
+          palletCall: {
+            name: 'Burn';
+            params: { value: bigint; keepAlive: boolean };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -736,7 +921,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   staking: {
     /**
-     * See [`Pallet::bond`].
+     * Take the origin account as a stash and lock up `value` of its balance. `controller` will
+     * be the account that controls it.
+     *
+     * `value` must be more than the `minimum_balance` specified by `T::Currency`.
+     *
+     * The dispatch origin for this call must be _Signed_ by the stash account.
+     *
+     * Emits `Bonded`.
+     * ## Complexity
+     * - Independent of the arguments. Moderate complexity.
+     * - O(1).
+     * - Three extra DB entries.
+     *
+     * NOTE: Two of the storage writes (`Self::bonded`, `Self::payee`) are _never_ cleaned
+     * unless the `origin` falls below _existential deposit_ (or equal to 0) and gets removed
+     * as dust.
      *
      * @param {bigint} value
      * @param {PalletStakingRewardDestination} payee
@@ -759,7 +959,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::bond_extra`].
+     * Add some extra amount that have appeared in the stash `free_balance` into the balance up
+     * for staking.
+     *
+     * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
+     *
+     * Use this if there are additional funds in your stash account that you wish to bond.
+     * Unlike [`bond`](Self::bond) or [`unbond`](Self::unbond) this function does not impose
+     * any limitation on the amount that can be added.
+     *
+     * Emits `Bonded`.
+     *
+     * ## Complexity
+     * - Independent of the arguments. Insignificant complexity.
+     * - O(1).
      *
      * @param {bigint} maxAdditional
      **/
@@ -778,7 +991,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::unbond`].
+     * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
+     * period ends. If this leaves an amount actively bonded less than
+     * T::Currency::minimum_balance(), then it is increased to the full amount.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
+     * the funds out of management ready for transfer.
+     *
+     * No more than a limited number of unlocking chunks (see `MaxUnlockingChunks`)
+     * can co-exists at the same time. If there are no unlocking chunks slots available
+     * [`Call::withdraw_unbonded`] is called to remove some of the chunks (if possible).
+     *
+     * If a user encounters the `InsufficientBond` error when calling this extrinsic,
+     * they should call `chill` first in order to free up their bonded funds.
+     *
+     * Emits `Unbonded`.
+     *
+     * See also [`Call::withdraw_unbonded`].
      *
      * @param {bigint} value
      **/
@@ -797,7 +1028,29 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::withdraw_unbonded`].
+     * Remove any unlocked chunks from the `unlocking` queue from our management.
+     *
+     * This essentially frees up that balance to be used by the stash account to do whatever
+     * it wants.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller.
+     *
+     * Emits `Withdrawn`.
+     *
+     * See also [`Call::unbond`].
+     *
+     * ## Parameters
+     *
+     * - `num_slashing_spans` indicates the number of metadata slashing spans to clear when
+     * this call results in a complete removal of all the data related to the stash account.
+     * In this case, the `num_slashing_spans` must be larger or equal to the number of
+     * slashing spans associated with the stash account in the [`SlashingSpans`] storage type,
+     * otherwise the call will fail. The call weight is directly proportional to
+     * `num_slashing_spans`.
+     *
+     * ## Complexity
+     * O(S) where S is the number of slashing spans to remove
+     * NOTE: Weight annotation is the kill scenario, we refund otherwise.
      *
      * @param {number} numSlashingSpans
      **/
@@ -816,7 +1069,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::validate`].
+     * Declare the desire to validate for the origin controller.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
      *
      * @param {PalletStakingValidatorPrefs} prefs
      **/
@@ -835,7 +1092,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::nominate`].
+     * Declare the desire to nominate `targets` for the origin controller.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * ## Complexity
+     * - The transaction's complexity is proportional to the size of `targets` (N)
+     * which is capped at CompactAssignments::LIMIT (T::MaxNominations).
+     * - Both the reads and writes follow a similar pattern.
      *
      * @param {Array<MultiAddressLike>} targets
      **/
@@ -854,7 +1120,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::chill`].
+     * Declare no desire to either validate or nominate.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * ## Complexity
+     * - Independent of the arguments. Insignificant complexity.
+     * - Contains one read.
+     * - Writes are limited to the `origin` account key.
      *
      **/
     chill: GenericTxCall<
@@ -871,7 +1146,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_payee`].
+     * (Re-)set the payment target for a controller.
+     *
+     * Effects will be felt instantly (as soon as this function is completed successfully).
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * ## Complexity
+     * - O(1)
+     * - Independent of the arguments. Insignificant complexity.
+     * - Contains a limited number of reads.
+     * - Writes are limited to the `origin` account key.
+     * ---------
      *
      * @param {PalletStakingRewardDestination} payee
      **/
@@ -890,7 +1176,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_controller`].
+     * (Re-)sets the controller of a stash to the stash itself. This function previously
+     * accepted a `controller` argument to set the controller to an account other than the
+     * stash itself. This functionality has now been removed, now only setting the controller
+     * to the stash, if it is not already.
+     *
+     * Effects will be felt instantly (as soon as this function is completed successfully).
+     *
+     * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
+     *
+     * ## Complexity
+     * O(1)
+     * - Independent of the arguments. Insignificant complexity.
+     * - Contains a limited number of reads.
+     * - Writes are limited to the `origin` account key.
      *
      **/
     setController: GenericTxCall<
@@ -907,7 +1206,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_validator_count`].
+     * Sets the ideal number of validators.
+     *
+     * The dispatch origin must be Root.
+     *
+     * ## Complexity
+     * O(1)
      *
      * @param {number} new_
      **/
@@ -926,7 +1230,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::increase_validator_count`].
+     * Increments the ideal number of validators up to maximum of
+     * `ElectionProviderBase::MaxWinners`.
+     *
+     * The dispatch origin must be Root.
+     *
+     * ## Complexity
+     * Same as [`Self::set_validator_count`].
      *
      * @param {number} additional
      **/
@@ -945,7 +1255,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::scale_validator_count`].
+     * Scale up the ideal number of validators by a factor up to maximum of
+     * `ElectionProviderBase::MaxWinners`.
+     *
+     * The dispatch origin must be Root.
+     *
+     * ## Complexity
+     * Same as [`Self::set_validator_count`].
      *
      * @param {Percent} factor
      **/
@@ -964,7 +1280,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_no_eras`].
+     * Force there to be no new eras indefinitely.
+     *
+     * The dispatch origin must be Root.
+     *
+     * # Warning
+     *
+     * The election process starts multiple blocks before the end of the era.
+     * Thus the election process may be ongoing when this is called. In this case the
+     * election will continue until the next era is triggered.
+     *
+     * ## Complexity
+     * - No arguments.
+     * - Weight: O(1)
      *
      **/
     forceNoEras: GenericTxCall<
@@ -981,7 +1309,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_new_era`].
+     * Force there to be a new era at the end of the next session. After this, it will be
+     * reset to normal (non-forced) behaviour.
+     *
+     * The dispatch origin must be Root.
+     *
+     * # Warning
+     *
+     * The election process starts multiple blocks before the end of the era.
+     * If this is called just before a new era is triggered, the election process may not
+     * have enough blocks to get a result.
+     *
+     * ## Complexity
+     * - No arguments.
+     * - Weight: O(1)
      *
      **/
     forceNewEra: GenericTxCall<
@@ -998,7 +1339,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_invulnerables`].
+     * Set the validators who cannot be slashed (if any).
+     *
+     * The dispatch origin must be Root.
      *
      * @param {Array<AccountId32Like>} invulnerables
      **/
@@ -1017,7 +1360,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_unstake`].
+     * Force a current staker to become completely unstaked, immediately.
+     *
+     * The dispatch origin must be Root.
+     *
+     * ## Parameters
+     *
+     * - `num_slashing_spans`: Refer to comments on [`Call::withdraw_unbonded`] for more
+     * details.
      *
      * @param {AccountId32Like} stash
      * @param {number} numSlashingSpans
@@ -1040,7 +1390,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_new_era_always`].
+     * Force there to be a new era at the end of sessions indefinitely.
+     *
+     * The dispatch origin must be Root.
+     *
+     * # Warning
+     *
+     * The election process starts multiple blocks before the end of the era.
+     * If this is called just before a new era is triggered, the election process may not
+     * have enough blocks to get a result.
      *
      **/
     forceNewEraAlways: GenericTxCall<
@@ -1057,7 +1415,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cancel_deferred_slash`].
+     * Cancel enactment of a deferred slash.
+     *
+     * Can be called by the `T::AdminOrigin`.
+     *
+     * Parameters: era and indices of the slashes for that era to kill.
      *
      * @param {number} era
      * @param {Array<number>} slashIndices
@@ -1080,7 +1442,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::payout_stakers`].
+     * Pay out next page of the stakers behind a validator for the given era.
+     *
+     * - `validator_stash` is the stash account of the validator.
+     * - `era` may be any era between `[current_era - history_depth; current_era]`.
+     *
+     * The origin of this call must be _Signed_. Any account can call this function, even if
+     * it is not one of the stakers.
+     *
+     * The reward payout could be paged in case there are too many nominators backing the
+     * `validator_stash`. This call will payout unpaid pages in an ascending order. To claim a
+     * specific page, use `payout_stakers_by_page`.`
+     *
+     * If all pages are claimed, it returns an error `InvalidPage`.
      *
      * @param {AccountId32Like} validatorStash
      * @param {number} era
@@ -1103,7 +1477,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::rebond`].
+     * Rebond a portion of the stash scheduled to be unlocked.
+     *
+     * The dispatch origin must be signed by the controller.
+     *
+     * ## Complexity
+     * - Time complexity: O(L), where L is unlocking chunks
+     * - Bounded by `MaxUnlockingChunks`.
      *
      * @param {bigint} value
      **/
@@ -1122,7 +1502,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::reap_stash`].
+     * Remove all data structures concerning a staker/stash once it is at a state where it can
+     * be considered `dust` in the staking system. The requirements are:
+     *
+     * 1. the `total_balance` of the stash is below existential deposit.
+     * 2. or, the `ledger.total` of the stash is below existential deposit.
+     * 3. or, existential deposit is zero and either `total_balance` or `ledger.total` is zero.
+     *
+     * The former can happen in cases like a slash; the latter when a fully unbonded account
+     * is still receiving staking rewards in `RewardDestination::Staked`.
+     *
+     * It can be called by anyone, as long as `stash` meets the above requirements.
+     *
+     * Refunds the transaction fees upon successful execution.
+     *
+     * ## Parameters
+     *
+     * - `num_slashing_spans`: Refer to comments on [`Call::withdraw_unbonded`] for more
+     * details.
      *
      * @param {AccountId32Like} stash
      * @param {number} numSlashingSpans
@@ -1145,7 +1542,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::kick`].
+     * Remove the given nominations from the calling validator.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * - `who`: A list of nominator stash accounts who are nominating this validator which
+     * should no longer be nominating this validator.
+     *
+     * Note: Making this call only makes sense if you first set the validator preferences to
+     * block any further nominations.
      *
      * @param {Array<MultiAddressLike>} who
      **/
@@ -1164,7 +1571,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_staking_configs`].
+     * Update the various staking configurations .
+     *
+     * * `min_nominator_bond`: The minimum active bond needed to be a nominator.
+     * * `min_validator_bond`: The minimum active bond needed to be a validator.
+     * * `max_nominator_count`: The max number of users who can be a nominator at once. When
+     * set to `None`, no limit is enforced.
+     * * `max_validator_count`: The max number of users who can be a validator at once. When
+     * set to `None`, no limit is enforced.
+     * * `chill_threshold`: The ratio of `max_nominator_count` or `max_validator_count` which
+     * should be filled in order for the `chill_other` transaction to work.
+     * * `min_commission`: The minimum amount of commission that each validators must maintain.
+     * This is checked only upon calling `validate`. Existing validators are not affected.
+     *
+     * RuntimeOrigin must be Root to call this function.
+     *
+     * NOTE: Existing nominators and validators will not be affected by this update.
+     * to kick people under the new limits, `chill_other` should be called.
      *
      * @param {PalletStakingPalletConfigOp} minNominatorBond
      * @param {PalletStakingPalletConfigOp} minValidatorBond
@@ -1172,6 +1595,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletStakingPalletConfigOpU32} maxValidatorCount
      * @param {PalletStakingPalletConfigOpPercent} chillThreshold
      * @param {PalletStakingPalletConfigOpPerbill} minCommission
+     * @param {PalletStakingPalletConfigOpPercent} maxStakedRewards
      **/
     setStakingConfigs: GenericTxCall<
       Rv,
@@ -1182,6 +1606,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         maxValidatorCount: PalletStakingPalletConfigOpU32,
         chillThreshold: PalletStakingPalletConfigOpPercent,
         minCommission: PalletStakingPalletConfigOpPerbill,
+        maxStakedRewards: PalletStakingPalletConfigOpPercent,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
@@ -1195,6 +1620,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               maxValidatorCount: PalletStakingPalletConfigOpU32;
               chillThreshold: PalletStakingPalletConfigOpPercent;
               minCommission: PalletStakingPalletConfigOpPerbill;
+              maxStakedRewards: PalletStakingPalletConfigOpPercent;
             };
           };
         }
@@ -1202,7 +1628,32 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::chill_other`].
+     * Declare a `controller` to stop participating as either a validator or nominator.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_, but can be called by anyone.
+     *
+     * If the caller is the same as the controller being targeted, then no further checks are
+     * enforced, and this function behaves just like `chill`.
+     *
+     * If the caller is different than the controller being targeted, the following conditions
+     * must be met:
+     *
+     * * `controller` must belong to a nominator who has become non-decodable,
+     *
+     * Or:
+     *
+     * * A `ChillThreshold` must be set and checked which defines how close to the max
+     * nominators or validators we must reach before users can start chilling one-another.
+     * * A `MaxNominatorCount` and `MaxValidatorCount` must be set which is used to determine
+     * how close we are to the threshold.
+     * * A `MinNominatorBond` and `MinValidatorBond` must be set and checked, which determines
+     * if this is a person that should be chilled because they have not met the threshold
+     * bond required.
+     *
+     * This can be helpful if bond requirements are updated, and we need to remove old users
+     * who do not satisfy these requirements.
      *
      * @param {AccountId32Like} stash
      **/
@@ -1221,7 +1672,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_apply_min_commission`].
+     * Force a validator to have at least the minimum commission. This will not affect a
+     * validator who already has a commission greater than or equal to the minimum. Any account
+     * can call this.
      *
      * @param {AccountId32Like} validatorStash
      **/
@@ -1240,7 +1693,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_min_commission`].
+     * Sets the minimum amount of commission that each validators must maintain.
+     *
+     * This call has lower privilege requirements than `set_staking_config` and can be called
+     * by the `T::AdminOrigin`. Root can always call this.
      *
      * @param {Perbill} new_
      **/
@@ -1259,7 +1715,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::payout_stakers_by_page`].
+     * Pay out a page of the stakers behind a validator for the given era and page.
+     *
+     * - `validator_stash` is the stash account of the validator.
+     * - `era` may be any era between `[current_era - history_depth; current_era]`.
+     * - `page` is the page index of nominators to pay out with value between 0 and
+     * `num_nominators / T::MaxExposurePageSize`.
+     *
+     * The origin of this call must be _Signed_. Any account can call this function, even if
+     * it is not one of the stakers.
+     *
+     * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
+     * them, then the list of nominators is paged, with each page being capped at
+     * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+     * the call needs to be made for each page separately in order for all the nominators
+     * backing a validator to receive the reward. The nominators are not sorted across pages
+     * and so it should not be assumed the highest staker would be on the topmost page and vice
+     * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
      *
      * @param {AccountId32Like} validatorStash
      * @param {number} era
@@ -1284,7 +1756,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::update_payee`].
+     * Migrates an account's `RewardDestination::Controller` to
+     * `RewardDestination::Account(controller)`.
+     *
+     * Effects will be felt instantly (as soon as this function is completed successfully).
+     *
+     * This will waive the transaction fee if the `payee` is successfully migrated.
      *
      * @param {AccountId32Like} controller
      **/
@@ -1303,7 +1780,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::deprecate_controller_batch`].
+     * Updates a batch of controller accounts to their corresponding stash account if they are
+     * not the same. Ignores any controller accounts that do not exist, and does not operate if
+     * the stash and controller are already the same.
+     *
+     * Effects will be felt instantly (as soon as this function is completed successfully).
+     *
+     * The dispatch origin must be `T::AdminOrigin`.
      *
      * @param {Array<AccountId32Like>} controllers
      **/
@@ -1322,7 +1805,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::restore_ledger`].
+     * Restores the state of a ledger which is in an inconsistent state.
+     *
+     * The requirements to restore a ledger are the following:
+     * * The stash is bonded; or
+     * * The stash is not bonded but it has a staking lock left behind; or
+     * * If the stash has an associated ledger and its state is inconsistent; or
+     * * If the ledger is not corrupted *but* its staking lock is out of sync.
+     *
+     * The `maybe_*` input parameters will overwrite the corresponding data and metadata of the
+     * ledger associated with the stash. If the input parameters are not set, the ledger will
+     * be reset values from on-chain state.
      *
      * @param {AccountId32Like} stash
      * @param {AccountId32Like | undefined} maybeController
@@ -1363,7 +1856,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   session: {
     /**
-     * See [`Pallet::set_keys`].
+     * Sets the session key(s) of the function caller to `keys`.
+     * Allows an account to set its session key prior to becoming a validator.
+     * This doesn't take effect until the next session.
+     *
+     * The dispatch origin of this function must be signed.
+     *
+     * ## Complexity
+     * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
+     * fixed.
      *
      * @param {StagingKusamaRuntimeSessionKeys} keys
      * @param {BytesLike} proof
@@ -1386,7 +1887,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::purge_keys`].
+     * Removes any session key(s) of the function caller.
+     *
+     * This doesn't take effect until the next session.
+     *
+     * The dispatch origin of this function must be Signed and the account must be either be
+     * convertible to a validator ID using the chain's typical addressing system (this usually
+     * means being a controller account) or directly convertible into a validator ID (which
+     * usually means being a stash account).
+     *
+     * ## Complexity
+     * - `O(1)` in number of key types. Actual cost depends on the number of length of
+     * `T::Keys::key_ids()` which is fixed.
      *
      **/
     purgeKeys: GenericTxCall<
@@ -1412,7 +1924,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   grandpa: {
     /**
-     * See [`Pallet::report_equivocation`].
+     * Report voter equivocation/misbehavior. This method will verify the
+     * equivocation proof and validate the given key ownership proof
+     * against the extracted offender. If both are valid, the offence
+     * will be reported.
      *
      * @param {SpConsensusGrandpaEquivocationProof} equivocationProof
      * @param {SpSessionMembershipProof} keyOwnerProof
@@ -1435,7 +1950,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::report_equivocation_unsigned`].
+     * Report voter equivocation/misbehavior. This method will verify the
+     * equivocation proof and validate the given key ownership proof
+     * against the extracted offender. If both are valid, the offence
+     * will be reported.
+     *
+     * This extrinsic must be called unsigned and it is expected that only
+     * block authors will call it (validated in `ValidateUnsigned`), as such
+     * if the block author is defined it will be defined as the equivocation
+     * reporter.
      *
      * @param {SpConsensusGrandpaEquivocationProof} equivocationProof
      * @param {SpSessionMembershipProof} keyOwnerProof
@@ -1458,7 +1981,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::note_stalled`].
+     * Note that the current authority set of the GRANDPA finality gadget has stalled.
+     *
+     * This will trigger a forced authority set change at the beginning of the next session, to
+     * be enacted `delay` blocks after that. The `delay` should be high enough to safely assume
+     * that the block signalling the forced change will not be re-orged e.g. 1000 blocks.
+     * The block production rate (which may be slowed down because of finality lagging) should
+     * be taken into account when choosing the `delay`. The GRANDPA voters based on the new
+     * authority will start voting on top of `best_finalized_block_number` for new finalized
+     * blocks. `best_finalized_block_number` should be the highest of the latest finalized
+     * block of all validators of the new authority set.
+     *
+     * Only callable by root.
      *
      * @param {number} delay
      * @param {number} bestFinalizedBlockNumber
@@ -1490,68 +2024,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   treasury: {
     /**
-     * See [`Pallet::propose_spend`].
+     * Propose and approve a spend of treasury funds.
      *
-     * @param {bigint} value
-     * @param {MultiAddressLike} beneficiary
-     **/
-    proposeSpend: GenericTxCall<
-      Rv,
-      (
-        value: bigint,
-        beneficiary: MultiAddressLike,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'ProposeSpend';
-            params: { value: bigint; beneficiary: MultiAddressLike };
-          };
-        }
-      >
-    >;
-
-    /**
-     * See [`Pallet::reject_proposal`].
+     * ## Dispatch Origin
      *
-     * @param {number} proposalId
-     **/
-    rejectProposal: GenericTxCall<
-      Rv,
-      (proposalId: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'RejectProposal';
-            params: { proposalId: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * See [`Pallet::approve_proposal`].
+     * Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`.
      *
-     * @param {number} proposalId
-     **/
-    approveProposal: GenericTxCall<
-      Rv,
-      (proposalId: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'ApproveProposal';
-            params: { proposalId: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * See [`Pallet::spend_local`].
+     * ### Details
+     * NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the
+     * beneficiary.
+     *
+     * ### Parameters
+     * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
+     * - `beneficiary`: The destination account for the transfer.
+     *
+     * ## Events
+     *
+     * Emits [`Event::SpendApproved`] if successful.
      *
      * @param {bigint} amount
      * @param {MultiAddressLike} beneficiary
@@ -1574,7 +2063,27 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_approval`].
+     * Force a previously approved proposal to be removed from the approval queue.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::RejectOrigin`].
+     *
+     * ## Details
+     *
+     * The original deposit will no longer be returned.
+     *
+     * ### Parameters
+     * - `proposal_id`: The index of a proposal
+     *
+     * ### Complexity
+     * - O(A) where `A` is the number of approvals
+     *
+     * ### Errors
+     * - [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the
+     * approval queue, i.e., the proposal has not been approved. This could also mean the
+     * proposal does not exist altogether, thus there is no way it would have been approved
+     * in the first place.
      *
      * @param {number} proposalId
      **/
@@ -1593,7 +2102,32 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::spend`].
+     * Propose and approve a spend of treasury funds.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::SpendOrigin`] with the `Success` value being at least
+     * `amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted
+     * for assertion using the [`Config::BalanceConverter`].
+     *
+     * ## Details
+     *
+     * Create an approved spend for transferring a specific `amount` of `asset_kind` to a
+     * designated beneficiary. The spend must be claimed using the `payout` dispatchable within
+     * the [`Config::PayoutPeriod`].
+     *
+     * ### Parameters
+     * - `asset_kind`: An indicator of the specific asset class to be spent.
+     * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
+     * - `beneficiary`: The beneficiary of the spend.
+     * - `valid_from`: The block number from which the spend can be claimed. It can refer to
+     * the past if the resulting spend has not yet expired according to the
+     * [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after
+     * approval.
+     *
+     * ## Events
+     *
+     * Emits [`Event::AssetSpendApproved`] if successful.
      *
      * @param {PolkadotRuntimeCommonImplsVersionedLocatableAsset} assetKind
      * @param {bigint} amount
@@ -1625,7 +2159,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::payout`].
+     * Claim a spend.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed
+     *
+     * ## Details
+     *
+     * Spends must be claimed within some temporal bounds. A spend may be claimed within one
+     * [`Config::PayoutPeriod`] from the `valid_from` block.
+     * In case of a payout failure, the spend status must be updated with the `check_status`
+     * dispatchable before retrying with the current function.
+     *
+     * ### Parameters
+     * - `index`: The spend index.
+     *
+     * ## Events
+     *
+     * Emits [`Event::Paid`] if successful.
      *
      * @param {number} index
      **/
@@ -1644,7 +2196,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::check_status`].
+     * Check the status of the spend and remove it from the storage if processed.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed.
+     *
+     * ## Details
+     *
+     * The status check is a prerequisite for retrying a failed payout.
+     * If a spend has either succeeded or expired, it is removed from the storage by this
+     * function. In such instances, transaction fees are refunded.
+     *
+     * ### Parameters
+     * - `index`: The spend index.
+     *
+     * ## Events
+     *
+     * Emits [`Event::PaymentFailed`] if the spend payout has failed.
+     * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
      *
      * @param {number} index
      **/
@@ -1663,7 +2233,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::void_spend`].
+     * Void previously approved spend.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::RejectOrigin`].
+     *
+     * ## Details
+     *
+     * A spend void is only possible if the payout has not been attempted yet.
+     *
+     * ### Parameters
+     * - `index`: The spend index.
+     *
+     * ## Events
+     *
+     * Emits [`Event::AssetSpendVoided`] if successful.
      *
      * @param {number} index
      **/
@@ -1691,7 +2276,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   convictionVoting: {
     /**
-     * See [`Pallet::vote`].
+     * Vote in a poll. If `vote.is_aye()`, the vote is to enact the proposal;
+     * otherwise it is a vote to keep the status quo.
+     *
+     * The dispatch origin of this call must be _Signed_.
+     *
+     * - `poll_index`: The index of the poll to vote for.
+     * - `vote`: The vote configuration.
+     *
+     * Weight: `O(R)` where R is the number of polls the voter has voted on.
      *
      * @param {number} pollIndex
      * @param {PalletConvictionVotingVoteAccountVote} vote
@@ -1714,7 +2307,29 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::delegate`].
+     * Delegate the voting power (with some given conviction) of the sending account for a
+     * particular class of polls.
+     *
+     * The balance delegated is locked for as long as it's delegated, and thereafter for the
+     * time appropriate for the conviction's lock period.
+     *
+     * The dispatch origin of this call must be _Signed_, and the signing account must either:
+     * - be delegating already; or
+     * - have no voting activity (if there is, then it will need to be removed through
+     * `remove_vote`).
+     *
+     * - `to`: The account whose voting the `target` account's voting power will follow.
+     * - `class`: The class of polls to delegate. To delegate multiple classes, multiple calls
+     * to this function are required.
+     * - `conviction`: The conviction that will be attached to the delegated votes. When the
+     * account is undelegated, the funds will be locked for the corresponding period.
+     * - `balance`: The amount of the account's balance to be used in delegating. This must not
+     * be more than the account's current balance.
+     *
+     * Emits `Delegated`.
+     *
+     * Weight: `O(R)` where R is the number of polls the voter delegating to has
+     * voted on. Weight is initially charged as if maximum votes, but is refunded later.
      *
      * @param {number} class_
      * @param {MultiAddressLike} to
@@ -1746,7 +2361,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::undelegate`].
+     * Undelegate the voting power of the sending account for a particular class of polls.
+     *
+     * Tokens may be unlocked following once an amount of time consistent with the lock period
+     * of the conviction with which the delegation was issued has passed.
+     *
+     * The dispatch origin of this call must be _Signed_ and the signing account must be
+     * currently delegating.
+     *
+     * - `class`: The class of polls to remove the delegation from.
+     *
+     * Emits `Undelegated`.
+     *
+     * Weight: `O(R)` where R is the number of polls the voter delegating to has
+     * voted on. Weight is initially charged as if maximum votes, but is refunded later.
      *
      * @param {number} class_
      **/
@@ -1765,7 +2393,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::unlock`].
+     * Remove the lock caused by prior voting/delegating which has expired within a particular
+     * class.
+     *
+     * The dispatch origin of this call must be _Signed_.
+     *
+     * - `class`: The class of polls to unlock.
+     * - `target`: The account to remove the lock on.
+     *
+     * Weight: `O(R)` with R number of vote of target.
      *
      * @param {number} class_
      * @param {MultiAddressLike} target
@@ -1788,7 +2424,35 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_vote`].
+     * Remove a vote for a poll.
+     *
+     * If:
+     * - the poll was cancelled, or
+     * - the poll is ongoing, or
+     * - the poll has ended such that
+     * - the vote of the account was in opposition to the result; or
+     * - there was no conviction to the account's vote; or
+     * - the account made a split vote
+     * ...then the vote is removed cleanly and a following call to `unlock` may result in more
+     * funds being available.
+     *
+     * If, however, the poll has ended and:
+     * - it finished corresponding to the vote of the account, and
+     * - the account made a standard vote with conviction, and
+     * - the lock period of the conviction is not over
+     * ...then the lock will be aggregated into the overall account's lock, which may involve
+     * *overlocking* (where the two locks are combined into a single lock that is the maximum
+     * of both the amount locked and the time is it locked for).
+     *
+     * The dispatch origin of this call must be _Signed_, and the signer must have a vote
+     * registered for poll `index`.
+     *
+     * - `index`: The index of poll of the vote to be removed.
+     * - `class`: Optional parameter, if given it indicates the class of the poll. For polls
+     * which have finished or are cancelled, this must be `Some`.
+     *
+     * Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
+     * Weight is calculated for the maximum number of vote.
      *
      * @param {number | undefined} class_
      * @param {number} index
@@ -1811,7 +2475,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_other_vote`].
+     * Remove a vote for a poll.
+     *
+     * If the `target` is equal to the signer, then this function is exactly equivalent to
+     * `remove_vote`. If not equal to the signer, then the vote must have expired,
+     * either because the poll was cancelled, because the voter lost the poll or
+     * because the conviction period is over.
+     *
+     * The dispatch origin of this call must be _Signed_.
+     *
+     * - `target`: The account of the vote to be removed; this account must have voted for poll
+     * `index`.
+     * - `index`: The index of poll of the vote to be removed.
+     * - `class`: The class of the poll.
+     *
+     * Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
+     * Weight is calculated for the maximum number of vote.
      *
      * @param {MultiAddressLike} target
      * @param {number} class_
@@ -1845,7 +2524,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   referenda: {
     /**
-     * See [`Pallet::submit`].
+     * Propose a referendum on a privileged action.
+     *
+     * - `origin`: must be `SubmitOrigin` and the account must have `SubmissionDeposit` funds
+     * available.
+     * - `proposal_origin`: The origin from which the proposal should be executed.
+     * - `proposal`: The proposal.
+     * - `enactment_moment`: The moment that the proposal should be enacted.
+     *
+     * Emits `Submitted`.
      *
      * @param {StagingKusamaRuntimeOriginCaller} proposalOrigin
      * @param {FrameSupportPreimagesBounded} proposal
@@ -1874,7 +2561,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::place_decision_deposit`].
+     * Post the Decision Deposit for a referendum.
+     *
+     * - `origin`: must be `Signed` and the account must have funds available for the
+     * referendum's track's Decision Deposit.
+     * - `index`: The index of the submitted referendum whose Decision Deposit is yet to be
+     * posted.
+     *
+     * Emits `DecisionDepositPlaced`.
      *
      * @param {number} index
      **/
@@ -1893,7 +2587,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::refund_decision_deposit`].
+     * Refund the Decision Deposit for a closed referendum back to the depositor.
+     *
+     * - `origin`: must be `Signed` or `Root`.
+     * - `index`: The index of a closed referendum whose Decision Deposit has not yet been
+     * refunded.
+     *
+     * Emits `DecisionDepositRefunded`.
      *
      * @param {number} index
      **/
@@ -1912,7 +2612,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cancel`].
+     * Cancel an ongoing referendum.
+     *
+     * - `origin`: must be the `CancelOrigin`.
+     * - `index`: The index of the referendum to be cancelled.
+     *
+     * Emits `Cancelled`.
      *
      * @param {number} index
      **/
@@ -1931,7 +2636,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::kill`].
+     * Cancel an ongoing referendum and slash the deposits.
+     *
+     * - `origin`: must be the `KillOrigin`.
+     * - `index`: The index of the referendum to be cancelled.
+     *
+     * Emits `Killed` and `DepositSlashed`.
      *
      * @param {number} index
      **/
@@ -1950,7 +2660,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::nudge_referendum`].
+     * Advance a referendum onto its next logical state. Only used internally.
+     *
+     * - `origin`: must be `Root`.
+     * - `index`: the referendum to be advanced.
      *
      * @param {number} index
      **/
@@ -1969,7 +2682,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::one_fewer_deciding`].
+     * Advance a track onto its next logical state. Only used internally.
+     *
+     * - `origin`: must be `Root`.
+     * - `track`: the track to be advanced.
+     *
+     * Action item for when there is now one fewer referendum in the deciding phase and the
+     * `DecidingCount` is not yet updated. This means that we should either:
+     * - begin deciding another referendum (and leave `DecidingCount` alone); or
+     * - decrement `DecidingCount`.
      *
      * @param {number} track
      **/
@@ -1988,7 +2709,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::refund_submission_deposit`].
+     * Refund the Submission Deposit for a closed referendum back to the depositor.
+     *
+     * - `origin`: must be `Signed` or `Root`.
+     * - `index`: The index of a closed referendum whose Submission Deposit has not yet been
+     * refunded.
+     *
+     * Emits `SubmissionDepositRefunded`.
      *
      * @param {number} index
      **/
@@ -2007,7 +2734,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_metadata`].
+     * Set or clear metadata of a referendum.
+     *
+     * Parameters:
+     * - `origin`: Must be `Signed` by a creator of a referendum or by anyone to clear a
+     * metadata of a finished referendum.
+     * - `index`: The index of a referendum to set or clear metadata for.
+     * - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
      *
      * @param {number} index
      * @param {H256 | undefined} maybeHash
@@ -2039,7 +2772,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   fellowshipCollective: {
     /**
-     * See [`Pallet::add_member`].
+     * Introduce a new member.
+     *
+     * - `origin`: Must be the `AddOrigin`.
+     * - `who`: Account of non-member which will become a member.
+     *
+     * Weight: `O(1)`
      *
      * @param {MultiAddressLike} who
      **/
@@ -2058,7 +2796,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::promote_member`].
+     * Increment the rank of an existing member by one.
+     *
+     * - `origin`: Must be the `PromoteOrigin`.
+     * - `who`: Account of existing member.
+     *
+     * Weight: `O(1)`
      *
      * @param {MultiAddressLike} who
      **/
@@ -2077,7 +2820,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::demote_member`].
+     * Decrement the rank of an existing member by one. If the member is already at rank zero,
+     * then they are removed entirely.
+     *
+     * - `origin`: Must be the `DemoteOrigin`.
+     * - `who`: Account of existing member of rank greater than zero.
+     *
+     * Weight: `O(1)`, less if the member's index is highest in its rank.
      *
      * @param {MultiAddressLike} who
      **/
@@ -2096,7 +2845,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_member`].
+     * Remove the member entirely.
+     *
+     * - `origin`: Must be the `RemoveOrigin`.
+     * - `who`: Account of existing member of rank greater than zero.
+     * - `min_rank`: The rank of the member or greater.
+     *
+     * Weight: `O(min_rank)`.
      *
      * @param {MultiAddressLike} who
      * @param {number} minRank
@@ -2119,7 +2874,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::vote`].
+     * Add an aye or nay vote for the sender to the given proposal.
+     *
+     * - `origin`: Must be `Signed` by a member account.
+     * - `poll`: Index of a poll which is ongoing.
+     * - `aye`: `true` if the vote is to approve the proposal, `false` otherwise.
+     *
+     * Transaction fees are be waived if the member is voting on any particular proposal
+     * for the first time and the call is successful. Subsequent vote changes will charge a
+     * fee.
+     *
+     * Weight: `O(1)`, less if there was no previous vote on the poll by the member.
      *
      * @param {number} poll
      * @param {boolean} aye
@@ -2142,7 +2907,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cleanup_poll`].
+     * Remove votes from the given poll. It must have ended.
+     *
+     * - `origin`: Must be `Signed` by any account.
+     * - `poll_index`: Index of a poll which is completed and for which votes continue to
+     * exist.
+     * - `max`: Maximum number of vote items from remove in this call.
+     *
+     * Transaction fees are waived if the operation is successful.
+     *
+     * Weight `O(max)` (less if there are fewer items to remove than `max`).
      *
      * @param {number} pollIndex
      * @param {number} max
@@ -2165,7 +2939,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::exchange_member`].
+     * Exchanges a member with a new account and the same existing rank.
+     *
+     * - `origin`: Must be the `ExchangeOrigin`.
+     * - `who`: Account of existing member of rank greater than zero to be exchanged.
+     * - `new_who`: New Account of existing member of rank greater than zero to exchanged to.
      *
      * @param {MultiAddressLike} who
      * @param {MultiAddressLike} newWho
@@ -2197,7 +2975,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   fellowshipReferenda: {
     /**
-     * See [`Pallet::submit`].
+     * Propose a referendum on a privileged action.
+     *
+     * - `origin`: must be `SubmitOrigin` and the account must have `SubmissionDeposit` funds
+     * available.
+     * - `proposal_origin`: The origin from which the proposal should be executed.
+     * - `proposal`: The proposal.
+     * - `enactment_moment`: The moment that the proposal should be enacted.
+     *
+     * Emits `Submitted`.
      *
      * @param {StagingKusamaRuntimeOriginCaller} proposalOrigin
      * @param {FrameSupportPreimagesBounded} proposal
@@ -2226,7 +3012,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::place_decision_deposit`].
+     * Post the Decision Deposit for a referendum.
+     *
+     * - `origin`: must be `Signed` and the account must have funds available for the
+     * referendum's track's Decision Deposit.
+     * - `index`: The index of the submitted referendum whose Decision Deposit is yet to be
+     * posted.
+     *
+     * Emits `DecisionDepositPlaced`.
      *
      * @param {number} index
      **/
@@ -2245,7 +3038,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::refund_decision_deposit`].
+     * Refund the Decision Deposit for a closed referendum back to the depositor.
+     *
+     * - `origin`: must be `Signed` or `Root`.
+     * - `index`: The index of a closed referendum whose Decision Deposit has not yet been
+     * refunded.
+     *
+     * Emits `DecisionDepositRefunded`.
      *
      * @param {number} index
      **/
@@ -2264,7 +3063,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cancel`].
+     * Cancel an ongoing referendum.
+     *
+     * - `origin`: must be the `CancelOrigin`.
+     * - `index`: The index of the referendum to be cancelled.
+     *
+     * Emits `Cancelled`.
      *
      * @param {number} index
      **/
@@ -2283,7 +3087,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::kill`].
+     * Cancel an ongoing referendum and slash the deposits.
+     *
+     * - `origin`: must be the `KillOrigin`.
+     * - `index`: The index of the referendum to be cancelled.
+     *
+     * Emits `Killed` and `DepositSlashed`.
      *
      * @param {number} index
      **/
@@ -2302,7 +3111,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::nudge_referendum`].
+     * Advance a referendum onto its next logical state. Only used internally.
+     *
+     * - `origin`: must be `Root`.
+     * - `index`: the referendum to be advanced.
      *
      * @param {number} index
      **/
@@ -2321,7 +3133,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::one_fewer_deciding`].
+     * Advance a track onto its next logical state. Only used internally.
+     *
+     * - `origin`: must be `Root`.
+     * - `track`: the track to be advanced.
+     *
+     * Action item for when there is now one fewer referendum in the deciding phase and the
+     * `DecidingCount` is not yet updated. This means that we should either:
+     * - begin deciding another referendum (and leave `DecidingCount` alone); or
+     * - decrement `DecidingCount`.
      *
      * @param {number} track
      **/
@@ -2340,7 +3160,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::refund_submission_deposit`].
+     * Refund the Submission Deposit for a closed referendum back to the depositor.
+     *
+     * - `origin`: must be `Signed` or `Root`.
+     * - `index`: The index of a closed referendum whose Submission Deposit has not yet been
+     * refunded.
+     *
+     * Emits `SubmissionDepositRefunded`.
      *
      * @param {number} index
      **/
@@ -2359,7 +3185,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_metadata`].
+     * Set or clear metadata of a referendum.
+     *
+     * Parameters:
+     * - `origin`: Must be `Signed` by a creator of a referendum or by anyone to clear a
+     * metadata of a finished referendum.
+     * - `index`: The index of a referendum to set or clear metadata for.
+     * - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
      *
      * @param {number} index
      * @param {H256 | undefined} maybeHash
@@ -2391,7 +3223,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   whitelist: {
     /**
-     * See [`Pallet::whitelist_call`].
      *
      * @param {H256} callHash
      **/
@@ -2410,7 +3241,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_whitelisted_call`].
      *
      * @param {H256} callHash
      **/
@@ -2429,7 +3259,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::dispatch_whitelisted_call`].
      *
      * @param {H256} callHash
      * @param {number} callEncodedLen
@@ -2454,7 +3283,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::dispatch_whitelisted_call_with_preimage`].
      *
      * @param {StagingKusamaRuntimeRuntimeCallLike} call
      **/
@@ -2478,11 +3306,65 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
+   * Pallet `Parameters`'s transaction calls
+   **/
+  parameters: {
+    /**
+     * Set the value of a parameter.
+     *
+     * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+     * deleted by setting them to `None`.
+     *
+     * @param {StagingKusamaRuntimeRuntimeParameters} keyValue
+     **/
+    setParameter: GenericTxCall<
+      Rv,
+      (keyValue: StagingKusamaRuntimeRuntimeParameters) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'SetParameter';
+            params: { keyValue: StagingKusamaRuntimeRuntimeParameters };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
    * Pallet `Claims`'s transaction calls
    **/
   claims: {
     /**
-     * See [`Pallet::claim`].
+     * Make a claim to collect your DOTs.
+     *
+     * The dispatch origin for this call must be _None_.
+     *
+     * Unsigned Validation:
+     * A call to claim is deemed valid if the signature provided matches
+     * the expected signed message of:
+     *
+     * > Ethereum Signed Message:
+     * > (configured prefix string)(address)
+     *
+     * and `address` matches the `dest` account.
+     *
+     * Parameters:
+     * - `dest`: The destination account to payout the claim.
+     * - `ethereum_signature`: The signature of an ethereum signed message matching the format
+     * described above.
+     *
+     * <weight>
+     * The weight of this call is invariant over the input parameters.
+     * Weight includes logic to validate unsigned `claim` call.
+     *
+     * Total Complexity: O(1)
+     * </weight>
      *
      * @param {AccountId32Like} dest
      * @param {PolkadotRuntimeCommonClaimsEcdsaSignature} ethereumSignature
@@ -2505,7 +3387,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::mint_claim`].
+     * Mint a new claim to collect DOTs.
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * Parameters:
+     * - `who`: The Ethereum address allowed to collect this claim.
+     * - `value`: The number of DOTs that will be claimed.
+     * - `vesting_schedule`: An optional vesting schedule for these DOTs.
+     *
+     * <weight>
+     * The weight of this call is invariant over the input parameters.
+     * We assume worst case that both vesting and statement is being inserted.
+     *
+     * Total Complexity: O(1)
+     * </weight>
      *
      * @param {EthereumAddressLike} who
      * @param {bigint} value
@@ -2537,7 +3433,33 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::claim_attest`].
+     * Make a claim to collect your DOTs by signing a statement.
+     *
+     * The dispatch origin for this call must be _None_.
+     *
+     * Unsigned Validation:
+     * A call to `claim_attest` is deemed valid if the signature provided matches
+     * the expected signed message of:
+     *
+     * > Ethereum Signed Message:
+     * > (configured prefix string)(address)(statement)
+     *
+     * and `address` matches the `dest` account; the `statement` must match that which is
+     * expected according to your purchase arrangement.
+     *
+     * Parameters:
+     * - `dest`: The destination account to payout the claim.
+     * - `ethereum_signature`: The signature of an ethereum signed message matching the format
+     * described above.
+     * - `statement`: The identity of the statement which is being attested to in the
+     * signature.
+     *
+     * <weight>
+     * The weight of this call is invariant over the input parameters.
+     * Weight includes logic to validate unsigned `claim_attest` call.
+     *
+     * Total Complexity: O(1)
+     * </weight>
      *
      * @param {AccountId32Like} dest
      * @param {PolkadotRuntimeCommonClaimsEcdsaSignature} ethereumSignature
@@ -2566,7 +3488,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::attest`].
+     * Attest to a statement, needed to finalize the claims process.
+     *
+     * WARNING: Insecure unless your chain includes `PrevalidateAttests` as a
+     * `SignedExtension`.
+     *
+     * Unsigned Validation:
+     * A call to attest is deemed valid if the sender has a `Preclaim` registered
+     * and provides a `statement` which is expected for the account.
+     *
+     * Parameters:
+     * - `statement`: The identity of the statement which is being attested to in the
+     * signature.
+     *
+     * <weight>
+     * The weight of this call is invariant over the input parameters.
+     * Weight includes logic to do pre-validation on `attest` call.
+     *
+     * Total Complexity: O(1)
+     * </weight>
      *
      * @param {BytesLike} statement
      **/
@@ -2585,7 +3525,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::move_claim`].
      *
      * @param {EthereumAddressLike} old
      * @param {EthereumAddressLike} new_
@@ -2619,7 +3558,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   utility: {
     /**
-     * See [`Pallet::batch`].
+     * Send a batch of dispatch calls.
+     *
+     * May be called from any origin except `None`.
+     *
+     * - `calls`: The calls to be dispatched from the same origin. The number of call must not
+     * exceed the constant: `batched_calls_limit` (available in constant metadata).
+     *
+     * If origin is root then the calls are dispatched without checking origin filter. (This
+     * includes bypassing `frame_system::Config::BaseCallFilter`).
+     *
+     * ## Complexity
+     * - O(C) where C is the number of calls to be batched.
+     *
+     * This will return `Ok` in all circumstances. To determine the success of the batch, an
+     * event is deposited. If a call failed and the batch was interrupted, then the
+     * `BatchInterrupted` event is deposited, along with the number of successful calls made
+     * and the error of the failed call. If all were successful, then the `BatchCompleted`
+     * event is deposited.
      *
      * @param {Array<StagingKusamaRuntimeRuntimeCallLike>} calls
      **/
@@ -2638,7 +3594,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::as_derivative`].
+     * Send a call through an indexed pseudonym of the sender.
+     *
+     * Filter from origin are passed along. The call will be dispatched with an origin which
+     * use the same filter as the origin of this call.
+     *
+     * NOTE: If you need to ensure that any account-based filtering is not honored (i.e.
+     * because you expect `proxy` to have been used prior in the call stack and you do not want
+     * the call restrictions to apply to any sub-accounts), then use `as_multi_threshold_1`
+     * in the Multisig pallet instead.
+     *
+     * NOTE: Prior to version *12, this was called `as_limited_sub`.
+     *
+     * The dispatch origin for this call must be _Signed_.
      *
      * @param {number} index
      * @param {StagingKusamaRuntimeRuntimeCallLike} call
@@ -2661,7 +3629,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::batch_all`].
+     * Send a batch of dispatch calls and atomically execute them.
+     * The whole transaction will rollback and fail if any of the calls failed.
+     *
+     * May be called from any origin except `None`.
+     *
+     * - `calls`: The calls to be dispatched from the same origin. The number of call must not
+     * exceed the constant: `batched_calls_limit` (available in constant metadata).
+     *
+     * If origin is root then the calls are dispatched without checking origin filter. (This
+     * includes bypassing `frame_system::Config::BaseCallFilter`).
+     *
+     * ## Complexity
+     * - O(C) where C is the number of calls to be batched.
      *
      * @param {Array<StagingKusamaRuntimeRuntimeCallLike>} calls
      **/
@@ -2680,7 +3660,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::dispatch_as`].
+     * Dispatches a function call with a provided origin.
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * ## Complexity
+     * - O(1).
      *
      * @param {StagingKusamaRuntimeOriginCaller} asOrigin
      * @param {StagingKusamaRuntimeRuntimeCallLike} call
@@ -2703,7 +3688,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_batch`].
+     * Send a batch of dispatch calls.
+     * Unlike `batch`, it allows errors and won't interrupt.
+     *
+     * May be called from any origin except `None`.
+     *
+     * - `calls`: The calls to be dispatched from the same origin. The number of call must not
+     * exceed the constant: `batched_calls_limit` (available in constant metadata).
+     *
+     * If origin is root then the calls are dispatch without checking origin filter. (This
+     * includes bypassing `frame_system::Config::BaseCallFilter`).
+     *
+     * ## Complexity
+     * - O(C) where C is the number of calls to be batched.
      *
      * @param {Array<StagingKusamaRuntimeRuntimeCallLike>} calls
      **/
@@ -2722,7 +3719,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::with_weight`].
+     * Dispatch a function call with a specified weight.
+     *
+     * This function does not check the weight of the call, and instead allows the
+     * Root origin to specify the weight of the call.
+     *
+     * The dispatch origin for this call must be _Root_.
      *
      * @param {StagingKusamaRuntimeRuntimeCallLike} call
      * @param {SpWeightsWeightV2Weight} weight
@@ -2754,7 +3756,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   society: {
     /**
-     * See [`Pallet::bid`].
+     * A user outside of the society can make a bid for entry.
+     *
+     * Payment: The group's Candidate Deposit will be reserved for making a bid. It is returned
+     * when the bid becomes a member, or if the bid calls `unbid`.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `value`: A one time payment the bid would like to receive when joining the society.
      *
      * @param {bigint} value
      **/
@@ -2773,7 +3783,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::unbid`].
+     * A bidder can remove their bid for entry into society.
+     * By doing so, they will have their candidate deposit returned or
+     * they will unvouch their voucher.
+     *
+     * Payment: The bid deposit is unreserved if the user made a bid.
+     *
+     * The dispatch origin for this call must be _Signed_ and a bidder.
      *
      **/
     unbid: GenericTxCall<
@@ -2790,7 +3806,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::vouch`].
+     * As a member, vouch for someone to join society by placing a bid on their behalf.
+     *
+     * There is no deposit required to vouch for a new bid, but a member can only vouch for
+     * one bid at a time. If the bid becomes a suspended candidate and ultimately rejected by
+     * the suspension judgement origin, the member will be banned from vouching again.
+     *
+     * As a vouching member, you can claim a tip if the candidate is accepted. This tip will
+     * be paid as a portion of the reward the member will receive for joining the society.
+     *
+     * The dispatch origin for this call must be _Signed_ and a member.
+     *
+     * Parameters:
+     * - `who`: The user who you would like to vouch for.
+     * - `value`: The total reward to be paid between you and the candidate if they become
+     * a member in the society.
+     * - `tip`: Your cut of the total `value` payout when the candidate is inducted into
+     * the society. Tips larger than `value` will be saturated upon payout.
      *
      * @param {MultiAddressLike} who
      * @param {bigint} value
@@ -2815,7 +3847,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::unvouch`].
+     * As a vouching member, unvouch a bid. This only works while vouched user is
+     * only a bidder (and not a candidate).
+     *
+     * The dispatch origin for this call must be _Signed_ and a vouching member.
+     *
+     * Parameters:
+     * - `pos`: Position in the `Bids` vector of the bid who should be unvouched.
      *
      **/
     unvouch: GenericTxCall<
@@ -2832,7 +3870,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::vote`].
+     * As a member, vote on a candidate.
+     *
+     * The dispatch origin for this call must be _Signed_ and a member.
+     *
+     * Parameters:
+     * - `candidate`: The candidate that the member would like to bid on.
+     * - `approve`: A boolean which says if the candidate should be approved (`true`) or
+     * rejected (`false`).
      *
      * @param {MultiAddressLike} candidate
      * @param {boolean} approve
@@ -2855,7 +3900,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::defender_vote`].
+     * As a member, vote on the defender.
+     *
+     * The dispatch origin for this call must be _Signed_ and a member.
+     *
+     * Parameters:
+     * - `approve`: A boolean which says if the candidate should be
+     * approved (`true`) or rejected (`false`).
      *
      * @param {boolean} approve
      **/
@@ -2874,7 +3925,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::payout`].
+     * Transfer the first matured payout for the sender and remove it from the records.
+     *
+     * NOTE: This extrinsic needs to be called multiple times to claim multiple matured
+     * payouts.
+     *
+     * Payment: The member will receive a payment equal to their first matured
+     * payout to their free balance.
+     *
+     * The dispatch origin for this call must be _Signed_ and a member with
+     * payouts remaining.
      *
      **/
     payout: GenericTxCall<
@@ -2891,7 +3951,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::waive_repay`].
+     * Repay the payment previously given to the member with the signed origin, remove any
+     * pending payments, and elevate them from rank 0 to rank 1.
      *
      * @param {bigint} amount
      **/
@@ -2910,7 +3971,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::found_society`].
+     * Found the society.
+     *
+     * This is done as a discrete action in order to allow for the
+     * pallet to be included into a running chain and can only be done once.
+     *
+     * The dispatch origin for this call must be from the _FounderSetOrigin_.
+     *
+     * Parameters:
+     * - `founder` - The first member and head of the newly founded society.
+     * - `max_members` - The initial max number of members for the society.
+     * - `max_intake` - The maximum number of candidates per intake period.
+     * - `max_strikes`: The maximum number of strikes a member may get before they become
+     * suspended and may only be reinstated by the founder.
+     * - `candidate_deposit`: The deposit required to make a bid for membership of the group.
+     * - `rules` - The rules of this society concerning membership.
+     *
+     * Complexity: O(1)
      *
      * @param {MultiAddressLike} founder
      * @param {number} maxMembers
@@ -2948,7 +4025,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::dissolve`].
+     * Dissolve the society and remove all members.
+     *
+     * The dispatch origin for this call must be Signed, and the signing account must be both
+     * the `Founder` and the `Head`. This implies that it may only be done when there is one
+     * member.
      *
      **/
     dissolve: GenericTxCall<
@@ -2965,7 +4046,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::judge_suspended_member`].
+     * Allow suspension judgement origin to make judgement on a suspended member.
+     *
+     * If a suspended member is forgiven, we simply add them back as a member, not affecting
+     * any of the existing storage items for that member.
+     *
+     * If a suspended member is rejected, remove all associated storage items, including
+     * their payouts, and remove any vouched bids they currently have.
+     *
+     * The dispatch origin for this call must be Signed from the Founder.
+     *
+     * Parameters:
+     * - `who` - The suspended member to be judged.
+     * - `forgive` - A boolean representing whether the suspension judgement origin forgives
+     * (`true`) or rejects (`false`) a suspended member.
      *
      * @param {MultiAddressLike} who
      * @param {boolean} forgive
@@ -2988,7 +4082,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_parameters`].
+     * Change the maximum number of members in society and the maximum number of new candidates
+     * in a single intake period.
+     *
+     * The dispatch origin for this call must be Signed by the Founder.
+     *
+     * Parameters:
+     * - `max_members` - The maximum number of members for the society. This must be no less
+     * than the current number of members.
+     * - `max_intake` - The maximum number of candidates per intake period.
+     * - `max_strikes`: The maximum number of strikes a member may get before they become
+     * suspended and may only be reinstated by the founder.
+     * - `candidate_deposit`: The deposit required to make a bid for membership of the group.
      *
      * @param {number} maxMembers
      * @param {number} maxIntake
@@ -3015,7 +4120,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::punish_skeptic`].
+     * Punish the skeptic with a strike if they did not vote on a candidate. Callable by the
+     * candidate.
      *
      **/
     punishSkeptic: GenericTxCall<
@@ -3032,7 +4138,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::claim_membership`].
+     * Transform an approved candidate into a member. Callable only by the
+     * the candidate, and only after the period for voting has ended.
      *
      **/
     claimMembership: GenericTxCall<
@@ -3049,7 +4156,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::bestow_membership`].
+     * Transform an approved candidate into a member. Callable only by the Signed origin of the
+     * Founder, only after the period for voting has ended and only when the candidate is not
+     * clearly rejected.
      *
      * @param {AccountId32Like} candidate
      **/
@@ -3068,7 +4177,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::kick_candidate`].
+     * Remove the candidate's application from the society. Callable only by the Signed origin
+     * of the Founder, only after the period for voting has ended, and only when they do not
+     * have a clear approval.
+     *
+     * Any bid deposit is lost and voucher is banned.
      *
      * @param {AccountId32Like} candidate
      **/
@@ -3087,7 +4200,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::resign_candidacy`].
+     * Remove the candidate's application from the society. Callable only by the candidate.
+     *
+     * Any bid deposit is lost and voucher is banned.
      *
      **/
     resignCandidacy: GenericTxCall<
@@ -3104,7 +4219,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::drop_candidate`].
+     * Remove a `candidate`'s failed application from the society. Callable by any
+     * signed origin but only at the end of the subsequent round and only for
+     * a candidate with more rejections than approvals.
+     *
+     * The bid deposit is lost and the voucher is banned.
      *
      * @param {AccountId32Like} candidate
      **/
@@ -3123,7 +4242,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cleanup_candidacy`].
+     * Remove up to `max` stale votes for the given `candidate`.
+     *
+     * May be called by any Signed origin, but only after the candidate's candidacy is ended.
      *
      * @param {AccountId32Like} candidate
      * @param {number} max
@@ -3146,7 +4267,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cleanup_challenge`].
+     * Remove up to `max` stale votes for the defender in the given `challenge_round`.
+     *
+     * May be called by any Signed origin, but only after the challenge round is ended.
      *
      * @param {number} challengeRound
      * @param {number} max
@@ -3178,7 +4301,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   recovery: {
     /**
-     * See [`Pallet::as_recovered`].
+     * Send a call through a recovered account.
+     *
+     * The dispatch origin for this call must be _Signed_ and registered to
+     * be able to make calls on behalf of the recovered account.
+     *
+     * Parameters:
+     * - `account`: The recovered account you want to make a call on-behalf-of.
+     * - `call`: The call you want to make with the recovered account.
      *
      * @param {MultiAddressLike} account
      * @param {StagingKusamaRuntimeRuntimeCallLike} call
@@ -3201,7 +4331,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_recovered`].
+     * Allow ROOT to bypass the recovery process and set an a rescuer account
+     * for a lost account directly.
+     *
+     * The dispatch origin for this call must be _ROOT_.
+     *
+     * Parameters:
+     * - `lost`: The "lost account" to be recovered.
+     * - `rescuer`: The "rescuer account" which can call as the lost account.
      *
      * @param {MultiAddressLike} lost
      * @param {MultiAddressLike} rescuer
@@ -3224,7 +4361,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::create_recovery`].
+     * Create a recovery configuration for your account. This makes your account recoverable.
+     *
+     * Payment: `ConfigDepositBase` + `FriendDepositFactor` * #_of_friends balance
+     * will be reserved for storing the recovery configuration. This deposit is returned
+     * in full when the user calls `remove_recovery`.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `friends`: A list of friends you trust to vouch for recovery attempts. Should be
+     * ordered and contain no duplicate values.
+     * - `threshold`: The number of friends that must vouch for a recovery attempt before the
+     * account can be recovered. Should be less than or equal to the length of the list of
+     * friends.
+     * - `delay_period`: The number of blocks after a recovery attempt is initialized that
+     * needs to pass before the account can be recovered.
      *
      * @param {Array<AccountId32Like>} friends
      * @param {number} threshold
@@ -3249,7 +4401,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::initiate_recovery`].
+     * Initiate the process for recovering a recoverable account.
+     *
+     * Payment: `RecoveryDeposit` balance will be reserved for initiating the
+     * recovery process. This deposit will always be repatriated to the account
+     * trying to be recovered. See `close_recovery`.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `account`: The lost account that you want to recover. This account needs to be
+     * recoverable (i.e. have a recovery configuration).
      *
      * @param {MultiAddressLike} account
      **/
@@ -3268,7 +4430,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::vouch_recovery`].
+     * Allow a "friend" of a recoverable account to vouch for an active recovery
+     * process for that account.
+     *
+     * The dispatch origin for this call must be _Signed_ and must be a "friend"
+     * for the recoverable account.
+     *
+     * Parameters:
+     * - `lost`: The lost account that you want to recover.
+     * - `rescuer`: The account trying to rescue the lost account that you want to vouch for.
+     *
+     * The combination of these two parameters must point to an active recovery
+     * process.
      *
      * @param {MultiAddressLike} lost
      * @param {MultiAddressLike} rescuer
@@ -3291,7 +4464,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::claim_recovery`].
+     * Allow a successful rescuer to claim their recovered account.
+     *
+     * The dispatch origin for this call must be _Signed_ and must be a "rescuer"
+     * who has successfully completed the account recovery process: collected
+     * `threshold` or more vouches, waited `delay_period` blocks since initiation.
+     *
+     * Parameters:
+     * - `account`: The lost account that you want to claim has been successfully recovered by
+     * you.
      *
      * @param {MultiAddressLike} account
      **/
@@ -3310,7 +4491,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::close_recovery`].
+     * As the controller of a recoverable account, close an active recovery
+     * process for your account.
+     *
+     * Payment: By calling this function, the recoverable account will receive
+     * the recovery deposit `RecoveryDeposit` placed by the rescuer.
+     *
+     * The dispatch origin for this call must be _Signed_ and must be a
+     * recoverable account with an active recovery process for it.
+     *
+     * Parameters:
+     * - `rescuer`: The account trying to rescue this recoverable account.
      *
      * @param {MultiAddressLike} rescuer
      **/
@@ -3329,7 +4520,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_recovery`].
+     * Remove the recovery process for your account. Recovered accounts are still accessible.
+     *
+     * NOTE: The user must make sure to call `close_recovery` on all active
+     * recovery attempts before calling this function else it will fail.
+     *
+     * Payment: By calling this function the recoverable account will unreserve
+     * their recovery configuration deposit.
+     * (`ConfigDepositBase` + `FriendDepositFactor` * #_of_friends)
+     *
+     * The dispatch origin for this call must be _Signed_ and must be a
+     * recoverable account (i.e. has a recovery configuration).
      *
      **/
     removeRecovery: GenericTxCall<
@@ -3346,7 +4547,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cancel_recovered`].
+     * Cancel the ability to use `as_recovered` for `account`.
+     *
+     * The dispatch origin for this call must be _Signed_ and registered to
+     * be able to make calls on behalf of the recovered account.
+     *
+     * Parameters:
+     * - `account`: The recovered account you are able to call on-behalf-of.
      *
      * @param {MultiAddressLike} account
      **/
@@ -3374,7 +4581,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   vesting: {
     /**
-     * See [`Pallet::vest`].
+     * Unlock any vested funds of the sender account.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must have funds still
+     * locked under this pallet.
+     *
+     * Emits either `VestingCompleted` or `VestingUpdated`.
+     *
+     * ## Complexity
+     * - `O(1)`.
      *
      **/
     vest: GenericTxCall<
@@ -3391,7 +4606,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::vest_other`].
+     * Unlock any vested funds of a `target` account.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `target`: The account whose vested funds should be unlocked. Must have funds still
+     * locked under this pallet.
+     *
+     * Emits either `VestingCompleted` or `VestingUpdated`.
+     *
+     * ## Complexity
+     * - `O(1)`.
      *
      * @param {MultiAddressLike} target
      **/
@@ -3410,7 +4635,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::vested_transfer`].
+     * Create a vested transfer.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `target`: The account receiving the vested funds.
+     * - `schedule`: The vesting schedule attached to the transfer.
+     *
+     * Emits `VestingCreated`.
+     *
+     * NOTE: This will unlock all schedules through the current block.
+     *
+     * ## Complexity
+     * - `O(1)`.
      *
      * @param {MultiAddressLike} target
      * @param {PalletVestingVestingInfo} schedule
@@ -3433,7 +4670,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_vested_transfer`].
+     * Force a vested transfer.
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * - `source`: The account whose funds should be transferred.
+     * - `target`: The account that should be transferred the vested funds.
+     * - `schedule`: The vesting schedule attached to the transfer.
+     *
+     * Emits `VestingCreated`.
+     *
+     * NOTE: This will unlock all schedules through the current block.
+     *
+     * ## Complexity
+     * - `O(1)`.
      *
      * @param {MultiAddressLike} source
      * @param {MultiAddressLike} target
@@ -3458,7 +4708,27 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::merge_schedules`].
+     * Merge two vesting schedules together, creating a new vesting schedule that unlocks over
+     * the highest possible start and end blocks. If both schedules have already started the
+     * current block will be used as the schedule start; with the caveat that if one schedule
+     * is finished by the current block, the other will be treated as the new merged schedule,
+     * unmodified.
+     *
+     * NOTE: If `schedule1_index == schedule2_index` this is a no-op.
+     * NOTE: This will unlock all schedules through the current block prior to merging.
+     * NOTE: If both schedules have ended by the current block, no new schedule will be created
+     * and both will be removed.
+     *
+     * Merged schedule attributes:
+     * - `starting_block`: `MAX(schedule1.starting_block, scheduled2.starting_block,
+     * current_block)`.
+     * - `ending_block`: `MAX(schedule1.ending_block, schedule2.ending_block)`.
+     * - `locked`: `schedule1.locked_at(current_block) + schedule2.locked_at(current_block)`.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `schedule1_index`: index of the first schedule to merge.
+     * - `schedule2_index`: index of the second schedule to merge.
      *
      * @param {number} schedule1Index
      * @param {number} schedule2Index
@@ -3481,7 +4751,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_remove_vesting_schedule`].
+     * Force remove a vesting schedule
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * - `target`: An account that has a vesting schedule
+     * - `schedule_index`: The vesting schedule index that should be removed
      *
      * @param {MultiAddressLike} target
      * @param {number} scheduleIndex
@@ -3513,7 +4788,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   scheduler: {
     /**
-     * See [`Pallet::schedule`].
+     * Anonymously schedule a task.
      *
      * @param {number} when
      * @param {[number, number] | undefined} maybePeriodic
@@ -3545,7 +4820,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cancel`].
+     * Cancel an anonymously scheduled task.
      *
      * @param {number} when
      * @param {number} index
@@ -3568,7 +4843,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::schedule_named`].
+     * Schedule a named task.
      *
      * @param {FixedBytes<32>} id
      * @param {number} when
@@ -3603,7 +4878,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cancel_named`].
+     * Cancel a named scheduled task.
      *
      * @param {FixedBytes<32>} id
      **/
@@ -3622,7 +4897,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::schedule_after`].
+     * Anonymously schedule a task after a delay.
      *
      * @param {number} after
      * @param {[number, number] | undefined} maybePeriodic
@@ -3654,7 +4929,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::schedule_named_after`].
+     * Schedule a named task after a delay.
      *
      * @param {FixedBytes<32>} id
      * @param {number} after
@@ -3689,6 +4964,116 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Set a retry configuration for a task so that, in case its scheduled run fails, it will
+     * be retried after `period` blocks, for a total amount of `retries` retries or until it
+     * succeeds.
+     *
+     * Tasks which need to be scheduled for a retry are still subject to weight metering and
+     * agenda space, same as a regular task. If a periodic task fails, it will be scheduled
+     * normally while the task is retrying.
+     *
+     * Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic
+     * clones of the original task. Their retry configuration will be derived from the
+     * original task's configuration, but will have a lower value for `remaining` than the
+     * original `total_retries`.
+     *
+     * @param {[number, number]} task
+     * @param {number} retries
+     * @param {number} period
+     **/
+    setRetry: GenericTxCall<
+      Rv,
+      (
+        task: [number, number],
+        retries: number,
+        period: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'SetRetry';
+            params: { task: [number, number]; retries: number; period: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set a retry configuration for a named task so that, in case its scheduled run fails, it
+     * will be retried after `period` blocks, for a total amount of `retries` retries or until
+     * it succeeds.
+     *
+     * Tasks which need to be scheduled for a retry are still subject to weight metering and
+     * agenda space, same as a regular task. If a periodic task fails, it will be scheduled
+     * normally while the task is retrying.
+     *
+     * Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic
+     * clones of the original task. Their retry configuration will be derived from the
+     * original task's configuration, but will have a lower value for `remaining` than the
+     * original `total_retries`.
+     *
+     * @param {FixedBytes<32>} id
+     * @param {number} retries
+     * @param {number} period
+     **/
+    setRetryNamed: GenericTxCall<
+      Rv,
+      (
+        id: FixedBytes<32>,
+        retries: number,
+        period: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'SetRetryNamed';
+            params: { id: FixedBytes<32>; retries: number; period: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Removes the retry configuration of a task.
+     *
+     * @param {[number, number]} task
+     **/
+    cancelRetry: GenericTxCall<
+      Rv,
+      (task: [number, number]) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'CancelRetry';
+            params: { task: [number, number] };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Cancel the retry configuration of a named task.
+     *
+     * @param {FixedBytes<32>} id
+     **/
+    cancelRetryNamed: GenericTxCall<
+      Rv,
+      (id: FixedBytes<32>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'CancelRetryNamed';
+            params: { id: FixedBytes<32> };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -3698,7 +5083,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   proxy: {
     /**
-     * See [`Pallet::proxy`].
+     * Dispatch the given `call` from an account that the sender is authorised for through
+     * `add_proxy`.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `real`: The account that the proxy will make a call on behalf of.
+     * - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
+     * - `call`: The call to be made by the `real` account.
      *
      * @param {MultiAddressLike} real
      * @param {StagingKusamaRuntimeProxyType | undefined} forceProxyType
@@ -3727,7 +5120,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::add_proxy`].
+     * Register a proxy account for the sender that is able to make calls on its behalf.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `proxy`: The account that the `caller` would like to make a proxy.
+     * - `proxy_type`: The permissions allowed for this proxy account.
+     * - `delay`: The announcement period required of the initial proxy. Will generally be
+     * zero.
      *
      * @param {MultiAddressLike} delegate
      * @param {StagingKusamaRuntimeProxyType} proxyType
@@ -3752,7 +5153,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_proxy`].
+     * Unregister a proxy account for the sender.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `proxy`: The account that the `caller` would like to remove as a proxy.
+     * - `proxy_type`: The permissions currently enabled for the removed proxy account.
      *
      * @param {MultiAddressLike} delegate
      * @param {StagingKusamaRuntimeProxyType} proxyType
@@ -3777,7 +5184,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_proxies`].
+     * Unregister all proxy accounts for the sender.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * WARNING: This may be called on accounts created by `pure`, however if done, then
+     * the unreserved fees will be inaccessible. **All access to this account will be lost.**
      *
      **/
     removeProxies: GenericTxCall<
@@ -3794,7 +5206,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::create_pure`].
+     * Spawn a fresh new account that is guaranteed to be otherwise inaccessible, and
+     * initialize it with a proxy of `proxy_type` for `origin` sender.
+     *
+     * Requires a `Signed` origin.
+     *
+     * - `proxy_type`: The type of the proxy that the sender will be registered as over the
+     * new account. This will almost always be the most permissive `ProxyType` possible to
+     * allow for maximum flexibility.
+     * - `index`: A disambiguation index, in case this is called multiple times in the same
+     * transaction (e.g. with `utility::batch`). Unless you're using `batch` you probably just
+     * want to use `0`.
+     * - `delay`: The announcement period required of the initial proxy. Will generally be
+     * zero.
+     *
+     * Fails with `Duplicate` if this has already been called in this transaction, from the
+     * same sender, with the same parameters.
+     *
+     * Fails if there are insufficient funds to pay for deposit.
      *
      * @param {StagingKusamaRuntimeProxyType} proxyType
      * @param {number} delay
@@ -3819,7 +5248,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::kill_pure`].
+     * Removes a previously spawned pure proxy.
+     *
+     * WARNING: **All access to this account will be lost.** Any funds held in it will be
+     * inaccessible.
+     *
+     * Requires a `Signed` origin, and the sender account must have been created by a call to
+     * `pure` with corresponding parameters.
+     *
+     * - `spawner`: The account that originally called `pure` to create this account.
+     * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+     * - `proxy_type`: The proxy type originally passed to `pure`.
+     * - `height`: The height of the chain when the call to `pure` was processed.
+     * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+     *
+     * Fails with `NoPermission` in case the caller is not a previously created pure
+     * account whose `pure` call has corresponding parameters.
      *
      * @param {MultiAddressLike} spawner
      * @param {StagingKusamaRuntimeProxyType} proxyType
@@ -3854,7 +5298,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::announce`].
+     * Publish the hash of a proxy-call that will be made in the future.
+     *
+     * This must be called some number of blocks before the corresponding `proxy` is attempted
+     * if the delay associated with the proxy relationship is greater than zero.
+     *
+     * No more than `MaxPending` announcements may be made at any one time.
+     *
+     * This will take a deposit of `AnnouncementDepositFactor` as well as
+     * `AnnouncementDepositBase` if there are no other pending announcements.
+     *
+     * The dispatch origin for this call must be _Signed_ and a proxy of `real`.
+     *
+     * Parameters:
+     * - `real`: The account that the proxy will make a call on behalf of.
+     * - `call_hash`: The hash of the call to be made by the `real` account.
      *
      * @param {MultiAddressLike} real
      * @param {H256} callHash
@@ -3877,7 +5335,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_announcement`].
+     * Remove a given announcement.
+     *
+     * May be called by a proxy account to remove a call they previously announced and return
+     * the deposit.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `real`: The account that the proxy will make a call on behalf of.
+     * - `call_hash`: The hash of the call to be made by the `real` account.
      *
      * @param {MultiAddressLike} real
      * @param {H256} callHash
@@ -3900,7 +5367,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::reject_announcement`].
+     * Remove the given announcement of a delegate.
+     *
+     * May be called by a target (proxied) account to remove a call that one of their delegates
+     * (`delegate`) has announced they want to execute. The deposit is returned.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `delegate`: The account that previously announced the call.
+     * - `call_hash`: The hash of the call to be made.
      *
      * @param {MultiAddressLike} delegate
      * @param {H256} callHash
@@ -3923,7 +5399,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::proxy_announced`].
+     * Dispatch the given `call` from an account that the sender is authorized for through
+     * `add_proxy`.
+     *
+     * Removes any corresponding announcement(s).
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `real`: The account that the proxy will make a call on behalf of.
+     * - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
+     * - `call`: The call to be made by the `real` account.
      *
      * @param {MultiAddressLike} delegate
      * @param {MultiAddressLike} real
@@ -3964,7 +5450,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   multisig: {
     /**
-     * See [`Pallet::as_multi_threshold_1`].
+     * Immediately dispatch a multi-signature call using a single approval from the caller.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `other_signatories`: The accounts (other than the sender) who are part of the
+     * multi-signature, but do not participate in the approval process.
+     * - `call`: The call to be executed.
+     *
+     * Result is equivalent to the dispatched result.
+     *
+     * ## Complexity
+     * O(Z + C) where Z is the length of the call and C its execution weight.
      *
      * @param {Array<AccountId32Like>} otherSignatories
      * @param {StagingKusamaRuntimeRuntimeCallLike} call
@@ -3987,7 +5484,45 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::as_multi`].
+     * Register approval for a dispatch to be made from a deterministic composite account if
+     * approved by a total of `threshold - 1` of `other_signatories`.
+     *
+     * If there are enough, then dispatch the call.
+     *
+     * Payment: `DepositBase` will be reserved if this is the first approval, plus
+     * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
+     * is cancelled.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `threshold`: The total number of approvals for this dispatch before it is executed.
+     * - `other_signatories`: The accounts (other than the sender) who can approve this
+     * dispatch. May not be empty.
+     * - `maybe_timepoint`: If this is the first approval, then this must be `None`. If it is
+     * not the first approval, then it must be `Some`, with the timepoint (block number and
+     * transaction index) of the first approval transaction.
+     * - `call`: The call to be executed.
+     *
+     * NOTE: Unless this is the final approval, you will generally want to use
+     * `approve_as_multi` instead, since it only requires a hash of the call.
+     *
+     * Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise
+     * on success, result is `Ok` and the result from the interior call, if it was executed,
+     * may be found in the deposited `MultisigExecuted` event.
+     *
+     * ## Complexity
+     * - `O(S + Z + Call)`.
+     * - Up to one balance-reserve or unreserve operation.
+     * - One passthrough operation, one insert, both `O(S)` where `S` is the number of
+     * signatories. `S` is capped by `MaxSignatories`, with weight being proportional.
+     * - One call encode & hash, both of complexity `O(Z)` where `Z` is tx-len.
+     * - One encode & hash, both of complexity `O(S)`.
+     * - Up to one binary search and insert (`O(logS + S)`).
+     * - I/O: 1 read `O(S)`, up to 1 mutate `O(S)`. Up to one remove.
+     * - One event.
+     * - The weight of the `call`.
+     * - Storage: inserts one item, value size bounded by `MaxSignatories`, with a deposit
+     * taken for its lifetime of `DepositBase + threshold * DepositFactor`.
      *
      * @param {number} threshold
      * @param {Array<AccountId32Like>} otherSignatories
@@ -4022,7 +5557,36 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::approve_as_multi`].
+     * Register approval for a dispatch to be made from a deterministic composite account if
+     * approved by a total of `threshold - 1` of `other_signatories`.
+     *
+     * Payment: `DepositBase` will be reserved if this is the first approval, plus
+     * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
+     * is cancelled.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `threshold`: The total number of approvals for this dispatch before it is executed.
+     * - `other_signatories`: The accounts (other than the sender) who can approve this
+     * dispatch. May not be empty.
+     * - `maybe_timepoint`: If this is the first approval, then this must be `None`. If it is
+     * not the first approval, then it must be `Some`, with the timepoint (block number and
+     * transaction index) of the first approval transaction.
+     * - `call_hash`: The hash of the call to be executed.
+     *
+     * NOTE: If this is the final approval, you will want to use `as_multi` instead.
+     *
+     * ## Complexity
+     * - `O(S)`.
+     * - Up to one balance-reserve or unreserve operation.
+     * - One passthrough operation, one insert, both `O(S)` where `S` is the number of
+     * signatories. `S` is capped by `MaxSignatories`, with weight being proportional.
+     * - One encode & hash, both of complexity `O(S)`.
+     * - Up to one binary search and insert (`O(logS + S)`).
+     * - I/O: 1 read `O(S)`, up to 1 mutate `O(S)`. Up to one remove.
+     * - One event.
+     * - Storage: inserts one item, value size bounded by `MaxSignatories`, with a deposit
+     * taken for its lifetime of `DepositBase + threshold * DepositFactor`.
      *
      * @param {number} threshold
      * @param {Array<AccountId32Like>} otherSignatories
@@ -4057,7 +5621,27 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cancel_as_multi`].
+     * Cancel a pre-existing, on-going multisig transaction. Any deposit reserved previously
+     * for this operation will be unreserved on success.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `threshold`: The total number of approvals for this dispatch before it is executed.
+     * - `other_signatories`: The accounts (other than the sender) who can approve this
+     * dispatch. May not be empty.
+     * - `timepoint`: The timepoint (block number and transaction index) of the first approval
+     * transaction for this dispatch.
+     * - `call_hash`: The hash of the call to be executed.
+     *
+     * ## Complexity
+     * - `O(S)`.
+     * - Up to one balance-reserve or unreserve operation.
+     * - One passthrough operation, one insert, both `O(S)` where `S` is the number of
+     * signatories. `S` is capped by `MaxSignatories`, with weight being proportional.
+     * - One encode & hash, both of complexity `O(S)`.
+     * - One event.
+     * - I/O: 1 read `O(S)`, one remove.
+     * - Storage: removes one item.
      *
      * @param {number} threshold
      * @param {Array<AccountId32Like>} otherSignatories
@@ -4098,7 +5682,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   preimage: {
     /**
-     * See [`Pallet::note_preimage`].
+     * Register a preimage on-chain.
+     *
+     * If the preimage was previously requested, no fees or deposits are taken for providing
+     * the preimage. Otherwise, a deposit is taken proportional to the size of the preimage.
      *
      * @param {BytesLike} bytes
      **/
@@ -4117,7 +5704,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::unnote_preimage`].
+     * Clear an unrequested preimage from the runtime storage.
+     *
+     * If `len` is provided, then it will be a much cheaper operation.
+     *
+     * - `hash`: The hash of the preimage to be removed from the store.
+     * - `len`: The length of the preimage of `hash`.
      *
      * @param {H256} hash
      **/
@@ -4136,7 +5728,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::request_preimage`].
+     * Request a preimage be uploaded to the chain without paying any fees or deposits.
+     *
+     * If the preimage requests has already been provided on-chain, we unreserve any deposit
+     * a user may have paid, and take the control of the preimage out of their hands.
      *
      * @param {H256} hash
      **/
@@ -4155,7 +5750,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::unrequest_preimage`].
+     * Clear a previously made request for a preimage.
+     *
+     * NOTE: THIS MUST NOT BE CALLED ON `hash` MORE TIMES THAN `request_preimage`.
      *
      * @param {H256} hash
      **/
@@ -4174,7 +5771,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::ensure_updated`].
+     * Ensure that the a bulk of pre-images is upgraded.
+     *
+     * The caller pays no fee if at least 90% of pre-images were successfully updated.
      *
      * @param {Array<H256>} hashes
      **/
@@ -4202,7 +5801,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   bounties: {
     /**
-     * See [`Pallet::propose_bounty`].
+     * Propose a new bounty.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Payment: `TipReportDepositBase` will be reserved from the origin account, as well as
+     * `DataDepositPerByte` for each byte in `reason`. It will be unreserved upon approval,
+     * or slashed when rejected.
+     *
+     * - `curator`: The curator account whom will manage this bounty.
+     * - `fee`: The curator fee.
+     * - `value`: The total payment amount of this bounty, curator fee included.
+     * - `description`: The description of this bounty.
      *
      * @param {bigint} value
      * @param {BytesLike} description
@@ -4225,7 +5835,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::approve_bounty`].
+     * Approve a bounty proposal. At a later time, the bounty will be funded and become active
+     * and the original deposit will be returned.
+     *
+     * May only be called from `T::SpendOrigin`.
+     *
+     * ## Complexity
+     * - O(1).
      *
      * @param {number} bountyId
      **/
@@ -4244,7 +5860,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::propose_curator`].
+     * Propose a curator to a funded bounty.
+     *
+     * May only be called from `T::SpendOrigin`.
+     *
+     * ## Complexity
+     * - O(1).
      *
      * @param {number} bountyId
      * @param {MultiAddressLike} curator
@@ -4269,7 +5890,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::unassign_curator`].
+     * Unassign curator from a bounty.
+     *
+     * This function can only be called by the `RejectOrigin` a signed origin.
+     *
+     * If this function is called by the `RejectOrigin`, we assume that the curator is
+     * malicious or inactive. As a result, we will slash the curator when possible.
+     *
+     * If the origin is the curator, we take this as a sign they are unable to do their job and
+     * they willingly give up. We could slash them, but for now we allow them to recover their
+     * deposit and exit without issue. (We may want to change this if it is abused.)
+     *
+     * Finally, the origin can be anyone if and only if the curator is "inactive". This allows
+     * anyone in the community to call out that a curator is not doing their due diligence, and
+     * we should pick a new curator. In this case the curator should also be slashed.
+     *
+     * ## Complexity
+     * - O(1).
      *
      * @param {number} bountyId
      **/
@@ -4288,7 +5925,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::accept_curator`].
+     * Accept the curator role for a bounty.
+     * A deposit will be reserved from curator and refund upon successful payout.
+     *
+     * May only be called from the curator.
+     *
+     * ## Complexity
+     * - O(1).
      *
      * @param {number} bountyId
      **/
@@ -4307,7 +5950,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::award_bounty`].
+     * Award bounty to a beneficiary account. The beneficiary will be able to claim the funds
+     * after a delay.
+     *
+     * The dispatch origin for this call must be the curator of this bounty.
+     *
+     * - `bounty_id`: Bounty ID to award.
+     * - `beneficiary`: The beneficiary account whom will receive the payout.
+     *
+     * ## Complexity
+     * - O(1).
      *
      * @param {number} bountyId
      * @param {MultiAddressLike} beneficiary
@@ -4330,7 +5982,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::claim_bounty`].
+     * Claim the payout from an awarded bounty after payout delay.
+     *
+     * The dispatch origin for this call must be the beneficiary of this bounty.
+     *
+     * - `bounty_id`: Bounty ID to claim.
+     *
+     * ## Complexity
+     * - O(1).
      *
      * @param {number} bountyId
      **/
@@ -4349,7 +6008,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::close_bounty`].
+     * Cancel a proposed or active bounty. All the funds will be sent to treasury and
+     * the curator deposit will be unreserved if possible.
+     *
+     * Only `T::RejectOrigin` is able to cancel a bounty.
+     *
+     * - `bounty_id`: Bounty ID to cancel.
+     *
+     * ## Complexity
+     * - O(1).
      *
      * @param {number} bountyId
      **/
@@ -4368,7 +6035,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::extend_bounty_expiry`].
+     * Extend the expiry time of an active bounty.
+     *
+     * The dispatch origin for this call must be the curator of this bounty.
+     *
+     * - `bounty_id`: Bounty ID to extend.
+     * - `remark`: additional information.
+     *
+     * ## Complexity
+     * - O(1).
      *
      * @param {number} bountyId
      * @param {BytesLike} remark
@@ -4400,7 +6075,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   childBounties: {
     /**
-     * See [`Pallet::add_child_bounty`].
+     * Add a new child-bounty.
+     *
+     * The dispatch origin for this call must be the curator of parent
+     * bounty and the parent bounty must be in "active" state.
+     *
+     * Child-bounty gets added successfully & fund gets transferred from
+     * parent bounty to child-bounty account, if parent bounty has enough
+     * funds, else the call fails.
+     *
+     * Upper bound to maximum number of active child bounties that can be
+     * added are managed via runtime trait config
+     * [`Config::MaxActiveChildBountyCount`].
+     *
+     * If the call is success, the status of child-bounty is updated to
+     * "Added".
+     *
+     * - `parent_bounty_id`: Index of parent bounty for which child-bounty is being added.
+     * - `value`: Value for executing the proposal.
+     * - `description`: Text description for the child-bounty.
      *
      * @param {number} parentBountyId
      * @param {bigint} value
@@ -4425,7 +6118,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::propose_curator`].
+     * Propose curator for funded child-bounty.
+     *
+     * The dispatch origin for this call must be curator of parent bounty.
+     *
+     * Parent bounty must be in active state, for this child-bounty call to
+     * work.
+     *
+     * Child-bounty must be in "Added" state, for processing the call. And
+     * state of child-bounty is moved to "CuratorProposed" on successful
+     * call completion.
+     *
+     * - `parent_bounty_id`: Index of parent bounty.
+     * - `child_bounty_id`: Index of child bounty.
+     * - `curator`: Address of child-bounty curator.
+     * - `fee`: payment fee to child-bounty curator for execution.
      *
      * @param {number} parentBountyId
      * @param {number} childBountyId
@@ -4452,7 +6159,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::accept_curator`].
+     * Accept the curator role for the child-bounty.
+     *
+     * The dispatch origin for this call must be the curator of this
+     * child-bounty.
+     *
+     * A deposit will be reserved from the curator and refund upon
+     * successful payout or cancellation.
+     *
+     * Fee for curator is deducted from curator fee of parent bounty.
+     *
+     * Parent bounty must be in active state, for this child-bounty call to
+     * work.
+     *
+     * Child-bounty must be in "CuratorProposed" state, for processing the
+     * call. And state of child-bounty is moved to "Active" on successful
+     * call completion.
+     *
+     * - `parent_bounty_id`: Index of parent bounty.
+     * - `child_bounty_id`: Index of child bounty.
      *
      * @param {number} parentBountyId
      * @param {number} childBountyId
@@ -4475,7 +6200,40 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::unassign_curator`].
+     * Unassign curator from a child-bounty.
+     *
+     * The dispatch origin for this call can be either `RejectOrigin`, or
+     * the curator of the parent bounty, or any signed origin.
+     *
+     * For the origin other than T::RejectOrigin and the child-bounty
+     * curator, parent bounty must be in active state, for this call to
+     * work. We allow child-bounty curator and T::RejectOrigin to execute
+     * this call irrespective of the parent bounty state.
+     *
+     * If this function is called by the `RejectOrigin` or the
+     * parent bounty curator, we assume that the child-bounty curator is
+     * malicious or inactive. As a result, child-bounty curator deposit is
+     * slashed.
+     *
+     * If the origin is the child-bounty curator, we take this as a sign
+     * that they are unable to do their job, and are willingly giving up.
+     * We could slash the deposit, but for now we allow them to unreserve
+     * their deposit and exit without issue. (We may want to change this if
+     * it is abused.)
+     *
+     * Finally, the origin can be anyone iff the child-bounty curator is
+     * "inactive". Expiry update due of parent bounty is used to estimate
+     * inactive state of child-bounty curator.
+     *
+     * This allows anyone in the community to call out that a child-bounty
+     * curator is not doing their due diligence, and we should pick a new
+     * one. In this case the child-bounty curator deposit is slashed.
+     *
+     * State of child-bounty is moved to Added state on successful call
+     * completion.
+     *
+     * - `parent_bounty_id`: Index of parent bounty.
+     * - `child_bounty_id`: Index of child bounty.
      *
      * @param {number} parentBountyId
      * @param {number} childBountyId
@@ -4498,7 +6256,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::award_child_bounty`].
+     * Award child-bounty to a beneficiary.
+     *
+     * The beneficiary will be able to claim the funds after a delay.
+     *
+     * The dispatch origin for this call must be the parent curator or
+     * curator of this child-bounty.
+     *
+     * Parent bounty must be in active state, for this child-bounty call to
+     * work.
+     *
+     * Child-bounty must be in active state, for processing the call. And
+     * state of child-bounty is moved to "PendingPayout" on successful call
+     * completion.
+     *
+     * - `parent_bounty_id`: Index of parent bounty.
+     * - `child_bounty_id`: Index of child bounty.
+     * - `beneficiary`: Beneficiary account.
      *
      * @param {number} parentBountyId
      * @param {number} childBountyId
@@ -4523,7 +6297,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::claim_child_bounty`].
+     * Claim the payout from an awarded child-bounty after payout delay.
+     *
+     * The dispatch origin for this call may be any signed origin.
+     *
+     * Call works independent of parent bounty state, No need for parent
+     * bounty to be in active state.
+     *
+     * The Beneficiary is paid out with agreed bounty value. Curator fee is
+     * paid & curator deposit is unreserved.
+     *
+     * Child-bounty must be in "PendingPayout" state, for processing the
+     * call. And instance of child-bounty is removed from the state on
+     * successful call completion.
+     *
+     * - `parent_bounty_id`: Index of parent bounty.
+     * - `child_bounty_id`: Index of child bounty.
      *
      * @param {number} parentBountyId
      * @param {number} childBountyId
@@ -4546,7 +6335,28 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::close_child_bounty`].
+     * Cancel a proposed or active child-bounty. Child-bounty account funds
+     * are transferred to parent bounty account. The child-bounty curator
+     * deposit may be unreserved if possible.
+     *
+     * The dispatch origin for this call must be either parent curator or
+     * `T::RejectOrigin`.
+     *
+     * If the state of child-bounty is `Active`, curator deposit is
+     * unreserved.
+     *
+     * If the state of child-bounty is `PendingPayout`, call fails &
+     * returns `PendingPayout` error.
+     *
+     * For the origin other than T::RejectOrigin, parent bounty must be in
+     * active state, for this child-bounty call to work. For origin
+     * T::RejectOrigin execution is forced.
+     *
+     * Instance of child-bounty is removed from the state on successful
+     * call completion.
+     *
+     * - `parent_bounty_id`: Index of parent bounty.
+     * - `child_bounty_id`: Index of child bounty.
      *
      * @param {number} parentBountyId
      * @param {number} childBountyId
@@ -4578,7 +6388,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   electionProviderMultiPhase: {
     /**
-     * See [`Pallet::submit_unsigned`].
+     * Submit a solution for the unsigned phase.
+     *
+     * The dispatch origin fo this call must be __none__.
+     *
+     * This submission is checked on the fly. Moreover, this unsigned solution is only
+     * validated when submitted to the pool from the **local** node. Effectively, this means
+     * that only active validators can submit this transaction when authoring a block (similar
+     * to an inherent).
+     *
+     * To prevent any incorrect solution (and thus wasted time/weight), this transaction will
+     * panic if the solution submitted by the validator is invalid in any way, effectively
+     * putting their authoring reward at risk.
+     *
+     * No deposit or reward is associated with this submission.
      *
      * @param {PalletElectionProviderMultiPhaseRawSolution} rawSolution
      * @param {PalletElectionProviderMultiPhaseSolutionOrSnapshotSize} witness
@@ -4604,7 +6427,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_minimum_untrusted_score`].
+     * Set a new value for `MinimumUntrustedScore`.
+     *
+     * Dispatch origin must be aligned with `T::ForceOrigin`.
+     *
+     * This check can be turned off by setting the value to `None`.
      *
      * @param {SpNposElectionsElectionScore | undefined} maybeNextScore
      **/
@@ -4623,7 +6450,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_emergency_election_result`].
+     * Set a solution in the queue, to be handed out to the client of this pallet in the next
+     * call to `ElectionProvider::elect`.
+     *
+     * This can only be set by `T::ForceOrigin`, and only when the phase is `Emergency`.
+     *
+     * The solution is not checked for any feasibility and is assumed to be trustworthy, as any
+     * feasibility check itself can in principle cause the election process to fail (due to
+     * memory/weight constrains).
      *
      * @param {Array<[AccountId32Like, SpNposElectionsSupport]>} supports
      **/
@@ -4642,7 +6476,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::submit`].
+     * Submit a solution for the signed phase.
+     *
+     * The dispatch origin fo this call must be __signed__.
+     *
+     * The solution is potentially queued, based on the claimed score and processed at the end
+     * of the signed phase.
+     *
+     * A deposit is reserved and recorded for the solution. Based on the outcome, the solution
+     * might be rewarded, slashed, or get all or a part of the deposit back.
      *
      * @param {PalletElectionProviderMultiPhaseRawSolution} rawSolution
      **/
@@ -4661,7 +6503,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::governance_fallback`].
+     * Trigger the governance fallback.
+     *
+     * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
+     * calling [`Call::set_emergency_election_result`].
      *
      * @param {number | undefined} maybeMaxVoters
      * @param {number | undefined} maybeMaxTargets
@@ -4693,7 +6538,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   nis: {
     /**
-     * See [`Pallet::place_bid`].
+     * Place a bid.
+     *
+     * Origin must be Signed, and account must have at least `amount` in free balance.
+     *
+     * - `amount`: The amount of the bid; these funds will be reserved, and if/when
+     * consolidated, removed. Must be at least `MinBid`.
+     * - `duration`: The number of periods before which the newly consolidated bid may be
+     * thawed. Must be greater than 1 and no more than `QueueCount`.
+     *
+     * Complexities:
+     * - `Queues[duration].len()` (just take max).
      *
      * @param {bigint} amount
      * @param {number} duration
@@ -4716,7 +6571,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::retract_bid`].
+     * Retract a previously placed bid.
+     *
+     * Origin must be Signed, and the account should have previously issued a still-active bid
+     * of `amount` for `duration`.
+     *
+     * - `amount`: The amount of the previous bid.
+     * - `duration`: The duration of the previous bid.
      *
      * @param {bigint} amount
      * @param {number} duration
@@ -4739,7 +6600,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::fund_deficit`].
+     * Ensure we have sufficient funding for all potential payouts.
+     *
+     * - `origin`: Must be accepted by `FundOrigin`.
      *
      **/
     fundDeficit: GenericTxCall<
@@ -4756,7 +6619,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::thaw_private`].
+     * Reduce or remove an outstanding receipt, placing the according proportion of funds into
+     * the account of the owner.
+     *
+     * - `origin`: Must be Signed and the account must be the owner of the receipt `index` as
+     * well as any fungible counterpart.
+     * - `index`: The index of the receipt.
+     * - `portion`: If `Some`, then only the given portion of the receipt should be thawed. If
+     * `None`, then all of it should be.
      *
      * @param {number} index
      * @param {Perquintill | undefined} maybeProportion
@@ -4779,7 +6649,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::thaw_communal`].
+     * Reduce or remove an outstanding receipt, placing the according proportion of funds into
+     * the account of the owner.
+     *
+     * - `origin`: Must be Signed and the account must be the owner of the fungible counterpart
+     * for receipt `index`.
+     * - `index`: The index of the receipt.
      *
      * @param {number} index
      **/
@@ -4798,7 +6673,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::communify`].
+     * Make a private receipt communal and create fungible counterparts for its owner.
      *
      * @param {number} index
      **/
@@ -4817,7 +6692,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::privatize`].
+     * Make a communal receipt private and burn fungible counterparts from its owner.
      *
      * @param {number} index
      **/
@@ -4845,7 +6720,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   nisCounterpartBalances: {
     /**
-     * See [`Pallet::transfer_allow_death`].
+     * Transfer some liquid free balance to another account.
+     *
+     * `transfer_allow_death` will set the `FreeBalance` of the sender and receiver.
+     * If the sender's account is below the existential deposit as a result
+     * of the transfer, the account will be reaped.
+     *
+     * The dispatch origin for this call must be `Signed` by the transactor.
      *
      * @param {MultiAddressLike} dest
      * @param {bigint} value
@@ -4868,7 +6749,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_transfer`].
+     * Exactly as `transfer_allow_death`, except the origin must be root and the source account
+     * may be specified.
      *
      * @param {MultiAddressLike} source
      * @param {MultiAddressLike} dest
@@ -4893,7 +6775,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_keep_alive`].
+     * Same as the [`transfer_allow_death`] call, but with a check that the transfer will not
+     * kill the origin account.
+     *
+     * 99% of the time you want [`transfer_allow_death`] instead.
+     *
+     * [`transfer_allow_death`]: struct.Pallet.html#method.transfer
      *
      * @param {MultiAddressLike} dest
      * @param {bigint} value
@@ -4916,7 +6803,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_all`].
+     * Transfer the entire transferable balance from the caller account.
+     *
+     * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+     * any locked, reserved, or existential deposits (when `keep_alive` is `true`), will not be
+     * transferred by this function. To ensure that this function results in a killed account,
+     * you might need to prepare the account by removing any reference counters, storage
+     * deposits, etc...
+     *
+     * The dispatch origin of this call must be Signed.
+     *
+     * - `dest`: The recipient of the transfer.
+     * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+     * of the funds the account has, causing the sender account to be killed (false), or
+     * transfer everything except at least the existential deposit, which will guarantee to
+     * keep the sender account alive (true).
      *
      * @param {MultiAddressLike} dest
      * @param {boolean} keepAlive
@@ -4939,7 +6840,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_unreserve`].
+     * Unreserve some balance from a user by force.
+     *
+     * Can only be called by ROOT.
      *
      * @param {MultiAddressLike} who
      * @param {bigint} amount
@@ -4962,7 +6865,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::upgrade_accounts`].
+     * Upgrade a specified account.
+     *
+     * - `origin`: Must be `Signed`.
+     * - `who`: The account to be upgraded.
+     *
+     * This will waive the transaction fee if at least all but 10% of the accounts needed to
+     * be upgraded. (We let some not have to be upgraded just in order to allow for the
+     * possibility of churn).
      *
      * @param {Array<AccountId32Like>} who
      **/
@@ -4981,7 +6891,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_set_balance`].
+     * Set the regular balance of a given account.
+     *
+     * The dispatch origin for this call is `root`.
      *
      * @param {MultiAddressLike} who
      * @param {bigint} newFree
@@ -5004,7 +6916,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_adjust_total_issuance`].
+     * Adjust the total issuance in a saturating way.
+     *
+     * Can only be called by root and always needs a positive `delta`.
+     *
+     * # Example
      *
      * @param {PalletBalancesAdjustmentDirection} direction
      * @param {bigint} delta
@@ -5027,6 +6943,35 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Burn the specified liquid free balance from the origin account.
+     *
+     * If the origin's account ends up below the existential deposit as a result
+     * of the burn and `keep_alive` is false, the account will be reaped.
+     *
+     * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+     * this `burn` operation will reduce total issuance by the amount _burned_.
+     *
+     * @param {bigint} value
+     * @param {boolean} keepAlive
+     **/
+    burn: GenericTxCall<
+      Rv,
+      (
+        value: bigint,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NisCounterpartBalances';
+          palletCall: {
+            name: 'Burn';
+            params: { value: bigint; keepAlive: boolean };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -5036,7 +6981,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   voterList: {
     /**
-     * See [`Pallet::rebag`].
+     * Declare that some `dislocated` account has, through rewards or penalties, sufficiently
+     * changed its score that it should properly fall into a different bag than its current
+     * one.
+     *
+     * Anyone can call this function about any potentially dislocated account.
+     *
+     * Will always update the stored score of `dislocated` to the correct score, based on
+     * `ScoreProvider`.
+     *
+     * If `dislocated` does not exists, it returns an error.
      *
      * @param {MultiAddressLike} dislocated
      **/
@@ -5055,7 +7009,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::put_in_front_of`].
+     * Move the caller's Id directly in front of `lighter`.
+     *
+     * The dispatch origin for this call must be _Signed_ and can only be called by the Id of
+     * the account going in front of `lighter`. Fee is payed by the origin under all
+     * circumstances.
+     *
+     * Only works if:
+     *
+     * - both nodes are within the same bag,
+     * - and `origin` has a greater `Score` than `lighter`.
      *
      * @param {MultiAddressLike} lighter
      **/
@@ -5074,7 +7037,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::put_in_front_of_other`].
+     * Same as [`Pallet::put_in_front_of`], but it can be called by anyone.
+     *
+     * Fee is paid by the origin under all circumstances.
      *
      * @param {MultiAddressLike} heavier
      * @param {MultiAddressLike} lighter
@@ -5106,7 +7071,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   nominationPools: {
     /**
-     * See [`Pallet::join`].
+     * Stake funds with a pool. The amount to bond is transferred from the member to the
+     * pools account and immediately increases the pools bond.
+     *
+     * # Note
+     *
+     * * An account can only be a member of a single pool.
+     * * An account cannot join the same pool multiple times.
+     * * This call will *not* dust the member account, so the member must have at least
+     * `existential deposit + amount` in their account.
+     * * Only a pool with [`PoolState::Open`] can be joined
      *
      * @param {bigint} amount
      * @param {number} poolId
@@ -5129,7 +7103,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::bond_extra`].
+     * Bond `extra` more funds from `origin` into the pool to which they already belong.
+     *
+     * Additional funds can come from either the free balance of the account, of from the
+     * accumulated rewards, see [`BondExtra`].
+     *
+     * Bonding extra funds implies an automatic payout of all pending rewards as well.
+     * See `bond_extra_other` to bond pending rewards of `other` members.
      *
      * @param {PalletNominationPoolsBondExtra} extra
      **/
@@ -5148,7 +7128,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::claim_payout`].
+     * A bonded member can use this to claim their payout based on the rewards that the pool
+     * has accumulated since their last claimed payout (OR since joining if this is their first
+     * time claiming rewards). The payout will be transferred to the member's account.
+     *
+     * The member will earn rewards pro rata based on the members stake vs the sum of the
+     * members in the pools stake. Rewards do not "expire".
+     *
+     * See `claim_payout_other` to claim rewards on behalf of some `other` pool member.
      *
      **/
     claimPayout: GenericTxCall<
@@ -5165,7 +7152,37 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::unbond`].
+     * Unbond up to `unbonding_points` of the `member_account`'s funds from the pool. It
+     * implicitly collects the rewards one last time, since not doing so would mean some
+     * rewards would be forfeited.
+     *
+     * Under certain conditions, this call can be dispatched permissionlessly (i.e. by any
+     * account).
+     *
+     * # Conditions for a permissionless dispatch.
+     *
+     * * The pool is blocked and the caller is either the root or bouncer. This is refereed to
+     * as a kick.
+     * * The pool is destroying and the member is not the depositor.
+     * * The pool is destroying, the member is the depositor and no other members are in the
+     * pool.
+     *
+     * ## Conditions for permissioned dispatch (i.e. the caller is also the
+     * `member_account`):
+     *
+     * * The caller is not the depositor.
+     * * The caller is the depositor, the pool is destroying and no other members are in the
+     * pool.
+     *
+     * # Note
+     *
+     * If there are too many unlocking chunks to unbond with the pool account,
+     * [`Call::pool_withdraw_unbonded`] can be called to try and minimize unlocking chunks.
+     * The [`StakingInterface::unbond`] will implicitly call [`Call::pool_withdraw_unbonded`]
+     * to try to free chunks if necessary (ie. if unbound was called and no unlocking chunks
+     * are available). However, it may not be possible to release the current unlocking chunks,
+     * in which case, the result of this call will likely be the `NoMoreChunks` error from the
+     * staking system.
      *
      * @param {MultiAddressLike} memberAccount
      * @param {bigint} unbondingPoints
@@ -5188,7 +7205,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::pool_withdraw_unbonded`].
+     * Call `withdraw_unbonded` for the pools account. This call can be made by any account.
+     *
+     * This is useful if there are too many unlocking chunks to call `unbond`, and some
+     * can be cleared by withdrawing. In the case there are too many unlocking chunks, the user
+     * would probably see an error like `NoMoreChunks` emitted from the staking system when
+     * they attempt to unbond.
      *
      * @param {number} poolId
      * @param {number} numSlashingSpans
@@ -5211,7 +7233,28 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::withdraw_unbonded`].
+     * Withdraw unbonded funds from `member_account`. If no bonded funds can be unbonded, an
+     * error is returned.
+     *
+     * Under certain conditions, this call can be dispatched permissionlessly (i.e. by any
+     * account).
+     *
+     * # Conditions for a permissionless dispatch
+     *
+     * * The pool is in destroy mode and the target is not the depositor.
+     * * The target is the depositor and they are the only member in the sub pools.
+     * * The pool is blocked and the caller is either the root or bouncer.
+     *
+     * # Conditions for permissioned dispatch
+     *
+     * * The caller is the target and they are not the depositor.
+     *
+     * # Note
+     *
+     * - If the target is the depositor, the pool will be destroyed.
+     * - If the pool has any pending slash, we also try to slash the member before letting them
+     * withdraw. This calculation adds some weight overhead and is only defensive. In reality,
+     * pool slashes must have been already applied via permissionless [`Call::apply_slash`].
      *
      * @param {MultiAddressLike} memberAccount
      * @param {number} numSlashingSpans
@@ -5234,7 +7277,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::create`].
+     * Create a new delegation pool.
+     *
+     * # Arguments
+     *
+     * * `amount` - The amount of funds to delegate to the pool. This also acts of a sort of
+     * deposit since the pools creator cannot fully unbond funds until the pool is being
+     * destroyed.
+     * * `index` - A disambiguation index for creating the account. Likely only useful when
+     * creating multiple pools in the same extrinsic.
+     * * `root` - The account to set as [`PoolRoles::root`].
+     * * `nominator` - The account to set as the [`PoolRoles::nominator`].
+     * * `bouncer` - The account to set as the [`PoolRoles::bouncer`].
+     *
+     * # Note
+     *
+     * In addition to `amount`, the caller will transfer the existential deposit; so the caller
+     * needs at have at least `amount + existential_deposit` transferable.
      *
      * @param {bigint} amount
      * @param {MultiAddressLike} root
@@ -5261,7 +7320,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::create_with_pool_id`].
+     * Create a new delegation pool with a previously used pool id
+     *
+     * # Arguments
+     *
+     * same as `create` with the inclusion of
+     * * `pool_id` - `A valid PoolId.
      *
      * @param {bigint} amount
      * @param {MultiAddressLike} root
@@ -5296,7 +7360,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::nominate`].
+     * Nominate on behalf of the pool.
+     *
+     * The dispatch origin of this call must be signed by the pool nominator or the pool
+     * root role.
+     *
+     * This directly forward the call to the staking pallet, on behalf of the pool bonded
+     * account.
+     *
+     * # Note
+     *
+     * In addition to a `root` or `nominator` role of `origin`, pool's depositor needs to have
+     * at least `depositor_min_bond` in the pool to start nominating.
      *
      * @param {number} poolId
      * @param {Array<AccountId32Like>} validators
@@ -5319,7 +7394,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_state`].
+     * Set a new state for the pool.
+     *
+     * If a pool is already in the `Destroying` state, then under no condition can its state
+     * change again.
+     *
+     * The dispatch origin of this call must be either:
+     *
+     * 1. signed by the bouncer, or the root role of the pool,
+     * 2. if the pool conditions to be open are NOT met (as described by `ok_to_be_open`), and
+     * then the state of the pool can be permissionlessly changed to `Destroying`.
      *
      * @param {number} poolId
      * @param {PalletNominationPoolsPoolState} state
@@ -5342,7 +7426,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_metadata`].
+     * Set a new metadata for the pool.
+     *
+     * The dispatch origin of this call must be signed by the bouncer, or the root role of the
+     * pool.
      *
      * @param {number} poolId
      * @param {BytesLike} metadata
@@ -5365,7 +7452,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_configs`].
+     * Update configurations for the nomination pools. The origin for this call must be
+     * [`Config::AdminOrigin`].
+     *
+     * # Arguments
+     *
+     * * `min_join_bond` - Set [`MinJoinBond`].
+     * * `min_create_bond` - Set [`MinCreateBond`].
+     * * `max_pools` - Set [`MaxPools`].
+     * * `max_members` - Set [`MaxPoolMembers`].
+     * * `max_members_per_pool` - Set [`MaxPoolMembersPerPool`].
+     * * `global_max_commission` - Set [`GlobalMaxCommission`].
      *
      * @param {PalletNominationPoolsConfigOp} minJoinBond
      * @param {PalletNominationPoolsConfigOp} minCreateBond
@@ -5403,7 +7500,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::update_roles`].
+     * Update the roles of the pool.
+     *
+     * The root is the only entity that can change any of the roles, including itself,
+     * excluding the depositor, who can never change.
+     *
+     * It emits an event, notifying UIs of the role change. This event is quite relevant to
+     * most pool members and they should be informed of changes to pool roles.
      *
      * @param {number} poolId
      * @param {PalletNominationPoolsConfigOp004} newRoot
@@ -5435,7 +7538,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::chill`].
+     * Chill on behalf of the pool.
+     *
+     * The dispatch origin of this call can be signed by the pool nominator or the pool
+     * root role, same as [`Pallet::nominate`].
+     *
+     * Under certain conditions, this call can be dispatched permissionlessly (i.e. by any
+     * account).
+     *
+     * # Conditions for a permissionless dispatch:
+     * * When pool depositor has less than `MinNominatorBond` staked, otherwise pool members
+     * are unable to unbond.
+     *
+     * # Conditions for permissioned dispatch:
+     * * The caller has a nominator or root role of the pool.
+     * This directly forward the call to the staking pallet, on behalf of the pool bonded
+     * account.
      *
      * @param {number} poolId
      **/
@@ -5454,7 +7572,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::bond_extra_other`].
+     * `origin` bonds funds from `extra` for some pool member `member` into their respective
+     * pools.
+     *
+     * `origin` can bond extra funds from free balance or pending rewards when `origin ==
+     * other`.
+     *
+     * In the case of `origin != other`, `origin` can only bond extra pending rewards of
+     * `other` members assuming set_claim_permission for the given member is
+     * `PermissionlessCompound` or `PermissionlessAll`.
      *
      * @param {MultiAddressLike} member
      * @param {PalletNominationPoolsBondExtra} extra
@@ -5477,7 +7603,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_claim_permission`].
+     * Allows a pool member to set a claim permission to allow or disallow permissionless
+     * bonding and withdrawing.
+     *
+     * # Arguments
+     *
+     * * `origin` - Member of a pool.
+     * * `permission` - The permission to be applied.
      *
      * @param {PalletNominationPoolsClaimPermission} permission
      **/
@@ -5496,7 +7628,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::claim_payout_other`].
+     * `origin` can claim payouts on some pool member `other`'s behalf.
+     *
+     * Pool member `other` must have a `PermissionlessWithdraw` or `PermissionlessAll` claim
+     * permission for this call to be successful.
      *
      * @param {AccountId32Like} other
      **/
@@ -5515,7 +7650,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_commission`].
+     * Set the commission of a pool.
+     * Both a commission percentage and a commission payee must be provided in the `current`
+     * tuple. Where a `current` of `None` is provided, any current commission will be removed.
+     *
+     * - If a `None` is supplied to `new_commission`, existing commission will be removed.
      *
      * @param {number} poolId
      * @param {[Perbill, AccountId32Like] | undefined} newCommission
@@ -5538,7 +7677,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_commission_max`].
+     * Set the maximum commission of a pool.
+     *
+     * - Initial max can be set to any `Perbill`, and only smaller values thereafter.
+     * - Current commission will be lowered in the event it is higher than a new max
+     * commission.
      *
      * @param {number} poolId
      * @param {Perbill} maxCommission
@@ -5561,7 +7704,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_commission_change_rate`].
+     * Set the commission change rate for a pool.
+     *
+     * Initial change rate is not bounded, whereas subsequent updates can only be more
+     * restrictive than the current.
      *
      * @param {number} poolId
      * @param {PalletNominationPoolsCommissionChangeRate} changeRate
@@ -5584,7 +7730,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::claim_commission`].
+     * Claim pending commission.
+     *
+     * The dispatch origin of this call must be signed by the `root` role of the pool. Pending
+     * commission is paid out and added to total claimed commission`. Total pending commission
+     * is reset to zero. the current.
      *
      * @param {number} poolId
      **/
@@ -5603,7 +7753,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::adjust_pool_deposit`].
+     * Top up the deficit or withdraw the excess ED from the pool.
+     *
+     * When a pool is created, the pool depositor transfers ED to the reward account of the
+     * pool. ED is subject to change and over time, the deposit in the reward account may be
+     * insufficient to cover the ED deficit of the pool or vice-versa where there is excess
+     * deposit to the pool. This call allows anyone to adjust the ED deposit of the
+     * pool by either topping up the deficit or claiming the excess.
      *
      * @param {number} poolId
      **/
@@ -5622,7 +7778,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_commission_claim_permission`].
+     * Set or remove a pool's commission claim permission.
+     *
+     * Determines who can claim the pool's pending commission. Only the `Root` role of the pool
+     * is able to configure commission claim permissions.
      *
      * @param {number} poolId
      * @param {PalletNominationPoolsCommissionClaimPermission | undefined} permission
@@ -5645,6 +7804,85 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Apply a pending slash on a member.
+     *
+     * Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:
+     * [`adapter::StakeStrategyType::Delegate`].
+     *
+     * This call can be dispatched permissionlessly (i.e. by any account). If the member has
+     * slash to be applied, caller may be rewarded with the part of the slash.
+     *
+     * @param {MultiAddressLike} memberAccount
+     **/
+    applySlash: GenericTxCall<
+      Rv,
+      (memberAccount: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'ApplySlash';
+            params: { memberAccount: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Migrates delegated funds from the pool account to the `member_account`.
+     *
+     * Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:
+     * [`adapter::StakeStrategyType::Delegate`].
+     *
+     * This is a permission-less call and refunds any fee if claim is successful.
+     *
+     * If the pool has migrated to delegation based staking, the staked tokens of pool members
+     * can be moved and held in their own account. See [`adapter::DelegateStake`]
+     *
+     * @param {MultiAddressLike} memberAccount
+     **/
+    migrateDelegation: GenericTxCall<
+      Rv,
+      (memberAccount: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'MigrateDelegation';
+            params: { memberAccount: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Migrate pool from [`adapter::StakeStrategyType::Transfer`] to
+     * [`adapter::StakeStrategyType::Delegate`].
+     *
+     * Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:
+     * [`adapter::StakeStrategyType::Delegate`].
+     *
+     * This call can be dispatched permissionlessly, and refunds any fee if successful.
+     *
+     * If the pool has already migrated to delegation based staking, this call will fail.
+     *
+     * @param {number} poolId
+     **/
+    migratePoolToDelegateStake: GenericTxCall<
+      Rv,
+      (poolId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'MigratePoolToDelegateStake';
+            params: { poolId: number };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -5654,7 +7892,32 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   fastUnstake: {
     /**
-     * See [`Pallet::register_fast_unstake`].
+     * Register oneself for fast-unstake.
+     *
+     * ## Dispatch Origin
+     *
+     * The dispatch origin of this call must be *signed* by whoever is permitted to call
+     * unbond funds by the staking system. See [`Config::Staking`].
+     *
+     * ## Details
+     *
+     * The stash associated with the origin must have no ongoing unlocking chunks. If
+     * successful, this will fully unbond and chill the stash. Then, it will enqueue the stash
+     * to be checked in further blocks.
+     *
+     * If by the time this is called, the stash is actually eligible for fast-unstake, then
+     * they are guaranteed to remain eligible, because the call will chill them as well.
+     *
+     * If the check works, the entire staking data is removed, i.e. the stash is fully
+     * unstaked.
+     *
+     * If the check fails, the stash remains chilled and waiting for being unbonded as in with
+     * the normal staking system, but they lose part of their unbonding chunks due to consuming
+     * the chain's resources.
+     *
+     * ## Events
+     *
+     * Some events from the staking and currency system might be emitted.
      *
      **/
     registerFastUnstake: GenericTxCall<
@@ -5671,7 +7934,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::deregister`].
+     * Deregister oneself from the fast-unstake.
+     *
+     * ## Dispatch Origin
+     *
+     * The dispatch origin of this call must be *signed* by whoever is permitted to call
+     * unbond funds by the staking system. See [`Config::Staking`].
+     *
+     * ## Details
+     *
+     * This is useful if one is registered, they are still waiting, and they change their mind.
+     *
+     * Note that the associated stash is still fully unbonded and chilled as a consequence of
+     * calling [`Pallet::register_fast_unstake`]. Therefore, this should probably be followed
+     * by a call to `rebond` in the staking system.
+     *
+     * ## Events
+     *
+     * Some events from the staking and currency system might be emitted.
      *
      **/
     deregister: GenericTxCall<
@@ -5688,7 +7968,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::control`].
+     * Control the operation of this pallet.
+     *
+     * ## Dispatch Origin
+     *
+     * The dispatch origin of this call must be [`Config::ControlOrigin`].
+     *
+     * ## Details
+     *
+     * Can set the number of eras to check per block, and potentially other admin work.
+     *
+     * ## Events
+     *
+     * No events are emitted from this dispatch.
      *
      * @param {number} erasToCheck
      **/
@@ -5716,7 +8008,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   configuration: {
     /**
-     * See [`Pallet::set_validation_upgrade_cooldown`].
+     * Set the validation upgrade cooldown.
      *
      * @param {number} new_
      **/
@@ -5735,7 +8027,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_validation_upgrade_delay`].
+     * Set the validation upgrade delay.
      *
      * @param {number} new_
      **/
@@ -5754,7 +8046,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_code_retention_period`].
+     * Set the acceptance period for an included candidate.
      *
      * @param {number} new_
      **/
@@ -5773,7 +8065,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_max_code_size`].
+     * Set the max validation code size for incoming upgrades.
      *
      * @param {number} new_
      **/
@@ -5792,7 +8084,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_max_pov_size`].
+     * Set the max POV block size for incoming upgrades.
      *
      * @param {number} new_
      **/
@@ -5811,7 +8103,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_max_head_data_size`].
+     * Set the max head data size for paras.
      *
      * @param {number} new_
      **/
@@ -5830,7 +8122,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_coretime_cores`].
+     * Set the number of coretime execution cores.
+     *
+     * NOTE: that this configuration is managed by the coretime chain. Only manually change
+     * this, if you really know what you are doing!
      *
      * @param {number} new_
      **/
@@ -5849,18 +8144,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_on_demand_retries`].
+     * Set the max number of times a claim may timeout on a core before it is abandoned
      *
      * @param {number} new_
      **/
-    setOnDemandRetries: GenericTxCall<
+    setMaxAvailabilityTimeouts: GenericTxCall<
       Rv,
       (new_: number) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Configuration';
           palletCall: {
-            name: 'SetOnDemandRetries';
+            name: 'SetMaxAvailabilityTimeouts';
             params: { new: number };
           };
         }
@@ -5868,7 +8163,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_group_rotation_frequency`].
+     * Set the parachain validator-group rotation frequency
      *
      * @param {number} new_
      **/
@@ -5887,7 +8182,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_paras_availability_period`].
+     * Set the availability period for paras.
      *
      * @param {number} new_
      **/
@@ -5906,7 +8201,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_scheduling_lookahead`].
+     * Set the scheduling lookahead, in expected number of blocks at peak throughput.
      *
      * @param {number} new_
      **/
@@ -5925,7 +8220,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_max_validators_per_core`].
+     * Set the maximum number of validators to assign to any core.
      *
      * @param {number | undefined} new_
      **/
@@ -5944,7 +8239,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_max_validators`].
+     * Set the maximum number of validators to use in parachain consensus.
      *
      * @param {number | undefined} new_
      **/
@@ -5963,7 +8258,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_dispute_period`].
+     * Set the dispute period, in number of sessions to keep for disputes.
      *
      * @param {number} new_
      **/
@@ -5982,7 +8277,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_dispute_post_conclusion_acceptance_period`].
+     * Set the dispute post conclusion acceptance period.
      *
      * @param {number} new_
      **/
@@ -6001,7 +8296,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_no_show_slots`].
+     * Set the no show slots, in number of number of consensus slots.
+     * Must be at least 1.
      *
      * @param {number} new_
      **/
@@ -6020,7 +8316,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_n_delay_tranches`].
+     * Set the total number of delay tranches.
      *
      * @param {number} new_
      **/
@@ -6039,7 +8335,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_zeroth_delay_tranche_width`].
+     * Set the zeroth delay tranche width.
      *
      * @param {number} new_
      **/
@@ -6058,7 +8354,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_needed_approvals`].
+     * Set the number of validators needed to approve a block.
      *
      * @param {number} new_
      **/
@@ -6077,7 +8373,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_relay_vrf_modulo_samples`].
+     * Set the number of samples to do of the `RelayVRFModulo` approval assignment criterion.
      *
      * @param {number} new_
      **/
@@ -6096,7 +8392,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_max_upward_queue_count`].
+     * Sets the maximum items that can present in a upward dispatch queue at once.
      *
      * @param {number} new_
      **/
@@ -6115,7 +8411,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_max_upward_queue_size`].
+     * Sets the maximum total size of items that can present in a upward dispatch queue at
+     * once.
      *
      * @param {number} new_
      **/
@@ -6134,7 +8431,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_max_downward_message_size`].
+     * Set the critical downward message size.
      *
      * @param {number} new_
      **/
@@ -6153,7 +8450,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_max_upward_message_size`].
+     * Sets the maximum size of an upward message that can be sent by a candidate.
      *
      * @param {number} new_
      **/
@@ -6172,7 +8469,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_max_upward_message_num_per_candidate`].
+     * Sets the maximum number of messages that a candidate can contain.
      *
      * @param {number} new_
      **/
@@ -6191,7 +8488,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_hrmp_open_request_ttl`].
+     * Sets the number of sessions after which an HRMP open channel request expires.
      *
      * @param {number} new_
      **/
@@ -6210,7 +8507,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_hrmp_sender_deposit`].
+     * Sets the amount of funds that the sender should provide for opening an HRMP channel.
      *
      * @param {bigint} new_
      **/
@@ -6229,7 +8526,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_hrmp_recipient_deposit`].
+     * Sets the amount of funds that the recipient should provide for accepting opening an HRMP
+     * channel.
      *
      * @param {bigint} new_
      **/
@@ -6248,7 +8546,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_hrmp_channel_max_capacity`].
+     * Sets the maximum number of messages allowed in an HRMP channel at once.
      *
      * @param {number} new_
      **/
@@ -6267,7 +8565,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_hrmp_channel_max_total_size`].
+     * Sets the maximum total size of messages in bytes allowed in an HRMP channel at once.
      *
      * @param {number} new_
      **/
@@ -6286,7 +8584,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_hrmp_max_parachain_inbound_channels`].
+     * Sets the maximum number of inbound HRMP channels a parachain is allowed to accept.
      *
      * @param {number} new_
      **/
@@ -6305,7 +8603,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_hrmp_channel_max_message_size`].
+     * Sets the maximum size of a message that could ever be put into an HRMP channel.
      *
      * @param {number} new_
      **/
@@ -6324,7 +8622,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_hrmp_max_parachain_outbound_channels`].
+     * Sets the maximum number of outbound HRMP channels a parachain is allowed to open.
      *
      * @param {number} new_
      **/
@@ -6343,7 +8641,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_hrmp_max_message_num_per_candidate`].
+     * Sets the maximum number of outbound HRMP messages can be sent by a candidate.
      *
      * @param {number} new_
      **/
@@ -6362,7 +8660,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_pvf_voting_ttl`].
+     * Set the number of session changes after which a PVF pre-checking voting is rejected.
      *
      * @param {number} new_
      **/
@@ -6381,7 +8679,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_minimum_validation_upgrade_delay`].
+     * Sets the minimum delay between announcing the upgrade block for a parachain until the
+     * upgrade taking place.
+     *
+     * See the field documentation for information and constraints for the new value.
      *
      * @param {number} new_
      **/
@@ -6400,7 +8701,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_bypass_consistency_check`].
+     * Setting this to true will disable consistency checks for the configuration setters.
+     * Use with caution.
      *
      * @param {boolean} new_
      **/
@@ -6419,45 +8721,45 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_async_backing_params`].
+     * Set the asynchronous backing parameters.
      *
-     * @param {PolkadotPrimitivesV6AsyncBackingAsyncBackingParams} new_
+     * @param {PolkadotPrimitivesV7AsyncBackingAsyncBackingParams} new_
      **/
     setAsyncBackingParams: GenericTxCall<
       Rv,
-      (new_: PolkadotPrimitivesV6AsyncBackingAsyncBackingParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetAsyncBackingParams';
-            params: { new: PolkadotPrimitivesV6AsyncBackingAsyncBackingParams };
+            params: { new: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::set_executor_params`].
+     * Set PVF executor parameters.
      *
-     * @param {PolkadotPrimitivesV6ExecutorParams} new_
+     * @param {PolkadotPrimitivesV7ExecutorParams} new_
      **/
     setExecutorParams: GenericTxCall<
       Rv,
-      (new_: PolkadotPrimitivesV6ExecutorParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV7ExecutorParams) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetExecutorParams';
-            params: { new: PolkadotPrimitivesV6ExecutorParams };
+            params: { new: PolkadotPrimitivesV7ExecutorParams };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::set_on_demand_base_fee`].
+     * Set the on demand (parathreads) base fee.
      *
      * @param {bigint} new_
      **/
@@ -6476,7 +8778,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_on_demand_fee_variability`].
+     * Set the on demand (parathreads) fee variability.
      *
      * @param {Perbill} new_
      **/
@@ -6495,7 +8797,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_on_demand_queue_max_size`].
+     * Set the on demand (parathreads) queue max size.
      *
      * @param {number} new_
      **/
@@ -6514,7 +8816,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_on_demand_target_queue_utilization`].
+     * Set the on demand (parathreads) fee variability.
      *
      * @param {Perbill} new_
      **/
@@ -6533,7 +8835,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_on_demand_ttl`].
+     * Set the on demand (parathreads) ttl in the claimqueue.
      *
      * @param {number} new_
      **/
@@ -6552,7 +8854,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_minimum_backing_votes`].
+     * Set the minimum backing votes threshold.
      *
      * @param {number} new_
      **/
@@ -6571,7 +8873,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_node_feature`].
+     * Set/Unset a node feature.
      *
      * @param {number} index
      * @param {boolean} value
@@ -6594,19 +8896,38 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_approval_voting_params`].
+     * Set approval-voting-params.
      *
-     * @param {PolkadotPrimitivesVstagingApprovalVotingParams} new_
+     * @param {PolkadotPrimitivesV7ApprovalVotingParams} new_
      **/
     setApprovalVotingParams: GenericTxCall<
       Rv,
-      (new_: PolkadotPrimitivesVstagingApprovalVotingParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV7ApprovalVotingParams) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetApprovalVotingParams';
-            params: { new: PolkadotPrimitivesVstagingApprovalVotingParams };
+            params: { new: PolkadotPrimitivesV7ApprovalVotingParams };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set scheduler-params.
+     *
+     * @param {PolkadotPrimitivesVstagingSchedulerParams} new_
+     **/
+    setSchedulerParams: GenericTxCall<
+      Rv,
+      (new_: PolkadotPrimitivesVstagingSchedulerParams) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Configuration';
+          palletCall: {
+            name: 'SetSchedulerParams';
+            params: { new: PolkadotPrimitivesVstagingSchedulerParams };
           };
         }
       >
@@ -6640,19 +8961,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   paraInherent: {
     /**
-     * See [`Pallet::enter`].
+     * Enter the paras inherent. This will process bitfields and backed candidates.
      *
-     * @param {PolkadotPrimitivesV6InherentData} data
+     * @param {PolkadotPrimitivesV7InherentData} data
      **/
     enter: GenericTxCall<
       Rv,
-      (data: PolkadotPrimitivesV6InherentData) => ChainSubmittableExtrinsic<
+      (data: PolkadotPrimitivesV7InherentData) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ParaInherent';
           palletCall: {
             name: 'Enter';
-            params: { data: PolkadotPrimitivesV6InherentData };
+            params: { data: PolkadotPrimitivesV7InherentData };
           };
         }
       >
@@ -6668,7 +8989,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   paras: {
     /**
-     * See [`Pallet::force_set_current_code`].
+     * Set the storage for the parachain validation code immediately.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      * @param {PolkadotParachainPrimitivesPrimitivesValidationCode} newCode
@@ -6694,7 +9015,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_set_current_head`].
+     * Set the storage for the current parachain head data immediately.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      * @param {PolkadotParachainPrimitivesPrimitivesHeadData} newHead
@@ -6720,7 +9041,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_schedule_code_upgrade`].
+     * Schedule an upgrade as if it was scheduled in the given relay parent block.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      * @param {PolkadotParachainPrimitivesPrimitivesValidationCode} newCode
@@ -6749,7 +9070,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_note_new_head`].
+     * Note a new block head for para within the context of the current block.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      * @param {PolkadotParachainPrimitivesPrimitivesHeadData} newHead
@@ -6775,7 +9096,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_queue_action`].
+     * Put a parachain directly into the next session's action queue.
+     * We can't queue it any sooner than this without going into the
+     * initializer...
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      **/
@@ -6794,7 +9117,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::add_trusted_validation_code`].
+     * Adds the validation code to the storage.
+     *
+     * The code will not be added if it is already present. Additionally, if PVF pre-checking
+     * is running for that code, it will be instantly accepted.
+     *
+     * Otherwise, the code will be added into the storage. Note that the code will be added
+     * into storage with reference count 0. This is to account the fact that there are no users
+     * for this code yet. The caller will have to make sure that this code eventually gets
+     * used by some parachain or removed from the storage to avoid storage leaks. For the
+     * latter prefer to use the `poke_unused_validation_code` dispatchable to raw storage
+     * manipulation.
+     *
+     * This function is mainly meant to be used for upgrading parachains that do not follow
+     * the go-ahead signal while the PVF pre-checking feature is enabled.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesValidationCode} validationCode
      **/
@@ -6813,7 +9149,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::poke_unused_validation_code`].
+     * Remove the validation code from the storage iff the reference count is 0.
+     *
+     * This is better than removing the storage directly, because it will not remove the code
+     * that was suddenly got used by some parachain while this dispatchable was pending
+     * dispatching.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesValidationCodeHash} validationCodeHash
      **/
@@ -6832,16 +9172,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::include_pvf_check_statement`].
+     * Includes a statement for a PVF pre-checking vote. Potentially, finalizes the vote and
+     * enacts the results if that was the last vote before achieving the supermajority.
      *
-     * @param {PolkadotPrimitivesV6PvfCheckStatement} stmt
-     * @param {PolkadotPrimitivesV6ValidatorAppSignature} signature
+     * @param {PolkadotPrimitivesV7PvfCheckStatement} stmt
+     * @param {PolkadotPrimitivesV7ValidatorAppSignature} signature
      **/
     includePvfCheckStatement: GenericTxCall<
       Rv,
       (
-        stmt: PolkadotPrimitivesV6PvfCheckStatement,
-        signature: PolkadotPrimitivesV6ValidatorAppSignature,
+        stmt: PolkadotPrimitivesV7PvfCheckStatement,
+        signature: PolkadotPrimitivesV7ValidatorAppSignature,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
@@ -6849,8 +9190,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'IncludePvfCheckStatement';
             params: {
-              stmt: PolkadotPrimitivesV6PvfCheckStatement;
-              signature: PolkadotPrimitivesV6ValidatorAppSignature;
+              stmt: PolkadotPrimitivesV7PvfCheckStatement;
+              signature: PolkadotPrimitivesV7ValidatorAppSignature;
             };
           };
         }
@@ -6858,7 +9199,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_set_most_recent_context`].
+     * Set the storage for the current parachain head data immediately.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      * @param {number} context
@@ -6890,7 +9231,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   initializer: {
     /**
-     * See [`Pallet::force_approve`].
+     * Issue a signal to the consensus engine to forcibly act as though all parachain
+     * blocks in all relay chain blocks up to and including the given number in the current
+     * chain are valid and should be finalized.
      *
      * @param {number} upTo
      **/
@@ -6918,7 +9261,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   hrmp: {
     /**
-     * See [`Pallet::hrmp_init_open_channel`].
+     * Initiate opening a channel from a parachain to a given recipient with given channel
+     * parameters.
+     *
+     * - `proposed_max_capacity` - specifies how many messages can be in the channel at once.
+     * - `proposed_max_message_size` - specifies the maximum size of the messages.
+     *
+     * These numbers are a subject to the relay-chain configuration limits.
+     *
+     * The channel can be opened only after the recipient confirms it and only on a session
+     * change.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} recipient
      * @param {number} proposedMaxCapacity
@@ -6947,7 +9299,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::hrmp_accept_open_channel`].
+     * Accept a pending open channel request from the given sender.
+     *
+     * The channel will be opened only on the next session boundary.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} sender
      **/
@@ -6966,7 +9320,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::hrmp_close_channel`].
+     * Initiate unilateral closing of a channel. The origin must be either the sender or the
+     * recipient in the channel being closed.
+     *
+     * The closure can only happen on a session change.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesHrmpChannelId} channelId
      **/
@@ -6985,7 +9342,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_clean_hrmp`].
+     * This extrinsic triggers the cleanup of all the HRMP storage items that a para may have.
+     * Normally this happens once per session, but this allows you to trigger the cleanup
+     * immediately for a specific parachain.
+     *
+     * Number of inbound and outbound channels for `para` must be provided as witness data.
+     *
+     * Origin must be the `ChannelManager`.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      * @param {number} numInbound
@@ -7010,7 +9373,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_process_hrmp_open`].
+     * Force process HRMP open channel requests.
+     *
+     * If there are pending HRMP open channel requests, you can use this function to process
+     * all of those requests immediately.
+     *
+     * Total number of opening channels must be provided as witness data.
+     *
+     * Origin must be the `ChannelManager`.
      *
      * @param {number} channels
      **/
@@ -7029,7 +9399,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_process_hrmp_close`].
+     * Force process HRMP close channel requests.
+     *
+     * If there are pending HRMP close channel requests, you can use this function to process
+     * all of those requests immediately.
+     *
+     * Total number of closing channels must be provided as witness data.
+     *
+     * Origin must be the `ChannelManager`.
      *
      * @param {number} channels
      **/
@@ -7048,7 +9425,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::hrmp_cancel_open_request`].
+     * This cancels a pending open channel request. It can be canceled by either of the sender
+     * or the recipient for that request. The origin must be either of those.
+     *
+     * The cancellation happens immediately. It is not possible to cancel the request if it is
+     * already accepted.
+     *
+     * Total number of open requests (i.e. `HrmpOpenChannelRequestsList`) must be provided as
+     * witness data.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesHrmpChannelId} channelId
      * @param {number} openRequests
@@ -7071,7 +9455,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_open_hrmp_channel`].
+     * Open a channel from a `sender` to a `recipient` `ParaId`. Although opened by governance,
+     * the `max_capacity` and `max_message_size` are still subject to the Relay Chain's
+     * configured limits.
+     *
+     * Expected use is when one (and only one) of the `ParaId`s involved in the channel is
+     * governed by the system, e.g. a system parachain.
+     *
+     * Origin must be the `ChannelManager`.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} sender
      * @param {PolkadotParachainPrimitivesPrimitivesId} recipient
@@ -7103,7 +9494,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::establish_system_channel`].
+     * Establish an HRMP channel between two system chains. If the channel does not already
+     * exist, the transaction fees will be refunded to the caller. The system does not take
+     * deposits for channels between system chains, and automatically sets the message number
+     * and size limits to the maximum allowed by the network's configuration.
+     *
+     * Arguments:
+     *
+     * - `sender`: A system chain, `ParaId`.
+     * - `recipient`: A system chain, `ParaId`.
+     *
+     * Any signed origin can call this function, but _both_ inputs MUST be system chains. If
+     * the channel does not exist yet, there is no fee.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} sender
      * @param {PolkadotParachainPrimitivesPrimitivesId} recipient
@@ -7129,7 +9531,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::poke_channel_deposits`].
+     * Update the deposits held for an HRMP channel to the latest `Configuration`. Channels
+     * with system chains do not require a deposit.
+     *
+     * Arguments:
+     *
+     * - `sender`: A chain, `ParaId`.
+     * - `recipient`: A chain, `ParaId`.
+     *
+     * Any signed origin can call this function.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} sender
      * @param {PolkadotParachainPrimitivesPrimitivesId} recipient
@@ -7155,7 +9565,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::establish_channel_with_system`].
+     * Establish a bidirectional HRMP channel between a parachain and a system chain.
+     *
+     * Arguments:
+     *
+     * - `target_system_chain`: A system chain, `ParaId`.
+     *
+     * The origin needs to be the parachain origin.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} targetSystemChain
      **/
@@ -7183,7 +9599,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   parasDisputes: {
     /**
-     * See [`Pallet::force_unfreeze`].
      *
      **/
     forceUnfreeze: GenericTxCall<
@@ -7207,15 +9622,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   parasSlashing: {
     /**
-     * See [`Pallet::report_dispute_lost_unsigned`].
      *
-     * @param {PolkadotPrimitivesV6SlashingDisputeProof} disputeProof
+     * @param {PolkadotPrimitivesV7SlashingDisputeProof} disputeProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
     reportDisputeLostUnsigned: GenericTxCall<
       Rv,
       (
-        disputeProof: PolkadotPrimitivesV6SlashingDisputeProof,
+        disputeProof: PolkadotPrimitivesV7SlashingDisputeProof,
         keyOwnerProof: SpSessionMembershipProof,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -7223,7 +9637,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ParasSlashing';
           palletCall: {
             name: 'ReportDisputeLostUnsigned';
-            params: { disputeProof: PolkadotPrimitivesV6SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+            params: { disputeProof: PolkadotPrimitivesV7SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
           };
         }
       >
@@ -7239,7 +9653,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   onDemandAssignmentProvider: {
     /**
-     * See [`Pallet::place_order_allow_death`].
+     * Create a single on demand core order.
+     * Will use the spot price for the current block and will reap the account if needed.
+     *
+     * Parameters:
+     * - `origin`: The sender of the call, funds will be withdrawn from this account.
+     * - `max_amount`: The maximum balance to withdraw from the origin to place an order.
+     * - `para_id`: A `ParaId` the origin wants to provide blockspace for.
+     *
+     * Errors:
+     * - `InsufficientBalance`: from the Currency implementation
+     * - `QueueFull`
+     * - `SpotPriceHigherThanMaxAmount`
+     *
+     * Events:
+     * - `OnDemandOrderPlaced`
      *
      * @param {bigint} maxAmount
      * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
@@ -7262,7 +9690,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::place_order_keep_alive`].
+     * Same as the [`place_order_allow_death`](Self::place_order_allow_death) call , but with a
+     * check that placing the order will not reap the account.
+     *
+     * Parameters:
+     * - `origin`: The sender of the call, funds will be withdrawn from this account.
+     * - `max_amount`: The maximum balance to withdraw from the origin to place an order.
+     * - `para_id`: A `ParaId` the origin wants to provide blockspace for.
+     *
+     * Errors:
+     * - `InsufficientBalance`: from the Currency implementation
+     * - `QueueFull`
+     * - `SpotPriceHigherThanMaxAmount`
+     *
+     * Events:
+     * - `OnDemandOrderPlaced`
      *
      * @param {bigint} maxAmount
      * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
@@ -7294,7 +9736,26 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   registrar: {
     /**
-     * See [`Pallet::register`].
+     * Register head data and validation code for a reserved Para Id.
+     *
+     * ## Arguments
+     * - `origin`: Must be called by a `Signed` origin.
+     * - `id`: The para ID. Must be owned/managed by the `origin` signing account.
+     * - `genesis_head`: The genesis head data of the parachain/thread.
+     * - `validation_code`: The initial validation code of the parachain/thread.
+     *
+     * ## Deposits/Fees
+     * The account with the originating signature must reserve a deposit.
+     *
+     * The deposit is required to cover the costs associated with storing the genesis head
+     * data and the validation code.
+     * This accounts for the potential to store validation code of a size up to the
+     * `max_code_size`, as defined in the configuration pallet
+     *
+     * Anything already reserved previously for this para ID is accounted for.
+     *
+     * ## Events
+     * The `Registered` event is emitted in case of success.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} id
      * @param {PolkadotParachainPrimitivesPrimitivesHeadData} genesisHead
@@ -7323,7 +9784,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_register`].
+     * Force the registration of a Para Id on the relay chain.
+     *
+     * This function must be called by a Root origin.
+     *
+     * The deposit taken can be specified for this registration. Any `ParaId`
+     * can be registered, including sub-1000 IDs which are System Parachains.
      *
      * @param {AccountId32Like} who
      * @param {bigint} deposit
@@ -7358,7 +9824,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::deregister`].
+     * Deregister a Para Id, freeing all data and returning any deposit.
+     *
+     * The caller must be Root, the `para` owner, or the `para` itself. The para must be an
+     * on-demand parachain.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} id
      **/
@@ -7377,7 +9846,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::swap`].
+     * Swap a lease holding parachain with another parachain, either on-demand or lease
+     * holding.
+     *
+     * The origin must be Root, the `para` owner, or the `para` itself.
+     *
+     * The swap will happen only if there is already an opposite swap pending. If there is not,
+     * the swap will be stored in the pending swaps map, ready for a later confirmatory swap.
+     *
+     * The `ParaId`s remain mapped to the same head data and code so external code can rely on
+     * `ParaId` to be a long-term identifier of a notional "parachain". However, their
+     * scheduling info (i.e. whether they're an on-demand parachain or lease holding
+     * parachain), auction information and the auction deposit are switched.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} id
      * @param {PolkadotParachainPrimitivesPrimitivesId} other
@@ -7400,7 +9880,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove_lock`].
+     * Remove a manager lock from a para. This will allow the manager of a
+     * previously locked para to deregister or swap a para without using governance.
+     *
+     * Can only be called by the Root origin or the parachain.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      **/
@@ -7419,7 +9902,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::reserve`].
+     * Reserve a Para Id on the relay chain.
+     *
+     * This function will reserve a new Para Id to be owned/managed by the origin account.
+     * The origin account is able to register head data and validation code using `register` to
+     * create an on-demand parachain. Using the Slots pallet, an on-demand parachain can then
+     * be upgraded to a lease holding parachain.
+     *
+     * ## Arguments
+     * - `origin`: Must be called by a `Signed` origin. Becomes the manager/owner of the new
+     * para ID.
+     *
+     * ## Deposits/Fees
+     * The origin must reserve a deposit of `ParaDeposit` for the registration.
+     *
+     * ## Events
+     * The `Reserved` event is emitted in case of success, which provides the ID reserved for
+     * use.
      *
      **/
     reserve: GenericTxCall<
@@ -7436,7 +9935,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::add_lock`].
+     * Add a manager lock from a para. This will prevent the manager of a
+     * para to deregister or swap a para.
+     *
+     * Can be called by Root, the parachain, or the parachain manager if the parachain is
+     * unlocked.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      **/
@@ -7455,7 +9958,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::schedule_code_upgrade`].
+     * Schedule a parachain upgrade.
+     *
+     * This will kick off a check of `new_code` by all validators. After the majority of the
+     * validators have reported on the validity of the code, the code will either be enacted
+     * or the upgrade will be rejected. If the code will be enacted, the current code of the
+     * parachain will be overwritten directly. This means that any PoV will be checked by this
+     * new code. The parachain itself will not be informed explicitly that the validation code
+     * has changed.
+     *
+     * Can be called by Root, the parachain, or the parachain manager if the parachain is
+     * unlocked.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      * @param {PolkadotParachainPrimitivesPrimitivesValidationCode} newCode
@@ -7481,7 +9994,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::set_current_head`].
+     * Set the parachain's current head.
+     *
+     * Can be called by Root, the parachain, or the parachain manager if the parachain is
+     * unlocked.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      * @param {PolkadotParachainPrimitivesPrimitivesHeadData} newHead
@@ -7516,7 +10032,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   slots: {
     /**
-     * See [`Pallet::force_lease`].
+     * Just a connect into the `lease_out` call, in case Root wants to force some lease to
+     * happen independently of any other on-chain mechanism to use it.
+     *
+     * The dispatch origin for this call must match `T::ForceOrigin`.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      * @param {AccountId32Like} leaser
@@ -7551,7 +10070,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::clear_all_leases`].
+     * Clear all leases for a Para Id, refunding any deposits back to the original owners.
+     *
+     * The dispatch origin for this call must match `T::ForceOrigin`.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      **/
@@ -7570,7 +10091,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::trigger_onboard`].
+     * Try to onboard a parachain that has a lease for the current lease period.
+     *
+     * This function can be useful if there was some state issue with a para that should
+     * have onboarded, but was unable to. As long as they have a lease period, we can
+     * let them onboard from here.
+     *
+     * Origin must be signed, but can be called by anyone.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      **/
@@ -7598,7 +10125,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   auctions: {
     /**
-     * See [`Pallet::new_auction`].
+     * Create a new auction.
+     *
+     * This can only happen when there isn't already an auction in progress and may only be
+     * called by the root origin. Accepts the `duration` of this auction and the
+     * `lease_period_index` of the initial lease period of the four that are to be auctioned.
      *
      * @param {number} duration
      * @param {number} leasePeriodIndex
@@ -7621,7 +10152,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::bid`].
+     * Make a new bid from an account (including a parachain account) for deploying a new
+     * parachain.
+     *
+     * Multiple simultaneous bids from the same bidder are allowed only as long as all active
+     * bids overlap each other (i.e. are mutually exclusive). Bids cannot be redacted.
+     *
+     * - `sub` is the sub-bidder ID, allowing for multiple competing bids to be made by (and
+     * funded by) the same account.
+     * - `auction_index` is the index of the auction to bid on. Should just be the present
+     * value of `AuctionCounter`.
+     * - `first_slot` is the first lease period index of the range to bid on. This is the
+     * absolute lease period index value, not an auction-specific offset.
+     * - `last_slot` is the last lease period index of the range to bid on. This is the
+     * absolute lease period index value, not an auction-specific offset.
+     * - `amount` is the amount to bid to be held as deposit for the parachain should the
+     * bid win. This amount is held throughout the range.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} para
      * @param {number} auctionIndex
@@ -7656,7 +10202,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::cancel_auction`].
+     * Cancel an in-progress auction.
+     *
+     * Can only be called by Root origin.
      *
      **/
     cancelAuction: GenericTxCall<
@@ -7682,7 +10230,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   crowdloan: {
     /**
-     * See [`Pallet::create`].
+     * Create a new crowdloaning campaign for a parachain slot with the given lease period
+     * range.
+     *
+     * This applies a lock to your parachain configuration, ensuring that it cannot be changed
+     * by the parachain manager.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} index
      * @param {bigint} cap
@@ -7720,7 +10272,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::contribute`].
+     * Contribute to a crowd sale. This will transfer some balance over to fund a parachain
+     * slot. It will be withdrawable when the crowdloan has ended and the funds are unused.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} index
      * @param {bigint} value
@@ -7749,7 +10302,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::withdraw`].
+     * Withdraw full balance of a specific contributor.
+     *
+     * Origin must be signed, but can come from anyone.
+     *
+     * The fund must be either in, or ready for, retirement. For a fund to be *in* retirement,
+     * then the retirement flag must be set. For a fund to be ready for retirement, then:
+     * - it must not already be in retirement;
+     * - the amount of raised funds must be bigger than the _free_ balance of the account;
+     * - and either:
+     * - the block number must be at least `end`; or
+     * - the current lease period must be greater than the fund's `last_period`.
+     *
+     * In this case, the fund's retirement flag is set and its `end` is reset to the current
+     * block number.
+     *
+     * - `who`: The account whose contribution should be withdrawn.
+     * - `index`: The parachain to whose crowdloan the contribution was made.
      *
      * @param {AccountId32Like} who
      * @param {PolkadotParachainPrimitivesPrimitivesId} index
@@ -7772,7 +10341,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::refund`].
+     * Automatically refund contributors of an ended crowdloan.
+     * Due to weight restrictions, this function may need to be called multiple
+     * times to fully refund all users. We will refund `RemoveKeysLimit` users at a time.
+     *
+     * Origin must be signed, but can come from anyone.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} index
      **/
@@ -7791,7 +10364,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::dissolve`].
+     * Remove a fund after the retirement period has ended and all funds have been returned.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} index
      **/
@@ -7810,7 +10383,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::edit`].
+     * Edit the configuration for an in-progress crowdloan.
+     *
+     * Can only be called by Root origin.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} index
      * @param {bigint} cap
@@ -7848,7 +10423,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::add_memo`].
+     * Add an optional memo to an existing crowdloan contribution.
+     *
+     * Origin must be Signed, and the user must have contributed to the crowdloan.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} index
      * @param {BytesLike} memo
@@ -7871,7 +10448,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::poke`].
+     * Poke the fund into `NewRaise`
+     *
+     * Origin must be Signed, and the fund has non-zero raise.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} index
      **/
@@ -7890,7 +10469,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::contribute_all`].
+     * Contribute your entire balance to a crowd sale. This will transfer the entire balance of
+     * a user over to fund a parachain slot. It will be withdrawable when the crowdloan has
+     * ended and the funds are unused.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} index
      * @param {SpRuntimeMultiSignature | undefined} signature
@@ -7922,7 +10503,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   coretime: {
     /**
-     * See [`Pallet::request_core_count`].
+     * Request the configuration to be updated with the specified number of cores. Warning:
+     * Since this only schedules a configuration update, it takes two sessions to come into
+     * effect.
+     *
+     * - `origin`: Root or the Coretime Chain
+     * - `count`: total number of cores
      *
      * @param {number} count
      **/
@@ -7941,7 +10527,37 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::assign_core`].
+     * Request to claim the instantaneous coretime sales revenue starting from the block it was
+     * last claimed until and up to the block specified. The claimed amount value is sent back
+     * to the Coretime chain in a `notify_revenue` message. At the same time, the amount is
+     * teleported to the Coretime chain.
+     *
+     * @param {number} when
+     **/
+    requestRevenueAt: GenericTxCall<
+      Rv,
+      (when: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Coretime';
+          palletCall: {
+            name: 'RequestRevenueAt';
+            params: { when: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Receive instructions from the `ExternalBrokerOrigin`, detailing how a specific core is
+     * to be used.
+     *
+     * Parameters:
+     * -`origin`: The `ExternalBrokerOrigin`, assumed to be the coretime chain.
+     * -`core`: The core that should be scheduled.
+     * -`begin`: The starting blockheight of the instruction.
+     * -`assignment`: How the blockspace should be utilised.
+     * -`end_hint`: An optional hint as to when this particular set of instructions will end.
      *
      * @param {number} core
      * @param {number} begin
@@ -7986,7 +10602,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   xcmPallet: {
     /**
-     * See [`Pallet::send`].
      *
      * @param {XcmVersionedLocation} dest
      * @param {XcmVersionedXcm} message
@@ -8009,7 +10624,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::teleport_assets`].
+     * Teleport some assets from the local chain to some destination chain.
+     *
+     * **This function is deprecated: Use `limited_teleport_assets` instead.**
+     *
+     * Fee payment on the destination side is made from the asset in the `assets` vector of
+     * index `fee_asset_item`. The weight limit for fees is not provided and thus is unlimited,
+     * with all fees taken as needed from the asset.
+     *
+     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+     * - `dest`: Destination context for the assets. Will typically be `[Parent,
+     * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+     * relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     * generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     * fee on the `dest` chain.
+     * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
+     * fees.
      *
      * @param {XcmVersionedLocation} dest
      * @param {XcmVersionedLocation} beneficiary
@@ -8041,7 +10673,36 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::reserve_transfer_assets`].
+     * Transfer some assets from the local chain to the destination chain through their local,
+     * destination or remote reserve.
+     *
+     * `assets` must have same reserve location and may not be teleportable to `dest`.
+     * - `assets` have local reserve: transfer assets to sovereign account of destination
+     * chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+     * assets to `beneficiary`.
+     * - `assets` have destination reserve: burn local assets and forward a notification to
+     * `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+     * deposit them to `beneficiary`.
+     * - `assets` have remote reserve: burn local assets, forward XCM to reserve chain to move
+     * reserves from this chain's SA to `dest` chain's SA, and forward another XCM to `dest`
+     * to mint and deposit reserve-based assets to `beneficiary`.
+     *
+     * **This function is deprecated: Use `limited_reserve_transfer_assets` instead.**
+     *
+     * Fee payment on the destination side is made from the asset in the `assets` vector of
+     * index `fee_asset_item`. The weight limit for fees is not provided and thus is unlimited,
+     * with all fees taken as needed from the asset.
+     *
+     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+     * - `dest`: Destination context for the assets. Will typically be `[Parent,
+     * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+     * relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     * generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     * fee on the `dest` (and possibly reserve) chains.
+     * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
+     * fees.
      *
      * @param {XcmVersionedLocation} dest
      * @param {XcmVersionedLocation} beneficiary
@@ -8073,7 +10734,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::execute`].
+     * Execute an XCM message from a local, signed, origin.
+     *
+     * An event is deposited indicating whether `msg` could be executed completely or only
+     * partially.
+     *
+     * No more than `max_weight` will be used in its attempted execution. If this is less than
+     * the maximum amount of weight that the message could take to be executed, then no
+     * execution attempt will be made.
      *
      * @param {XcmVersionedXcm} message
      * @param {SpWeightsWeightV2Weight} maxWeight
@@ -8096,7 +10764,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_xcm_version`].
+     * Extoll that a particular destination can be communicated with through a particular
+     * version of XCM.
+     *
+     * - `origin`: Must be an origin specified by AdminOrigin.
+     * - `location`: The destination that is being described.
+     * - `xcm_version`: The latest version of XCM that `location` supports.
      *
      * @param {StagingXcmV4Location} location
      * @param {number} version
@@ -8119,7 +10792,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_default_xcm_version`].
+     * Set a safe XCM version (the version that XCM should be encoded with if the most recent
+     * version a destination can accept is unknown).
+     *
+     * - `origin`: Must be an origin specified by AdminOrigin.
+     * - `maybe_xcm_version`: The default XCM encoding version, or `None` to disable.
      *
      * @param {number | undefined} maybeXcmVersion
      **/
@@ -8138,7 +10815,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_subscribe_version_notify`].
+     * Ask a location to notify us regarding their XCM version and any changes to it.
+     *
+     * - `origin`: Must be an origin specified by AdminOrigin.
+     * - `location`: The location to which we should subscribe for XCM version notifications.
      *
      * @param {XcmVersionedLocation} location
      **/
@@ -8157,7 +10837,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_unsubscribe_version_notify`].
+     * Require that a particular destination should no longer notify us regarding any XCM
+     * version changes.
+     *
+     * - `origin`: Must be an origin specified by AdminOrigin.
+     * - `location`: The location to which we are currently subscribed for XCM version
+     * notifications which we no longer desire.
      *
      * @param {XcmVersionedLocation} location
      **/
@@ -8176,7 +10861,36 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::limited_reserve_transfer_assets`].
+     * Transfer some assets from the local chain to the destination chain through their local,
+     * destination or remote reserve.
+     *
+     * `assets` must have same reserve location and may not be teleportable to `dest`.
+     * - `assets` have local reserve: transfer assets to sovereign account of destination
+     * chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+     * assets to `beneficiary`.
+     * - `assets` have destination reserve: burn local assets and forward a notification to
+     * `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+     * deposit them to `beneficiary`.
+     * - `assets` have remote reserve: burn local assets, forward XCM to reserve chain to move
+     * reserves from this chain's SA to `dest` chain's SA, and forward another XCM to `dest`
+     * to mint and deposit reserve-based assets to `beneficiary`.
+     *
+     * Fee payment on the destination side is made from the asset in the `assets` vector of
+     * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
+     * is needed than `weight_limit`, then the operation will fail and the sent assets may be
+     * at risk.
+     *
+     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+     * - `dest`: Destination context for the assets. Will typically be `[Parent,
+     * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+     * relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     * generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     * fee on the `dest` (and possibly reserve) chains.
+     * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
+     * fees.
+     * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
      *
      * @param {XcmVersionedLocation} dest
      * @param {XcmVersionedLocation} beneficiary
@@ -8211,7 +10925,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::limited_teleport_assets`].
+     * Teleport some assets from the local chain to some destination chain.
+     *
+     * Fee payment on the destination side is made from the asset in the `assets` vector of
+     * index `fee_asset_item`, up to enough to pay for `weight_limit` of weight. If more weight
+     * is needed than `weight_limit`, then the operation will fail and the sent assets may be
+     * at risk.
+     *
+     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+     * - `dest`: Destination context for the assets. Will typically be `[Parent,
+     * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+     * relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     * generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     * fee on the `dest` chain.
+     * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
+     * fees.
+     * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
      *
      * @param {XcmVersionedLocation} dest
      * @param {XcmVersionedLocation} beneficiary
@@ -8246,7 +10977,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::force_suspension`].
+     * Set or unset the global suspension state of the XCM executor.
+     *
+     * - `origin`: Must be an origin specified by AdminOrigin.
+     * - `suspended`: `true` to suspend, `false` to resume.
      *
      * @param {boolean} suspended
      **/
@@ -8265,7 +10999,39 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_assets`].
+     * Transfer some assets from the local chain to the destination chain through their local,
+     * destination or remote reserve, or through teleports.
+     *
+     * Fee payment on the destination side is made from the asset in the `assets` vector of
+     * index `fee_asset_item` (hence referred to as `fees`), up to enough to pay for
+     * `weight_limit` of weight. If more weight is needed than `weight_limit`, then the
+     * operation will fail and the sent assets may be at risk.
+     *
+     * `assets` (excluding `fees`) must have same reserve location or otherwise be teleportable
+     * to `dest`, no limitations imposed on `fees`.
+     * - for local reserve: transfer assets to sovereign account of destination chain and
+     * forward a notification XCM to `dest` to mint and deposit reserve-based assets to
+     * `beneficiary`.
+     * - for destination reserve: burn local assets and forward a notification to `dest` chain
+     * to withdraw the reserve assets from this chain's sovereign account and deposit them
+     * to `beneficiary`.
+     * - for remote reserve: burn local assets, forward XCM to reserve chain to move reserves
+     * from this chain's SA to `dest` chain's SA, and forward another XCM to `dest` to mint
+     * and deposit reserve-based assets to `beneficiary`.
+     * - for teleports: burn local assets and forward XCM to `dest` chain to mint/teleport
+     * assets and deposit them to `beneficiary`.
+     *
+     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+     * - `dest`: Destination context for the assets. Will typically be `X2(Parent,
+     * Parachain(..))` to send from parachain to parachain, or `X1(Parachain(..))` to send
+     * from relay to parachain.
+     * - `beneficiary`: A beneficiary location for the assets in the context of `dest`. Will
+     * generally be an `AccountId32` value.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     * fee on the `dest` (and possibly reserve) chains.
+     * - `fee_asset_item`: The index into `assets` of the item which should be used to pay
+     * fees.
+     * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
      *
      * @param {XcmVersionedLocation} dest
      * @param {XcmVersionedLocation} beneficiary
@@ -8300,7 +11066,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::claim_assets`].
+     * Claims assets trapped on this pallet because of leftover assets during XCM execution.
+     *
+     * - `origin`: Anyone can call this extrinsic.
+     * - `assets`: The exact assets that were trapped. Use the version to specify what version
+     * was the latest when they were trapped.
+     * - `beneficiary`: The location/account where the claimed assets will be deposited.
      *
      * @param {XcmVersionedAssets} assets
      * @param {XcmVersionedLocation} beneficiary
@@ -8323,7 +11094,54 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::transfer_assets_using_type_and_then`].
+     * Transfer assets from the local chain to the destination chain using explicit transfer
+     * types for assets and fees.
+     *
+     * `assets` must have same reserve location or may be teleportable to `dest`. Caller must
+     * provide the `assets_transfer_type` to be used for `assets`:
+     * - `TransferType::LocalReserve`: transfer assets to sovereign account of destination
+     * chain and forward a notification XCM to `dest` to mint and deposit reserve-based
+     * assets to `beneficiary`.
+     * - `TransferType::DestinationReserve`: burn local assets and forward a notification to
+     * `dest` chain to withdraw the reserve assets from this chain's sovereign account and
+     * deposit them to `beneficiary`.
+     * - `TransferType::RemoteReserve(reserve)`: burn local assets, forward XCM to `reserve`
+     * chain to move reserves from this chain's SA to `dest` chain's SA, and forward another
+     * XCM to `dest` to mint and deposit reserve-based assets to `beneficiary`. Typically
+     * the remote `reserve` is Asset Hub.
+     * - `TransferType::Teleport`: burn local assets and forward XCM to `dest` chain to
+     * mint/teleport assets and deposit them to `beneficiary`.
+     *
+     * On the destination chain, as well as any intermediary hops, `BuyExecution` is used to
+     * buy execution using transferred `assets` identified by `remote_fees_id`.
+     * Make sure enough of the specified `remote_fees_id` asset is included in the given list
+     * of `assets`. `remote_fees_id` should be enough to pay for `weight_limit`. If more weight
+     * is needed than `weight_limit`, then the operation will fail and the sent assets may be
+     * at risk.
+     *
+     * `remote_fees_id` may use different transfer type than rest of `assets` and can be
+     * specified through `fees_transfer_type`.
+     *
+     * The caller needs to specify what should happen to the transferred assets once they reach
+     * the `dest` chain. This is done through the `custom_xcm_on_dest` parameter, which
+     * contains the instructions to execute on `dest` as a final step.
+     * This is usually as simple as:
+     * `Xcm(vec![DepositAsset { assets: Wild(AllCounted(assets.len())), beneficiary }])`,
+     * but could be something more exotic like sending the `assets` even further.
+     *
+     * - `origin`: Must be capable of withdrawing the `assets` and executing XCM.
+     * - `dest`: Destination context for the assets. Will typically be `[Parent,
+     * Parachain(..)]` to send from parachain to parachain, or `[Parachain(..)]` to send from
+     * relay to parachain, or `(parents: 2, (GlobalConsensus(..), ..))` to send from
+     * parachain across a bridge to another ecosystem destination.
+     * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
+     * fee on the `dest` (and possibly reserve) chains.
+     * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
+     * - `remote_fees_id`: One of the included `assets` to be used to pay fees.
+     * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
+     * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
+     * transfer, which also determines what happens to the assets on the destination chain.
+     * - `weight_limit`: The remote-side weight limit, if any, for the XCM fee purchase.
      *
      * @param {XcmVersionedLocation} dest
      * @param {XcmVersionedAssets} assets
@@ -8373,7 +11191,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   messageQueue: {
     /**
-     * See [`Pallet::reap_page`].
+     * Remove a page which has no more messages remaining to be processed or is stale.
      *
      * @param {PolkadotRuntimeParachainsInclusionAggregateMessageOrigin} messageOrigin
      * @param {number} pageIndex
@@ -8396,7 +11214,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::execute_overweight`].
+     * Execute an overweight message.
+     *
+     * Temporary processing errors will be propagated whereas permanent errors are treated
+     * as success condition.
+     *
+     * - `origin`: Must be `Signed`.
+     * - `message_origin`: The origin from which the message to be executed arrived.
+     * - `page`: The page in the queue in which the message to be executed is sitting.
+     * - `index`: The index into the queue of the message to be executed.
+     * - `weight_limit`: The maximum amount of weight allowed to be consumed in the execution
+     * of the message.
+     *
+     * Benchmark complexity considerations: O(index + weight_limit).
      *
      * @param {PolkadotRuntimeParachainsInclusionAggregateMessageOrigin} messageOrigin
      * @param {number} page
@@ -8437,7 +11267,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   assetRate: {
     /**
-     * See [`Pallet::create`].
+     * Initialize a conversion rate to native balance for the given asset.
+     *
+     * ## Complexity
+     * - O(1)
      *
      * @param {PolkadotRuntimeCommonImplsVersionedLocatableAsset} assetKind
      * @param {FixedU128} rate
@@ -8460,7 +11293,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::update`].
+     * Update the conversion rate to native balance for the given asset.
+     *
+     * ## Complexity
+     * - O(1)
      *
      * @param {PolkadotRuntimeCommonImplsVersionedLocatableAsset} assetKind
      * @param {FixedU128} rate
@@ -8483,7 +11319,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::remove`].
+     * Remove an existing conversion rate to native balance for the given asset.
+     *
+     * ## Complexity
+     * - O(1)
      *
      * @param {PolkadotRuntimeCommonImplsVersionedLocatableAsset} assetKind
      **/
@@ -8511,15 +11350,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   beefy: {
     /**
-     * See [`Pallet::report_equivocation`].
+     * Report voter equivocation/misbehavior. This method will verify the
+     * equivocation proof and validate the given key ownership proof
+     * against the extracted offender. If both are valid, the offence
+     * will be reported.
      *
-     * @param {SpConsensusBeefyEquivocationProof} equivocationProof
+     * @param {SpConsensusBeefyDoubleVotingProof} equivocationProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
     reportEquivocation: GenericTxCall<
       Rv,
       (
-        equivocationProof: SpConsensusBeefyEquivocationProof,
+        equivocationProof: SpConsensusBeefyDoubleVotingProof,
         keyOwnerProof: SpSessionMembershipProof,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -8527,22 +11369,30 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Beefy';
           palletCall: {
             name: 'ReportEquivocation';
-            params: { equivocationProof: SpConsensusBeefyEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
+            params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::report_equivocation_unsigned`].
+     * Report voter equivocation/misbehavior. This method will verify the
+     * equivocation proof and validate the given key ownership proof
+     * against the extracted offender. If both are valid, the offence
+     * will be reported.
      *
-     * @param {SpConsensusBeefyEquivocationProof} equivocationProof
+     * This extrinsic must be called unsigned and it is expected that only
+     * block authors will call it (validated in `ValidateUnsigned`), as such
+     * if the block author is defined it will be defined as the equivocation
+     * reporter.
+     *
+     * @param {SpConsensusBeefyDoubleVotingProof} equivocationProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
     reportEquivocationUnsigned: GenericTxCall<
       Rv,
       (
-        equivocationProof: SpConsensusBeefyEquivocationProof,
+        equivocationProof: SpConsensusBeefyDoubleVotingProof,
         keyOwnerProof: SpSessionMembershipProof,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -8550,14 +11400,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Beefy';
           palletCall: {
             name: 'ReportEquivocationUnsigned';
-            params: { equivocationProof: SpConsensusBeefyEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
+            params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
           };
         }
       >
     >;
 
     /**
-     * See [`Pallet::set_new_genesis`].
+     * Reset BEEFY consensus by setting a new BEEFY genesis at `delay_in_blocks` blocks in the
+     * future.
+     *
+     * Note: `delay_in_blocks` has to be at least 1.
      *
      * @param {number} delayInBlocks
      **/

@@ -20,6 +20,7 @@ import type {
   SpConsensusGrandpaAppPublic,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   XcmVersionedLocation,
+  PalletConvictionVotingVoteAccountVote,
   FrameSupportPreimagesBounded,
   PalletConvictionVotingTally,
   PalletRankedCollectiveVoteRecord,
@@ -29,10 +30,10 @@ import type {
   PalletSocietyGroupParams,
   RococoRuntimeProxyType,
   PalletMultisigTimepoint,
-  PolkadotPrimitivesV7CandidateReceipt,
+  PolkadotPrimitivesV8CandidateReceipt,
   PolkadotParachainPrimitivesPrimitivesHeadData,
-  PolkadotPrimitivesV7CoreIndex,
-  PolkadotPrimitivesV7GroupIndex,
+  PolkadotPrimitivesV8CoreIndex,
+  PolkadotPrimitivesV8GroupIndex,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
@@ -479,6 +480,26 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * An \[account\] has cancelled a previous delegation operation.
      **/
     Undelegated: GenericPalletEvent<Rv, 'ConvictionVoting', 'Undelegated', AccountId32>;
+
+    /**
+     * An account that has voted
+     **/
+    Voted: GenericPalletEvent<
+      Rv,
+      'ConvictionVoting',
+      'Voted',
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+    >;
+
+    /**
+     * A vote that been removed
+     **/
+    VoteRemoved: GenericPalletEvent<
+      Rv,
+      'ConvictionVoting',
+      'VoteRemoved',
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+    >;
 
     /**
      * Generic pallet event
@@ -2208,10 +2229,10 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateBacked',
       [
-        PolkadotPrimitivesV7CandidateReceipt,
+        PolkadotPrimitivesV8CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV7CoreIndex,
-        PolkadotPrimitivesV7GroupIndex,
+        PolkadotPrimitivesV8CoreIndex,
+        PolkadotPrimitivesV8GroupIndex,
       ]
     >;
 
@@ -2223,10 +2244,10 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateIncluded',
       [
-        PolkadotPrimitivesV7CandidateReceipt,
+        PolkadotPrimitivesV8CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV7CoreIndex,
-        PolkadotPrimitivesV7GroupIndex,
+        PolkadotPrimitivesV8CoreIndex,
+        PolkadotPrimitivesV8GroupIndex,
       ]
     >;
 
@@ -2238,9 +2259,9 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateTimedOut',
       [
-        PolkadotPrimitivesV7CandidateReceipt,
+        PolkadotPrimitivesV8CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV7CoreIndex,
+        PolkadotPrimitivesV8CoreIndex,
       ]
     >;
 
@@ -2863,7 +2884,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * A core has received a new assignment from the broker chain.
      **/
-    CoreAssigned: GenericPalletEvent<Rv, 'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV7CoreIndex }>;
+    CoreAssigned: GenericPalletEvent<Rv, 'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV8CoreIndex }>;
 
     /**
      * Generic pallet event

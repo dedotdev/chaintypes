@@ -10,7 +10,7 @@ import type {
   SpWeightsWeightV2Weight,
   PalletNftsBitFlagsPalletFeature,
   FrameSupportPalletId,
-  StagingXcmV3MultilocationMultiLocation,
+  StagingXcmV4Location,
 } from './types';
 
 export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<Rv> {
@@ -769,7 +769,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     /**
      * Asset class from [`Config::Assets`] used to pay the [`Config::PoolSetupFee`].
      **/
-    poolSetupFeeAsset: StagingXcmV3MultilocationMultiLocation;
+    poolSetupFeeAsset: StagingXcmV4Location;
 
     /**
      * A fee to withdraw the liquidity.

@@ -1357,11 +1357,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     TooFew: GenericPalletError<Rv>;
 
     /**
-     * No ticket with a cost was returned by [`Config::Consideration`] to store the preimage.
-     **/
-    NoCost: GenericPalletError<Rv>;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1702,11 +1697,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Invalid (bad signature, unknown validator, etc.) backing.
      **/
     InvalidBacking: GenericPalletError<Rv>;
-
-    /**
-     * Collator did not sign PoV.
-     **/
-    NotCollatorSigned: GenericPalletError<Rv>;
 
     /**
      * The validation data hash does not match expected.

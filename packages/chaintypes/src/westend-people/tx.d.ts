@@ -342,63 +342,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
-     * later.
-     *
-     * The `check_version` parameter sets a boolean flag for whether or not the runtime's spec
-     * version and name should be verified on upgrade. Since the authorization only has a hash,
-     * it cannot actually perform the verification.
-     *
-     * This call requires Root origin.
-     *
-     * @param {H256} codeHash
-     * @param {boolean} checkVersion
-     **/
-    authorizeUpgrade: GenericTxCall<
-      Rv,
-      (
-        codeHash: H256,
-        checkVersion: boolean,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainSystem';
-          palletCall: {
-            name: 'AuthorizeUpgrade';
-            params: { codeHash: H256; checkVersion: boolean };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
-     *
-     * If the authorization required a version check, this call will ensure the spec name
-     * remains unchanged and that the spec version has increased.
-     *
-     * Note that this function will not apply the new `code`, but only attempt to schedule the
-     * upgrade with the Relay Chain.
-     *
-     * All origins are allowed.
-     *
-     * @param {BytesLike} code
-     **/
-    enactAuthorizedUpgrade: GenericTxCall<
-      Rv,
-      (code: BytesLike) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainSystem';
-          palletCall: {
-            name: 'EnactAuthorizedUpgrade';
-            params: { code: BytesLike };
-          };
-        }
-      >
-    >;
-
-    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -2357,7 +2300,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `max_fee`: The maximum fee that may be paid. This should just be auto-populated as:
      *
      * ```nocompile
-     * Self::registrars().get(reg_index).unwrap().fee
+     * Registrars::<T>::get().get(reg_index).unwrap().fee
      * ```
      *
      * Emits `JudgementRequested` if successful.

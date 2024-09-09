@@ -43,7 +43,6 @@ import type {
   PalletNftsPriceWithDirection,
   PalletNftsPreSignedMint,
   PalletNftsPreSignedAttributes,
-  StagingXcmV3MultilocationMultiLocation,
 } from './types';
 
 export type ChainSubmittableExtrinsic<
@@ -349,63 +348,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SudoSendUpwardMessage';
             params: { message: BytesLike };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
-     * later.
-     *
-     * The `check_version` parameter sets a boolean flag for whether or not the runtime's spec
-     * version and name should be verified on upgrade. Since the authorization only has a hash,
-     * it cannot actually perform the verification.
-     *
-     * This call requires Root origin.
-     *
-     * @param {H256} codeHash
-     * @param {boolean} checkVersion
-     **/
-    authorizeUpgrade: GenericTxCall<
-      Rv,
-      (
-        codeHash: H256,
-        checkVersion: boolean,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainSystem';
-          palletCall: {
-            name: 'AuthorizeUpgrade';
-            params: { codeHash: H256; checkVersion: boolean };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
-     *
-     * If the authorization required a version check, this call will ensure the spec name
-     * remains unchanged and that the spec version has increased.
-     *
-     * Note that this function will not apply the new `code`, but only attempt to schedule the
-     * upgrade with the Relay Chain.
-     *
-     * All origins are allowed.
-     *
-     * @param {BytesLike} code
-     **/
-    enactAuthorizedUpgrade: GenericTxCall<
-      Rv,
-      (code: BytesLike) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainSystem';
-          palletCall: {
-            name: 'EnactAuthorizedUpgrade';
-            params: { code: BytesLike };
           };
         }
       >
@@ -2617,38 +2559,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
-   * Pallet `ToWestendXcmRouter`'s transaction calls
-   **/
-  toWestendXcmRouter: {
-    /**
-     * Notification about congested bridge queue.
-     *
-     * @param {H256} bridgeId
-     * @param {boolean} isCongested
-     **/
-    reportBridgeStatus: GenericTxCall<
-      Rv,
-      (
-        bridgeId: H256,
-        isCongested: boolean,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ToWestendXcmRouter';
-          palletCall: {
-            name: 'ReportBridgeStatus';
-            params: { bridgeId: H256; isCongested: boolean };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
    * Pallet `Assets`'s transaction calls
    **/
   assets: {
@@ -2750,8 +2660,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * - `id`: The identifier of the asset to be destroyed. This must identify an existing
      * asset.
-     *
-     * The asset class must be frozen before calling `start_destroy`.
      *
      * @param {number} id
      **/
@@ -3802,6 +3710,46 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'Block';
             params: { id: number; who: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Transfer the entire transferable balance from the caller asset account.
+     *
+     * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+     * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+     * transferred by this function. To ensure that this function results in a killed account,
+     * you might need to prepare the account by removing any reference counters, storage
+     * deposits, etc...
+     *
+     * The dispatch origin of this call must be Signed.
+     *
+     * - `id`: The identifier of the asset for the account holding a deposit.
+     * - `dest`: The recipient of the transfer.
+     * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+     * of the funds the asset account has, causing the sender asset account to be killed
+     * (false), or transfer everything except at least the minimum balance, which will
+     * guarantee to keep the sender asset account alive (true).
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} dest
+     * @param {boolean} keepAlive
+     **/
+    transferAll: GenericTxCall<
+      Rv,
+      (
+        id: number,
+        dest: MultiAddressLike,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'TransferAll';
+            params: { id: number; dest: MultiAddressLike; keepAlive: boolean };
           };
         }
       >
@@ -6295,14 +6243,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} admin
      * @param {bigint} minBalance
      **/
     create: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         admin: MultiAddressLike,
         minBalance: bigint,
       ) => ChainSubmittableExtrinsic<
@@ -6311,7 +6259,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Create';
-            params: { id: StagingXcmV3MultilocationMultiLocation; admin: MultiAddressLike; minBalance: bigint };
+            params: { id: StagingXcmV4Location; admin: MultiAddressLike; minBalance: bigint };
           };
         }
       >
@@ -6338,7 +6286,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} owner
      * @param {boolean} isSufficient
      * @param {bigint} minBalance
@@ -6346,7 +6294,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     forceCreate: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         owner: MultiAddressLike,
         isSufficient: boolean,
         minBalance: bigint,
@@ -6356,12 +6304,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'ForceCreate';
-            params: {
-              id: StagingXcmV3MultilocationMultiLocation;
-              owner: MultiAddressLike;
-              isSufficient: boolean;
-              minBalance: bigint;
-            };
+            params: { id: StagingXcmV4Location; owner: MultiAddressLike; isSufficient: boolean; minBalance: bigint };
           };
         }
       >
@@ -6378,19 +6321,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `id`: The identifier of the asset to be destroyed. This must identify an existing
      * asset.
      *
-     * The asset class must be frozen before calling `start_destroy`.
-     *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      **/
     startDestroy: GenericTxCall<
       Rv,
-      (id: StagingXcmV3MultilocationMultiLocation) => ChainSubmittableExtrinsic<
+      (id: StagingXcmV4Location) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'StartDestroy';
-            params: { id: StagingXcmV3MultilocationMultiLocation };
+            params: { id: StagingXcmV4Location };
           };
         }
       >
@@ -6410,17 +6351,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Each call emits the `Event::DestroyedAccounts` event.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      **/
     destroyAccounts: GenericTxCall<
       Rv,
-      (id: StagingXcmV3MultilocationMultiLocation) => ChainSubmittableExtrinsic<
+      (id: StagingXcmV4Location) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'DestroyAccounts';
-            params: { id: StagingXcmV3MultilocationMultiLocation };
+            params: { id: StagingXcmV4Location };
           };
         }
       >
@@ -6440,17 +6381,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Each call emits the `Event::DestroyedApprovals` event.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      **/
     destroyApprovals: GenericTxCall<
       Rv,
-      (id: StagingXcmV3MultilocationMultiLocation) => ChainSubmittableExtrinsic<
+      (id: StagingXcmV4Location) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'DestroyApprovals';
-            params: { id: StagingXcmV3MultilocationMultiLocation };
+            params: { id: StagingXcmV4Location };
           };
         }
       >
@@ -6468,17 +6409,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Each successful call emits the `Event::Destroyed` event.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      **/
     finishDestroy: GenericTxCall<
       Rv,
-      (id: StagingXcmV3MultilocationMultiLocation) => ChainSubmittableExtrinsic<
+      (id: StagingXcmV4Location) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'FinishDestroy';
-            params: { id: StagingXcmV3MultilocationMultiLocation };
+            params: { id: StagingXcmV4Location };
           };
         }
       >
@@ -6498,14 +6439,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Weight: `O(1)`
      * Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} beneficiary
      * @param {bigint} amount
      **/
     mint: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         beneficiary: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
@@ -6514,7 +6455,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Mint';
-            params: { id: StagingXcmV3MultilocationMultiLocation; beneficiary: MultiAddressLike; amount: bigint };
+            params: { id: StagingXcmV4Location; beneficiary: MultiAddressLike; amount: bigint };
           };
         }
       >
@@ -6537,14 +6478,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Weight: `O(1)`
      * Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} who
      * @param {bigint} amount
      **/
     burn: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         who: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
@@ -6553,7 +6494,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Burn';
-            params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddressLike; amount: bigint };
+            params: { id: StagingXcmV4Location; who: MultiAddressLike; amount: bigint };
           };
         }
       >
@@ -6579,14 +6520,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
      * `target`.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} target
      * @param {bigint} amount
      **/
     transfer: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         target: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
@@ -6595,7 +6536,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Transfer';
-            params: { id: StagingXcmV3MultilocationMultiLocation; target: MultiAddressLike; amount: bigint };
+            params: { id: StagingXcmV4Location; target: MultiAddressLike; amount: bigint };
           };
         }
       >
@@ -6621,14 +6562,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
      * `target`.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} target
      * @param {bigint} amount
      **/
     transferKeepAlive: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         target: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
@@ -6637,7 +6578,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'TransferKeepAlive';
-            params: { id: StagingXcmV3MultilocationMultiLocation; target: MultiAddressLike; amount: bigint };
+            params: { id: StagingXcmV4Location; target: MultiAddressLike; amount: bigint };
           };
         }
       >
@@ -6664,7 +6605,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Modes: Pre-existence of `dest`; Post-existence of `source`; Account pre-existence of
      * `dest`.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} source
      * @param {MultiAddressLike} dest
      * @param {bigint} amount
@@ -6672,7 +6613,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     forceTransfer: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         source: MultiAddressLike,
         dest: MultiAddressLike,
         amount: bigint,
@@ -6682,12 +6623,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'ForceTransfer';
-            params: {
-              id: StagingXcmV3MultilocationMultiLocation;
-              source: MultiAddressLike;
-              dest: MultiAddressLike;
-              amount: bigint;
-            };
+            params: { id: StagingXcmV4Location; source: MultiAddressLike; dest: MultiAddressLike; amount: bigint };
           };
         }
       >
@@ -6707,13 +6643,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} who
      **/
     freeze: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -6721,7 +6657,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Freeze';
-            params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddressLike };
+            params: { id: StagingXcmV4Location; who: MultiAddressLike };
           };
         }
       >
@@ -6739,13 +6675,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} who
      **/
     thaw: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -6753,7 +6689,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Thaw';
-            params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddressLike };
+            params: { id: StagingXcmV4Location; who: MultiAddressLike };
           };
         }
       >
@@ -6770,17 +6706,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      **/
     freezeAsset: GenericTxCall<
       Rv,
-      (id: StagingXcmV3MultilocationMultiLocation) => ChainSubmittableExtrinsic<
+      (id: StagingXcmV4Location) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'FreezeAsset';
-            params: { id: StagingXcmV3MultilocationMultiLocation };
+            params: { id: StagingXcmV4Location };
           };
         }
       >
@@ -6797,17 +6733,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      **/
     thawAsset: GenericTxCall<
       Rv,
-      (id: StagingXcmV3MultilocationMultiLocation) => ChainSubmittableExtrinsic<
+      (id: StagingXcmV4Location) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'ThawAsset';
-            params: { id: StagingXcmV3MultilocationMultiLocation };
+            params: { id: StagingXcmV4Location };
           };
         }
       >
@@ -6825,13 +6761,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} owner
      **/
     transferOwnership: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         owner: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -6839,7 +6775,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'TransferOwnership';
-            params: { id: StagingXcmV3MultilocationMultiLocation; owner: MultiAddressLike };
+            params: { id: StagingXcmV4Location; owner: MultiAddressLike };
           };
         }
       >
@@ -6859,7 +6795,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} issuer
      * @param {MultiAddressLike} admin
      * @param {MultiAddressLike} freezer
@@ -6867,7 +6803,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     setTeam: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         issuer: MultiAddressLike,
         admin: MultiAddressLike,
         freezer: MultiAddressLike,
@@ -6878,7 +6814,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SetTeam';
             params: {
-              id: StagingXcmV3MultilocationMultiLocation;
+              id: StagingXcmV4Location;
               issuer: MultiAddressLike;
               admin: MultiAddressLike;
               freezer: MultiAddressLike;
@@ -6906,7 +6842,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {BytesLike} name
      * @param {BytesLike} symbol
      * @param {number} decimals
@@ -6914,7 +6850,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     setMetadata: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         name: BytesLike,
         symbol: BytesLike,
         decimals: number,
@@ -6924,12 +6860,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'SetMetadata';
-            params: {
-              id: StagingXcmV3MultilocationMultiLocation;
-              name: BytesLike;
-              symbol: BytesLike;
-              decimals: number;
-            };
+            params: { id: StagingXcmV4Location; name: BytesLike; symbol: BytesLike; decimals: number };
           };
         }
       >
@@ -6948,17 +6879,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      **/
     clearMetadata: GenericTxCall<
       Rv,
-      (id: StagingXcmV3MultilocationMultiLocation) => ChainSubmittableExtrinsic<
+      (id: StagingXcmV4Location) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'ClearMetadata';
-            params: { id: StagingXcmV3MultilocationMultiLocation };
+            params: { id: StagingXcmV4Location };
           };
         }
       >
@@ -6980,7 +6911,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(N + S)` where N and S are the length of the name and symbol respectively.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {BytesLike} name
      * @param {BytesLike} symbol
      * @param {number} decimals
@@ -6989,7 +6920,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     forceSetMetadata: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         name: BytesLike,
         symbol: BytesLike,
         decimals: number,
@@ -7001,7 +6932,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ForceSetMetadata';
             params: {
-              id: StagingXcmV3MultilocationMultiLocation;
+              id: StagingXcmV4Location;
               name: BytesLike;
               symbol: BytesLike;
               decimals: number;
@@ -7025,17 +6956,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      **/
     forceClearMetadata: GenericTxCall<
       Rv,
-      (id: StagingXcmV3MultilocationMultiLocation) => ChainSubmittableExtrinsic<
+      (id: StagingXcmV4Location) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'ForceClearMetadata';
-            params: { id: StagingXcmV3MultilocationMultiLocation };
+            params: { id: StagingXcmV4Location };
           };
         }
       >
@@ -7065,7 +6996,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} owner
      * @param {MultiAddressLike} issuer
      * @param {MultiAddressLike} admin
@@ -7077,7 +7008,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     forceAssetStatus: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         owner: MultiAddressLike,
         issuer: MultiAddressLike,
         admin: MultiAddressLike,
@@ -7092,7 +7023,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ForceAssetStatus';
             params: {
-              id: StagingXcmV3MultilocationMultiLocation;
+              id: StagingXcmV4Location;
               owner: MultiAddressLike;
               issuer: MultiAddressLike;
               admin: MultiAddressLike;
@@ -7128,14 +7059,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} delegate
      * @param {bigint} amount
      **/
     approveTransfer: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         delegate: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
@@ -7144,7 +7075,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'ApproveTransfer';
-            params: { id: StagingXcmV3MultilocationMultiLocation; delegate: MultiAddressLike; amount: bigint };
+            params: { id: StagingXcmV4Location; delegate: MultiAddressLike; amount: bigint };
           };
         }
       >
@@ -7165,13 +7096,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} delegate
      **/
     cancelApproval: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         delegate: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -7179,7 +7110,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'CancelApproval';
-            params: { id: StagingXcmV3MultilocationMultiLocation; delegate: MultiAddressLike };
+            params: { id: StagingXcmV4Location; delegate: MultiAddressLike };
           };
         }
       >
@@ -7200,14 +7131,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} owner
      * @param {MultiAddressLike} delegate
      **/
     forceCancelApproval: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         owner: MultiAddressLike,
         delegate: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
@@ -7216,7 +7147,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'ForceCancelApproval';
-            params: { id: StagingXcmV3MultilocationMultiLocation; owner: MultiAddressLike; delegate: MultiAddressLike };
+            params: { id: StagingXcmV4Location; owner: MultiAddressLike; delegate: MultiAddressLike };
           };
         }
       >
@@ -7242,7 +7173,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} owner
      * @param {MultiAddressLike} destination
      * @param {bigint} amount
@@ -7250,7 +7181,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     transferApproved: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         owner: MultiAddressLike,
         destination: MultiAddressLike,
         amount: bigint,
@@ -7261,7 +7192,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'TransferApproved';
             params: {
-              id: StagingXcmV3MultilocationMultiLocation;
+              id: StagingXcmV4Location;
               owner: MultiAddressLike;
               destination: MultiAddressLike;
               amount: bigint;
@@ -7282,17 +7213,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Emits `Touched` event when successful.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      **/
     touch: GenericTxCall<
       Rv,
-      (id: StagingXcmV3MultilocationMultiLocation) => ChainSubmittableExtrinsic<
+      (id: StagingXcmV4Location) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Touch';
-            params: { id: StagingXcmV3MultilocationMultiLocation };
+            params: { id: StagingXcmV4Location };
           };
         }
       >
@@ -7310,13 +7241,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Emits `Refunded` event when successful.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {boolean} allowBurn
      **/
     refund: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         allowBurn: boolean,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -7324,7 +7255,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Refund';
-            params: { id: StagingXcmV3MultilocationMultiLocation; allowBurn: boolean };
+            params: { id: StagingXcmV4Location; allowBurn: boolean };
           };
         }
       >
@@ -7344,13 +7275,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Emits `AssetMinBalanceChanged` event when successful.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {bigint} minBalance
      **/
     setMinBalance: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         minBalance: bigint,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -7358,7 +7289,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'SetMinBalance';
-            params: { id: StagingXcmV3MultilocationMultiLocation; minBalance: bigint };
+            params: { id: StagingXcmV4Location; minBalance: bigint };
           };
         }
       >
@@ -7376,13 +7307,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Emits `Touched` event when successful.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} who
      **/
     touchOther: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -7390,7 +7321,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'TouchOther';
-            params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddressLike };
+            params: { id: StagingXcmV4Location; who: MultiAddressLike };
           };
         }
       >
@@ -7408,13 +7339,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Emits `Refunded` event when successful.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} who
      **/
     refundOther: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -7422,7 +7353,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'RefundOther';
-            params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddressLike };
+            params: { id: StagingXcmV4Location; who: MultiAddressLike };
           };
         }
       >
@@ -7440,13 +7371,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Weight: `O(1)`
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} id
+     * @param {StagingXcmV4Location} id
      * @param {MultiAddressLike} who
      **/
     block: GenericTxCall<
       Rv,
       (
-        id: StagingXcmV3MultilocationMultiLocation,
+        id: StagingXcmV4Location,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -7454,7 +7385,47 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Block';
-            params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddressLike };
+            params: { id: StagingXcmV4Location; who: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Transfer the entire transferable balance from the caller asset account.
+     *
+     * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+     * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+     * transferred by this function. To ensure that this function results in a killed account,
+     * you might need to prepare the account by removing any reference counters, storage
+     * deposits, etc...
+     *
+     * The dispatch origin of this call must be Signed.
+     *
+     * - `id`: The identifier of the asset for the account holding a deposit.
+     * - `dest`: The recipient of the transfer.
+     * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+     * of the funds the asset account has, causing the sender asset account to be killed
+     * (false), or transfer everything except at least the minimum balance, which will
+     * guarantee to keep the sender asset account alive (true).
+     *
+     * @param {StagingXcmV4Location} id
+     * @param {MultiAddressLike} dest
+     * @param {boolean} keepAlive
+     **/
+    transferAll: GenericTxCall<
+      Rv,
+      (
+        id: StagingXcmV4Location,
+        dest: MultiAddressLike,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'ForeignAssets';
+          palletCall: {
+            name: 'TransferAll';
+            params: { id: StagingXcmV4Location; dest: MultiAddressLike; keepAlive: boolean };
           };
         }
       >
@@ -7669,8 +7640,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * - `id`: The identifier of the asset to be destroyed. This must identify an existing
      * asset.
-     *
-     * The asset class must be frozen before calling `start_destroy`.
      *
      * @param {number} id
      **/
@@ -8727,6 +8696,46 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Transfer the entire transferable balance from the caller asset account.
+     *
+     * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+     * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+     * transferred by this function. To ensure that this function results in a killed account,
+     * you might need to prepare the account by removing any reference counters, storage
+     * deposits, etc...
+     *
+     * The dispatch origin of this call must be Signed.
+     *
+     * - `id`: The identifier of the asset for the account holding a deposit.
+     * - `dest`: The recipient of the transfer.
+     * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+     * of the funds the asset account has, causing the sender asset account to be killed
+     * (false), or transfer everything except at least the minimum balance, which will
+     * guarantee to keep the sender asset account alive (true).
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} dest
+     * @param {boolean} keepAlive
+     **/
+    transferAll: GenericTxCall<
+      Rv,
+      (
+        id: number,
+        dest: MultiAddressLike,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'TransferAll';
+            params: { id: number; dest: MultiAddressLike; keepAlive: boolean };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -8741,21 +8750,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Once a pool is created, someone may [`Pallet::add_liquidity`] to it.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} asset1
-     * @param {StagingXcmV3MultilocationMultiLocation} asset2
+     * @param {StagingXcmV4Location} asset1
+     * @param {StagingXcmV4Location} asset2
      **/
     createPool: GenericTxCall<
       Rv,
       (
-        asset1: StagingXcmV3MultilocationMultiLocation,
-        asset2: StagingXcmV3MultilocationMultiLocation,
+        asset1: StagingXcmV4Location,
+        asset2: StagingXcmV4Location,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'AssetConversion';
           palletCall: {
             name: 'CreatePool';
-            params: { asset1: StagingXcmV3MultilocationMultiLocation; asset2: StagingXcmV3MultilocationMultiLocation };
+            params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location };
           };
         }
       >
@@ -8775,10 +8784,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * calls to render the liquidity withdrawable and rectify the exchange rate.
      *
      * Once liquidity is added, someone may successfully call
-     * [`Pallet::swap_exact_tokens_for_tokens`] successfully.
+     * [`Pallet::swap_exact_tokens_for_tokens`].
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} asset1
-     * @param {StagingXcmV3MultilocationMultiLocation} asset2
+     * @param {StagingXcmV4Location} asset1
+     * @param {StagingXcmV4Location} asset2
      * @param {bigint} amount1Desired
      * @param {bigint} amount2Desired
      * @param {bigint} amount1Min
@@ -8788,8 +8797,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     addLiquidity: GenericTxCall<
       Rv,
       (
-        asset1: StagingXcmV3MultilocationMultiLocation,
-        asset2: StagingXcmV3MultilocationMultiLocation,
+        asset1: StagingXcmV4Location,
+        asset2: StagingXcmV4Location,
         amount1Desired: bigint,
         amount2Desired: bigint,
         amount1Min: bigint,
@@ -8802,8 +8811,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'AddLiquidity';
             params: {
-              asset1: StagingXcmV3MultilocationMultiLocation;
-              asset2: StagingXcmV3MultilocationMultiLocation;
+              asset1: StagingXcmV4Location;
+              asset2: StagingXcmV4Location;
               amount1Desired: bigint;
               amount2Desired: bigint;
               amount1Min: bigint;
@@ -8820,8 +8829,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * burned in the process. With the usage of `amount1_min_receive`/`amount2_min_receive`
      * it's possible to control the min amount of returned tokens you're happy with.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} asset1
-     * @param {StagingXcmV3MultilocationMultiLocation} asset2
+     * @param {StagingXcmV4Location} asset1
+     * @param {StagingXcmV4Location} asset2
      * @param {bigint} lpTokenBurn
      * @param {bigint} amount1MinReceive
      * @param {bigint} amount2MinReceive
@@ -8830,8 +8839,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     removeLiquidity: GenericTxCall<
       Rv,
       (
-        asset1: StagingXcmV3MultilocationMultiLocation,
-        asset2: StagingXcmV3MultilocationMultiLocation,
+        asset1: StagingXcmV4Location,
+        asset2: StagingXcmV4Location,
         lpTokenBurn: bigint,
         amount1MinReceive: bigint,
         amount2MinReceive: bigint,
@@ -8843,8 +8852,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'RemoveLiquidity';
             params: {
-              asset1: StagingXcmV3MultilocationMultiLocation;
-              asset2: StagingXcmV3MultilocationMultiLocation;
+              asset1: StagingXcmV4Location;
+              asset2: StagingXcmV4Location;
               lpTokenBurn: bigint;
               amount1MinReceive: bigint;
               amount2MinReceive: bigint;
@@ -8863,7 +8872,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * [`AssetConversionApi::quote_price_exact_tokens_for_tokens`] runtime call can be called
      * for a quote.
      *
-     * @param {Array<StagingXcmV3MultilocationMultiLocation>} path
+     * @param {Array<StagingXcmV4Location>} path
      * @param {bigint} amountIn
      * @param {bigint} amountOutMin
      * @param {AccountId32Like} sendTo
@@ -8872,7 +8881,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     swapExactTokensForTokens: GenericTxCall<
       Rv,
       (
-        path: Array<StagingXcmV3MultilocationMultiLocation>,
+        path: Array<StagingXcmV4Location>,
         amountIn: bigint,
         amountOutMin: bigint,
         sendTo: AccountId32Like,
@@ -8884,7 +8893,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SwapExactTokensForTokens';
             params: {
-              path: Array<StagingXcmV3MultilocationMultiLocation>;
+              path: Array<StagingXcmV4Location>;
               amountIn: bigint;
               amountOutMin: bigint;
               sendTo: AccountId32Like;
@@ -8903,7 +8912,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * [`AssetConversionApi::quote_price_tokens_for_exact_tokens`] runtime call can be called
      * for a quote.
      *
-     * @param {Array<StagingXcmV3MultilocationMultiLocation>} path
+     * @param {Array<StagingXcmV4Location>} path
      * @param {bigint} amountOut
      * @param {bigint} amountInMax
      * @param {AccountId32Like} sendTo
@@ -8912,7 +8921,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     swapTokensForExactTokens: GenericTxCall<
       Rv,
       (
-        path: Array<StagingXcmV3MultilocationMultiLocation>,
+        path: Array<StagingXcmV4Location>,
         amountOut: bigint,
         amountInMax: bigint,
         sendTo: AccountId32Like,
@@ -8924,7 +8933,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SwapTokensForExactTokens';
             params: {
-              path: Array<StagingXcmV3MultilocationMultiLocation>;
+              path: Array<StagingXcmV4Location>;
               amountOut: bigint;
               amountInMax: bigint;
               sendTo: AccountId32Like;
@@ -8948,21 +8957,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Emits `Touched` event when successful.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} asset1
-     * @param {StagingXcmV3MultilocationMultiLocation} asset2
+     * @param {StagingXcmV4Location} asset1
+     * @param {StagingXcmV4Location} asset2
      **/
     touch: GenericTxCall<
       Rv,
       (
-        asset1: StagingXcmV3MultilocationMultiLocation,
-        asset2: StagingXcmV3MultilocationMultiLocation,
+        asset1: StagingXcmV4Location,
+        asset2: StagingXcmV4Location,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'AssetConversion';
           palletCall: {
             name: 'Touch';
-            params: { asset1: StagingXcmV3MultilocationMultiLocation; asset2: StagingXcmV3MultilocationMultiLocation };
+            params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location };
           };
         }
       >
@@ -8983,21 +8992,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Must be signed.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} asset1
-     * @param {StagingXcmV3MultilocationMultiLocation} asset2
+     * @param {StagingXcmV4Location} asset1
+     * @param {StagingXcmV4Location} asset2
      **/
     migrateToNewAccount: GenericTxCall<
       Rv,
       (
-        asset1: StagingXcmV3MultilocationMultiLocation,
-        asset2: StagingXcmV3MultilocationMultiLocation,
+        asset1: StagingXcmV4Location,
+        asset2: StagingXcmV4Location,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'AssetConversionMigration';
           palletCall: {
             name: 'MigrateToNewAccount';
-            params: { asset1: StagingXcmV3MultilocationMultiLocation; asset2: StagingXcmV3MultilocationMultiLocation };
+            params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location };
           };
         }
       >

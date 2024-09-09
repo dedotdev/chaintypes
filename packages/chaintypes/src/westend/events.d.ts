@@ -17,6 +17,8 @@ import type {
   PalletStakingRewardDestination,
   PalletStakingValidatorPrefs,
   PalletStakingForcing,
+  WestendRuntimeRuntimeParametersKey,
+  WestendRuntimeRuntimeParametersValue,
   SpConsensusGrandpaAppPublic,
   WestendRuntimeProxyType,
   PalletMultisigTimepoint,
@@ -26,16 +28,17 @@ import type {
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
+  PalletConvictionVotingVoteAccountVote,
   FrameSupportPreimagesBounded,
   PalletConvictionVotingTally,
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   XcmVersionedLocation,
-  PolkadotPrimitivesV7CandidateReceipt,
+  PolkadotPrimitivesV8CandidateReceipt,
   PolkadotParachainPrimitivesPrimitivesHeadData,
-  PolkadotPrimitivesV7CoreIndex,
-  PolkadotPrimitivesV7GroupIndex,
+  PolkadotPrimitivesV8CoreIndex,
+  PolkadotPrimitivesV8GroupIndex,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
@@ -420,6 +423,42 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * \[kind, timeslot\].
      **/
     Offence: GenericPalletEvent<Rv, 'Offences', 'Offence', { kind: FixedBytes<16>; timeslot: Bytes }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Parameters`'s events
+   **/
+  parameters: {
+    /**
+     * A Parameter was set.
+     *
+     * Is also emitted when the value was not changed.
+     **/
+    Updated: GenericPalletEvent<
+      Rv,
+      'Parameters',
+      'Updated',
+      {
+        /**
+         * The key that was updated.
+         **/
+        key: WestendRuntimeRuntimeParametersKey;
+
+        /**
+         * The old value before this call.
+         **/
+        oldValue?: WestendRuntimeRuntimeParametersValue | undefined;
+
+        /**
+         * The new value after this call.
+         **/
+        newValue?: WestendRuntimeRuntimeParametersValue | undefined;
+      }
+    >;
 
     /**
      * Generic pallet event
@@ -1176,8 +1215,15 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * A member has been removed from a pool.
      *
      * The removal can be voluntary (withdrawn all unbonded funds) or involuntary (kicked).
+     * Any funds that are still delegated (i.e. dangling delegation) are released and are
+     * represented by `released_balance`.
      **/
-    MemberRemoved: GenericPalletEvent<Rv, 'NominationPools', 'MemberRemoved', { poolId: number; member: AccountId32 }>;
+    MemberRemoved: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'MemberRemoved',
+      { poolId: number; member: AccountId32; releasedBalance: bigint }
+    >;
 
     /**
      * The roles of a pool have been updated to the given new roles. Note that the depositor
@@ -1335,6 +1381,26 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * An \[account\] has cancelled a previous delegation operation.
      **/
     Undelegated: GenericPalletEvent<Rv, 'ConvictionVoting', 'Undelegated', AccountId32>;
+
+    /**
+     * An account that has voted
+     **/
+    Voted: GenericPalletEvent<
+      Rv,
+      'ConvictionVoting',
+      'Voted',
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+    >;
+
+    /**
+     * A vote that been removed
+     **/
+    VoteRemoved: GenericPalletEvent<
+      Rv,
+      'ConvictionVoting',
+      'VoteRemoved',
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+    >;
 
     /**
      * Generic pallet event
@@ -1853,10 +1919,10 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateBacked',
       [
-        PolkadotPrimitivesV7CandidateReceipt,
+        PolkadotPrimitivesV8CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV7CoreIndex,
-        PolkadotPrimitivesV7GroupIndex,
+        PolkadotPrimitivesV8CoreIndex,
+        PolkadotPrimitivesV8GroupIndex,
       ]
     >;
 
@@ -1868,10 +1934,10 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateIncluded',
       [
-        PolkadotPrimitivesV7CandidateReceipt,
+        PolkadotPrimitivesV8CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV7CoreIndex,
-        PolkadotPrimitivesV7GroupIndex,
+        PolkadotPrimitivesV8CoreIndex,
+        PolkadotPrimitivesV8GroupIndex,
       ]
     >;
 
@@ -1883,9 +1949,9 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateTimedOut',
       [
-        PolkadotPrimitivesV7CandidateReceipt,
+        PolkadotPrimitivesV8CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV7CoreIndex,
+        PolkadotPrimitivesV8CoreIndex,
       ]
     >;
 
@@ -2425,7 +2491,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * A core has received a new assignment from the broker chain.
      **/
-    CoreAssigned: GenericPalletEvent<Rv, 'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV7CoreIndex }>;
+    CoreAssigned: GenericPalletEvent<Rv, 'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV8CoreIndex }>;
 
     /**
      * Generic pallet event

@@ -37,6 +37,7 @@ import type {
   PalletStakingPalletConfigOpPercent,
   PalletStakingPalletConfigOpPerbill,
   PalletStakingUnlockChunk,
+  WestendRuntimeRuntimeParameters,
   WestendRuntimeSessionKeys,
   SpConsensusGrandpaEquivocationProof,
   WestendRuntimeOriginCaller,
@@ -65,19 +66,19 @@ import type {
   FrameSupportScheduleDispatchTime,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   XcmVersionedLocation,
-  PolkadotPrimitivesV7AsyncBackingAsyncBackingParams,
-  PolkadotPrimitivesV7ExecutorParams,
-  PolkadotPrimitivesV7ApprovalVotingParams,
-  PolkadotPrimitivesVstagingSchedulerParams,
-  PolkadotPrimitivesV7InherentData,
+  PolkadotPrimitivesV8AsyncBackingAsyncBackingParams,
+  PolkadotPrimitivesV8ExecutorParams,
+  PolkadotPrimitivesV8ApprovalVotingParams,
+  PolkadotPrimitivesV8SchedulerParams,
+  PolkadotPrimitivesV8InherentData,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
-  PolkadotPrimitivesV7PvfCheckStatement,
-  PolkadotPrimitivesV7ValidatorAppSignature,
+  PolkadotPrimitivesV8PvfCheckStatement,
+  PolkadotPrimitivesV8ValidatorAppSignature,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
-  PolkadotPrimitivesV7SlashingDisputeProof,
+  PolkadotPrimitivesV8SlashingDisputeProof,
   PolkadotRuntimeParachainsParasParaGenesisArgs,
   XcmVersionedXcm,
   SpRuntimeMultiSigner,
@@ -1854,6 +1855,37 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
+   * Pallet `Parameters`'s transaction calls
+   **/
+  parameters: {
+    /**
+     * Set the value of a parameter.
+     *
+     * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+     * deleted by setting them to `None`.
+     *
+     * @param {WestendRuntimeRuntimeParameters} keyValue
+     **/
+    setParameter: GenericTxCall<
+      Rv,
+      (keyValue: WestendRuntimeRuntimeParameters) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'SetParameter';
+            params: { keyValue: WestendRuntimeRuntimeParameters };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
    * Pallet `Session`'s transaction calls
    **/
   session: {
@@ -2340,7 +2372,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `max_fee`: The maximum fee that may be paid. This should just be auto-populated as:
      *
      * ```nocompile
-     * Self::registrars().get(reg_index).unwrap().fee
+     * Registrars::<T>::get().get(reg_index).unwrap().fee
      * ```
      *
      * Emits `JudgementRequested` if successful.
@@ -4687,8 +4719,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   nominationPools: {
     /**
-     * Stake funds with a pool. The amount to bond is transferred from the member to the
-     * pools account and immediately increases the pools bond.
+     * Stake funds with a pool. The amount to bond is transferred from the member to the pool
+     * account and immediately increases the pools bond.
+     *
+     * The method of transferring the amount to the pool account is determined by
+     * [`adapter::StakeStrategyType`]. If the pool is configured to use
+     * [`adapter::StakeStrategyType::Delegate`], the funds remain in the account of
+     * the `origin`, while the pool gains the right to use these funds for staking.
      *
      * # Note
      *
@@ -7174,17 +7211,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Set the asynchronous backing parameters.
      *
-     * @param {PolkadotPrimitivesV7AsyncBackingAsyncBackingParams} new_
+     * @param {PolkadotPrimitivesV8AsyncBackingAsyncBackingParams} new_
      **/
     setAsyncBackingParams: GenericTxCall<
       Rv,
-      (new_: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetAsyncBackingParams';
-            params: { new: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams };
+            params: { new: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams };
           };
         }
       >
@@ -7193,17 +7230,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Set PVF executor parameters.
      *
-     * @param {PolkadotPrimitivesV7ExecutorParams} new_
+     * @param {PolkadotPrimitivesV8ExecutorParams} new_
      **/
     setExecutorParams: GenericTxCall<
       Rv,
-      (new_: PolkadotPrimitivesV7ExecutorParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV8ExecutorParams) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetExecutorParams';
-            params: { new: PolkadotPrimitivesV7ExecutorParams };
+            params: { new: PolkadotPrimitivesV8ExecutorParams };
           };
         }
       >
@@ -7349,17 +7386,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Set approval-voting-params.
      *
-     * @param {PolkadotPrimitivesV7ApprovalVotingParams} new_
+     * @param {PolkadotPrimitivesV8ApprovalVotingParams} new_
      **/
     setApprovalVotingParams: GenericTxCall<
       Rv,
-      (new_: PolkadotPrimitivesV7ApprovalVotingParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV8ApprovalVotingParams) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetApprovalVotingParams';
-            params: { new: PolkadotPrimitivesV7ApprovalVotingParams };
+            params: { new: PolkadotPrimitivesV8ApprovalVotingParams };
           };
         }
       >
@@ -7368,17 +7405,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Set scheduler-params.
      *
-     * @param {PolkadotPrimitivesVstagingSchedulerParams} new_
+     * @param {PolkadotPrimitivesV8SchedulerParams} new_
      **/
     setSchedulerParams: GenericTxCall<
       Rv,
-      (new_: PolkadotPrimitivesVstagingSchedulerParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV8SchedulerParams) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetSchedulerParams';
-            params: { new: PolkadotPrimitivesVstagingSchedulerParams };
+            params: { new: PolkadotPrimitivesV8SchedulerParams };
           };
         }
       >
@@ -7414,17 +7451,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Enter the paras inherent. This will process bitfields and backed candidates.
      *
-     * @param {PolkadotPrimitivesV7InherentData} data
+     * @param {PolkadotPrimitivesV8InherentData} data
      **/
     enter: GenericTxCall<
       Rv,
-      (data: PolkadotPrimitivesV7InherentData) => ChainSubmittableExtrinsic<
+      (data: PolkadotPrimitivesV8InherentData) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ParaInherent';
           palletCall: {
             name: 'Enter';
-            params: { data: PolkadotPrimitivesV7InherentData };
+            params: { data: PolkadotPrimitivesV8InherentData };
           };
         }
       >
@@ -7626,14 +7663,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Includes a statement for a PVF pre-checking vote. Potentially, finalizes the vote and
      * enacts the results if that was the last vote before achieving the supermajority.
      *
-     * @param {PolkadotPrimitivesV7PvfCheckStatement} stmt
-     * @param {PolkadotPrimitivesV7ValidatorAppSignature} signature
+     * @param {PolkadotPrimitivesV8PvfCheckStatement} stmt
+     * @param {PolkadotPrimitivesV8ValidatorAppSignature} signature
      **/
     includePvfCheckStatement: GenericTxCall<
       Rv,
       (
-        stmt: PolkadotPrimitivesV7PvfCheckStatement,
-        signature: PolkadotPrimitivesV7ValidatorAppSignature,
+        stmt: PolkadotPrimitivesV8PvfCheckStatement,
+        signature: PolkadotPrimitivesV8ValidatorAppSignature,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
@@ -7641,8 +7678,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'IncludePvfCheckStatement';
             params: {
-              stmt: PolkadotPrimitivesV7PvfCheckStatement;
-              signature: PolkadotPrimitivesV7ValidatorAppSignature;
+              stmt: PolkadotPrimitivesV8PvfCheckStatement;
+              signature: PolkadotPrimitivesV8ValidatorAppSignature;
             };
           };
         }
@@ -8074,13 +8111,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
   parasSlashing: {
     /**
      *
-     * @param {PolkadotPrimitivesV7SlashingDisputeProof} disputeProof
+     * @param {PolkadotPrimitivesV8SlashingDisputeProof} disputeProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
     reportDisputeLostUnsigned: GenericTxCall<
       Rv,
       (
-        disputeProof: PolkadotPrimitivesV7SlashingDisputeProof,
+        disputeProof: PolkadotPrimitivesV8SlashingDisputeProof,
         keyOwnerProof: SpSessionMembershipProof,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -8088,7 +8125,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ParasSlashing';
           palletCall: {
             name: 'ReportDisputeLostUnsigned';
-            params: { disputeProof: PolkadotPrimitivesV7SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+            params: { disputeProof: PolkadotPrimitivesV8SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
           };
         }
       >

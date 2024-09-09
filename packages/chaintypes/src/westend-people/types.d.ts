@@ -1448,7 +1448,7 @@ export type FrameSystemError =
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV7UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
 };
 
 export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
@@ -1461,15 +1461,15 @@ export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
 
 export type CumulusPalletParachainSystemUnincludedSegmentHrmpChannelUpdate = { msgCount: number; totalBytes: number };
 
-export type PolkadotPrimitivesV7UpgradeGoAhead = 'Abort' | 'GoAhead';
+export type PolkadotPrimitivesV8UpgradeGoAhead = 'Abort' | 'GoAhead';
 
 export type CumulusPalletParachainSystemUnincludedSegmentSegmentTracker = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   hrmpWatermark?: number | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV7UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
 };
 
-export type PolkadotPrimitivesV7PersistedValidationData = {
+export type PolkadotPrimitivesV8PersistedValidationData = {
   parentHead: PolkadotParachainPrimitivesPrimitivesHeadData;
   relayParentNumber: number;
   relayParentStorageRoot: H256;
@@ -1478,15 +1478,15 @@ export type PolkadotPrimitivesV7PersistedValidationData = {
 
 export type PolkadotParachainPrimitivesPrimitivesHeadData = Bytes;
 
-export type PolkadotPrimitivesV7UpgradeRestriction = 'Present';
+export type PolkadotPrimitivesV8UpgradeRestriction = 'Present';
 
 export type SpTrieStorageProof = { trieNodes: Array<Bytes> };
 
 export type CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot = {
   dmqMqcHead: H256;
   relayDispatchQueueRemainingCapacity: CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity;
-  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV7AbridgedHrmpChannel]>;
-  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV7AbridgedHrmpChannel]>;
+  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
+  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
 };
 
 export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity = {
@@ -1494,7 +1494,7 @@ export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRema
   remainingSize: number;
 };
 
-export type PolkadotPrimitivesV7AbridgedHrmpChannel = {
+export type PolkadotPrimitivesV8AbridgedHrmpChannel = {
   maxCapacity: number;
   maxTotalSize: number;
   maxMessageSize: number;
@@ -1503,7 +1503,7 @@ export type PolkadotPrimitivesV7AbridgedHrmpChannel = {
   mqcHead?: H256 | undefined;
 };
 
-export type PolkadotPrimitivesV7AbridgedHostConfiguration = {
+export type PolkadotPrimitivesV8AbridgedHostConfiguration = {
   maxCodeSize: number;
   maxHeadDataSize: number;
   maxUpwardQueueCount: number;
@@ -1513,10 +1513,10 @@ export type PolkadotPrimitivesV7AbridgedHostConfiguration = {
   hrmpMaxMessageNumPerCandidate: number;
   validationUpgradeCooldown: number;
   validationUpgradeDelay: number;
-  asyncBackingParams: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams;
+  asyncBackingParams: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams;
 };
 
-export type PolkadotPrimitivesV7AsyncBackingAsyncBackingParams = {
+export type PolkadotPrimitivesV8AsyncBackingAsyncBackingParams = {
   maxCandidateDepth: number;
   allowedAncestryLen: number;
 };
@@ -1544,30 +1544,7 @@ export type CumulusPalletParachainSystemCall =
    * if the appropriate time has come.
    **/
   | { name: 'SetValidationData'; params: { data: CumulusPrimitivesParachainInherentParachainInherentData } }
-  | { name: 'SudoSendUpwardMessage'; params: { message: Bytes } }
-  /**
-   * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
-   * later.
-   *
-   * The `check_version` parameter sets a boolean flag for whether or not the runtime's spec
-   * version and name should be verified on upgrade. Since the authorization only has a hash,
-   * it cannot actually perform the verification.
-   *
-   * This call requires Root origin.
-   **/
-  | { name: 'AuthorizeUpgrade'; params: { codeHash: H256; checkVersion: boolean } }
-  /**
-   * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
-   *
-   * If the authorization required a version check, this call will ensure the spec name
-   * remains unchanged and that the spec version has increased.
-   *
-   * Note that this function will not apply the new `code`, but only attempt to schedule the
-   * upgrade with the Relay Chain.
-   *
-   * All origins are allowed.
-   **/
-  | { name: 'EnactAuthorizedUpgrade'; params: { code: Bytes } };
+  | { name: 'SudoSendUpwardMessage'; params: { message: Bytes } };
 
 export type CumulusPalletParachainSystemCallLike =
   /**
@@ -1582,33 +1559,10 @@ export type CumulusPalletParachainSystemCallLike =
    * if the appropriate time has come.
    **/
   | { name: 'SetValidationData'; params: { data: CumulusPrimitivesParachainInherentParachainInherentData } }
-  | { name: 'SudoSendUpwardMessage'; params: { message: BytesLike } }
-  /**
-   * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
-   * later.
-   *
-   * The `check_version` parameter sets a boolean flag for whether or not the runtime's spec
-   * version and name should be verified on upgrade. Since the authorization only has a hash,
-   * it cannot actually perform the verification.
-   *
-   * This call requires Root origin.
-   **/
-  | { name: 'AuthorizeUpgrade'; params: { codeHash: H256; checkVersion: boolean } }
-  /**
-   * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
-   *
-   * If the authorization required a version check, this call will ensure the spec name
-   * remains unchanged and that the spec version has increased.
-   *
-   * Note that this function will not apply the new `code`, but only attempt to schedule the
-   * upgrade with the Relay Chain.
-   *
-   * All origins are allowed.
-   **/
-  | { name: 'EnactAuthorizedUpgrade'; params: { code: BytesLike } };
+  | { name: 'SudoSendUpwardMessage'; params: { message: BytesLike } };
 
 export type CumulusPrimitivesParachainInherentParachainInherentData = {
-  validationData: PolkadotPrimitivesV7PersistedValidationData;
+  validationData: PolkadotPrimitivesV8PersistedValidationData;
   relayChainState: SpTrieStorageProof;
   downwardMessages: Array<PolkadotCorePrimitivesInboundDownwardMessage>;
   horizontalMessages: Array<[PolkadotParachainPrimitivesPrimitivesId, Array<PolkadotCorePrimitivesInboundHrmpMessage>]>;
@@ -4172,7 +4126,7 @@ export type PalletIdentityCall =
    * - `max_fee`: The maximum fee that may be paid. This should just be auto-populated as:
    *
    * ```nocompile
-   * Self::registrars().get(reg_index).unwrap().fee
+   * Registrars::<T>::get().get(reg_index).unwrap().fee
    * ```
    *
    * Emits `JudgementRequested` if successful.
@@ -4404,7 +4358,7 @@ export type PalletIdentityCallLike =
    * - `max_fee`: The maximum fee that may be paid. This should just be auto-populated as:
    *
    * ```nocompile
-   * Self::registrars().get(reg_index).unwrap().fee
+   * Registrars::<T>::get().get(reg_index).unwrap().fee
    * ```
    *
    * Emits `JudgementRequested` if successful.

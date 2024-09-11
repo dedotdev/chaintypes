@@ -911,13 +911,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/types-support@npm:^12.4.2":
-  version: 12.4.2
-  resolution: "@polkadot/types-support@npm:12.4.2"
+"@polkadot/types-support@npm:^13.0.1":
+  version: 13.0.1
+  resolution: "@polkadot/types-support@npm:13.0.1"
   dependencies:
     "@polkadot/util": "npm:^13.0.2"
-    tslib: "npm:^2.6.3"
-  checksum: 10/9ceb96f39b8eb1b29fc8cc69572f6d9f45406be99f6a8e4f2c0f3cea4f01d2e8af78184a226e21fa6ca6688a5b26b5b1b87f6a24f12fef7a981f31df1826f344
+    tslib: "npm:^2.7.0"
+  checksum: 10/38776c5a54deee171a4e84b1d05fbab31c175d8931b7597ea6366bcff9083886998a6b0d6ed972392eaff62d3033f6b0ad5359dfdd317fed3dfc0bc8cfbc507e
   languageName: node
   linkType: hard
 
@@ -2062,7 +2062,7 @@ __metadata:
   resolution: "dedot.dev@workspace:."
   dependencies:
     "@dedot/codegen": "npm:^0.5.0"
-    "@polkadot/types-support": "npm:^12.4.2"
+    "@polkadot/types-support": "npm:^13.0.1"
     "@trivago/prettier-plugin-sort-imports": "npm:^4.1.1"
     husky: "npm:^8.0.3"
     lerna: "npm:^7.4.2"
@@ -5865,7 +5865,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^2.6.3":
+"tslib@npm:^2.7.0":
   version: 2.7.0
   resolution: "tslib@npm:2.7.0"
   checksum: 10/9a5b47ddac65874fa011c20ff76db69f97cf90c78cff5934799ab8894a5342db2d17b4e7613a087046bc1d133d21547ddff87ac558abeec31ffa929c88b7fce6

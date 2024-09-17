@@ -33,10 +33,10 @@ import type {
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
-  PolkadotPrimitivesV6CandidateReceipt,
+  PolkadotPrimitivesV7CandidateReceipt,
   PolkadotParachainPrimitivesPrimitivesHeadData,
-  PolkadotPrimitivesV6CoreIndex,
-  PolkadotPrimitivesV6GroupIndex,
+  PolkadotPrimitivesV7CoreIndex,
+  PolkadotPrimitivesV7GroupIndex,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
@@ -132,6 +132,26 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * Set a retry configuration for some task.
+     **/
+    RetrySet: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetrySet',
+      { task: [number, number]; id?: FixedBytes<32> | undefined; period: number; retries: number }
+    >;
+
+    /**
+     * Cancel a retry configuration for some task.
+     **/
+    RetryCancelled: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetryCancelled',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
      * The call for the provided hash was not found so the task has been aborted.
      **/
     CallUnavailable: GenericPalletEvent<
@@ -148,6 +168,17 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'Scheduler',
       'PeriodicFailed',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
+     * The given task was unable to be retried since the agenda is full at that block or there
+     * was not enough weight to reschedule it.
+     **/
+    RetryFailed: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetryFailed',
       { task: [number, number]; id?: FixedBytes<32> | undefined }
     >;
 
@@ -561,11 +592,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
    **/
   treasury: {
     /**
-     * New proposal.
-     **/
-    Proposed: GenericPalletEvent<Rv, 'Treasury', 'Proposed', { proposalIndex: number }>;
-
-    /**
      * We have ended a spend period and will now allocate funds.
      **/
     Spending: GenericPalletEvent<Rv, 'Treasury', 'Spending', { budgetRemaining: bigint }>;
@@ -579,11 +605,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Awarded',
       { proposalIndex: number; award: bigint; account: AccountId32 }
     >;
-
-    /**
-     * A proposal was rejected; funds were slashed.
-     **/
-    Rejected: GenericPalletEvent<Rv, 'Treasury', 'Rejected', { proposalIndex: number; slashed: bigint }>;
 
     /**
      * Some of our funds have been burnt.
@@ -1116,142 +1137,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
-   * Pallet `Identity`'s events
-   **/
-  identity: {
-    /**
-     * A name was set or reset (which will remove all judgements).
-     **/
-    IdentitySet: GenericPalletEvent<Rv, 'Identity', 'IdentitySet', { who: AccountId32 }>;
-
-    /**
-     * A name was cleared, and the given balance returned.
-     **/
-    IdentityCleared: GenericPalletEvent<Rv, 'Identity', 'IdentityCleared', { who: AccountId32; deposit: bigint }>;
-
-    /**
-     * A name was removed and the given balance slashed.
-     **/
-    IdentityKilled: GenericPalletEvent<Rv, 'Identity', 'IdentityKilled', { who: AccountId32; deposit: bigint }>;
-
-    /**
-     * A judgement was asked from a registrar.
-     **/
-    JudgementRequested: GenericPalletEvent<
-      Rv,
-      'Identity',
-      'JudgementRequested',
-      { who: AccountId32; registrarIndex: number }
-    >;
-
-    /**
-     * A judgement request was retracted.
-     **/
-    JudgementUnrequested: GenericPalletEvent<
-      Rv,
-      'Identity',
-      'JudgementUnrequested',
-      { who: AccountId32; registrarIndex: number }
-    >;
-
-    /**
-     * A judgement was given by a registrar.
-     **/
-    JudgementGiven: GenericPalletEvent<
-      Rv,
-      'Identity',
-      'JudgementGiven',
-      { target: AccountId32; registrarIndex: number }
-    >;
-
-    /**
-     * A registrar was added.
-     **/
-    RegistrarAdded: GenericPalletEvent<Rv, 'Identity', 'RegistrarAdded', { registrarIndex: number }>;
-
-    /**
-     * A sub-identity was added to an identity and the deposit paid.
-     **/
-    SubIdentityAdded: GenericPalletEvent<
-      Rv,
-      'Identity',
-      'SubIdentityAdded',
-      { sub: AccountId32; main: AccountId32; deposit: bigint }
-    >;
-
-    /**
-     * A sub-identity was removed from an identity and the deposit freed.
-     **/
-    SubIdentityRemoved: GenericPalletEvent<
-      Rv,
-      'Identity',
-      'SubIdentityRemoved',
-      { sub: AccountId32; main: AccountId32; deposit: bigint }
-    >;
-
-    /**
-     * A sub-identity was cleared, and the given deposit repatriated from the
-     * main identity account to the sub-identity account.
-     **/
-    SubIdentityRevoked: GenericPalletEvent<
-      Rv,
-      'Identity',
-      'SubIdentityRevoked',
-      { sub: AccountId32; main: AccountId32; deposit: bigint }
-    >;
-
-    /**
-     * A username authority was added.
-     **/
-    AuthorityAdded: GenericPalletEvent<Rv, 'Identity', 'AuthorityAdded', { authority: AccountId32 }>;
-
-    /**
-     * A username authority was removed.
-     **/
-    AuthorityRemoved: GenericPalletEvent<Rv, 'Identity', 'AuthorityRemoved', { authority: AccountId32 }>;
-
-    /**
-     * A username was set for `who`.
-     **/
-    UsernameSet: GenericPalletEvent<Rv, 'Identity', 'UsernameSet', { who: AccountId32; username: Bytes }>;
-
-    /**
-     * A username was queued, but `who` must accept it prior to `expiration`.
-     **/
-    UsernameQueued: GenericPalletEvent<
-      Rv,
-      'Identity',
-      'UsernameQueued',
-      { who: AccountId32; username: Bytes; expiration: number }
-    >;
-
-    /**
-     * A queued username passed its expiration without being claimed and was removed.
-     **/
-    PreapprovalExpired: GenericPalletEvent<Rv, 'Identity', 'PreapprovalExpired', { whose: AccountId32 }>;
-
-    /**
-     * A username was set as a primary and can be looked up from `who`.
-     **/
-    PrimaryUsernameSet: GenericPalletEvent<Rv, 'Identity', 'PrimaryUsernameSet', { who: AccountId32; username: Bytes }>;
-
-    /**
-     * A dangling username (as in, a username corresponding to an account that has removed its
-     * identity) has been removed.
-     **/
-    DanglingUsernameRemoved: GenericPalletEvent<
-      Rv,
-      'Identity',
-      'DanglingUsernameRemoved',
-      { who: AccountId32; username: Bytes }
-    >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
    * Pallet `Proxy`'s events
    **/
   proxy: {
@@ -1472,7 +1357,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * A solution was stored with the given compute.
      *
      * The `origin` indicates the origin of the solution. If `origin` is `Some(AccountId)`,
-     * the stored solution was submited in the signed phase by a miner with the `AccountId`.
+     * the stored solution was submitted in the signed phase by a miner with the `AccountId`.
      * Otherwise, the solution was stored either during the unsigned phase or by
      * `T::ForceOrigin`. The `bool` is `true` when a previous solution was ejected to make
      * room for this one.
@@ -1790,10 +1675,10 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateBacked',
       [
-        PolkadotPrimitivesV6CandidateReceipt,
+        PolkadotPrimitivesV7CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV6CoreIndex,
-        PolkadotPrimitivesV6GroupIndex,
+        PolkadotPrimitivesV7CoreIndex,
+        PolkadotPrimitivesV7GroupIndex,
       ]
     >;
 
@@ -1805,10 +1690,10 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateIncluded',
       [
-        PolkadotPrimitivesV6CandidateReceipt,
+        PolkadotPrimitivesV7CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV6CoreIndex,
-        PolkadotPrimitivesV6GroupIndex,
+        PolkadotPrimitivesV7CoreIndex,
+        PolkadotPrimitivesV7GroupIndex,
       ]
     >;
 
@@ -1820,9 +1705,9 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateTimedOut',
       [
-        PolkadotPrimitivesV6CandidateReceipt,
+        PolkadotPrimitivesV7CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV6CoreIndex,
+        PolkadotPrimitivesV7CoreIndex,
       ]
     >;
 
@@ -2045,6 +1930,30 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * number of the child of the last known valid block in the chain.
      **/
     Revert: GenericPalletEvent<Rv, 'ParasDisputes', 'Revert', number>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `OnDemand`'s events
+   **/
+  onDemand: {
+    /**
+     * An order was placed at some spot price amount by orderer ordered_by
+     **/
+    OnDemandOrderPlaced: GenericPalletEvent<
+      Rv,
+      'OnDemand',
+      'OnDemandOrderPlaced',
+      { paraId: PolkadotParachainPrimitivesPrimitivesId; spotPrice: bigint; orderedBy: AccountId32 }
+    >;
+
+    /**
+     * The value of the spot price has likely changed
+     **/
+    SpotPriceSet: GenericPalletEvent<Rv, 'OnDemand', 'SpotPriceSet', { spotPrice: bigint }>;
 
     /**
      * Generic pallet event
@@ -2281,6 +2190,25 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'AddedToNewRaise',
       { paraId: PolkadotParachainPrimitivesPrimitivesId }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Coretime`'s events
+   **/
+  coretime: {
+    /**
+     * The broker chain has asked for revenue information for a specific block.
+     **/
+    RevenueInfoRequested: GenericPalletEvent<Rv, 'Coretime', 'RevenueInfoRequested', { when: number }>;
+
+    /**
+     * A core has received a new assignment from the broker chain.
+     **/
+    CoreAssigned: GenericPalletEvent<Rv, 'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV7CoreIndex }>;
 
     /**
      * Generic pallet event
@@ -2747,31 +2675,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'AssetRate',
       'AssetRateUpdated',
       { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; old: FixedU128; new: FixedU128 }
-    >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
-   * Pallet `IdentityMigrator`'s events
-   **/
-  identityMigrator: {
-    /**
-     * The identity and all sub accounts were reaped for `who`.
-     **/
-    IdentityReaped: GenericPalletEvent<Rv, 'IdentityMigrator', 'IdentityReaped', { who: AccountId32 }>;
-
-    /**
-     * The deposits held for `who` were updated. `identity` is the new deposit held for
-     * identity info, and `subs` is the new deposit held for the sub-accounts.
-     **/
-    DepositUpdated: GenericPalletEvent<
-      Rv,
-      'IdentityMigrator',
-      'DepositUpdated',
-      { who: AccountId32; identity: bigint; subs: bigint }
     >;
 
     /**

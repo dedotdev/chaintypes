@@ -13,53 +13,55 @@ import type {
   BitSequence,
   Bytes,
   BytesLike,
+  AccountId32,
 } from 'dedot/codecs';
 import type {
   SpRuntimeBlock,
+  SpRuntimeExtrinsicInclusionMode,
   SpCoreOpaqueMetadata,
   SpRuntimeTransactionValidityTransactionValidityError,
   SpInherentsInherentData,
   SpInherentsCheckInherentsResult,
   SpRuntimeTransactionValidityValidTransaction,
   SpRuntimeTransactionValidityTransactionSource,
-  PolkadotPrimitivesV6ValidatorAppPublic,
-  PolkadotPrimitivesV6ValidatorIndex,
-  PolkadotPrimitivesV6GroupRotationInfo,
-  PolkadotPrimitivesV6CoreState,
-  PolkadotPrimitivesV6PersistedValidationData,
+  PolkadotPrimitivesV7ValidatorAppPublic,
+  PolkadotPrimitivesV7ValidatorIndex,
+  PolkadotPrimitivesV7GroupRotationInfo,
+  PolkadotPrimitivesV7CoreState,
+  PolkadotPrimitivesV7PersistedValidationData,
   PolkadotParachainPrimitivesPrimitivesId,
-  PolkadotPrimitivesV6OccupiedCoreAssumption,
+  PolkadotPrimitivesV7OccupiedCoreAssumption,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
-  PolkadotPrimitivesV6CandidateCommitments,
+  PolkadotPrimitivesV7CandidateCommitments,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
-  PolkadotPrimitivesV6CommittedCandidateReceipt,
-  PolkadotPrimitivesV6CandidateEvent,
+  PolkadotPrimitivesV7CommittedCandidateReceipt,
+  PolkadotPrimitivesV7CandidateEvent,
   PolkadotCorePrimitivesInboundDownwardMessage,
   PolkadotCorePrimitivesInboundHrmpMessage,
-  PolkadotPrimitivesV6ScrapedOnChainVotes,
-  PolkadotPrimitivesV6SessionInfo,
-  PolkadotPrimitivesV6PvfCheckStatement,
-  PolkadotPrimitivesV6ValidatorAppSignature,
+  PolkadotPrimitivesV7ScrapedOnChainVotes,
+  PolkadotPrimitivesV7SessionInfo,
+  PolkadotPrimitivesV7PvfCheckStatement,
+  PolkadotPrimitivesV7ValidatorAppSignature,
   PolkadotCorePrimitivesCandidateHash,
-  PolkadotPrimitivesV6DisputeState,
-  PolkadotPrimitivesV6ExecutorParams,
-  PolkadotPrimitivesV6SlashingPendingSlashes,
-  PolkadotPrimitivesV6SlashingOpaqueKeyOwnershipProof,
-  PolkadotPrimitivesV6SlashingDisputeProof,
-  PolkadotPrimitivesV6AsyncBackingBackingState,
-  PolkadotPrimitivesV6AsyncBackingAsyncBackingParams,
-  PolkadotPrimitivesVstagingApprovalVotingParams,
+  PolkadotPrimitivesV7DisputeState,
+  PolkadotPrimitivesV7ExecutorParams,
+  PolkadotPrimitivesV7SlashingPendingSlashes,
+  PolkadotPrimitivesV7SlashingOpaqueKeyOwnershipProof,
+  PolkadotPrimitivesV7SlashingDisputeProof,
+  PolkadotPrimitivesV7AsyncBackingBackingState,
+  PolkadotPrimitivesV7AsyncBackingAsyncBackingParams,
+  PolkadotPrimitivesV7ApprovalVotingParams,
+  PolkadotPrimitivesV7CoreIndex,
   SpConsensusBeefyValidatorSet,
-  SpConsensusBeefyEquivocationProof,
-  SpConsensusBeefyOpaqueKeyOwnershipProof,
+  SpConsensusBeefyDoubleVotingProof,
+  SpRuntimeOpaqueValue,
   SpConsensusBeefyEcdsaCryptoPublic,
   SpMmrPrimitivesError,
   SpMmrPrimitivesEncodableOpaqueLeaf,
-  SpMmrPrimitivesProof,
+  SpMmrPrimitivesLeafProof,
   SpConsensusBeefyMmrBeefyAuthoritySet,
   SpConsensusGrandpaAppPublic,
   SpConsensusGrandpaEquivocationProof,
-  SpConsensusGrandpaOpaqueKeyOwnershipProof,
   SpConsensusBabeBabeConfiguration,
   SpConsensusSlotsSlot,
   SpConsensusBabeEpoch,
@@ -72,6 +74,16 @@ import type {
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
   PolkadotRuntimeRuntimeCallLike,
+  XcmVersionedAssetId,
+  XcmRuntimeApisFeesError,
+  XcmVersionedXcm,
+  XcmVersionedAssets,
+  XcmVersionedLocation,
+  XcmRuntimeApisDryRunCallDryRunEffects,
+  XcmRuntimeApisDryRunError,
+  PolkadotRuntimeOriginCaller,
+  XcmRuntimeApisDryRunXcmDryRunEffects,
+  XcmRuntimeApisConversionsError,
 } from './types';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
@@ -95,12 +107,12 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     executeBlock: GenericRuntimeApiMethod<Rv, (block: SpRuntimeBlock) => Promise<[]>>;
 
     /**
-     * Initialize a block with the given header.
+     * Initialize a block with the given header and return the runtime executive mode.
      *
      * @callname: Core_initialize_block
      * @param {Header} header
      **/
-    initializeBlock: GenericRuntimeApiMethod<Rv, (header: Header) => Promise<[]>>;
+    initializeBlock: GenericRuntimeApiMethod<Rv, (header: Header) => Promise<SpRuntimeExtrinsicInclusionMode>>;
 
     /**
      * Generic runtime api call
@@ -229,6 +241,51 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     balanceToPoints: GenericRuntimeApiMethod<Rv, (poolId: number, newFunds: bigint) => Promise<bigint>>;
 
     /**
+     * Returns the pending slash for a given pool.
+     *
+     * @callname: NominationPoolsApi_pool_pending_slash
+     * @param {number} pool_id
+     **/
+    poolPendingSlash: GenericRuntimeApiMethod<Rv, (poolId: number) => Promise<bigint>>;
+
+    /**
+     * Returns the pending slash for a given pool member.
+     *
+     * @callname: NominationPoolsApi_member_pending_slash
+     * @param {AccountId32Like} member
+     **/
+    memberPendingSlash: GenericRuntimeApiMethod<Rv, (member: AccountId32Like) => Promise<bigint>>;
+
+    /**
+     * Returns true if the pool with `pool_id` needs migration.
+     *
+     * This can happen when the `pallet-nomination-pools` has switched to using strategy
+     * [`DelegateStake`](pallet_nomination_pools::adapter::DelegateStake) but the pool
+     * still has funds that were staked using the older strategy
+     * [TransferStake](pallet_nomination_pools::adapter::TransferStake). Use
+     * [`migrate_pool_to_delegate_stake`](pallet_nomination_pools::Call::migrate_pool_to_delegate_stake)
+     * to migrate the pool.
+     *
+     * @callname: NominationPoolsApi_pool_needs_delegate_migration
+     * @param {number} pool_id
+     **/
+    poolNeedsDelegateMigration: GenericRuntimeApiMethod<Rv, (poolId: number) => Promise<boolean>>;
+
+    /**
+     * Returns true if the delegated funds of the pool `member` needs migration.
+     *
+     * Once a pool has successfully migrated to the strategy
+     * [`DelegateStake`](pallet_nomination_pools::adapter::DelegateStake), the funds of the
+     * member can be migrated from pool account to the member's account. Use
+     * [`migrate_delegation`](pallet_nomination_pools::Call::migrate_delegation)
+     * to migrate the funds of the pool member.
+     *
+     * @callname: NominationPoolsApi_member_needs_delegate_migration
+     * @param {AccountId32Like} member
+     **/
+    memberNeedsDelegateMigration: GenericRuntimeApiMethod<Rv, (member: AccountId32Like) => Promise<boolean>>;
+
+    /**
      * Generic runtime api call
      **/
     [method: string]: GenericRuntimeApiMethod<Rv>;
@@ -330,7 +387,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_validators
      **/
-    validators: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesV6ValidatorAppPublic>>>;
+    validators: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesV7ValidatorAppPublic>>>;
 
     /**
      * Returns the validator groups and rotation info localized based on the hypothetical child
@@ -341,7 +398,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     validatorGroups: GenericRuntimeApiMethod<
       Rv,
-      () => Promise<[Array<Array<PolkadotPrimitivesV6ValidatorIndex>>, PolkadotPrimitivesV6GroupRotationInfo]>
+      () => Promise<[Array<Array<PolkadotPrimitivesV7ValidatorIndex>>, PolkadotPrimitivesV7GroupRotationInfo]>
     >;
 
     /**
@@ -350,7 +407,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_availability_cores
      **/
-    availabilityCores: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesV6CoreState>>>;
+    availabilityCores: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesV7CoreState>>>;
 
     /**
      * Yields the persisted validation data for the given `ParaId` along with an assumption that
@@ -361,14 +418,14 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_persisted_validation_data
      * @param {PolkadotParachainPrimitivesPrimitivesId} para_id
-     * @param {PolkadotPrimitivesV6OccupiedCoreAssumption} assumption
+     * @param {PolkadotPrimitivesV7OccupiedCoreAssumption} assumption
      **/
     persistedValidationData: GenericRuntimeApiMethod<
       Rv,
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-        assumption: PolkadotPrimitivesV6OccupiedCoreAssumption,
-      ) => Promise<PolkadotPrimitivesV6PersistedValidationData | undefined>
+        assumption: PolkadotPrimitivesV7OccupiedCoreAssumption,
+      ) => Promise<PolkadotPrimitivesV7PersistedValidationData | undefined>
     >;
 
     /**
@@ -386,7 +443,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
         paraId: PolkadotParachainPrimitivesPrimitivesId,
         expectedPersistedValidationDataHash: H256,
       ) => Promise<
-        | [PolkadotPrimitivesV6PersistedValidationData, PolkadotParachainPrimitivesPrimitivesValidationCodeHash]
+        | [PolkadotPrimitivesV7PersistedValidationData, PolkadotParachainPrimitivesPrimitivesValidationCodeHash]
         | undefined
       >
     >;
@@ -396,13 +453,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_check_validation_outputs
      * @param {PolkadotParachainPrimitivesPrimitivesId} para_id
-     * @param {PolkadotPrimitivesV6CandidateCommitments} outputs
+     * @param {PolkadotPrimitivesV7CandidateCommitments} outputs
      **/
     checkValidationOutputs: GenericRuntimeApiMethod<
       Rv,
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-        outputs: PolkadotPrimitivesV6CandidateCommitments,
+        outputs: PolkadotPrimitivesV7CandidateCommitments,
       ) => Promise<boolean>
     >;
 
@@ -423,13 +480,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_validation_code
      * @param {PolkadotParachainPrimitivesPrimitivesId} para_id
-     * @param {PolkadotPrimitivesV6OccupiedCoreAssumption} assumption
+     * @param {PolkadotPrimitivesV7OccupiedCoreAssumption} assumption
      **/
     validationCode: GenericRuntimeApiMethod<
       Rv,
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-        assumption: PolkadotPrimitivesV6OccupiedCoreAssumption,
+        assumption: PolkadotPrimitivesV7OccupiedCoreAssumption,
       ) => Promise<PolkadotParachainPrimitivesPrimitivesValidationCode | undefined>
     >;
 
@@ -444,7 +501,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       Rv,
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-      ) => Promise<PolkadotPrimitivesV6CommittedCandidateReceipt | undefined>
+      ) => Promise<PolkadotPrimitivesV7CommittedCandidateReceipt | undefined>
     >;
 
     /**
@@ -452,7 +509,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_candidate_events
      **/
-    candidateEvents: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesV6CandidateEvent>>>;
+    candidateEvents: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesV7CandidateEvent>>>;
 
     /**
      * Get all the pending inbound messages in the downward message queue for a para.
@@ -499,7 +556,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_on_chain_votes
      **/
-    onChainVotes: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotPrimitivesV6ScrapedOnChainVotes | undefined>>;
+    onChainVotes: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotPrimitivesV7ScrapedOnChainVotes | undefined>>;
 
     /**
      * Get the session info for the given session, if stored.
@@ -509,7 +566,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: ParachainHost_session_info
      * @param {number} index
      **/
-    sessionInfo: GenericRuntimeApiMethod<Rv, (index: number) => Promise<PolkadotPrimitivesV6SessionInfo | undefined>>;
+    sessionInfo: GenericRuntimeApiMethod<Rv, (index: number) => Promise<PolkadotPrimitivesV7SessionInfo | undefined>>;
 
     /**
      * Submits a PVF pre-checking statement into the transaction pool.
@@ -517,12 +574,12 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * NOTE: This function is only available since parachain host version 2.
      *
      * @callname: ParachainHost_submit_pvf_check_statement
-     * @param {PolkadotPrimitivesV6PvfCheckStatement} stmt
-     * @param {PolkadotPrimitivesV6ValidatorAppSignature} signature
+     * @param {PolkadotPrimitivesV7PvfCheckStatement} stmt
+     * @param {PolkadotPrimitivesV7ValidatorAppSignature} signature
      **/
     submitPvfCheckStatement: GenericRuntimeApiMethod<
       Rv,
-      (stmt: PolkadotPrimitivesV6PvfCheckStatement, signature: PolkadotPrimitivesV6ValidatorAppSignature) => Promise<[]>
+      (stmt: PolkadotPrimitivesV7PvfCheckStatement, signature: PolkadotPrimitivesV7ValidatorAppSignature) => Promise<[]>
     >;
 
     /**
@@ -544,13 +601,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_validation_code_hash
      * @param {PolkadotParachainPrimitivesPrimitivesId} para_id
-     * @param {PolkadotPrimitivesV6OccupiedCoreAssumption} assumption
+     * @param {PolkadotPrimitivesV7OccupiedCoreAssumption} assumption
      **/
     validationCodeHash: GenericRuntimeApiMethod<
       Rv,
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-        assumption: PolkadotPrimitivesV6OccupiedCoreAssumption,
+        assumption: PolkadotPrimitivesV7OccupiedCoreAssumption,
       ) => Promise<PolkadotParachainPrimitivesPrimitivesValidationCodeHash | undefined>
     >;
 
@@ -561,7 +618,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     disputes: GenericRuntimeApiMethod<
       Rv,
-      () => Promise<Array<[number, PolkadotCorePrimitivesCandidateHash, PolkadotPrimitivesV6DisputeState]>>
+      () => Promise<Array<[number, PolkadotCorePrimitivesCandidateHash, PolkadotPrimitivesV7DisputeState]>>
     >;
 
     /**
@@ -572,7 +629,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     sessionExecutorParams: GenericRuntimeApiMethod<
       Rv,
-      (sessionIndex: number) => Promise<PolkadotPrimitivesV6ExecutorParams | undefined>
+      (sessionIndex: number) => Promise<PolkadotPrimitivesV7ExecutorParams | undefined>
     >;
 
     /**
@@ -583,7 +640,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     unappliedSlashes: GenericRuntimeApiMethod<
       Rv,
-      () => Promise<Array<[number, PolkadotCorePrimitivesCandidateHash, PolkadotPrimitivesV6SlashingPendingSlashes]>>
+      () => Promise<Array<[number, PolkadotCorePrimitivesCandidateHash, PolkadotPrimitivesV7SlashingPendingSlashes]>>
     >;
 
     /**
@@ -591,13 +648,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * NOTE: This function is only available since parachain host version 5.
      *
      * @callname: ParachainHost_key_ownership_proof
-     * @param {PolkadotPrimitivesV6ValidatorAppPublic} validator_id
+     * @param {PolkadotPrimitivesV7ValidatorAppPublic} validator_id
      **/
     keyOwnershipProof: GenericRuntimeApiMethod<
       Rv,
       (
-        validatorId: PolkadotPrimitivesV6ValidatorAppPublic,
-      ) => Promise<PolkadotPrimitivesV6SlashingOpaqueKeyOwnershipProof | undefined>
+        validatorId: PolkadotPrimitivesV7ValidatorAppPublic,
+      ) => Promise<PolkadotPrimitivesV7SlashingOpaqueKeyOwnershipProof | undefined>
     >;
 
     /**
@@ -606,14 +663,14 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * NOTE: This function is only available since parachain host version 5.
      *
      * @callname: ParachainHost_submit_report_dispute_lost
-     * @param {PolkadotPrimitivesV6SlashingDisputeProof} dispute_proof
-     * @param {PolkadotPrimitivesV6SlashingOpaqueKeyOwnershipProof} key_ownership_proof
+     * @param {PolkadotPrimitivesV7SlashingDisputeProof} dispute_proof
+     * @param {PolkadotPrimitivesV7SlashingOpaqueKeyOwnershipProof} key_ownership_proof
      **/
     submitReportDisputeLost: GenericRuntimeApiMethod<
       Rv,
       (
-        disputeProof: PolkadotPrimitivesV6SlashingDisputeProof,
-        keyOwnershipProof: PolkadotPrimitivesV6SlashingOpaqueKeyOwnershipProof,
+        disputeProof: PolkadotPrimitivesV7SlashingDisputeProof,
+        keyOwnershipProof: PolkadotPrimitivesV7SlashingOpaqueKeyOwnershipProof,
       ) => Promise<[] | undefined>
     >;
 
@@ -635,7 +692,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       Rv,
       (
         undefined: PolkadotParachainPrimitivesPrimitivesId,
-      ) => Promise<PolkadotPrimitivesV6AsyncBackingBackingState | undefined>
+      ) => Promise<PolkadotPrimitivesV7AsyncBackingBackingState | undefined>
     >;
 
     /**
@@ -643,14 +700,14 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_async_backing_params
      **/
-    asyncBackingParams: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotPrimitivesV6AsyncBackingAsyncBackingParams>>;
+    asyncBackingParams: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotPrimitivesV7AsyncBackingAsyncBackingParams>>;
 
     /**
      * Returns a list of all disabled validators at the given block.
      *
      * @callname: ParachainHost_disabled_validators
      **/
-    disabledValidators: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesV6ValidatorIndex>>>;
+    disabledValidators: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesV7ValidatorIndex>>>;
 
     /**
      * Get node features.
@@ -665,7 +722,28 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_approval_voting_params
      **/
-    approvalVotingParams: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotPrimitivesVstagingApprovalVotingParams>>;
+    approvalVotingParams: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotPrimitivesV7ApprovalVotingParams>>;
+
+    /**
+     * Claim queue
+     *
+     * @callname: ParachainHost_claim_queue
+     **/
+    claimQueue: GenericRuntimeApiMethod<
+      Rv,
+      () => Promise<Array<[PolkadotPrimitivesV7CoreIndex, Array<PolkadotParachainPrimitivesPrimitivesId>]>>
+    >;
+
+    /**
+     * Elastic scaling support
+     *
+     * @callname: ParachainHost_candidates_pending_availability
+     * @param {PolkadotParachainPrimitivesPrimitivesId} para_id
+     **/
+    candidatesPendingAvailability: GenericRuntimeApiMethod<
+      Rv,
+      (paraId: PolkadotParachainPrimitivesPrimitivesId) => Promise<Array<PolkadotPrimitivesV7CommittedCandidateReceipt>>
+    >;
 
     /**
      * Generic runtime api call
@@ -701,14 +779,14 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * hardcoded to return `None`). Only useful in an offchain context.
      *
      * @callname: BeefyApi_submit_report_equivocation_unsigned_extrinsic
-     * @param {SpConsensusBeefyEquivocationProof} equivocation_proof
-     * @param {SpConsensusBeefyOpaqueKeyOwnershipProof} key_owner_proof
+     * @param {SpConsensusBeefyDoubleVotingProof} equivocation_proof
+     * @param {SpRuntimeOpaqueValue} key_owner_proof
      **/
     submitReportEquivocationUnsignedExtrinsic: GenericRuntimeApiMethod<
       Rv,
       (
-        equivocationProof: SpConsensusBeefyEquivocationProof,
-        keyOwnerProof: SpConsensusBeefyOpaqueKeyOwnershipProof,
+        equivocationProof: SpConsensusBeefyDoubleVotingProof,
+        keyOwnerProof: SpRuntimeOpaqueValue,
       ) => Promise<[] | undefined>
     >;
 
@@ -731,10 +809,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     generateKeyOwnershipProof: GenericRuntimeApiMethod<
       Rv,
-      (
-        setId: bigint,
-        authorityId: SpConsensusBeefyEcdsaCryptoPublic,
-      ) => Promise<SpConsensusBeefyOpaqueKeyOwnershipProof | undefined>
+      (setId: bigint, authorityId: SpConsensusBeefyEcdsaCryptoPublic) => Promise<SpRuntimeOpaqueValue | undefined>
     >;
 
     /**
@@ -773,7 +848,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       (
         blockNumbers: Array<number>,
         bestKnownBlockNumber?: number | undefined,
-      ) => Promise<Result<[Array<SpMmrPrimitivesEncodableOpaqueLeaf>, SpMmrPrimitivesProof], SpMmrPrimitivesError>>
+      ) => Promise<Result<[Array<SpMmrPrimitivesEncodableOpaqueLeaf>, SpMmrPrimitivesLeafProof], SpMmrPrimitivesError>>
     >;
 
     /**
@@ -781,17 +856,17 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * Note this function will use on-chain MMR root hash and check if the proof matches the hash.
      * Note, the leaves should be sorted such that corresponding leaves and leaf indices have the
-     * same position in both the `leaves` vector and the `leaf_indices` vector contained in the [Proof]
+     * same position in both the `leaves` vector and the `leaf_indices` vector contained in the [LeafProof]
      *
      * @callname: MmrApi_verify_proof
      * @param {Array<SpMmrPrimitivesEncodableOpaqueLeaf>} leaves
-     * @param {SpMmrPrimitivesProof} proof
+     * @param {SpMmrPrimitivesLeafProof} proof
      **/
     verifyProof: GenericRuntimeApiMethod<
       Rv,
       (
         leaves: Array<SpMmrPrimitivesEncodableOpaqueLeaf>,
-        proof: SpMmrPrimitivesProof,
+        proof: SpMmrPrimitivesLeafProof,
       ) => Promise<Result<[], SpMmrPrimitivesError>>
     >;
 
@@ -802,19 +877,19 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * proof is verified against given MMR root hash.
      *
      * Note, the leaves should be sorted such that corresponding leaves and leaf indices have the
-     * same position in both the `leaves` vector and the `leaf_indices` vector contained in the [Proof]
+     * same position in both the `leaves` vector and the `leaf_indices` vector contained in the [LeafProof]
      *
      * @callname: MmrApi_verify_proof_stateless
      * @param {H256} root
      * @param {Array<SpMmrPrimitivesEncodableOpaqueLeaf>} leaves
-     * @param {SpMmrPrimitivesProof} proof
+     * @param {SpMmrPrimitivesLeafProof} proof
      **/
     verifyProofStateless: GenericRuntimeApiMethod<
       Rv,
       (
         root: H256,
         leaves: Array<SpMmrPrimitivesEncodableOpaqueLeaf>,
-        proof: SpMmrPrimitivesProof,
+        proof: SpMmrPrimitivesLeafProof,
       ) => Promise<Result<[], SpMmrPrimitivesError>>
     >;
 
@@ -874,13 +949,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: GrandpaApi_submit_report_equivocation_unsigned_extrinsic
      * @param {SpConsensusGrandpaEquivocationProof} equivocation_proof
-     * @param {SpConsensusGrandpaOpaqueKeyOwnershipProof} key_owner_proof
+     * @param {SpRuntimeOpaqueValue} key_owner_proof
      **/
     submitReportEquivocationUnsignedExtrinsic: GenericRuntimeApiMethod<
       Rv,
       (
         equivocationProof: SpConsensusGrandpaEquivocationProof,
-        keyOwnerProof: SpConsensusGrandpaOpaqueKeyOwnershipProof,
+        keyOwnerProof: SpRuntimeOpaqueValue,
       ) => Promise<[] | undefined>
     >;
 
@@ -903,10 +978,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     generateKeyOwnershipProof: GenericRuntimeApiMethod<
       Rv,
-      (
-        setId: bigint,
-        authorityId: SpConsensusGrandpaAppPublic,
-      ) => Promise<SpConsensusGrandpaOpaqueKeyOwnershipProof | undefined>
+      (setId: bigint, authorityId: SpConsensusGrandpaAppPublic) => Promise<SpRuntimeOpaqueValue | undefined>
     >;
 
     /**
@@ -1170,32 +1242,192 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
+   * @runtimeapi: XcmPaymentApi - 0x6ff52ee858e6c5bd
+   **/
+  xcmPaymentApi: {
+    /**
+     * Returns a list of acceptable payment assets.
+     *
+     * # Arguments
+     *
+     * * `xcm_version`: Version.
+     *
+     * @callname: XcmPaymentApi_query_acceptable_payment_assets
+     * @param {number} xcm_version
+     **/
+    queryAcceptablePaymentAssets: GenericRuntimeApiMethod<
+      Rv,
+      (xcmVersion: number) => Promise<Result<Array<XcmVersionedAssetId>, XcmRuntimeApisFeesError>>
+    >;
+
+    /**
+     * Returns a weight needed to execute a XCM.
+     *
+     * # Arguments
+     *
+     * * `message`: `VersionedXcm`.
+     *
+     * @callname: XcmPaymentApi_query_xcm_weight
+     * @param {XcmVersionedXcm} message
+     **/
+    queryXcmWeight: GenericRuntimeApiMethod<
+      Rv,
+      (message: XcmVersionedXcm) => Promise<Result<SpWeightsWeightV2Weight, XcmRuntimeApisFeesError>>
+    >;
+
+    /**
+     * Converts a weight into a fee for the specified `AssetId`.
+     *
+     * # Arguments
+     *
+     * * `weight`: convertible `Weight`.
+     * * `asset`: `VersionedAssetId`.
+     *
+     * @callname: XcmPaymentApi_query_weight_to_asset_fee
+     * @param {SpWeightsWeightV2Weight} weight
+     * @param {XcmVersionedAssetId} asset
+     **/
+    queryWeightToAssetFee: GenericRuntimeApiMethod<
+      Rv,
+      (weight: SpWeightsWeightV2Weight, asset: XcmVersionedAssetId) => Promise<Result<bigint, XcmRuntimeApisFeesError>>
+    >;
+
+    /**
+     * Get delivery fees for sending a specific `message` to a `destination`.
+     * These always come in a specific asset, defined by the chain.
+     *
+     * # Arguments
+     * * `message`: The message that'll be sent, necessary because most delivery fees are based on the
+     * size of the message.
+     * * `destination`: The destination to send the message to. Different destinations may use
+     * different senders that charge different fees.
+     *
+     * @callname: XcmPaymentApi_query_delivery_fees
+     * @param {XcmVersionedLocation} destination
+     * @param {XcmVersionedXcm} message
+     **/
+    queryDeliveryFees: GenericRuntimeApiMethod<
+      Rv,
+      (
+        destination: XcmVersionedLocation,
+        message: XcmVersionedXcm,
+      ) => Promise<Result<XcmVersionedAssets, XcmRuntimeApisFeesError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: DryRunApi - 0x91b1c8b16328eb92
+   **/
+  dryRunApi: {
+    /**
+     * Dry run call.
+     *
+     * @callname: DryRunApi_dry_run_call
+     * @param {PolkadotRuntimeOriginCaller} origin
+     * @param {PolkadotRuntimeRuntimeCallLike} call
+     **/
+    dryRunCall: GenericRuntimeApiMethod<
+      Rv,
+      (
+        origin: PolkadotRuntimeOriginCaller,
+        call: PolkadotRuntimeRuntimeCallLike,
+      ) => Promise<Result<XcmRuntimeApisDryRunCallDryRunEffects, XcmRuntimeApisDryRunError>>
+    >;
+
+    /**
+     * Dry run XCM program
+     *
+     * @callname: DryRunApi_dry_run_xcm
+     * @param {XcmVersionedLocation} origin_location
+     * @param {XcmVersionedXcm} xcm
+     **/
+    dryRunXcm: GenericRuntimeApiMethod<
+      Rv,
+      (
+        originLocation: XcmVersionedLocation,
+        xcm: XcmVersionedXcm,
+      ) => Promise<Result<XcmRuntimeApisDryRunXcmDryRunEffects, XcmRuntimeApisDryRunError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: LocationToAccountApi - 0x9ffb505aa738d69c
+   **/
+  locationToAccountApi: {
+    /**
+     * Converts `Location` to `AccountId`.
+     *
+     * @callname: LocationToAccountApi_convert_location
+     * @param {XcmVersionedLocation} location
+     **/
+    convertLocation: GenericRuntimeApiMethod<
+      Rv,
+      (location: XcmVersionedLocation) => Promise<Result<AccountId32, XcmRuntimeApisConversionsError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
    * @runtimeapi: GenesisBuilder - 0xfbc577b9d747efd6
    **/
   genesisBuilder: {
     /**
-     * Creates the default `GenesisConfig` and returns it as a JSON blob.
+     * Build `RuntimeGenesisConfig` from a JSON blob not using any defaults and store it in the
+     * storage.
      *
-     * This function instantiates the default `GenesisConfig` struct for the runtime and serializes it into a JSON
-     * blob. It returns a `Vec<u8>` containing the JSON representation of the default `GenesisConfig`.
+     * In the case of a FRAME-based runtime, this function deserializes the full `RuntimeGenesisConfig` from the given JSON blob and
+     * puts it into the storage. If the provided JSON blob is incorrect or incomplete or the
+     * deserialization fails, an error is returned.
      *
-     * @callname: GenesisBuilder_create_default_config
-     **/
-    createDefaultConfig: GenericRuntimeApiMethod<Rv, () => Promise<Bytes>>;
-
-    /**
-     * Build `GenesisConfig` from a JSON blob not using any defaults and store it in the storage.
+     * Please note that provided JSON blob must contain all `RuntimeGenesisConfig` fields, no
+     * defaults will be used.
      *
-     * This function deserializes the full `GenesisConfig` from the given JSON blob and puts it into the storage.
-     * If the provided JSON blob is incorrect or incomplete or the deserialization fails, an error is returned.
-     * It is recommended to log any errors encountered during the process.
-     *
-     * Please note that provided json blob must contain all `GenesisConfig` fields, no defaults will be used.
-     *
-     * @callname: GenesisBuilder_build_config
+     * @callname: GenesisBuilder_build_state
      * @param {BytesLike} json
      **/
-    buildConfig: GenericRuntimeApiMethod<Rv, (json: BytesLike) => Promise<Result<[], string>>>;
+    buildState: GenericRuntimeApiMethod<Rv, (json: BytesLike) => Promise<Result<[], string>>>;
+
+    /**
+     * Returns a JSON blob representation of the built-in `RuntimeGenesisConfig` identified by
+     * `id`.
+     *
+     * If `id` is `None` the function returns JSON blob representation of the default
+     * `RuntimeGenesisConfig` struct of the runtime. Implementation must provide default
+     * `RuntimeGenesisConfig`.
+     *
+     * Otherwise function returns a JSON representation of the built-in, named
+     * `RuntimeGenesisConfig` preset identified by `id`, or `None` if such preset does not
+     * exists. Returned `Vec<u8>` contains bytes of JSON blob (patch) which comprises a list of
+     * (potentially nested) key-value pairs that are intended for customizing the default
+     * runtime genesis config. The patch shall be merged (rfc7386) with the JSON representation
+     * of the default `RuntimeGenesisConfig` to create a comprehensive genesis config that can
+     * be used in `build_state` method.
+     *
+     * @callname: GenesisBuilder_get_preset
+     * @param {string | undefined} id
+     **/
+    getPreset: GenericRuntimeApiMethod<Rv, (id?: string | undefined) => Promise<Bytes | undefined>>;
+
+    /**
+     * Returns a list of identifiers for available builtin `RuntimeGenesisConfig` presets.
+     *
+     * The presets from the list can be queried with [`GenesisBuilder::get_preset`] method. If
+     * no named presets are provided by the runtime the list is empty.
+     *
+     * @callname: GenesisBuilder_preset_names
+     **/
+    presetNames: GenericRuntimeApiMethod<Rv, () => Promise<Array<string>>>;
 
     /**
      * Generic runtime api call

@@ -12,12 +12,14 @@ import type {
   Bytes,
   BytesLike,
   AccountId32Like,
+  AccountId32,
 } from 'dedot/codecs';
 import type {
   SpConsensusSlotsSlotDuration,
   SpConsensusAuraEd25519AppEd25519Public,
   SpConsensusSlotsSlot,
   SpRuntimeBlock,
+  SpRuntimeExtrinsicInclusionMode,
   SpCoreOpaqueMetadata,
   SpRuntimeTransactionValidityTransactionValidityError,
   SpInherentsInherentData,
@@ -29,7 +31,16 @@ import type {
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
   AssetHubPolkadotRuntimeRuntimeCallLike,
+  XcmVersionedAssetId,
+  XcmRuntimeApisFeesError,
+  XcmVersionedXcm,
   XcmVersionedAssets,
+  XcmVersionedLocation,
+  XcmRuntimeApisDryRunCallDryRunEffects,
+  XcmRuntimeApisDryRunError,
+  AssetHubPolkadotRuntimeOriginCaller,
+  XcmRuntimeApisDryRunXcmDryRunEffects,
+  XcmRuntimeApisConversionsError,
   AssetsCommonRuntimeApiFungiblesAccessError,
   CumulusPrimitivesCoreCollationInfo,
   StagingXcmV3MultilocationMultiLocation,
@@ -108,12 +119,12 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     executeBlock: GenericRuntimeApiMethod<Rv, (block: SpRuntimeBlock) => Promise<[]>>;
 
     /**
-     * Initialize a block with the given header.
+     * Initialize a block with the given header and return the runtime executive mode.
      *
      * @callname: Core_initialize_block
      * @param {Header} header
      **/
-    initializeBlock: GenericRuntimeApiMethod<Rv, (header: Header) => Promise<[]>>;
+    initializeBlock: GenericRuntimeApiMethod<Rv, (header: Header) => Promise<SpRuntimeExtrinsicInclusionMode>>;
 
     /**
      * Generic runtime api call
@@ -415,6 +426,143 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
+   * @runtimeapi: XcmPaymentApi - 0x6ff52ee858e6c5bd
+   **/
+  xcmPaymentApi: {
+    /**
+     * Returns a list of acceptable payment assets.
+     *
+     * # Arguments
+     *
+     * * `xcm_version`: Version.
+     *
+     * @callname: XcmPaymentApi_query_acceptable_payment_assets
+     * @param {number} xcm_version
+     **/
+    queryAcceptablePaymentAssets: GenericRuntimeApiMethod<
+      Rv,
+      (xcmVersion: number) => Promise<Result<Array<XcmVersionedAssetId>, XcmRuntimeApisFeesError>>
+    >;
+
+    /**
+     * Returns a weight needed to execute a XCM.
+     *
+     * # Arguments
+     *
+     * * `message`: `VersionedXcm`.
+     *
+     * @callname: XcmPaymentApi_query_xcm_weight
+     * @param {XcmVersionedXcm} message
+     **/
+    queryXcmWeight: GenericRuntimeApiMethod<
+      Rv,
+      (message: XcmVersionedXcm) => Promise<Result<SpWeightsWeightV2Weight, XcmRuntimeApisFeesError>>
+    >;
+
+    /**
+     * Converts a weight into a fee for the specified `AssetId`.
+     *
+     * # Arguments
+     *
+     * * `weight`: convertible `Weight`.
+     * * `asset`: `VersionedAssetId`.
+     *
+     * @callname: XcmPaymentApi_query_weight_to_asset_fee
+     * @param {SpWeightsWeightV2Weight} weight
+     * @param {XcmVersionedAssetId} asset
+     **/
+    queryWeightToAssetFee: GenericRuntimeApiMethod<
+      Rv,
+      (weight: SpWeightsWeightV2Weight, asset: XcmVersionedAssetId) => Promise<Result<bigint, XcmRuntimeApisFeesError>>
+    >;
+
+    /**
+     * Get delivery fees for sending a specific `message` to a `destination`.
+     * These always come in a specific asset, defined by the chain.
+     *
+     * # Arguments
+     * * `message`: The message that'll be sent, necessary because most delivery fees are based on the
+     * size of the message.
+     * * `destination`: The destination to send the message to. Different destinations may use
+     * different senders that charge different fees.
+     *
+     * @callname: XcmPaymentApi_query_delivery_fees
+     * @param {XcmVersionedLocation} destination
+     * @param {XcmVersionedXcm} message
+     **/
+    queryDeliveryFees: GenericRuntimeApiMethod<
+      Rv,
+      (
+        destination: XcmVersionedLocation,
+        message: XcmVersionedXcm,
+      ) => Promise<Result<XcmVersionedAssets, XcmRuntimeApisFeesError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: DryRunApi - 0x91b1c8b16328eb92
+   **/
+  dryRunApi: {
+    /**
+     * Dry run call.
+     *
+     * @callname: DryRunApi_dry_run_call
+     * @param {AssetHubPolkadotRuntimeOriginCaller} origin
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     **/
+    dryRunCall: GenericRuntimeApiMethod<
+      Rv,
+      (
+        origin: AssetHubPolkadotRuntimeOriginCaller,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+      ) => Promise<Result<XcmRuntimeApisDryRunCallDryRunEffects, XcmRuntimeApisDryRunError>>
+    >;
+
+    /**
+     * Dry run XCM program
+     *
+     * @callname: DryRunApi_dry_run_xcm
+     * @param {XcmVersionedLocation} origin_location
+     * @param {XcmVersionedXcm} xcm
+     **/
+    dryRunXcm: GenericRuntimeApiMethod<
+      Rv,
+      (
+        originLocation: XcmVersionedLocation,
+        xcm: XcmVersionedXcm,
+      ) => Promise<Result<XcmRuntimeApisDryRunXcmDryRunEffects, XcmRuntimeApisDryRunError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: LocationToAccountApi - 0x9ffb505aa738d69c
+   **/
+  locationToAccountApi: {
+    /**
+     * Converts `Location` to `AccountId`.
+     *
+     * @callname: LocationToAccountApi_convert_location
+     * @param {XcmVersionedLocation} location
+     **/
+    convertLocation: GenericRuntimeApiMethod<
+      Rv,
+      (location: XcmVersionedLocation) => Promise<Result<AccountId32, XcmRuntimeApisConversionsError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
    * @runtimeapi: FungiblesApi - 0xde92b8a0426b9bf6
    **/
   fungiblesApi: {
@@ -459,28 +607,51 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
    **/
   genesisBuilder: {
     /**
-     * Creates the default `GenesisConfig` and returns it as a JSON blob.
+     * Build `RuntimeGenesisConfig` from a JSON blob not using any defaults and store it in the
+     * storage.
      *
-     * This function instantiates the default `GenesisConfig` struct for the runtime and serializes it into a JSON
-     * blob. It returns a `Vec<u8>` containing the JSON representation of the default `GenesisConfig`.
+     * In the case of a FRAME-based runtime, this function deserializes the full `RuntimeGenesisConfig` from the given JSON blob and
+     * puts it into the storage. If the provided JSON blob is incorrect or incomplete or the
+     * deserialization fails, an error is returned.
      *
-     * @callname: GenesisBuilder_create_default_config
-     **/
-    createDefaultConfig: GenericRuntimeApiMethod<Rv, () => Promise<Bytes>>;
-
-    /**
-     * Build `GenesisConfig` from a JSON blob not using any defaults and store it in the storage.
+     * Please note that provided JSON blob must contain all `RuntimeGenesisConfig` fields, no
+     * defaults will be used.
      *
-     * This function deserializes the full `GenesisConfig` from the given JSON blob and puts it into the storage.
-     * If the provided JSON blob is incorrect or incomplete or the deserialization fails, an error is returned.
-     * It is recommended to log any errors encountered during the process.
-     *
-     * Please note that provided json blob must contain all `GenesisConfig` fields, no defaults will be used.
-     *
-     * @callname: GenesisBuilder_build_config
+     * @callname: GenesisBuilder_build_state
      * @param {BytesLike} json
      **/
-    buildConfig: GenericRuntimeApiMethod<Rv, (json: BytesLike) => Promise<Result<[], string>>>;
+    buildState: GenericRuntimeApiMethod<Rv, (json: BytesLike) => Promise<Result<[], string>>>;
+
+    /**
+     * Returns a JSON blob representation of the built-in `RuntimeGenesisConfig` identified by
+     * `id`.
+     *
+     * If `id` is `None` the function returns JSON blob representation of the default
+     * `RuntimeGenesisConfig` struct of the runtime. Implementation must provide default
+     * `RuntimeGenesisConfig`.
+     *
+     * Otherwise function returns a JSON representation of the built-in, named
+     * `RuntimeGenesisConfig` preset identified by `id`, or `None` if such preset does not
+     * exists. Returned `Vec<u8>` contains bytes of JSON blob (patch) which comprises a list of
+     * (potentially nested) key-value pairs that are intended for customizing the default
+     * runtime genesis config. The patch shall be merged (rfc7386) with the JSON representation
+     * of the default `RuntimeGenesisConfig` to create a comprehensive genesis config that can
+     * be used in `build_state` method.
+     *
+     * @callname: GenesisBuilder_get_preset
+     * @param {string | undefined} id
+     **/
+    getPreset: GenericRuntimeApiMethod<Rv, (id?: string | undefined) => Promise<Bytes | undefined>>;
+
+    /**
+     * Returns a list of identifiers for available builtin `RuntimeGenesisConfig` presets.
+     *
+     * The presets from the list can be queried with [`GenesisBuilder::get_preset`] method. If
+     * no named presets are provided by the runtime the list is empty.
+     *
+     * @callname: GenesisBuilder_preset_names
+     **/
+    presetNames: GenericRuntimeApiMethod<Rv, () => Promise<Array<string>>>;
 
     /**
      * Generic runtime api call

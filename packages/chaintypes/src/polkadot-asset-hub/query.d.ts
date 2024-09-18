@@ -20,12 +20,12 @@ import type {
   FrameSystemCodeUpgradeAuthorization,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
-  PolkadotPrimitivesV6PersistedValidationData,
-  PolkadotPrimitivesV6UpgradeRestriction,
-  PolkadotPrimitivesV6UpgradeGoAhead,
+  PolkadotPrimitivesV7PersistedValidationData,
+  PolkadotPrimitivesV7UpgradeRestriction,
+  PolkadotPrimitivesV7UpgradeGoAhead,
   SpTrieStorageProof,
   CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot,
-  PolkadotPrimitivesV6AbridgedHostConfiguration,
+  PolkadotPrimitivesV7AbridgedHostConfiguration,
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
@@ -33,8 +33,8 @@ import type {
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
-  PalletBalancesIdAmount,
-  PalletBalancesIdAmount002,
+  FrameSupportTokensMiscIdAmount,
+  FrameSupportTokensMiscIdAmount002,
   PalletTransactionPaymentReleases,
   PalletVestingVestingInfo,
   PalletVestingReleases,
@@ -50,6 +50,7 @@ import type {
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
+  StagingXcmV4Xcm,
   BpXcmBridgeHubRouterBridgeState,
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
@@ -98,6 +99,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<number | undefined> =} callback
      **/
     extrinsicCount: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Whether all inherents have been applied.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    inherentsApplied: GenericStorageQuery<Rv, () => boolean>;
 
     /**
      * The current weight for the block.
@@ -284,9 +292,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * This value is expected to be set only once per block and it's never stored
      * in the trie.
      *
-     * @param {Callback<PolkadotPrimitivesV6PersistedValidationData | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV7PersistedValidationData | undefined> =} callback
      **/
-    validationData: GenericStorageQuery<Rv, () => PolkadotPrimitivesV6PersistedValidationData | undefined>;
+    validationData: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7PersistedValidationData | undefined>;
 
     /**
      * Were the validation data set to notify the relay chain?
@@ -313,9 +321,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV6UpgradeRestriction | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV7UpgradeRestriction | undefined> =} callback
      **/
-    upgradeRestrictionSignal: GenericStorageQuery<Rv, () => PolkadotPrimitivesV6UpgradeRestriction | undefined>;
+    upgradeRestrictionSignal: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7UpgradeRestriction | undefined>;
 
     /**
      * Optional upgrade go-ahead signal from the relay-chain.
@@ -324,9 +332,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV6UpgradeGoAhead | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV7UpgradeGoAhead | undefined> =} callback
      **/
-    upgradeGoAhead: GenericStorageQuery<Rv, () => PolkadotPrimitivesV6UpgradeGoAhead | undefined>;
+    upgradeGoAhead: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7UpgradeGoAhead | undefined>;
 
     /**
      * The state proof for the last relay parent block.
@@ -364,9 +372,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      *
      * This data is also absent from the genesis.
      *
-     * @param {Callback<PolkadotPrimitivesV6AbridgedHostConfiguration | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV7AbridgedHostConfiguration | undefined> =} callback
      **/
-    hostConfiguration: GenericStorageQuery<Rv, () => PolkadotPrimitivesV6AbridgedHostConfiguration | undefined>;
+    hostConfiguration: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7AbridgedHostConfiguration | undefined>;
 
     /**
      * The last downward message queue chain head we have observed.
@@ -573,6 +581,8 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Any liquidity locks on some account balances.
      * NOTE: Should only be accessed when setting, changing and freeing a lock.
      *
+     * Use of locks is deprecated in favour of freezes. See `https://github.com/paritytech/substrate/pull/12951/`
+     *
      * @param {AccountId32Like} arg
      * @param {Callback<Array<PalletBalancesBalanceLock>> =} callback
      **/
@@ -580,6 +590,8 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
 
     /**
      * Named reserves on some account balances.
+     *
+     * Use of reserves is deprecated in favour of holds. See `https://github.com/paritytech/substrate/pull/12951/`
      *
      * @param {AccountId32Like} arg
      * @param {Callback<Array<PalletBalancesReserveData>> =} callback
@@ -590,17 +602,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Holds on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<PalletBalancesIdAmount>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
      **/
-    holds: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<PalletBalancesIdAmount>, AccountId32>;
+    holds: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount>, AccountId32>;
 
     /**
      * Freeze locks on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<PalletBalancesIdAmount002>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount002>> =} callback
      **/
-    freezes: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<PalletBalancesIdAmount002>, AccountId32>;
+    freezes: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount002>, AccountId32>;
 
     /**
      * Generic pallet storage query
@@ -1063,6 +1075,31 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     xcmExecutionSuspended: GenericStorageQuery<Rv, () => boolean>;
 
     /**
+     * Whether or not incoming XCMs (both executed locally and received) should be recorded.
+     * Only one XCM program will be recorded at a time.
+     * This is meant to be used in runtime APIs, and it's advised it stays false
+     * for all other use cases, so as to not degrade regular performance.
+     *
+     * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
+     * implementation in the XCM executor configuration.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    shouldRecordXcm: GenericStorageQuery<Rv, () => boolean>;
+
+    /**
+     * If [`ShouldRecordXcm`] is set to true, then the last XCM program executed locally
+     * will be stored here.
+     * Runtime APIs can fetch the XCM that was executed by accessing this value.
+     *
+     * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
+     * implementation in the XCM executor configuration.
+     *
+     * @param {Callback<StagingXcmV4Xcm | undefined> =} callback
+     **/
+    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV4Xcm | undefined>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -1229,6 +1266,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<PalletAssetsAssetMetadata> =} callback
      **/
     metadata: GenericStorageQuery<Rv, (arg: number) => PalletAssetsAssetMetadata, number>;
+
+    /**
+     * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
+     * item has no effect.
+     *
+     * This can be useful for setting up constraints for IDs of the new assets. For example, by
+     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
+     * auto-increment model can be applied to all new asset IDs.
+     *
+     * The initial next asset ID can be set using the [`GenesisConfig`] or the
+     * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    nextAssetId: GenericStorageQuery<Rv, () => number | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1565,6 +1617,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     >;
 
     /**
+     * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
+     * item has no effect.
+     *
+     * This can be useful for setting up constraints for IDs of the new assets. For example, by
+     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
+     * auto-increment model can be applied to all new asset IDs.
+     *
+     * The initial next asset ID can be set using the [`GenesisConfig`] or the
+     * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
+     *
+     * @param {Callback<StagingXcmV3MultilocationMultiLocation | undefined> =} callback
+     **/
+    nextAssetId: GenericStorageQuery<Rv, () => StagingXcmV3MultilocationMultiLocation | undefined>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -1614,6 +1681,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<PalletAssetsAssetMetadata> =} callback
      **/
     metadata: GenericStorageQuery<Rv, (arg: number) => PalletAssetsAssetMetadata, number>;
+
+    /**
+     * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
+     * item has no effect.
+     *
+     * This can be useful for setting up constraints for IDs of the new assets. For example, by
+     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
+     * auto-increment model can be applied to all new asset IDs.
+     *
+     * The initial next asset ID can be set using the [`GenesisConfig`] or the
+     * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    nextAssetId: GenericStorageQuery<Rv, () => number | undefined>;
 
     /**
      * Generic pallet storage query

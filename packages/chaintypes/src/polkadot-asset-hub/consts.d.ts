@@ -6,6 +6,7 @@ import type {
   FrameSystemLimitsBlockWeights,
   FrameSystemLimitsBlockLength,
   SpWeightsRuntimeDbWeight,
+  PolkadotParachainPrimitivesPrimitivesId,
   SpWeightsWeightV2Weight,
   PalletNftsBitFlagsPalletFeature,
   StagingXcmV3MultilocationMultiLocation,
@@ -38,7 +39,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     dbWeight: SpWeightsRuntimeDbWeight;
 
     /**
-     * Get the chain's current version.
+     * Get the chain's in-code version.
      **/
     version: RuntimeVersion;
 
@@ -60,6 +61,11 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    * Pallet `ParachainSystem`'s constants
    **/
   parachainSystem: {
+    /**
+     * Returns the parachain ID we are running with.
+     **/
+    selfParaId: PolkadotParachainPrimitivesPrimitivesId;
+
     /**
      * Generic pallet constant
      **/
@@ -112,11 +118,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     /**
      * The maximum number of locks that should exist on an account.
      * Not strictly enforced, but used for weight estimation.
+     *
+     * Use of locks is deprecated in favour of freezes. See `https://github.com/paritytech/substrate/pull/12951/`
      **/
     maxLocks: number;
 
     /**
      * The maximum number of named reserves that can exist on an account.
+     *
+     * Use of reserves is deprecated in favour of holds. See `https://github.com/paritytech/substrate/pull/12951/`
      **/
     maxReserves: number;
 
@@ -220,6 +230,14 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   aura: {
     /**
+     * The slot duration Aura should run with, expressed in milliseconds.
+     * The effective value of this type should not change while the chain is running.
+     *
+     * For backwards compatibility either use [`MinimumPeriodTimesTwo`] or a const.
+     **/
+    slotDuration: bigint;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -245,6 +263,27 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * [`InboundXcmpSuspended`] still applies at that scale.
      **/
     maxInboundSuspended: number;
+
+    /**
+     * Maximal number of outbound XCMP channels that can have messages queued at the same time.
+     *
+     * If this is reached, then no further messages can be sent to channels that do not yet
+     * have a message queued. This should be set to the expected maximum of outbound channels
+     * which is determined by [`Self::ChannelInfo`]. It is important to set this large enough,
+     * since otherwise the congestion control protocol will not work as intended and messages
+     * may be dropped. This value increases the PoV and should therefore not be picked too
+     * high. Governance needs to pay attention to not open more channels than this value.
+     **/
+    maxActiveOutboundChannels: number;
+
+    /**
+     * The maximal page size for HRMP message pages.
+     *
+     * A lower limit can be set dynamically, but this is the hard-limit for the PoV worst case
+     * benchmarking. The limit for the size of a message is slightly below this, since some
+     * overhead is incurred for encoding the format.
+     **/
+    maxPageSize: number;
 
     /**
      * Generic pallet constant
@@ -300,12 +339,22 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
 
     /**
      * The amount of weight (if any) which should be provided to the message queue for
-     * servicing enqueued items.
+     * servicing enqueued items `on_initialize`.
      *
      * This may be legitimately `None` in the case that you will call
-     * `ServiceQueues::service_queues` manually.
+     * `ServiceQueues::service_queues` manually or set [`Self::IdleMaxServiceWeight`] to have
+     * it run in `on_idle`.
      **/
     serviceWeight: SpWeightsWeightV2Weight | undefined;
+
+    /**
+     * The maximum amount of weight (if any) to be used from remaining weight `on_idle` which
+     * should be provided to the message queue for servicing enqueued items `on_idle`.
+     * Useful for parachains to process messages at the same block they are received.
+     *
+     * If `None`, it will not call `ServiceQueues::service_queues` in `on_idle`.
+     **/
+    idleMaxServiceWeight: SpWeightsWeightV2Weight | undefined;
 
     /**
      * Generic pallet constant

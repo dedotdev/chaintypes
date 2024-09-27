@@ -23,7 +23,7 @@ export interface VersionedRococoAssetHubApi<Rv extends RpcVersion> extends Gener
 
 /**
  * @name: RococoAssetHubApi
- * @specVersion: 1016000
+ * @specVersion: 1016001
  **/
 export interface RococoAssetHubApi {
   legacy: VersionedRococoAssetHubApi<RpcLegacy>;

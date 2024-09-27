@@ -23,7 +23,7 @@ export interface VersionedRococoApi<Rv extends RpcVersion> extends GenericSubstr
 
 /**
  * @name: RococoApi
- * @specVersion: 1016000
+ * @specVersion: 1016001
  **/
 export interface RococoApi {
   legacy: VersionedRococoApi<RpcLegacy>;

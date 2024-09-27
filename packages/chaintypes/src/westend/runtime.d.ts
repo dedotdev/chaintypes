@@ -1483,7 +1483,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * Otherwise function returns a JSON representation of the built-in, named
      * `RuntimeGenesisConfig` preset identified by `id`, or `None` if such preset does not
-     * exists. Returned `Vec<u8>` contains bytes of JSON blob (patch) which comprises a list of
+     * exist. Returned `Vec<u8>` contains bytes of JSON blob (patch) which comprises a list of
      * (potentially nested) key-value pairs that are intended for customizing the default
      * runtime genesis config. The patch shall be merged (rfc7386) with the JSON representation
      * of the default `RuntimeGenesisConfig` to create a comprehensive genesis config that can

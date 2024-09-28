@@ -54,6 +54,8 @@ import type {
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMessageQueuePage,
   PalletMultisigMultisig,
+  PalletProxyProxyDefinition,
+  PalletProxyAnnouncement,
   PalletIdentityRegistration,
   PalletIdentityRegistrarInfo,
   PalletIdentityAuthorityProperties,
@@ -1107,6 +1109,40 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       Rv,
       (arg: [AccountId32Like, FixedBytes<32>]) => PalletMultisigMultisig | undefined,
       [AccountId32, FixedBytes<32>]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Proxy`'s storage queries
+   **/
+  proxy: {
+    /**
+     * The set of account proxies. Maps the account which has delegated to the accounts
+     * which are being delegated to, together with the amount held on deposit.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[Array<PalletProxyProxyDefinition>, bigint]> =} callback
+     **/
+    proxies: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => [Array<PalletProxyProxyDefinition>, bigint],
+      AccountId32
+    >;
+
+    /**
+     * The announcements made by the proxy (key).
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[Array<PalletProxyAnnouncement>, bigint]> =} callback
+     **/
+    announcements: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => [Array<PalletProxyAnnouncement>, bigint],
+      AccountId32
     >;
 
     /**

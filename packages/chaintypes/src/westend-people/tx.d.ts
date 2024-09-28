@@ -29,6 +29,7 @@ import type {
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PeopleWestendRuntimeOriginCaller,
   PalletMultisigTimepoint,
+  PeopleWestendRuntimeProxyType,
   PeopleWestendRuntimePeopleIdentityInfo,
   PalletIdentityJudgement,
 } from './types';
@@ -2168,6 +2169,373 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               otherSignatories: Array<AccountId32Like>;
               timepoint: PalletMultisigTimepoint;
               callHash: FixedBytes<32>;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Proxy`'s transaction calls
+   **/
+  proxy: {
+    /**
+     * Dispatch the given `call` from an account that the sender is authorised for through
+     * `add_proxy`.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `real`: The account that the proxy will make a call on behalf of.
+     * - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
+     * - `call`: The call to be made by the `real` account.
+     *
+     * @param {MultiAddressLike} real
+     * @param {PeopleWestendRuntimeProxyType | undefined} forceProxyType
+     * @param {PeopleWestendRuntimeRuntimeCallLike} call
+     **/
+    proxy: GenericTxCall<
+      Rv,
+      (
+        real: MultiAddressLike,
+        forceProxyType: PeopleWestendRuntimeProxyType | undefined,
+        call: PeopleWestendRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'Proxy';
+            params: {
+              real: MultiAddressLike;
+              forceProxyType: PeopleWestendRuntimeProxyType | undefined;
+              call: PeopleWestendRuntimeRuntimeCallLike;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Register a proxy account for the sender that is able to make calls on its behalf.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `proxy`: The account that the `caller` would like to make a proxy.
+     * - `proxy_type`: The permissions allowed for this proxy account.
+     * - `delay`: The announcement period required of the initial proxy. Will generally be
+     * zero.
+     *
+     * @param {MultiAddressLike} delegate
+     * @param {PeopleWestendRuntimeProxyType} proxyType
+     * @param {number} delay
+     **/
+    addProxy: GenericTxCall<
+      Rv,
+      (
+        delegate: MultiAddressLike,
+        proxyType: PeopleWestendRuntimeProxyType,
+        delay: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'AddProxy';
+            params: { delegate: MultiAddressLike; proxyType: PeopleWestendRuntimeProxyType; delay: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Unregister a proxy account for the sender.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `proxy`: The account that the `caller` would like to remove as a proxy.
+     * - `proxy_type`: The permissions currently enabled for the removed proxy account.
+     *
+     * @param {MultiAddressLike} delegate
+     * @param {PeopleWestendRuntimeProxyType} proxyType
+     * @param {number} delay
+     **/
+    removeProxy: GenericTxCall<
+      Rv,
+      (
+        delegate: MultiAddressLike,
+        proxyType: PeopleWestendRuntimeProxyType,
+        delay: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'RemoveProxy';
+            params: { delegate: MultiAddressLike; proxyType: PeopleWestendRuntimeProxyType; delay: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Unregister all proxy accounts for the sender.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * WARNING: This may be called on accounts created by `pure`, however if done, then
+     * the unreserved fees will be inaccessible. **All access to this account will be lost.**
+     *
+     **/
+    removeProxies: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'RemoveProxies';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Spawn a fresh new account that is guaranteed to be otherwise inaccessible, and
+     * initialize it with a proxy of `proxy_type` for `origin` sender.
+     *
+     * Requires a `Signed` origin.
+     *
+     * - `proxy_type`: The type of the proxy that the sender will be registered as over the
+     * new account. This will almost always be the most permissive `ProxyType` possible to
+     * allow for maximum flexibility.
+     * - `index`: A disambiguation index, in case this is called multiple times in the same
+     * transaction (e.g. with `utility::batch`). Unless you're using `batch` you probably just
+     * want to use `0`.
+     * - `delay`: The announcement period required of the initial proxy. Will generally be
+     * zero.
+     *
+     * Fails with `Duplicate` if this has already been called in this transaction, from the
+     * same sender, with the same parameters.
+     *
+     * Fails if there are insufficient funds to pay for deposit.
+     *
+     * @param {PeopleWestendRuntimeProxyType} proxyType
+     * @param {number} delay
+     * @param {number} index
+     **/
+    createPure: GenericTxCall<
+      Rv,
+      (
+        proxyType: PeopleWestendRuntimeProxyType,
+        delay: number,
+        index: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'CreatePure';
+            params: { proxyType: PeopleWestendRuntimeProxyType; delay: number; index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Removes a previously spawned pure proxy.
+     *
+     * WARNING: **All access to this account will be lost.** Any funds held in it will be
+     * inaccessible.
+     *
+     * Requires a `Signed` origin, and the sender account must have been created by a call to
+     * `pure` with corresponding parameters.
+     *
+     * - `spawner`: The account that originally called `pure` to create this account.
+     * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+     * - `proxy_type`: The proxy type originally passed to `pure`.
+     * - `height`: The height of the chain when the call to `pure` was processed.
+     * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+     *
+     * Fails with `NoPermission` in case the caller is not a previously created pure
+     * account whose `pure` call has corresponding parameters.
+     *
+     * @param {MultiAddressLike} spawner
+     * @param {PeopleWestendRuntimeProxyType} proxyType
+     * @param {number} index
+     * @param {number} height
+     * @param {number} extIndex
+     **/
+    killPure: GenericTxCall<
+      Rv,
+      (
+        spawner: MultiAddressLike,
+        proxyType: PeopleWestendRuntimeProxyType,
+        index: number,
+        height: number,
+        extIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'KillPure';
+            params: {
+              spawner: MultiAddressLike;
+              proxyType: PeopleWestendRuntimeProxyType;
+              index: number;
+              height: number;
+              extIndex: number;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Publish the hash of a proxy-call that will be made in the future.
+     *
+     * This must be called some number of blocks before the corresponding `proxy` is attempted
+     * if the delay associated with the proxy relationship is greater than zero.
+     *
+     * No more than `MaxPending` announcements may be made at any one time.
+     *
+     * This will take a deposit of `AnnouncementDepositFactor` as well as
+     * `AnnouncementDepositBase` if there are no other pending announcements.
+     *
+     * The dispatch origin for this call must be _Signed_ and a proxy of `real`.
+     *
+     * Parameters:
+     * - `real`: The account that the proxy will make a call on behalf of.
+     * - `call_hash`: The hash of the call to be made by the `real` account.
+     *
+     * @param {MultiAddressLike} real
+     * @param {H256} callHash
+     **/
+    announce: GenericTxCall<
+      Rv,
+      (
+        real: MultiAddressLike,
+        callHash: H256,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'Announce';
+            params: { real: MultiAddressLike; callHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a given announcement.
+     *
+     * May be called by a proxy account to remove a call they previously announced and return
+     * the deposit.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `real`: The account that the proxy will make a call on behalf of.
+     * - `call_hash`: The hash of the call to be made by the `real` account.
+     *
+     * @param {MultiAddressLike} real
+     * @param {H256} callHash
+     **/
+    removeAnnouncement: GenericTxCall<
+      Rv,
+      (
+        real: MultiAddressLike,
+        callHash: H256,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'RemoveAnnouncement';
+            params: { real: MultiAddressLike; callHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove the given announcement of a delegate.
+     *
+     * May be called by a target (proxied) account to remove a call that one of their delegates
+     * (`delegate`) has announced they want to execute. The deposit is returned.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `delegate`: The account that previously announced the call.
+     * - `call_hash`: The hash of the call to be made.
+     *
+     * @param {MultiAddressLike} delegate
+     * @param {H256} callHash
+     **/
+    rejectAnnouncement: GenericTxCall<
+      Rv,
+      (
+        delegate: MultiAddressLike,
+        callHash: H256,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'RejectAnnouncement';
+            params: { delegate: MultiAddressLike; callHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Dispatch the given `call` from an account that the sender is authorized for through
+     * `add_proxy`.
+     *
+     * Removes any corresponding announcement(s).
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `real`: The account that the proxy will make a call on behalf of.
+     * - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
+     * - `call`: The call to be made by the `real` account.
+     *
+     * @param {MultiAddressLike} delegate
+     * @param {MultiAddressLike} real
+     * @param {PeopleWestendRuntimeProxyType | undefined} forceProxyType
+     * @param {PeopleWestendRuntimeRuntimeCallLike} call
+     **/
+    proxyAnnounced: GenericTxCall<
+      Rv,
+      (
+        delegate: MultiAddressLike,
+        real: MultiAddressLike,
+        forceProxyType: PeopleWestendRuntimeProxyType | undefined,
+        call: PeopleWestendRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'ProxyAnnounced';
+            params: {
+              delegate: MultiAddressLike;
+              real: MultiAddressLike;
+              forceProxyType: PeopleWestendRuntimeProxyType | undefined;
+              call: PeopleWestendRuntimeRuntimeCallLike;
             };
           };
         }

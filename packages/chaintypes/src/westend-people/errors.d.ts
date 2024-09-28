@@ -628,6 +628,55 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `Proxy`'s errors
+   **/
+  proxy: {
+    /**
+     * There are too many proxies registered or too many announcements pending.
+     **/
+    TooMany: GenericPalletError<Rv>;
+
+    /**
+     * Proxy registration not found.
+     **/
+    NotFound: GenericPalletError<Rv>;
+
+    /**
+     * Sender is not a proxy of the account to be proxied.
+     **/
+    NotProxy: GenericPalletError<Rv>;
+
+    /**
+     * A call which is incompatible with the proxy type's filter was attempted.
+     **/
+    Unproxyable: GenericPalletError<Rv>;
+
+    /**
+     * Account is already a proxy.
+     **/
+    Duplicate: GenericPalletError<Rv>;
+
+    /**
+     * Call may not be made by proxy because it may escalate its privileges.
+     **/
+    NoPermission: GenericPalletError<Rv>;
+
+    /**
+     * Announcement, if made at all, was made too recently.
+     **/
+    Unannounced: GenericPalletError<Rv>;
+
+    /**
+     * Cannot add self as proxy.
+     **/
+    NoSelfProxy: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `Identity`'s errors
    **/
   identity: {

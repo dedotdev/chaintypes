@@ -16,6 +16,7 @@ import type {
   CumulusPrimitivesCoreAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
   PalletMultisigTimepoint,
+  PeopleWestendRuntimeProxyType,
 } from './types';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -911,6 +912,56 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Multisig',
       'MultisigCancelled',
       { cancelling: AccountId32; timepoint: PalletMultisigTimepoint; multisig: AccountId32; callHash: FixedBytes<32> }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Proxy`'s events
+   **/
+  proxy: {
+    /**
+     * A proxy was executed correctly, with the given.
+     **/
+    ProxyExecuted: GenericPalletEvent<Rv, 'Proxy', 'ProxyExecuted', { result: Result<[], DispatchError> }>;
+
+    /**
+     * A pure account has been created by new proxy with given
+     * disambiguation index and proxy type.
+     **/
+    PureCreated: GenericPalletEvent<
+      Rv,
+      'Proxy',
+      'PureCreated',
+      { pure: AccountId32; who: AccountId32; proxyType: PeopleWestendRuntimeProxyType; disambiguationIndex: number }
+    >;
+
+    /**
+     * An announcement was placed to make a call in the future.
+     **/
+    Announced: GenericPalletEvent<Rv, 'Proxy', 'Announced', { real: AccountId32; proxy: AccountId32; callHash: H256 }>;
+
+    /**
+     * A proxy was added.
+     **/
+    ProxyAdded: GenericPalletEvent<
+      Rv,
+      'Proxy',
+      'ProxyAdded',
+      { delegator: AccountId32; delegatee: AccountId32; proxyType: PeopleWestendRuntimeProxyType; delay: number }
+    >;
+
+    /**
+     * A proxy was removed.
+     **/
+    ProxyRemoved: GenericPalletEvent<
+      Rv,
+      'Proxy',
+      'ProxyRemoved',
+      { delegator: AccountId32; delegatee: AccountId32; proxyType: PeopleWestendRuntimeProxyType; delay: number }
     >;
 
     /**

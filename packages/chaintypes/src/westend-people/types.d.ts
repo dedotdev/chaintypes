@@ -60,6 +60,7 @@ export type PeopleWestendRuntimeRuntimeEvent =
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
   | { pallet: 'Utility'; palletEvent: PalletUtilityEvent }
   | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
+  | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
   | { pallet: 'Identity'; palletEvent: PalletIdentityEvent }
   | { pallet: 'IdentityMigrator'; palletEvent: PolkadotRuntimeCommonIdentityMigratorPalletEvent };
 
@@ -1134,6 +1135,54 @@ export type PalletMultisigEvent =
     };
 
 export type PalletMultisigTimepoint = { height: number; index: number };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletProxyEvent =
+  /**
+   * A proxy was executed correctly, with the given.
+   **/
+  | { name: 'ProxyExecuted'; data: { result: Result<[], DispatchError> } }
+  /**
+   * A pure account has been created by new proxy with given
+   * disambiguation index and proxy type.
+   **/
+  | {
+      name: 'PureCreated';
+      data: {
+        pure: AccountId32;
+        who: AccountId32;
+        proxyType: PeopleWestendRuntimeProxyType;
+        disambiguationIndex: number;
+      };
+    }
+  /**
+   * An announcement was placed to make a call in the future.
+   **/
+  | { name: 'Announced'; data: { real: AccountId32; proxy: AccountId32; callHash: H256 } }
+  /**
+   * A proxy was added.
+   **/
+  | {
+      name: 'ProxyAdded';
+      data: { delegator: AccountId32; delegatee: AccountId32; proxyType: PeopleWestendRuntimeProxyType; delay: number };
+    }
+  /**
+   * A proxy was removed.
+   **/
+  | {
+      name: 'ProxyRemoved';
+      data: { delegator: AccountId32; delegatee: AccountId32; proxyType: PeopleWestendRuntimeProxyType; delay: number };
+    };
+
+export type PeopleWestendRuntimeProxyType =
+  | 'Any'
+  | 'NonTransfer'
+  | 'CancelProxy'
+  | 'Identity'
+  | 'IdentityJudgement'
+  | 'Collator';
 
 /**
  * The `Event` enum of this pallet
@@ -3750,6 +3799,7 @@ export type PeopleWestendRuntimeRuntimeCall =
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
   | { pallet: 'Utility'; palletCall: PalletUtilityCall }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
+  | { pallet: 'Proxy'; palletCall: PalletProxyCall }
   | { pallet: 'Identity'; palletCall: PalletIdentityCall }
   | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCall };
 
@@ -3767,6 +3817,7 @@ export type PeopleWestendRuntimeRuntimeCallLike =
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
   | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
+  | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
   | { pallet: 'Identity'; palletCall: PalletIdentityCallLike }
   | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCallLike };
 
@@ -4060,6 +4111,349 @@ export type PalletMultisigCallLike =
         otherSignatories: Array<AccountId32Like>;
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
+      };
+    };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletProxyCall =
+  /**
+   * Dispatch the given `call` from an account that the sender is authorised for through
+   * `add_proxy`.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `real`: The account that the proxy will make a call on behalf of.
+   * - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
+   * - `call`: The call to be made by the `real` account.
+   **/
+  | {
+      name: 'Proxy';
+      params: {
+        real: MultiAddress;
+        forceProxyType?: PeopleWestendRuntimeProxyType | undefined;
+        call: PeopleWestendRuntimeRuntimeCall;
+      };
+    }
+  /**
+   * Register a proxy account for the sender that is able to make calls on its behalf.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `proxy`: The account that the `caller` would like to make a proxy.
+   * - `proxy_type`: The permissions allowed for this proxy account.
+   * - `delay`: The announcement period required of the initial proxy. Will generally be
+   * zero.
+   **/
+  | { name: 'AddProxy'; params: { delegate: MultiAddress; proxyType: PeopleWestendRuntimeProxyType; delay: number } }
+  /**
+   * Unregister a proxy account for the sender.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `proxy`: The account that the `caller` would like to remove as a proxy.
+   * - `proxy_type`: The permissions currently enabled for the removed proxy account.
+   **/
+  | { name: 'RemoveProxy'; params: { delegate: MultiAddress; proxyType: PeopleWestendRuntimeProxyType; delay: number } }
+  /**
+   * Unregister all proxy accounts for the sender.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * WARNING: This may be called on accounts created by `pure`, however if done, then
+   * the unreserved fees will be inaccessible. **All access to this account will be lost.**
+   **/
+  | { name: 'RemoveProxies' }
+  /**
+   * Spawn a fresh new account that is guaranteed to be otherwise inaccessible, and
+   * initialize it with a proxy of `proxy_type` for `origin` sender.
+   *
+   * Requires a `Signed` origin.
+   *
+   * - `proxy_type`: The type of the proxy that the sender will be registered as over the
+   * new account. This will almost always be the most permissive `ProxyType` possible to
+   * allow for maximum flexibility.
+   * - `index`: A disambiguation index, in case this is called multiple times in the same
+   * transaction (e.g. with `utility::batch`). Unless you're using `batch` you probably just
+   * want to use `0`.
+   * - `delay`: The announcement period required of the initial proxy. Will generally be
+   * zero.
+   *
+   * Fails with `Duplicate` if this has already been called in this transaction, from the
+   * same sender, with the same parameters.
+   *
+   * Fails if there are insufficient funds to pay for deposit.
+   **/
+  | { name: 'CreatePure'; params: { proxyType: PeopleWestendRuntimeProxyType; delay: number; index: number } }
+  /**
+   * Removes a previously spawned pure proxy.
+   *
+   * WARNING: **All access to this account will be lost.** Any funds held in it will be
+   * inaccessible.
+   *
+   * Requires a `Signed` origin, and the sender account must have been created by a call to
+   * `pure` with corresponding parameters.
+   *
+   * - `spawner`: The account that originally called `pure` to create this account.
+   * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+   * - `proxy_type`: The proxy type originally passed to `pure`.
+   * - `height`: The height of the chain when the call to `pure` was processed.
+   * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+   *
+   * Fails with `NoPermission` in case the caller is not a previously created pure
+   * account whose `pure` call has corresponding parameters.
+   **/
+  | {
+      name: 'KillPure';
+      params: {
+        spawner: MultiAddress;
+        proxyType: PeopleWestendRuntimeProxyType;
+        index: number;
+        height: number;
+        extIndex: number;
+      };
+    }
+  /**
+   * Publish the hash of a proxy-call that will be made in the future.
+   *
+   * This must be called some number of blocks before the corresponding `proxy` is attempted
+   * if the delay associated with the proxy relationship is greater than zero.
+   *
+   * No more than `MaxPending` announcements may be made at any one time.
+   *
+   * This will take a deposit of `AnnouncementDepositFactor` as well as
+   * `AnnouncementDepositBase` if there are no other pending announcements.
+   *
+   * The dispatch origin for this call must be _Signed_ and a proxy of `real`.
+   *
+   * Parameters:
+   * - `real`: The account that the proxy will make a call on behalf of.
+   * - `call_hash`: The hash of the call to be made by the `real` account.
+   **/
+  | { name: 'Announce'; params: { real: MultiAddress; callHash: H256 } }
+  /**
+   * Remove a given announcement.
+   *
+   * May be called by a proxy account to remove a call they previously announced and return
+   * the deposit.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `real`: The account that the proxy will make a call on behalf of.
+   * - `call_hash`: The hash of the call to be made by the `real` account.
+   **/
+  | { name: 'RemoveAnnouncement'; params: { real: MultiAddress; callHash: H256 } }
+  /**
+   * Remove the given announcement of a delegate.
+   *
+   * May be called by a target (proxied) account to remove a call that one of their delegates
+   * (`delegate`) has announced they want to execute. The deposit is returned.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `delegate`: The account that previously announced the call.
+   * - `call_hash`: The hash of the call to be made.
+   **/
+  | { name: 'RejectAnnouncement'; params: { delegate: MultiAddress; callHash: H256 } }
+  /**
+   * Dispatch the given `call` from an account that the sender is authorized for through
+   * `add_proxy`.
+   *
+   * Removes any corresponding announcement(s).
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `real`: The account that the proxy will make a call on behalf of.
+   * - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
+   * - `call`: The call to be made by the `real` account.
+   **/
+  | {
+      name: 'ProxyAnnounced';
+      params: {
+        delegate: MultiAddress;
+        real: MultiAddress;
+        forceProxyType?: PeopleWestendRuntimeProxyType | undefined;
+        call: PeopleWestendRuntimeRuntimeCall;
+      };
+    };
+
+export type PalletProxyCallLike =
+  /**
+   * Dispatch the given `call` from an account that the sender is authorised for through
+   * `add_proxy`.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `real`: The account that the proxy will make a call on behalf of.
+   * - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
+   * - `call`: The call to be made by the `real` account.
+   **/
+  | {
+      name: 'Proxy';
+      params: {
+        real: MultiAddressLike;
+        forceProxyType?: PeopleWestendRuntimeProxyType | undefined;
+        call: PeopleWestendRuntimeRuntimeCallLike;
+      };
+    }
+  /**
+   * Register a proxy account for the sender that is able to make calls on its behalf.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `proxy`: The account that the `caller` would like to make a proxy.
+   * - `proxy_type`: The permissions allowed for this proxy account.
+   * - `delay`: The announcement period required of the initial proxy. Will generally be
+   * zero.
+   **/
+  | {
+      name: 'AddProxy';
+      params: { delegate: MultiAddressLike; proxyType: PeopleWestendRuntimeProxyType; delay: number };
+    }
+  /**
+   * Unregister a proxy account for the sender.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `proxy`: The account that the `caller` would like to remove as a proxy.
+   * - `proxy_type`: The permissions currently enabled for the removed proxy account.
+   **/
+  | {
+      name: 'RemoveProxy';
+      params: { delegate: MultiAddressLike; proxyType: PeopleWestendRuntimeProxyType; delay: number };
+    }
+  /**
+   * Unregister all proxy accounts for the sender.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * WARNING: This may be called on accounts created by `pure`, however if done, then
+   * the unreserved fees will be inaccessible. **All access to this account will be lost.**
+   **/
+  | { name: 'RemoveProxies' }
+  /**
+   * Spawn a fresh new account that is guaranteed to be otherwise inaccessible, and
+   * initialize it with a proxy of `proxy_type` for `origin` sender.
+   *
+   * Requires a `Signed` origin.
+   *
+   * - `proxy_type`: The type of the proxy that the sender will be registered as over the
+   * new account. This will almost always be the most permissive `ProxyType` possible to
+   * allow for maximum flexibility.
+   * - `index`: A disambiguation index, in case this is called multiple times in the same
+   * transaction (e.g. with `utility::batch`). Unless you're using `batch` you probably just
+   * want to use `0`.
+   * - `delay`: The announcement period required of the initial proxy. Will generally be
+   * zero.
+   *
+   * Fails with `Duplicate` if this has already been called in this transaction, from the
+   * same sender, with the same parameters.
+   *
+   * Fails if there are insufficient funds to pay for deposit.
+   **/
+  | { name: 'CreatePure'; params: { proxyType: PeopleWestendRuntimeProxyType; delay: number; index: number } }
+  /**
+   * Removes a previously spawned pure proxy.
+   *
+   * WARNING: **All access to this account will be lost.** Any funds held in it will be
+   * inaccessible.
+   *
+   * Requires a `Signed` origin, and the sender account must have been created by a call to
+   * `pure` with corresponding parameters.
+   *
+   * - `spawner`: The account that originally called `pure` to create this account.
+   * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+   * - `proxy_type`: The proxy type originally passed to `pure`.
+   * - `height`: The height of the chain when the call to `pure` was processed.
+   * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+   *
+   * Fails with `NoPermission` in case the caller is not a previously created pure
+   * account whose `pure` call has corresponding parameters.
+   **/
+  | {
+      name: 'KillPure';
+      params: {
+        spawner: MultiAddressLike;
+        proxyType: PeopleWestendRuntimeProxyType;
+        index: number;
+        height: number;
+        extIndex: number;
+      };
+    }
+  /**
+   * Publish the hash of a proxy-call that will be made in the future.
+   *
+   * This must be called some number of blocks before the corresponding `proxy` is attempted
+   * if the delay associated with the proxy relationship is greater than zero.
+   *
+   * No more than `MaxPending` announcements may be made at any one time.
+   *
+   * This will take a deposit of `AnnouncementDepositFactor` as well as
+   * `AnnouncementDepositBase` if there are no other pending announcements.
+   *
+   * The dispatch origin for this call must be _Signed_ and a proxy of `real`.
+   *
+   * Parameters:
+   * - `real`: The account that the proxy will make a call on behalf of.
+   * - `call_hash`: The hash of the call to be made by the `real` account.
+   **/
+  | { name: 'Announce'; params: { real: MultiAddressLike; callHash: H256 } }
+  /**
+   * Remove a given announcement.
+   *
+   * May be called by a proxy account to remove a call they previously announced and return
+   * the deposit.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `real`: The account that the proxy will make a call on behalf of.
+   * - `call_hash`: The hash of the call to be made by the `real` account.
+   **/
+  | { name: 'RemoveAnnouncement'; params: { real: MultiAddressLike; callHash: H256 } }
+  /**
+   * Remove the given announcement of a delegate.
+   *
+   * May be called by a target (proxied) account to remove a call that one of their delegates
+   * (`delegate`) has announced they want to execute. The deposit is returned.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `delegate`: The account that previously announced the call.
+   * - `call_hash`: The hash of the call to be made.
+   **/
+  | { name: 'RejectAnnouncement'; params: { delegate: MultiAddressLike; callHash: H256 } }
+  /**
+   * Dispatch the given `call` from an account that the sender is authorized for through
+   * `add_proxy`.
+   *
+   * Removes any corresponding announcement(s).
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `real`: The account that the proxy will make a call on behalf of.
+   * - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
+   * - `call`: The call to be made by the `real` account.
+   **/
+  | {
+      name: 'ProxyAnnounced';
+      params: {
+        delegate: MultiAddressLike;
+        real: MultiAddressLike;
+        forceProxyType?: PeopleWestendRuntimeProxyType | undefined;
+        call: PeopleWestendRuntimeRuntimeCallLike;
       };
     };
 
@@ -4682,6 +5076,51 @@ export type PalletMultisigError =
    **/
   | 'AlreadyStored';
 
+export type PalletProxyProxyDefinition = {
+  delegate: AccountId32;
+  proxyType: PeopleWestendRuntimeProxyType;
+  delay: number;
+};
+
+export type PalletProxyAnnouncement = { real: AccountId32; callHash: H256; height: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletProxyError =
+  /**
+   * There are too many proxies registered or too many announcements pending.
+   **/
+  | 'TooMany'
+  /**
+   * Proxy registration not found.
+   **/
+  | 'NotFound'
+  /**
+   * Sender is not a proxy of the account to be proxied.
+   **/
+  | 'NotProxy'
+  /**
+   * A call which is incompatible with the proxy type's filter was attempted.
+   **/
+  | 'Unproxyable'
+  /**
+   * Account is already a proxy.
+   **/
+  | 'Duplicate'
+  /**
+   * Call may not be made by proxy because it may escalate its privileges.
+   **/
+  | 'NoPermission'
+  /**
+   * Announcement, if made at all, was made too recently.
+   **/
+  | 'Unannounced'
+  /**
+   * Cannot add self as proxy.
+   **/
+  | 'NoSelfProxy';
+
 export type PalletIdentityRegistration = {
   judgements: Array<[number, PalletIdentityJudgement]>;
   deposit: bigint;
@@ -4935,4 +5374,5 @@ export type PeopleWestendRuntimeRuntimeError =
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }
   | { pallet: 'Utility'; palletError: PalletUtilityError }
   | { pallet: 'Multisig'; palletError: PalletMultisigError }
+  | { pallet: 'Proxy'; palletError: PalletProxyError }
   | { pallet: 'Identity'; palletError: PalletIdentityError };

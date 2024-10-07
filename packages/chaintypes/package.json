@@ -12,7 +12,7 @@
     "copy": "cp -R ./src/* ./dist"
   },
   "dependencies": {
-    "dedot": "^0.5.0"
+    "dedot": "^0.6.0"
   },
   "publishConfig": {
     "access": "public",

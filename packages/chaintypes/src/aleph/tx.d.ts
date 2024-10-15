@@ -1239,6 +1239,29 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * See [`Pallet::set_inflation_parameters`].
+     *
+     * @param {bigint | undefined} azeroCap
+     * @param {bigint | undefined} horizonMillisecs
+     **/
+    setInflationParameters: GenericTxCall<
+      Rv,
+      (
+        azeroCap: bigint | undefined,
+        horizonMillisecs: bigint | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Aleph';
+          palletCall: {
+            name: 'SetInflationParameters';
+            params: { azeroCap: bigint | undefined; horizonMillisecs: bigint | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;

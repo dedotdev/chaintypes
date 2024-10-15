@@ -353,7 +353,8 @@ export type PalletSessionEvent =
 export type PalletAlephEvent =
   | { name: 'ChangeEmergencyFinalizer'; data: PrimitivesAppPublic }
   | { name: 'ScheduleFinalityVersionChange'; data: PrimitivesVersionChange }
-  | { name: 'FinalityVersionChange'; data: PrimitivesVersionChange };
+  | { name: 'FinalityVersionChange'; data: PrimitivesVersionChange }
+  | { name: 'InflationParametersChange'; data: [bigint, bigint] };
 
 export type PrimitivesAppPublic = SpCoreEd25519Public;
 
@@ -1573,7 +1574,14 @@ export type PalletAlephCall =
   /**
    * See [`Pallet::schedule_finality_version_change`].
    **/
-  | { name: 'ScheduleFinalityVersionChange'; params: { versionIncoming: number; session: number } };
+  | { name: 'ScheduleFinalityVersionChange'; params: { versionIncoming: number; session: number } }
+  /**
+   * See [`Pallet::set_inflation_parameters`].
+   **/
+  | {
+      name: 'SetInflationParameters';
+      params: { azeroCap?: bigint | undefined; horizonMillisecs?: bigint | undefined };
+    };
 
 export type PalletAlephCallLike =
   /**
@@ -1583,7 +1591,14 @@ export type PalletAlephCallLike =
   /**
    * See [`Pallet::schedule_finality_version_change`].
    **/
-  | { name: 'ScheduleFinalityVersionChange'; params: { versionIncoming: number; session: number } };
+  | { name: 'ScheduleFinalityVersionChange'; params: { versionIncoming: number; session: number } }
+  /**
+   * See [`Pallet::set_inflation_parameters`].
+   **/
+  | {
+      name: 'SetInflationParameters';
+      params: { azeroCap?: bigint | undefined; horizonMillisecs?: bigint | undefined };
+    };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.

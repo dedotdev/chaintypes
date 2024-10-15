@@ -23,7 +23,7 @@ export interface VersionedAlephApi<Rv extends RpcVersion> extends GenericSubstra
 
 /**
  * @name: AlephApi
- * @specVersion: 73
+ * @specVersion: 74
  **/
 export interface AlephApi {
   legacy: VersionedAlephApi<RpcLegacy>;

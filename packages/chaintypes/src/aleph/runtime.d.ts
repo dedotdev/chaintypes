@@ -13,6 +13,7 @@ import type {
   BytesLike,
   AccountId32Like,
   AccountId32,
+  Perbill,
 } from 'dedot/codecs';
 import type {
   SpRuntimeBlock,
@@ -434,6 +435,20 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @param {PrimitivesAppPublic} key
      **/
     keyOwner: GenericRuntimeApiMethod<Rv, (key: PrimitivesAppPublic) => Promise<AccountId32 | undefined>>;
+
+    /**
+     * Returns inflation from now to now + 1 year. Capped at 100%
+     *
+     * @callname: AlephSessionApi_yearly_inflation
+     **/
+    yearlyInflation: GenericRuntimeApiMethod<Rv, () => Promise<Perbill>>;
+
+    /**
+     * Returns payout. First tuple item is a validators payout, 2nd is the rest.
+     *
+     * @callname: AlephSessionApi_current_era_payout
+     **/
+    currentEraPayout: GenericRuntimeApiMethod<Rv, () => Promise<[bigint, bigint]>>;
 
     /**
      * Generic runtime api call

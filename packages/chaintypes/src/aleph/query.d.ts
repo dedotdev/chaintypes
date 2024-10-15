@@ -936,6 +936,18 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
   aleph: {
     /**
      *
+     * @param {Callback<bigint> =} callback
+     **/
+    azeroCap: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    exponentialInflationHorizon: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     *
      * @param {Callback<Array<PrimitivesAppPublic>> =} callback
      **/
     authorities: GenericStorageQuery<Rv, () => Array<PrimitivesAppPublic>>;

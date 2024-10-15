@@ -422,6 +422,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       PrimitivesVersionChange
     >;
     FinalityVersionChange: GenericPalletEvent<Rv, 'Aleph', 'FinalityVersionChange', PrimitivesVersionChange>;
+    InflationParametersChange: GenericPalletEvent<Rv, 'Aleph', 'InflationParametersChange', [bigint, bigint]>;
 
     /**
      * Generic pallet event

@@ -17,6 +17,7 @@ import type {
   MultiAddressLike,
   AccountId32Like,
   Percent,
+  Perquintill,
   EthereumAddress,
   EthereumAddressLike,
   PerU16,
@@ -69,6 +70,7 @@ export type PolkadotRuntimeRuntimeEvent =
   | { pallet: 'ConvictionVoting'; palletEvent: PalletConvictionVotingEvent }
   | { pallet: 'Referenda'; palletEvent: PalletReferendaEvent }
   | { pallet: 'Whitelist'; palletEvent: PalletWhitelistEvent }
+  | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
   | { pallet: 'Claims'; palletEvent: PolkadotRuntimeCommonClaimsPalletEvent }
   | { pallet: 'Vesting'; palletEvent: PalletVestingEvent }
   | { pallet: 'Utility'; palletEvent: PalletUtilityEvent }
@@ -1036,6 +1038,7 @@ export type PolkadotRuntimeRuntimeCall =
   | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCall }
   | { pallet: 'Referenda'; palletCall: PalletReferendaCall }
   | { pallet: 'Whitelist'; palletCall: PalletWhitelistCall }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCall }
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCall }
   | { pallet: 'Vesting'; palletCall: PalletVestingCall }
   | { pallet: 'Utility'; palletCall: PalletUtilityCall }
@@ -1083,6 +1086,7 @@ export type PolkadotRuntimeRuntimeCallLike =
   | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCallLike }
   | { pallet: 'Referenda'; palletCall: PalletReferendaCallLike }
   | { pallet: 'Whitelist'; palletCall: PalletWhitelistCallLike }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCallLike }
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCallLike }
   | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
   | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
@@ -3942,6 +3946,49 @@ export type PalletWhitelistCallLike =
       params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
   | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: PolkadotRuntimeRuntimeCallLike } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletParametersCall =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: PolkadotRuntimeRuntimeParameters } };
+
+export type PalletParametersCallLike =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: PolkadotRuntimeRuntimeParameters } };
+
+export type PolkadotRuntimeRuntimeParameters = {
+  type: 'Inflation';
+  value: PolkadotRuntimeDynamicParamsInflationParameters;
+};
+
+export type PolkadotRuntimeDynamicParamsInflationParameters =
+  | { type: 'MinInflation'; value: [PolkadotRuntimeDynamicParamsInflationMinInflation, Perquintill | undefined] }
+  | { type: 'MaxInflation'; value: [PolkadotRuntimeDynamicParamsInflationMaxInflation, Perquintill | undefined] }
+  | { type: 'IdealStake'; value: [PolkadotRuntimeDynamicParamsInflationIdealStake, Perquintill | undefined] }
+  | { type: 'Falloff'; value: [PolkadotRuntimeDynamicParamsInflationFalloff, Perquintill | undefined] }
+  | { type: 'UseAuctionSlots'; value: [PolkadotRuntimeDynamicParamsInflationUseAuctionSlots, boolean | undefined] };
+
+export type PolkadotRuntimeDynamicParamsInflationMinInflation = {};
+
+export type PolkadotRuntimeDynamicParamsInflationMaxInflation = {};
+
+export type PolkadotRuntimeDynamicParamsInflationIdealStake = {};
+
+export type PolkadotRuntimeDynamicParamsInflationFalloff = {};
+
+export type PolkadotRuntimeDynamicParamsInflationUseAuctionSlots = {};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10382,6 +10429,59 @@ export type SpRuntimeDispatchErrorWithPostInfo = {
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletParametersEvent =
+  /**
+   * A Parameter was set.
+   *
+   * Is also emitted when the value was not changed.
+   **/
+  {
+    name: 'Updated';
+    data: {
+      /**
+       * The key that was updated.
+       **/
+      key: PolkadotRuntimeRuntimeParametersKey;
+
+      /**
+       * The old value before this call.
+       **/
+      oldValue?: PolkadotRuntimeRuntimeParametersValue | undefined;
+
+      /**
+       * The new value after this call.
+       **/
+      newValue?: PolkadotRuntimeRuntimeParametersValue | undefined;
+    };
+  };
+
+export type PolkadotRuntimeRuntimeParametersKey = {
+  type: 'Inflation';
+  value: PolkadotRuntimeDynamicParamsInflationParametersKey;
+};
+
+export type PolkadotRuntimeDynamicParamsInflationParametersKey =
+  | { type: 'MinInflation'; value: PolkadotRuntimeDynamicParamsInflationMinInflation }
+  | { type: 'MaxInflation'; value: PolkadotRuntimeDynamicParamsInflationMaxInflation }
+  | { type: 'IdealStake'; value: PolkadotRuntimeDynamicParamsInflationIdealStake }
+  | { type: 'Falloff'; value: PolkadotRuntimeDynamicParamsInflationFalloff }
+  | { type: 'UseAuctionSlots'; value: PolkadotRuntimeDynamicParamsInflationUseAuctionSlots };
+
+export type PolkadotRuntimeRuntimeParametersValue = {
+  type: 'Inflation';
+  value: PolkadotRuntimeDynamicParamsInflationParametersValue;
+};
+
+export type PolkadotRuntimeDynamicParamsInflationParametersValue =
+  | { type: 'MinInflation'; value: Perquintill }
+  | { type: 'MaxInflation'; value: Perquintill }
+  | { type: 'IdealStake'; value: Perquintill }
+  | { type: 'Falloff'; value: Perquintill }
+  | { type: 'UseAuctionSlots'; value: boolean };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PolkadotRuntimeCommonClaimsPalletEvent =
   /**
    * Someone claimed some DOTs.
@@ -14135,6 +14235,8 @@ export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataH
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
 export type PolkadotRuntimeRuntime = {};
+
+export type RelayCommonApisInflationInfo = { inflation: Perquintill; nextMint: [bigint, bigint] };
 
 export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
 

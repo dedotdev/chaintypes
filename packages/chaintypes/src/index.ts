@@ -6,8 +6,6 @@ export type { AstarApi } from './astar';
 export type { KusamaAssetHubApi } from './kusama-asset-hub';
 export type { AlephApi } from './aleph';
 export type { PolkadotAssetHubApi } from './polkadot-asset-hub';
-export type { RococoApi } from './rococo';
-export type { RococoAssetHubApi } from './rococo-asset-hub';
 export type { WestendApi } from './westend';
 export type { WestendPeopleApi } from './westend-people';
 export type { WestendAssetHubApi } from './westend-asset-hub';

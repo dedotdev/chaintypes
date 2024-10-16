@@ -43,14 +43,6 @@ export const networks: NetworkInfo[] = [
     endpoint: ['wss://kusama-asset-hub-rpc.polkadot.io/'],
   },
   {
-    chain: 'rococo',
-    endpoint: ['wss://rococo-rpc.polkadot.io/'],
-  },
-  {
-    chain: 'rococoAssetHub',
-    endpoint: ['wss://rococo-asset-hub-rpc.polkadot.io/'],
-  },
-  {
     chain: 'aleph',
     endpoint: ['wss://ws.azero.dev'],
   },

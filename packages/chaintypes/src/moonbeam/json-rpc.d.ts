@@ -85,7 +85,7 @@ export type ChainJsonRpcApis<Rv extends RpcVersion> = Pick<
   | 'eth_syncing'
   | 'eth_uninstallFilter'
   | 'eth_unsubscribe'
-  | 'moon_getLatestBlockHash'
+  | 'moon_getEthSyncBlockRange'
   | 'moon_isBlockFinalized'
   | 'moon_isTxFinalized'
   | 'net_listening'

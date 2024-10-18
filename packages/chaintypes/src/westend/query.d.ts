@@ -95,7 +95,7 @@ import type {
   PolkadotRuntimeParachainsSharedAllowedRelayParentsTracker,
   PolkadotRuntimeParachainsInclusionCandidatePendingAvailability,
   PolkadotParachainPrimitivesPrimitivesId,
-  PolkadotPrimitivesV8ScrapedOnChainVotes,
+  PolkadotPrimitivesVstagingScrapedOnChainVotes,
   PolkadotRuntimeParachainsSchedulerPalletCoreOccupied,
   PolkadotPrimitivesV8CoreIndex,
   PolkadotRuntimeParachainsSchedulerPalletParasEntry,
@@ -2410,9 +2410,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * Scraped on chain data for extracting resolved disputes as well as backing votes.
      *
-     * @param {Callback<PolkadotPrimitivesV8ScrapedOnChainVotes | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesVstagingScrapedOnChainVotes | undefined> =} callback
      **/
-    onChainVotes: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8ScrapedOnChainVotes | undefined>;
+    onChainVotes: GenericStorageQuery<Rv, () => PolkadotPrimitivesVstagingScrapedOnChainVotes | undefined>;
 
     /**
      * Generic pallet storage query

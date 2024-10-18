@@ -70,7 +70,7 @@ import type {
   PolkadotPrimitivesV8ExecutorParams,
   PolkadotPrimitivesV8ApprovalVotingParams,
   PolkadotPrimitivesV8SchedulerParams,
-  PolkadotPrimitivesV8InherentData,
+  PolkadotPrimitivesVstagingInherentData,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
   PolkadotParachainPrimitivesPrimitivesHeadData,
@@ -996,7 +996,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
      * period ends. If this leaves an amount actively bonded less than
-     * T::Currency::minimum_balance(), then it is increased to the full amount.
+     * [`asset::existential_deposit`], then it is increased to the full amount.
      *
      * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
      *
@@ -7451,17 +7451,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Enter the paras inherent. This will process bitfields and backed candidates.
      *
-     * @param {PolkadotPrimitivesV8InherentData} data
+     * @param {PolkadotPrimitivesVstagingInherentData} data
      **/
     enter: GenericTxCall<
       Rv,
-      (data: PolkadotPrimitivesV8InherentData) => ChainSubmittableExtrinsic<
+      (data: PolkadotPrimitivesVstagingInherentData) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ParaInherent';
           palletCall: {
             name: 'Enter';
-            params: { data: PolkadotPrimitivesV8InherentData };
+            params: { data: PolkadotPrimitivesVstagingInherentData };
           };
         }
       >

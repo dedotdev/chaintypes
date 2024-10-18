@@ -27,18 +27,18 @@ import type {
   PolkadotPrimitivesV8ValidatorAppPublic,
   PolkadotPrimitivesV8ValidatorIndex,
   PolkadotPrimitivesV8GroupRotationInfo,
-  PolkadotPrimitivesV8CoreState,
+  PolkadotPrimitivesVstagingCoreState,
   PolkadotPrimitivesV8PersistedValidationData,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotPrimitivesV8OccupiedCoreAssumption,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotPrimitivesV8CandidateCommitments,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
-  PolkadotPrimitivesV8CommittedCandidateReceipt,
-  PolkadotPrimitivesV8CandidateEvent,
+  PolkadotPrimitivesVstagingCommittedCandidateReceiptV2,
+  PolkadotPrimitivesVstagingCandidateEvent,
   PolkadotCorePrimitivesInboundDownwardMessage,
   PolkadotCorePrimitivesInboundHrmpMessage,
-  PolkadotPrimitivesV8ScrapedOnChainVotes,
+  PolkadotPrimitivesVstagingScrapedOnChainVotes,
   PolkadotPrimitivesV8SessionInfo,
   PolkadotPrimitivesV8PvfCheckStatement,
   PolkadotPrimitivesV8ValidatorAppSignature,
@@ -48,7 +48,7 @@ import type {
   PolkadotPrimitivesV8SlashingPendingSlashes,
   PolkadotPrimitivesV8SlashingOpaqueKeyOwnershipProof,
   PolkadotPrimitivesV8SlashingDisputeProof,
-  PolkadotPrimitivesV8AsyncBackingBackingState,
+  PolkadotPrimitivesVstagingAsyncBackingBackingState,
   PolkadotPrimitivesV8AsyncBackingAsyncBackingParams,
   PolkadotPrimitivesV8ApprovalVotingParams,
   PolkadotPrimitivesV8CoreIndex,
@@ -294,7 +294,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_availability_cores
      **/
-    availabilityCores: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesV8CoreState>>>;
+    availabilityCores: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesVstagingCoreState>>>;
 
     /**
      * Yields the persisted validation data for the given `ParaId` along with an assumption that
@@ -388,7 +388,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       Rv,
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-      ) => Promise<PolkadotPrimitivesV8CommittedCandidateReceipt | undefined>
+      ) => Promise<PolkadotPrimitivesVstagingCommittedCandidateReceiptV2 | undefined>
     >;
 
     /**
@@ -396,7 +396,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_candidate_events
      **/
-    candidateEvents: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesV8CandidateEvent>>>;
+    candidateEvents: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesVstagingCandidateEvent>>>;
 
     /**
      * Get all the pending inbound messages in the downward message queue for a para.
@@ -443,7 +443,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_on_chain_votes
      **/
-    onChainVotes: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotPrimitivesV8ScrapedOnChainVotes | undefined>>;
+    onChainVotes: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotPrimitivesVstagingScrapedOnChainVotes | undefined>>;
 
     /**
      * Get the session info for the given session, if stored.
@@ -579,7 +579,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       Rv,
       (
         undefined: PolkadotParachainPrimitivesPrimitivesId,
-      ) => Promise<PolkadotPrimitivesV8AsyncBackingBackingState | undefined>
+      ) => Promise<PolkadotPrimitivesVstagingAsyncBackingBackingState | undefined>
     >;
 
     /**
@@ -629,7 +629,9 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     candidatesPendingAvailability: GenericRuntimeApiMethod<
       Rv,
-      (paraId: PolkadotParachainPrimitivesPrimitivesId) => Promise<Array<PolkadotPrimitivesV8CommittedCandidateReceipt>>
+      (
+        paraId: PolkadotParachainPrimitivesPrimitivesId,
+      ) => Promise<Array<PolkadotPrimitivesVstagingCommittedCandidateReceiptV2>>
     >;
 
     /**

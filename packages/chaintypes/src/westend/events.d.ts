@@ -35,7 +35,7 @@ import type {
   SpRuntimeDispatchErrorWithPostInfo,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   XcmVersionedLocation,
-  PolkadotPrimitivesV8CandidateReceipt,
+  PolkadotPrimitivesVstagingCandidateReceiptV2,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotPrimitivesV8CoreIndex,
   PolkadotPrimitivesV8GroupIndex,
@@ -1919,7 +1919,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateBacked',
       [
-        PolkadotPrimitivesV8CandidateReceipt,
+        PolkadotPrimitivesVstagingCandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
         PolkadotPrimitivesV8CoreIndex,
         PolkadotPrimitivesV8GroupIndex,
@@ -1934,7 +1934,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateIncluded',
       [
-        PolkadotPrimitivesV8CandidateReceipt,
+        PolkadotPrimitivesVstagingCandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
         PolkadotPrimitivesV8CoreIndex,
         PolkadotPrimitivesV8GroupIndex,
@@ -1949,7 +1949,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateTimedOut',
       [
-        PolkadotPrimitivesV8CandidateReceipt,
+        PolkadotPrimitivesVstagingCandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
         PolkadotPrimitivesV8CoreIndex,
       ]

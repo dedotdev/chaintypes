@@ -98,6 +98,8 @@ import type {
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMessageQueuePage,
+  PalletMoonbeamForeignAssetsAssetStatus,
+  PalletEmergencyParaXcmXcmMode,
   PalletRandomnessRequestState,
   PalletRandomnessRandomnessResult,
   PalletRandomnessRequestType,
@@ -2066,27 +2068,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     >;
 
     /**
-     * Stores the units per second for local execution for a AssetType.
-     * This is used to know how to charge for XCM execution in a particular
-     * asset
-     * Not all assets might contain units per second, hence the different storage
-     *
-     * @param {MoonbeamRuntimeXcmConfigAssetType} arg
-     * @param {Callback<bigint | undefined> =} callback
-     **/
-    assetTypeUnitsPerSecond: GenericStorageQuery<
-      Rv,
-      (arg: MoonbeamRuntimeXcmConfigAssetType) => bigint | undefined,
-      MoonbeamRuntimeXcmConfigAssetType
-    >;
-
-    /**
-     *
-     * @param {Callback<Array<MoonbeamRuntimeXcmConfigAssetType>> =} callback
-     **/
-    supportedFeePaymentAssets: GenericStorageQuery<Rv, () => Array<MoonbeamRuntimeXcmConfigAssetType>>;
-
-    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -2210,6 +2191,85 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       (arg: [CumulusPrimitivesCoreAggregateMessageOrigin, number]) => PalletMessageQueuePage | undefined,
       [CumulusPrimitivesCoreAggregateMessageOrigin, number]
     >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `EvmForeignAssets`'s storage queries
+   **/
+  evmForeignAssets: {
+    /**
+     * Mapping from an asset id to a Foreign asset type.
+     * This is mostly used when receiving transaction specifying an asset directly,
+     * like transferring an asset from this chain to another.
+     *
+     * @param {bigint} arg
+     * @param {Callback<StagingXcmV4Location | undefined> =} callback
+     **/
+    assetsById: GenericStorageQuery<Rv, (arg: bigint) => StagingXcmV4Location | undefined, bigint>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForAssetsById: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Reverse mapping of AssetsById. Mapping from a foreign asset to an asset id.
+     * This is mostly used when receiving a multilocation XCM message to retrieve
+     * the corresponding asset in which tokens should me minted.
+     *
+     * @param {StagingXcmV4Location} arg
+     * @param {Callback<[bigint, PalletMoonbeamForeignAssetsAssetStatus] | undefined> =} callback
+     **/
+    assetsByLocation: GenericStorageQuery<
+      Rv,
+      (arg: StagingXcmV4Location) => [bigint, PalletMoonbeamForeignAssetsAssetStatus] | undefined,
+      StagingXcmV4Location
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `XcmWeightTrader`'s storage queries
+   **/
+  xcmWeightTrader: {
+    /**
+     * Stores all supported assets per XCM Location.
+     * The u128 is the asset price relative to native asset with 18 decimals
+     * The boolean specify if the support for this asset is active
+     *
+     * @param {StagingXcmV4Location} arg
+     * @param {Callback<[boolean, bigint] | undefined> =} callback
+     **/
+    supportedAssets: GenericStorageQuery<
+      Rv,
+      (arg: StagingXcmV4Location) => [boolean, bigint] | undefined,
+      StagingXcmV4Location
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `EmergencyParaXcm`'s storage queries
+   **/
+  emergencyParaXcm: {
+    /**
+     * Whether incoming XCM is enabled or paused
+     *
+     * @param {Callback<PalletEmergencyParaXcmXcmMode> =} callback
+     **/
+    mode: GenericStorageQuery<Rv, () => PalletEmergencyParaXcmXcmMode>;
 
     /**
      * Generic pallet storage query

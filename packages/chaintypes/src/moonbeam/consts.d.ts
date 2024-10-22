@@ -981,6 +981,33 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
+   * Pallet `EvmForeignAssets`'s constants
+   **/
+  evmForeignAssets: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `XcmWeightTrader`'s constants
+   **/
+  xcmWeightTrader: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `EmergencyParaXcm`'s constants
+   **/
+  emergencyParaXcm: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `RelayStorageRoots`'s constants
    **/
   relayStorageRoots: {

@@ -2610,12 +2610,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * Changed the amount of units we are charging per execution second for a given asset
      **/
-    UnitsPerSecondChanged: GenericPalletEvent<
-      Rv,
-      'AssetManager',
-      'UnitsPerSecondChanged',
-      { assetType: MoonbeamRuntimeXcmConfigAssetType; unitsPerSecond: bigint }
-    >;
+    UnitsPerSecondChanged: GenericPalletEvent<Rv, 'AssetManager', 'UnitsPerSecondChanged', null>;
 
     /**
      * Changed the xcm type mapping for a given asset id
@@ -2921,6 +2916,125 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
         index: number;
       }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `EvmForeignAssets`'s events
+   **/
+  evmForeignAssets: {
+    /**
+     * New asset with the asset manager is registered
+     **/
+    ForeignAssetCreated: GenericPalletEvent<
+      Rv,
+      'EvmForeignAssets',
+      'ForeignAssetCreated',
+      { contractAddress: H160; assetId: bigint; xcmLocation: StagingXcmV4Location }
+    >;
+
+    /**
+     * Changed the xcm type mapping for a given asset id
+     **/
+    ForeignAssetXcmLocationChanged: GenericPalletEvent<
+      Rv,
+      'EvmForeignAssets',
+      'ForeignAssetXcmLocationChanged',
+      { assetId: bigint; newXcmLocation: StagingXcmV4Location }
+    >;
+    ForeignAssetFrozen: GenericPalletEvent<
+      Rv,
+      'EvmForeignAssets',
+      'ForeignAssetFrozen',
+      { assetId: bigint; xcmLocation: StagingXcmV4Location }
+    >;
+    ForeignAssetUnfrozen: GenericPalletEvent<
+      Rv,
+      'EvmForeignAssets',
+      'ForeignAssetUnfrozen',
+      { assetId: bigint; xcmLocation: StagingXcmV4Location }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `XcmWeightTrader`'s events
+   **/
+  xcmWeightTrader: {
+    /**
+     * New supported asset is registered
+     **/
+    SupportedAssetAdded: GenericPalletEvent<
+      Rv,
+      'XcmWeightTrader',
+      'SupportedAssetAdded',
+      { location: StagingXcmV4Location; relativePrice: bigint }
+    >;
+
+    /**
+     * Changed the amount of units we are charging per execution second for a given asset
+     **/
+    SupportedAssetEdited: GenericPalletEvent<
+      Rv,
+      'XcmWeightTrader',
+      'SupportedAssetEdited',
+      { location: StagingXcmV4Location; relativePrice: bigint }
+    >;
+
+    /**
+     * Pause support for a given asset
+     **/
+    PauseAssetSupport: GenericPalletEvent<
+      Rv,
+      'XcmWeightTrader',
+      'PauseAssetSupport',
+      { location: StagingXcmV4Location }
+    >;
+
+    /**
+     * Resume support for a given asset
+     **/
+    ResumeAssetSupport: GenericPalletEvent<
+      Rv,
+      'XcmWeightTrader',
+      'ResumeAssetSupport',
+      { location: StagingXcmV4Location }
+    >;
+
+    /**
+     * Supported asset type for fee payment removed
+     **/
+    SupportedAssetRemoved: GenericPalletEvent<
+      Rv,
+      'XcmWeightTrader',
+      'SupportedAssetRemoved',
+      { location: StagingXcmV4Location }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `EmergencyParaXcm`'s events
+   **/
+  emergencyParaXcm: {
+    /**
+     * The XCM incoming execution was Paused
+     **/
+    EnteredPausedXcmMode: GenericPalletEvent<Rv, 'EmergencyParaXcm', 'EnteredPausedXcmMode', undefined>;
+
+    /**
+     * The XCM incoming execution returned to normal operation
+     **/
+    NormalXcmOperationResumed: GenericPalletEvent<Rv, 'EmergencyParaXcm', 'NormalXcmOperationResumed', undefined>;
 
     /**
      * Generic pallet event

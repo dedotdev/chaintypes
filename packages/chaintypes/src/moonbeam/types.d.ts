@@ -87,6 +87,9 @@ export type MoonbeamRuntimeRuntimeEvent =
   | { pallet: 'XcmTransactor'; palletEvent: PalletXcmTransactorEvent }
   | { pallet: 'EthereumXcm'; palletEvent: PalletEthereumXcmEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
+  | { pallet: 'EvmForeignAssets'; palletEvent: PalletMoonbeamForeignAssetsEvent }
+  | { pallet: 'XcmWeightTrader'; palletEvent: PalletXcmWeightTraderEvent }
+  | { pallet: 'EmergencyParaXcm'; palletEvent: PalletEmergencyParaXcmEvent }
   | { pallet: 'Randomness'; palletEvent: PalletRandomnessEvent };
 
 /**
@@ -1305,6 +1308,9 @@ export type MoonbeamRuntimeRuntimeCall =
   | { pallet: 'XcmTransactor'; palletCall: PalletXcmTransactorCall }
   | { pallet: 'EthereumXcm'; palletCall: PalletEthereumXcmCall }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
+  | { pallet: 'EvmForeignAssets'; palletCall: PalletMoonbeamForeignAssetsCall }
+  | { pallet: 'XcmWeightTrader'; palletCall: PalletXcmWeightTraderCall }
+  | { pallet: 'EmergencyParaXcm'; palletCall: PalletEmergencyParaXcmCall }
   | { pallet: 'Randomness'; palletCall: PalletRandomnessCall };
 
 export type MoonbeamRuntimeRuntimeCallLike =
@@ -1343,6 +1349,9 @@ export type MoonbeamRuntimeRuntimeCallLike =
   | { pallet: 'XcmTransactor'; palletCall: PalletXcmTransactorCallLike }
   | { pallet: 'EthereumXcm'; palletCall: PalletEthereumXcmCallLike }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
+  | { pallet: 'EvmForeignAssets'; palletCall: PalletMoonbeamForeignAssetsCallLike }
+  | { pallet: 'XcmWeightTrader'; palletCall: PalletXcmWeightTraderCallLike }
+  | { pallet: 'EmergencyParaXcm'; palletCall: PalletEmergencyParaXcmCallLike }
   | { pallet: 'Randomness'; palletCall: PalletRandomnessCallLike };
 
 /**
@@ -3778,15 +3787,13 @@ export type PalletMultisigCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletMoonbeamLazyMigrationsCall = {
-  name: 'ClearSuicidedStorage';
-  params: { addresses: Array<H160>; limit: number };
-};
+export type PalletMoonbeamLazyMigrationsCall =
+  | { name: 'ClearSuicidedStorage'; params: { addresses: Array<H160>; limit: number } }
+  | { name: 'CreateContractMetadata'; params: { address: H160 } };
 
-export type PalletMoonbeamLazyMigrationsCallLike = {
-  name: 'ClearSuicidedStorage';
-  params: { addresses: Array<H160>; limit: number };
-};
+export type PalletMoonbeamLazyMigrationsCallLike =
+  | { name: 'ClearSuicidedStorage'; params: { addresses: Array<H160>; limit: number } }
+  | { name: 'CreateContractMetadata'; params: { address: H160 } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -7851,14 +7858,6 @@ export type PalletAssetManagerCall =
       };
     }
   /**
-   * Change the amount of units we are charging per execution second
-   * for a given ForeignAssetType
-   **/
-  | {
-      name: 'SetAssetUnitsPerSecond';
-      params: { assetType: MoonbeamRuntimeXcmConfigAssetType; unitsPerSecond: bigint; numAssetsWeightHint: number };
-    }
-  /**
    * Change the xcm type mapping for a given assetId
    * We also change this if the previous units per second where pointing at the old
    * assetType
@@ -7866,10 +7865,6 @@ export type PalletAssetManagerCall =
   | {
       name: 'ChangeExistingAssetType';
       params: { assetId: bigint; newAssetType: MoonbeamRuntimeXcmConfigAssetType; numAssetsWeightHint: number };
-    }
-  | {
-      name: 'RemoveSupportedAsset';
-      params: { assetType: MoonbeamRuntimeXcmConfigAssetType; numAssetsWeightHint: number };
     }
   /**
    * Remove a given assetId -> assetType association
@@ -7897,14 +7892,6 @@ export type PalletAssetManagerCallLike =
       };
     }
   /**
-   * Change the amount of units we are charging per execution second
-   * for a given ForeignAssetType
-   **/
-  | {
-      name: 'SetAssetUnitsPerSecond';
-      params: { assetType: MoonbeamRuntimeXcmConfigAssetType; unitsPerSecond: bigint; numAssetsWeightHint: number };
-    }
-  /**
    * Change the xcm type mapping for a given assetId
    * We also change this if the previous units per second where pointing at the old
    * assetType
@@ -7912,10 +7899,6 @@ export type PalletAssetManagerCallLike =
   | {
       name: 'ChangeExistingAssetType';
       params: { assetId: bigint; newAssetType: MoonbeamRuntimeXcmConfigAssetType; numAssetsWeightHint: number };
-    }
-  | {
-      name: 'RemoveSupportedAsset';
-      params: { assetType: MoonbeamRuntimeXcmConfigAssetType; numAssetsWeightHint: number };
     }
   /**
    * Remove a given assetId -> assetType association
@@ -8703,6 +8686,101 @@ export type CumulusPrimitivesCoreAggregateMessageOrigin =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletMoonbeamForeignAssetsCall =
+  /**
+   * Create new asset with the ForeignAssetCreator
+   **/
+  | {
+      name: 'CreateForeignAsset';
+      params: { assetId: bigint; xcmLocation: StagingXcmV4Location; decimals: number; symbol: Bytes; name: Bytes };
+    }
+  /**
+   * Change the xcm type mapping for a given assetId
+   * We also change this if the previous units per second where pointing at the old
+   * assetType
+   **/
+  | { name: 'ChangeXcmLocation'; params: { assetId: bigint; newXcmLocation: StagingXcmV4Location } }
+  /**
+   * Freeze a given foreign assetId
+   **/
+  | { name: 'FreezeForeignAsset'; params: { assetId: bigint; allowXcmDeposit: boolean } }
+  /**
+   * Unfreeze a given foreign assetId
+   **/
+  | { name: 'UnfreezeForeignAsset'; params: { assetId: bigint } };
+
+export type PalletMoonbeamForeignAssetsCallLike =
+  /**
+   * Create new asset with the ForeignAssetCreator
+   **/
+  | {
+      name: 'CreateForeignAsset';
+      params: {
+        assetId: bigint;
+        xcmLocation: StagingXcmV4Location;
+        decimals: number;
+        symbol: BytesLike;
+        name: BytesLike;
+      };
+    }
+  /**
+   * Change the xcm type mapping for a given assetId
+   * We also change this if the previous units per second where pointing at the old
+   * assetType
+   **/
+  | { name: 'ChangeXcmLocation'; params: { assetId: bigint; newXcmLocation: StagingXcmV4Location } }
+  /**
+   * Freeze a given foreign assetId
+   **/
+  | { name: 'FreezeForeignAsset'; params: { assetId: bigint; allowXcmDeposit: boolean } }
+  /**
+   * Unfreeze a given foreign assetId
+   **/
+  | { name: 'UnfreezeForeignAsset'; params: { assetId: bigint } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletXcmWeightTraderCall =
+  | { name: 'AddAsset'; params: { location: StagingXcmV4Location; relativePrice: bigint } }
+  | { name: 'EditAsset'; params: { location: StagingXcmV4Location; relativePrice: bigint } }
+  | { name: 'PauseAssetSupport'; params: { location: StagingXcmV4Location } }
+  | { name: 'ResumeAssetSupport'; params: { location: StagingXcmV4Location } }
+  | { name: 'RemoveAsset'; params: { location: StagingXcmV4Location } };
+
+export type PalletXcmWeightTraderCallLike =
+  | { name: 'AddAsset'; params: { location: StagingXcmV4Location; relativePrice: bigint } }
+  | { name: 'EditAsset'; params: { location: StagingXcmV4Location; relativePrice: bigint } }
+  | { name: 'PauseAssetSupport'; params: { location: StagingXcmV4Location } }
+  | { name: 'ResumeAssetSupport'; params: { location: StagingXcmV4Location } }
+  | { name: 'RemoveAsset'; params: { location: StagingXcmV4Location } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletEmergencyParaXcmCall =
+  /**
+   * Resume `Normal` mode
+   **/
+  | { name: 'PausedToNormal' }
+  /**
+   * Authorize a runtime upgrade. Only callable in `Paused` mode
+   **/
+  | { name: 'FastAuthorizeUpgrade'; params: { codeHash: H256 } };
+
+export type PalletEmergencyParaXcmCallLike =
+  /**
+   * Resume `Normal` mode
+   **/
+  | { name: 'PausedToNormal' }
+  /**
+   * Authorize a runtime upgrade. Only callable in `Paused` mode
+   **/
+  | { name: 'FastAuthorizeUpgrade'; params: { codeHash: H256 } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletRandomnessCall =
   /**
    * Populates `RandomnessResults` due this epoch with BABE epoch randomness
@@ -9269,7 +9347,7 @@ export type PalletAssetManagerEvent =
   /**
    * Changed the amount of units we are charging per execution second for a given asset
    **/
-  | { name: 'UnitsPerSecondChanged'; data: { assetType: MoonbeamRuntimeXcmConfigAssetType; unitsPerSecond: bigint } }
+  | { name: 'UnitsPerSecondChanged' }
   /**
    * Changed the xcm type mapping for a given asset id
    **/
@@ -9488,6 +9566,59 @@ export type FrameSupportMessagesProcessMessageError =
   | { type: 'Unsupported' }
   | { type: 'Overweight'; value: SpWeightsWeightV2Weight }
   | { type: 'Yield' };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletMoonbeamForeignAssetsEvent =
+  /**
+   * New asset with the asset manager is registered
+   **/
+  | { name: 'ForeignAssetCreated'; data: { contractAddress: H160; assetId: bigint; xcmLocation: StagingXcmV4Location } }
+  /**
+   * Changed the xcm type mapping for a given asset id
+   **/
+  | { name: 'ForeignAssetXcmLocationChanged'; data: { assetId: bigint; newXcmLocation: StagingXcmV4Location } }
+  | { name: 'ForeignAssetFrozen'; data: { assetId: bigint; xcmLocation: StagingXcmV4Location } }
+  | { name: 'ForeignAssetUnfrozen'; data: { assetId: bigint; xcmLocation: StagingXcmV4Location } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletXcmWeightTraderEvent =
+  /**
+   * New supported asset is registered
+   **/
+  | { name: 'SupportedAssetAdded'; data: { location: StagingXcmV4Location; relativePrice: bigint } }
+  /**
+   * Changed the amount of units we are charging per execution second for a given asset
+   **/
+  | { name: 'SupportedAssetEdited'; data: { location: StagingXcmV4Location; relativePrice: bigint } }
+  /**
+   * Pause support for a given asset
+   **/
+  | { name: 'PauseAssetSupport'; data: { location: StagingXcmV4Location } }
+  /**
+   * Resume support for a given asset
+   **/
+  | { name: 'ResumeAssetSupport'; data: { location: StagingXcmV4Location } }
+  /**
+   * Supported asset type for fee payment removed
+   **/
+  | { name: 'SupportedAssetRemoved'; data: { location: StagingXcmV4Location } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletEmergencyParaXcmEvent =
+  /**
+   * The XCM incoming execution was Paused
+   **/
+  | 'EnteredPausedXcmMode'
+  /**
+   * The XCM incoming execution returned to normal operation
+   **/
+  | 'NormalXcmOperationResumed';
 
 /**
  * The `Event` enum of this pallet
@@ -10306,7 +10437,15 @@ export type PalletMoonbeamLazyMigrationsError =
   /**
    * The contract is not corrupted (Still exist or properly suicided)
    **/
-  | 'ContractNotCorrupted';
+  | 'ContractNotCorrupted'
+  /**
+   * The contract already have metadata
+   **/
+  | 'ContractMetadataAlreadySet'
+  /**
+   * Contract not exist
+   **/
+  | 'ContractNotExist';
 
 export type PalletEvmCodeMetadata = { size: bigint; hash: H256 };
 
@@ -11473,6 +11612,67 @@ export type PalletMessageQueueError =
    **/
   | 'RecursiveDisallowed';
 
+export type PalletMoonbeamForeignAssetsAssetStatus = 'Active' | 'FrozenXcmDepositAllowed' | 'FrozenXcmDepositForbidden';
+
+/**
+ * An error that can occur while executing the mapping pallet's logic.
+ **/
+export type PalletMoonbeamForeignAssetsError =
+  | 'AssetAlreadyExists'
+  | 'AssetAlreadyFrozen'
+  | 'AssetDoesNotExist'
+  | 'AssetIdFiltered'
+  | 'AssetNotFrozen'
+  | 'CorruptedStorageOrphanLocation'
+  | 'Erc20ContractCreationFail'
+  | 'EvmCallPauseFail'
+  | 'EvmCallUnpauseFail'
+  | 'EvmInternalError'
+  | 'InvalidSymbol'
+  | 'InvalidTokenName'
+  | 'LocationAlreadyExists'
+  | 'TooManyForeignAssets';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletXcmWeightTraderError =
+  /**
+   * The given asset was already added
+   **/
+  | 'AssetAlreadyAdded'
+  /**
+   * The given asset was already paused
+   **/
+  | 'AssetAlreadyPaused'
+  /**
+   * The given asset was not found
+   **/
+  | 'AssetNotFound'
+  /**
+   * The given asset is not paused
+   **/
+  | 'AssetNotPaused'
+  /**
+   * XCM location filtered
+   **/
+  | 'XcmLocationFiltered'
+  /**
+   * The relative price cannot be zero
+   **/
+  | 'PriceCannotBeZero';
+
+export type PalletEmergencyParaXcmXcmMode = 'Normal' | 'Paused';
+
+/**
+ * An error that can occur while executing this pallet's extrinsics.
+ **/
+export type PalletEmergencyParaXcmError =
+  /**
+   * The current XCM Mode is not Paused
+   **/
+  'NotInPausedMode';
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -11530,6 +11730,12 @@ export type FrameSystemExtensionsCheckNonce = number;
 export type FrameSystemExtensionsCheckWeight = {};
 
 export type PalletTransactionPaymentChargeTransactionPayment = bigint;
+
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
+
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
+
+export type CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim = {};
 
 export type MoonbeamRuntimeRuntime = {};
 
@@ -11677,5 +11883,8 @@ export type MoonbeamRuntimeRuntimeError =
   | { pallet: 'XcmTransactor'; palletError: PalletXcmTransactorError }
   | { pallet: 'EthereumXcm'; palletError: PalletEthereumXcmError }
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }
+  | { pallet: 'EvmForeignAssets'; palletError: PalletMoonbeamForeignAssetsError }
+  | { pallet: 'XcmWeightTrader'; palletError: PalletXcmWeightTraderError }
+  | { pallet: 'EmergencyParaXcm'; palletError: PalletEmergencyParaXcmError }
   | { pallet: 'PrecompileBenchmarks'; palletError: PalletPrecompileBenchmarksError }
   | { pallet: 'Randomness'; palletError: PalletRandomnessError };

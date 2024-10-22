@@ -3241,6 +3241,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     *
+     * @param {H160} address
+     **/
+    createContractMetadata: GenericTxCall<
+      Rv,
+      (address: H160) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MoonbeamLazyMigrations';
+          palletCall: {
+            name: 'CreateContractMetadata';
+            params: { address: H160 };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -7227,36 +7245,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Change the amount of units we are charging per execution second
-     * for a given ForeignAssetType
-     *
-     * @param {MoonbeamRuntimeXcmConfigAssetType} assetType
-     * @param {bigint} unitsPerSecond
-     * @param {number} numAssetsWeightHint
-     **/
-    setAssetUnitsPerSecond: GenericTxCall<
-      Rv,
-      (
-        assetType: MoonbeamRuntimeXcmConfigAssetType,
-        unitsPerSecond: bigint,
-        numAssetsWeightHint: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AssetManager';
-          palletCall: {
-            name: 'SetAssetUnitsPerSecond';
-            params: {
-              assetType: MoonbeamRuntimeXcmConfigAssetType;
-              unitsPerSecond: bigint;
-              numAssetsWeightHint: number;
-            };
-          };
-        }
-      >
-    >;
-
-    /**
      * Change the xcm type mapping for a given assetId
      * We also change this if the previous units per second where pointing at the old
      * assetType
@@ -7278,28 +7266,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ChangeExistingAssetType';
             params: { assetId: bigint; newAssetType: MoonbeamRuntimeXcmConfigAssetType; numAssetsWeightHint: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {MoonbeamRuntimeXcmConfigAssetType} assetType
-     * @param {number} numAssetsWeightHint
-     **/
-    removeSupportedAsset: GenericTxCall<
-      Rv,
-      (
-        assetType: MoonbeamRuntimeXcmConfigAssetType,
-        numAssetsWeightHint: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AssetManager';
-          palletCall: {
-            name: 'RemoveSupportedAsset';
-            params: { assetType: MoonbeamRuntimeXcmConfigAssetType; numAssetsWeightHint: number };
           };
         }
       >
@@ -8140,6 +8106,269 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               index: number;
               weightLimit: SpWeightsWeightV2Weight;
             };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `EvmForeignAssets`'s transaction calls
+   **/
+  evmForeignAssets: {
+    /**
+     * Create new asset with the ForeignAssetCreator
+     *
+     * @param {bigint} assetId
+     * @param {StagingXcmV4Location} xcmLocation
+     * @param {number} decimals
+     * @param {BytesLike} symbol
+     * @param {BytesLike} name
+     **/
+    createForeignAsset: GenericTxCall<
+      Rv,
+      (
+        assetId: bigint,
+        xcmLocation: StagingXcmV4Location,
+        decimals: number,
+        symbol: BytesLike,
+        name: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'EvmForeignAssets';
+          palletCall: {
+            name: 'CreateForeignAsset';
+            params: {
+              assetId: bigint;
+              xcmLocation: StagingXcmV4Location;
+              decimals: number;
+              symbol: BytesLike;
+              name: BytesLike;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Change the xcm type mapping for a given assetId
+     * We also change this if the previous units per second where pointing at the old
+     * assetType
+     *
+     * @param {bigint} assetId
+     * @param {StagingXcmV4Location} newXcmLocation
+     **/
+    changeXcmLocation: GenericTxCall<
+      Rv,
+      (
+        assetId: bigint,
+        newXcmLocation: StagingXcmV4Location,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'EvmForeignAssets';
+          palletCall: {
+            name: 'ChangeXcmLocation';
+            params: { assetId: bigint; newXcmLocation: StagingXcmV4Location };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Freeze a given foreign assetId
+     *
+     * @param {bigint} assetId
+     * @param {boolean} allowXcmDeposit
+     **/
+    freezeForeignAsset: GenericTxCall<
+      Rv,
+      (
+        assetId: bigint,
+        allowXcmDeposit: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'EvmForeignAssets';
+          palletCall: {
+            name: 'FreezeForeignAsset';
+            params: { assetId: bigint; allowXcmDeposit: boolean };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Unfreeze a given foreign assetId
+     *
+     * @param {bigint} assetId
+     **/
+    unfreezeForeignAsset: GenericTxCall<
+      Rv,
+      (assetId: bigint) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'EvmForeignAssets';
+          palletCall: {
+            name: 'UnfreezeForeignAsset';
+            params: { assetId: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `XcmWeightTrader`'s transaction calls
+   **/
+  xcmWeightTrader: {
+    /**
+     *
+     * @param {StagingXcmV4Location} location
+     * @param {bigint} relativePrice
+     **/
+    addAsset: GenericTxCall<
+      Rv,
+      (
+        location: StagingXcmV4Location,
+        relativePrice: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'XcmWeightTrader';
+          palletCall: {
+            name: 'AddAsset';
+            params: { location: StagingXcmV4Location; relativePrice: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {StagingXcmV4Location} location
+     * @param {bigint} relativePrice
+     **/
+    editAsset: GenericTxCall<
+      Rv,
+      (
+        location: StagingXcmV4Location,
+        relativePrice: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'XcmWeightTrader';
+          palletCall: {
+            name: 'EditAsset';
+            params: { location: StagingXcmV4Location; relativePrice: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {StagingXcmV4Location} location
+     **/
+    pauseAssetSupport: GenericTxCall<
+      Rv,
+      (location: StagingXcmV4Location) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'XcmWeightTrader';
+          palletCall: {
+            name: 'PauseAssetSupport';
+            params: { location: StagingXcmV4Location };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {StagingXcmV4Location} location
+     **/
+    resumeAssetSupport: GenericTxCall<
+      Rv,
+      (location: StagingXcmV4Location) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'XcmWeightTrader';
+          palletCall: {
+            name: 'ResumeAssetSupport';
+            params: { location: StagingXcmV4Location };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {StagingXcmV4Location} location
+     **/
+    removeAsset: GenericTxCall<
+      Rv,
+      (location: StagingXcmV4Location) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'XcmWeightTrader';
+          palletCall: {
+            name: 'RemoveAsset';
+            params: { location: StagingXcmV4Location };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `EmergencyParaXcm`'s transaction calls
+   **/
+  emergencyParaXcm: {
+    /**
+     * Resume `Normal` mode
+     *
+     **/
+    pausedToNormal: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'EmergencyParaXcm';
+          palletCall: {
+            name: 'PausedToNormal';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Authorize a runtime upgrade. Only callable in `Paused` mode
+     *
+     * @param {H256} codeHash
+     **/
+    fastAuthorizeUpgrade: GenericTxCall<
+      Rv,
+      (codeHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'EmergencyParaXcm';
+          palletCall: {
+            name: 'FastAuthorizeUpgrade';
+            params: { codeHash: H256 };
           };
         }
       >

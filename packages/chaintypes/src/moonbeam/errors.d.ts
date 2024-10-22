@@ -722,6 +722,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ContractNotCorrupted: GenericPalletError<Rv>;
 
     /**
+     * The contract already have metadata
+     **/
+    ContractMetadataAlreadySet: GenericPalletError<Rv>;
+
+    /**
+     * Contract not exist
+     **/
+    ContractNotExist: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1875,6 +1885,83 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Another call is in progress and needs to finish before this call can happen.
      **/
     RecursiveDisallowed: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `EvmForeignAssets`'s errors
+   **/
+  evmForeignAssets: {
+    AssetAlreadyExists: GenericPalletError<Rv>;
+    AssetAlreadyFrozen: GenericPalletError<Rv>;
+    AssetDoesNotExist: GenericPalletError<Rv>;
+    AssetIdFiltered: GenericPalletError<Rv>;
+    AssetNotFrozen: GenericPalletError<Rv>;
+    CorruptedStorageOrphanLocation: GenericPalletError<Rv>;
+    Erc20ContractCreationFail: GenericPalletError<Rv>;
+    EvmCallPauseFail: GenericPalletError<Rv>;
+    EvmCallUnpauseFail: GenericPalletError<Rv>;
+    EvmInternalError: GenericPalletError<Rv>;
+    InvalidSymbol: GenericPalletError<Rv>;
+    InvalidTokenName: GenericPalletError<Rv>;
+    LocationAlreadyExists: GenericPalletError<Rv>;
+    TooManyForeignAssets: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `XcmWeightTrader`'s errors
+   **/
+  xcmWeightTrader: {
+    /**
+     * The given asset was already added
+     **/
+    AssetAlreadyAdded: GenericPalletError<Rv>;
+
+    /**
+     * The given asset was already paused
+     **/
+    AssetAlreadyPaused: GenericPalletError<Rv>;
+
+    /**
+     * The given asset was not found
+     **/
+    AssetNotFound: GenericPalletError<Rv>;
+
+    /**
+     * The given asset is not paused
+     **/
+    AssetNotPaused: GenericPalletError<Rv>;
+
+    /**
+     * XCM location filtered
+     **/
+    XcmLocationFiltered: GenericPalletError<Rv>;
+
+    /**
+     * The relative price cannot be zero
+     **/
+    PriceCannotBeZero: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `EmergencyParaXcm`'s errors
+   **/
+  emergencyParaXcm: {
+    /**
+     * The current XCM Mode is not Paused
+     **/
+    NotInPausedMode: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

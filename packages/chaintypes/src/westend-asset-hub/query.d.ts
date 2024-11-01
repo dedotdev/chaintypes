@@ -11,6 +11,7 @@ import type {
   FixedU128,
   BytesLike,
   FixedBytes,
+  H160,
 } from 'dedot/codecs';
 import type {
   FrameSystemAccountInfo,
@@ -77,6 +78,9 @@ import type {
   PalletNftFractionalizationDetails,
   PalletAssetConversionPoolInfo,
   FrameSupportTokensMiscIdAmountRuntimeFreezeReason,
+  PalletReviveWasmCodeInfo,
+  PalletReviveStorageContractInfo,
+  PalletReviveStorageDeletionQueueManager,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationMigrationLimits,
 } from './types';
@@ -1834,6 +1838,78 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       (arg: [number, AccountId32Like]) => bigint | undefined,
       [number, AccountId32]
     >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Revive`'s storage queries
+   **/
+  revive: {
+    /**
+     * A mapping from a contract's code hash to its code.
+     *
+     * @param {H256} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    pristineCode: GenericStorageQuery<Rv, (arg: H256) => Bytes | undefined, H256>;
+
+    /**
+     * A mapping from a contract's code hash to its code info.
+     *
+     * @param {H256} arg
+     * @param {Callback<PalletReviveWasmCodeInfo | undefined> =} callback
+     **/
+    codeInfoOf: GenericStorageQuery<Rv, (arg: H256) => PalletReviveWasmCodeInfo | undefined, H256>;
+
+    /**
+     * The code associated with a given account.
+     *
+     * @param {H160} arg
+     * @param {Callback<PalletReviveStorageContractInfo | undefined> =} callback
+     **/
+    contractInfoOf: GenericStorageQuery<Rv, (arg: H160) => PalletReviveStorageContractInfo | undefined, H160>;
+
+    /**
+     * The immutable data associated with a given account.
+     *
+     * @param {H160} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    immutableDataOf: GenericStorageQuery<Rv, (arg: H160) => Bytes | undefined, H160>;
+
+    /**
+     * Evicted contracts that await child trie deletion.
+     *
+     * Child trie deletion is a heavy operation depending on the amount of storage items
+     * stored in said trie. Therefore this operation is performed lazily in `on_idle`.
+     *
+     * @param {number} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    deletionQueue: GenericStorageQuery<Rv, (arg: number) => Bytes | undefined, number>;
+
+    /**
+     * A pair of monotonic counters used to track the latest contract marked for deletion
+     * and the latest deleted contract in queue.
+     *
+     * @param {Callback<PalletReviveStorageDeletionQueueManager> =} callback
+     **/
+    deletionQueueCounter: GenericStorageQuery<Rv, () => PalletReviveStorageDeletionQueueManager>;
+
+    /**
+     * Map a Ethereum address to its original `AccountId32`.
+     *
+     * Stores the last 12 byte for addresses that were originally an `AccountId32` instead
+     * of an `H160`. Register your `AccountId32` using [`Pallet::map_account`] in order to
+     * use it with this pallet.
+     *
+     * @param {H160} arg
+     * @param {Callback<FixedBytes<12> | undefined> =} callback
+     **/
+    addressSuffix: GenericStorageQuery<Rv, (arg: H160) => FixedBytes<12> | undefined, H160>;
 
     /**
      * Generic pallet storage query

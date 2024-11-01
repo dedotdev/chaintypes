@@ -23,7 +23,7 @@ export interface VersionedWestendAssetHubApi<Rv extends RpcVersion> extends Gene
 
 /**
  * @name: WestendAssetHubApi
- * @specVersion: 1016002
+ * @specVersion: 1016003
  **/
 export interface WestendAssetHubApi {
   legacy: VersionedWestendAssetHubApi<RpcLegacy>;

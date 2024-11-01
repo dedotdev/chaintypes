@@ -2,7 +2,6 @@
 
 import type { GenericChainEvents, GenericPalletEvent, RpcVersion } from 'dedot/types';
 import type {
-  DispatchInfo,
   DispatchError,
   AccountId32,
   H256,
@@ -11,8 +10,10 @@ import type {
   Result,
   Bytes,
   Permill,
+  H160,
 } from 'dedot/codecs';
 import type {
+  FrameSystemDispatchEventInfo,
   SpWeightsWeightV2Weight,
   FrameSupportTokensMiscBalanceStatus,
   StagingXcmV4Location,
@@ -30,6 +31,7 @@ import type {
   PalletNftsAttributeNamespace,
   PalletNftsPriceWithDirection,
   PalletNftsPalletAttributes,
+  PalletReviveExecOrigin,
   PalletStateTrieMigrationMigrationCompute,
   PalletStateTrieMigrationError,
 } from './types';
@@ -42,7 +44,12 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * An extrinsic completed successfully.
      **/
-    ExtrinsicSuccess: GenericPalletEvent<Rv, 'System', 'ExtrinsicSuccess', { dispatchInfo: DispatchInfo }>;
+    ExtrinsicSuccess: GenericPalletEvent<
+      Rv,
+      'System',
+      'ExtrinsicSuccess',
+      { dispatchInfo: FrameSystemDispatchEventInfo }
+    >;
 
     /**
      * An extrinsic failed.
@@ -51,7 +58,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'System',
       'ExtrinsicFailed',
-      { dispatchError: DispatchError; dispatchInfo: DispatchInfo }
+      { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo }
     >;
 
     /**
@@ -2538,6 +2545,185 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'PoolAssetsFreezer',
       'Thawed',
       { who: AccountId32; assetId: number; amount: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Revive`'s events
+   **/
+  revive: {
+    /**
+     * Contract deployed by address at the specified address.
+     **/
+    Instantiated: GenericPalletEvent<Rv, 'Revive', 'Instantiated', { deployer: H160; contract: H160 }>;
+
+    /**
+     * Contract has been removed.
+     *
+     * # Note
+     *
+     * The only way for a contract to be removed and emitting this event is by calling
+     * `seal_terminate`.
+     **/
+    Terminated: GenericPalletEvent<
+      Rv,
+      'Revive',
+      'Terminated',
+      {
+        /**
+         * The contract that was terminated.
+         **/
+        contract: H160;
+
+        /**
+         * The account that received the contracts remaining balance
+         **/
+        beneficiary: H160;
+      }
+    >;
+
+    /**
+     * Code with the specified hash has been stored.
+     **/
+    CodeStored: GenericPalletEvent<Rv, 'Revive', 'CodeStored', { codeHash: H256; depositHeld: bigint; uploader: H160 }>;
+
+    /**
+     * A custom event emitted by the contract.
+     **/
+    ContractEmitted: GenericPalletEvent<
+      Rv,
+      'Revive',
+      'ContractEmitted',
+      {
+        /**
+         * The contract that emitted the event.
+         **/
+        contract: H160;
+
+        /**
+         * Data supplied by the contract. Metadata generated during contract compilation
+         * is needed to decode it.
+         **/
+        data: Bytes;
+
+        /**
+         * A list of topics used to index the event.
+         * Number of topics is capped by [`limits::NUM_EVENT_TOPICS`].
+         **/
+        topics: Array<H256>;
+      }
+    >;
+
+    /**
+     * A code with the specified hash was removed.
+     **/
+    CodeRemoved: GenericPalletEvent<
+      Rv,
+      'Revive',
+      'CodeRemoved',
+      { codeHash: H256; depositReleased: bigint; remover: H160 }
+    >;
+
+    /**
+     * A contract's code was updated.
+     **/
+    ContractCodeUpdated: GenericPalletEvent<
+      Rv,
+      'Revive',
+      'ContractCodeUpdated',
+      {
+        /**
+         * The contract that has been updated.
+         **/
+        contract: H160;
+
+        /**
+         * New code hash that was set for the contract.
+         **/
+        newCodeHash: H256;
+
+        /**
+         * Previous code hash of the contract.
+         **/
+        oldCodeHash: H256;
+      }
+    >;
+
+    /**
+     * A contract was called either by a plain account or another contract.
+     *
+     * # Note
+     *
+     * Please keep in mind that like all events this is only emitted for successful
+     * calls. This is because on failure all storage changes including events are
+     * rolled back.
+     **/
+    Called: GenericPalletEvent<
+      Rv,
+      'Revive',
+      'Called',
+      {
+        /**
+         * The caller of the `contract`.
+         **/
+        caller: PalletReviveExecOrigin;
+
+        /**
+         * The contract that was called.
+         **/
+        contract: H160;
+      }
+    >;
+
+    /**
+     * A contract delegate called a code hash.
+     *
+     * # Note
+     *
+     * Please keep in mind that like all events this is only emitted for successful
+     * calls. This is because on failure all storage changes including events are
+     * rolled back.
+     **/
+    DelegateCalled: GenericPalletEvent<
+      Rv,
+      'Revive',
+      'DelegateCalled',
+      {
+        /**
+         * The contract that performed the delegate call and hence in whose context
+         * the `code_hash` is executed.
+         **/
+        contract: H160;
+
+        /**
+         * The code hash that was delegate called.
+         **/
+        codeHash: H256;
+      }
+    >;
+
+    /**
+     * Some funds have been transferred and held as storage deposit.
+     **/
+    StorageDepositTransferredAndHeld: GenericPalletEvent<
+      Rv,
+      'Revive',
+      'StorageDepositTransferredAndHeld',
+      { from: H160; to: H160; amount: bigint }
+    >;
+
+    /**
+     * Some storage deposit funds have been transferred and released.
+     **/
+    StorageDepositTransferredAndReleased: GenericPalletEvent<
+      Rv,
+      'Revive',
+      'StorageDepositTransferredAndReleased',
+      { from: H160; to: H160; amount: bigint }
     >;
 
     /**

@@ -13,6 +13,8 @@ import type {
   BytesLike,
   AccountId32Like,
   AccountId32,
+  H160,
+  FixedBytes,
 } from 'dedot/codecs';
 import type {
   SpConsensusSlotsSlotDuration,
@@ -44,6 +46,16 @@ import type {
   XcmRuntimeApisConversionsError,
   AssetsCommonRuntimeApiFungiblesAccessError,
   CumulusPrimitivesCoreCollationInfo,
+  PolkadotPrimitivesVstagingCoreSelector,
+  PolkadotPrimitivesVstagingClaimQueueOffset,
+  XcmRuntimeApisTrustedQueryError,
+  XcmVersionedAsset,
+  PalletRevivePrimitivesContractResult,
+  PalletRevivePrimitivesContractResultInstantiateReturnValue,
+  PalletRevivePrimitivesCode,
+  PalletRevivePrimitivesEthContractResult,
+  PalletRevivePrimitivesCodeUploadReturnValue,
+  PalletRevivePrimitivesContractAccessError,
 } from './types';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
@@ -737,6 +749,25 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
+   * @runtimeapi: GetCoreSelectorApi - 0x695c80446b8b3d4e
+   **/
+  getCoreSelectorApi: {
+    /**
+     * Retrieve core selector and claim queue offset for the next block.
+     *
+     * @callname: GetCoreSelectorApi_core_selector
+     **/
+    coreSelector: GenericRuntimeApiMethod<
+      Rv,
+      () => Promise<[PolkadotPrimitivesVstagingCoreSelector, PolkadotPrimitivesVstagingClaimQueueOffset]>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
    * @runtimeapi: GenesisBuilder - 0xfbc577b9d747efd6
    **/
   genesisBuilder: {
@@ -744,9 +775,10 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * Build `RuntimeGenesisConfig` from a JSON blob not using any defaults and store it in the
      * storage.
      *
-     * In the case of a FRAME-based runtime, this function deserializes the full `RuntimeGenesisConfig` from the given JSON blob and
-     * puts it into the storage. If the provided JSON blob is incorrect or incomplete or the
-     * deserialization fails, an error is returned.
+     * In the case of a FRAME-based runtime, this function deserializes the full
+     * `RuntimeGenesisConfig` from the given JSON blob and puts it into the storage. If the
+     * provided JSON blob is incorrect or incomplete or the deserialization fails, an error
+     * is returned.
      *
      * Please note that provided JSON blob must contain all `RuntimeGenesisConfig` fields, no
      * defaults will be used.
@@ -760,7 +792,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * Returns a JSON blob representation of the built-in `RuntimeGenesisConfig` identified by
      * `id`.
      *
-     * If `id` is `None` the function returns JSON blob representation of the default
+     * If `id` is `None` the function should return JSON blob representation of the default
      * `RuntimeGenesisConfig` struct of the runtime. Implementation must provide default
      * `RuntimeGenesisConfig`.
      *
@@ -786,6 +818,193 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: GenesisBuilder_preset_names
      **/
     presetNames: GenericRuntimeApiMethod<Rv, () => Promise<Array<string>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: TrustedQueryApi - 0x2609be83ac4468dc
+   **/
+  trustedQueryApi: {
+    /**
+     * Returns if the location is a trusted reserve for the asset.
+     *
+     * # Arguments
+     * * `asset`: `VersionedAsset`.
+     * * `location`: `VersionedLocation`.
+     *
+     * @callname: TrustedQueryApi_is_trusted_reserve
+     * @param {XcmVersionedAsset} asset
+     * @param {XcmVersionedLocation} location
+     **/
+    isTrustedReserve: GenericRuntimeApiMethod<
+      Rv,
+      (
+        asset: XcmVersionedAsset,
+        location: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
+    >;
+
+    /**
+     * Returns if the asset can be teleported to the location.
+     *
+     * # Arguments
+     * * `asset`: `VersionedAsset`.
+     * * `location`: `VersionedLocation`.
+     *
+     * @callname: TrustedQueryApi_is_trusted_teleporter
+     * @param {XcmVersionedAsset} asset
+     * @param {XcmVersionedLocation} location
+     **/
+    isTrustedTeleporter: GenericRuntimeApiMethod<
+      Rv,
+      (
+        asset: XcmVersionedAsset,
+        location: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: ReviveApi - 0x8c403e5c4a9fd442
+   **/
+  reviveApi: {
+    /**
+     * Returns the free balance of the given `[H160]` address.
+     *
+     * @callname: ReviveApi_balance
+     * @param {H160} address
+     **/
+    balance: GenericRuntimeApiMethod<Rv, (address: H160) => Promise<bigint>>;
+
+    /**
+     * Returns the nonce of the given `[H160]` address.
+     *
+     * @callname: ReviveApi_nonce
+     * @param {H160} address
+     **/
+    nonce: GenericRuntimeApiMethod<Rv, (address: H160) => Promise<number>>;
+
+    /**
+     * Perform a call from a specified account to a given contract.
+     *
+     * See [`crate::Pallet::bare_call`].
+     *
+     * @callname: ReviveApi_call
+     * @param {AccountId32Like} origin
+     * @param {H160} dest
+     * @param {bigint} value
+     * @param {SpWeightsWeightV2Weight | undefined} gas_limit
+     * @param {bigint | undefined} storage_deposit_limit
+     * @param {BytesLike} input_data
+     **/
+    call: GenericRuntimeApiMethod<
+      Rv,
+      (
+        origin: AccountId32Like,
+        dest: H160,
+        value: bigint,
+        gasLimit: SpWeightsWeightV2Weight | undefined,
+        storageDepositLimit: bigint | undefined,
+        inputData: BytesLike,
+      ) => Promise<PalletRevivePrimitivesContractResult>
+    >;
+
+    /**
+     * Instantiate a new contract.
+     *
+     * See `[crate::Pallet::bare_instantiate]`.
+     *
+     * @callname: ReviveApi_instantiate
+     * @param {AccountId32Like} origin
+     * @param {bigint} value
+     * @param {SpWeightsWeightV2Weight | undefined} gas_limit
+     * @param {bigint | undefined} storage_deposit_limit
+     * @param {PalletRevivePrimitivesCode} code
+     * @param {BytesLike} data
+     * @param {FixedBytes<32> | undefined} salt
+     **/
+    instantiate: GenericRuntimeApiMethod<
+      Rv,
+      (
+        origin: AccountId32Like,
+        value: bigint,
+        gasLimit: SpWeightsWeightV2Weight | undefined,
+        storageDepositLimit: bigint | undefined,
+        code: PalletRevivePrimitivesCode,
+        data: BytesLike,
+        salt?: FixedBytes<32> | undefined,
+      ) => Promise<PalletRevivePrimitivesContractResultInstantiateReturnValue>
+    >;
+
+    /**
+     * Perform an Ethereum call.
+     *
+     * See [`crate::Pallet::bare_eth_transact`]
+     *
+     * @callname: ReviveApi_eth_transact
+     * @param {H160} origin
+     * @param {H160 | undefined} dest
+     * @param {bigint} value
+     * @param {BytesLike} input
+     * @param {SpWeightsWeightV2Weight | undefined} gas_limit
+     * @param {bigint | undefined} storage_deposit_limit
+     **/
+    ethTransact: GenericRuntimeApiMethod<
+      Rv,
+      (
+        origin: H160,
+        dest: H160 | undefined,
+        value: bigint,
+        input: BytesLike,
+        gasLimit?: SpWeightsWeightV2Weight | undefined,
+        storageDepositLimit?: bigint | undefined,
+      ) => Promise<PalletRevivePrimitivesEthContractResult>
+    >;
+
+    /**
+     * Upload new code without instantiating a contract from it.
+     *
+     * See [`crate::Pallet::bare_upload_code`].
+     *
+     * @callname: ReviveApi_upload_code
+     * @param {AccountId32Like} origin
+     * @param {BytesLike} code
+     * @param {bigint | undefined} storage_deposit_limit
+     **/
+    uploadCode: GenericRuntimeApiMethod<
+      Rv,
+      (
+        origin: AccountId32Like,
+        code: BytesLike,
+        storageDepositLimit?: bigint | undefined,
+      ) => Promise<Result<PalletRevivePrimitivesCodeUploadReturnValue, DispatchError>>
+    >;
+
+    /**
+     * Query a given storage key in a given contract.
+     *
+     * Returns `Ok(Some(Vec<u8>))` if the storage value exists under the given key in the
+     * specified account and `Ok(None)` if it doesn't. If the account specified by the address
+     * doesn't exist, or doesn't have a contract then `Err` is returned.
+     *
+     * @callname: ReviveApi_get_storage
+     * @param {H160} address
+     * @param {FixedBytes<32>} key
+     **/
+    getStorage: GenericRuntimeApiMethod<
+      Rv,
+      (
+        address: H160,
+        key: FixedBytes<32>,
+      ) => Promise<Result<Bytes | undefined, PalletRevivePrimitivesContractAccessError>>
+    >;
 
     /**
      * Generic runtime api call

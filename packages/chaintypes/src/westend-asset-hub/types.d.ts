@@ -3,7 +3,6 @@
 import type {
   Phase,
   H256,
-  DispatchInfo,
   DispatchError,
   AccountId32,
   FixedBytes,
@@ -12,6 +11,7 @@ import type {
   FixedU128,
   Result,
   Permill,
+  H160,
   BytesLike,
   MultiAddress,
   MultiAddressLike,
@@ -74,6 +74,7 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'AssetsFreezer'; palletEvent: PalletAssetsFreezerEvent }
   | { pallet: 'ForeignAssetsFreezer'; palletEvent: PalletAssetsFreezerEvent002 }
   | { pallet: 'PoolAssetsFreezer'; palletEvent: PalletAssetsFreezerEvent }
+  | { pallet: 'Revive'; palletEvent: PalletReviveEvent }
   | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent }
   | { pallet: 'AssetConversionMigration'; palletEvent: PalletAssetConversionOpsEvent };
 
@@ -84,11 +85,11 @@ export type FrameSystemEvent =
   /**
    * An extrinsic completed successfully.
    **/
-  | { name: 'ExtrinsicSuccess'; data: { dispatchInfo: DispatchInfo } }
+  | { name: 'ExtrinsicSuccess'; data: { dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
    * An extrinsic failed.
    **/
-  | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: DispatchInfo } }
+  | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
    * `:code` was updated.
    **/
@@ -110,9 +111,31 @@ export type FrameSystemEvent =
    **/
   | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } };
 
+export type FrameSystemDispatchEventInfo = {
+  weight: SpWeightsWeightV2Weight;
+  class: FrameSupportDispatchDispatchClass;
+  paysFee: FrameSupportDispatchPays;
+};
+
 export type FrameSupportDispatchDispatchClass = 'Normal' | 'Operational' | 'Mandatory';
 
 export type FrameSupportDispatchPays = 'Yes' | 'No';
+
+export type SpRuntimeProvingTrieTrieError =
+  | 'InvalidStateRoot'
+  | 'IncompleteDatabase'
+  | 'ValueAtIncompleteKey'
+  | 'DecoderError'
+  | 'InvalidHash'
+  | 'DuplicateKey'
+  | 'ExtraneousNode'
+  | 'ExtraneousValue'
+  | 'ExtraneousHashReference'
+  | 'InvalidChildReference'
+  | 'ValueMismatch'
+  | 'IncompleteProof'
+  | 'RootMismatch'
+  | 'DecodeError';
 
 /**
  * The `Event` enum of this pallet
@@ -2101,6 +2124,150 @@ export type PalletAssetsFreezerEvent002 =
   | { name: 'Thawed'; data: { who: AccountId32; assetId: StagingXcmV4Location; amount: bigint } };
 
 /**
+ * The `Event` enum of this pallet
+ **/
+export type PalletReviveEvent =
+  /**
+   * Contract deployed by address at the specified address.
+   **/
+  | { name: 'Instantiated'; data: { deployer: H160; contract: H160 } }
+  /**
+   * Contract has been removed.
+   *
+   * # Note
+   *
+   * The only way for a contract to be removed and emitting this event is by calling
+   * `seal_terminate`.
+   **/
+  | {
+      name: 'Terminated';
+      data: {
+        /**
+         * The contract that was terminated.
+         **/
+        contract: H160;
+
+        /**
+         * The account that received the contracts remaining balance
+         **/
+        beneficiary: H160;
+      };
+    }
+  /**
+   * Code with the specified hash has been stored.
+   **/
+  | { name: 'CodeStored'; data: { codeHash: H256; depositHeld: bigint; uploader: H160 } }
+  /**
+   * A custom event emitted by the contract.
+   **/
+  | {
+      name: 'ContractEmitted';
+      data: {
+        /**
+         * The contract that emitted the event.
+         **/
+        contract: H160;
+
+        /**
+         * Data supplied by the contract. Metadata generated during contract compilation
+         * is needed to decode it.
+         **/
+        data: Bytes;
+
+        /**
+         * A list of topics used to index the event.
+         * Number of topics is capped by [`limits::NUM_EVENT_TOPICS`].
+         **/
+        topics: Array<H256>;
+      };
+    }
+  /**
+   * A code with the specified hash was removed.
+   **/
+  | { name: 'CodeRemoved'; data: { codeHash: H256; depositReleased: bigint; remover: H160 } }
+  /**
+   * A contract's code was updated.
+   **/
+  | {
+      name: 'ContractCodeUpdated';
+      data: {
+        /**
+         * The contract that has been updated.
+         **/
+        contract: H160;
+
+        /**
+         * New code hash that was set for the contract.
+         **/
+        newCodeHash: H256;
+
+        /**
+         * Previous code hash of the contract.
+         **/
+        oldCodeHash: H256;
+      };
+    }
+  /**
+   * A contract was called either by a plain account or another contract.
+   *
+   * # Note
+   *
+   * Please keep in mind that like all events this is only emitted for successful
+   * calls. This is because on failure all storage changes including events are
+   * rolled back.
+   **/
+  | {
+      name: 'Called';
+      data: {
+        /**
+         * The caller of the `contract`.
+         **/
+        caller: PalletReviveExecOrigin;
+
+        /**
+         * The contract that was called.
+         **/
+        contract: H160;
+      };
+    }
+  /**
+   * A contract delegate called a code hash.
+   *
+   * # Note
+   *
+   * Please keep in mind that like all events this is only emitted for successful
+   * calls. This is because on failure all storage changes including events are
+   * rolled back.
+   **/
+  | {
+      name: 'DelegateCalled';
+      data: {
+        /**
+         * The contract that performed the delegate call and hence in whose context
+         * the `code_hash` is executed.
+         **/
+        contract: H160;
+
+        /**
+         * The code hash that was delegate called.
+         **/
+        codeHash: H256;
+      };
+    }
+  /**
+   * Some funds have been transferred and held as storage deposit.
+   **/
+  | { name: 'StorageDepositTransferredAndHeld'; data: { from: H160; to: H160; amount: bigint } }
+  /**
+   * Some storage deposit funds have been transferred and released.
+   **/
+  | { name: 'StorageDepositTransferredAndReleased'; data: { from: H160; to: H160; amount: bigint } };
+
+export type PalletReviveExecOrigin = { type: 'Root' } | { type: 'Signed'; value: AccountId32 };
+
+export type AssetHubWestendRuntimeRuntime = {};
+
+/**
  * Inner events of this pallet.
  **/
 export type PalletStateTrieMigrationEvent =
@@ -2640,9 +2807,12 @@ export type FrameSupportTokensMiscIdAmount = { id: AssetHubWestendRuntimeRuntime
 
 export type AssetHubWestendRuntimeRuntimeHoldReason =
   | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
+  | { type: 'Revive'; value: PalletReviveHoldReason }
   | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason };
 
 export type PalletNftFractionalizationHoldReason = 'Fractionalized';
+
+export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
 
 export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
 
@@ -4726,6 +4896,7 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'NftFractionalization'; palletCall: PalletNftFractionalizationCall }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCall003 }
   | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall }
+  | { pallet: 'Revive'; palletCall: PalletReviveCall }
   | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall }
   | { pallet: 'AssetConversionMigration'; palletCall: PalletAssetConversionOpsCall };
 
@@ -4751,6 +4922,7 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'NftFractionalization'; palletCall: PalletNftFractionalizationCallLike }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCallLike003 }
   | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike }
+  | { pallet: 'Revive'; palletCall: PalletReviveCallLike }
   | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike }
   | { pallet: 'AssetConversionMigration'; palletCall: PalletAssetConversionOpsCallLike };
 
@@ -11495,6 +11667,338 @@ export type PalletAssetConversionCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletReviveCall =
+  /**
+   * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
+   *
+   * # Parameters
+   *
+   * * `payload`: The RLP-encoded [`crate::evm::TransactionLegacySigned`].
+   * * `gas_limit`: The gas limit enforced during contract execution.
+   * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
+   * storage usage.
+   *
+   * # Note
+   *
+   * This call cannot be dispatched directly; attempting to do so will result in a failed
+   * transaction. It serves as a wrapper for an Ethereum transaction. When submitted, the
+   * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
+   * signer and validating the transaction.
+   **/
+  | { name: 'EthTransact'; params: { payload: Bytes; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint } }
+  /**
+   * Makes a call to an account, optionally transferring some balance.
+   *
+   * # Parameters
+   *
+   * * `dest`: Address of the contract to call.
+   * * `value`: The balance to transfer from the `origin` to `dest`.
+   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
+   * caller to pay for the storage consumed.
+   * * `data`: The input data to pass to the contract.
+   *
+   * * If the account is a smart-contract account, the associated code will be
+   * executed and any value will be transferred.
+   * * If the account is a regular account, any value will be transferred.
+   * * If no account exists and the call value is not less than `existential_deposit`,
+   * a regular account will be created and any value will be transferred.
+   **/
+  | {
+      name: 'Call';
+      params: {
+        dest: H160;
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        data: Bytes;
+      };
+    }
+  /**
+   * Instantiates a contract from a previously deployed wasm binary.
+   *
+   * This function is identical to [`Self::instantiate_with_code`] but without the
+   * code deployment step. Instead, the `code_hash` of an on-chain deployed wasm binary
+   * must be supplied.
+   **/
+  | {
+      name: 'Instantiate';
+      params: {
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        codeHash: H256;
+        data: Bytes;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Instantiates a new contract from the supplied `code` optionally transferring
+   * some balance.
+   *
+   * This dispatchable has the same effect as calling [`Self::upload_code`] +
+   * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
+   * also check the documentation of [`Self::upload_code`].
+   *
+   * # Parameters
+   *
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
+   * from the caller to pay for the storage consumed.
+   * * `code`: The contract code to deploy in raw bytes.
+   * * `data`: The input data to pass to the contract constructor.
+   * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
+   * semantics are used. If `None` then `CRATE1` is used.
+   *
+   *
+   * Instantiation is executed as follows:
+   *
+   * - The supplied `code` is deployed, and a `code_hash` is created for that code.
+   * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
+   * - The destination address is computed based on the sender, code_hash and the salt.
+   * - The smart-contract account is created at the computed address.
+   * - The `value` is transferred to the new account.
+   * - The `deploy` function is executed in the context of the newly-created account.
+   **/
+  | {
+      name: 'InstantiateWithCode';
+      params: {
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        code: Bytes;
+        data: Bytes;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Upload new `code` without instantiating a contract from it.
+   *
+   * If the code does not already exist a deposit is reserved from the caller
+   * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
+   * depends on the size of the supplied `code`.
+   *
+   * # Note
+   *
+   * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
+   * To avoid this situation a constructor could employ access control so that it can
+   * only be instantiated by permissioned entities. The same is true when uploading
+   * through [`Self::instantiate_with_code`].
+   **/
+  | { name: 'UploadCode'; params: { code: Bytes; storageDepositLimit: bigint } }
+  /**
+   * Remove the code stored under `code_hash` and refund the deposit to its owner.
+   *
+   * A code can only be removed by its original uploader (its owner) and only if it is
+   * not used by any contract.
+   **/
+  | { name: 'RemoveCode'; params: { codeHash: H256 } }
+  /**
+   * Privileged function that changes the code of an existing contract.
+   *
+   * This takes care of updating refcounts and all other necessary operations. Returns
+   * an error if either the `code_hash` or `dest` do not exist.
+   *
+   * # Note
+   *
+   * This does **not** change the address of the contract in question. This means
+   * that the contract address is no longer derived from its code hash after calling
+   * this dispatchable.
+   **/
+  | { name: 'SetCode'; params: { dest: H160; codeHash: H256 } }
+  /**
+   * Register the callers account id so that it can be used in contract interactions.
+   *
+   * This will error if the origin is already mapped or is a eth native `Address20`. It will
+   * take a deposit that can be released by calling [`Self::unmap_account`].
+   **/
+  | { name: 'MapAccount' }
+  /**
+   * Unregister the callers account id in order to free the deposit.
+   *
+   * There is no reason to ever call this function other than freeing up the deposit.
+   * This is only useful when the account should no longer be used.
+   **/
+  | { name: 'UnmapAccount' }
+  /**
+   * Dispatch an `call` with the origin set to the callers fallback address.
+   *
+   * Every `AccountId32` can control its corresponding fallback account. The fallback account
+   * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
+   * recovery function in case an `AccountId20` was used without creating a mapping first.
+   **/
+  | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubWestendRuntimeRuntimeCall } };
+
+export type PalletReviveCallLike =
+  /**
+   * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
+   *
+   * # Parameters
+   *
+   * * `payload`: The RLP-encoded [`crate::evm::TransactionLegacySigned`].
+   * * `gas_limit`: The gas limit enforced during contract execution.
+   * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
+   * storage usage.
+   *
+   * # Note
+   *
+   * This call cannot be dispatched directly; attempting to do so will result in a failed
+   * transaction. It serves as a wrapper for an Ethereum transaction. When submitted, the
+   * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
+   * signer and validating the transaction.
+   **/
+  | {
+      name: 'EthTransact';
+      params: { payload: BytesLike; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint };
+    }
+  /**
+   * Makes a call to an account, optionally transferring some balance.
+   *
+   * # Parameters
+   *
+   * * `dest`: Address of the contract to call.
+   * * `value`: The balance to transfer from the `origin` to `dest`.
+   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
+   * caller to pay for the storage consumed.
+   * * `data`: The input data to pass to the contract.
+   *
+   * * If the account is a smart-contract account, the associated code will be
+   * executed and any value will be transferred.
+   * * If the account is a regular account, any value will be transferred.
+   * * If no account exists and the call value is not less than `existential_deposit`,
+   * a regular account will be created and any value will be transferred.
+   **/
+  | {
+      name: 'Call';
+      params: {
+        dest: H160;
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        data: BytesLike;
+      };
+    }
+  /**
+   * Instantiates a contract from a previously deployed wasm binary.
+   *
+   * This function is identical to [`Self::instantiate_with_code`] but without the
+   * code deployment step. Instead, the `code_hash` of an on-chain deployed wasm binary
+   * must be supplied.
+   **/
+  | {
+      name: 'Instantiate';
+      params: {
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        codeHash: H256;
+        data: BytesLike;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Instantiates a new contract from the supplied `code` optionally transferring
+   * some balance.
+   *
+   * This dispatchable has the same effect as calling [`Self::upload_code`] +
+   * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
+   * also check the documentation of [`Self::upload_code`].
+   *
+   * # Parameters
+   *
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
+   * from the caller to pay for the storage consumed.
+   * * `code`: The contract code to deploy in raw bytes.
+   * * `data`: The input data to pass to the contract constructor.
+   * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
+   * semantics are used. If `None` then `CRATE1` is used.
+   *
+   *
+   * Instantiation is executed as follows:
+   *
+   * - The supplied `code` is deployed, and a `code_hash` is created for that code.
+   * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
+   * - The destination address is computed based on the sender, code_hash and the salt.
+   * - The smart-contract account is created at the computed address.
+   * - The `value` is transferred to the new account.
+   * - The `deploy` function is executed in the context of the newly-created account.
+   **/
+  | {
+      name: 'InstantiateWithCode';
+      params: {
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        code: BytesLike;
+        data: BytesLike;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Upload new `code` without instantiating a contract from it.
+   *
+   * If the code does not already exist a deposit is reserved from the caller
+   * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
+   * depends on the size of the supplied `code`.
+   *
+   * # Note
+   *
+   * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
+   * To avoid this situation a constructor could employ access control so that it can
+   * only be instantiated by permissioned entities. The same is true when uploading
+   * through [`Self::instantiate_with_code`].
+   **/
+  | { name: 'UploadCode'; params: { code: BytesLike; storageDepositLimit: bigint } }
+  /**
+   * Remove the code stored under `code_hash` and refund the deposit to its owner.
+   *
+   * A code can only be removed by its original uploader (its owner) and only if it is
+   * not used by any contract.
+   **/
+  | { name: 'RemoveCode'; params: { codeHash: H256 } }
+  /**
+   * Privileged function that changes the code of an existing contract.
+   *
+   * This takes care of updating refcounts and all other necessary operations. Returns
+   * an error if either the `code_hash` or `dest` do not exist.
+   *
+   * # Note
+   *
+   * This does **not** change the address of the contract in question. This means
+   * that the contract address is no longer derived from its code hash after calling
+   * this dispatchable.
+   **/
+  | { name: 'SetCode'; params: { dest: H160; codeHash: H256 } }
+  /**
+   * Register the callers account id so that it can be used in contract interactions.
+   *
+   * This will error if the origin is already mapped or is a eth native `Address20`. It will
+   * take a deposit that can be released by calling [`Self::unmap_account`].
+   **/
+  | { name: 'MapAccount' }
+  /**
+   * Unregister the callers account id in order to free the deposit.
+   *
+   * There is no reason to ever call this function other than freeing up the deposit.
+   * This is only useful when the account should no longer be used.
+   **/
+  | { name: 'UnmapAccount' }
+  /**
+   * Dispatch an `call` with the origin set to the callers fallback address.
+   *
+   * Every `AccountId32` can control its corresponding fallback account. The fallback account
+   * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
+   * recovery function in case an `AccountId20` was used without creating a mapping first.
+   **/
+  | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubWestendRuntimeRuntimeCallLike } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletStateTrieMigrationCall =
   /**
    * Control the automatic migration.
@@ -12431,6 +12935,223 @@ export type PalletAssetsFreezerError =
    **/
   'TooManyFreezes';
 
+export type PalletReviveWasmCodeInfo = {
+  owner: AccountId32;
+  deposit: bigint;
+  refcount: bigint;
+  codeLen: number;
+  apiVersion: number;
+  behaviourVersion: number;
+};
+
+export type PalletReviveStorageContractInfo = {
+  trieId: Bytes;
+  codeHash: H256;
+  storageBytes: number;
+  storageItems: number;
+  storageByteDeposit: bigint;
+  storageItemDeposit: bigint;
+  storageBaseDeposit: bigint;
+  delegateDependencies: Array<[H256, bigint]>;
+  immutableDataLen: number;
+};
+
+export type PalletReviveStorageDeletionQueueManager = { insertCounter: number; deleteCounter: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletReviveError =
+  /**
+   * Invalid schedule supplied, e.g. with zero weight of a basic operation.
+   **/
+  | 'InvalidSchedule'
+  /**
+   * Invalid combination of flags supplied to `seal_call` or `seal_delegate_call`.
+   **/
+  | 'InvalidCallFlags'
+  /**
+   * The executed contract exhausted its gas limit.
+   **/
+  | 'OutOfGas'
+  /**
+   * Performing the requested transfer failed. Probably because there isn't enough
+   * free balance in the sender's account.
+   **/
+  | 'TransferFailed'
+  /**
+   * Performing a call was denied because the calling depth reached the limit
+   * of what is specified in the schedule.
+   **/
+  | 'MaxCallDepthReached'
+  /**
+   * No contract was found at the specified address.
+   **/
+  | 'ContractNotFound'
+  /**
+   * No code could be found at the supplied code hash.
+   **/
+  | 'CodeNotFound'
+  /**
+   * No code info could be found at the supplied code hash.
+   **/
+  | 'CodeInfoNotFound'
+  /**
+   * A buffer outside of sandbox memory was passed to a contract API function.
+   **/
+  | 'OutOfBounds'
+  /**
+   * Input passed to a contract API function failed to decode as expected type.
+   **/
+  | 'DecodingFailed'
+  /**
+   * Contract trapped during execution.
+   **/
+  | 'ContractTrapped'
+  /**
+   * The size defined in `T::MaxValueSize` was exceeded.
+   **/
+  | 'ValueTooLarge'
+  /**
+   * Termination of a contract is not allowed while the contract is already
+   * on the call stack. Can be triggered by `seal_terminate`.
+   **/
+  | 'TerminatedWhileReentrant'
+  /**
+   * `seal_call` forwarded this contracts input. It therefore is no longer available.
+   **/
+  | 'InputForwarded'
+  /**
+   * The amount of topics passed to `seal_deposit_events` exceeds the limit.
+   **/
+  | 'TooManyTopics'
+  /**
+   * The chain does not provide a chain extension. Calling the chain extension results
+   * in this error. Note that this usually shouldn't happen as deploying such contracts
+   * is rejected.
+   **/
+  | 'NoChainExtension'
+  /**
+   * Failed to decode the XCM program.
+   **/
+  | 'XcmDecodeFailed'
+  /**
+   * A contract with the same AccountId already exists.
+   **/
+  | 'DuplicateContract'
+  /**
+   * A contract self destructed in its constructor.
+   *
+   * This can be triggered by a call to `seal_terminate`.
+   **/
+  | 'TerminatedInConstructor'
+  /**
+   * A call tried to invoke a contract that is flagged as non-reentrant.
+   **/
+  | 'ReentranceDenied'
+  /**
+   * A contract called into the runtime which then called back into this pallet.
+   **/
+  | 'ReenteredPallet'
+  /**
+   * A contract attempted to invoke a state modifying API while being in read-only mode.
+   **/
+  | 'StateChangeDenied'
+  /**
+   * Origin doesn't have enough balance to pay the required storage deposits.
+   **/
+  | 'StorageDepositNotEnoughFunds'
+  /**
+   * More storage was created than allowed by the storage deposit limit.
+   **/
+  | 'StorageDepositLimitExhausted'
+  /**
+   * Code removal was denied because the code is still in use by at least one contract.
+   **/
+  | 'CodeInUse'
+  /**
+   * The contract ran to completion but decided to revert its storage changes.
+   * Please note that this error is only returned from extrinsics. When called directly
+   * or via RPC an `Ok` will be returned. In this case the caller needs to inspect the flags
+   * to determine whether a reversion has taken place.
+   **/
+  | 'ContractReverted'
+  /**
+   * The contract failed to compile or is missing the correct entry points.
+   *
+   * A more detailed error can be found on the node console if debug messages are enabled
+   * by supplying `-lruntime::revive=debug`.
+   **/
+  | 'CodeRejected'
+  /**
+   * The code blob supplied is larger than [`limits::code::BLOB_BYTES`].
+   **/
+  | 'BlobTooLarge'
+  /**
+   * The static memory consumption of the blob will be larger than
+   * [`limits::code::STATIC_MEMORY_BYTES`].
+   **/
+  | 'StaticMemoryTooLarge'
+  /**
+   * The program contains a basic block that is larger than allowed.
+   **/
+  | 'BasicBlockTooLarge'
+  /**
+   * The program contains an invalid instruction.
+   **/
+  | 'InvalidInstruction'
+  /**
+   * The contract has reached its maximum number of delegate dependencies.
+   **/
+  | 'MaxDelegateDependenciesReached'
+  /**
+   * The dependency was not found in the contract's delegate dependencies.
+   **/
+  | 'DelegateDependencyNotFound'
+  /**
+   * The contract already depends on the given delegate dependency.
+   **/
+  | 'DelegateDependencyAlreadyExists'
+  /**
+   * Can not add a delegate dependency to the code hash of the contract itself.
+   **/
+  | 'CannotAddSelfAsDelegateDependency'
+  /**
+   * Can not add more data to transient storage.
+   **/
+  | 'OutOfTransientStorage'
+  /**
+   * The contract tried to call a syscall which does not exist (at its current api level).
+   **/
+  | 'InvalidSyscall'
+  /**
+   * Invalid storage flags were passed to one of the storage syscalls.
+   **/
+  | 'InvalidStorageFlags'
+  /**
+   * PolkaVM failed during code execution. Probably due to a malformed program.
+   **/
+  | 'ExecutionFailed'
+  /**
+   * Failed to convert a U256 to a Balance.
+   **/
+  | 'BalanceConversionFailed'
+  /**
+   * Immutable data can only be set during deploys and only be read during calls.
+   * Additionally, it is only valid to set the data once and it must not be empty.
+   **/
+  | 'InvalidImmutableAccess'
+  /**
+   * An `AccountID32` account tried to interact with the pallet without having a mapping.
+   *
+   * Call [`Pallet::map_account`] in order to create a mapping for the account.
+   **/
+  | 'AccountUnmapped'
+  /**
+   * Tried to map an account that is already mapped.
+   **/
+  | 'AccountAlreadyMapped';
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -12477,8 +13198,6 @@ export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataH
 
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
-export type AssetHubWestendRuntimeRuntime = {};
-
 export type SpConsensusSlotsSlotDuration = bigint;
 
 export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
@@ -12502,7 +13221,9 @@ export type SpRuntimeTransactionValidityInvalidTransaction =
   | { type: 'Custom'; value: number }
   | { type: 'BadMandatory' }
   | { type: 'MandatoryValidation' }
-  | { type: 'BadSigner' };
+  | { type: 'BadSigner' }
+  | { type: 'IndeterminateImplicit' }
+  | { type: 'UnknownOrigin' };
 
 export type SpRuntimeTransactionValidityUnknownTransaction =
   | { type: 'CannotLookup' }
@@ -12584,6 +13305,61 @@ export type CumulusPrimitivesCoreCollationInfo = {
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
 
+export type PolkadotPrimitivesVstagingCoreSelector = number;
+
+export type PolkadotPrimitivesVstagingClaimQueueOffset = number;
+
+export type XcmVersionedAsset =
+  | { type: 'V2'; value: XcmV2MultiassetMultiAsset }
+  | { type: 'V3'; value: XcmV3MultiassetMultiAsset }
+  | { type: 'V4'; value: StagingXcmV4Asset };
+
+export type XcmRuntimeApisTrustedQueryError = 'VersionedAssetConversionFailed' | 'VersionedLocationConversionFailed';
+
+export type PalletRevivePrimitivesContractResult = {
+  gasConsumed: SpWeightsWeightV2Weight;
+  gasRequired: SpWeightsWeightV2Weight;
+  storageDeposit: PalletRevivePrimitivesStorageDeposit;
+  debugMessage: Bytes;
+  result: Result<PalletRevivePrimitivesExecReturnValue, DispatchError>;
+  events?: Array<FrameSystemEventRecord> | undefined;
+};
+
+export type PalletRevivePrimitivesExecReturnValue = { flags: PalletReviveUapiFlagsReturnFlags; data: Bytes };
+
+export type PalletReviveUapiFlagsReturnFlags = { bits: number };
+
+export type PalletRevivePrimitivesStorageDeposit =
+  | { type: 'Refund'; value: bigint }
+  | { type: 'Charge'; value: bigint };
+
+export type PalletRevivePrimitivesCode = { type: 'Upload'; value: Bytes } | { type: 'Existing'; value: H256 };
+
+export type PalletRevivePrimitivesContractResultInstantiateReturnValue = {
+  gasConsumed: SpWeightsWeightV2Weight;
+  gasRequired: SpWeightsWeightV2Weight;
+  storageDeposit: PalletRevivePrimitivesStorageDeposit;
+  debugMessage: Bytes;
+  result: Result<PalletRevivePrimitivesInstantiateReturnValue, DispatchError>;
+  events?: Array<FrameSystemEventRecord> | undefined;
+};
+
+export type PalletRevivePrimitivesInstantiateReturnValue = {
+  result: PalletRevivePrimitivesExecReturnValue;
+  addr: H160;
+};
+
+export type PalletRevivePrimitivesEthContractResult = {
+  fee: bigint;
+  gasRequired: SpWeightsWeightV2Weight;
+  storageDeposit: bigint;
+  result: Result<Bytes, DispatchError>;
+};
+
+export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
+
+export type PalletRevivePrimitivesContractAccessError = 'DoesntExist' | 'KeyDecodingFailed';
+
 export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }
   | { pallet: 'ParachainSystem'; palletError: CumulusPalletParachainSystemError }
@@ -12606,5 +13382,6 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'AssetsFreezer'; palletError: PalletAssetsFreezerError }
   | { pallet: 'ForeignAssetsFreezer'; palletError: PalletAssetsFreezerError }
   | { pallet: 'PoolAssetsFreezer'; palletError: PalletAssetsFreezerError }
+  | { pallet: 'Revive'; palletError: PalletReviveError }
   | { pallet: 'StateTrieMigration'; palletError: PalletStateTrieMigrationError }
   | { pallet: 'AssetConversionMigration'; palletError: PalletAssetConversionOpsError };

@@ -1559,6 +1559,247 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `Revive`'s errors
+   **/
+  revive: {
+    /**
+     * Invalid schedule supplied, e.g. with zero weight of a basic operation.
+     **/
+    InvalidSchedule: GenericPalletError<Rv>;
+
+    /**
+     * Invalid combination of flags supplied to `seal_call` or `seal_delegate_call`.
+     **/
+    InvalidCallFlags: GenericPalletError<Rv>;
+
+    /**
+     * The executed contract exhausted its gas limit.
+     **/
+    OutOfGas: GenericPalletError<Rv>;
+
+    /**
+     * Performing the requested transfer failed. Probably because there isn't enough
+     * free balance in the sender's account.
+     **/
+    TransferFailed: GenericPalletError<Rv>;
+
+    /**
+     * Performing a call was denied because the calling depth reached the limit
+     * of what is specified in the schedule.
+     **/
+    MaxCallDepthReached: GenericPalletError<Rv>;
+
+    /**
+     * No contract was found at the specified address.
+     **/
+    ContractNotFound: GenericPalletError<Rv>;
+
+    /**
+     * No code could be found at the supplied code hash.
+     **/
+    CodeNotFound: GenericPalletError<Rv>;
+
+    /**
+     * No code info could be found at the supplied code hash.
+     **/
+    CodeInfoNotFound: GenericPalletError<Rv>;
+
+    /**
+     * A buffer outside of sandbox memory was passed to a contract API function.
+     **/
+    OutOfBounds: GenericPalletError<Rv>;
+
+    /**
+     * Input passed to a contract API function failed to decode as expected type.
+     **/
+    DecodingFailed: GenericPalletError<Rv>;
+
+    /**
+     * Contract trapped during execution.
+     **/
+    ContractTrapped: GenericPalletError<Rv>;
+
+    /**
+     * The size defined in `T::MaxValueSize` was exceeded.
+     **/
+    ValueTooLarge: GenericPalletError<Rv>;
+
+    /**
+     * Termination of a contract is not allowed while the contract is already
+     * on the call stack. Can be triggered by `seal_terminate`.
+     **/
+    TerminatedWhileReentrant: GenericPalletError<Rv>;
+
+    /**
+     * `seal_call` forwarded this contracts input. It therefore is no longer available.
+     **/
+    InputForwarded: GenericPalletError<Rv>;
+
+    /**
+     * The amount of topics passed to `seal_deposit_events` exceeds the limit.
+     **/
+    TooManyTopics: GenericPalletError<Rv>;
+
+    /**
+     * The chain does not provide a chain extension. Calling the chain extension results
+     * in this error. Note that this usually shouldn't happen as deploying such contracts
+     * is rejected.
+     **/
+    NoChainExtension: GenericPalletError<Rv>;
+
+    /**
+     * Failed to decode the XCM program.
+     **/
+    XcmDecodeFailed: GenericPalletError<Rv>;
+
+    /**
+     * A contract with the same AccountId already exists.
+     **/
+    DuplicateContract: GenericPalletError<Rv>;
+
+    /**
+     * A contract self destructed in its constructor.
+     *
+     * This can be triggered by a call to `seal_terminate`.
+     **/
+    TerminatedInConstructor: GenericPalletError<Rv>;
+
+    /**
+     * A call tried to invoke a contract that is flagged as non-reentrant.
+     **/
+    ReentranceDenied: GenericPalletError<Rv>;
+
+    /**
+     * A contract called into the runtime which then called back into this pallet.
+     **/
+    ReenteredPallet: GenericPalletError<Rv>;
+
+    /**
+     * A contract attempted to invoke a state modifying API while being in read-only mode.
+     **/
+    StateChangeDenied: GenericPalletError<Rv>;
+
+    /**
+     * Origin doesn't have enough balance to pay the required storage deposits.
+     **/
+    StorageDepositNotEnoughFunds: GenericPalletError<Rv>;
+
+    /**
+     * More storage was created than allowed by the storage deposit limit.
+     **/
+    StorageDepositLimitExhausted: GenericPalletError<Rv>;
+
+    /**
+     * Code removal was denied because the code is still in use by at least one contract.
+     **/
+    CodeInUse: GenericPalletError<Rv>;
+
+    /**
+     * The contract ran to completion but decided to revert its storage changes.
+     * Please note that this error is only returned from extrinsics. When called directly
+     * or via RPC an `Ok` will be returned. In this case the caller needs to inspect the flags
+     * to determine whether a reversion has taken place.
+     **/
+    ContractReverted: GenericPalletError<Rv>;
+
+    /**
+     * The contract failed to compile or is missing the correct entry points.
+     *
+     * A more detailed error can be found on the node console if debug messages are enabled
+     * by supplying `-lruntime::revive=debug`.
+     **/
+    CodeRejected: GenericPalletError<Rv>;
+
+    /**
+     * The code blob supplied is larger than [`limits::code::BLOB_BYTES`].
+     **/
+    BlobTooLarge: GenericPalletError<Rv>;
+
+    /**
+     * The static memory consumption of the blob will be larger than
+     * [`limits::code::STATIC_MEMORY_BYTES`].
+     **/
+    StaticMemoryTooLarge: GenericPalletError<Rv>;
+
+    /**
+     * The program contains a basic block that is larger than allowed.
+     **/
+    BasicBlockTooLarge: GenericPalletError<Rv>;
+
+    /**
+     * The program contains an invalid instruction.
+     **/
+    InvalidInstruction: GenericPalletError<Rv>;
+
+    /**
+     * The contract has reached its maximum number of delegate dependencies.
+     **/
+    MaxDelegateDependenciesReached: GenericPalletError<Rv>;
+
+    /**
+     * The dependency was not found in the contract's delegate dependencies.
+     **/
+    DelegateDependencyNotFound: GenericPalletError<Rv>;
+
+    /**
+     * The contract already depends on the given delegate dependency.
+     **/
+    DelegateDependencyAlreadyExists: GenericPalletError<Rv>;
+
+    /**
+     * Can not add a delegate dependency to the code hash of the contract itself.
+     **/
+    CannotAddSelfAsDelegateDependency: GenericPalletError<Rv>;
+
+    /**
+     * Can not add more data to transient storage.
+     **/
+    OutOfTransientStorage: GenericPalletError<Rv>;
+
+    /**
+     * The contract tried to call a syscall which does not exist (at its current api level).
+     **/
+    InvalidSyscall: GenericPalletError<Rv>;
+
+    /**
+     * Invalid storage flags were passed to one of the storage syscalls.
+     **/
+    InvalidStorageFlags: GenericPalletError<Rv>;
+
+    /**
+     * PolkaVM failed during code execution. Probably due to a malformed program.
+     **/
+    ExecutionFailed: GenericPalletError<Rv>;
+
+    /**
+     * Failed to convert a U256 to a Balance.
+     **/
+    BalanceConversionFailed: GenericPalletError<Rv>;
+
+    /**
+     * Immutable data can only be set during deploys and only be read during calls.
+     * Additionally, it is only valid to set the data once and it must not be empty.
+     **/
+    InvalidImmutableAccess: GenericPalletError<Rv>;
+
+    /**
+     * An `AccountID32` account tried to interact with the pallet without having a mapping.
+     *
+     * Call [`Pallet::map_account`] in order to create a mapping for the account.
+     **/
+    AccountUnmapped: GenericPalletError<Rv>;
+
+    /**
+     * Tried to map an account that is already mapped.
+     **/
+    AccountAlreadyMapped: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `StateTrieMigration`'s errors
    **/
   stateTrieMigration: {

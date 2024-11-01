@@ -1,6 +1,6 @@
 {
   "name": "@dedot/chaintypes",
-  "version": "0.33.0",
+  "version": "0.34.0",
   "description": "Types for substrate-based chains",
   "author": "Thang X. Vu <thang@coongcrafts.io>",
   "main": "src/index.ts",

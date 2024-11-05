@@ -873,6 +873,11 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * preventing replay attacks.
      **/
     chainId: bigint;
+
+    /**
+     * The ratio between the decimal representation of the native token and the ETH token.
+     **/
+    nativeToEthRatio: number;
     apiVersion: number;
 
     /**

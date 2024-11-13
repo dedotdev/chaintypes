@@ -29,7 +29,7 @@ import type {
   SpRuntimeTransactionValidityValidTransaction,
   SpRuntimeTransactionValidityTransactionSource,
   SpCoreCryptoKeyTypeId,
-  StagingXcmV4Location,
+  StagingXcmV5Location,
   PalletTransactionPaymentRuntimeDispatchInfo,
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
@@ -423,16 +423,16 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * (Use `amount_in_max` to control slippage.)
      *
      * @callname: AssetConversionApi_quote_price_tokens_for_exact_tokens
-     * @param {StagingXcmV4Location} asset1
-     * @param {StagingXcmV4Location} asset2
+     * @param {StagingXcmV5Location} asset1
+     * @param {StagingXcmV5Location} asset2
      * @param {bigint} amount
      * @param {boolean} include_fee
      **/
     quotePriceTokensForExactTokens: GenericRuntimeApiMethod<
       Rv,
       (
-        asset1: StagingXcmV4Location,
-        asset2: StagingXcmV4Location,
+        asset1: StagingXcmV5Location,
+        asset2: StagingXcmV5Location,
         amount: bigint,
         includeFee: boolean,
       ) => Promise<bigint | undefined>
@@ -445,16 +445,16 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * (Use `amount_out_min` to control slippage.)
      *
      * @callname: AssetConversionApi_quote_price_exact_tokens_for_tokens
-     * @param {StagingXcmV4Location} asset1
-     * @param {StagingXcmV4Location} asset2
+     * @param {StagingXcmV5Location} asset1
+     * @param {StagingXcmV5Location} asset2
      * @param {bigint} amount
      * @param {boolean} include_fee
      **/
     quotePriceExactTokensForTokens: GenericRuntimeApiMethod<
       Rv,
       (
-        asset1: StagingXcmV4Location,
-        asset2: StagingXcmV4Location,
+        asset1: StagingXcmV5Location,
+        asset2: StagingXcmV5Location,
         amount: bigint,
         includeFee: boolean,
       ) => Promise<bigint | undefined>
@@ -464,12 +464,12 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * Returns the size of the liquidity pool for the given asset pair.
      *
      * @callname: AssetConversionApi_get_reserves
-     * @param {StagingXcmV4Location} asset1
-     * @param {StagingXcmV4Location} asset2
+     * @param {StagingXcmV5Location} asset1
+     * @param {StagingXcmV5Location} asset2
      **/
     getReserves: GenericRuntimeApiMethod<
       Rv,
-      (asset1: StagingXcmV4Location, asset2: StagingXcmV4Location) => Promise<[bigint, bigint] | undefined>
+      (asset1: StagingXcmV5Location, asset2: StagingXcmV5Location) => Promise<[bigint, bigint] | undefined>
     >;
 
     /**

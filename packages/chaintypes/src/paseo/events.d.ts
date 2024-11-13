@@ -25,6 +25,8 @@ import type {
   PalletConvictionVotingTally,
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
+  PaseoRuntimeRuntimeParametersKey,
+  PaseoRuntimeRuntimeParametersValue,
   PaseoRuntimeProxyType,
   PalletMultisigTimepoint,
   PalletElectionProviderMultiPhaseElectionCompute,
@@ -1050,6 +1052,42 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Whitelist',
       'WhitelistedCallDispatched',
       { callHash: H256; result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo> }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Parameters`'s events
+   **/
+  parameters: {
+    /**
+     * A Parameter was set.
+     *
+     * Is also emitted when the value was not changed.
+     **/
+    Updated: GenericPalletEvent<
+      Rv,
+      'Parameters',
+      'Updated',
+      {
+        /**
+         * The key that was updated.
+         **/
+        key: PaseoRuntimeRuntimeParametersKey;
+
+        /**
+         * The old value before this call.
+         **/
+        oldValue?: PaseoRuntimeRuntimeParametersValue | undefined;
+
+        /**
+         * The new value after this call.
+         **/
+        newValue?: PaseoRuntimeRuntimeParametersValue | undefined;
+      }
     >;
 
     /**

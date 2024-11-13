@@ -16,13 +16,13 @@ import type {
   FrameSystemDispatchEventInfo,
   SpWeightsWeightV2Weight,
   FrameSupportTokensMiscBalanceStatus,
-  StagingXcmV4Location,
-  StagingXcmV4TraitsOutcome,
-  StagingXcmV4Xcm,
-  StagingXcmV4Response,
+  StagingXcmV5Location,
+  StagingXcmV5TraitsOutcome,
+  StagingXcmV5Xcm,
+  StagingXcmV5Response,
   XcmVersionedAssets,
-  StagingXcmV4AssetAssets,
-  XcmV3TraitsError,
+  StagingXcmV5AssetAssets,
+  XcmV5TraitsError,
   XcmVersionedLocation,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
@@ -303,7 +303,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'AssetTxPayment',
       'AssetTxFeePaid',
-      { who: AccountId32; actualFee: bigint; tip: bigint; assetId: StagingXcmV4Location }
+      { who: AccountId32; actualFee: bigint; tip: bigint; assetId: StagingXcmV5Location }
     >;
 
     /**
@@ -442,7 +442,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * Execution of an XCM message was attempted.
      **/
-    Attempted: GenericPalletEvent<Rv, 'PolkadotXcm', 'Attempted', { outcome: StagingXcmV4TraitsOutcome }>;
+    Attempted: GenericPalletEvent<Rv, 'PolkadotXcm', 'Attempted', { outcome: StagingXcmV5TraitsOutcome }>;
 
     /**
      * A XCM message was sent.
@@ -452,9 +452,9 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'PolkadotXcm',
       'Sent',
       {
-        origin: StagingXcmV4Location;
-        destination: StagingXcmV4Location;
-        message: StagingXcmV4Xcm;
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       }
     >;
@@ -468,7 +468,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'UnexpectedResponse',
-      { origin: StagingXcmV4Location; queryId: bigint }
+      { origin: StagingXcmV5Location; queryId: bigint }
     >;
 
     /**
@@ -479,7 +479,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'ResponseReady',
-      { queryId: bigint; response: StagingXcmV4Response }
+      { queryId: bigint; response: StagingXcmV5Response }
     >;
 
     /**
@@ -543,7 +543,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'InvalidResponder',
-      { origin: StagingXcmV4Location; queryId: bigint; expectedLocation?: StagingXcmV4Location | undefined }
+      { origin: StagingXcmV5Location; queryId: bigint; expectedLocation?: StagingXcmV5Location | undefined }
     >;
 
     /**
@@ -559,7 +559,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'InvalidResponderVersion',
-      { origin: StagingXcmV4Location; queryId: bigint }
+      { origin: StagingXcmV5Location; queryId: bigint }
     >;
 
     /**
@@ -574,7 +574,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'AssetsTrapped',
-      { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets }
+      { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets }
     >;
 
     /**
@@ -586,7 +586,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'VersionChangeNotified',
-      { destination: StagingXcmV4Location; result: number; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; result: number; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -597,7 +597,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'SupportedVersionChanged',
-      { location: StagingXcmV4Location; version: number }
+      { location: StagingXcmV5Location; version: number }
     >;
 
     /**
@@ -608,7 +608,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'NotifyTargetSendFail',
-      { location: StagingXcmV4Location; queryId: bigint; error: XcmV3TraitsError }
+      { location: StagingXcmV5Location; queryId: bigint; error: XcmV5TraitsError }
     >;
 
     /**
@@ -635,7 +635,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'InvalidQuerierVersion',
-      { origin: StagingXcmV4Location; queryId: bigint }
+      { origin: StagingXcmV5Location; queryId: bigint }
     >;
 
     /**
@@ -648,10 +648,10 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'PolkadotXcm',
       'InvalidQuerier',
       {
-        origin: StagingXcmV4Location;
+        origin: StagingXcmV5Location;
         queryId: bigint;
-        expectedQuerier: StagingXcmV4Location;
-        maybeActualQuerier?: StagingXcmV4Location | undefined;
+        expectedQuerier: StagingXcmV5Location;
+        maybeActualQuerier?: StagingXcmV5Location | undefined;
       }
     >;
 
@@ -663,7 +663,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'VersionNotifyStarted',
-      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -673,7 +673,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'VersionNotifyRequested',
-      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -684,7 +684,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'VersionNotifyUnrequested',
-      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -694,7 +694,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'FeesPaid',
-      { paying: StagingXcmV4Location; fees: StagingXcmV4AssetAssets }
+      { paying: StagingXcmV5Location; fees: StagingXcmV5AssetAssets }
     >;
 
     /**
@@ -704,7 +704,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'AssetsClaimed',
-      { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets }
+      { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets }
     >;
 
     /**
@@ -741,7 +741,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'CumulusXcm',
       'ExecutedDownward',
-      [FixedBytes<32>, StagingXcmV4TraitsOutcome]
+      [FixedBytes<32>, StagingXcmV5TraitsOutcome]
     >;
 
     /**
@@ -1823,7 +1823,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'Created',
-      { assetId: StagingXcmV4Location; creator: AccountId32; owner: AccountId32 }
+      { assetId: StagingXcmV5Location; creator: AccountId32; owner: AccountId32 }
     >;
 
     /**
@@ -1833,7 +1833,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'Issued',
-      { assetId: StagingXcmV4Location; owner: AccountId32; amount: bigint }
+      { assetId: StagingXcmV5Location; owner: AccountId32; amount: bigint }
     >;
 
     /**
@@ -1843,7 +1843,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'Transferred',
-      { assetId: StagingXcmV4Location; from: AccountId32; to: AccountId32; amount: bigint }
+      { assetId: StagingXcmV5Location; from: AccountId32; to: AccountId32; amount: bigint }
     >;
 
     /**
@@ -1853,7 +1853,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'Burned',
-      { assetId: StagingXcmV4Location; owner: AccountId32; balance: bigint }
+      { assetId: StagingXcmV5Location; owner: AccountId32; balance: bigint }
     >;
 
     /**
@@ -1863,7 +1863,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'TeamChanged',
-      { assetId: StagingXcmV4Location; issuer: AccountId32; admin: AccountId32; freezer: AccountId32 }
+      { assetId: StagingXcmV5Location; issuer: AccountId32; admin: AccountId32; freezer: AccountId32 }
     >;
 
     /**
@@ -1873,28 +1873,28 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'OwnerChanged',
-      { assetId: StagingXcmV4Location; owner: AccountId32 }
+      { assetId: StagingXcmV5Location; owner: AccountId32 }
     >;
 
     /**
      * Some account `who` was frozen.
      **/
-    Frozen: GenericPalletEvent<Rv, 'ForeignAssets', 'Frozen', { assetId: StagingXcmV4Location; who: AccountId32 }>;
+    Frozen: GenericPalletEvent<Rv, 'ForeignAssets', 'Frozen', { assetId: StagingXcmV5Location; who: AccountId32 }>;
 
     /**
      * Some account `who` was thawed.
      **/
-    Thawed: GenericPalletEvent<Rv, 'ForeignAssets', 'Thawed', { assetId: StagingXcmV4Location; who: AccountId32 }>;
+    Thawed: GenericPalletEvent<Rv, 'ForeignAssets', 'Thawed', { assetId: StagingXcmV5Location; who: AccountId32 }>;
 
     /**
      * Some asset `asset_id` was frozen.
      **/
-    AssetFrozen: GenericPalletEvent<Rv, 'ForeignAssets', 'AssetFrozen', { assetId: StagingXcmV4Location }>;
+    AssetFrozen: GenericPalletEvent<Rv, 'ForeignAssets', 'AssetFrozen', { assetId: StagingXcmV5Location }>;
 
     /**
      * Some asset `asset_id` was thawed.
      **/
-    AssetThawed: GenericPalletEvent<Rv, 'ForeignAssets', 'AssetThawed', { assetId: StagingXcmV4Location }>;
+    AssetThawed: GenericPalletEvent<Rv, 'ForeignAssets', 'AssetThawed', { assetId: StagingXcmV5Location }>;
 
     /**
      * Accounts were destroyed for given asset.
@@ -1903,7 +1903,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'AccountsDestroyed',
-      { assetId: StagingXcmV4Location; accountsDestroyed: number; accountsRemaining: number }
+      { assetId: StagingXcmV5Location; accountsDestroyed: number; accountsRemaining: number }
     >;
 
     /**
@@ -1913,7 +1913,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'ApprovalsDestroyed',
-      { assetId: StagingXcmV4Location; approvalsDestroyed: number; approvalsRemaining: number }
+      { assetId: StagingXcmV5Location; approvalsDestroyed: number; approvalsRemaining: number }
     >;
 
     /**
@@ -1923,13 +1923,13 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'DestructionStarted',
-      { assetId: StagingXcmV4Location }
+      { assetId: StagingXcmV5Location }
     >;
 
     /**
      * An asset class was destroyed.
      **/
-    Destroyed: GenericPalletEvent<Rv, 'ForeignAssets', 'Destroyed', { assetId: StagingXcmV4Location }>;
+    Destroyed: GenericPalletEvent<Rv, 'ForeignAssets', 'Destroyed', { assetId: StagingXcmV5Location }>;
 
     /**
      * Some asset class was force-created.
@@ -1938,7 +1938,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'ForceCreated',
-      { assetId: StagingXcmV4Location; owner: AccountId32 }
+      { assetId: StagingXcmV5Location; owner: AccountId32 }
     >;
 
     /**
@@ -1948,13 +1948,13 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'MetadataSet',
-      { assetId: StagingXcmV4Location; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean }
+      { assetId: StagingXcmV5Location; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean }
     >;
 
     /**
      * Metadata has been cleared for an asset.
      **/
-    MetadataCleared: GenericPalletEvent<Rv, 'ForeignAssets', 'MetadataCleared', { assetId: StagingXcmV4Location }>;
+    MetadataCleared: GenericPalletEvent<Rv, 'ForeignAssets', 'MetadataCleared', { assetId: StagingXcmV5Location }>;
 
     /**
      * (Additional) funds have been approved for transfer to a destination account.
@@ -1963,7 +1963,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'ApprovedTransfer',
-      { assetId: StagingXcmV4Location; source: AccountId32; delegate: AccountId32; amount: bigint }
+      { assetId: StagingXcmV5Location; source: AccountId32; delegate: AccountId32; amount: bigint }
     >;
 
     /**
@@ -1973,7 +1973,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'ApprovalCancelled',
-      { assetId: StagingXcmV4Location; owner: AccountId32; delegate: AccountId32 }
+      { assetId: StagingXcmV5Location; owner: AccountId32; delegate: AccountId32 }
     >;
 
     /**
@@ -1985,7 +1985,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ForeignAssets',
       'TransferredApproved',
       {
-        assetId: StagingXcmV4Location;
+        assetId: StagingXcmV5Location;
         owner: AccountId32;
         delegate: AccountId32;
         destination: AccountId32;
@@ -2000,7 +2000,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'AssetStatusChanged',
-      { assetId: StagingXcmV4Location }
+      { assetId: StagingXcmV5Location }
     >;
 
     /**
@@ -2010,7 +2010,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'AssetMinBalanceChanged',
-      { assetId: StagingXcmV4Location; newMinBalance: bigint }
+      { assetId: StagingXcmV5Location; newMinBalance: bigint }
     >;
 
     /**
@@ -2020,13 +2020,13 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'Touched',
-      { assetId: StagingXcmV4Location; who: AccountId32; depositor: AccountId32 }
+      { assetId: StagingXcmV5Location; who: AccountId32; depositor: AccountId32 }
     >;
 
     /**
      * Some account `who` was blocked.
      **/
-    Blocked: GenericPalletEvent<Rv, 'ForeignAssets', 'Blocked', { assetId: StagingXcmV4Location; who: AccountId32 }>;
+    Blocked: GenericPalletEvent<Rv, 'ForeignAssets', 'Blocked', { assetId: StagingXcmV5Location; who: AccountId32 }>;
 
     /**
      * Some assets were deposited (e.g. for transaction fees).
@@ -2035,7 +2035,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'Deposited',
-      { assetId: StagingXcmV4Location; who: AccountId32; amount: bigint }
+      { assetId: StagingXcmV5Location; who: AccountId32; amount: bigint }
     >;
 
     /**
@@ -2045,7 +2045,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssets',
       'Withdrawn',
-      { assetId: StagingXcmV4Location; who: AccountId32; amount: bigint }
+      { assetId: StagingXcmV5Location; who: AccountId32; amount: bigint }
     >;
 
     /**
@@ -2298,7 +2298,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
          * The pool id associated with the pool. Note that the order of the assets may not be
          * the same as the order specified in the create pool extrinsic.
          **/
-        poolId: [StagingXcmV4Location, StagingXcmV4Location];
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
 
         /**
          * The account ID of the pool.
@@ -2334,7 +2334,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
         /**
          * The pool id of the pool that the liquidity was added to.
          **/
-        poolId: [StagingXcmV4Location, StagingXcmV4Location];
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
 
         /**
          * The amount of the first asset that was added to the pool.
@@ -2379,7 +2379,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
         /**
          * The pool id that the liquidity was removed from.
          **/
-        poolId: [StagingXcmV4Location, StagingXcmV4Location];
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
 
         /**
          * The amount of the first asset that was removed from the pool.
@@ -2441,7 +2441,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
          * The route of asset IDs with amounts that the swap went through.
          * E.g. (A, amount_in) -> (Dot, amount_out) -> (B, amount_out)
          **/
-        path: Array<[StagingXcmV4Location, bigint]>;
+        path: Array<[StagingXcmV5Location, bigint]>;
       }
     >;
 
@@ -2467,7 +2467,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
          * The route of asset IDs with amounts that the swap went through.
          * E.g. (A, amount_in) -> (Dot, amount_out) -> (B, amount_out)
          **/
-        path: Array<[StagingXcmV4Location, bigint]>;
+        path: Array<[StagingXcmV5Location, bigint]>;
       }
     >;
 
@@ -2482,7 +2482,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
         /**
          * The ID of the pool.
          **/
-        poolId: [StagingXcmV4Location, StagingXcmV4Location];
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
 
         /**
          * The account initiating the touch.
@@ -2516,13 +2516,13 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ForeignAssetsFreezer',
       'Frozen',
-      { who: AccountId32; assetId: StagingXcmV4Location; amount: bigint }
+      { who: AccountId32; assetId: StagingXcmV5Location; amount: bigint }
     >;
     Thawed: GenericPalletEvent<
       Rv,
       'ForeignAssetsFreezer',
       'Thawed',
-      { who: AccountId32; assetId: StagingXcmV4Location; amount: bigint }
+      { who: AccountId32; assetId: StagingXcmV5Location; amount: bigint }
     >;
 
     /**
@@ -2781,7 +2781,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
         /**
          * Pool's ID.
          **/
-        poolId: [StagingXcmV4Location, StagingXcmV4Location];
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
 
         /**
          * Pool's prior account ID.

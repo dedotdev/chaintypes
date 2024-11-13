@@ -49,7 +49,7 @@ import type {
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
-  StagingXcmV4Xcm,
+  StagingXcmV5Xcm,
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMessageQueuePage,
@@ -74,7 +74,7 @@ import type {
   PalletNftsPendingSwap,
   PalletNftsCollectionConfig,
   PalletNftsItemConfig,
-  StagingXcmV4Location,
+  StagingXcmV5Location,
   PalletNftFractionalizationDetails,
   PalletAssetConversionPoolInfo,
   FrameSupportTokensMiscIdAmountRuntimeFreezeReason,
@@ -1070,9 +1070,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
      * implementation in the XCM executor configuration.
      *
-     * @param {Callback<StagingXcmV4Xcm | undefined> =} callback
+     * @param {Callback<StagingXcmV5Xcm | undefined> =} callback
      **/
-    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV4Xcm | undefined>;
+    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV5Xcm | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1565,25 +1565,25 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * Details of an asset.
      *
-     * @param {StagingXcmV4Location} arg
+     * @param {StagingXcmV5Location} arg
      * @param {Callback<PalletAssetsAssetDetails | undefined> =} callback
      **/
     asset: GenericStorageQuery<
       Rv,
-      (arg: StagingXcmV4Location) => PalletAssetsAssetDetails | undefined,
-      StagingXcmV4Location
+      (arg: StagingXcmV5Location) => PalletAssetsAssetDetails | undefined,
+      StagingXcmV5Location
     >;
 
     /**
      * The holdings of a specific account for a specific asset.
      *
-     * @param {[StagingXcmV4Location, AccountId32Like]} arg
+     * @param {[StagingXcmV5Location, AccountId32Like]} arg
      * @param {Callback<PalletAssetsAssetAccount | undefined> =} callback
      **/
     account: GenericStorageQuery<
       Rv,
-      (arg: [StagingXcmV4Location, AccountId32Like]) => PalletAssetsAssetAccount | undefined,
-      [StagingXcmV4Location, AccountId32]
+      (arg: [StagingXcmV5Location, AccountId32Like]) => PalletAssetsAssetAccount | undefined,
+      [StagingXcmV5Location, AccountId32]
     >;
 
     /**
@@ -1591,22 +1591,22 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * is the amount of `T::Currency` reserved for storing this.
      * First key is the asset ID, second key is the owner and third key is the delegate.
      *
-     * @param {[StagingXcmV4Location, AccountId32Like, AccountId32Like]} arg
+     * @param {[StagingXcmV5Location, AccountId32Like, AccountId32Like]} arg
      * @param {Callback<PalletAssetsApproval | undefined> =} callback
      **/
     approvals: GenericStorageQuery<
       Rv,
-      (arg: [StagingXcmV4Location, AccountId32Like, AccountId32Like]) => PalletAssetsApproval | undefined,
-      [StagingXcmV4Location, AccountId32, AccountId32]
+      (arg: [StagingXcmV5Location, AccountId32Like, AccountId32Like]) => PalletAssetsApproval | undefined,
+      [StagingXcmV5Location, AccountId32, AccountId32]
     >;
 
     /**
      * Metadata of an asset.
      *
-     * @param {StagingXcmV4Location} arg
+     * @param {StagingXcmV5Location} arg
      * @param {Callback<PalletAssetsAssetMetadata> =} callback
      **/
-    metadata: GenericStorageQuery<Rv, (arg: StagingXcmV4Location) => PalletAssetsAssetMetadata, StagingXcmV4Location>;
+    metadata: GenericStorageQuery<Rv, (arg: StagingXcmV5Location) => PalletAssetsAssetMetadata, StagingXcmV5Location>;
 
     /**
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
@@ -1619,9 +1619,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * The initial next asset ID can be set using the [`GenesisConfig`] or the
      * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
      *
-     * @param {Callback<StagingXcmV4Location | undefined> =} callback
+     * @param {Callback<StagingXcmV5Location | undefined> =} callback
      **/
-    nextAssetId: GenericStorageQuery<Rv, () => StagingXcmV4Location | undefined>;
+    nextAssetId: GenericStorageQuery<Rv, () => StagingXcmV5Location | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1723,13 +1723,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Map from `PoolAssetId` to `PoolInfo`. This establishes whether a pool has been officially
      * created rather than people sending tokens directly to a pool's public account.
      *
-     * @param {[StagingXcmV4Location, StagingXcmV4Location]} arg
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
      * @param {Callback<PalletAssetConversionPoolInfo | undefined> =} callback
      **/
     pools: GenericStorageQuery<
       Rv,
-      (arg: [StagingXcmV4Location, StagingXcmV4Location]) => PalletAssetConversionPoolInfo | undefined,
-      [StagingXcmV4Location, StagingXcmV4Location]
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => PalletAssetConversionPoolInfo | undefined,
+      [StagingXcmV5Location, StagingXcmV5Location]
     >;
 
     /**
@@ -1785,25 +1785,25 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * A map that stores freezes applied on an account for a given AssetId.
      *
-     * @param {[StagingXcmV4Location, AccountId32Like]} arg
+     * @param {[StagingXcmV5Location, AccountId32Like]} arg
      * @param {Callback<Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>> =} callback
      **/
     freezes: GenericStorageQuery<
       Rv,
-      (arg: [StagingXcmV4Location, AccountId32Like]) => Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>,
-      [StagingXcmV4Location, AccountId32]
+      (arg: [StagingXcmV5Location, AccountId32Like]) => Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>,
+      [StagingXcmV5Location, AccountId32]
     >;
 
     /**
      * A map that stores the current total frozen balance for every account on a given AssetId.
      *
-     * @param {[StagingXcmV4Location, AccountId32Like]} arg
+     * @param {[StagingXcmV5Location, AccountId32Like]} arg
      * @param {Callback<bigint | undefined> =} callback
      **/
     frozenBalances: GenericStorageQuery<
       Rv,
-      (arg: [StagingXcmV4Location, AccountId32Like]) => bigint | undefined,
-      [StagingXcmV4Location, AccountId32]
+      (arg: [StagingXcmV5Location, AccountId32Like]) => bigint | undefined,
+      [StagingXcmV5Location, AccountId32]
     >;
 
     /**

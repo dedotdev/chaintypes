@@ -47,6 +47,7 @@ import type {
   FrameSupportPreimagesBounded,
   FrameSupportScheduleDispatchTime,
   SpWeightsWeightV2Weight,
+  PaseoRuntimeRuntimeParameters,
   PolkadotRuntimeCommonClaimsEcdsaSignature,
   PolkadotRuntimeCommonClaimsStatementKind,
   PalletVestingVestingInfo,
@@ -3260,6 +3261,37 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'DispatchWhitelistedCallWithPreimage';
             params: { call: PaseoRuntimeRuntimeCallLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Parameters`'s transaction calls
+   **/
+  parameters: {
+    /**
+     * Set the value of a parameter.
+     *
+     * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+     * deleted by setting them to `None`.
+     *
+     * @param {PaseoRuntimeRuntimeParameters} keyValue
+     **/
+    setParameter: GenericTxCall<
+      Rv,
+      (keyValue: PaseoRuntimeRuntimeParameters) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'SetParameter';
+            params: { keyValue: PaseoRuntimeRuntimeParameters };
           };
         }
       >

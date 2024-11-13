@@ -291,46 +291,43 @@ export type PalletAssetConversionTxPaymentEvent =
    **/
   | {
       name: 'AssetTxFeePaid';
-      data: { who: AccountId32; actualFee: bigint; tip: bigint; assetId: StagingXcmV4Location };
+      data: { who: AccountId32; actualFee: bigint; tip: bigint; assetId: StagingXcmV5Location };
     }
   /**
    * A swap of the refund in native currency back to asset failed.
    **/
   | { name: 'AssetRefundFailed'; data: { nativeAmountKept: bigint } };
 
-export type StagingXcmV4Location = { parents: number; interior: StagingXcmV4Junctions };
+export type StagingXcmV5Location = { parents: number; interior: StagingXcmV5Junctions };
 
-export type StagingXcmV4Junctions =
+export type StagingXcmV5Junctions =
   | { type: 'Here' }
-  | { type: 'X1'; value: FixedArray<StagingXcmV4Junction, 1> }
-  | { type: 'X2'; value: FixedArray<StagingXcmV4Junction, 2> }
-  | { type: 'X3'; value: FixedArray<StagingXcmV4Junction, 3> }
-  | { type: 'X4'; value: FixedArray<StagingXcmV4Junction, 4> }
-  | { type: 'X5'; value: FixedArray<StagingXcmV4Junction, 5> }
-  | { type: 'X6'; value: FixedArray<StagingXcmV4Junction, 6> }
-  | { type: 'X7'; value: FixedArray<StagingXcmV4Junction, 7> }
-  | { type: 'X8'; value: FixedArray<StagingXcmV4Junction, 8> };
+  | { type: 'X1'; value: FixedArray<StagingXcmV5Junction, 1> }
+  | { type: 'X2'; value: FixedArray<StagingXcmV5Junction, 2> }
+  | { type: 'X3'; value: FixedArray<StagingXcmV5Junction, 3> }
+  | { type: 'X4'; value: FixedArray<StagingXcmV5Junction, 4> }
+  | { type: 'X5'; value: FixedArray<StagingXcmV5Junction, 5> }
+  | { type: 'X6'; value: FixedArray<StagingXcmV5Junction, 6> }
+  | { type: 'X7'; value: FixedArray<StagingXcmV5Junction, 7> }
+  | { type: 'X8'; value: FixedArray<StagingXcmV5Junction, 8> };
 
-export type StagingXcmV4Junction =
+export type StagingXcmV5Junction =
   | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; index: bigint } }
-  | { type: 'AccountKey20'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; key: FixedBytes<20> } }
+  | { type: 'AccountId32'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; key: FixedBytes<20> } }
   | { type: 'PalletInstance'; value: number }
   | { type: 'GeneralIndex'; value: bigint }
   | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
   | { type: 'OnlyChild' }
   | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
-  | { type: 'GlobalConsensus'; value: StagingXcmV4JunctionNetworkId };
+  | { type: 'GlobalConsensus'; value: StagingXcmV5JunctionNetworkId };
 
-export type StagingXcmV4JunctionNetworkId =
+export type StagingXcmV5JunctionNetworkId =
   | { type: 'ByGenesis'; value: FixedBytes<32> }
   | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
   | { type: 'Polkadot' }
   | { type: 'Kusama' }
-  | { type: 'Westend' }
-  | { type: 'Rococo' }
-  | { type: 'Wococo' }
   | { type: 'Ethereum'; value: { chainId: bigint } }
   | { type: 'BitcoinCore' }
   | { type: 'BitcoinCash' }
@@ -427,16 +424,16 @@ export type PalletXcmEvent =
   /**
    * Execution of an XCM message was attempted.
    **/
-  | { name: 'Attempted'; data: { outcome: StagingXcmV4TraitsOutcome } }
+  | { name: 'Attempted'; data: { outcome: StagingXcmV5TraitsOutcome } }
   /**
    * A XCM message was sent.
    **/
   | {
       name: 'Sent';
       data: {
-        origin: StagingXcmV4Location;
-        destination: StagingXcmV4Location;
-        message: StagingXcmV4Xcm;
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       };
     }
@@ -445,12 +442,12 @@ export type PalletXcmEvent =
    * matching query was never registered, it may be because it is a duplicate response, or
    * because the query timed out.
    **/
-  | { name: 'UnexpectedResponse'; data: { origin: StagingXcmV4Location; queryId: bigint } }
+  | { name: 'UnexpectedResponse'; data: { origin: StagingXcmV5Location; queryId: bigint } }
   /**
    * Query response has been received and is ready for taking with `take_response`. There is
    * no registered notification call.
    **/
-  | { name: 'ResponseReady'; data: { queryId: bigint; response: StagingXcmV4Response } }
+  | { name: 'ResponseReady'; data: { queryId: bigint; response: StagingXcmV5Response } }
   /**
    * Query response has been received and query is removed. The registered notification has
    * been dispatched and executed successfully.
@@ -489,7 +486,7 @@ export type PalletXcmEvent =
    **/
   | {
       name: 'InvalidResponder';
-      data: { origin: StagingXcmV4Location; queryId: bigint; expectedLocation?: StagingXcmV4Location | undefined };
+      data: { origin: StagingXcmV5Location; queryId: bigint; expectedLocation?: StagingXcmV5Location | undefined };
     }
   /**
    * Expected query response has been received but the expected origin location placed in
@@ -500,7 +497,7 @@ export type PalletXcmEvent =
    * valid response will be dropped. Manual governance intervention is probably going to be
    * needed.
    **/
-  | { name: 'InvalidResponderVersion'; data: { origin: StagingXcmV4Location; queryId: bigint } }
+  | { name: 'InvalidResponderVersion'; data: { origin: StagingXcmV5Location; queryId: bigint } }
   /**
    * Received query response has been read and removed.
    **/
@@ -508,7 +505,7 @@ export type PalletXcmEvent =
   /**
    * Some assets have been placed in an asset trap.
    **/
-  | { name: 'AssetsTrapped'; data: { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets } }
+  | { name: 'AssetsTrapped'; data: { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets } }
   /**
    * An XCM version change notification message has been attempted to be sent.
    *
@@ -517,9 +514,9 @@ export type PalletXcmEvent =
   | {
       name: 'VersionChangeNotified';
       data: {
-        destination: StagingXcmV4Location;
+        destination: StagingXcmV5Location;
         result: number;
-        cost: StagingXcmV4AssetAssets;
+        cost: StagingXcmV5AssetAssets;
         messageId: FixedBytes<32>;
       };
     }
@@ -527,12 +524,12 @@ export type PalletXcmEvent =
    * The supported version of a location has been changed. This might be through an
    * automatic notification or a manual intervention.
    **/
-  | { name: 'SupportedVersionChanged'; data: { location: StagingXcmV4Location; version: number } }
+  | { name: 'SupportedVersionChanged'; data: { location: StagingXcmV5Location; version: number } }
   /**
    * A given location which had a version change subscription was dropped owing to an error
    * sending the notification to it.
    **/
-  | { name: 'NotifyTargetSendFail'; data: { location: StagingXcmV4Location; queryId: bigint; error: XcmV3TraitsError } }
+  | { name: 'NotifyTargetSendFail'; data: { location: StagingXcmV5Location; queryId: bigint; error: XcmV5TraitsError } }
   /**
    * A given location which had a version change subscription was dropped owing to an error
    * migrating the location to our new XCM format.
@@ -547,7 +544,7 @@ export type PalletXcmEvent =
    * valid response will be dropped. Manual governance intervention is probably going to be
    * needed.
    **/
-  | { name: 'InvalidQuerierVersion'; data: { origin: StagingXcmV4Location; queryId: bigint } }
+  | { name: 'InvalidQuerierVersion'; data: { origin: StagingXcmV5Location; queryId: bigint } }
   /**
    * Expected query response has been received but the querier location of the response does
    * not match the expected. The query remains registered for a later, valid, response to
@@ -556,10 +553,10 @@ export type PalletXcmEvent =
   | {
       name: 'InvalidQuerier';
       data: {
-        origin: StagingXcmV4Location;
+        origin: StagingXcmV5Location;
         queryId: bigint;
-        expectedQuerier: StagingXcmV4Location;
-        maybeActualQuerier?: StagingXcmV4Location | undefined;
+        expectedQuerier: StagingXcmV5Location;
+        maybeActualQuerier?: StagingXcmV5Location | undefined;
       };
     }
   /**
@@ -568,14 +565,14 @@ export type PalletXcmEvent =
    **/
   | {
       name: 'VersionNotifyStarted';
-      data: { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> };
+      data: { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> };
     }
   /**
    * We have requested that a remote chain send us XCM version change notifications.
    **/
   | {
       name: 'VersionNotifyRequested';
-      data: { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> };
+      data: { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> };
     }
   /**
    * We have requested that a remote chain stops sending us XCM version change
@@ -583,27 +580,27 @@ export type PalletXcmEvent =
    **/
   | {
       name: 'VersionNotifyUnrequested';
-      data: { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> };
+      data: { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> };
     }
   /**
    * Fees were paid from a location for an operation (often for using `SendXcm`).
    **/
-  | { name: 'FeesPaid'; data: { paying: StagingXcmV4Location; fees: StagingXcmV4AssetAssets } }
+  | { name: 'FeesPaid'; data: { paying: StagingXcmV5Location; fees: StagingXcmV5AssetAssets } }
   /**
    * Some assets have been claimed from an asset trap
    **/
-  | { name: 'AssetsClaimed'; data: { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets } }
+  | { name: 'AssetsClaimed'; data: { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets } }
   /**
    * A XCM version migration finished.
    **/
   | { name: 'VersionMigrationFinished'; data: { version: number } };
 
-export type StagingXcmV4TraitsOutcome =
+export type StagingXcmV5TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
-  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV3TraitsError } }
-  | { type: 'Error'; value: { error: XcmV3TraitsError } };
+  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV5TraitsError } }
+  | { type: 'Error'; value: { error: XcmV5TraitsError } };
 
-export type XcmV3TraitsError =
+export type XcmV5TraitsError =
   | { type: 'Overflow' }
   | { type: 'Unimplemented' }
   | { type: 'UntrustedReserveLocation' }
@@ -639,113 +636,123 @@ export type XcmV3TraitsError =
   | { type: 'NoPermission' }
   | { type: 'Unanchored' }
   | { type: 'NotDepositable' }
+  | { type: 'TooManyAssets' }
   | { type: 'UnhandledXcmVersion' }
   | { type: 'WeightLimitReached'; value: SpWeightsWeightV2Weight }
   | { type: 'Barrier' }
   | { type: 'WeightNotComputable' }
   | { type: 'ExceedsStackLimit' };
 
-export type StagingXcmV4Xcm = Array<StagingXcmV4Instruction>;
+export type StagingXcmV5Xcm = Array<StagingXcmV5Instruction>;
 
-export type StagingXcmV4Instruction =
-  | { type: 'WithdrawAsset'; value: StagingXcmV4AssetAssets }
-  | { type: 'ReserveAssetDeposited'; value: StagingXcmV4AssetAssets }
-  | { type: 'ReceiveTeleportedAsset'; value: StagingXcmV4AssetAssets }
+export type StagingXcmV5Instruction =
+  | { type: 'WithdrawAsset'; value: StagingXcmV5AssetAssets }
+  | { type: 'ReserveAssetDeposited'; value: StagingXcmV5AssetAssets }
+  | { type: 'ReceiveTeleportedAsset'; value: StagingXcmV5AssetAssets }
   | {
       type: 'QueryResponse';
       value: {
         queryId: bigint;
-        response: StagingXcmV4Response;
+        response: StagingXcmV5Response;
         maxWeight: SpWeightsWeightV2Weight;
-        querier?: StagingXcmV4Location | undefined;
+        querier?: StagingXcmV5Location | undefined;
       };
     }
-  | { type: 'TransferAsset'; value: { assets: StagingXcmV4AssetAssets; beneficiary: StagingXcmV4Location } }
+  | { type: 'TransferAsset'; value: { assets: StagingXcmV5AssetAssets; beneficiary: StagingXcmV5Location } }
   | {
       type: 'TransferReserveAsset';
-      value: { assets: StagingXcmV4AssetAssets; dest: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+      value: { assets: StagingXcmV5AssetAssets; dest: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
     }
-  | {
-      type: 'Transact';
-      value: { originKind: XcmV3OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
-    }
+  | { type: 'Transact'; value: { originKind: XcmV3OriginKind; call: XcmDoubleEncoded } }
   | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
   | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
   | { type: 'HrmpChannelClosing'; value: { initiator: number; sender: number; recipient: number } }
   | { type: 'ClearOrigin' }
-  | { type: 'DescendOrigin'; value: StagingXcmV4Junctions }
-  | { type: 'ReportError'; value: StagingXcmV4QueryResponseInfo }
-  | { type: 'DepositAsset'; value: { assets: StagingXcmV4AssetAssetFilter; beneficiary: StagingXcmV4Location } }
+  | { type: 'DescendOrigin'; value: StagingXcmV5Junctions }
+  | { type: 'ReportError'; value: StagingXcmV5QueryResponseInfo }
+  | { type: 'DepositAsset'; value: { assets: StagingXcmV5AssetAssetFilter; beneficiary: StagingXcmV5Location } }
   | {
       type: 'DepositReserveAsset';
-      value: { assets: StagingXcmV4AssetAssetFilter; dest: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+      value: { assets: StagingXcmV5AssetAssetFilter; dest: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
     }
   | {
       type: 'ExchangeAsset';
-      value: { give: StagingXcmV4AssetAssetFilter; want: StagingXcmV4AssetAssets; maximal: boolean };
+      value: { give: StagingXcmV5AssetAssetFilter; want: StagingXcmV5AssetAssets; maximal: boolean };
     }
   | {
       type: 'InitiateReserveWithdraw';
-      value: { assets: StagingXcmV4AssetAssetFilter; reserve: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+      value: { assets: StagingXcmV5AssetAssetFilter; reserve: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
     }
   | {
       type: 'InitiateTeleport';
-      value: { assets: StagingXcmV4AssetAssetFilter; dest: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+      value: { assets: StagingXcmV5AssetAssetFilter; dest: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
     }
   | {
       type: 'ReportHolding';
-      value: { responseInfo: StagingXcmV4QueryResponseInfo; assets: StagingXcmV4AssetAssetFilter };
+      value: { responseInfo: StagingXcmV5QueryResponseInfo; assets: StagingXcmV5AssetAssetFilter };
     }
-  | { type: 'BuyExecution'; value: { fees: StagingXcmV4Asset; weightLimit: XcmV3WeightLimit } }
+  | { type: 'BuyExecution'; value: { fees: StagingXcmV5Asset; weightLimit: XcmV3WeightLimit } }
   | { type: 'RefundSurplus' }
-  | { type: 'SetErrorHandler'; value: StagingXcmV4Xcm }
-  | { type: 'SetAppendix'; value: StagingXcmV4Xcm }
+  | { type: 'SetErrorHandler'; value: StagingXcmV5Xcm }
+  | { type: 'SetAppendix'; value: StagingXcmV5Xcm }
   | { type: 'ClearError' }
-  | { type: 'ClaimAsset'; value: { assets: StagingXcmV4AssetAssets; ticket: StagingXcmV4Location } }
+  | { type: 'SetAssetClaimer'; value: { location: StagingXcmV5Location } }
+  | { type: 'ClaimAsset'; value: { assets: StagingXcmV5AssetAssets; ticket: StagingXcmV5Location } }
   | { type: 'Trap'; value: bigint }
   | { type: 'SubscribeVersion'; value: { queryId: bigint; maxResponseWeight: SpWeightsWeightV2Weight } }
   | { type: 'UnsubscribeVersion' }
-  | { type: 'BurnAsset'; value: StagingXcmV4AssetAssets }
-  | { type: 'ExpectAsset'; value: StagingXcmV4AssetAssets }
-  | { type: 'ExpectOrigin'; value?: StagingXcmV4Location | undefined }
-  | { type: 'ExpectError'; value?: [number, XcmV3TraitsError] | undefined }
+  | { type: 'BurnAsset'; value: StagingXcmV5AssetAssets }
+  | { type: 'ExpectAsset'; value: StagingXcmV5AssetAssets }
+  | { type: 'ExpectOrigin'; value?: StagingXcmV5Location | undefined }
+  | { type: 'ExpectError'; value?: [number, XcmV5TraitsError] | undefined }
   | { type: 'ExpectTransactStatus'; value: XcmV3MaybeErrorCode }
-  | { type: 'QueryPallet'; value: { moduleName: Bytes; responseInfo: StagingXcmV4QueryResponseInfo } }
+  | { type: 'QueryPallet'; value: { moduleName: Bytes; responseInfo: StagingXcmV5QueryResponseInfo } }
   | {
       type: 'ExpectPallet';
       value: { index: number; name: Bytes; moduleName: Bytes; crateMajor: number; minCrateMinor: number };
     }
-  | { type: 'ReportTransactStatus'; value: StagingXcmV4QueryResponseInfo }
+  | { type: 'ReportTransactStatus'; value: StagingXcmV5QueryResponseInfo }
   | { type: 'ClearTransactStatus' }
-  | { type: 'UniversalOrigin'; value: StagingXcmV4Junction }
+  | { type: 'UniversalOrigin'; value: StagingXcmV5Junction }
   | {
       type: 'ExportMessage';
-      value: { network: StagingXcmV4JunctionNetworkId; destination: StagingXcmV4Junctions; xcm: StagingXcmV4Xcm };
+      value: { network: StagingXcmV5JunctionNetworkId; destination: StagingXcmV5Junctions; xcm: StagingXcmV5Xcm };
     }
-  | { type: 'LockAsset'; value: { asset: StagingXcmV4Asset; unlocker: StagingXcmV4Location } }
-  | { type: 'UnlockAsset'; value: { asset: StagingXcmV4Asset; target: StagingXcmV4Location } }
-  | { type: 'NoteUnlockable'; value: { asset: StagingXcmV4Asset; owner: StagingXcmV4Location } }
-  | { type: 'RequestUnlock'; value: { asset: StagingXcmV4Asset; locker: StagingXcmV4Location } }
+  | { type: 'LockAsset'; value: { asset: StagingXcmV5Asset; unlocker: StagingXcmV5Location } }
+  | { type: 'UnlockAsset'; value: { asset: StagingXcmV5Asset; target: StagingXcmV5Location } }
+  | { type: 'NoteUnlockable'; value: { asset: StagingXcmV5Asset; owner: StagingXcmV5Location } }
+  | { type: 'RequestUnlock'; value: { asset: StagingXcmV5Asset; locker: StagingXcmV5Location } }
   | { type: 'SetFeesMode'; value: { jitWithdraw: boolean } }
   | { type: 'SetTopic'; value: FixedBytes<32> }
   | { type: 'ClearTopic' }
-  | { type: 'AliasOrigin'; value: StagingXcmV4Location }
+  | { type: 'AliasOrigin'; value: StagingXcmV5Location }
   | {
       type: 'UnpaidExecution';
-      value: { weightLimit: XcmV3WeightLimit; checkOrigin?: StagingXcmV4Location | undefined };
+      value: { weightLimit: XcmV3WeightLimit; checkOrigin?: StagingXcmV5Location | undefined };
+    }
+  | { type: 'PayFees'; value: { asset: StagingXcmV5Asset } }
+  | {
+      type: 'InitiateTransfer';
+      value: {
+        destination: StagingXcmV5Location;
+        remoteFees?: StagingXcmV5AssetAssetTransferFilter | undefined;
+        preserveOrigin: boolean;
+        assets: Array<StagingXcmV5AssetAssetTransferFilter>;
+        remoteXcm: StagingXcmV5Xcm;
+      };
     };
 
-export type StagingXcmV4AssetAssets = Array<StagingXcmV4Asset>;
+export type StagingXcmV5AssetAssets = Array<StagingXcmV5Asset>;
 
-export type StagingXcmV4Asset = { id: StagingXcmV4AssetAssetId; fun: StagingXcmV4AssetFungibility };
+export type StagingXcmV5Asset = { id: StagingXcmV5AssetAssetId; fun: StagingXcmV5AssetFungibility };
 
-export type StagingXcmV4AssetAssetId = StagingXcmV4Location;
+export type StagingXcmV5AssetAssetId = StagingXcmV5Location;
 
-export type StagingXcmV4AssetFungibility =
+export type StagingXcmV5AssetFungibility =
   | { type: 'Fungible'; value: bigint }
-  | { type: 'NonFungible'; value: StagingXcmV4AssetAssetInstance };
+  | { type: 'NonFungible'; value: StagingXcmV5AssetAssetInstance };
 
-export type StagingXcmV4AssetAssetInstance =
+export type StagingXcmV5AssetAssetInstance =
   | { type: 'Undefined' }
   | { type: 'Index'; value: bigint }
   | { type: 'Array4'; value: FixedBytes<4> }
@@ -753,15 +760,15 @@ export type StagingXcmV4AssetAssetInstance =
   | { type: 'Array16'; value: FixedBytes<16> }
   | { type: 'Array32'; value: FixedBytes<32> };
 
-export type StagingXcmV4Response =
+export type StagingXcmV5Response =
   | { type: 'Null' }
-  | { type: 'Assets'; value: StagingXcmV4AssetAssets }
-  | { type: 'ExecutionResult'; value?: [number, XcmV3TraitsError] | undefined }
+  | { type: 'Assets'; value: StagingXcmV5AssetAssets }
+  | { type: 'ExecutionResult'; value?: [number, XcmV5TraitsError] | undefined }
   | { type: 'Version'; value: number }
-  | { type: 'PalletsInfo'; value: Array<StagingXcmV4PalletInfo> }
+  | { type: 'PalletsInfo'; value: Array<StagingXcmV5PalletInfo> }
   | { type: 'DispatchResult'; value: XcmV3MaybeErrorCode };
 
-export type StagingXcmV4PalletInfo = {
+export type StagingXcmV5PalletInfo = {
   index: number;
   name: Bytes;
   moduleName: Bytes;
@@ -779,118 +786,38 @@ export type XcmV3OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm
 
 export type XcmDoubleEncoded = { encoded: Bytes };
 
-export type StagingXcmV4QueryResponseInfo = {
-  destination: StagingXcmV4Location;
+export type StagingXcmV5QueryResponseInfo = {
+  destination: StagingXcmV5Location;
   queryId: bigint;
   maxWeight: SpWeightsWeightV2Weight;
 };
 
-export type StagingXcmV4AssetAssetFilter =
-  | { type: 'Definite'; value: StagingXcmV4AssetAssets }
-  | { type: 'Wild'; value: StagingXcmV4AssetWildAsset };
+export type StagingXcmV5AssetAssetFilter =
+  | { type: 'Definite'; value: StagingXcmV5AssetAssets }
+  | { type: 'Wild'; value: StagingXcmV5AssetWildAsset };
 
-export type StagingXcmV4AssetWildAsset =
+export type StagingXcmV5AssetWildAsset =
   | { type: 'All' }
-  | { type: 'AllOf'; value: { id: StagingXcmV4AssetAssetId; fun: StagingXcmV4AssetWildFungibility } }
+  | { type: 'AllOf'; value: { id: StagingXcmV5AssetAssetId; fun: StagingXcmV5AssetWildFungibility } }
   | { type: 'AllCounted'; value: number }
   | {
       type: 'AllOfCounted';
-      value: { id: StagingXcmV4AssetAssetId; fun: StagingXcmV4AssetWildFungibility; count: number };
+      value: { id: StagingXcmV5AssetAssetId; fun: StagingXcmV5AssetWildFungibility; count: number };
     };
 
-export type StagingXcmV4AssetWildFungibility = 'Fungible' | 'NonFungible';
+export type StagingXcmV5AssetWildFungibility = 'Fungible' | 'NonFungible';
 
 export type XcmV3WeightLimit = { type: 'Unlimited' } | { type: 'Limited'; value: SpWeightsWeightV2Weight };
 
+export type StagingXcmV5AssetAssetTransferFilter =
+  | { type: 'Teleport'; value: StagingXcmV5AssetAssetFilter }
+  | { type: 'ReserveDeposit'; value: StagingXcmV5AssetAssetFilter }
+  | { type: 'ReserveWithdraw'; value: StagingXcmV5AssetAssetFilter };
+
 export type XcmVersionedAssets =
-  | { type: 'V2'; value: XcmV2MultiassetMultiAssets }
   | { type: 'V3'; value: XcmV3MultiassetMultiAssets }
-  | { type: 'V4'; value: StagingXcmV4AssetAssets };
-
-export type XcmV2MultiassetMultiAssets = Array<XcmV2MultiassetMultiAsset>;
-
-export type XcmV2MultiassetMultiAsset = { id: XcmV2MultiassetAssetId; fun: XcmV2MultiassetFungibility };
-
-export type XcmV2MultiassetAssetId =
-  | { type: 'Concrete'; value: XcmV2MultilocationMultiLocation }
-  | { type: 'Abstract'; value: Bytes };
-
-export type XcmV2MultilocationMultiLocation = { parents: number; interior: XcmV2MultilocationJunctions };
-
-export type XcmV2MultilocationJunctions =
-  | { type: 'Here' }
-  | { type: 'X1'; value: XcmV2Junction }
-  | { type: 'X2'; value: [XcmV2Junction, XcmV2Junction] }
-  | { type: 'X3'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | { type: 'X4'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | { type: 'X5'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | { type: 'X6'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | {
-      type: 'X7';
-      value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction];
-    }
-  | {
-      type: 'X8';
-      value: [
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-      ];
-    };
-
-export type XcmV2Junction =
-  | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network: XcmV2NetworkId; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network: XcmV2NetworkId; index: bigint } }
-  | { type: 'AccountKey20'; value: { network: XcmV2NetworkId; key: FixedBytes<20> } }
-  | { type: 'PalletInstance'; value: number }
-  | { type: 'GeneralIndex'; value: bigint }
-  | { type: 'GeneralKey'; value: Bytes }
-  | { type: 'OnlyChild' }
-  | { type: 'Plurality'; value: { id: XcmV2BodyId; part: XcmV2BodyPart } };
-
-export type XcmV2NetworkId =
-  | { type: 'Any' }
-  | { type: 'Named'; value: Bytes }
-  | { type: 'Polkadot' }
-  | { type: 'Kusama' };
-
-export type XcmV2BodyId =
-  | { type: 'Unit' }
-  | { type: 'Named'; value: Bytes }
-  | { type: 'Index'; value: number }
-  | { type: 'Executive' }
-  | { type: 'Technical' }
-  | { type: 'Legislative' }
-  | { type: 'Judicial' }
-  | { type: 'Defense' }
-  | { type: 'Administration' }
-  | { type: 'Treasury' };
-
-export type XcmV2BodyPart =
-  | { type: 'Voice' }
-  | { type: 'Members'; value: { count: number } }
-  | { type: 'Fraction'; value: { nom: number; denom: number } }
-  | { type: 'AtLeastProportion'; value: { nom: number; denom: number } }
-  | { type: 'MoreThanProportion'; value: { nom: number; denom: number } };
-
-export type XcmV2MultiassetFungibility =
-  | { type: 'Fungible'; value: bigint }
-  | { type: 'NonFungible'; value: XcmV2MultiassetAssetInstance };
-
-export type XcmV2MultiassetAssetInstance =
-  | { type: 'Undefined' }
-  | { type: 'Index'; value: bigint }
-  | { type: 'Array4'; value: FixedBytes<4> }
-  | { type: 'Array8'; value: FixedBytes<8> }
-  | { type: 'Array16'; value: FixedBytes<16> }
-  | { type: 'Array32'; value: FixedBytes<32> }
-  | { type: 'Blob'; value: Bytes };
+  | { type: 'V4'; value: StagingXcmV4AssetAssets }
+  | { type: 'V5'; value: StagingXcmV5AssetAssets };
 
 export type XcmV3MultiassetMultiAssets = Array<XcmV3MultiassetMultiAsset>;
 
@@ -965,10 +892,66 @@ export type XcmV3MultiassetAssetInstance =
   | { type: 'Array16'; value: FixedBytes<16> }
   | { type: 'Array32'; value: FixedBytes<32> };
 
+export type StagingXcmV4AssetAssets = Array<StagingXcmV4Asset>;
+
+export type StagingXcmV4Asset = { id: StagingXcmV4AssetAssetId; fun: StagingXcmV4AssetFungibility };
+
+export type StagingXcmV4AssetAssetId = StagingXcmV4Location;
+
+export type StagingXcmV4Location = { parents: number; interior: StagingXcmV4Junctions };
+
+export type StagingXcmV4Junctions =
+  | { type: 'Here' }
+  | { type: 'X1'; value: FixedArray<StagingXcmV4Junction, 1> }
+  | { type: 'X2'; value: FixedArray<StagingXcmV4Junction, 2> }
+  | { type: 'X3'; value: FixedArray<StagingXcmV4Junction, 3> }
+  | { type: 'X4'; value: FixedArray<StagingXcmV4Junction, 4> }
+  | { type: 'X5'; value: FixedArray<StagingXcmV4Junction, 5> }
+  | { type: 'X6'; value: FixedArray<StagingXcmV4Junction, 6> }
+  | { type: 'X7'; value: FixedArray<StagingXcmV4Junction, 7> }
+  | { type: 'X8'; value: FixedArray<StagingXcmV4Junction, 8> };
+
+export type StagingXcmV4Junction =
+  | { type: 'Parachain'; value: number }
+  | { type: 'AccountId32'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; key: FixedBytes<20> } }
+  | { type: 'PalletInstance'; value: number }
+  | { type: 'GeneralIndex'; value: bigint }
+  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
+  | { type: 'OnlyChild' }
+  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
+  | { type: 'GlobalConsensus'; value: StagingXcmV4JunctionNetworkId };
+
+export type StagingXcmV4JunctionNetworkId =
+  | { type: 'ByGenesis'; value: FixedBytes<32> }
+  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
+  | { type: 'Polkadot' }
+  | { type: 'Kusama' }
+  | { type: 'Westend' }
+  | { type: 'Rococo' }
+  | { type: 'Wococo' }
+  | { type: 'Ethereum'; value: { chainId: bigint } }
+  | { type: 'BitcoinCore' }
+  | { type: 'BitcoinCash' }
+  | { type: 'PolkadotBulletin' };
+
+export type StagingXcmV4AssetFungibility =
+  | { type: 'Fungible'; value: bigint }
+  | { type: 'NonFungible'; value: StagingXcmV4AssetAssetInstance };
+
+export type StagingXcmV4AssetAssetInstance =
+  | { type: 'Undefined' }
+  | { type: 'Index'; value: bigint }
+  | { type: 'Array4'; value: FixedBytes<4> }
+  | { type: 'Array8'; value: FixedBytes<8> }
+  | { type: 'Array16'; value: FixedBytes<16> }
+  | { type: 'Array32'; value: FixedBytes<32> };
+
 export type XcmVersionedLocation =
-  | { type: 'V2'; value: XcmV2MultilocationMultiLocation }
   | { type: 'V3'; value: StagingXcmV3MultilocationMultiLocation }
-  | { type: 'V4'; value: StagingXcmV4Location };
+  | { type: 'V4'; value: StagingXcmV4Location }
+  | { type: 'V5'; value: StagingXcmV5Location };
 
 /**
  * The `Event` enum of this pallet
@@ -988,7 +971,7 @@ export type CumulusPalletXcmEvent =
    * Downward message executed with the given outcome.
    * \[ id, outcome \]
    **/
-  | { name: 'ExecutedDownward'; data: [FixedBytes<32>, StagingXcmV4TraitsOutcome] };
+  | { name: 'ExecutedDownward'; data: [FixedBytes<32>, StagingXcmV5TraitsOutcome] };
 
 /**
  * The `Event` enum of this pallet
@@ -1769,94 +1752,94 @@ export type PalletAssetsEvent002 =
   /**
    * Some asset class was created.
    **/
-  | { name: 'Created'; data: { assetId: StagingXcmV4Location; creator: AccountId32; owner: AccountId32 } }
+  | { name: 'Created'; data: { assetId: StagingXcmV5Location; creator: AccountId32; owner: AccountId32 } }
   /**
    * Some assets were issued.
    **/
-  | { name: 'Issued'; data: { assetId: StagingXcmV4Location; owner: AccountId32; amount: bigint } }
+  | { name: 'Issued'; data: { assetId: StagingXcmV5Location; owner: AccountId32; amount: bigint } }
   /**
    * Some assets were transferred.
    **/
-  | { name: 'Transferred'; data: { assetId: StagingXcmV4Location; from: AccountId32; to: AccountId32; amount: bigint } }
+  | { name: 'Transferred'; data: { assetId: StagingXcmV5Location; from: AccountId32; to: AccountId32; amount: bigint } }
   /**
    * Some assets were destroyed.
    **/
-  | { name: 'Burned'; data: { assetId: StagingXcmV4Location; owner: AccountId32; balance: bigint } }
+  | { name: 'Burned'; data: { assetId: StagingXcmV5Location; owner: AccountId32; balance: bigint } }
   /**
    * The management team changed.
    **/
   | {
       name: 'TeamChanged';
-      data: { assetId: StagingXcmV4Location; issuer: AccountId32; admin: AccountId32; freezer: AccountId32 };
+      data: { assetId: StagingXcmV5Location; issuer: AccountId32; admin: AccountId32; freezer: AccountId32 };
     }
   /**
    * The owner changed.
    **/
-  | { name: 'OwnerChanged'; data: { assetId: StagingXcmV4Location; owner: AccountId32 } }
+  | { name: 'OwnerChanged'; data: { assetId: StagingXcmV5Location; owner: AccountId32 } }
   /**
    * Some account `who` was frozen.
    **/
-  | { name: 'Frozen'; data: { assetId: StagingXcmV4Location; who: AccountId32 } }
+  | { name: 'Frozen'; data: { assetId: StagingXcmV5Location; who: AccountId32 } }
   /**
    * Some account `who` was thawed.
    **/
-  | { name: 'Thawed'; data: { assetId: StagingXcmV4Location; who: AccountId32 } }
+  | { name: 'Thawed'; data: { assetId: StagingXcmV5Location; who: AccountId32 } }
   /**
    * Some asset `asset_id` was frozen.
    **/
-  | { name: 'AssetFrozen'; data: { assetId: StagingXcmV4Location } }
+  | { name: 'AssetFrozen'; data: { assetId: StagingXcmV5Location } }
   /**
    * Some asset `asset_id` was thawed.
    **/
-  | { name: 'AssetThawed'; data: { assetId: StagingXcmV4Location } }
+  | { name: 'AssetThawed'; data: { assetId: StagingXcmV5Location } }
   /**
    * Accounts were destroyed for given asset.
    **/
   | {
       name: 'AccountsDestroyed';
-      data: { assetId: StagingXcmV4Location; accountsDestroyed: number; accountsRemaining: number };
+      data: { assetId: StagingXcmV5Location; accountsDestroyed: number; accountsRemaining: number };
     }
   /**
    * Approvals were destroyed for given asset.
    **/
   | {
       name: 'ApprovalsDestroyed';
-      data: { assetId: StagingXcmV4Location; approvalsDestroyed: number; approvalsRemaining: number };
+      data: { assetId: StagingXcmV5Location; approvalsDestroyed: number; approvalsRemaining: number };
     }
   /**
    * An asset class is in the process of being destroyed.
    **/
-  | { name: 'DestructionStarted'; data: { assetId: StagingXcmV4Location } }
+  | { name: 'DestructionStarted'; data: { assetId: StagingXcmV5Location } }
   /**
    * An asset class was destroyed.
    **/
-  | { name: 'Destroyed'; data: { assetId: StagingXcmV4Location } }
+  | { name: 'Destroyed'; data: { assetId: StagingXcmV5Location } }
   /**
    * Some asset class was force-created.
    **/
-  | { name: 'ForceCreated'; data: { assetId: StagingXcmV4Location; owner: AccountId32 } }
+  | { name: 'ForceCreated'; data: { assetId: StagingXcmV5Location; owner: AccountId32 } }
   /**
    * New metadata has been set for an asset.
    **/
   | {
       name: 'MetadataSet';
-      data: { assetId: StagingXcmV4Location; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean };
+      data: { assetId: StagingXcmV5Location; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean };
     }
   /**
    * Metadata has been cleared for an asset.
    **/
-  | { name: 'MetadataCleared'; data: { assetId: StagingXcmV4Location } }
+  | { name: 'MetadataCleared'; data: { assetId: StagingXcmV5Location } }
   /**
    * (Additional) funds have been approved for transfer to a destination account.
    **/
   | {
       name: 'ApprovedTransfer';
-      data: { assetId: StagingXcmV4Location; source: AccountId32; delegate: AccountId32; amount: bigint };
+      data: { assetId: StagingXcmV5Location; source: AccountId32; delegate: AccountId32; amount: bigint };
     }
   /**
    * An approval for account `delegate` was cancelled by `owner`.
    **/
-  | { name: 'ApprovalCancelled'; data: { assetId: StagingXcmV4Location; owner: AccountId32; delegate: AccountId32 } }
+  | { name: 'ApprovalCancelled'; data: { assetId: StagingXcmV5Location; owner: AccountId32; delegate: AccountId32 } }
   /**
    * An `amount` was transferred in its entirety from `owner` to `destination` by
    * the approved `delegate`.
@@ -1864,7 +1847,7 @@ export type PalletAssetsEvent002 =
   | {
       name: 'TransferredApproved';
       data: {
-        assetId: StagingXcmV4Location;
+        assetId: StagingXcmV5Location;
         owner: AccountId32;
         delegate: AccountId32;
         destination: AccountId32;
@@ -1874,27 +1857,27 @@ export type PalletAssetsEvent002 =
   /**
    * An asset has had its attributes changed by the `Force` origin.
    **/
-  | { name: 'AssetStatusChanged'; data: { assetId: StagingXcmV4Location } }
+  | { name: 'AssetStatusChanged'; data: { assetId: StagingXcmV5Location } }
   /**
    * The min_balance of an asset has been updated by the asset owner.
    **/
-  | { name: 'AssetMinBalanceChanged'; data: { assetId: StagingXcmV4Location; newMinBalance: bigint } }
+  | { name: 'AssetMinBalanceChanged'; data: { assetId: StagingXcmV5Location; newMinBalance: bigint } }
   /**
    * Some account `who` was created with a deposit from `depositor`.
    **/
-  | { name: 'Touched'; data: { assetId: StagingXcmV4Location; who: AccountId32; depositor: AccountId32 } }
+  | { name: 'Touched'; data: { assetId: StagingXcmV5Location; who: AccountId32; depositor: AccountId32 } }
   /**
    * Some account `who` was blocked.
    **/
-  | { name: 'Blocked'; data: { assetId: StagingXcmV4Location; who: AccountId32 } }
+  | { name: 'Blocked'; data: { assetId: StagingXcmV5Location; who: AccountId32 } }
   /**
    * Some assets were deposited (e.g. for transaction fees).
    **/
-  | { name: 'Deposited'; data: { assetId: StagingXcmV4Location; who: AccountId32; amount: bigint } }
+  | { name: 'Deposited'; data: { assetId: StagingXcmV5Location; who: AccountId32; amount: bigint } }
   /**
    * Some assets were withdrawn from the account (e.g. for transaction fees).
    **/
-  | { name: 'Withdrawn'; data: { assetId: StagingXcmV4Location; who: AccountId32; amount: bigint } };
+  | { name: 'Withdrawn'; data: { assetId: StagingXcmV5Location; who: AccountId32; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -1931,7 +1914,7 @@ export type PalletAssetConversionEvent =
          * The pool id associated with the pool. Note that the order of the assets may not be
          * the same as the order specified in the create pool extrinsic.
          **/
-        poolId: [StagingXcmV4Location, StagingXcmV4Location];
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
 
         /**
          * The account ID of the pool.
@@ -1964,7 +1947,7 @@ export type PalletAssetConversionEvent =
         /**
          * The pool id of the pool that the liquidity was added to.
          **/
-        poolId: [StagingXcmV4Location, StagingXcmV4Location];
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
 
         /**
          * The amount of the first asset that was added to the pool.
@@ -2006,7 +1989,7 @@ export type PalletAssetConversionEvent =
         /**
          * The pool id that the liquidity was removed from.
          **/
-        poolId: [StagingXcmV4Location, StagingXcmV4Location];
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
 
         /**
          * The amount of the first asset that was removed from the pool.
@@ -2065,7 +2048,7 @@ export type PalletAssetConversionEvent =
          * The route of asset IDs with amounts that the swap went through.
          * E.g. (A, amount_in) -> (Dot, amount_out) -> (B, amount_out)
          **/
-        path: Array<[StagingXcmV4Location, bigint]>;
+        path: Array<[StagingXcmV5Location, bigint]>;
       };
     }
   /**
@@ -2088,7 +2071,7 @@ export type PalletAssetConversionEvent =
          * The route of asset IDs with amounts that the swap went through.
          * E.g. (A, amount_in) -> (Dot, amount_out) -> (B, amount_out)
          **/
-        path: Array<[StagingXcmV4Location, bigint]>;
+        path: Array<[StagingXcmV5Location, bigint]>;
       };
     }
   /**
@@ -2100,7 +2083,7 @@ export type PalletAssetConversionEvent =
         /**
          * The ID of the pool.
          **/
-        poolId: [StagingXcmV4Location, StagingXcmV4Location];
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
 
         /**
          * The account initiating the touch.
@@ -2120,8 +2103,8 @@ export type PalletAssetsFreezerEvent =
  * The `Event` enum of this pallet
  **/
 export type PalletAssetsFreezerEvent002 =
-  | { name: 'Frozen'; data: { who: AccountId32; assetId: StagingXcmV4Location; amount: bigint } }
-  | { name: 'Thawed'; data: { who: AccountId32; assetId: StagingXcmV4Location; amount: bigint } };
+  | { name: 'Frozen'; data: { who: AccountId32; assetId: StagingXcmV5Location; amount: bigint } }
+  | { name: 'Thawed'; data: { who: AccountId32; assetId: StagingXcmV5Location; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -2339,7 +2322,7 @@ export type PalletAssetConversionOpsEvent =
       /**
        * Pool's ID.
        **/
-      poolId: [StagingXcmV4Location, StagingXcmV4Location];
+      poolId: [StagingXcmV5Location, StagingXcmV5Location];
 
       /**
        * Pool's prior account ID.
@@ -3528,23 +3511,25 @@ export type PalletXcmQueryStatus =
   | { type: 'Ready'; value: { response: XcmVersionedResponse; at: number } };
 
 export type XcmVersionedResponse =
-  | { type: 'V2'; value: XcmV2Response }
   | { type: 'V3'; value: XcmV3Response }
-  | { type: 'V4'; value: StagingXcmV4Response };
+  | { type: 'V4'; value: StagingXcmV4Response }
+  | { type: 'V5'; value: StagingXcmV5Response };
 
-export type XcmV2Response =
+export type XcmV3Response =
   | { type: 'Null' }
-  | { type: 'Assets'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'ExecutionResult'; value?: [number, XcmV2TraitsError] | undefined }
-  | { type: 'Version'; value: number };
+  | { type: 'Assets'; value: XcmV3MultiassetMultiAssets }
+  | { type: 'ExecutionResult'; value?: [number, XcmV3TraitsError] | undefined }
+  | { type: 'Version'; value: number }
+  | { type: 'PalletsInfo'; value: Array<XcmV3PalletInfo> }
+  | { type: 'DispatchResult'; value: XcmV3MaybeErrorCode };
 
-export type XcmV2TraitsError =
+export type XcmV3TraitsError =
   | { type: 'Overflow' }
   | { type: 'Unimplemented' }
   | { type: 'UntrustedReserveLocation' }
   | { type: 'UntrustedTeleportLocation' }
-  | { type: 'MultiLocationFull' }
-  | { type: 'MultiLocationNotInvertible' }
+  | { type: 'LocationFull' }
+  | { type: 'LocationNotInvertible' }
   | { type: 'BadOrigin' }
   | { type: 'InvalidLocation' }
   | { type: 'AssetNotFound' }
@@ -3561,20 +3546,43 @@ export type XcmV2TraitsError =
   | { type: 'NotHoldingFees' }
   | { type: 'TooExpensive' }
   | { type: 'Trap'; value: bigint }
+  | { type: 'ExpectationFalse' }
+  | { type: 'PalletNotFound' }
+  | { type: 'NameMismatch' }
+  | { type: 'VersionIncompatible' }
+  | { type: 'HoldingWouldOverflow' }
+  | { type: 'ExportError' }
+  | { type: 'ReanchorFailed' }
+  | { type: 'NoDeal' }
+  | { type: 'FeesNotMet' }
+  | { type: 'LockError' }
+  | { type: 'NoPermission' }
+  | { type: 'Unanchored' }
+  | { type: 'NotDepositable' }
   | { type: 'UnhandledXcmVersion' }
-  | { type: 'WeightLimitReached'; value: bigint }
+  | { type: 'WeightLimitReached'; value: SpWeightsWeightV2Weight }
   | { type: 'Barrier' }
-  | { type: 'WeightNotComputable' };
-
-export type XcmV3Response =
-  | { type: 'Null' }
-  | { type: 'Assets'; value: XcmV3MultiassetMultiAssets }
-  | { type: 'ExecutionResult'; value?: [number, XcmV3TraitsError] | undefined }
-  | { type: 'Version'; value: number }
-  | { type: 'PalletsInfo'; value: Array<XcmV3PalletInfo> }
-  | { type: 'DispatchResult'; value: XcmV3MaybeErrorCode };
+  | { type: 'WeightNotComputable' }
+  | { type: 'ExceedsStackLimit' };
 
 export type XcmV3PalletInfo = {
+  index: number;
+  name: Bytes;
+  moduleName: Bytes;
+  major: number;
+  minor: number;
+  patch: number;
+};
+
+export type StagingXcmV4Response =
+  | { type: 'Null' }
+  | { type: 'Assets'; value: StagingXcmV4AssetAssets }
+  | { type: 'ExecutionResult'; value?: [number, XcmV3TraitsError] | undefined }
+  | { type: 'Version'; value: number }
+  | { type: 'PalletsInfo'; value: Array<StagingXcmV4PalletInfo> }
+  | { type: 'DispatchResult'; value: XcmV3MaybeErrorCode };
+
+export type StagingXcmV4PalletInfo = {
   index: number;
   name: Bytes;
   moduleName: Bytes;
@@ -3591,7 +3599,8 @@ export type PalletXcmVersionMigrationStage =
 
 export type XcmVersionedAssetId =
   | { type: 'V3'; value: XcmV3MultiassetAssetId }
-  | { type: 'V4'; value: StagingXcmV4AssetAssetId };
+  | { type: 'V4'; value: StagingXcmV4AssetAssetId }
+  | { type: 'V5'; value: StagingXcmV5AssetAssetId };
 
 export type PalletXcmRemoteLockedFungibleRecord = {
   amount: bigint;
@@ -3694,7 +3703,7 @@ export type PalletXcmCall =
    * - `location`: The destination that is being described.
    * - `xcm_version`: The latest version of XCM that `location` supports.
    **/
-  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV4Location; version: number } }
+  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV5Location; version: number } }
   /**
    * Set a safe XCM version (the version that XCM should be encoded with if the most recent
    * version a destination can accept is unknown).
@@ -4006,7 +4015,7 @@ export type PalletXcmCallLike =
    * - `location`: The destination that is being described.
    * - `xcm_version`: The latest version of XCM that `location` supports.
    **/
-  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV4Location; version: number } }
+  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV5Location; version: number } }
   /**
    * Set a safe XCM version (the version that XCM should be encoded with if the most recent
    * version a destination can accept is unknown).
@@ -4228,93 +4237,9 @@ export type PalletXcmCallLike =
     };
 
 export type XcmVersionedXcm =
-  | { type: 'V2'; value: XcmV2Xcm }
   | { type: 'V3'; value: XcmV3Xcm }
-  | { type: 'V4'; value: StagingXcmV4Xcm };
-
-export type XcmV2Xcm = Array<XcmV2Instruction>;
-
-export type XcmV2Instruction =
-  | { type: 'WithdrawAsset'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'ReserveAssetDeposited'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'ReceiveTeleportedAsset'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'QueryResponse'; value: { queryId: bigint; response: XcmV2Response; maxWeight: bigint } }
-  | {
-      type: 'TransferAsset';
-      value: { assets: XcmV2MultiassetMultiAssets; beneficiary: XcmV2MultilocationMultiLocation };
-    }
-  | {
-      type: 'TransferReserveAsset';
-      value: { assets: XcmV2MultiassetMultiAssets; dest: XcmV2MultilocationMultiLocation; xcm: XcmV2Xcm };
-    }
-  | { type: 'Transact'; value: { originType: XcmV2OriginKind; requireWeightAtMost: bigint; call: XcmDoubleEncoded } }
-  | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
-  | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
-  | { type: 'HrmpChannelClosing'; value: { initiator: number; sender: number; recipient: number } }
-  | { type: 'ClearOrigin' }
-  | { type: 'DescendOrigin'; value: XcmV2MultilocationJunctions }
-  | {
-      type: 'ReportError';
-      value: { queryId: bigint; dest: XcmV2MultilocationMultiLocation; maxResponseWeight: bigint };
-    }
-  | {
-      type: 'DepositAsset';
-      value: {
-        assets: XcmV2MultiassetMultiAssetFilter;
-        maxAssets: number;
-        beneficiary: XcmV2MultilocationMultiLocation;
-      };
-    }
-  | {
-      type: 'DepositReserveAsset';
-      value: {
-        assets: XcmV2MultiassetMultiAssetFilter;
-        maxAssets: number;
-        dest: XcmV2MultilocationMultiLocation;
-        xcm: XcmV2Xcm;
-      };
-    }
-  | { type: 'ExchangeAsset'; value: { give: XcmV2MultiassetMultiAssetFilter; receive: XcmV2MultiassetMultiAssets } }
-  | {
-      type: 'InitiateReserveWithdraw';
-      value: { assets: XcmV2MultiassetMultiAssetFilter; reserve: XcmV2MultilocationMultiLocation; xcm: XcmV2Xcm };
-    }
-  | {
-      type: 'InitiateTeleport';
-      value: { assets: XcmV2MultiassetMultiAssetFilter; dest: XcmV2MultilocationMultiLocation; xcm: XcmV2Xcm };
-    }
-  | {
-      type: 'QueryHolding';
-      value: {
-        queryId: bigint;
-        dest: XcmV2MultilocationMultiLocation;
-        assets: XcmV2MultiassetMultiAssetFilter;
-        maxResponseWeight: bigint;
-      };
-    }
-  | { type: 'BuyExecution'; value: { fees: XcmV2MultiassetMultiAsset; weightLimit: XcmV2WeightLimit } }
-  | { type: 'RefundSurplus' }
-  | { type: 'SetErrorHandler'; value: XcmV2Xcm }
-  | { type: 'SetAppendix'; value: XcmV2Xcm }
-  | { type: 'ClearError' }
-  | { type: 'ClaimAsset'; value: { assets: XcmV2MultiassetMultiAssets; ticket: XcmV2MultilocationMultiLocation } }
-  | { type: 'Trap'; value: bigint }
-  | { type: 'SubscribeVersion'; value: { queryId: bigint; maxResponseWeight: bigint } }
-  | { type: 'UnsubscribeVersion' };
-
-export type XcmV2OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
-
-export type XcmV2MultiassetMultiAssetFilter =
-  | { type: 'Definite'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'Wild'; value: XcmV2MultiassetWildMultiAsset };
-
-export type XcmV2MultiassetWildMultiAsset =
-  | { type: 'All' }
-  | { type: 'AllOf'; value: { id: XcmV2MultiassetAssetId; fun: XcmV2MultiassetWildFungibility } };
-
-export type XcmV2MultiassetWildFungibility = 'Fungible' | 'NonFungible';
-
-export type XcmV2WeightLimit = { type: 'Unlimited' } | { type: 'Limited'; value: bigint };
+  | { type: 'V4'; value: StagingXcmV4Xcm }
+  | { type: 'V5'; value: StagingXcmV5Xcm };
 
 export type XcmV3Xcm = Array<XcmV3Instruction>;
 
@@ -4436,6 +4361,117 @@ export type XcmV3MultiassetWildMultiAsset =
   | { type: 'AllOfCounted'; value: { id: XcmV3MultiassetAssetId; fun: XcmV3MultiassetWildFungibility; count: number } };
 
 export type XcmV3MultiassetWildFungibility = 'Fungible' | 'NonFungible';
+
+export type StagingXcmV4Xcm = Array<StagingXcmV4Instruction>;
+
+export type StagingXcmV4Instruction =
+  | { type: 'WithdrawAsset'; value: StagingXcmV4AssetAssets }
+  | { type: 'ReserveAssetDeposited'; value: StagingXcmV4AssetAssets }
+  | { type: 'ReceiveTeleportedAsset'; value: StagingXcmV4AssetAssets }
+  | {
+      type: 'QueryResponse';
+      value: {
+        queryId: bigint;
+        response: StagingXcmV4Response;
+        maxWeight: SpWeightsWeightV2Weight;
+        querier?: StagingXcmV4Location | undefined;
+      };
+    }
+  | { type: 'TransferAsset'; value: { assets: StagingXcmV4AssetAssets; beneficiary: StagingXcmV4Location } }
+  | {
+      type: 'TransferReserveAsset';
+      value: { assets: StagingXcmV4AssetAssets; dest: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+    }
+  | {
+      type: 'Transact';
+      value: { originKind: XcmV3OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
+    }
+  | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
+  | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
+  | { type: 'HrmpChannelClosing'; value: { initiator: number; sender: number; recipient: number } }
+  | { type: 'ClearOrigin' }
+  | { type: 'DescendOrigin'; value: StagingXcmV4Junctions }
+  | { type: 'ReportError'; value: StagingXcmV4QueryResponseInfo }
+  | { type: 'DepositAsset'; value: { assets: StagingXcmV4AssetAssetFilter; beneficiary: StagingXcmV4Location } }
+  | {
+      type: 'DepositReserveAsset';
+      value: { assets: StagingXcmV4AssetAssetFilter; dest: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+    }
+  | {
+      type: 'ExchangeAsset';
+      value: { give: StagingXcmV4AssetAssetFilter; want: StagingXcmV4AssetAssets; maximal: boolean };
+    }
+  | {
+      type: 'InitiateReserveWithdraw';
+      value: { assets: StagingXcmV4AssetAssetFilter; reserve: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+    }
+  | {
+      type: 'InitiateTeleport';
+      value: { assets: StagingXcmV4AssetAssetFilter; dest: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+    }
+  | {
+      type: 'ReportHolding';
+      value: { responseInfo: StagingXcmV4QueryResponseInfo; assets: StagingXcmV4AssetAssetFilter };
+    }
+  | { type: 'BuyExecution'; value: { fees: StagingXcmV4Asset; weightLimit: XcmV3WeightLimit } }
+  | { type: 'RefundSurplus' }
+  | { type: 'SetErrorHandler'; value: StagingXcmV4Xcm }
+  | { type: 'SetAppendix'; value: StagingXcmV4Xcm }
+  | { type: 'ClearError' }
+  | { type: 'ClaimAsset'; value: { assets: StagingXcmV4AssetAssets; ticket: StagingXcmV4Location } }
+  | { type: 'Trap'; value: bigint }
+  | { type: 'SubscribeVersion'; value: { queryId: bigint; maxResponseWeight: SpWeightsWeightV2Weight } }
+  | { type: 'UnsubscribeVersion' }
+  | { type: 'BurnAsset'; value: StagingXcmV4AssetAssets }
+  | { type: 'ExpectAsset'; value: StagingXcmV4AssetAssets }
+  | { type: 'ExpectOrigin'; value?: StagingXcmV4Location | undefined }
+  | { type: 'ExpectError'; value?: [number, XcmV3TraitsError] | undefined }
+  | { type: 'ExpectTransactStatus'; value: XcmV3MaybeErrorCode }
+  | { type: 'QueryPallet'; value: { moduleName: Bytes; responseInfo: StagingXcmV4QueryResponseInfo } }
+  | {
+      type: 'ExpectPallet';
+      value: { index: number; name: Bytes; moduleName: Bytes; crateMajor: number; minCrateMinor: number };
+    }
+  | { type: 'ReportTransactStatus'; value: StagingXcmV4QueryResponseInfo }
+  | { type: 'ClearTransactStatus' }
+  | { type: 'UniversalOrigin'; value: StagingXcmV4Junction }
+  | {
+      type: 'ExportMessage';
+      value: { network: StagingXcmV4JunctionNetworkId; destination: StagingXcmV4Junctions; xcm: StagingXcmV4Xcm };
+    }
+  | { type: 'LockAsset'; value: { asset: StagingXcmV4Asset; unlocker: StagingXcmV4Location } }
+  | { type: 'UnlockAsset'; value: { asset: StagingXcmV4Asset; target: StagingXcmV4Location } }
+  | { type: 'NoteUnlockable'; value: { asset: StagingXcmV4Asset; owner: StagingXcmV4Location } }
+  | { type: 'RequestUnlock'; value: { asset: StagingXcmV4Asset; locker: StagingXcmV4Location } }
+  | { type: 'SetFeesMode'; value: { jitWithdraw: boolean } }
+  | { type: 'SetTopic'; value: FixedBytes<32> }
+  | { type: 'ClearTopic' }
+  | { type: 'AliasOrigin'; value: StagingXcmV4Location }
+  | {
+      type: 'UnpaidExecution';
+      value: { weightLimit: XcmV3WeightLimit; checkOrigin?: StagingXcmV4Location | undefined };
+    };
+
+export type StagingXcmV4QueryResponseInfo = {
+  destination: StagingXcmV4Location;
+  queryId: bigint;
+  maxWeight: SpWeightsWeightV2Weight;
+};
+
+export type StagingXcmV4AssetAssetFilter =
+  | { type: 'Definite'; value: StagingXcmV4AssetAssets }
+  | { type: 'Wild'; value: StagingXcmV4AssetWildAsset };
+
+export type StagingXcmV4AssetWildAsset =
+  | { type: 'All' }
+  | { type: 'AllOf'; value: { id: StagingXcmV4AssetAssetId; fun: StagingXcmV4AssetWildFungibility } }
+  | { type: 'AllCounted'; value: number }
+  | {
+      type: 'AllOfCounted';
+      value: { id: StagingXcmV4AssetAssetId; fun: StagingXcmV4AssetWildFungibility; count: number };
+    };
+
+export type StagingXcmV4AssetWildFungibility = 'Fungible' | 'NonFungible';
 
 export type StagingXcmExecutorAssetTransferTransferType =
   | { type: 'Teleport' }
@@ -9112,7 +9148,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Create'; params: { id: StagingXcmV4Location; admin: MultiAddress; minBalance: bigint } }
+  | { name: 'Create'; params: { id: StagingXcmV5Location; admin: MultiAddress; minBalance: bigint } }
   /**
    * Issue a new class of fungible assets from a privileged origin.
    *
@@ -9136,7 +9172,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'ForceCreate';
-      params: { id: StagingXcmV4Location; owner: MultiAddress; isSufficient: boolean; minBalance: bigint };
+      params: { id: StagingXcmV5Location; owner: MultiAddress; isSufficient: boolean; minBalance: bigint };
     }
   /**
    * Start the process of destroying a fungible asset class.
@@ -9149,7 +9185,7 @@ export type PalletAssetsCall002 =
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
    **/
-  | { name: 'StartDestroy'; params: { id: StagingXcmV4Location } }
+  | { name: 'StartDestroy'; params: { id: StagingXcmV5Location } }
   /**
    * Destroy all accounts associated with a given asset.
    *
@@ -9164,7 +9200,7 @@ export type PalletAssetsCall002 =
    *
    * Each call emits the `Event::DestroyedAccounts` event.
    **/
-  | { name: 'DestroyAccounts'; params: { id: StagingXcmV4Location } }
+  | { name: 'DestroyAccounts'; params: { id: StagingXcmV5Location } }
   /**
    * Destroy all approvals associated with a given asset up to the max (T::RemoveItemsLimit).
    *
@@ -9179,7 +9215,7 @@ export type PalletAssetsCall002 =
    *
    * Each call emits the `Event::DestroyedApprovals` event.
    **/
-  | { name: 'DestroyApprovals'; params: { id: StagingXcmV4Location } }
+  | { name: 'DestroyApprovals'; params: { id: StagingXcmV5Location } }
   /**
    * Complete destroying asset and unreserve currency.
    *
@@ -9192,7 +9228,7 @@ export type PalletAssetsCall002 =
    *
    * Each successful call emits the `Event::Destroyed` event.
    **/
-  | { name: 'FinishDestroy'; params: { id: StagingXcmV4Location } }
+  | { name: 'FinishDestroy'; params: { id: StagingXcmV5Location } }
   /**
    * Mint assets of a particular class.
    *
@@ -9207,7 +9243,7 @@ export type PalletAssetsCall002 =
    * Weight: `O(1)`
    * Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
    **/
-  | { name: 'Mint'; params: { id: StagingXcmV4Location; beneficiary: MultiAddress; amount: bigint } }
+  | { name: 'Mint'; params: { id: StagingXcmV5Location; beneficiary: MultiAddress; amount: bigint } }
   /**
    * Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
    *
@@ -9225,7 +9261,7 @@ export type PalletAssetsCall002 =
    * Weight: `O(1)`
    * Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
    **/
-  | { name: 'Burn'; params: { id: StagingXcmV4Location; who: MultiAddress; amount: bigint } }
+  | { name: 'Burn'; params: { id: StagingXcmV5Location; who: MultiAddress; amount: bigint } }
   /**
    * Move some assets from the sender account to another.
    *
@@ -9246,7 +9282,7 @@ export type PalletAssetsCall002 =
    * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
    * `target`.
    **/
-  | { name: 'Transfer'; params: { id: StagingXcmV4Location; target: MultiAddress; amount: bigint } }
+  | { name: 'Transfer'; params: { id: StagingXcmV5Location; target: MultiAddress; amount: bigint } }
   /**
    * Move some assets from the sender account to another, keeping the sender account alive.
    *
@@ -9267,7 +9303,7 @@ export type PalletAssetsCall002 =
    * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
    * `target`.
    **/
-  | { name: 'TransferKeepAlive'; params: { id: StagingXcmV4Location; target: MultiAddress; amount: bigint } }
+  | { name: 'TransferKeepAlive'; params: { id: StagingXcmV5Location; target: MultiAddress; amount: bigint } }
   /**
    * Move some assets from one account to another.
    *
@@ -9291,7 +9327,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'ForceTransfer';
-      params: { id: StagingXcmV4Location; source: MultiAddress; dest: MultiAddress; amount: bigint };
+      params: { id: StagingXcmV5Location; source: MultiAddress; dest: MultiAddress; amount: bigint };
     }
   /**
    * Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
@@ -9307,7 +9343,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Freeze'; params: { id: StagingXcmV4Location; who: MultiAddress } }
+  | { name: 'Freeze'; params: { id: StagingXcmV5Location; who: MultiAddress } }
   /**
    * Allow unprivileged transfers to and from an account again.
    *
@@ -9320,7 +9356,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Thaw'; params: { id: StagingXcmV4Location; who: MultiAddress } }
+  | { name: 'Thaw'; params: { id: StagingXcmV5Location; who: MultiAddress } }
   /**
    * Disallow further unprivileged transfers for the asset class.
    *
@@ -9332,7 +9368,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'FreezeAsset'; params: { id: StagingXcmV4Location } }
+  | { name: 'FreezeAsset'; params: { id: StagingXcmV5Location } }
   /**
    * Allow unprivileged transfers for the asset again.
    *
@@ -9344,7 +9380,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ThawAsset'; params: { id: StagingXcmV4Location } }
+  | { name: 'ThawAsset'; params: { id: StagingXcmV5Location } }
   /**
    * Change the Owner of an asset.
    *
@@ -9357,7 +9393,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'TransferOwnership'; params: { id: StagingXcmV4Location; owner: MultiAddress } }
+  | { name: 'TransferOwnership'; params: { id: StagingXcmV5Location; owner: MultiAddress } }
   /**
    * Change the Issuer, Admin and Freezer of an asset.
    *
@@ -9374,7 +9410,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'SetTeam';
-      params: { id: StagingXcmV4Location; issuer: MultiAddress; admin: MultiAddress; freezer: MultiAddress };
+      params: { id: StagingXcmV5Location; issuer: MultiAddress; admin: MultiAddress; freezer: MultiAddress };
     }
   /**
    * Set the metadata for an asset.
@@ -9394,7 +9430,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'SetMetadata'; params: { id: StagingXcmV4Location; name: Bytes; symbol: Bytes; decimals: number } }
+  | { name: 'SetMetadata'; params: { id: StagingXcmV5Location; name: Bytes; symbol: Bytes; decimals: number } }
   /**
    * Clear the metadata for an asset.
    *
@@ -9408,7 +9444,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ClearMetadata'; params: { id: StagingXcmV4Location } }
+  | { name: 'ClearMetadata'; params: { id: StagingXcmV5Location } }
   /**
    * Force the metadata for an asset to some value.
    *
@@ -9427,7 +9463,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'ForceSetMetadata';
-      params: { id: StagingXcmV4Location; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean };
+      params: { id: StagingXcmV5Location; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean };
     }
   /**
    * Clear the metadata for an asset.
@@ -9442,7 +9478,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ForceClearMetadata'; params: { id: StagingXcmV4Location } }
+  | { name: 'ForceClearMetadata'; params: { id: StagingXcmV5Location } }
   /**
    * Alter the attributes of a given asset.
    *
@@ -9470,7 +9506,7 @@ export type PalletAssetsCall002 =
   | {
       name: 'ForceAssetStatus';
       params: {
-        id: StagingXcmV4Location;
+        id: StagingXcmV5Location;
         owner: MultiAddress;
         issuer: MultiAddress;
         admin: MultiAddress;
@@ -9502,7 +9538,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ApproveTransfer'; params: { id: StagingXcmV4Location; delegate: MultiAddress; amount: bigint } }
+  | { name: 'ApproveTransfer'; params: { id: StagingXcmV5Location; delegate: MultiAddress; amount: bigint } }
   /**
    * Cancel all of some asset approved for delegated transfer by a third-party account.
    *
@@ -9518,7 +9554,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'CancelApproval'; params: { id: StagingXcmV4Location; delegate: MultiAddress } }
+  | { name: 'CancelApproval'; params: { id: StagingXcmV5Location; delegate: MultiAddress } }
   /**
    * Cancel all of some asset approved for delegated transfer by a third-party account.
    *
@@ -9534,7 +9570,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ForceCancelApproval'; params: { id: StagingXcmV4Location; owner: MultiAddress; delegate: MultiAddress } }
+  | { name: 'ForceCancelApproval'; params: { id: StagingXcmV5Location; owner: MultiAddress; delegate: MultiAddress } }
   /**
    * Transfer some asset balance from a previously delegated account to some third-party
    * account.
@@ -9557,7 +9593,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'TransferApproved';
-      params: { id: StagingXcmV4Location; owner: MultiAddress; destination: MultiAddress; amount: bigint };
+      params: { id: StagingXcmV5Location; owner: MultiAddress; destination: MultiAddress; amount: bigint };
     }
   /**
    * Create an asset account for non-provider assets.
@@ -9570,7 +9606,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { id: StagingXcmV4Location } }
+  | { name: 'Touch'; params: { id: StagingXcmV5Location } }
   /**
    * Return the deposit (if any) of an asset account or a consumer reference (if any) of an
    * account.
@@ -9583,7 +9619,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `Refunded` event when successful.
    **/
-  | { name: 'Refund'; params: { id: StagingXcmV4Location; allowBurn: boolean } }
+  | { name: 'Refund'; params: { id: StagingXcmV5Location; allowBurn: boolean } }
   /**
    * Sets the minimum balance of an asset.
    *
@@ -9598,7 +9634,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `AssetMinBalanceChanged` event when successful.
    **/
-  | { name: 'SetMinBalance'; params: { id: StagingXcmV4Location; minBalance: bigint } }
+  | { name: 'SetMinBalance'; params: { id: StagingXcmV5Location; minBalance: bigint } }
   /**
    * Create an asset account for `who`.
    *
@@ -9611,7 +9647,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'TouchOther'; params: { id: StagingXcmV4Location; who: MultiAddress } }
+  | { name: 'TouchOther'; params: { id: StagingXcmV5Location; who: MultiAddress } }
   /**
    * Return the deposit (if any) of a target asset account. Useful if you are the depositor.
    *
@@ -9624,7 +9660,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `Refunded` event when successful.
    **/
-  | { name: 'RefundOther'; params: { id: StagingXcmV4Location; who: MultiAddress } }
+  | { name: 'RefundOther'; params: { id: StagingXcmV5Location; who: MultiAddress } }
   /**
    * Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
    *
@@ -9637,7 +9673,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Block'; params: { id: StagingXcmV4Location; who: MultiAddress } }
+  | { name: 'Block'; params: { id: StagingXcmV5Location; who: MultiAddress } }
   /**
    * Transfer the entire transferable balance from the caller asset account.
    *
@@ -9656,7 +9692,7 @@ export type PalletAssetsCall002 =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: StagingXcmV4Location; dest: MultiAddress; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddress; keepAlive: boolean } };
 
 export type PalletAssetsCallLike002 =
   /**
@@ -9680,7 +9716,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Create'; params: { id: StagingXcmV4Location; admin: MultiAddressLike; minBalance: bigint } }
+  | { name: 'Create'; params: { id: StagingXcmV5Location; admin: MultiAddressLike; minBalance: bigint } }
   /**
    * Issue a new class of fungible assets from a privileged origin.
    *
@@ -9704,7 +9740,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'ForceCreate';
-      params: { id: StagingXcmV4Location; owner: MultiAddressLike; isSufficient: boolean; minBalance: bigint };
+      params: { id: StagingXcmV5Location; owner: MultiAddressLike; isSufficient: boolean; minBalance: bigint };
     }
   /**
    * Start the process of destroying a fungible asset class.
@@ -9717,7 +9753,7 @@ export type PalletAssetsCallLike002 =
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
    **/
-  | { name: 'StartDestroy'; params: { id: StagingXcmV4Location } }
+  | { name: 'StartDestroy'; params: { id: StagingXcmV5Location } }
   /**
    * Destroy all accounts associated with a given asset.
    *
@@ -9732,7 +9768,7 @@ export type PalletAssetsCallLike002 =
    *
    * Each call emits the `Event::DestroyedAccounts` event.
    **/
-  | { name: 'DestroyAccounts'; params: { id: StagingXcmV4Location } }
+  | { name: 'DestroyAccounts'; params: { id: StagingXcmV5Location } }
   /**
    * Destroy all approvals associated with a given asset up to the max (T::RemoveItemsLimit).
    *
@@ -9747,7 +9783,7 @@ export type PalletAssetsCallLike002 =
    *
    * Each call emits the `Event::DestroyedApprovals` event.
    **/
-  | { name: 'DestroyApprovals'; params: { id: StagingXcmV4Location } }
+  | { name: 'DestroyApprovals'; params: { id: StagingXcmV5Location } }
   /**
    * Complete destroying asset and unreserve currency.
    *
@@ -9760,7 +9796,7 @@ export type PalletAssetsCallLike002 =
    *
    * Each successful call emits the `Event::Destroyed` event.
    **/
-  | { name: 'FinishDestroy'; params: { id: StagingXcmV4Location } }
+  | { name: 'FinishDestroy'; params: { id: StagingXcmV5Location } }
   /**
    * Mint assets of a particular class.
    *
@@ -9775,7 +9811,7 @@ export type PalletAssetsCallLike002 =
    * Weight: `O(1)`
    * Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
    **/
-  | { name: 'Mint'; params: { id: StagingXcmV4Location; beneficiary: MultiAddressLike; amount: bigint } }
+  | { name: 'Mint'; params: { id: StagingXcmV5Location; beneficiary: MultiAddressLike; amount: bigint } }
   /**
    * Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
    *
@@ -9793,7 +9829,7 @@ export type PalletAssetsCallLike002 =
    * Weight: `O(1)`
    * Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
    **/
-  | { name: 'Burn'; params: { id: StagingXcmV4Location; who: MultiAddressLike; amount: bigint } }
+  | { name: 'Burn'; params: { id: StagingXcmV5Location; who: MultiAddressLike; amount: bigint } }
   /**
    * Move some assets from the sender account to another.
    *
@@ -9814,7 +9850,7 @@ export type PalletAssetsCallLike002 =
    * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
    * `target`.
    **/
-  | { name: 'Transfer'; params: { id: StagingXcmV4Location; target: MultiAddressLike; amount: bigint } }
+  | { name: 'Transfer'; params: { id: StagingXcmV5Location; target: MultiAddressLike; amount: bigint } }
   /**
    * Move some assets from the sender account to another, keeping the sender account alive.
    *
@@ -9835,7 +9871,7 @@ export type PalletAssetsCallLike002 =
    * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
    * `target`.
    **/
-  | { name: 'TransferKeepAlive'; params: { id: StagingXcmV4Location; target: MultiAddressLike; amount: bigint } }
+  | { name: 'TransferKeepAlive'; params: { id: StagingXcmV5Location; target: MultiAddressLike; amount: bigint } }
   /**
    * Move some assets from one account to another.
    *
@@ -9859,7 +9895,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'ForceTransfer';
-      params: { id: StagingXcmV4Location; source: MultiAddressLike; dest: MultiAddressLike; amount: bigint };
+      params: { id: StagingXcmV5Location; source: MultiAddressLike; dest: MultiAddressLike; amount: bigint };
     }
   /**
    * Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
@@ -9875,7 +9911,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Freeze'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
+  | { name: 'Freeze'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
   /**
    * Allow unprivileged transfers to and from an account again.
    *
@@ -9888,7 +9924,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Thaw'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
+  | { name: 'Thaw'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
   /**
    * Disallow further unprivileged transfers for the asset class.
    *
@@ -9900,7 +9936,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'FreezeAsset'; params: { id: StagingXcmV4Location } }
+  | { name: 'FreezeAsset'; params: { id: StagingXcmV5Location } }
   /**
    * Allow unprivileged transfers for the asset again.
    *
@@ -9912,7 +9948,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ThawAsset'; params: { id: StagingXcmV4Location } }
+  | { name: 'ThawAsset'; params: { id: StagingXcmV5Location } }
   /**
    * Change the Owner of an asset.
    *
@@ -9925,7 +9961,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'TransferOwnership'; params: { id: StagingXcmV4Location; owner: MultiAddressLike } }
+  | { name: 'TransferOwnership'; params: { id: StagingXcmV5Location; owner: MultiAddressLike } }
   /**
    * Change the Issuer, Admin and Freezer of an asset.
    *
@@ -9943,7 +9979,7 @@ export type PalletAssetsCallLike002 =
   | {
       name: 'SetTeam';
       params: {
-        id: StagingXcmV4Location;
+        id: StagingXcmV5Location;
         issuer: MultiAddressLike;
         admin: MultiAddressLike;
         freezer: MultiAddressLike;
@@ -9967,7 +10003,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'SetMetadata'; params: { id: StagingXcmV4Location; name: BytesLike; symbol: BytesLike; decimals: number } }
+  | { name: 'SetMetadata'; params: { id: StagingXcmV5Location; name: BytesLike; symbol: BytesLike; decimals: number } }
   /**
    * Clear the metadata for an asset.
    *
@@ -9981,7 +10017,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ClearMetadata'; params: { id: StagingXcmV4Location } }
+  | { name: 'ClearMetadata'; params: { id: StagingXcmV5Location } }
   /**
    * Force the metadata for an asset to some value.
    *
@@ -10000,7 +10036,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'ForceSetMetadata';
-      params: { id: StagingXcmV4Location; name: BytesLike; symbol: BytesLike; decimals: number; isFrozen: boolean };
+      params: { id: StagingXcmV5Location; name: BytesLike; symbol: BytesLike; decimals: number; isFrozen: boolean };
     }
   /**
    * Clear the metadata for an asset.
@@ -10015,7 +10051,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ForceClearMetadata'; params: { id: StagingXcmV4Location } }
+  | { name: 'ForceClearMetadata'; params: { id: StagingXcmV5Location } }
   /**
    * Alter the attributes of a given asset.
    *
@@ -10043,7 +10079,7 @@ export type PalletAssetsCallLike002 =
   | {
       name: 'ForceAssetStatus';
       params: {
-        id: StagingXcmV4Location;
+        id: StagingXcmV5Location;
         owner: MultiAddressLike;
         issuer: MultiAddressLike;
         admin: MultiAddressLike;
@@ -10075,7 +10111,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ApproveTransfer'; params: { id: StagingXcmV4Location; delegate: MultiAddressLike; amount: bigint } }
+  | { name: 'ApproveTransfer'; params: { id: StagingXcmV5Location; delegate: MultiAddressLike; amount: bigint } }
   /**
    * Cancel all of some asset approved for delegated transfer by a third-party account.
    *
@@ -10091,7 +10127,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'CancelApproval'; params: { id: StagingXcmV4Location; delegate: MultiAddressLike } }
+  | { name: 'CancelApproval'; params: { id: StagingXcmV5Location; delegate: MultiAddressLike } }
   /**
    * Cancel all of some asset approved for delegated transfer by a third-party account.
    *
@@ -10109,7 +10145,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'ForceCancelApproval';
-      params: { id: StagingXcmV4Location; owner: MultiAddressLike; delegate: MultiAddressLike };
+      params: { id: StagingXcmV5Location; owner: MultiAddressLike; delegate: MultiAddressLike };
     }
   /**
    * Transfer some asset balance from a previously delegated account to some third-party
@@ -10133,7 +10169,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'TransferApproved';
-      params: { id: StagingXcmV4Location; owner: MultiAddressLike; destination: MultiAddressLike; amount: bigint };
+      params: { id: StagingXcmV5Location; owner: MultiAddressLike; destination: MultiAddressLike; amount: bigint };
     }
   /**
    * Create an asset account for non-provider assets.
@@ -10146,7 +10182,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { id: StagingXcmV4Location } }
+  | { name: 'Touch'; params: { id: StagingXcmV5Location } }
   /**
    * Return the deposit (if any) of an asset account or a consumer reference (if any) of an
    * account.
@@ -10159,7 +10195,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `Refunded` event when successful.
    **/
-  | { name: 'Refund'; params: { id: StagingXcmV4Location; allowBurn: boolean } }
+  | { name: 'Refund'; params: { id: StagingXcmV5Location; allowBurn: boolean } }
   /**
    * Sets the minimum balance of an asset.
    *
@@ -10174,7 +10210,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `AssetMinBalanceChanged` event when successful.
    **/
-  | { name: 'SetMinBalance'; params: { id: StagingXcmV4Location; minBalance: bigint } }
+  | { name: 'SetMinBalance'; params: { id: StagingXcmV5Location; minBalance: bigint } }
   /**
    * Create an asset account for `who`.
    *
@@ -10187,7 +10223,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'TouchOther'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
+  | { name: 'TouchOther'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
   /**
    * Return the deposit (if any) of a target asset account. Useful if you are the depositor.
    *
@@ -10200,7 +10236,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `Refunded` event when successful.
    **/
-  | { name: 'RefundOther'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
+  | { name: 'RefundOther'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
   /**
    * Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
    *
@@ -10213,7 +10249,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Block'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
+  | { name: 'Block'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
   /**
    * Transfer the entire transferable balance from the caller asset account.
    *
@@ -10232,7 +10268,7 @@ export type PalletAssetsCallLike002 =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: StagingXcmV4Location; dest: MultiAddressLike; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddressLike; keepAlive: boolean } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11465,7 +11501,7 @@ export type PalletAssetConversionCall =
    *
    * Once a pool is created, someone may [`Pallet::add_liquidity`] to it.
    **/
-  | { name: 'CreatePool'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } }
+  | { name: 'CreatePool'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } }
   /**
    * Provide liquidity into the pool of `asset1` and `asset2`.
    * NOTE: an optimal amount of asset1 and asset2 will be calculated and
@@ -11485,8 +11521,8 @@ export type PalletAssetConversionCall =
   | {
       name: 'AddLiquidity';
       params: {
-        asset1: StagingXcmV4Location;
-        asset2: StagingXcmV4Location;
+        asset1: StagingXcmV5Location;
+        asset2: StagingXcmV5Location;
         amount1Desired: bigint;
         amount2Desired: bigint;
         amount1Min: bigint;
@@ -11502,8 +11538,8 @@ export type PalletAssetConversionCall =
   | {
       name: 'RemoveLiquidity';
       params: {
-        asset1: StagingXcmV4Location;
-        asset2: StagingXcmV4Location;
+        asset1: StagingXcmV5Location;
+        asset2: StagingXcmV5Location;
         lpTokenBurn: bigint;
         amount1MinReceive: bigint;
         amount2MinReceive: bigint;
@@ -11521,7 +11557,7 @@ export type PalletAssetConversionCall =
   | {
       name: 'SwapExactTokensForTokens';
       params: {
-        path: Array<StagingXcmV4Location>;
+        path: Array<StagingXcmV5Location>;
         amountIn: bigint;
         amountOutMin: bigint;
         sendTo: AccountId32;
@@ -11539,7 +11575,7 @@ export type PalletAssetConversionCall =
   | {
       name: 'SwapTokensForExactTokens';
       params: {
-        path: Array<StagingXcmV4Location>;
+        path: Array<StagingXcmV5Location>;
         amountOut: bigint;
         amountInMax: bigint;
         sendTo: AccountId32;
@@ -11559,7 +11595,7 @@ export type PalletAssetConversionCall =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } };
+  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
 
 export type PalletAssetConversionCallLike =
   /**
@@ -11568,7 +11604,7 @@ export type PalletAssetConversionCallLike =
    *
    * Once a pool is created, someone may [`Pallet::add_liquidity`] to it.
    **/
-  | { name: 'CreatePool'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } }
+  | { name: 'CreatePool'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } }
   /**
    * Provide liquidity into the pool of `asset1` and `asset2`.
    * NOTE: an optimal amount of asset1 and asset2 will be calculated and
@@ -11588,8 +11624,8 @@ export type PalletAssetConversionCallLike =
   | {
       name: 'AddLiquidity';
       params: {
-        asset1: StagingXcmV4Location;
-        asset2: StagingXcmV4Location;
+        asset1: StagingXcmV5Location;
+        asset2: StagingXcmV5Location;
         amount1Desired: bigint;
         amount2Desired: bigint;
         amount1Min: bigint;
@@ -11605,8 +11641,8 @@ export type PalletAssetConversionCallLike =
   | {
       name: 'RemoveLiquidity';
       params: {
-        asset1: StagingXcmV4Location;
-        asset2: StagingXcmV4Location;
+        asset1: StagingXcmV5Location;
+        asset2: StagingXcmV5Location;
         lpTokenBurn: bigint;
         amount1MinReceive: bigint;
         amount2MinReceive: bigint;
@@ -11624,7 +11660,7 @@ export type PalletAssetConversionCallLike =
   | {
       name: 'SwapExactTokensForTokens';
       params: {
-        path: Array<StagingXcmV4Location>;
+        path: Array<StagingXcmV5Location>;
         amountIn: bigint;
         amountOutMin: bigint;
         sendTo: AccountId32Like;
@@ -11642,7 +11678,7 @@ export type PalletAssetConversionCallLike =
   | {
       name: 'SwapTokensForExactTokens';
       params: {
-        path: Array<StagingXcmV4Location>;
+        path: Array<StagingXcmV5Location>;
         amountOut: bigint;
         amountInMax: bigint;
         sendTo: AccountId32Like;
@@ -11662,7 +11698,7 @@ export type PalletAssetConversionCallLike =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } };
+  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -12172,7 +12208,7 @@ export type PalletAssetConversionOpsCall =
    *
    * Must be signed.
    **/
-  { name: 'MigrateToNewAccount'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } };
+  { name: 'MigrateToNewAccount'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
 
 export type PalletAssetConversionOpsCallLike =
   /**
@@ -12181,7 +12217,7 @@ export type PalletAssetConversionOpsCallLike =
    *
    * Must be signed.
    **/
-  { name: 'MigrateToNewAccount'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } };
+  { name: 'MigrateToNewAccount'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
 
 export type AssetHubWestendRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
@@ -12195,8 +12231,8 @@ export type FrameSupportDispatchRawOrigin =
   | { type: 'None' };
 
 export type PalletXcmOrigin =
-  | { type: 'Xcm'; value: StagingXcmV4Location }
-  | { type: 'Response'; value: StagingXcmV4Location };
+  | { type: 'Xcm'; value: StagingXcmV5Location }
+  | { type: 'Response'; value: StagingXcmV5Location };
 
 export type CumulusPalletXcmOrigin =
   | { type: 'Relay' }
@@ -13189,7 +13225,7 @@ export type FrameSystemExtensionsCheckWeight = {};
 
 export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
   tip: bigint;
-  assetId?: StagingXcmV4Location | undefined;
+  assetId?: StagingXcmV5Location | undefined;
 };
 
 export type CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim = {};
@@ -13285,7 +13321,7 @@ export type SpRuntimeDispatchErrorWithPostInfo = {
 export type XcmRuntimeApisDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
 
 export type XcmRuntimeApisDryRunXcmDryRunEffects = {
-  executionResult: StagingXcmV4TraitsOutcome;
+  executionResult: StagingXcmV5TraitsOutcome;
   emittedEvents: Array<AssetHubWestendRuntimeRuntimeEvent>;
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };
@@ -13310,9 +13346,9 @@ export type PolkadotPrimitivesVstagingCoreSelector = number;
 export type PolkadotPrimitivesVstagingClaimQueueOffset = number;
 
 export type XcmVersionedAsset =
-  | { type: 'V2'; value: XcmV2MultiassetMultiAsset }
   | { type: 'V3'; value: XcmV3MultiassetMultiAsset }
-  | { type: 'V4'; value: StagingXcmV4Asset };
+  | { type: 'V4'; value: StagingXcmV4Asset }
+  | { type: 'V5'; value: StagingXcmV5Asset };
 
 export type XcmRuntimeApisTrustedQueryError = 'VersionedAssetConversionFailed' | 'VersionedLocationConversionFailed';
 
@@ -13353,7 +13389,7 @@ export type PalletRevivePrimitivesEthContractResult = {
   fee: bigint;
   gasRequired: SpWeightsWeightV2Weight;
   storageDeposit: bigint;
-  result: Result<Bytes, DispatchError>;
+  result: Result<PalletRevivePrimitivesExecReturnValue, DispatchError>;
 };
 
 export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };

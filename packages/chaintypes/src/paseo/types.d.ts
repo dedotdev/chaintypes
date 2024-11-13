@@ -17,6 +17,7 @@ import type {
   MultiAddressLike,
   AccountId32Like,
   Percent,
+  Perquintill,
   EthereumAddress,
   EthereumAddressLike,
   PerU16,
@@ -69,6 +70,7 @@ export type PaseoRuntimeRuntimeEvent =
   | { pallet: 'ConvictionVoting'; palletEvent: PalletConvictionVotingEvent }
   | { pallet: 'Referenda'; palletEvent: PalletReferendaEvent }
   | { pallet: 'Whitelist'; palletEvent: PalletWhitelistEvent }
+  | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
   | { pallet: 'Claims'; palletEvent: PolkadotRuntimeCommonClaimsPalletEvent }
   | { pallet: 'Vesting'; palletEvent: PalletVestingEvent }
   | { pallet: 'Utility'; palletEvent: PalletUtilityEvent }
@@ -1037,6 +1039,7 @@ export type PaseoRuntimeRuntimeCall =
   | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCall }
   | { pallet: 'Referenda'; palletCall: PalletReferendaCall }
   | { pallet: 'Whitelist'; palletCall: PalletWhitelistCall }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCall }
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCall }
   | { pallet: 'Vesting'; palletCall: PalletVestingCall }
   | { pallet: 'Utility'; palletCall: PalletUtilityCall }
@@ -1086,6 +1089,7 @@ export type PaseoRuntimeRuntimeCallLike =
   | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCallLike }
   | { pallet: 'Referenda'; palletCall: PalletReferendaCallLike }
   | { pallet: 'Whitelist'; palletCall: PalletWhitelistCallLike }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCallLike }
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCallLike }
   | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
   | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
@@ -3947,6 +3951,46 @@ export type PalletWhitelistCallLike =
       params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
   | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: PaseoRuntimeRuntimeCallLike } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletParametersCall =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: PaseoRuntimeRuntimeParameters } };
+
+export type PalletParametersCallLike =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: PaseoRuntimeRuntimeParameters } };
+
+export type PaseoRuntimeRuntimeParameters = { type: 'Inflation'; value: PaseoRuntimeDynamicParamsInflationParameters };
+
+export type PaseoRuntimeDynamicParamsInflationParameters =
+  | { type: 'MinInflation'; value: [PaseoRuntimeDynamicParamsInflationMinInflation, Perquintill | undefined] }
+  | { type: 'MaxInflation'; value: [PaseoRuntimeDynamicParamsInflationMaxInflation, Perquintill | undefined] }
+  | { type: 'IdealStake'; value: [PaseoRuntimeDynamicParamsInflationIdealStake, Perquintill | undefined] }
+  | { type: 'Falloff'; value: [PaseoRuntimeDynamicParamsInflationFalloff, Perquintill | undefined] }
+  | { type: 'UseAuctionSlots'; value: [PaseoRuntimeDynamicParamsInflationUseAuctionSlots, boolean | undefined] };
+
+export type PaseoRuntimeDynamicParamsInflationMinInflation = {};
+
+export type PaseoRuntimeDynamicParamsInflationMaxInflation = {};
+
+export type PaseoRuntimeDynamicParamsInflationIdealStake = {};
+
+export type PaseoRuntimeDynamicParamsInflationFalloff = {};
+
+export type PaseoRuntimeDynamicParamsInflationUseAuctionSlots = {};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10553,6 +10597,59 @@ export type SpRuntimeDispatchErrorWithPostInfo = {
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletParametersEvent =
+  /**
+   * A Parameter was set.
+   *
+   * Is also emitted when the value was not changed.
+   **/
+  {
+    name: 'Updated';
+    data: {
+      /**
+       * The key that was updated.
+       **/
+      key: PaseoRuntimeRuntimeParametersKey;
+
+      /**
+       * The old value before this call.
+       **/
+      oldValue?: PaseoRuntimeRuntimeParametersValue | undefined;
+
+      /**
+       * The new value after this call.
+       **/
+      newValue?: PaseoRuntimeRuntimeParametersValue | undefined;
+    };
+  };
+
+export type PaseoRuntimeRuntimeParametersKey = {
+  type: 'Inflation';
+  value: PaseoRuntimeDynamicParamsInflationParametersKey;
+};
+
+export type PaseoRuntimeDynamicParamsInflationParametersKey =
+  | { type: 'MinInflation'; value: PaseoRuntimeDynamicParamsInflationMinInflation }
+  | { type: 'MaxInflation'; value: PaseoRuntimeDynamicParamsInflationMaxInflation }
+  | { type: 'IdealStake'; value: PaseoRuntimeDynamicParamsInflationIdealStake }
+  | { type: 'Falloff'; value: PaseoRuntimeDynamicParamsInflationFalloff }
+  | { type: 'UseAuctionSlots'; value: PaseoRuntimeDynamicParamsInflationUseAuctionSlots };
+
+export type PaseoRuntimeRuntimeParametersValue = {
+  type: 'Inflation';
+  value: PaseoRuntimeDynamicParamsInflationParametersValue;
+};
+
+export type PaseoRuntimeDynamicParamsInflationParametersValue =
+  | { type: 'MinInflation'; value: Perquintill }
+  | { type: 'MaxInflation'; value: Perquintill }
+  | { type: 'IdealStake'; value: Perquintill }
+  | { type: 'Falloff'; value: Perquintill }
+  | { type: 'UseAuctionSlots'; value: boolean };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PolkadotRuntimeCommonClaimsPalletEvent =
   /**
    * Someone claimed some DOTs.
@@ -14398,6 +14495,8 @@ export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataH
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
 export type PaseoRuntimeRuntime = {};
+
+export type RelayCommonApisInflationInfo = { inflation: Perquintill; nextMint: [bigint, bigint] };
 
 export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
 

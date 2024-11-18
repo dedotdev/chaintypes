@@ -263,54 +263,39 @@ export type PalletAssetConversionTxPaymentEvent =
    **/
   | {
       name: 'AssetTxFeePaid';
-      data: { who: AccountId32; actualFee: bigint; tip: bigint; assetId: StagingXcmV3MultilocationMultiLocation };
+      data: { who: AccountId32; actualFee: bigint; tip: bigint; assetId: StagingXcmV4Location };
     }
   /**
    * A swap of the refund in native currency back to asset failed.
    **/
   | { name: 'AssetRefundFailed'; data: { nativeAmountKept: bigint } };
 
-export type StagingXcmV3MultilocationMultiLocation = { parents: number; interior: XcmV3Junctions };
+export type StagingXcmV4Location = { parents: number; interior: StagingXcmV4Junctions };
 
-export type XcmV3Junctions =
+export type StagingXcmV4Junctions =
   | { type: 'Here' }
-  | { type: 'X1'; value: XcmV3Junction }
-  | { type: 'X2'; value: [XcmV3Junction, XcmV3Junction] }
-  | { type: 'X3'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction] }
-  | { type: 'X4'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
-  | { type: 'X5'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
-  | { type: 'X6'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
-  | {
-      type: 'X7';
-      value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction];
-    }
-  | {
-      type: 'X8';
-      value: [
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-      ];
-    };
+  | { type: 'X1'; value: FixedArray<StagingXcmV4Junction, 1> }
+  | { type: 'X2'; value: FixedArray<StagingXcmV4Junction, 2> }
+  | { type: 'X3'; value: FixedArray<StagingXcmV4Junction, 3> }
+  | { type: 'X4'; value: FixedArray<StagingXcmV4Junction, 4> }
+  | { type: 'X5'; value: FixedArray<StagingXcmV4Junction, 5> }
+  | { type: 'X6'; value: FixedArray<StagingXcmV4Junction, 6> }
+  | { type: 'X7'; value: FixedArray<StagingXcmV4Junction, 7> }
+  | { type: 'X8'; value: FixedArray<StagingXcmV4Junction, 8> };
 
-export type XcmV3Junction =
+export type StagingXcmV4Junction =
   | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network?: XcmV3JunctionNetworkId | undefined; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network?: XcmV3JunctionNetworkId | undefined; index: bigint } }
-  | { type: 'AccountKey20'; value: { network?: XcmV3JunctionNetworkId | undefined; key: FixedBytes<20> } }
+  | { type: 'AccountId32'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; key: FixedBytes<20> } }
   | { type: 'PalletInstance'; value: number }
   | { type: 'GeneralIndex'; value: bigint }
   | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
   | { type: 'OnlyChild' }
   | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
-  | { type: 'GlobalConsensus'; value: XcmV3JunctionNetworkId };
+  | { type: 'GlobalConsensus'; value: StagingXcmV4JunctionNetworkId };
 
-export type XcmV3JunctionNetworkId =
+export type StagingXcmV4JunctionNetworkId =
   | { type: 'ByGenesis'; value: FixedBytes<32> }
   | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
   | { type: 'Polkadot' }
@@ -646,44 +631,6 @@ export type XcmV3TraitsError =
   | { type: 'WeightNotComputable' }
   | { type: 'ExceedsStackLimit' };
 
-export type StagingXcmV4Location = { parents: number; interior: StagingXcmV4Junctions };
-
-export type StagingXcmV4Junctions =
-  | { type: 'Here' }
-  | { type: 'X1'; value: FixedArray<StagingXcmV4Junction, 1> }
-  | { type: 'X2'; value: FixedArray<StagingXcmV4Junction, 2> }
-  | { type: 'X3'; value: FixedArray<StagingXcmV4Junction, 3> }
-  | { type: 'X4'; value: FixedArray<StagingXcmV4Junction, 4> }
-  | { type: 'X5'; value: FixedArray<StagingXcmV4Junction, 5> }
-  | { type: 'X6'; value: FixedArray<StagingXcmV4Junction, 6> }
-  | { type: 'X7'; value: FixedArray<StagingXcmV4Junction, 7> }
-  | { type: 'X8'; value: FixedArray<StagingXcmV4Junction, 8> };
-
-export type StagingXcmV4Junction =
-  | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; index: bigint } }
-  | { type: 'AccountKey20'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; key: FixedBytes<20> } }
-  | { type: 'PalletInstance'; value: number }
-  | { type: 'GeneralIndex'; value: bigint }
-  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
-  | { type: 'OnlyChild' }
-  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
-  | { type: 'GlobalConsensus'; value: StagingXcmV4JunctionNetworkId };
-
-export type StagingXcmV4JunctionNetworkId =
-  | { type: 'ByGenesis'; value: FixedBytes<32> }
-  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
-  | { type: 'Polkadot' }
-  | { type: 'Kusama' }
-  | { type: 'Westend' }
-  | { type: 'Rococo' }
-  | { type: 'Wococo' }
-  | { type: 'Ethereum'; value: { chainId: bigint } }
-  | { type: 'BitcoinCore' }
-  | { type: 'BitcoinCash' }
-  | { type: 'PolkadotBulletin' };
-
 export type StagingXcmV4Xcm = Array<StagingXcmV4Instruction>;
 
 export type StagingXcmV4Instruction =
@@ -938,6 +885,59 @@ export type XcmV3MultiassetMultiAsset = { id: XcmV3MultiassetAssetId; fun: XcmV3
 export type XcmV3MultiassetAssetId =
   | { type: 'Concrete'; value: StagingXcmV3MultilocationMultiLocation }
   | { type: 'Abstract'; value: FixedBytes<32> };
+
+export type StagingXcmV3MultilocationMultiLocation = { parents: number; interior: XcmV3Junctions };
+
+export type XcmV3Junctions =
+  | { type: 'Here' }
+  | { type: 'X1'; value: XcmV3Junction }
+  | { type: 'X2'; value: [XcmV3Junction, XcmV3Junction] }
+  | { type: 'X3'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction] }
+  | { type: 'X4'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
+  | { type: 'X5'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
+  | { type: 'X6'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
+  | {
+      type: 'X7';
+      value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction];
+    }
+  | {
+      type: 'X8';
+      value: [
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+      ];
+    };
+
+export type XcmV3Junction =
+  | { type: 'Parachain'; value: number }
+  | { type: 'AccountId32'; value: { network?: XcmV3JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: XcmV3JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: XcmV3JunctionNetworkId | undefined; key: FixedBytes<20> } }
+  | { type: 'PalletInstance'; value: number }
+  | { type: 'GeneralIndex'; value: bigint }
+  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
+  | { type: 'OnlyChild' }
+  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
+  | { type: 'GlobalConsensus'; value: XcmV3JunctionNetworkId };
+
+export type XcmV3JunctionNetworkId =
+  | { type: 'ByGenesis'; value: FixedBytes<32> }
+  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
+  | { type: 'Polkadot' }
+  | { type: 'Kusama' }
+  | { type: 'Westend' }
+  | { type: 'Rococo' }
+  | { type: 'Wococo' }
+  | { type: 'Ethereum'; value: { chainId: bigint } }
+  | { type: 'BitcoinCore' }
+  | { type: 'BitcoinCash' }
+  | { type: 'PolkadotBulletin' };
 
 export type XcmV3MultiassetFungibility =
   | { type: 'Fungible'; value: bigint }
@@ -1726,119 +1726,94 @@ export type PalletAssetsEvent002 =
   /**
    * Some asset class was created.
    **/
-  | {
-      name: 'Created';
-      data: { assetId: StagingXcmV3MultilocationMultiLocation; creator: AccountId32; owner: AccountId32 };
-    }
+  | { name: 'Created'; data: { assetId: StagingXcmV4Location; creator: AccountId32; owner: AccountId32 } }
   /**
    * Some assets were issued.
    **/
-  | { name: 'Issued'; data: { assetId: StagingXcmV3MultilocationMultiLocation; owner: AccountId32; amount: bigint } }
+  | { name: 'Issued'; data: { assetId: StagingXcmV4Location; owner: AccountId32; amount: bigint } }
   /**
    * Some assets were transferred.
    **/
-  | {
-      name: 'Transferred';
-      data: { assetId: StagingXcmV3MultilocationMultiLocation; from: AccountId32; to: AccountId32; amount: bigint };
-    }
+  | { name: 'Transferred'; data: { assetId: StagingXcmV4Location; from: AccountId32; to: AccountId32; amount: bigint } }
   /**
    * Some assets were destroyed.
    **/
-  | { name: 'Burned'; data: { assetId: StagingXcmV3MultilocationMultiLocation; owner: AccountId32; balance: bigint } }
+  | { name: 'Burned'; data: { assetId: StagingXcmV4Location; owner: AccountId32; balance: bigint } }
   /**
    * The management team changed.
    **/
   | {
       name: 'TeamChanged';
-      data: {
-        assetId: StagingXcmV3MultilocationMultiLocation;
-        issuer: AccountId32;
-        admin: AccountId32;
-        freezer: AccountId32;
-      };
+      data: { assetId: StagingXcmV4Location; issuer: AccountId32; admin: AccountId32; freezer: AccountId32 };
     }
   /**
    * The owner changed.
    **/
-  | { name: 'OwnerChanged'; data: { assetId: StagingXcmV3MultilocationMultiLocation; owner: AccountId32 } }
+  | { name: 'OwnerChanged'; data: { assetId: StagingXcmV4Location; owner: AccountId32 } }
   /**
    * Some account `who` was frozen.
    **/
-  | { name: 'Frozen'; data: { assetId: StagingXcmV3MultilocationMultiLocation; who: AccountId32 } }
+  | { name: 'Frozen'; data: { assetId: StagingXcmV4Location; who: AccountId32 } }
   /**
    * Some account `who` was thawed.
    **/
-  | { name: 'Thawed'; data: { assetId: StagingXcmV3MultilocationMultiLocation; who: AccountId32 } }
+  | { name: 'Thawed'; data: { assetId: StagingXcmV4Location; who: AccountId32 } }
   /**
    * Some asset `asset_id` was frozen.
    **/
-  | { name: 'AssetFrozen'; data: { assetId: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'AssetFrozen'; data: { assetId: StagingXcmV4Location } }
   /**
    * Some asset `asset_id` was thawed.
    **/
-  | { name: 'AssetThawed'; data: { assetId: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'AssetThawed'; data: { assetId: StagingXcmV4Location } }
   /**
    * Accounts were destroyed for given asset.
    **/
   | {
       name: 'AccountsDestroyed';
-      data: { assetId: StagingXcmV3MultilocationMultiLocation; accountsDestroyed: number; accountsRemaining: number };
+      data: { assetId: StagingXcmV4Location; accountsDestroyed: number; accountsRemaining: number };
     }
   /**
    * Approvals were destroyed for given asset.
    **/
   | {
       name: 'ApprovalsDestroyed';
-      data: { assetId: StagingXcmV3MultilocationMultiLocation; approvalsDestroyed: number; approvalsRemaining: number };
+      data: { assetId: StagingXcmV4Location; approvalsDestroyed: number; approvalsRemaining: number };
     }
   /**
    * An asset class is in the process of being destroyed.
    **/
-  | { name: 'DestructionStarted'; data: { assetId: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'DestructionStarted'; data: { assetId: StagingXcmV4Location } }
   /**
    * An asset class was destroyed.
    **/
-  | { name: 'Destroyed'; data: { assetId: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'Destroyed'; data: { assetId: StagingXcmV4Location } }
   /**
    * Some asset class was force-created.
    **/
-  | { name: 'ForceCreated'; data: { assetId: StagingXcmV3MultilocationMultiLocation; owner: AccountId32 } }
+  | { name: 'ForceCreated'; data: { assetId: StagingXcmV4Location; owner: AccountId32 } }
   /**
    * New metadata has been set for an asset.
    **/
   | {
       name: 'MetadataSet';
-      data: {
-        assetId: StagingXcmV3MultilocationMultiLocation;
-        name: Bytes;
-        symbol: Bytes;
-        decimals: number;
-        isFrozen: boolean;
-      };
+      data: { assetId: StagingXcmV4Location; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean };
     }
   /**
    * Metadata has been cleared for an asset.
    **/
-  | { name: 'MetadataCleared'; data: { assetId: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'MetadataCleared'; data: { assetId: StagingXcmV4Location } }
   /**
    * (Additional) funds have been approved for transfer to a destination account.
    **/
   | {
       name: 'ApprovedTransfer';
-      data: {
-        assetId: StagingXcmV3MultilocationMultiLocation;
-        source: AccountId32;
-        delegate: AccountId32;
-        amount: bigint;
-      };
+      data: { assetId: StagingXcmV4Location; source: AccountId32; delegate: AccountId32; amount: bigint };
     }
   /**
    * An approval for account `delegate` was cancelled by `owner`.
    **/
-  | {
-      name: 'ApprovalCancelled';
-      data: { assetId: StagingXcmV3MultilocationMultiLocation; owner: AccountId32; delegate: AccountId32 };
-    }
+  | { name: 'ApprovalCancelled'; data: { assetId: StagingXcmV4Location; owner: AccountId32; delegate: AccountId32 } }
   /**
    * An `amount` was transferred in its entirety from `owner` to `destination` by
    * the approved `delegate`.
@@ -1846,7 +1821,7 @@ export type PalletAssetsEvent002 =
   | {
       name: 'TransferredApproved';
       data: {
-        assetId: StagingXcmV3MultilocationMultiLocation;
+        assetId: StagingXcmV4Location;
         owner: AccountId32;
         delegate: AccountId32;
         destination: AccountId32;
@@ -1856,30 +1831,27 @@ export type PalletAssetsEvent002 =
   /**
    * An asset has had its attributes changed by the `Force` origin.
    **/
-  | { name: 'AssetStatusChanged'; data: { assetId: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'AssetStatusChanged'; data: { assetId: StagingXcmV4Location } }
   /**
    * The min_balance of an asset has been updated by the asset owner.
    **/
-  | { name: 'AssetMinBalanceChanged'; data: { assetId: StagingXcmV3MultilocationMultiLocation; newMinBalance: bigint } }
+  | { name: 'AssetMinBalanceChanged'; data: { assetId: StagingXcmV4Location; newMinBalance: bigint } }
   /**
    * Some account `who` was created with a deposit from `depositor`.
    **/
-  | {
-      name: 'Touched';
-      data: { assetId: StagingXcmV3MultilocationMultiLocation; who: AccountId32; depositor: AccountId32 };
-    }
+  | { name: 'Touched'; data: { assetId: StagingXcmV4Location; who: AccountId32; depositor: AccountId32 } }
   /**
    * Some account `who` was blocked.
    **/
-  | { name: 'Blocked'; data: { assetId: StagingXcmV3MultilocationMultiLocation; who: AccountId32 } }
+  | { name: 'Blocked'; data: { assetId: StagingXcmV4Location; who: AccountId32 } }
   /**
    * Some assets were deposited (e.g. for transaction fees).
    **/
-  | { name: 'Deposited'; data: { assetId: StagingXcmV3MultilocationMultiLocation; who: AccountId32; amount: bigint } }
+  | { name: 'Deposited'; data: { assetId: StagingXcmV4Location; who: AccountId32; amount: bigint } }
   /**
    * Some assets were withdrawn from the account (e.g. for transaction fees).
    **/
-  | { name: 'Withdrawn'; data: { assetId: StagingXcmV3MultilocationMultiLocation; who: AccountId32; amount: bigint } };
+  | { name: 'Withdrawn'; data: { assetId: StagingXcmV4Location; who: AccountId32; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -1916,7 +1888,7 @@ export type PalletAssetConversionEvent =
          * The pool id associated with the pool. Note that the order of the assets may not be
          * the same as the order specified in the create pool extrinsic.
          **/
-        poolId: [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation];
+        poolId: [StagingXcmV4Location, StagingXcmV4Location];
 
         /**
          * The account ID of the pool.
@@ -1949,7 +1921,7 @@ export type PalletAssetConversionEvent =
         /**
          * The pool id of the pool that the liquidity was added to.
          **/
-        poolId: [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation];
+        poolId: [StagingXcmV4Location, StagingXcmV4Location];
 
         /**
          * The amount of the first asset that was added to the pool.
@@ -1991,7 +1963,7 @@ export type PalletAssetConversionEvent =
         /**
          * The pool id that the liquidity was removed from.
          **/
-        poolId: [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation];
+        poolId: [StagingXcmV4Location, StagingXcmV4Location];
 
         /**
          * The amount of the first asset that was removed from the pool.
@@ -2050,7 +2022,7 @@ export type PalletAssetConversionEvent =
          * The route of asset IDs with amounts that the swap went through.
          * E.g. (A, amount_in) -> (Dot, amount_out) -> (B, amount_out)
          **/
-        path: Array<[StagingXcmV3MultilocationMultiLocation, bigint]>;
+        path: Array<[StagingXcmV4Location, bigint]>;
       };
     }
   /**
@@ -2073,7 +2045,7 @@ export type PalletAssetConversionEvent =
          * The route of asset IDs with amounts that the swap went through.
          * E.g. (A, amount_in) -> (Dot, amount_out) -> (B, amount_out)
          **/
-        path: Array<[StagingXcmV3MultilocationMultiLocation, bigint]>;
+        path: Array<[StagingXcmV4Location, bigint]>;
       };
     }
   /**
@@ -2085,7 +2057,7 @@ export type PalletAssetConversionEvent =
         /**
          * The ID of the pool.
          **/
-        poolId: [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation];
+        poolId: [StagingXcmV4Location, StagingXcmV4Location];
 
         /**
          * The account initiating the touch.
@@ -9104,7 +9076,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Create'; params: { id: StagingXcmV3MultilocationMultiLocation; admin: MultiAddress; minBalance: bigint } }
+  | { name: 'Create'; params: { id: StagingXcmV4Location; admin: MultiAddress; minBalance: bigint } }
   /**
    * Issue a new class of fungible assets from a privileged origin.
    *
@@ -9128,12 +9100,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'ForceCreate';
-      params: {
-        id: StagingXcmV3MultilocationMultiLocation;
-        owner: MultiAddress;
-        isSufficient: boolean;
-        minBalance: bigint;
-      };
+      params: { id: StagingXcmV4Location; owner: MultiAddress; isSufficient: boolean; minBalance: bigint };
     }
   /**
    * Start the process of destroying a fungible asset class.
@@ -9148,7 +9115,7 @@ export type PalletAssetsCall002 =
    *
    * The asset class must be frozen before calling `start_destroy`.
    **/
-  | { name: 'StartDestroy'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'StartDestroy'; params: { id: StagingXcmV4Location } }
   /**
    * Destroy all accounts associated with a given asset.
    *
@@ -9163,7 +9130,7 @@ export type PalletAssetsCall002 =
    *
    * Each call emits the `Event::DestroyedAccounts` event.
    **/
-  | { name: 'DestroyAccounts'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'DestroyAccounts'; params: { id: StagingXcmV4Location } }
   /**
    * Destroy all approvals associated with a given asset up to the max (T::RemoveItemsLimit).
    *
@@ -9178,7 +9145,7 @@ export type PalletAssetsCall002 =
    *
    * Each call emits the `Event::DestroyedApprovals` event.
    **/
-  | { name: 'DestroyApprovals'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'DestroyApprovals'; params: { id: StagingXcmV4Location } }
   /**
    * Complete destroying asset and unreserve currency.
    *
@@ -9191,7 +9158,7 @@ export type PalletAssetsCall002 =
    *
    * Each successful call emits the `Event::Destroyed` event.
    **/
-  | { name: 'FinishDestroy'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'FinishDestroy'; params: { id: StagingXcmV4Location } }
   /**
    * Mint assets of a particular class.
    *
@@ -9206,7 +9173,7 @@ export type PalletAssetsCall002 =
    * Weight: `O(1)`
    * Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
    **/
-  | { name: 'Mint'; params: { id: StagingXcmV3MultilocationMultiLocation; beneficiary: MultiAddress; amount: bigint } }
+  | { name: 'Mint'; params: { id: StagingXcmV4Location; beneficiary: MultiAddress; amount: bigint } }
   /**
    * Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
    *
@@ -9224,7 +9191,7 @@ export type PalletAssetsCall002 =
    * Weight: `O(1)`
    * Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
    **/
-  | { name: 'Burn'; params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddress; amount: bigint } }
+  | { name: 'Burn'; params: { id: StagingXcmV4Location; who: MultiAddress; amount: bigint } }
   /**
    * Move some assets from the sender account to another.
    *
@@ -9245,7 +9212,7 @@ export type PalletAssetsCall002 =
    * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
    * `target`.
    **/
-  | { name: 'Transfer'; params: { id: StagingXcmV3MultilocationMultiLocation; target: MultiAddress; amount: bigint } }
+  | { name: 'Transfer'; params: { id: StagingXcmV4Location; target: MultiAddress; amount: bigint } }
   /**
    * Move some assets from the sender account to another, keeping the sender account alive.
    *
@@ -9266,10 +9233,7 @@ export type PalletAssetsCall002 =
    * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
    * `target`.
    **/
-  | {
-      name: 'TransferKeepAlive';
-      params: { id: StagingXcmV3MultilocationMultiLocation; target: MultiAddress; amount: bigint };
-    }
+  | { name: 'TransferKeepAlive'; params: { id: StagingXcmV4Location; target: MultiAddress; amount: bigint } }
   /**
    * Move some assets from one account to another.
    *
@@ -9293,7 +9257,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'ForceTransfer';
-      params: { id: StagingXcmV3MultilocationMultiLocation; source: MultiAddress; dest: MultiAddress; amount: bigint };
+      params: { id: StagingXcmV4Location; source: MultiAddress; dest: MultiAddress; amount: bigint };
     }
   /**
    * Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
@@ -9309,7 +9273,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Freeze'; params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddress } }
+  | { name: 'Freeze'; params: { id: StagingXcmV4Location; who: MultiAddress } }
   /**
    * Allow unprivileged transfers to and from an account again.
    *
@@ -9322,7 +9286,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Thaw'; params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddress } }
+  | { name: 'Thaw'; params: { id: StagingXcmV4Location; who: MultiAddress } }
   /**
    * Disallow further unprivileged transfers for the asset class.
    *
@@ -9334,7 +9298,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'FreezeAsset'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'FreezeAsset'; params: { id: StagingXcmV4Location } }
   /**
    * Allow unprivileged transfers for the asset again.
    *
@@ -9346,7 +9310,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ThawAsset'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'ThawAsset'; params: { id: StagingXcmV4Location } }
   /**
    * Change the Owner of an asset.
    *
@@ -9359,7 +9323,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'TransferOwnership'; params: { id: StagingXcmV3MultilocationMultiLocation; owner: MultiAddress } }
+  | { name: 'TransferOwnership'; params: { id: StagingXcmV4Location; owner: MultiAddress } }
   /**
    * Change the Issuer, Admin and Freezer of an asset.
    *
@@ -9376,12 +9340,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'SetTeam';
-      params: {
-        id: StagingXcmV3MultilocationMultiLocation;
-        issuer: MultiAddress;
-        admin: MultiAddress;
-        freezer: MultiAddress;
-      };
+      params: { id: StagingXcmV4Location; issuer: MultiAddress; admin: MultiAddress; freezer: MultiAddress };
     }
   /**
    * Set the metadata for an asset.
@@ -9401,10 +9360,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | {
-      name: 'SetMetadata';
-      params: { id: StagingXcmV3MultilocationMultiLocation; name: Bytes; symbol: Bytes; decimals: number };
-    }
+  | { name: 'SetMetadata'; params: { id: StagingXcmV4Location; name: Bytes; symbol: Bytes; decimals: number } }
   /**
    * Clear the metadata for an asset.
    *
@@ -9418,7 +9374,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ClearMetadata'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'ClearMetadata'; params: { id: StagingXcmV4Location } }
   /**
    * Force the metadata for an asset to some value.
    *
@@ -9437,13 +9393,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'ForceSetMetadata';
-      params: {
-        id: StagingXcmV3MultilocationMultiLocation;
-        name: Bytes;
-        symbol: Bytes;
-        decimals: number;
-        isFrozen: boolean;
-      };
+      params: { id: StagingXcmV4Location; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean };
     }
   /**
    * Clear the metadata for an asset.
@@ -9458,7 +9408,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ForceClearMetadata'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'ForceClearMetadata'; params: { id: StagingXcmV4Location } }
   /**
    * Alter the attributes of a given asset.
    *
@@ -9486,7 +9436,7 @@ export type PalletAssetsCall002 =
   | {
       name: 'ForceAssetStatus';
       params: {
-        id: StagingXcmV3MultilocationMultiLocation;
+        id: StagingXcmV4Location;
         owner: MultiAddress;
         issuer: MultiAddress;
         admin: MultiAddress;
@@ -9518,10 +9468,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | {
-      name: 'ApproveTransfer';
-      params: { id: StagingXcmV3MultilocationMultiLocation; delegate: MultiAddress; amount: bigint };
-    }
+  | { name: 'ApproveTransfer'; params: { id: StagingXcmV4Location; delegate: MultiAddress; amount: bigint } }
   /**
    * Cancel all of some asset approved for delegated transfer by a third-party account.
    *
@@ -9537,7 +9484,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'CancelApproval'; params: { id: StagingXcmV3MultilocationMultiLocation; delegate: MultiAddress } }
+  | { name: 'CancelApproval'; params: { id: StagingXcmV4Location; delegate: MultiAddress } }
   /**
    * Cancel all of some asset approved for delegated transfer by a third-party account.
    *
@@ -9553,10 +9500,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | {
-      name: 'ForceCancelApproval';
-      params: { id: StagingXcmV3MultilocationMultiLocation; owner: MultiAddress; delegate: MultiAddress };
-    }
+  | { name: 'ForceCancelApproval'; params: { id: StagingXcmV4Location; owner: MultiAddress; delegate: MultiAddress } }
   /**
    * Transfer some asset balance from a previously delegated account to some third-party
    * account.
@@ -9579,12 +9523,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'TransferApproved';
-      params: {
-        id: StagingXcmV3MultilocationMultiLocation;
-        owner: MultiAddress;
-        destination: MultiAddress;
-        amount: bigint;
-      };
+      params: { id: StagingXcmV4Location; owner: MultiAddress; destination: MultiAddress; amount: bigint };
     }
   /**
    * Create an asset account for non-provider assets.
@@ -9597,7 +9536,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'Touch'; params: { id: StagingXcmV4Location } }
   /**
    * Return the deposit (if any) of an asset account or a consumer reference (if any) of an
    * account.
@@ -9610,7 +9549,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `Refunded` event when successful.
    **/
-  | { name: 'Refund'; params: { id: StagingXcmV3MultilocationMultiLocation; allowBurn: boolean } }
+  | { name: 'Refund'; params: { id: StagingXcmV4Location; allowBurn: boolean } }
   /**
    * Sets the minimum balance of an asset.
    *
@@ -9625,7 +9564,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `AssetMinBalanceChanged` event when successful.
    **/
-  | { name: 'SetMinBalance'; params: { id: StagingXcmV3MultilocationMultiLocation; minBalance: bigint } }
+  | { name: 'SetMinBalance'; params: { id: StagingXcmV4Location; minBalance: bigint } }
   /**
    * Create an asset account for `who`.
    *
@@ -9638,7 +9577,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'TouchOther'; params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddress } }
+  | { name: 'TouchOther'; params: { id: StagingXcmV4Location; who: MultiAddress } }
   /**
    * Return the deposit (if any) of a target asset account. Useful if you are the depositor.
    *
@@ -9651,7 +9590,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `Refunded` event when successful.
    **/
-  | { name: 'RefundOther'; params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddress } }
+  | { name: 'RefundOther'; params: { id: StagingXcmV4Location; who: MultiAddress } }
   /**
    * Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
    *
@@ -9664,7 +9603,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Block'; params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddress } };
+  | { name: 'Block'; params: { id: StagingXcmV4Location; who: MultiAddress } };
 
 export type PalletAssetsCallLike002 =
   /**
@@ -9688,10 +9627,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | {
-      name: 'Create';
-      params: { id: StagingXcmV3MultilocationMultiLocation; admin: MultiAddressLike; minBalance: bigint };
-    }
+  | { name: 'Create'; params: { id: StagingXcmV4Location; admin: MultiAddressLike; minBalance: bigint } }
   /**
    * Issue a new class of fungible assets from a privileged origin.
    *
@@ -9715,12 +9651,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'ForceCreate';
-      params: {
-        id: StagingXcmV3MultilocationMultiLocation;
-        owner: MultiAddressLike;
-        isSufficient: boolean;
-        minBalance: bigint;
-      };
+      params: { id: StagingXcmV4Location; owner: MultiAddressLike; isSufficient: boolean; minBalance: bigint };
     }
   /**
    * Start the process of destroying a fungible asset class.
@@ -9735,7 +9666,7 @@ export type PalletAssetsCallLike002 =
    *
    * The asset class must be frozen before calling `start_destroy`.
    **/
-  | { name: 'StartDestroy'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'StartDestroy'; params: { id: StagingXcmV4Location } }
   /**
    * Destroy all accounts associated with a given asset.
    *
@@ -9750,7 +9681,7 @@ export type PalletAssetsCallLike002 =
    *
    * Each call emits the `Event::DestroyedAccounts` event.
    **/
-  | { name: 'DestroyAccounts'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'DestroyAccounts'; params: { id: StagingXcmV4Location } }
   /**
    * Destroy all approvals associated with a given asset up to the max (T::RemoveItemsLimit).
    *
@@ -9765,7 +9696,7 @@ export type PalletAssetsCallLike002 =
    *
    * Each call emits the `Event::DestroyedApprovals` event.
    **/
-  | { name: 'DestroyApprovals'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'DestroyApprovals'; params: { id: StagingXcmV4Location } }
   /**
    * Complete destroying asset and unreserve currency.
    *
@@ -9778,7 +9709,7 @@ export type PalletAssetsCallLike002 =
    *
    * Each successful call emits the `Event::Destroyed` event.
    **/
-  | { name: 'FinishDestroy'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'FinishDestroy'; params: { id: StagingXcmV4Location } }
   /**
    * Mint assets of a particular class.
    *
@@ -9793,10 +9724,7 @@ export type PalletAssetsCallLike002 =
    * Weight: `O(1)`
    * Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
    **/
-  | {
-      name: 'Mint';
-      params: { id: StagingXcmV3MultilocationMultiLocation; beneficiary: MultiAddressLike; amount: bigint };
-    }
+  | { name: 'Mint'; params: { id: StagingXcmV4Location; beneficiary: MultiAddressLike; amount: bigint } }
   /**
    * Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
    *
@@ -9814,7 +9742,7 @@ export type PalletAssetsCallLike002 =
    * Weight: `O(1)`
    * Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
    **/
-  | { name: 'Burn'; params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddressLike; amount: bigint } }
+  | { name: 'Burn'; params: { id: StagingXcmV4Location; who: MultiAddressLike; amount: bigint } }
   /**
    * Move some assets from the sender account to another.
    *
@@ -9835,10 +9763,7 @@ export type PalletAssetsCallLike002 =
    * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
    * `target`.
    **/
-  | {
-      name: 'Transfer';
-      params: { id: StagingXcmV3MultilocationMultiLocation; target: MultiAddressLike; amount: bigint };
-    }
+  | { name: 'Transfer'; params: { id: StagingXcmV4Location; target: MultiAddressLike; amount: bigint } }
   /**
    * Move some assets from the sender account to another, keeping the sender account alive.
    *
@@ -9859,10 +9784,7 @@ export type PalletAssetsCallLike002 =
    * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
    * `target`.
    **/
-  | {
-      name: 'TransferKeepAlive';
-      params: { id: StagingXcmV3MultilocationMultiLocation; target: MultiAddressLike; amount: bigint };
-    }
+  | { name: 'TransferKeepAlive'; params: { id: StagingXcmV4Location; target: MultiAddressLike; amount: bigint } }
   /**
    * Move some assets from one account to another.
    *
@@ -9886,12 +9808,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'ForceTransfer';
-      params: {
-        id: StagingXcmV3MultilocationMultiLocation;
-        source: MultiAddressLike;
-        dest: MultiAddressLike;
-        amount: bigint;
-      };
+      params: { id: StagingXcmV4Location; source: MultiAddressLike; dest: MultiAddressLike; amount: bigint };
     }
   /**
    * Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
@@ -9907,7 +9824,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Freeze'; params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddressLike } }
+  | { name: 'Freeze'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
   /**
    * Allow unprivileged transfers to and from an account again.
    *
@@ -9920,7 +9837,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Thaw'; params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddressLike } }
+  | { name: 'Thaw'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
   /**
    * Disallow further unprivileged transfers for the asset class.
    *
@@ -9932,7 +9849,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'FreezeAsset'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'FreezeAsset'; params: { id: StagingXcmV4Location } }
   /**
    * Allow unprivileged transfers for the asset again.
    *
@@ -9944,7 +9861,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ThawAsset'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'ThawAsset'; params: { id: StagingXcmV4Location } }
   /**
    * Change the Owner of an asset.
    *
@@ -9957,7 +9874,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'TransferOwnership'; params: { id: StagingXcmV3MultilocationMultiLocation; owner: MultiAddressLike } }
+  | { name: 'TransferOwnership'; params: { id: StagingXcmV4Location; owner: MultiAddressLike } }
   /**
    * Change the Issuer, Admin and Freezer of an asset.
    *
@@ -9975,7 +9892,7 @@ export type PalletAssetsCallLike002 =
   | {
       name: 'SetTeam';
       params: {
-        id: StagingXcmV3MultilocationMultiLocation;
+        id: StagingXcmV4Location;
         issuer: MultiAddressLike;
         admin: MultiAddressLike;
         freezer: MultiAddressLike;
@@ -9999,10 +9916,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | {
-      name: 'SetMetadata';
-      params: { id: StagingXcmV3MultilocationMultiLocation; name: BytesLike; symbol: BytesLike; decimals: number };
-    }
+  | { name: 'SetMetadata'; params: { id: StagingXcmV4Location; name: BytesLike; symbol: BytesLike; decimals: number } }
   /**
    * Clear the metadata for an asset.
    *
@@ -10016,7 +9930,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ClearMetadata'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'ClearMetadata'; params: { id: StagingXcmV4Location } }
   /**
    * Force the metadata for an asset to some value.
    *
@@ -10035,13 +9949,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'ForceSetMetadata';
-      params: {
-        id: StagingXcmV3MultilocationMultiLocation;
-        name: BytesLike;
-        symbol: BytesLike;
-        decimals: number;
-        isFrozen: boolean;
-      };
+      params: { id: StagingXcmV4Location; name: BytesLike; symbol: BytesLike; decimals: number; isFrozen: boolean };
     }
   /**
    * Clear the metadata for an asset.
@@ -10056,7 +9964,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ForceClearMetadata'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'ForceClearMetadata'; params: { id: StagingXcmV4Location } }
   /**
    * Alter the attributes of a given asset.
    *
@@ -10084,7 +9992,7 @@ export type PalletAssetsCallLike002 =
   | {
       name: 'ForceAssetStatus';
       params: {
-        id: StagingXcmV3MultilocationMultiLocation;
+        id: StagingXcmV4Location;
         owner: MultiAddressLike;
         issuer: MultiAddressLike;
         admin: MultiAddressLike;
@@ -10116,10 +10024,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | {
-      name: 'ApproveTransfer';
-      params: { id: StagingXcmV3MultilocationMultiLocation; delegate: MultiAddressLike; amount: bigint };
-    }
+  | { name: 'ApproveTransfer'; params: { id: StagingXcmV4Location; delegate: MultiAddressLike; amount: bigint } }
   /**
    * Cancel all of some asset approved for delegated transfer by a third-party account.
    *
@@ -10135,7 +10040,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'CancelApproval'; params: { id: StagingXcmV3MultilocationMultiLocation; delegate: MultiAddressLike } }
+  | { name: 'CancelApproval'; params: { id: StagingXcmV4Location; delegate: MultiAddressLike } }
   /**
    * Cancel all of some asset approved for delegated transfer by a third-party account.
    *
@@ -10153,7 +10058,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'ForceCancelApproval';
-      params: { id: StagingXcmV3MultilocationMultiLocation; owner: MultiAddressLike; delegate: MultiAddressLike };
+      params: { id: StagingXcmV4Location; owner: MultiAddressLike; delegate: MultiAddressLike };
     }
   /**
    * Transfer some asset balance from a previously delegated account to some third-party
@@ -10177,12 +10082,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'TransferApproved';
-      params: {
-        id: StagingXcmV3MultilocationMultiLocation;
-        owner: MultiAddressLike;
-        destination: MultiAddressLike;
-        amount: bigint;
-      };
+      params: { id: StagingXcmV4Location; owner: MultiAddressLike; destination: MultiAddressLike; amount: bigint };
     }
   /**
    * Create an asset account for non-provider assets.
@@ -10195,7 +10095,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { id: StagingXcmV3MultilocationMultiLocation } }
+  | { name: 'Touch'; params: { id: StagingXcmV4Location } }
   /**
    * Return the deposit (if any) of an asset account or a consumer reference (if any) of an
    * account.
@@ -10208,7 +10108,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `Refunded` event when successful.
    **/
-  | { name: 'Refund'; params: { id: StagingXcmV3MultilocationMultiLocation; allowBurn: boolean } }
+  | { name: 'Refund'; params: { id: StagingXcmV4Location; allowBurn: boolean } }
   /**
    * Sets the minimum balance of an asset.
    *
@@ -10223,7 +10123,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `AssetMinBalanceChanged` event when successful.
    **/
-  | { name: 'SetMinBalance'; params: { id: StagingXcmV3MultilocationMultiLocation; minBalance: bigint } }
+  | { name: 'SetMinBalance'; params: { id: StagingXcmV4Location; minBalance: bigint } }
   /**
    * Create an asset account for `who`.
    *
@@ -10236,7 +10136,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'TouchOther'; params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddressLike } }
+  | { name: 'TouchOther'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
   /**
    * Return the deposit (if any) of a target asset account. Useful if you are the depositor.
    *
@@ -10249,7 +10149,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `Refunded` event when successful.
    **/
-  | { name: 'RefundOther'; params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddressLike } }
+  | { name: 'RefundOther'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
   /**
    * Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
    *
@@ -10262,7 +10162,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Block'; params: { id: StagingXcmV3MultilocationMultiLocation; who: MultiAddressLike } };
+  | { name: 'Block'; params: { id: StagingXcmV4Location; who: MultiAddressLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11461,10 +11361,7 @@ export type PalletAssetConversionCall =
    *
    * Once a pool is created, someone may [`Pallet::add_liquidity`] to it.
    **/
-  | {
-      name: 'CreatePool';
-      params: { asset1: StagingXcmV3MultilocationMultiLocation; asset2: StagingXcmV3MultilocationMultiLocation };
-    }
+  | { name: 'CreatePool'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } }
   /**
    * Provide liquidity into the pool of `asset1` and `asset2`.
    * NOTE: an optimal amount of asset1 and asset2 will be calculated and
@@ -11484,8 +11381,8 @@ export type PalletAssetConversionCall =
   | {
       name: 'AddLiquidity';
       params: {
-        asset1: StagingXcmV3MultilocationMultiLocation;
-        asset2: StagingXcmV3MultilocationMultiLocation;
+        asset1: StagingXcmV4Location;
+        asset2: StagingXcmV4Location;
         amount1Desired: bigint;
         amount2Desired: bigint;
         amount1Min: bigint;
@@ -11501,8 +11398,8 @@ export type PalletAssetConversionCall =
   | {
       name: 'RemoveLiquidity';
       params: {
-        asset1: StagingXcmV3MultilocationMultiLocation;
-        asset2: StagingXcmV3MultilocationMultiLocation;
+        asset1: StagingXcmV4Location;
+        asset2: StagingXcmV4Location;
         lpTokenBurn: bigint;
         amount1MinReceive: bigint;
         amount2MinReceive: bigint;
@@ -11520,7 +11417,7 @@ export type PalletAssetConversionCall =
   | {
       name: 'SwapExactTokensForTokens';
       params: {
-        path: Array<StagingXcmV3MultilocationMultiLocation>;
+        path: Array<StagingXcmV4Location>;
         amountIn: bigint;
         amountOutMin: bigint;
         sendTo: AccountId32;
@@ -11538,7 +11435,7 @@ export type PalletAssetConversionCall =
   | {
       name: 'SwapTokensForExactTokens';
       params: {
-        path: Array<StagingXcmV3MultilocationMultiLocation>;
+        path: Array<StagingXcmV4Location>;
         amountOut: bigint;
         amountInMax: bigint;
         sendTo: AccountId32;
@@ -11558,10 +11455,7 @@ export type PalletAssetConversionCall =
    *
    * Emits `Touched` event when successful.
    **/
-  | {
-      name: 'Touch';
-      params: { asset1: StagingXcmV3MultilocationMultiLocation; asset2: StagingXcmV3MultilocationMultiLocation };
-    };
+  | { name: 'Touch'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } };
 
 export type PalletAssetConversionCallLike =
   /**
@@ -11570,10 +11464,7 @@ export type PalletAssetConversionCallLike =
    *
    * Once a pool is created, someone may [`Pallet::add_liquidity`] to it.
    **/
-  | {
-      name: 'CreatePool';
-      params: { asset1: StagingXcmV3MultilocationMultiLocation; asset2: StagingXcmV3MultilocationMultiLocation };
-    }
+  | { name: 'CreatePool'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } }
   /**
    * Provide liquidity into the pool of `asset1` and `asset2`.
    * NOTE: an optimal amount of asset1 and asset2 will be calculated and
@@ -11593,8 +11484,8 @@ export type PalletAssetConversionCallLike =
   | {
       name: 'AddLiquidity';
       params: {
-        asset1: StagingXcmV3MultilocationMultiLocation;
-        asset2: StagingXcmV3MultilocationMultiLocation;
+        asset1: StagingXcmV4Location;
+        asset2: StagingXcmV4Location;
         amount1Desired: bigint;
         amount2Desired: bigint;
         amount1Min: bigint;
@@ -11610,8 +11501,8 @@ export type PalletAssetConversionCallLike =
   | {
       name: 'RemoveLiquidity';
       params: {
-        asset1: StagingXcmV3MultilocationMultiLocation;
-        asset2: StagingXcmV3MultilocationMultiLocation;
+        asset1: StagingXcmV4Location;
+        asset2: StagingXcmV4Location;
         lpTokenBurn: bigint;
         amount1MinReceive: bigint;
         amount2MinReceive: bigint;
@@ -11629,7 +11520,7 @@ export type PalletAssetConversionCallLike =
   | {
       name: 'SwapExactTokensForTokens';
       params: {
-        path: Array<StagingXcmV3MultilocationMultiLocation>;
+        path: Array<StagingXcmV4Location>;
         amountIn: bigint;
         amountOutMin: bigint;
         sendTo: AccountId32Like;
@@ -11647,7 +11538,7 @@ export type PalletAssetConversionCallLike =
   | {
       name: 'SwapTokensForExactTokens';
       params: {
-        path: Array<StagingXcmV3MultilocationMultiLocation>;
+        path: Array<StagingXcmV4Location>;
         amountOut: bigint;
         amountInMax: bigint;
         sendTo: AccountId32Like;
@@ -11667,10 +11558,7 @@ export type PalletAssetConversionCallLike =
    *
    * Emits `Touched` event when successful.
    **/
-  | {
-      name: 'Touch';
-      params: { asset1: StagingXcmV3MultilocationMultiLocation; asset2: StagingXcmV3MultilocationMultiLocation };
-    };
+  | { name: 'Touch'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } };
 
 export type AssetHubKusamaRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
@@ -12424,7 +12312,7 @@ export type FrameSystemExtensionsCheckWeight = {};
 
 export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
   tip: bigint;
-  assetId?: StagingXcmV3MultilocationMultiLocation | undefined;
+  assetId?: StagingXcmV4Location | undefined;
 };
 
 export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };

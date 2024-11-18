@@ -76,7 +76,7 @@ import type {
   PalletNftsPendingSwap,
   PalletNftsCollectionConfig,
   PalletNftsItemConfig,
-  StagingXcmV3MultilocationMultiLocation,
+  StagingXcmV4Location,
   PalletAssetConversionPoolInfo,
 } from './types';
 
@@ -1567,25 +1567,25 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * Details of an asset.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} arg
+     * @param {StagingXcmV4Location} arg
      * @param {Callback<PalletAssetsAssetDetails | undefined> =} callback
      **/
     asset: GenericStorageQuery<
       Rv,
-      (arg: StagingXcmV3MultilocationMultiLocation) => PalletAssetsAssetDetails | undefined,
-      StagingXcmV3MultilocationMultiLocation
+      (arg: StagingXcmV4Location) => PalletAssetsAssetDetails | undefined,
+      StagingXcmV4Location
     >;
 
     /**
      * The holdings of a specific account for a specific asset.
      *
-     * @param {[StagingXcmV3MultilocationMultiLocation, AccountId32Like]} arg
+     * @param {[StagingXcmV4Location, AccountId32Like]} arg
      * @param {Callback<PalletAssetsAssetAccount | undefined> =} callback
      **/
     account: GenericStorageQuery<
       Rv,
-      (arg: [StagingXcmV3MultilocationMultiLocation, AccountId32Like]) => PalletAssetsAssetAccount | undefined,
-      [StagingXcmV3MultilocationMultiLocation, AccountId32]
+      (arg: [StagingXcmV4Location, AccountId32Like]) => PalletAssetsAssetAccount | undefined,
+      [StagingXcmV4Location, AccountId32]
     >;
 
     /**
@@ -1593,28 +1593,22 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * is the amount of `T::Currency` reserved for storing this.
      * First key is the asset ID, second key is the owner and third key is the delegate.
      *
-     * @param {[StagingXcmV3MultilocationMultiLocation, AccountId32Like, AccountId32Like]} arg
+     * @param {[StagingXcmV4Location, AccountId32Like, AccountId32Like]} arg
      * @param {Callback<PalletAssetsApproval | undefined> =} callback
      **/
     approvals: GenericStorageQuery<
       Rv,
-      (
-        arg: [StagingXcmV3MultilocationMultiLocation, AccountId32Like, AccountId32Like],
-      ) => PalletAssetsApproval | undefined,
-      [StagingXcmV3MultilocationMultiLocation, AccountId32, AccountId32]
+      (arg: [StagingXcmV4Location, AccountId32Like, AccountId32Like]) => PalletAssetsApproval | undefined,
+      [StagingXcmV4Location, AccountId32, AccountId32]
     >;
 
     /**
      * Metadata of an asset.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} arg
+     * @param {StagingXcmV4Location} arg
      * @param {Callback<PalletAssetsAssetMetadata> =} callback
      **/
-    metadata: GenericStorageQuery<
-      Rv,
-      (arg: StagingXcmV3MultilocationMultiLocation) => PalletAssetsAssetMetadata,
-      StagingXcmV3MultilocationMultiLocation
-    >;
+    metadata: GenericStorageQuery<Rv, (arg: StagingXcmV4Location) => PalletAssetsAssetMetadata, StagingXcmV4Location>;
 
     /**
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
@@ -1627,9 +1621,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * The initial next asset ID can be set using the [`GenesisConfig`] or the
      * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
      *
-     * @param {Callback<StagingXcmV3MultilocationMultiLocation | undefined> =} callback
+     * @param {Callback<StagingXcmV4Location | undefined> =} callback
      **/
-    nextAssetId: GenericStorageQuery<Rv, () => StagingXcmV3MultilocationMultiLocation | undefined>;
+    nextAssetId: GenericStorageQuery<Rv, () => StagingXcmV4Location | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1710,15 +1704,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Map from `PoolAssetId` to `PoolInfo`. This establishes whether a pool has been officially
      * created rather than people sending tokens directly to a pool's public account.
      *
-     * @param {[StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation]} arg
+     * @param {[StagingXcmV4Location, StagingXcmV4Location]} arg
      * @param {Callback<PalletAssetConversionPoolInfo | undefined> =} callback
      **/
     pools: GenericStorageQuery<
       Rv,
-      (
-        arg: [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation],
-      ) => PalletAssetConversionPoolInfo | undefined,
-      [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation]
+      (arg: [StagingXcmV4Location, StagingXcmV4Location]) => PalletAssetConversionPoolInfo | undefined,
+      [StagingXcmV4Location, StagingXcmV4Location]
     >;
 
     /**

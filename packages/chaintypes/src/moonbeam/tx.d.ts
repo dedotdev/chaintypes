@@ -28,6 +28,7 @@ import type {
   FrameSystemEventRecord,
   CumulusPrimitivesParachainInherentParachainInherentData,
   PalletBalancesAdjustmentDirection,
+  PalletParachainStakingInflationDistributionConfig,
   PalletAuthorSlotFilterNumNonZeroU32,
   NimbusPrimitivesNimbusCryptoPublic,
   MoonbeamRuntimeOriginCaller,
@@ -36,6 +37,7 @@ import type {
   PalletIdentityLegacyIdentityInfo,
   PalletIdentityJudgement,
   PalletMultisigTimepoint,
+  MoonbeamRuntimeRuntimeParamsRuntimeParameters,
   EthereumTransactionTransactionV2,
   PalletConvictionVotingVoteAccountVote,
   PalletConvictionVotingConviction,
@@ -51,12 +53,10 @@ import type {
   XcmVersionedAssetId,
   MoonbeamRuntimeXcmConfigAssetType,
   MoonbeamRuntimeAssetConfigAssetRegistrarMetadata,
-  MoonbeamRuntimeXcmConfigCurrencyId,
-  XcmVersionedAsset,
   MoonbeamRuntimeXcmConfigTransactors,
   PalletXcmTransactorCurrencyPayment,
   PalletXcmTransactorTransactWeights,
-  XcmV2OriginKind,
+  XcmV3OriginKind,
   PalletXcmTransactorHrmpOperation,
   XcmPrimitivesEthereumXcmEthereumXcmTransaction,
   CumulusPrimitivesCoreAggregateMessageOrigin,
@@ -750,6 +750,35 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Burn the specified liquid free balance from the origin account.
+     *
+     * If the origin's account ends up below the existential deposit as a result
+     * of the burn and `keep_alive` is false, the account will be reaped.
+     *
+     * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+     * this `burn` operation will reduce total issuance by the amount _burned_.
+     *
+     * @param {bigint} value
+     * @param {boolean} keepAlive
+     **/
+    burn: GenericTxCall<
+      Rv,
+      (
+        value: bigint,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Balances';
+          palletCall: {
+            name: 'Burn';
+            params: { value: bigint; keepAlive: boolean };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -798,6 +827,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Deprecated: please use `set_inflation_distribution_config` instead.
+     *
      * Set the account that will hold funds set aside for parachain bond
      *
      * @param {AccountId20Like} new_
@@ -817,6 +848,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Deprecated: please use `set_inflation_distribution_config` instead.
+     *
      * Set the percent of inflation set aside for parachain bond
      *
      * @param {Percent} new_
@@ -1438,6 +1471,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ForceJoinCandidates';
             params: { account: AccountId20Like; bond: bigint; candidateCount: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the inflation distribution configuration.
+     *
+     * @param {PalletParachainStakingInflationDistributionConfig} new_
+     **/
+    setInflationDistributionConfig: GenericTxCall<
+      Rv,
+      (new_: PalletParachainStakingInflationDistributionConfig) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'ParachainStaking';
+          palletCall: {
+            name: 'SetInflationDistributionConfig';
+            params: { new: PalletParachainStakingInflationDistributionConfig };
           };
         }
       >
@@ -3264,6 +3316,37 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
+   * Pallet `Parameters`'s transaction calls
+   **/
+  parameters: {
+    /**
+     * Set the value of a parameter.
+     *
+     * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+     * deleted by setting them to `None`.
+     *
+     * @param {MoonbeamRuntimeRuntimeParamsRuntimeParameters} keyValue
+     **/
+    setParameter: GenericTxCall<
+      Rv,
+      (keyValue: MoonbeamRuntimeRuntimeParamsRuntimeParameters) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'SetParameter';
+            params: { keyValue: MoonbeamRuntimeRuntimeParamsRuntimeParameters };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
    * Pallet `EVM`'s transaction calls
    **/
   evm: {
@@ -4948,112 +5031,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   treasury: {
     /**
-     * Put forward a suggestion for spending.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be signed.
-     *
-     * ## Details
-     * A deposit proportional to the value is reserved and slashed if the proposal is rejected.
-     * It is returned once the proposal is awarded.
-     *
-     * ### Complexity
-     * - O(1)
-     *
-     * ## Events
-     *
-     * Emits [`Event::Proposed`] if successful.
-     *
-     * @param {bigint} value
-     * @param {AccountId20Like} beneficiary
-     **/
-    proposeSpend: GenericTxCall<
-      Rv,
-      (
-        value: bigint,
-        beneficiary: AccountId20Like,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'ProposeSpend';
-            params: { value: bigint; beneficiary: AccountId20Like };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Reject a proposed spend.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be [`Config::RejectOrigin`].
-     *
-     * ## Details
-     * The original deposit will be slashed.
-     *
-     * ### Complexity
-     * - O(1)
-     *
-     * ## Events
-     *
-     * Emits [`Event::Rejected`] if successful.
-     *
-     * @param {number} proposalId
-     **/
-    rejectProposal: GenericTxCall<
-      Rv,
-      (proposalId: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'RejectProposal';
-            params: { proposalId: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Approve a proposal.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be [`Config::ApproveOrigin`].
-     *
-     * ## Details
-     *
-     * At a later time, the proposal will be allocated to the beneficiary and the original
-     * deposit will be returned.
-     *
-     * ### Complexity
-     * - O(1).
-     *
-     * ## Events
-     *
-     * No events are emitted from this dispatch.
-     *
-     * @param {number} proposalId
-     **/
-    approveProposal: GenericTxCall<
-      Rv,
-      (proposalId: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'ApproveProposal';
-            params: { proposalId: number };
-          };
-        }
-      >
-    >;
-
-    /**
      * Propose and approve a spend of treasury funds.
      *
      * ## Dispatch Origin
@@ -5188,7 +5165,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * ## Dispatch Origin
      *
-     * Must be signed.
+     * Must be signed
      *
      * ## Details
      *
@@ -5441,15 +5418,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       >
     >;
 
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
-   * Pallet `DmpQueue`'s transaction calls
-   **/
-  dmpQueue: {
     /**
      * Generic pallet tx call
      **/
@@ -5995,7 +5963,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
      * fee on the `dest` (and possibly reserve) chains.
      * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
-     * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+     * - `remote_fees_id`: One of the included `assets` to be used to pay fees.
      * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
      * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
      * transfer, which also determines what happens to the assets on the destination chain.
@@ -6059,7 +6027,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset.
+     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -6101,7 +6069,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Unlike `create`, no funds are reserved.
      *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset.
+     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.
@@ -7326,293 +7294,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
-   * Pallet `XTokens`'s transaction calls
-   **/
-  xTokens: {
-    /**
-     * Transfer native currencies.
-     *
-     * `dest_weight_limit` is the weight for XCM execution on the dest
-     * chain, and it would be charged from the transferred assets. If set
-     * below requirements, the execution may fail and assets wouldn't be
-     * received.
-     *
-     * It's a no-op if any error on local XCM execution or message sending.
-     * Note sending assets out per se doesn't guarantee they would be
-     * received. Receiving depends on if the XCM message could be delivered
-     * by the network, and if the receiving chain would handle
-     * messages correctly.
-     *
-     * @param {MoonbeamRuntimeXcmConfigCurrencyId} currencyId
-     * @param {bigint} amount
-     * @param {XcmVersionedLocation} dest
-     * @param {XcmV3WeightLimit} destWeightLimit
-     **/
-    transfer: GenericTxCall<
-      Rv,
-      (
-        currencyId: MoonbeamRuntimeXcmConfigCurrencyId,
-        amount: bigint,
-        dest: XcmVersionedLocation,
-        destWeightLimit: XcmV3WeightLimit,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'XTokens';
-          palletCall: {
-            name: 'Transfer';
-            params: {
-              currencyId: MoonbeamRuntimeXcmConfigCurrencyId;
-              amount: bigint;
-              dest: XcmVersionedLocation;
-              destWeightLimit: XcmV3WeightLimit;
-            };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Transfer `Asset`.
-     *
-     * `dest_weight_limit` is the weight for XCM execution on the dest
-     * chain, and it would be charged from the transferred assets. If set
-     * below requirements, the execution may fail and assets wouldn't be
-     * received.
-     *
-     * It's a no-op if any error on local XCM execution or message sending.
-     * Note sending assets out per se doesn't guarantee they would be
-     * received. Receiving depends on if the XCM message could be delivered
-     * by the network, and if the receiving chain would handle
-     * messages correctly.
-     *
-     * @param {XcmVersionedAsset} asset
-     * @param {XcmVersionedLocation} dest
-     * @param {XcmV3WeightLimit} destWeightLimit
-     **/
-    transferMultiasset: GenericTxCall<
-      Rv,
-      (
-        asset: XcmVersionedAsset,
-        dest: XcmVersionedLocation,
-        destWeightLimit: XcmV3WeightLimit,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'XTokens';
-          palletCall: {
-            name: 'TransferMultiasset';
-            params: { asset: XcmVersionedAsset; dest: XcmVersionedLocation; destWeightLimit: XcmV3WeightLimit };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Transfer native currencies specifying the fee and amount as
-     * separate.
-     *
-     * `dest_weight_limit` is the weight for XCM execution on the dest
-     * chain, and it would be charged from the transferred assets. If set
-     * below requirements, the execution may fail and assets wouldn't be
-     * received.
-     *
-     * `fee` is the amount to be spent to pay for execution in destination
-     * chain. Both fee and amount will be subtracted form the callers
-     * balance.
-     *
-     * If `fee` is not high enough to cover for the execution costs in the
-     * destination chain, then the assets will be trapped in the
-     * destination chain
-     *
-     * It's a no-op if any error on local XCM execution or message sending.
-     * Note sending assets out per se doesn't guarantee they would be
-     * received. Receiving depends on if the XCM message could be delivered
-     * by the network, and if the receiving chain would handle
-     * messages correctly.
-     *
-     * @param {MoonbeamRuntimeXcmConfigCurrencyId} currencyId
-     * @param {bigint} amount
-     * @param {bigint} fee
-     * @param {XcmVersionedLocation} dest
-     * @param {XcmV3WeightLimit} destWeightLimit
-     **/
-    transferWithFee: GenericTxCall<
-      Rv,
-      (
-        currencyId: MoonbeamRuntimeXcmConfigCurrencyId,
-        amount: bigint,
-        fee: bigint,
-        dest: XcmVersionedLocation,
-        destWeightLimit: XcmV3WeightLimit,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'XTokens';
-          palletCall: {
-            name: 'TransferWithFee';
-            params: {
-              currencyId: MoonbeamRuntimeXcmConfigCurrencyId;
-              amount: bigint;
-              fee: bigint;
-              dest: XcmVersionedLocation;
-              destWeightLimit: XcmV3WeightLimit;
-            };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Transfer `Asset` specifying the fee and amount as separate.
-     *
-     * `dest_weight_limit` is the weight for XCM execution on the dest
-     * chain, and it would be charged from the transferred assets. If set
-     * below requirements, the execution may fail and assets wouldn't be
-     * received.
-     *
-     * `fee` is the Asset to be spent to pay for execution in
-     * destination chain. Both fee and amount will be subtracted form the
-     * callers balance For now we only accept fee and asset having the same
-     * `Location` id.
-     *
-     * If `fee` is not high enough to cover for the execution costs in the
-     * destination chain, then the assets will be trapped in the
-     * destination chain
-     *
-     * It's a no-op if any error on local XCM execution or message sending.
-     * Note sending assets out per se doesn't guarantee they would be
-     * received. Receiving depends on if the XCM message could be delivered
-     * by the network, and if the receiving chain would handle
-     * messages correctly.
-     *
-     * @param {XcmVersionedAsset} asset
-     * @param {XcmVersionedAsset} fee
-     * @param {XcmVersionedLocation} dest
-     * @param {XcmV3WeightLimit} destWeightLimit
-     **/
-    transferMultiassetWithFee: GenericTxCall<
-      Rv,
-      (
-        asset: XcmVersionedAsset,
-        fee: XcmVersionedAsset,
-        dest: XcmVersionedLocation,
-        destWeightLimit: XcmV3WeightLimit,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'XTokens';
-          palletCall: {
-            name: 'TransferMultiassetWithFee';
-            params: {
-              asset: XcmVersionedAsset;
-              fee: XcmVersionedAsset;
-              dest: XcmVersionedLocation;
-              destWeightLimit: XcmV3WeightLimit;
-            };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Transfer several currencies specifying the item to be used as fee
-     *
-     * `dest_weight_limit` is the weight for XCM execution on the dest
-     * chain, and it would be charged from the transferred assets. If set
-     * below requirements, the execution may fail and assets wouldn't be
-     * received.
-     *
-     * `fee_item` is index of the currencies tuple that we want to use for
-     * payment
-     *
-     * It's a no-op if any error on local XCM execution or message sending.
-     * Note sending assets out per se doesn't guarantee they would be
-     * received. Receiving depends on if the XCM message could be delivered
-     * by the network, and if the receiving chain would handle
-     * messages correctly.
-     *
-     * @param {Array<[MoonbeamRuntimeXcmConfigCurrencyId, bigint]>} currencies
-     * @param {number} feeItem
-     * @param {XcmVersionedLocation} dest
-     * @param {XcmV3WeightLimit} destWeightLimit
-     **/
-    transferMulticurrencies: GenericTxCall<
-      Rv,
-      (
-        currencies: Array<[MoonbeamRuntimeXcmConfigCurrencyId, bigint]>,
-        feeItem: number,
-        dest: XcmVersionedLocation,
-        destWeightLimit: XcmV3WeightLimit,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'XTokens';
-          palletCall: {
-            name: 'TransferMulticurrencies';
-            params: {
-              currencies: Array<[MoonbeamRuntimeXcmConfigCurrencyId, bigint]>;
-              feeItem: number;
-              dest: XcmVersionedLocation;
-              destWeightLimit: XcmV3WeightLimit;
-            };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Transfer several `Asset` specifying the item to be used as fee
-     *
-     * `dest_weight_limit` is the weight for XCM execution on the dest
-     * chain, and it would be charged from the transferred assets. If set
-     * below requirements, the execution may fail and assets wouldn't be
-     * received.
-     *
-     * `fee_item` is index of the Assets that we want to use for
-     * payment
-     *
-     * It's a no-op if any error on local XCM execution or message sending.
-     * Note sending assets out per se doesn't guarantee they would be
-     * received. Receiving depends on if the XCM message could be delivered
-     * by the network, and if the receiving chain would handle
-     * messages correctly.
-     *
-     * @param {XcmVersionedAssets} assets
-     * @param {number} feeItem
-     * @param {XcmVersionedLocation} dest
-     * @param {XcmV3WeightLimit} destWeightLimit
-     **/
-    transferMultiassets: GenericTxCall<
-      Rv,
-      (
-        assets: XcmVersionedAssets,
-        feeItem: number,
-        dest: XcmVersionedLocation,
-        destWeightLimit: XcmV3WeightLimit,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'XTokens';
-          palletCall: {
-            name: 'TransferMultiassets';
-            params: {
-              assets: XcmVersionedAssets;
-              feeItem: number;
-              dest: XcmVersionedLocation;
-              destWeightLimit: XcmV3WeightLimit;
-            };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
    * Pallet `XcmTransactor`'s transaction calls
    **/
   xcmTransactor: {
@@ -7718,7 +7399,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId20Like | undefined} feePayer
      * @param {PalletXcmTransactorCurrencyPayment} fee
      * @param {BytesLike} call
-     * @param {XcmV2OriginKind} originKind
+     * @param {XcmV3OriginKind} originKind
      * @param {PalletXcmTransactorTransactWeights} weightInfo
      * @param {boolean} refund
      **/
@@ -7729,7 +7410,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         feePayer: AccountId20Like | undefined,
         fee: PalletXcmTransactorCurrencyPayment,
         call: BytesLike,
-        originKind: XcmV2OriginKind,
+        originKind: XcmV3OriginKind,
         weightInfo: PalletXcmTransactorTransactWeights,
         refund: boolean,
       ) => ChainSubmittableExtrinsic<
@@ -7743,7 +7424,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               feePayer: AccountId20Like | undefined;
               fee: PalletXcmTransactorCurrencyPayment;
               call: BytesLike;
-              originKind: XcmV2OriginKind;
+              originKind: XcmV3OriginKind;
               weightInfo: PalletXcmTransactorTransactWeights;
               refund: boolean;
             };

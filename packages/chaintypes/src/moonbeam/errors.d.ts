@@ -211,6 +211,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CannotSetBelowMin: GenericPalletError<Rv>;
     RoundLengthMustBeGreaterThanTotalSelectedCollators: GenericPalletError<Rv>;
     NoWritingSameValue: GenericPalletError<Rv>;
+    TotalInflationDistributionPercentExceeds100: GenericPalletError<Rv>;
     TooLowCandidateCountWeightHintJoinCandidates: GenericPalletError<Rv>;
     TooLowCandidateCountWeightHintCancelLeaveCandidates: GenericPalletError<Rv>;
     TooLowCandidateCountToLeaveCandidates: GenericPalletError<Rv>;
@@ -732,6 +733,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ContractNotExist: GenericPalletError<Rv>;
 
     /**
+     * The key lengths exceeds the maximum allowed
+     **/
+    KeyTooLong: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -906,6 +912,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Too few hashes were requested to be upgraded (i.e. zero).
      **/
     TooFew: GenericPalletError<Rv>;
+
+    /**
+     * No ticket with a cost was returned by [`Config::Consideration`] to store the preimage.
+     **/
+    NoCost: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1228,11 +1239,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
    **/
   treasury: {
     /**
-     * Proposer's balance is too low.
-     **/
-    InsufficientProposersBalance: GenericPalletError<Rv>;
-
-    /**
      * No proposal, bounty or spend at that index.
      **/
     InvalidIndex: GenericPalletError<Rv>;
@@ -1400,6 +1406,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The execution is already resumed.
      **/
     AlreadyResumed: GenericPalletError<Rv>;
+
+    /**
+     * There are too many active outbound channels.
+     **/
+    TooManyActiveOutboundChannels: GenericPalletError<Rv>;
+
+    /**
+     * The message is too big.
+     **/
+    TooBig: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1646,6 +1662,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CallbackFailed: GenericPalletError<Rv>;
 
     /**
+     * The asset ID must be equal to the [`NextAssetId`].
+     **/
+    BadAssetId: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1662,118 +1683,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ErrorDestroyingAsset: GenericPalletError<Rv>;
     NotSufficientDeposit: GenericPalletError<Rv>;
     NonExistentLocalAsset: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
-   * Pallet `XTokens`'s errors
-   **/
-  xTokens: {
-    /**
-     * Asset has no reserve location.
-     **/
-    AssetHasNoReserve: GenericPalletError<Rv>;
-
-    /**
-     * Not cross-chain transfer.
-     **/
-    NotCrossChainTransfer: GenericPalletError<Rv>;
-
-    /**
-     * Invalid transfer destination.
-     **/
-    InvalidDest: GenericPalletError<Rv>;
-
-    /**
-     * Currency is not cross-chain transferable.
-     **/
-    NotCrossChainTransferableCurrency: GenericPalletError<Rv>;
-
-    /**
-     * The message's weight could not be determined.
-     **/
-    UnweighableMessage: GenericPalletError<Rv>;
-
-    /**
-     * XCM execution failed.
-     **/
-    XcmExecutionFailed: GenericPalletError<Rv>;
-
-    /**
-     * Could not re-anchor the assets to declare the fees for the
-     * destination chain.
-     **/
-    CannotReanchor: GenericPalletError<Rv>;
-
-    /**
-     * Could not get ancestry of asset reserve location.
-     **/
-    InvalidAncestry: GenericPalletError<Rv>;
-
-    /**
-     * The Asset is invalid.
-     **/
-    InvalidAsset: GenericPalletError<Rv>;
-
-    /**
-     * The destination `Location` provided cannot be inverted.
-     **/
-    DestinationNotInvertible: GenericPalletError<Rv>;
-
-    /**
-     * The version of the `Versioned` value used is not able to be
-     * interpreted.
-     **/
-    BadVersion: GenericPalletError<Rv>;
-
-    /**
-     * We tried sending distinct asset and fee but they have different
-     * reserve chains.
-     **/
-    DistinctReserveForAssetAndFee: GenericPalletError<Rv>;
-
-    /**
-     * The fee is zero.
-     **/
-    ZeroFee: GenericPalletError<Rv>;
-
-    /**
-     * The transfering asset amount is zero.
-     **/
-    ZeroAmount: GenericPalletError<Rv>;
-
-    /**
-     * The number of assets to be sent is over the maximum.
-     **/
-    TooManyAssetsBeingSent: GenericPalletError<Rv>;
-
-    /**
-     * The specified index does not exist in a Assets struct.
-     **/
-    AssetIndexNonExistent: GenericPalletError<Rv>;
-
-    /**
-     * Fee is not enough.
-     **/
-    FeeNotEnough: GenericPalletError<Rv>;
-
-    /**
-     * Not supported Location
-     **/
-    NotSupportedLocation: GenericPalletError<Rv>;
-
-    /**
-     * MinXcmFee not registered for certain reserve location
-     **/
-    MinXcmFeeNotDefined: GenericPalletError<Rv>;
-
-    /**
-     * Asset transfer is limited by RateLimiter.
-     **/
-    RateLimited: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

@@ -18,11 +18,14 @@ import type {
   FrameSupportTokensMiscBalanceStatus,
   PalletParachainStakingDelegationRequestsCancelledScheduledRequest,
   PalletParachainStakingDelegatorAdded,
+  PalletParachainStakingInflationDistributionConfig,
   PalletAuthorSlotFilterNumNonZeroU32,
   NimbusPrimitivesNimbusCryptoPublic,
   SessionKeysPrimitivesVrfVrfCryptoPublic,
   MoonbeamRuntimeProxyType,
   PalletMultisigTimepoint,
+  MoonbeamRuntimeRuntimeParamsRuntimeParametersKey,
+  MoonbeamRuntimeRuntimeParamsRuntimeParametersValue,
   EthereumLog,
   EvmCoreErrorExitReason,
   FrameSupportPreimagesBounded,
@@ -39,7 +42,6 @@ import type {
   XcmVersionedLocation,
   MoonbeamRuntimeXcmConfigAssetType,
   MoonbeamRuntimeAssetConfigAssetRegistrarMetadata,
-  StagingXcmV4Asset,
   PalletXcmTransactorRemoteTransactInfoWithMaxWeight,
   PalletXcmTransactorHrmpOperation,
   CumulusPrimitivesCoreAggregateMessageOrigin,
@@ -559,31 +561,17 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * Transferred to account which holds funds reserved for parachain bond.
      **/
-    ReservedForParachainBond: GenericPalletEvent<
+    InflationDistributed: GenericPalletEvent<
       Rv,
       'ParachainStaking',
-      'ReservedForParachainBond',
-      { account: AccountId20; value: bigint }
+      'InflationDistributed',
+      { index: number; account: AccountId20; value: bigint }
     >;
-
-    /**
-     * Account (re)set for parachain bond treasury.
-     **/
-    ParachainBondAccountSet: GenericPalletEvent<
+    InflationDistributionConfigUpdated: GenericPalletEvent<
       Rv,
       'ParachainStaking',
-      'ParachainBondAccountSet',
-      { old: AccountId20; new: AccountId20 }
-    >;
-
-    /**
-     * Percent of inflation reserved for parachain bond (re)set.
-     **/
-    ParachainBondReservePercentSet: GenericPalletEvent<
-      Rv,
-      'ParachainStaking',
-      'ParachainBondReservePercentSet',
-      { old: Percent; new: Percent }
+      'InflationDistributionConfigUpdated',
+      { old: PalletParachainStakingInflationDistributionConfig; new: PalletParachainStakingInflationDistributionConfig }
     >;
 
     /**
@@ -1168,6 +1156,42 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Multisig',
       'MultisigCancelled',
       { cancelling: AccountId20; timepoint: PalletMultisigTimepoint; multisig: AccountId20; callHash: FixedBytes<32> }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Parameters`'s events
+   **/
+  parameters: {
+    /**
+     * A Parameter was set.
+     *
+     * Is also emitted when the value was not changed.
+     **/
+    Updated: GenericPalletEvent<
+      Rv,
+      'Parameters',
+      'Updated',
+      {
+        /**
+         * The key that was updated.
+         **/
+        key: MoonbeamRuntimeRuntimeParamsRuntimeParametersKey;
+
+        /**
+         * The old value before this call.
+         **/
+        oldValue?: MoonbeamRuntimeRuntimeParamsRuntimeParametersValue | undefined;
+
+        /**
+         * The new value after this call.
+         **/
+        newValue?: MoonbeamRuntimeRuntimeParamsRuntimeParametersValue | undefined;
+      }
     >;
 
     /**
@@ -1862,11 +1886,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
    **/
   treasury: {
     /**
-     * New proposal.
-     **/
-    Proposed: GenericPalletEvent<Rv, 'Treasury', 'Proposed', { proposalIndex: number }>;
-
-    /**
      * We have ended a spend period and will now allocate funds.
      **/
     Spending: GenericPalletEvent<Rv, 'Treasury', 'Spending', { budgetRemaining: bigint }>;
@@ -1880,11 +1899,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Awarded',
       { proposalIndex: number; award: bigint; account: AccountId20 }
     >;
-
-    /**
-     * A proposal was rejected; funds were slashed.
-     **/
-    Rejected: GenericPalletEvent<Rv, 'Treasury', 'Rejected', { proposalIndex: number; slashed: bigint }>;
 
     /**
      * Some of our funds have been burnt.
@@ -2058,74 +2072,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ExecutedDownward',
       [FixedBytes<32>, StagingXcmV4TraitsOutcome]
     >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
-   * Pallet `DmpQueue`'s events
-   **/
-  dmpQueue: {
-    /**
-     * The export of pages started.
-     **/
-    StartedExport: GenericPalletEvent<Rv, 'DmpQueue', 'StartedExport', null>;
-
-    /**
-     * The export of a page completed.
-     **/
-    Exported: GenericPalletEvent<Rv, 'DmpQueue', 'Exported', { page: number }>;
-
-    /**
-     * The export of a page failed.
-     *
-     * This should never be emitted.
-     **/
-    ExportFailed: GenericPalletEvent<Rv, 'DmpQueue', 'ExportFailed', { page: number }>;
-
-    /**
-     * The export of pages completed.
-     **/
-    CompletedExport: GenericPalletEvent<Rv, 'DmpQueue', 'CompletedExport', null>;
-
-    /**
-     * The export of overweight messages started.
-     **/
-    StartedOverweightExport: GenericPalletEvent<Rv, 'DmpQueue', 'StartedOverweightExport', null>;
-
-    /**
-     * The export of an overweight message completed.
-     **/
-    ExportedOverweight: GenericPalletEvent<Rv, 'DmpQueue', 'ExportedOverweight', { index: bigint }>;
-
-    /**
-     * The export of an overweight message failed.
-     *
-     * This should never be emitted.
-     **/
-    ExportOverweightFailed: GenericPalletEvent<Rv, 'DmpQueue', 'ExportOverweightFailed', { index: bigint }>;
-
-    /**
-     * The export of overweight messages completed.
-     **/
-    CompletedOverweightExport: GenericPalletEvent<Rv, 'DmpQueue', 'CompletedOverweightExport', null>;
-
-    /**
-     * The cleanup of remaining pallet storage started.
-     **/
-    StartedCleanup: GenericPalletEvent<Rv, 'DmpQueue', 'StartedCleanup', null>;
-
-    /**
-     * Some debris was cleaned up.
-     **/
-    CleanedSome: GenericPalletEvent<Rv, 'DmpQueue', 'CleanedSome', { keysRemoved: number }>;
-
-    /**
-     * The cleanup of remaining pallet storage completed.
-     **/
-    Completed: GenericPalletEvent<Rv, 'DmpQueue', 'Completed', { error: boolean }>;
 
     /**
      * Generic pallet event
@@ -2585,6 +2531,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Blocked: GenericPalletEvent<Rv, 'Assets', 'Blocked', { assetId: bigint; who: AccountId20 }>;
 
     /**
+     * Some assets were deposited (e.g. for transaction fees).
+     **/
+    Deposited: GenericPalletEvent<Rv, 'Assets', 'Deposited', { assetId: bigint; who: AccountId20; amount: bigint }>;
+
+    /**
+     * Some assets were withdrawn from the account (e.g. for transaction fees).
+     **/
+    Withdrawn: GenericPalletEvent<Rv, 'Assets', 'Withdrawn', { assetId: bigint; who: AccountId20; amount: bigint }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -2656,25 +2612,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * Removed all information related to an assetId and destroyed asset
      **/
     LocalAssetDestroyed: GenericPalletEvent<Rv, 'AssetManager', 'LocalAssetDestroyed', { assetId: bigint }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
-   * Pallet `XTokens`'s events
-   **/
-  xTokens: {
-    /**
-     * Transferred `Asset` with fee.
-     **/
-    TransferredAssets: GenericPalletEvent<
-      Rv,
-      'XTokens',
-      'TransferredAssets',
-      { sender: AccountId20; assets: StagingXcmV4AssetAssets; fee: StagingXcmV4Asset; dest: StagingXcmV4Location }
-    >;
 
     /**
      * Generic pallet event

@@ -38,10 +38,10 @@ import type {
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
-  PalletBalancesIdAmount,
-  PalletBalancesIdAmount002,
+  FrameSupportTokensMiscIdAmount,
+  FrameSupportTokensMiscIdAmount002,
   PalletTransactionPaymentReleases,
-  PalletParachainStakingParachainBondConfig,
+  PalletParachainStakingInflationDistributionConfig,
   PalletParachainStakingRoundInfo,
   PalletParachainStakingDelegator,
   PalletParachainStakingCandidateMetadata,
@@ -63,6 +63,9 @@ import type {
   PalletIdentityRegistrarInfo,
   PalletIdentityAuthorityProperties,
   PalletMultisigMultisig,
+  PalletMoonbeamLazyMigrationsStateMigrationStatus,
+  MoonbeamRuntimeRuntimeParamsRuntimeParametersValue,
+  MoonbeamRuntimeRuntimeParamsRuntimeParametersKey,
   PalletEvmCodeMetadata,
   EthereumTransactionTransactionV2,
   FpRpcTransactionStatus,
@@ -81,12 +84,12 @@ import type {
   PalletCrowdloanRewardsRewardInfo,
   CumulusPalletXcmpQueueOutboundChannelDetails,
   CumulusPalletXcmpQueueQueueConfigData,
-  CumulusPalletDmpQueueMigrationState,
   PalletXcmQueryStatus,
   XcmVersionedLocation,
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
+  StagingXcmV4Xcm,
   PalletAssetsAssetDetails,
   PalletAssetsAssetAccount,
   PalletAssetsApproval,
@@ -636,17 +639,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Holds on account balances.
      *
      * @param {AccountId20Like} arg
-     * @param {Callback<Array<PalletBalancesIdAmount>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
      **/
-    holds: GenericStorageQuery<Rv, (arg: AccountId20Like) => Array<PalletBalancesIdAmount>, AccountId20>;
+    holds: GenericStorageQuery<Rv, (arg: AccountId20Like) => Array<FrameSupportTokensMiscIdAmount>, AccountId20>;
 
     /**
      * Freeze locks on account balances.
      *
      * @param {AccountId20Like} arg
-     * @param {Callback<Array<PalletBalancesIdAmount002>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount002>> =} callback
      **/
-    freezes: GenericStorageQuery<Rv, (arg: AccountId20Like) => Array<PalletBalancesIdAmount002>, AccountId20>;
+    freezes: GenericStorageQuery<Rv, (arg: AccountId20Like) => Array<FrameSupportTokensMiscIdAmount002>, AccountId20>;
 
     /**
      * Generic pallet storage query
@@ -693,11 +696,14 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     totalSelected: GenericStorageQuery<Rv, () => number>;
 
     /**
-     * Parachain bond config info { account, percent_of_inflation }
+     * Inflation distribution configuration, including accounts that should receive inflation
+     * before it is distributed to collators and delegators.
      *
-     * @param {Callback<PalletParachainStakingParachainBondConfig> =} callback
+     * The sum of the distribution percents must be less than or equal to 100.
+     *
+     * @param {Callback<PalletParachainStakingInflationDistributionConfig> =} callback
      **/
-    parachainBondInfo: GenericStorageQuery<Rv, () => PalletParachainStakingParachainBondConfig>;
+    inflationDistributionInfo: GenericStorageQuery<Rv, () => PalletParachainStakingInflationDistributionConfig>;
 
     /**
      * Current round index and next round scheduled transition
@@ -1240,6 +1246,38 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<number> =} callback
      **/
     suicidedContractsRemoved: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     *
+     * @param {Callback<[PalletMoonbeamLazyMigrationsStateMigrationStatus, bigint]> =} callback
+     **/
+    stateMigrationStatusValue: GenericStorageQuery<
+      Rv,
+      () => [PalletMoonbeamLazyMigrationsStateMigrationStatus, bigint]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Parameters`'s storage queries
+   **/
+  parameters: {
+    /**
+     * Stored parameters.
+     *
+     * @param {MoonbeamRuntimeRuntimeParamsRuntimeParametersKey} arg
+     * @param {Callback<MoonbeamRuntimeRuntimeParamsRuntimeParametersValue | undefined> =} callback
+     **/
+    parameters: GenericStorageQuery<
+      Rv,
+      (
+        arg: MoonbeamRuntimeRuntimeParamsRuntimeParametersKey,
+      ) => MoonbeamRuntimeRuntimeParamsRuntimeParametersValue | undefined,
+      MoonbeamRuntimeRuntimeParamsRuntimeParametersKey
+    >;
 
     /**
      * Generic pallet storage query
@@ -1846,22 +1884,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
-   * Pallet `DmpQueue`'s storage queries
-   **/
-  dmpQueue: {
-    /**
-     * The migration state of this pallet.
-     *
-     * @param {Callback<CumulusPalletDmpQueueMigrationState> =} callback
-     **/
-    migrationStatus: GenericStorageQuery<Rv, () => CumulusPalletDmpQueueMigrationState>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
    * Pallet `PolkadotXcm`'s storage queries
    **/
   polkadotXcm: {
@@ -1984,6 +2006,31 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     xcmExecutionSuspended: GenericStorageQuery<Rv, () => boolean>;
 
     /**
+     * Whether or not incoming XCMs (both executed locally and received) should be recorded.
+     * Only one XCM program will be recorded at a time.
+     * This is meant to be used in runtime APIs, and it's advised it stays false
+     * for all other use cases, so as to not degrade regular performance.
+     *
+     * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
+     * implementation in the XCM executor configuration.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    shouldRecordXcm: GenericStorageQuery<Rv, () => boolean>;
+
+    /**
+     * If [`ShouldRecordXcm`] is set to true, then the last XCM program executed locally
+     * will be stored here.
+     * Runtime APIs can fetch the XCM that was executed by accessing this value.
+     *
+     * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
+     * implementation in the XCM executor configuration.
+     *
+     * @param {Callback<StagingXcmV4Xcm | undefined> =} callback
+     **/
+    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV4Xcm | undefined>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -2035,6 +2082,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     metadata: GenericStorageQuery<Rv, (arg: bigint) => PalletAssetsAssetMetadata, bigint>;
 
     /**
+     * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
+     * item has no effect.
+     *
+     * This can be useful for setting up constraints for IDs of the new assets. For example, by
+     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
+     * auto-increment model can be applied to all new asset IDs.
+     *
+     * The initial next asset ID can be set using the [`GenesisConfig`] or the
+     * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
+     *
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    nextAssetId: GenericStorageQuery<Rv, () => bigint | undefined>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -2067,15 +2129,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       MoonbeamRuntimeXcmConfigAssetType
     >;
 
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
-   * Pallet `XTokens`'s storage queries
-   **/
-  xTokens: {
     /**
      * Generic pallet storage query
      **/

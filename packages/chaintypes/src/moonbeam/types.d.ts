@@ -9,12 +9,12 @@ import type {
   FixedBytes,
   Percent,
   Perbill,
+  FixedArray,
   Result,
   Bytes,
   H160,
   BytesLike,
   AccountId20Like,
-  FixedArray,
   Data,
   U256,
   FixedI64,
@@ -66,6 +66,7 @@ export type MoonbeamRuntimeRuntimeEvent =
   | { pallet: 'Identity'; palletEvent: PalletIdentityEvent }
   | { pallet: 'Migrations'; palletEvent: PalletMigrationsEvent }
   | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
+  | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
   | { pallet: 'Evm'; palletEvent: PalletEvmEvent }
   | { pallet: 'Ethereum'; palletEvent: PalletEthereumEvent }
   | { pallet: 'Scheduler'; palletEvent: PalletSchedulerEvent }
@@ -79,11 +80,9 @@ export type MoonbeamRuntimeRuntimeEvent =
   | { pallet: 'CrowdloanRewards'; palletEvent: PalletCrowdloanRewardsEvent }
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
   | { pallet: 'CumulusXcm'; palletEvent: CumulusPalletXcmEvent }
-  | { pallet: 'DmpQueue'; palletEvent: CumulusPalletDmpQueueEvent }
   | { pallet: 'PolkadotXcm'; palletEvent: PalletXcmEvent }
   | { pallet: 'Assets'; palletEvent: PalletAssetsEvent }
   | { pallet: 'AssetManager'; palletEvent: PalletAssetManagerEvent }
-  | { pallet: 'XTokens'; palletEvent: OrmlXtokensModuleEvent }
   | { pallet: 'XcmTransactor'; palletEvent: PalletXcmTransactorEvent }
   | { pallet: 'EthereumXcm'; palletEvent: PalletEthereumXcmEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
@@ -426,15 +425,14 @@ export type PalletParachainStakingEvent =
   /**
    * Transferred to account which holds funds reserved for parachain bond.
    **/
-  | { name: 'ReservedForParachainBond'; data: { account: AccountId20; value: bigint } }
-  /**
-   * Account (re)set for parachain bond treasury.
-   **/
-  | { name: 'ParachainBondAccountSet'; data: { old: AccountId20; new: AccountId20 } }
-  /**
-   * Percent of inflation reserved for parachain bond (re)set.
-   **/
-  | { name: 'ParachainBondReservePercentSet'; data: { old: Percent; new: Percent } }
+  | { name: 'InflationDistributed'; data: { index: number; account: AccountId20; value: bigint } }
+  | {
+      name: 'InflationDistributionConfigUpdated';
+      data: {
+        old: PalletParachainStakingInflationDistributionConfig;
+        new: PalletParachainStakingInflationDistributionConfig;
+      };
+    }
   /**
    * Annual inflation input (first 3) was used to derive new per-round inflation (last 3)
    **/
@@ -497,6 +495,13 @@ export type PalletParachainStakingDelegationRequestsDelegationAction =
 export type PalletParachainStakingDelegatorAdded =
   | { type: 'AddedToTop'; value: { newTotal: bigint } }
   | { type: 'AddedToBottom' };
+
+export type PalletParachainStakingInflationDistributionConfig = FixedArray<
+  PalletParachainStakingInflationDistributionAccount,
+  2
+>;
+
+export type PalletParachainStakingInflationDistributionAccount = { account: AccountId20; percent: Percent };
 
 /**
  * The `Event` enum of this pallet
@@ -827,6 +832,69 @@ export type PalletMultisigEvent =
     };
 
 export type PalletMultisigTimepoint = { height: number; index: number };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletParametersEvent =
+  /**
+   * A Parameter was set.
+   *
+   * Is also emitted when the value was not changed.
+   **/
+  {
+    name: 'Updated';
+    data: {
+      /**
+       * The key that was updated.
+       **/
+      key: MoonbeamRuntimeRuntimeParamsRuntimeParametersKey;
+
+      /**
+       * The old value before this call.
+       **/
+      oldValue?: MoonbeamRuntimeRuntimeParamsRuntimeParametersValue | undefined;
+
+      /**
+       * The new value after this call.
+       **/
+      newValue?: MoonbeamRuntimeRuntimeParamsRuntimeParametersValue | undefined;
+    };
+  };
+
+export type MoonbeamRuntimeRuntimeParamsRuntimeParametersKey =
+  | { type: 'RuntimeConfig'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParametersKey }
+  | { type: 'PalletRandomness'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParametersKey };
+
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParametersKey = {
+  type: 'FeesTreasuryProportion';
+  value: MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigFeesTreasuryProportion;
+};
+
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigFeesTreasuryProportion = {};
+
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParametersKey = {
+  type: 'Deposit';
+  value: MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessDeposit;
+};
+
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessDeposit = {};
+
+export type MoonbeamRuntimeRuntimeParamsRuntimeParametersValue =
+  | { type: 'RuntimeConfig'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParametersValue }
+  | { type: 'PalletRandomness'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParametersValue };
+
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParametersValue = {
+  type: 'FeesTreasuryProportion';
+  value: Perbill;
+};
+
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParametersValue = {
+  type: 'Deposit';
+  value: MoonbeamRuntimeCommonBoundedU128;
+};
+
+export type MoonbeamRuntimeCommonBoundedU128 = bigint;
 
 /**
  * The `Event` enum of this pallet
@@ -1289,6 +1357,7 @@ export type MoonbeamRuntimeRuntimeCall =
   | { pallet: 'Identity'; palletCall: PalletIdentityCall }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
   | { pallet: 'MoonbeamLazyMigrations'; palletCall: PalletMoonbeamLazyMigrationsCall }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCall }
   | { pallet: 'Evm'; palletCall: PalletEvmCall }
   | { pallet: 'Ethereum'; palletCall: PalletEthereumCall }
   | { pallet: 'Scheduler'; palletCall: PalletSchedulerCall }
@@ -1300,11 +1369,9 @@ export type MoonbeamRuntimeRuntimeCall =
   | { pallet: 'OpenTechCommitteeCollective'; palletCall: PalletCollectiveCall }
   | { pallet: 'Treasury'; palletCall: PalletTreasuryCall }
   | { pallet: 'CrowdloanRewards'; palletCall: PalletCrowdloanRewardsCall }
-  | { pallet: 'DmpQueue'; palletCall: CumulusPalletDmpQueueCall }
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCall }
   | { pallet: 'Assets'; palletCall: PalletAssetsCall }
   | { pallet: 'AssetManager'; palletCall: PalletAssetManagerCall }
-  | { pallet: 'XTokens'; palletCall: OrmlXtokensModuleCall }
   | { pallet: 'XcmTransactor'; palletCall: PalletXcmTransactorCall }
   | { pallet: 'EthereumXcm'; palletCall: PalletEthereumXcmCall }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
@@ -1330,6 +1397,7 @@ export type MoonbeamRuntimeRuntimeCallLike =
   | { pallet: 'Identity'; palletCall: PalletIdentityCallLike }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
   | { pallet: 'MoonbeamLazyMigrations'; palletCall: PalletMoonbeamLazyMigrationsCallLike }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCallLike }
   | { pallet: 'Evm'; palletCall: PalletEvmCallLike }
   | { pallet: 'Ethereum'; palletCall: PalletEthereumCallLike }
   | { pallet: 'Scheduler'; palletCall: PalletSchedulerCallLike }
@@ -1341,11 +1409,9 @@ export type MoonbeamRuntimeRuntimeCallLike =
   | { pallet: 'OpenTechCommitteeCollective'; palletCall: PalletCollectiveCallLike }
   | { pallet: 'Treasury'; palletCall: PalletTreasuryCallLike }
   | { pallet: 'CrowdloanRewards'; palletCall: PalletCrowdloanRewardsCallLike }
-  | { pallet: 'DmpQueue'; palletCall: CumulusPalletDmpQueueCallLike }
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCallLike }
   | { pallet: 'Assets'; palletCall: PalletAssetsCallLike }
   | { pallet: 'AssetManager'; palletCall: PalletAssetManagerCallLike }
-  | { pallet: 'XTokens'; palletCall: OrmlXtokensModuleCallLike }
   | { pallet: 'XcmTransactor'; palletCall: PalletXcmTransactorCallLike }
   | { pallet: 'EthereumXcm'; palletCall: PalletEthereumXcmCallLike }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
@@ -1746,7 +1812,17 @@ export type PalletBalancesCall =
    *
    * # Example
    **/
-  | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } };
+  | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } }
+  /**
+   * Burn the specified liquid free balance from the origin account.
+   *
+   * If the origin's account ends up below the existential deposit as a result
+   * of the burn and `keep_alive` is false, the account will be reaped.
+   *
+   * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+   * this `burn` operation will reduce total issuance by the amount _burned_.
+   **/
+  | { name: 'Burn'; params: { value: bigint; keepAlive: boolean } };
 
 export type PalletBalancesCallLike =
   /**
@@ -1821,7 +1897,17 @@ export type PalletBalancesCallLike =
    *
    * # Example
    **/
-  | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } };
+  | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } }
+  /**
+   * Burn the specified liquid free balance from the origin account.
+   *
+   * If the origin's account ends up below the existential deposit as a result
+   * of the burn and `keep_alive` is false, the account will be reaped.
+   *
+   * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+   * this `burn` operation will reduce total issuance by the amount _burned_.
+   **/
+  | { name: 'Burn'; params: { value: bigint; keepAlive: boolean } };
 
 export type PalletBalancesAdjustmentDirection = 'Increase' | 'Decrease';
 
@@ -1839,10 +1925,14 @@ export type PalletParachainStakingCall =
    **/
   | { name: 'SetInflation'; params: { schedule: { min: Perbill; ideal: Perbill; max: Perbill } } }
   /**
+   * Deprecated: please use `set_inflation_distribution_config` instead.
+   *
    * Set the account that will hold funds set aside for parachain bond
    **/
   | { name: 'SetParachainBondAccount'; params: { new: AccountId20 } }
   /**
+   * Deprecated: please use `set_inflation_distribution_config` instead.
+   *
    * Set the percent of inflation set aside for parachain bond
    **/
   | { name: 'SetParachainBondReservePercent'; params: { new: Percent } }
@@ -1995,7 +2085,11 @@ export type PalletParachainStakingCall =
    * Force join the set of collator candidates.
    * It will skip the minimum required bond check.
    **/
-  | { name: 'ForceJoinCandidates'; params: { account: AccountId20; bond: bigint; candidateCount: number } };
+  | { name: 'ForceJoinCandidates'; params: { account: AccountId20; bond: bigint; candidateCount: number } }
+  /**
+   * Set the inflation distribution configuration.
+   **/
+  | { name: 'SetInflationDistributionConfig'; params: { new: PalletParachainStakingInflationDistributionConfig } };
 
 export type PalletParachainStakingCallLike =
   /**
@@ -2008,10 +2102,14 @@ export type PalletParachainStakingCallLike =
    **/
   | { name: 'SetInflation'; params: { schedule: { min: Perbill; ideal: Perbill; max: Perbill } } }
   /**
+   * Deprecated: please use `set_inflation_distribution_config` instead.
+   *
    * Set the account that will hold funds set aside for parachain bond
    **/
   | { name: 'SetParachainBondAccount'; params: { new: AccountId20Like } }
   /**
+   * Deprecated: please use `set_inflation_distribution_config` instead.
+   *
    * Set the percent of inflation set aside for parachain bond
    **/
   | { name: 'SetParachainBondReservePercent'; params: { new: Percent } }
@@ -2164,7 +2262,11 @@ export type PalletParachainStakingCallLike =
    * Force join the set of collator candidates.
    * It will skip the minimum required bond check.
    **/
-  | { name: 'ForceJoinCandidates'; params: { account: AccountId20Like; bond: bigint; candidateCount: number } };
+  | { name: 'ForceJoinCandidates'; params: { account: AccountId20Like; bond: bigint; candidateCount: number } }
+  /**
+   * Set the inflation distribution configuration.
+   **/
+  | { name: 'SetInflationDistributionConfig'; params: { new: PalletParachainStakingInflationDistributionConfig } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3798,6 +3900,44 @@ export type PalletMoonbeamLazyMigrationsCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletParametersCall =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: MoonbeamRuntimeRuntimeParamsRuntimeParameters } };
+
+export type PalletParametersCallLike =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: MoonbeamRuntimeRuntimeParamsRuntimeParameters } };
+
+export type MoonbeamRuntimeRuntimeParamsRuntimeParameters =
+  | { type: 'RuntimeConfig'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParameters }
+  | { type: 'PalletRandomness'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParameters };
+
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParameters = {
+  type: 'FeesTreasuryProportion';
+  value: [MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigFeesTreasuryProportion, Perbill | undefined];
+};
+
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParameters = {
+  type: 'Deposit';
+  value: [
+    MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessDeposit,
+    MoonbeamRuntimeCommonBoundedU128 | undefined,
+  ];
+};
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletEvmCall =
   /**
    * Withdraw balance from EVM into currency/balances pallet.
@@ -4984,63 +5124,6 @@ export type PalletCollectiveCallLike =
  **/
 export type PalletTreasuryCall =
   /**
-   * Put forward a suggestion for spending.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be signed.
-   *
-   * ## Details
-   * A deposit proportional to the value is reserved and slashed if the proposal is rejected.
-   * It is returned once the proposal is awarded.
-   *
-   * ### Complexity
-   * - O(1)
-   *
-   * ## Events
-   *
-   * Emits [`Event::Proposed`] if successful.
-   **/
-  | { name: 'ProposeSpend'; params: { value: bigint; beneficiary: AccountId20 } }
-  /**
-   * Reject a proposed spend.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::RejectOrigin`].
-   *
-   * ## Details
-   * The original deposit will be slashed.
-   *
-   * ### Complexity
-   * - O(1)
-   *
-   * ## Events
-   *
-   * Emits [`Event::Rejected`] if successful.
-   **/
-  | { name: 'RejectProposal'; params: { proposalId: number } }
-  /**
-   * Approve a proposal.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::ApproveOrigin`].
-   *
-   * ## Details
-   *
-   * At a later time, the proposal will be allocated to the beneficiary and the original
-   * deposit will be returned.
-   *
-   * ### Complexity
-   * - O(1).
-   *
-   * ## Events
-   *
-   * No events are emitted from this dispatch.
-   **/
-  | { name: 'ApproveProposal'; params: { proposalId: number } }
-  /**
    * Propose and approve a spend of treasury funds.
    *
    * ## Dispatch Origin
@@ -5121,7 +5204,7 @@ export type PalletTreasuryCall =
    *
    * ## Dispatch Origin
    *
-   * Must be signed.
+   * Must be signed
    *
    * ## Details
    *
@@ -5181,63 +5264,6 @@ export type PalletTreasuryCall =
   | { name: 'VoidSpend'; params: { index: number } };
 
 export type PalletTreasuryCallLike =
-  /**
-   * Put forward a suggestion for spending.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be signed.
-   *
-   * ## Details
-   * A deposit proportional to the value is reserved and slashed if the proposal is rejected.
-   * It is returned once the proposal is awarded.
-   *
-   * ### Complexity
-   * - O(1)
-   *
-   * ## Events
-   *
-   * Emits [`Event::Proposed`] if successful.
-   **/
-  | { name: 'ProposeSpend'; params: { value: bigint; beneficiary: AccountId20Like } }
-  /**
-   * Reject a proposed spend.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::RejectOrigin`].
-   *
-   * ## Details
-   * The original deposit will be slashed.
-   *
-   * ### Complexity
-   * - O(1)
-   *
-   * ## Events
-   *
-   * Emits [`Event::Rejected`] if successful.
-   **/
-  | { name: 'RejectProposal'; params: { proposalId: number } }
-  /**
-   * Approve a proposal.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::ApproveOrigin`].
-   *
-   * ## Details
-   *
-   * At a later time, the proposal will be allocated to the beneficiary and the original
-   * deposit will be returned.
-   *
-   * ### Complexity
-   * - O(1).
-   *
-   * ## Events
-   *
-   * No events are emitted from this dispatch.
-   **/
-  | { name: 'ApproveProposal'; params: { proposalId: number } }
   /**
    * Propose and approve a spend of treasury funds.
    *
@@ -5319,7 +5345,7 @@ export type PalletTreasuryCallLike =
    *
    * ## Dispatch Origin
    *
-   * Must be signed.
+   * Must be signed
    *
    * ## Details
    *
@@ -5483,13 +5509,6 @@ export type SpRuntimeMultiSignature =
   | { type: 'Ed25519'; value: FixedBytes<64> }
   | { type: 'Sr25519'; value: FixedBytes<64> }
   | { type: 'Ecdsa'; value: FixedBytes<65> };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type CumulusPalletDmpQueueCall = null;
-
-export type CumulusPalletDmpQueueCallLike = null;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5787,7 +5806,7 @@ export type PalletXcmCall =
    * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
    * fee on the `dest` (and possibly reserve) chains.
    * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
-   * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+   * - `remote_fees_id`: One of the included `assets` to be used to pay fees.
    * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
    * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
    * transfer, which also determines what happens to the assets on the destination chain.
@@ -6099,7 +6118,7 @@ export type PalletXcmCallLike =
    * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
    * fee on the `dest` (and possibly reserve) chains.
    * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
-   * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+   * - `remote_fees_id`: One of the included `assets` to be used to pay fees.
    * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
    * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
    * transfer, which also determines what happens to the assets on the destination chain.
@@ -6411,7 +6430,7 @@ export type XcmV3Instruction =
     }
   | {
       type: 'Transact';
-      value: { originKind: XcmV2OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
+      value: { originKind: XcmV3OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
     }
   | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
   | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
@@ -6573,6 +6592,8 @@ export type XcmV3MaybeErrorCode =
   | { type: 'Error'; value: Bytes }
   | { type: 'TruncatedError'; value: Bytes };
 
+export type XcmV3OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
+
 export type XcmV3QueryResponseInfo = {
   destination: StagingXcmV3MultilocationMultiLocation;
   queryId: bigint;
@@ -6615,7 +6636,7 @@ export type StagingXcmV4Instruction =
     }
   | {
       type: 'Transact';
-      value: { originKind: XcmV2OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
+      value: { originKind: XcmV3OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
     }
   | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
   | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
@@ -6769,7 +6790,7 @@ export type PalletAssetsCall =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -6790,7 +6811,7 @@ export type PalletAssetsCall =
    * Unlike `create`, no funds are reserved.
    *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -7308,7 +7329,7 @@ export type PalletAssetsCallLike =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -7329,7 +7350,7 @@ export type PalletAssetsCallLike =
    * Unlike `create`, no funds are reserved.
    *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -7924,339 +7945,6 @@ export type MoonbeamRuntimeAssetConfigAssetRegistrarMetadata = {
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type OrmlXtokensModuleCall =
-  /**
-   * Transfer native currencies.
-   *
-   * `dest_weight_limit` is the weight for XCM execution on the dest
-   * chain, and it would be charged from the transferred assets. If set
-   * below requirements, the execution may fail and assets wouldn't be
-   * received.
-   *
-   * It's a no-op if any error on local XCM execution or message sending.
-   * Note sending assets out per se doesn't guarantee they would be
-   * received. Receiving depends on if the XCM message could be delivered
-   * by the network, and if the receiving chain would handle
-   * messages correctly.
-   **/
-  | {
-      name: 'Transfer';
-      params: {
-        currencyId: MoonbeamRuntimeXcmConfigCurrencyId;
-        amount: bigint;
-        dest: XcmVersionedLocation;
-        destWeightLimit: XcmV3WeightLimit;
-      };
-    }
-  /**
-   * Transfer `Asset`.
-   *
-   * `dest_weight_limit` is the weight for XCM execution on the dest
-   * chain, and it would be charged from the transferred assets. If set
-   * below requirements, the execution may fail and assets wouldn't be
-   * received.
-   *
-   * It's a no-op if any error on local XCM execution or message sending.
-   * Note sending assets out per se doesn't guarantee they would be
-   * received. Receiving depends on if the XCM message could be delivered
-   * by the network, and if the receiving chain would handle
-   * messages correctly.
-   **/
-  | {
-      name: 'TransferMultiasset';
-      params: { asset: XcmVersionedAsset; dest: XcmVersionedLocation; destWeightLimit: XcmV3WeightLimit };
-    }
-  /**
-   * Transfer native currencies specifying the fee and amount as
-   * separate.
-   *
-   * `dest_weight_limit` is the weight for XCM execution on the dest
-   * chain, and it would be charged from the transferred assets. If set
-   * below requirements, the execution may fail and assets wouldn't be
-   * received.
-   *
-   * `fee` is the amount to be spent to pay for execution in destination
-   * chain. Both fee and amount will be subtracted form the callers
-   * balance.
-   *
-   * If `fee` is not high enough to cover for the execution costs in the
-   * destination chain, then the assets will be trapped in the
-   * destination chain
-   *
-   * It's a no-op if any error on local XCM execution or message sending.
-   * Note sending assets out per se doesn't guarantee they would be
-   * received. Receiving depends on if the XCM message could be delivered
-   * by the network, and if the receiving chain would handle
-   * messages correctly.
-   **/
-  | {
-      name: 'TransferWithFee';
-      params: {
-        currencyId: MoonbeamRuntimeXcmConfigCurrencyId;
-        amount: bigint;
-        fee: bigint;
-        dest: XcmVersionedLocation;
-        destWeightLimit: XcmV3WeightLimit;
-      };
-    }
-  /**
-   * Transfer `Asset` specifying the fee and amount as separate.
-   *
-   * `dest_weight_limit` is the weight for XCM execution on the dest
-   * chain, and it would be charged from the transferred assets. If set
-   * below requirements, the execution may fail and assets wouldn't be
-   * received.
-   *
-   * `fee` is the Asset to be spent to pay for execution in
-   * destination chain. Both fee and amount will be subtracted form the
-   * callers balance For now we only accept fee and asset having the same
-   * `Location` id.
-   *
-   * If `fee` is not high enough to cover for the execution costs in the
-   * destination chain, then the assets will be trapped in the
-   * destination chain
-   *
-   * It's a no-op if any error on local XCM execution or message sending.
-   * Note sending assets out per se doesn't guarantee they would be
-   * received. Receiving depends on if the XCM message could be delivered
-   * by the network, and if the receiving chain would handle
-   * messages correctly.
-   **/
-  | {
-      name: 'TransferMultiassetWithFee';
-      params: {
-        asset: XcmVersionedAsset;
-        fee: XcmVersionedAsset;
-        dest: XcmVersionedLocation;
-        destWeightLimit: XcmV3WeightLimit;
-      };
-    }
-  /**
-   * Transfer several currencies specifying the item to be used as fee
-   *
-   * `dest_weight_limit` is the weight for XCM execution on the dest
-   * chain, and it would be charged from the transferred assets. If set
-   * below requirements, the execution may fail and assets wouldn't be
-   * received.
-   *
-   * `fee_item` is index of the currencies tuple that we want to use for
-   * payment
-   *
-   * It's a no-op if any error on local XCM execution or message sending.
-   * Note sending assets out per se doesn't guarantee they would be
-   * received. Receiving depends on if the XCM message could be delivered
-   * by the network, and if the receiving chain would handle
-   * messages correctly.
-   **/
-  | {
-      name: 'TransferMulticurrencies';
-      params: {
-        currencies: Array<[MoonbeamRuntimeXcmConfigCurrencyId, bigint]>;
-        feeItem: number;
-        dest: XcmVersionedLocation;
-        destWeightLimit: XcmV3WeightLimit;
-      };
-    }
-  /**
-   * Transfer several `Asset` specifying the item to be used as fee
-   *
-   * `dest_weight_limit` is the weight for XCM execution on the dest
-   * chain, and it would be charged from the transferred assets. If set
-   * below requirements, the execution may fail and assets wouldn't be
-   * received.
-   *
-   * `fee_item` is index of the Assets that we want to use for
-   * payment
-   *
-   * It's a no-op if any error on local XCM execution or message sending.
-   * Note sending assets out per se doesn't guarantee they would be
-   * received. Receiving depends on if the XCM message could be delivered
-   * by the network, and if the receiving chain would handle
-   * messages correctly.
-   **/
-  | {
-      name: 'TransferMultiassets';
-      params: {
-        assets: XcmVersionedAssets;
-        feeItem: number;
-        dest: XcmVersionedLocation;
-        destWeightLimit: XcmV3WeightLimit;
-      };
-    };
-
-export type OrmlXtokensModuleCallLike =
-  /**
-   * Transfer native currencies.
-   *
-   * `dest_weight_limit` is the weight for XCM execution on the dest
-   * chain, and it would be charged from the transferred assets. If set
-   * below requirements, the execution may fail and assets wouldn't be
-   * received.
-   *
-   * It's a no-op if any error on local XCM execution or message sending.
-   * Note sending assets out per se doesn't guarantee they would be
-   * received. Receiving depends on if the XCM message could be delivered
-   * by the network, and if the receiving chain would handle
-   * messages correctly.
-   **/
-  | {
-      name: 'Transfer';
-      params: {
-        currencyId: MoonbeamRuntimeXcmConfigCurrencyId;
-        amount: bigint;
-        dest: XcmVersionedLocation;
-        destWeightLimit: XcmV3WeightLimit;
-      };
-    }
-  /**
-   * Transfer `Asset`.
-   *
-   * `dest_weight_limit` is the weight for XCM execution on the dest
-   * chain, and it would be charged from the transferred assets. If set
-   * below requirements, the execution may fail and assets wouldn't be
-   * received.
-   *
-   * It's a no-op if any error on local XCM execution or message sending.
-   * Note sending assets out per se doesn't guarantee they would be
-   * received. Receiving depends on if the XCM message could be delivered
-   * by the network, and if the receiving chain would handle
-   * messages correctly.
-   **/
-  | {
-      name: 'TransferMultiasset';
-      params: { asset: XcmVersionedAsset; dest: XcmVersionedLocation; destWeightLimit: XcmV3WeightLimit };
-    }
-  /**
-   * Transfer native currencies specifying the fee and amount as
-   * separate.
-   *
-   * `dest_weight_limit` is the weight for XCM execution on the dest
-   * chain, and it would be charged from the transferred assets. If set
-   * below requirements, the execution may fail and assets wouldn't be
-   * received.
-   *
-   * `fee` is the amount to be spent to pay for execution in destination
-   * chain. Both fee and amount will be subtracted form the callers
-   * balance.
-   *
-   * If `fee` is not high enough to cover for the execution costs in the
-   * destination chain, then the assets will be trapped in the
-   * destination chain
-   *
-   * It's a no-op if any error on local XCM execution or message sending.
-   * Note sending assets out per se doesn't guarantee they would be
-   * received. Receiving depends on if the XCM message could be delivered
-   * by the network, and if the receiving chain would handle
-   * messages correctly.
-   **/
-  | {
-      name: 'TransferWithFee';
-      params: {
-        currencyId: MoonbeamRuntimeXcmConfigCurrencyId;
-        amount: bigint;
-        fee: bigint;
-        dest: XcmVersionedLocation;
-        destWeightLimit: XcmV3WeightLimit;
-      };
-    }
-  /**
-   * Transfer `Asset` specifying the fee and amount as separate.
-   *
-   * `dest_weight_limit` is the weight for XCM execution on the dest
-   * chain, and it would be charged from the transferred assets. If set
-   * below requirements, the execution may fail and assets wouldn't be
-   * received.
-   *
-   * `fee` is the Asset to be spent to pay for execution in
-   * destination chain. Both fee and amount will be subtracted form the
-   * callers balance For now we only accept fee and asset having the same
-   * `Location` id.
-   *
-   * If `fee` is not high enough to cover for the execution costs in the
-   * destination chain, then the assets will be trapped in the
-   * destination chain
-   *
-   * It's a no-op if any error on local XCM execution or message sending.
-   * Note sending assets out per se doesn't guarantee they would be
-   * received. Receiving depends on if the XCM message could be delivered
-   * by the network, and if the receiving chain would handle
-   * messages correctly.
-   **/
-  | {
-      name: 'TransferMultiassetWithFee';
-      params: {
-        asset: XcmVersionedAsset;
-        fee: XcmVersionedAsset;
-        dest: XcmVersionedLocation;
-        destWeightLimit: XcmV3WeightLimit;
-      };
-    }
-  /**
-   * Transfer several currencies specifying the item to be used as fee
-   *
-   * `dest_weight_limit` is the weight for XCM execution on the dest
-   * chain, and it would be charged from the transferred assets. If set
-   * below requirements, the execution may fail and assets wouldn't be
-   * received.
-   *
-   * `fee_item` is index of the currencies tuple that we want to use for
-   * payment
-   *
-   * It's a no-op if any error on local XCM execution or message sending.
-   * Note sending assets out per se doesn't guarantee they would be
-   * received. Receiving depends on if the XCM message could be delivered
-   * by the network, and if the receiving chain would handle
-   * messages correctly.
-   **/
-  | {
-      name: 'TransferMulticurrencies';
-      params: {
-        currencies: Array<[MoonbeamRuntimeXcmConfigCurrencyId, bigint]>;
-        feeItem: number;
-        dest: XcmVersionedLocation;
-        destWeightLimit: XcmV3WeightLimit;
-      };
-    }
-  /**
-   * Transfer several `Asset` specifying the item to be used as fee
-   *
-   * `dest_weight_limit` is the weight for XCM execution on the dest
-   * chain, and it would be charged from the transferred assets. If set
-   * below requirements, the execution may fail and assets wouldn't be
-   * received.
-   *
-   * `fee_item` is index of the Assets that we want to use for
-   * payment
-   *
-   * It's a no-op if any error on local XCM execution or message sending.
-   * Note sending assets out per se doesn't guarantee they would be
-   * received. Receiving depends on if the XCM message could be delivered
-   * by the network, and if the receiving chain would handle
-   * messages correctly.
-   **/
-  | {
-      name: 'TransferMultiassets';
-      params: {
-        assets: XcmVersionedAssets;
-        feeItem: number;
-        dest: XcmVersionedLocation;
-        destWeightLimit: XcmV3WeightLimit;
-      };
-    };
-
-export type MoonbeamRuntimeXcmConfigCurrencyId =
-  | { type: 'SelfReserve' }
-  | { type: 'ForeignAsset'; value: bigint }
-  | { type: 'Erc20'; value: { contractAddress: H160 } };
-
-export type XcmVersionedAsset =
-  | { type: 'V2'; value: XcmV2MultiassetMultiAsset }
-  | { type: 'V3'; value: XcmV3MultiassetMultiAsset }
-  | { type: 'V4'; value: StagingXcmV4Asset };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
 export type PalletXcmTransactorCall =
   /**
    * Register a derivative index for an account id. Dispatchable by
@@ -8305,7 +7993,7 @@ export type PalletXcmTransactorCall =
         feePayer?: AccountId20 | undefined;
         fee: PalletXcmTransactorCurrencyPayment;
         call: Bytes;
-        originKind: XcmV2OriginKind;
+        originKind: XcmV3OriginKind;
         weightInfo: PalletXcmTransactorTransactWeights;
         refund: boolean;
       };
@@ -8411,7 +8099,7 @@ export type PalletXcmTransactorCallLike =
         feePayer?: AccountId20Like | undefined;
         fee: PalletXcmTransactorCurrencyPayment;
         call: BytesLike;
-        originKind: XcmV2OriginKind;
+        originKind: XcmV3OriginKind;
         weightInfo: PalletXcmTransactorTransactWeights;
         refund: boolean;
       };
@@ -8475,6 +8163,11 @@ export type PalletXcmTransactorCurrencyPayment = {
   currency: PalletXcmTransactorCurrency;
   feeAmount?: bigint | undefined;
 };
+
+export type MoonbeamRuntimeXcmConfigCurrencyId =
+  | { type: 'SelfReserve' }
+  | { type: 'ForeignAsset'; value: bigint }
+  | { type: 'Erc20'; value: { contractAddress: H160 } };
 
 export type PalletXcmTransactorCurrency =
   | { type: 'AsCurrencyId'; value: MoonbeamRuntimeXcmConfigCurrencyId }
@@ -8861,10 +8554,6 @@ export type PalletCollectiveEvent =
  **/
 export type PalletTreasuryEvent =
   /**
-   * New proposal.
-   **/
-  | { name: 'Proposed'; data: { proposalIndex: number } }
-  /**
    * We have ended a spend period and will now allocate funds.
    **/
   | { name: 'Spending'; data: { budgetRemaining: bigint } }
@@ -8872,10 +8561,6 @@ export type PalletTreasuryEvent =
    * Some funds have been allocated.
    **/
   | { name: 'Awarded'; data: { proposalIndex: number; award: bigint; account: AccountId20 } }
-  /**
-   * A proposal was rejected; funds were slashed.
-   **/
-  | { name: 'Rejected'; data: { proposalIndex: number; slashed: bigint } }
   /**
    * Some of our funds have been burnt.
    **/
@@ -8992,59 +8677,6 @@ export type StagingXcmV4TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
   | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV3TraitsError } }
   | { type: 'Error'; value: { error: XcmV3TraitsError } };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type CumulusPalletDmpQueueEvent =
-  /**
-   * The export of pages started.
-   **/
-  | { name: 'StartedExport' }
-  /**
-   * The export of a page completed.
-   **/
-  | { name: 'Exported'; data: { page: number } }
-  /**
-   * The export of a page failed.
-   *
-   * This should never be emitted.
-   **/
-  | { name: 'ExportFailed'; data: { page: number } }
-  /**
-   * The export of pages completed.
-   **/
-  | { name: 'CompletedExport' }
-  /**
-   * The export of overweight messages started.
-   **/
-  | { name: 'StartedOverweightExport' }
-  /**
-   * The export of an overweight message completed.
-   **/
-  | { name: 'ExportedOverweight'; data: { index: bigint } }
-  /**
-   * The export of an overweight message failed.
-   *
-   * This should never be emitted.
-   **/
-  | { name: 'ExportOverweightFailed'; data: { index: bigint } }
-  /**
-   * The export of overweight messages completed.
-   **/
-  | { name: 'CompletedOverweightExport' }
-  /**
-   * The cleanup of remaining pallet storage started.
-   **/
-  | { name: 'StartedCleanup' }
-  /**
-   * Some debris was cleaned up.
-   **/
-  | { name: 'CleanedSome'; data: { keysRemoved: number } }
-  /**
-   * The cleanup of remaining pallet storage completed.
-   **/
-  | { name: 'Completed'; data: { error: boolean } };
 
 /**
  * The `Event` enum of this pallet
@@ -9327,7 +8959,15 @@ export type PalletAssetsEvent =
   /**
    * Some account `who` was blocked.
    **/
-  | { name: 'Blocked'; data: { assetId: bigint; who: AccountId20 } };
+  | { name: 'Blocked'; data: { assetId: bigint; who: AccountId20 } }
+  /**
+   * Some assets were deposited (e.g. for transaction fees).
+   **/
+  | { name: 'Deposited'; data: { assetId: bigint; who: AccountId20; amount: bigint } }
+  /**
+   * Some assets were withdrawn from the account (e.g. for transaction fees).
+   **/
+  | { name: 'Withdrawn'; data: { assetId: bigint; who: AccountId20; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -9371,18 +9011,6 @@ export type PalletAssetManagerEvent =
    * Removed all information related to an assetId and destroyed asset
    **/
   | { name: 'LocalAssetDestroyed'; data: { assetId: bigint } };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type OrmlXtokensModuleEvent =
-  /**
-   * Transferred `Asset` with fee.
-   **/
-  {
-    name: 'TransferredAssets';
-    data: { sender: AccountId20; assets: StagingXcmV4AssetAssets; fee: StagingXcmV4Asset; dest: StagingXcmV4Location };
-  };
 
 /**
  * The `Event` enum of this pallet
@@ -9565,7 +9193,8 @@ export type FrameSupportMessagesProcessMessageError =
   | { type: 'Corrupt' }
   | { type: 'Unsupported' }
   | { type: 'Overweight'; value: SpWeightsWeightV2Weight }
-  | { type: 'Yield' };
+  | { type: 'Yield' }
+  | { type: 'StackLimitReached' };
 
 /**
  * The `Event` enum of this pallet
@@ -9844,13 +9473,13 @@ export type PalletBalancesReasons = 'Fee' | 'Misc' | 'All';
 
 export type PalletBalancesReserveData = { id: FixedBytes<4>; amount: bigint };
 
-export type PalletBalancesIdAmount = { id: MoonbeamRuntimeRuntimeHoldReason; amount: bigint };
+export type FrameSupportTokensMiscIdAmount = { id: MoonbeamRuntimeRuntimeHoldReason; amount: bigint };
 
 export type MoonbeamRuntimeRuntimeHoldReason = { type: 'Preimage'; value: PalletPreimageHoldReason };
 
 export type PalletPreimageHoldReason = 'Preimage';
 
-export type PalletBalancesIdAmount002 = { id: []; amount: bigint };
+export type FrameSupportTokensMiscIdAmount002 = { id: []; amount: bigint };
 
 /**
  * The `Error` enum of this pallet.
@@ -9906,8 +9535,6 @@ export type PalletBalancesError =
   | 'DeltaZero';
 
 export type PalletTransactionPaymentReleases = 'V1Ancient' | 'V2';
-
-export type PalletParachainStakingParachainBondConfig = { account: AccountId20; percent: Percent };
 
 export type PalletParachainStakingRoundInfo = { current: number; first: number; length: number; firstSlot: bigint };
 
@@ -10010,6 +9637,7 @@ export type PalletParachainStakingError =
   | 'CannotSetBelowMin'
   | 'RoundLengthMustBeGreaterThanTotalSelectedCollators'
   | 'NoWritingSameValue'
+  | 'TotalInflationDistributionPercentExceeds100'
   | 'TooLowCandidateCountWeightHintJoinCandidates'
   | 'TooLowCandidateCountWeightHintCancelLeaveCandidates'
   | 'TooLowCandidateCountToLeaveCandidates'
@@ -10422,6 +10050,12 @@ export type PalletMultisigError =
    **/
   | 'AlreadyStored';
 
+export type PalletMoonbeamLazyMigrationsStateMigrationStatus =
+  | { type: 'NotStarted' }
+  | { type: 'Started'; value: Bytes }
+  | { type: 'Error'; value: Bytes }
+  | { type: 'Complete' };
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -10445,7 +10079,11 @@ export type PalletMoonbeamLazyMigrationsError =
   /**
    * Contract not exist
    **/
-  | 'ContractNotExist';
+  | 'ContractNotExist'
+  /**
+   * The key lengths exceeds the maximum allowed
+   **/
+  | 'KeyTooLong';
 
 export type PalletEvmCodeMetadata = { size: bigint; hash: H256 };
 
@@ -10659,7 +10297,11 @@ export type PalletPreimageError =
   /**
    * Too few hashes were requested to be upgraded (i.e. zero).
    **/
-  | 'TooFew';
+  | 'TooFew'
+  /**
+   * No ticket with a cost was returned by [`Config::Consideration`] to store the preimage.
+   **/
+  | 'NoCost';
 
 export type PalletConvictionVotingVoteVoting =
   | { type: 'Casting'; value: PalletConvictionVotingVoteCasting }
@@ -10946,10 +10588,6 @@ export type FrameSupportPalletId = FixedBytes<8>;
  **/
 export type PalletTreasuryError =
   /**
-   * Proposer's balance is too low.
-   **/
-  | 'InsufficientProposersBalance'
-  /**
    * No proposal, bounty or spend at that index.
    **/
   | 'InvalidIndex'
@@ -11102,16 +10740,15 @@ export type CumulusPalletXcmpQueueError =
   /**
    * The execution is already resumed.
    **/
-  | 'AlreadyResumed';
-
-export type CumulusPalletDmpQueueMigrationState =
-  | { type: 'NotStarted' }
-  | { type: 'StartedExport'; value: { nextBeginUsed: number } }
-  | { type: 'CompletedExport' }
-  | { type: 'StartedOverweightExport'; value: { nextOverweightIndex: bigint } }
-  | { type: 'CompletedOverweightExport' }
-  | { type: 'StartedCleanup'; value: { cursor?: Bytes | undefined } }
-  | { type: 'Completed' };
+  | 'AlreadyResumed'
+  /**
+   * There are too many active outbound channels.
+   **/
+  | 'TooManyActiveOutboundChannels'
+  /**
+   * The message is too big.
+   **/
+  | 'TooBig';
 
 export type PalletXcmQueryStatus =
   | {
@@ -11377,7 +11014,11 @@ export type PalletAssetsError =
   /**
    * Callback action resulted in error
    **/
-  | 'CallbackFailed';
+  | 'CallbackFailed'
+  /**
+   * The asset ID must be equal to the [`NextAssetId`].
+   **/
+  | 'BadAssetId';
 
 /**
  * An error that can occur while executing the mapping pallet's logic.
@@ -11391,94 +11032,6 @@ export type PalletAssetManagerError =
   | 'ErrorDestroyingAsset'
   | 'NotSufficientDeposit'
   | 'NonExistentLocalAsset';
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type OrmlXtokensModuleError =
-  /**
-   * Asset has no reserve location.
-   **/
-  | 'AssetHasNoReserve'
-  /**
-   * Not cross-chain transfer.
-   **/
-  | 'NotCrossChainTransfer'
-  /**
-   * Invalid transfer destination.
-   **/
-  | 'InvalidDest'
-  /**
-   * Currency is not cross-chain transferable.
-   **/
-  | 'NotCrossChainTransferableCurrency'
-  /**
-   * The message's weight could not be determined.
-   **/
-  | 'UnweighableMessage'
-  /**
-   * XCM execution failed.
-   **/
-  | 'XcmExecutionFailed'
-  /**
-   * Could not re-anchor the assets to declare the fees for the
-   * destination chain.
-   **/
-  | 'CannotReanchor'
-  /**
-   * Could not get ancestry of asset reserve location.
-   **/
-  | 'InvalidAncestry'
-  /**
-   * The Asset is invalid.
-   **/
-  | 'InvalidAsset'
-  /**
-   * The destination `Location` provided cannot be inverted.
-   **/
-  | 'DestinationNotInvertible'
-  /**
-   * The version of the `Versioned` value used is not able to be
-   * interpreted.
-   **/
-  | 'BadVersion'
-  /**
-   * We tried sending distinct asset and fee but they have different
-   * reserve chains.
-   **/
-  | 'DistinctReserveForAssetAndFee'
-  /**
-   * The fee is zero.
-   **/
-  | 'ZeroFee'
-  /**
-   * The transfering asset amount is zero.
-   **/
-  | 'ZeroAmount'
-  /**
-   * The number of assets to be sent is over the maximum.
-   **/
-  | 'TooManyAssetsBeingSent'
-  /**
-   * The specified index does not exist in a Assets struct.
-   **/
-  | 'AssetIndexNonExistent'
-  /**
-   * Fee is not enough.
-   **/
-  | 'FeeNotEnough'
-  /**
-   * Not supported Location
-   **/
-  | 'NotSupportedLocation'
-  /**
-   * MinXcmFee not registered for certain reserve location
-   **/
-  | 'MinXcmFeeNotDefined'
-  /**
-   * Asset transfer is limited by RateLimiter.
-   **/
-  | 'RateLimited';
 
 export type PalletXcmTransactorRelayIndicesRelayChainIndices = {
   staking: number;
@@ -11841,13 +11394,30 @@ export type CumulusPrimitivesCoreCollationInfo = {
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
 
-export type XcmFeePaymentRuntimeApiError =
+export type XcmRuntimeApisFeesError =
   | 'Unimplemented'
   | 'VersionedConversionFailed'
   | 'WeightNotComputable'
   | 'UnhandledXcmVersion'
   | 'AssetNotFound'
   | 'Unroutable';
+
+export type XcmRuntimeApisDryRunCallDryRunEffects = {
+  executionResult: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
+  emittedEvents: Array<MoonbeamRuntimeRuntimeEvent>;
+  localXcm?: XcmVersionedXcm | undefined;
+  forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
+};
+
+export type XcmRuntimeApisDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
+
+export type XcmRuntimeApisDryRunXcmDryRunEffects = {
+  executionResult: StagingXcmV4TraitsOutcome;
+  emittedEvents: Array<MoonbeamRuntimeRuntimeEvent>;
+  forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
+};
+
+export type XcmRuntimeApisConversionsError = 'Unsupported' | 'VersionedConversionFailed';
 
 export type MoonbeamRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }
@@ -11879,7 +11449,6 @@ export type MoonbeamRuntimeRuntimeError =
   | { pallet: 'PolkadotXcm'; palletError: PalletXcmError }
   | { pallet: 'Assets'; palletError: PalletAssetsError }
   | { pallet: 'AssetManager'; palletError: PalletAssetManagerError }
-  | { pallet: 'XTokens'; palletError: OrmlXtokensModuleError }
   | { pallet: 'XcmTransactor'; palletError: PalletXcmTransactorError }
   | { pallet: 'EthereumXcm'; palletError: PalletEthereumXcmError }
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }

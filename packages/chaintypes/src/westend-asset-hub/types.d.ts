@@ -740,6 +740,10 @@ export type StagingXcmV5Instruction =
         assets: Array<StagingXcmV5AssetAssetTransferFilter>;
         remoteXcm: StagingXcmV5Xcm;
       };
+    }
+  | {
+      type: 'ExecuteWithOrigin';
+      value: { descendantOrigin?: StagingXcmV5Junctions | undefined; xcm: StagingXcmV5Xcm };
     };
 
 export type StagingXcmV5AssetAssets = Array<StagingXcmV5Asset>;
@@ -13172,6 +13176,10 @@ export type PalletReviveError =
    * Failed to convert a U256 to a Balance.
    **/
   | 'BalanceConversionFailed'
+  /**
+   * Failed to convert an EVM balance to a native balance.
+   **/
+  | 'DecimalPrecisionLoss'
   /**
    * Immutable data can only be set during deploys and only be read during calls.
    * Additionally, it is only valid to set the data once and it must not be empty.

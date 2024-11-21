@@ -85,8 +85,10 @@ import type {
   PolkadotRuntimeCommonAssignedSlotsSlotLeasePeriodStart,
   PalletBrokerCoretimeInterfaceCoreAssignment,
   PolkadotRuntimeParachainsAssignerCoretimePartsOf57600,
+  PalletMigrationsMigrationCursor,
+  PalletMigrationsHistoricCleanupSelector,
   XcmVersionedAssets,
-  StagingXcmV4Location,
+  StagingXcmV5Location,
   XcmV3WeightLimit,
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
@@ -2692,8 +2694,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Add an `AccountId` with permission to grant usernames with a given `suffix` appended.
      *
-     * The authority can grant up to `allocation` usernames. To top up their allocation, they
-     * should just issue (or request via governance) a new `add_username_authority` call.
+     * The authority can grant up to `allocation` usernames. To top up the allocation or
+     * change the account used to grant usernames, this call can be used with the updated
+     * parameters to overwrite the existing configuration.
      *
      * @param {MultiAddressLike} authority
      * @param {BytesLike} suffix
@@ -2720,17 +2723,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Remove `authority` from the username authorities.
      *
+     * @param {BytesLike} suffix
      * @param {MultiAddressLike} authority
      **/
     removeUsernameAuthority: GenericTxCall<
       Rv,
-      (authority: MultiAddressLike) => ChainSubmittableExtrinsic<
+      (
+        suffix: BytesLike,
+        authority: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Identity';
           palletCall: {
             name: 'RemoveUsernameAuthority';
-            params: { authority: MultiAddressLike };
+            params: { suffix: BytesLike; authority: MultiAddressLike };
           };
         }
       >
@@ -2739,7 +2746,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Set the username for `who`. Must be called by a username authority.
      *
-     * The authority must have an `allocation`. Users can either pre-sign their usernames or
+     * If `use_allocation` is set, the authority must have a username allocation available to
+     * spend. Otherwise, the authority will need to put up a deposit for registering the
+     * username.
+     *
+     * Users can either pre-sign their usernames or
      * accept them later.
      *
      * Usernames must:
@@ -2750,6 +2761,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      * @param {BytesLike} username
      * @param {SpRuntimeMultiSignature | undefined} signature
+     * @param {boolean} useAllocation
      **/
     setUsernameFor: GenericTxCall<
       Rv,
@@ -2757,13 +2769,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         who: MultiAddressLike,
         username: BytesLike,
         signature: SpRuntimeMultiSignature | undefined,
+        useAllocation: boolean,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Identity';
           palletCall: {
             name: 'SetUsernameFor';
-            params: { who: MultiAddressLike; username: BytesLike; signature: SpRuntimeMultiSignature | undefined };
+            params: {
+              who: MultiAddressLike;
+              username: BytesLike;
+              signature: SpRuntimeMultiSignature | undefined;
+              useAllocation: boolean;
+            };
           };
         }
       >
@@ -2830,19 +2848,60 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Remove a username that corresponds to an account with no identity. Exists when a user
-     * gets a username but then calls `clear_identity`.
+     * Start the process of removing a username by placing it in the unbinding usernames map.
+     * Once the grace period has passed, the username can be deleted by calling
+     * [remove_username](crate::Call::remove_username).
      *
      * @param {BytesLike} username
      **/
-    removeDanglingUsername: GenericTxCall<
+    unbindUsername: GenericTxCall<
       Rv,
       (username: BytesLike) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Identity';
           palletCall: {
-            name: 'RemoveDanglingUsername';
+            name: 'UnbindUsername';
+            params: { username: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Permanently delete a username which has been unbinding for longer than the grace period.
+     * Caller is refunded the fee if the username expired and the removal was successful.
+     *
+     * @param {BytesLike} username
+     **/
+    removeUsername: GenericTxCall<
+      Rv,
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'RemoveUsername';
+            params: { username: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Call with [ForceOrigin](crate::Config::ForceOrigin) privileges which deletes a username
+     * and slashes any deposit associated with it.
+     *
+     * @param {BytesLike} username
+     **/
+    killUsername: GenericTxCall<
+      Rv,
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'KillUsername';
             params: { username: BytesLike };
           };
         }
@@ -6632,25 +6691,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Set the max number of times a claim may timeout on a core before it is abandoned
-     *
-     * @param {number} new_
-     **/
-    setMaxAvailabilityTimeouts: GenericTxCall<
-      Rv,
-      (new_: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Configuration';
-          palletCall: {
-            name: 'SetMaxAvailabilityTimeouts';
-            params: { new: number };
-          };
-        }
-      >
-    >;
-
-    /**
      * Set the parachain validator-group rotation frequency
      *
      * @param {number} new_
@@ -7317,25 +7357,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SetOnDemandTargetQueueUtilization';
             params: { new: Perbill };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Set the on demand (parathreads) ttl in the claimqueue.
-     *
-     * @param {number} new_
-     **/
-    setOnDemandTtl: GenericTxCall<
-      Rv,
-      (new_: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Configuration';
-          palletCall: {
-            name: 'SetOnDemandTtl';
-            params: { new: number };
           };
         }
       >
@@ -9356,6 +9377,111 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
+   * Pallet `MultiBlockMigrations`'s transaction calls
+   **/
+  multiBlockMigrations: {
+    /**
+     * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+     *
+     * Should normally not be needed and is only in place as emergency measure. Note that
+     * restarting the migration process in this manner will not call the
+     * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+     *
+     * @param {PalletMigrationsMigrationCursor | undefined} cursor
+     **/
+    forceSetCursor: GenericTxCall<
+      Rv,
+      (cursor: PalletMigrationsMigrationCursor | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceSetCursor';
+            params: { cursor: PalletMigrationsMigrationCursor | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Allows root to set an active cursor to forcefully start/forward the migration process.
+     *
+     * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+     * `started_at` value to the next block number. Otherwise this would not be possible, since
+     * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+     * indicates that the current block number plus one should be used.
+     *
+     * @param {number} index
+     * @param {BytesLike | undefined} innerCursor
+     * @param {number | undefined} startedAt
+     **/
+    forceSetActiveCursor: GenericTxCall<
+      Rv,
+      (
+        index: number,
+        innerCursor: BytesLike | undefined,
+        startedAt: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceSetActiveCursor';
+            params: { index: number; innerCursor: BytesLike | undefined; startedAt: number | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Forces the onboarding of the migrations.
+     *
+     * This process happens automatically on a runtime upgrade. It is in place as an emergency
+     * measurement. The cursor needs to be `None` for this to succeed.
+     *
+     **/
+    forceOnboardMbms: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceOnboardMbms';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Clears the `Historic` set.
+     *
+     * `map_cursor` must be set to the last value that was returned by the
+     * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+     * way that will result in a sensible weight.
+     *
+     * @param {PalletMigrationsHistoricCleanupSelector} selector
+     **/
+    clearHistoric: GenericTxCall<
+      Rv,
+      (selector: PalletMigrationsHistoricCleanupSelector) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ClearHistoric';
+            params: { selector: PalletMigrationsHistoricCleanupSelector };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
    * Pallet `XcmPallet`'s transaction calls
    **/
   xcmPallet: {
@@ -9529,13 +9655,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `location`: The destination that is being described.
      * - `xcm_version`: The latest version of XCM that `location` supports.
      *
-     * @param {StagingXcmV4Location} location
+     * @param {StagingXcmV5Location} location
      * @param {number} version
      **/
     forceXcmVersion: GenericTxCall<
       Rv,
       (
-        location: StagingXcmV4Location,
+        location: StagingXcmV5Location,
         version: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -9543,7 +9669,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'XcmPallet';
           palletCall: {
             name: 'ForceXcmVersion';
-            params: { location: StagingXcmV4Location; version: number };
+            params: { location: StagingXcmV5Location; version: number };
           };
         }
       >

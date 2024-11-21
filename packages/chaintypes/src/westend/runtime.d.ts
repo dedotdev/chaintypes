@@ -86,6 +86,8 @@ import type {
   WestendRuntimeOriginCaller,
   XcmRuntimeApisDryRunXcmDryRunEffects,
   XcmRuntimeApisConversionsError,
+  XcmRuntimeApisTrustedQueryError,
+  XcmVersionedAsset,
 } from './types';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
@@ -573,12 +575,12 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * Returns the state of parachain backing for a given para.
      *
      * @callname: ParachainHost_para_backing_state
-     * @param {PolkadotParachainPrimitivesPrimitivesId} _
+     * @param {PolkadotParachainPrimitivesPrimitivesId} __runtime_api_generated_name_0__
      **/
     paraBackingState: GenericRuntimeApiMethod<
       Rv,
       (
-        undefined: PolkadotParachainPrimitivesPrimitivesId,
+        runtimeApiGeneratedName0: PolkadotParachainPrimitivesPrimitivesId,
       ) => Promise<PolkadotPrimitivesVstagingAsyncBackingBackingState | undefined>
     >;
 
@@ -1416,6 +1418,14 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     poolBalance: GenericRuntimeApiMethod<Rv, (poolId: number) => Promise<bigint>>;
 
     /**
+     * Returns the bonded account and reward account associated with the pool_id.
+     *
+     * @callname: NominationPoolsApi_pool_accounts
+     * @param {number} pool_id
+     **/
+    poolAccounts: GenericRuntimeApiMethod<Rv, (poolId: number) => Promise<[AccountId32, AccountId32]>>;
+
+    /**
      * Generic runtime api call
      **/
     [method: string]: GenericRuntimeApiMethod<Rv>;
@@ -1463,9 +1473,10 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * Build `RuntimeGenesisConfig` from a JSON blob not using any defaults and store it in the
      * storage.
      *
-     * In the case of a FRAME-based runtime, this function deserializes the full `RuntimeGenesisConfig` from the given JSON blob and
-     * puts it into the storage. If the provided JSON blob is incorrect or incomplete or the
-     * deserialization fails, an error is returned.
+     * In the case of a FRAME-based runtime, this function deserializes the full
+     * `RuntimeGenesisConfig` from the given JSON blob and puts it into the storage. If the
+     * provided JSON blob is incorrect or incomplete or the deserialization fails, an error
+     * is returned.
      *
      * Please note that provided JSON blob must contain all `RuntimeGenesisConfig` fields, no
      * defaults will be used.
@@ -1479,7 +1490,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * Returns a JSON blob representation of the built-in `RuntimeGenesisConfig` identified by
      * `id`.
      *
-     * If `id` is `None` the function returns JSON blob representation of the default
+     * If `id` is `None` the function should return JSON blob representation of the default
      * `RuntimeGenesisConfig` struct of the runtime. Implementation must provide default
      * `RuntimeGenesisConfig`.
      *
@@ -1505,6 +1516,53 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: GenesisBuilder_preset_names
      **/
     presetNames: GenericRuntimeApiMethod<Rv, () => Promise<Array<string>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: TrustedQueryApi - 0x2609be83ac4468dc
+   **/
+  trustedQueryApi: {
+    /**
+     * Returns if the location is a trusted reserve for the asset.
+     *
+     * # Arguments
+     * * `asset`: `VersionedAsset`.
+     * * `location`: `VersionedLocation`.
+     *
+     * @callname: TrustedQueryApi_is_trusted_reserve
+     * @param {XcmVersionedAsset} asset
+     * @param {XcmVersionedLocation} location
+     **/
+    isTrustedReserve: GenericRuntimeApiMethod<
+      Rv,
+      (
+        asset: XcmVersionedAsset,
+        location: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
+    >;
+
+    /**
+     * Returns if the asset can be teleported to the location.
+     *
+     * # Arguments
+     * * `asset`: `VersionedAsset`.
+     * * `location`: `VersionedLocation`.
+     *
+     * @callname: TrustedQueryApi_is_trusted_teleporter
+     * @param {XcmVersionedAsset} asset
+     * @param {XcmVersionedLocation} location
+     **/
+    isTrustedTeleporter: GenericRuntimeApiMethod<
+      Rv,
+      (
+        asset: XcmVersionedAsset,
+        location: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
+    >;
 
     /**
      * Generic runtime api call

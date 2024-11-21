@@ -13,7 +13,6 @@ import type {
   BytesLike,
   AccountId32Like,
   AccountId32,
-  U256,
   H160,
   FixedBytes,
 } from 'dedot/codecs';
@@ -877,12 +876,12 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
    **/
   reviveApi: {
     /**
-     * Returns the free balance of the given `[H160]` address, using EVM decimals.
+     * Returns the free balance of the given `[H160]` address.
      *
      * @callname: ReviveApi_balance
      * @param {H160} address
      **/
-    balance: GenericRuntimeApiMethod<Rv, (address: H160) => Promise<U256>>;
+    balance: GenericRuntimeApiMethod<Rv, (address: H160) => Promise<bigint>>;
 
     /**
      * Returns the nonce of the given `[H160]` address.
@@ -952,7 +951,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: ReviveApi_eth_transact
      * @param {H160} origin
      * @param {H160 | undefined} dest
-     * @param {U256} value
+     * @param {bigint} value
      * @param {BytesLike} input
      * @param {SpWeightsWeightV2Weight | undefined} gas_limit
      * @param {bigint | undefined} storage_deposit_limit
@@ -962,7 +961,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       (
         origin: H160,
         dest: H160 | undefined,
-        value: U256,
+        value: bigint,
         input: BytesLike,
         gasLimit?: SpWeightsWeightV2Weight | undefined,
         storageDepositLimit?: bigint | undefined,

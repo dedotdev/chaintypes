@@ -9,7 +9,7 @@ import type {
   SpWeightsWeightV2Weight,
   FrameSupportPalletId,
   PalletReferendaTrackInfo,
-  StagingXcmV4Junctions,
+  StagingXcmV5Junctions,
 } from './types';
 
 export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<Rv> {
@@ -391,6 +391,12 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     byteDeposit: bigint;
 
     /**
+     * The amount held on deposit per registered username. This value should change only in
+     * runtime upgrades with proper migration of existing deposits.
+     **/
+    usernameDeposit: bigint;
+
+    /**
      * The amount held on deposit for a registered subaccount. This should account for the fact
      * that one storage item's value will increase by the size of an account ID, and there will
      * be another trie item whose value is the size of an account ID plus 32 bytes.
@@ -412,6 +418,12 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * The number of blocks within which a username grant must be accepted.
      **/
     pendingUsernameExpiration: number;
+
+    /**
+     * The number of blocks that must pass to enable the permanent deletion of a username by
+     * its respective authority.
+     **/
+    usernameGracePeriod: number;
 
     /**
      * The maximum length of a suffix.
@@ -900,6 +912,9 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     palletId: FrameSupportPalletId;
 
     /**
+     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+     *
      * The maximum number of approvals that can wait in the spending queue.
      *
      * NOTE: This parameter is also used within the Bounties Pallet extension if enabled.
@@ -1221,7 +1236,32 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     /**
      * The coretime chain pot location.
      **/
-    brokerPotLocation: StagingXcmV4Junctions;
+    brokerPotLocation: StagingXcmV5Junctions;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s constants
+   **/
+  multiBlockMigrations: {
+    /**
+     * The maximal length of an encoded cursor.
+     *
+     * A good default needs to selected such that no migration will ever have a cursor with MEL
+     * above this limit. This is statically checked in `integrity_test`.
+     **/
+    cursorMaxLen: number;
+
+    /**
+     * The maximal length of an encoded identifier.
+     *
+     * A good default needs to selected such that no migration will ever have an identifier
+     * with MEL above this limit. This is statically checked in `integrity_test`.
+     **/
+    identifierMaxLen: number;
 
     /**
      * Generic pallet constant

@@ -5,6 +5,13 @@ import type { JsonRpcApis } from 'dedot/types/json-rpc';
 
 export type ChainJsonRpcApis<Rv extends RpcVersion> = Pick<
   JsonRpcApis,
+  | 'archive_unstable_body'
+  | 'archive_unstable_call'
+  | 'archive_unstable_finalizedHeight'
+  | 'archive_unstable_genesisHash'
+  | 'archive_unstable_hashByHeight'
+  | 'archive_unstable_header'
+  | 'archive_unstable_storage'
   | 'author_hasKey'
   | 'author_hasSessionKeys'
   | 'author_insertKey'

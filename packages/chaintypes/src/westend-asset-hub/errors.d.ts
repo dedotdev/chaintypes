@@ -1777,6 +1777,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     BalanceConversionFailed: GenericPalletError<Rv>;
 
     /**
+     * Failed to convert an EVM balance to a native balance.
+     **/
+    DecimalPrecisionLoss: GenericPalletError<Rv>;
+
+    /**
      * Immutable data can only be set during deploys and only be read during calls.
      * Additionally, it is only valid to set the data once and it must not be empty.
      **/

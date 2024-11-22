@@ -13177,6 +13177,10 @@ export type PalletReviveError =
    **/
   | 'BalanceConversionFailed'
   /**
+   * Failed to convert an EVM balance to a native balance.
+   **/
+  | 'DecimalPrecisionLoss'
+  /**
    * Immutable data can only be set during deploys and only be read during calls.
    * Additionally, it is only valid to set the data once and it must not be empty.
    **/
@@ -13393,7 +13397,7 @@ export type PalletRevivePrimitivesEthContractResult = {
   fee: bigint;
   gasRequired: SpWeightsWeightV2Weight;
   storageDeposit: bigint;
-  result: Result<Bytes, DispatchError>;
+  result: Result<PalletRevivePrimitivesExecReturnValue, DispatchError>;
 };
 
 export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };

@@ -19,6 +19,7 @@ import type {
   Era,
   Header,
   UncheckedExtrinsic,
+  U256,
 } from 'dedot/codecs';
 
 export type FrameSystemAccountInfo = {
@@ -11713,7 +11714,7 @@ export type PalletReviveCall =
    *
    * # Parameters
    *
-   * * `payload`: The RLP-encoded [`crate::evm::TransactionLegacySigned`].
+   * * `payload`: The encoded [`crate::evm::TransactionSigned`].
    * * `gas_limit`: The gas limit enforced during contract execution.
    * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
    * storage usage.
@@ -11876,7 +11877,7 @@ export type PalletReviveCallLike =
    *
    * # Parameters
    *
-   * * `payload`: The RLP-encoded [`crate::evm::TransactionLegacySigned`].
+   * * `payload`: The encoded [`crate::evm::TransactionSigned`].
    * * `gas_limit`: The gas limit enforced during contract execution.
    * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
    * storage usage.
@@ -13393,12 +13394,40 @@ export type PalletRevivePrimitivesInstantiateReturnValue = {
   addr: H160;
 };
 
-export type PalletRevivePrimitivesEthContractResult = {
-  fee: bigint;
+export type PalletReviveEvmApiRpcTypesGenGenericTransaction = {
+  accessList?: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry> | undefined;
+  blobVersionedHashes: Array<H256>;
+  blobs: Array<PalletReviveEvmApiByteBytes>;
+  chainId?: U256 | undefined;
+  from?: H160 | undefined;
+  gas?: U256 | undefined;
+  gasPrice?: U256 | undefined;
+  input?: PalletReviveEvmApiByteBytes | undefined;
+  maxFeePerBlobGas?: U256 | undefined;
+  maxFeePerGas?: U256 | undefined;
+  maxPriorityFeePerGas?: U256 | undefined;
+  nonce?: U256 | undefined;
+  to?: H160 | undefined;
+  rType?: PalletReviveEvmApiByte | undefined;
+  value?: U256 | undefined;
+};
+
+export type PalletReviveEvmApiRpcTypesGenAccessListEntry = { address: H160; storageKeys: Array<H256> };
+
+export type PalletReviveEvmApiByteBytes = Bytes;
+
+export type PalletReviveEvmApiByte = number;
+
+export type PalletRevivePrimitivesEthTransactInfo = {
   gasRequired: SpWeightsWeightV2Weight;
   storageDeposit: bigint;
-  result: Result<PalletRevivePrimitivesExecReturnValue, DispatchError>;
+  ethGas: U256;
+  data: Bytes;
 };
+
+export type PalletRevivePrimitivesEthTransactError =
+  | { type: 'Data'; value: Bytes }
+  | { type: 'Message'; value: string };
 
 export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
 

@@ -37,7 +37,7 @@ import type {
   PalletVestingVestingInfo,
   PalletInflationInflationParameters,
   AstarPrimitivesDappStakingSmartContract,
-  PalletDappStakingV3ForcingType,
+  PalletDappStakingForcingType,
   AstarPrimitivesOracleCurrencyId,
   AstarRuntimeSessionKeys,
   XcmVersionedLocation,
@@ -51,6 +51,12 @@ import type {
   CumulusPrimitivesCoreAggregateMessageOrigin,
   EthereumTransactionTransactionV2,
   PalletContractsWasmDeterminism,
+  FrameSupportPreimagesBounded,
+  PalletDemocracyVoteAccountVote,
+  PalletDemocracyConviction,
+  PalletDemocracyMetadataOwner,
+  PalletMigrationsMigrationCursor,
+  PalletMigrationsHistoricCleanupSelector,
 } from './types';
 
 export type ChainSubmittableExtrinsic<
@@ -1759,6 +1765,301 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
+   * Pallet `Scheduler`'s transaction calls
+   **/
+  scheduler: {
+    /**
+     * Anonymously schedule a task.
+     *
+     * @param {number} when
+     * @param {[number, number] | undefined} maybePeriodic
+     * @param {number} priority
+     * @param {AstarRuntimeRuntimeCallLike} call
+     **/
+    schedule: GenericTxCall<
+      Rv,
+      (
+        when: number,
+        maybePeriodic: [number, number] | undefined,
+        priority: number,
+        call: AstarRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'Schedule';
+            params: {
+              when: number;
+              maybePeriodic: [number, number] | undefined;
+              priority: number;
+              call: AstarRuntimeRuntimeCallLike;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Cancel an anonymously scheduled task.
+     *
+     * @param {number} when
+     * @param {number} index
+     **/
+    cancel: GenericTxCall<
+      Rv,
+      (
+        when: number,
+        index: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'Cancel';
+            params: { when: number; index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Schedule a named task.
+     *
+     * @param {FixedBytes<32>} id
+     * @param {number} when
+     * @param {[number, number] | undefined} maybePeriodic
+     * @param {number} priority
+     * @param {AstarRuntimeRuntimeCallLike} call
+     **/
+    scheduleNamed: GenericTxCall<
+      Rv,
+      (
+        id: FixedBytes<32>,
+        when: number,
+        maybePeriodic: [number, number] | undefined,
+        priority: number,
+        call: AstarRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'ScheduleNamed';
+            params: {
+              id: FixedBytes<32>;
+              when: number;
+              maybePeriodic: [number, number] | undefined;
+              priority: number;
+              call: AstarRuntimeRuntimeCallLike;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Cancel a named scheduled task.
+     *
+     * @param {FixedBytes<32>} id
+     **/
+    cancelNamed: GenericTxCall<
+      Rv,
+      (id: FixedBytes<32>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'CancelNamed';
+            params: { id: FixedBytes<32> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Anonymously schedule a task after a delay.
+     *
+     * @param {number} after
+     * @param {[number, number] | undefined} maybePeriodic
+     * @param {number} priority
+     * @param {AstarRuntimeRuntimeCallLike} call
+     **/
+    scheduleAfter: GenericTxCall<
+      Rv,
+      (
+        after: number,
+        maybePeriodic: [number, number] | undefined,
+        priority: number,
+        call: AstarRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'ScheduleAfter';
+            params: {
+              after: number;
+              maybePeriodic: [number, number] | undefined;
+              priority: number;
+              call: AstarRuntimeRuntimeCallLike;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Schedule a named task after a delay.
+     *
+     * @param {FixedBytes<32>} id
+     * @param {number} after
+     * @param {[number, number] | undefined} maybePeriodic
+     * @param {number} priority
+     * @param {AstarRuntimeRuntimeCallLike} call
+     **/
+    scheduleNamedAfter: GenericTxCall<
+      Rv,
+      (
+        id: FixedBytes<32>,
+        after: number,
+        maybePeriodic: [number, number] | undefined,
+        priority: number,
+        call: AstarRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'ScheduleNamedAfter';
+            params: {
+              id: FixedBytes<32>;
+              after: number;
+              maybePeriodic: [number, number] | undefined;
+              priority: number;
+              call: AstarRuntimeRuntimeCallLike;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set a retry configuration for a task so that, in case its scheduled run fails, it will
+     * be retried after `period` blocks, for a total amount of `retries` retries or until it
+     * succeeds.
+     *
+     * Tasks which need to be scheduled for a retry are still subject to weight metering and
+     * agenda space, same as a regular task. If a periodic task fails, it will be scheduled
+     * normally while the task is retrying.
+     *
+     * Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic
+     * clones of the original task. Their retry configuration will be derived from the
+     * original task's configuration, but will have a lower value for `remaining` than the
+     * original `total_retries`.
+     *
+     * @param {[number, number]} task
+     * @param {number} retries
+     * @param {number} period
+     **/
+    setRetry: GenericTxCall<
+      Rv,
+      (
+        task: [number, number],
+        retries: number,
+        period: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'SetRetry';
+            params: { task: [number, number]; retries: number; period: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set a retry configuration for a named task so that, in case its scheduled run fails, it
+     * will be retried after `period` blocks, for a total amount of `retries` retries or until
+     * it succeeds.
+     *
+     * Tasks which need to be scheduled for a retry are still subject to weight metering and
+     * agenda space, same as a regular task. If a periodic task fails, it will be scheduled
+     * normally while the task is retrying.
+     *
+     * Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic
+     * clones of the original task. Their retry configuration will be derived from the
+     * original task's configuration, but will have a lower value for `remaining` than the
+     * original `total_retries`.
+     *
+     * @param {FixedBytes<32>} id
+     * @param {number} retries
+     * @param {number} period
+     **/
+    setRetryNamed: GenericTxCall<
+      Rv,
+      (
+        id: FixedBytes<32>,
+        retries: number,
+        period: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'SetRetryNamed';
+            params: { id: FixedBytes<32>; retries: number; period: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Removes the retry configuration of a task.
+     *
+     * @param {[number, number]} task
+     **/
+    cancelRetry: GenericTxCall<
+      Rv,
+      (task: [number, number]) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'CancelRetry';
+            params: { task: [number, number] };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Cancel the retry configuration of a named task.
+     *
+     * @param {FixedBytes<32>} id
+     **/
+    cancelRetryNamed: GenericTxCall<
+      Rv,
+      (id: FixedBytes<32>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'CancelRetryNamed';
+            params: { id: FixedBytes<32> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
    * Pallet `ParachainSystem`'s transaction calls
    **/
   parachainSystem: {
@@ -2106,22 +2407,29 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Burn the specified liquid free balance from the origin account.
+     *
+     * If the origin's account ends up below the existential deposit as a result
+     * of the burn and `keep_alive` is false, the account will be reaped.
+     *
+     * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+     * this `burn` operation will reduce total issuance by the amount _burned_.
      *
      * @param {bigint} value
-     * @param {boolean} ignorable
+     * @param {boolean} keepAlive
      **/
     burn: GenericTxCall<
       Rv,
       (
         value: bigint,
-        ignorable: boolean,
+        keepAlive: boolean,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Balances';
           palletCall: {
             name: 'Burn';
-            params: { value: bigint; ignorable: boolean };
+            params: { value: bigint; keepAlive: boolean };
           };
         }
       >
@@ -2822,17 +3130,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Can only be called by the root origin.
      *
-     * @param {PalletDappStakingV3ForcingType} forcingType
+     * @param {PalletDappStakingForcingType} forcingType
      **/
     force: GenericTxCall<
       Rv,
-      (forcingType: PalletDappStakingV3ForcingType) => ChainSubmittableExtrinsic<
+      (forcingType: PalletDappStakingForcingType) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'DappStaking';
           palletCall: {
             name: 'Force';
-            params: { forcingType: PalletDappStakingV3ForcingType };
+            params: { forcingType: PalletDappStakingForcingType };
           };
         }
       >
@@ -2882,34 +3190,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * A call used to fix accounts with inconsistent state, where frozen balance is actually higher than what's available.
-     *
-     * The approach is as simple as possible:
-     * 1. Caller provides an account to fix.
-     * 2. If account is eligible for the fix, all unlocking chunks are modified to be claimable immediately.
-     * 3. The `claim_unlocked` call is executed using the provided account as the origin.
-     * 4. All states are updated accordingly, and the account is no longer in an inconsistent state.
-     *
-     * The benchmarked weight of the `claim_unlocked` call is used as a base, and additional overestimated weight is added.
-     * Call doesn't touch any storage items that aren't already touched by the `claim_unlocked` call, hence the simplified approach.
-     *
-     * @param {AccountId32Like} account
-     **/
-    fixAccount: GenericTxCall<
-      Rv,
-      (account: AccountId32Like) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'DappStaking';
-          palletCall: {
-            name: 'FixAccount';
-            params: { account: AccountId32Like };
-          };
-        }
-      >
-    >;
-
-    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -2929,7 +3209,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset.
+     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -2971,7 +3251,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Unlike `create`, no funds are reserved.
      *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset.
+     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.
@@ -5145,7 +5425,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
      * fee on the `dest` (and possibly reserve) chains.
      * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
-     * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+     * - `remote_fees_id`: One of the included `assets` to be used to pay fees.
      * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
      * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
      * transfer, which also determines what happens to the assets on the destination chain.
@@ -6319,6 +6599,125 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
+   * Pallet `Preimage`'s transaction calls
+   **/
+  preimage: {
+    /**
+     * Register a preimage on-chain.
+     *
+     * If the preimage was previously requested, no fees or deposits are taken for providing
+     * the preimage. Otherwise, a deposit is taken proportional to the size of the preimage.
+     *
+     * @param {BytesLike} bytes
+     **/
+    notePreimage: GenericTxCall<
+      Rv,
+      (bytes: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Preimage';
+          palletCall: {
+            name: 'NotePreimage';
+            params: { bytes: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Clear an unrequested preimage from the runtime storage.
+     *
+     * If `len` is provided, then it will be a much cheaper operation.
+     *
+     * - `hash`: The hash of the preimage to be removed from the store.
+     * - `len`: The length of the preimage of `hash`.
+     *
+     * @param {H256} hash
+     **/
+    unnotePreimage: GenericTxCall<
+      Rv,
+      (hash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Preimage';
+          palletCall: {
+            name: 'UnnotePreimage';
+            params: { hash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Request a preimage be uploaded to the chain without paying any fees or deposits.
+     *
+     * If the preimage requests has already been provided on-chain, we unreserve any deposit
+     * a user may have paid, and take the control of the preimage out of their hands.
+     *
+     * @param {H256} hash
+     **/
+    requestPreimage: GenericTxCall<
+      Rv,
+      (hash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Preimage';
+          palletCall: {
+            name: 'RequestPreimage';
+            params: { hash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Clear a previously made request for a preimage.
+     *
+     * NOTE: THIS MUST NOT BE CALLED ON `hash` MORE TIMES THAN `request_preimage`.
+     *
+     * @param {H256} hash
+     **/
+    unrequestPreimage: GenericTxCall<
+      Rv,
+      (hash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Preimage';
+          palletCall: {
+            name: 'UnrequestPreimage';
+            params: { hash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Ensure that the a bulk of pre-images is upgraded.
+     *
+     * The caller pays no fee if at least 90% of pre-images were successfully updated.
+     *
+     * @param {Array<H256>} hashes
+     **/
+    ensureUpdated: GenericTxCall<
+      Rv,
+      (hashes: Array<H256>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Preimage';
+          palletCall: {
+            name: 'EnsureUpdated';
+            params: { hashes: Array<H256> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
    * Pallet `Sudo`'s transaction calls
    **/
   sudo: {
@@ -6428,6 +6827,2655 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Sudo';
           palletCall: {
             name: 'RemoveKey';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `CouncilMembership`'s transaction calls
+   **/
+  councilMembership: {
+    /**
+     * Add a member `who` to the set.
+     *
+     * May only be called from `T::AddOrigin`.
+     *
+     * @param {MultiAddressLike} who
+     **/
+    addMember: GenericTxCall<
+      Rv,
+      (who: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CouncilMembership';
+          palletCall: {
+            name: 'AddMember';
+            params: { who: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a member `who` from the set.
+     *
+     * May only be called from `T::RemoveOrigin`.
+     *
+     * @param {MultiAddressLike} who
+     **/
+    removeMember: GenericTxCall<
+      Rv,
+      (who: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CouncilMembership';
+          palletCall: {
+            name: 'RemoveMember';
+            params: { who: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Swap out one member `remove` for another `add`.
+     *
+     * May only be called from `T::SwapOrigin`.
+     *
+     * Prime membership is *not* passed from `remove` to `add`, if extant.
+     *
+     * @param {MultiAddressLike} remove
+     * @param {MultiAddressLike} add
+     **/
+    swapMember: GenericTxCall<
+      Rv,
+      (
+        remove: MultiAddressLike,
+        add: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CouncilMembership';
+          palletCall: {
+            name: 'SwapMember';
+            params: { remove: MultiAddressLike; add: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Change the membership to a new set, disregarding the existing membership. Be nice and
+     * pass `members` pre-sorted.
+     *
+     * May only be called from `T::ResetOrigin`.
+     *
+     * @param {Array<AccountId32Like>} members
+     **/
+    resetMembers: GenericTxCall<
+      Rv,
+      (members: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CouncilMembership';
+          palletCall: {
+            name: 'ResetMembers';
+            params: { members: Array<AccountId32Like> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Swap out the sending member for some other key `new`.
+     *
+     * May only be called from `Signed` origin of a current member.
+     *
+     * Prime membership is passed from the origin account to `new`, if extant.
+     *
+     * @param {MultiAddressLike} new_
+     **/
+    changeKey: GenericTxCall<
+      Rv,
+      (new_: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CouncilMembership';
+          palletCall: {
+            name: 'ChangeKey';
+            params: { new: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the prime member. Must be a current member.
+     *
+     * May only be called from `T::PrimeOrigin`.
+     *
+     * @param {MultiAddressLike} who
+     **/
+    setPrime: GenericTxCall<
+      Rv,
+      (who: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CouncilMembership';
+          palletCall: {
+            name: 'SetPrime';
+            params: { who: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove the prime member if it exists.
+     *
+     * May only be called from `T::PrimeOrigin`.
+     *
+     **/
+    clearPrime: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CouncilMembership';
+          palletCall: {
+            name: 'ClearPrime';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `TechnicalCommitteeMembership`'s transaction calls
+   **/
+  technicalCommitteeMembership: {
+    /**
+     * Add a member `who` to the set.
+     *
+     * May only be called from `T::AddOrigin`.
+     *
+     * @param {MultiAddressLike} who
+     **/
+    addMember: GenericTxCall<
+      Rv,
+      (who: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommitteeMembership';
+          palletCall: {
+            name: 'AddMember';
+            params: { who: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a member `who` from the set.
+     *
+     * May only be called from `T::RemoveOrigin`.
+     *
+     * @param {MultiAddressLike} who
+     **/
+    removeMember: GenericTxCall<
+      Rv,
+      (who: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommitteeMembership';
+          palletCall: {
+            name: 'RemoveMember';
+            params: { who: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Swap out one member `remove` for another `add`.
+     *
+     * May only be called from `T::SwapOrigin`.
+     *
+     * Prime membership is *not* passed from `remove` to `add`, if extant.
+     *
+     * @param {MultiAddressLike} remove
+     * @param {MultiAddressLike} add
+     **/
+    swapMember: GenericTxCall<
+      Rv,
+      (
+        remove: MultiAddressLike,
+        add: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommitteeMembership';
+          palletCall: {
+            name: 'SwapMember';
+            params: { remove: MultiAddressLike; add: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Change the membership to a new set, disregarding the existing membership. Be nice and
+     * pass `members` pre-sorted.
+     *
+     * May only be called from `T::ResetOrigin`.
+     *
+     * @param {Array<AccountId32Like>} members
+     **/
+    resetMembers: GenericTxCall<
+      Rv,
+      (members: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommitteeMembership';
+          palletCall: {
+            name: 'ResetMembers';
+            params: { members: Array<AccountId32Like> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Swap out the sending member for some other key `new`.
+     *
+     * May only be called from `Signed` origin of a current member.
+     *
+     * Prime membership is passed from the origin account to `new`, if extant.
+     *
+     * @param {MultiAddressLike} new_
+     **/
+    changeKey: GenericTxCall<
+      Rv,
+      (new_: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommitteeMembership';
+          palletCall: {
+            name: 'ChangeKey';
+            params: { new: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the prime member. Must be a current member.
+     *
+     * May only be called from `T::PrimeOrigin`.
+     *
+     * @param {MultiAddressLike} who
+     **/
+    setPrime: GenericTxCall<
+      Rv,
+      (who: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommitteeMembership';
+          palletCall: {
+            name: 'SetPrime';
+            params: { who: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove the prime member if it exists.
+     *
+     * May only be called from `T::PrimeOrigin`.
+     *
+     **/
+    clearPrime: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommitteeMembership';
+          palletCall: {
+            name: 'ClearPrime';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `CommunityCouncilMembership`'s transaction calls
+   **/
+  communityCouncilMembership: {
+    /**
+     * Add a member `who` to the set.
+     *
+     * May only be called from `T::AddOrigin`.
+     *
+     * @param {MultiAddressLike} who
+     **/
+    addMember: GenericTxCall<
+      Rv,
+      (who: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncilMembership';
+          palletCall: {
+            name: 'AddMember';
+            params: { who: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a member `who` from the set.
+     *
+     * May only be called from `T::RemoveOrigin`.
+     *
+     * @param {MultiAddressLike} who
+     **/
+    removeMember: GenericTxCall<
+      Rv,
+      (who: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncilMembership';
+          palletCall: {
+            name: 'RemoveMember';
+            params: { who: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Swap out one member `remove` for another `add`.
+     *
+     * May only be called from `T::SwapOrigin`.
+     *
+     * Prime membership is *not* passed from `remove` to `add`, if extant.
+     *
+     * @param {MultiAddressLike} remove
+     * @param {MultiAddressLike} add
+     **/
+    swapMember: GenericTxCall<
+      Rv,
+      (
+        remove: MultiAddressLike,
+        add: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncilMembership';
+          palletCall: {
+            name: 'SwapMember';
+            params: { remove: MultiAddressLike; add: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Change the membership to a new set, disregarding the existing membership. Be nice and
+     * pass `members` pre-sorted.
+     *
+     * May only be called from `T::ResetOrigin`.
+     *
+     * @param {Array<AccountId32Like>} members
+     **/
+    resetMembers: GenericTxCall<
+      Rv,
+      (members: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncilMembership';
+          palletCall: {
+            name: 'ResetMembers';
+            params: { members: Array<AccountId32Like> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Swap out the sending member for some other key `new`.
+     *
+     * May only be called from `Signed` origin of a current member.
+     *
+     * Prime membership is passed from the origin account to `new`, if extant.
+     *
+     * @param {MultiAddressLike} new_
+     **/
+    changeKey: GenericTxCall<
+      Rv,
+      (new_: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncilMembership';
+          palletCall: {
+            name: 'ChangeKey';
+            params: { new: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the prime member. Must be a current member.
+     *
+     * May only be called from `T::PrimeOrigin`.
+     *
+     * @param {MultiAddressLike} who
+     **/
+    setPrime: GenericTxCall<
+      Rv,
+      (who: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncilMembership';
+          palletCall: {
+            name: 'SetPrime';
+            params: { who: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove the prime member if it exists.
+     *
+     * May only be called from `T::PrimeOrigin`.
+     *
+     **/
+    clearPrime: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncilMembership';
+          palletCall: {
+            name: 'ClearPrime';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Council`'s transaction calls
+   **/
+  council: {
+    /**
+     * Set the collective's membership.
+     *
+     * - `new_members`: The new member list. Be nice to the chain and provide it sorted.
+     * - `prime`: The prime member whose vote sets the default.
+     * - `old_count`: The upper bound for the previous number of members in storage. Used for
+     * weight estimation.
+     *
+     * The dispatch of this call must be `SetMembersOrigin`.
+     *
+     * NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but
+     * the weight estimations rely on it to estimate dispatchable weight.
+     *
+     * # WARNING:
+     *
+     * The `pallet-collective` can also be managed by logic outside of the pallet through the
+     * implementation of the trait [`ChangeMembers`].
+     * Any call to `set_members` must be careful that the member set doesn't get out of sync
+     * with other logic managing the member set.
+     *
+     * ## Complexity:
+     * - `O(MP + N)` where:
+     * - `M` old-members-count (code- and governance-bounded)
+     * - `N` new-members-count (code- and governance-bounded)
+     * - `P` proposals-count (code-bounded)
+     *
+     * @param {Array<AccountId32Like>} newMembers
+     * @param {AccountId32Like | undefined} prime
+     * @param {number} oldCount
+     **/
+    setMembers: GenericTxCall<
+      Rv,
+      (
+        newMembers: Array<AccountId32Like>,
+        prime: AccountId32Like | undefined,
+        oldCount: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Council';
+          palletCall: {
+            name: 'SetMembers';
+            params: { newMembers: Array<AccountId32Like>; prime: AccountId32Like | undefined; oldCount: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Dispatch a proposal from a member using the `Member` origin.
+     *
+     * Origin must be a member of the collective.
+     *
+     * ## Complexity:
+     * - `O(B + M + P)` where:
+     * - `B` is `proposal` size in bytes (length-fee-bounded)
+     * - `M` members-count (code-bounded)
+     * - `P` complexity of dispatching `proposal`
+     *
+     * @param {AstarRuntimeRuntimeCallLike} proposal
+     * @param {number} lengthBound
+     **/
+    execute: GenericTxCall<
+      Rv,
+      (
+        proposal: AstarRuntimeRuntimeCallLike,
+        lengthBound: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Council';
+          palletCall: {
+            name: 'Execute';
+            params: { proposal: AstarRuntimeRuntimeCallLike; lengthBound: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Add a new proposal to either be voted on or executed directly.
+     *
+     * Requires the sender to be member.
+     *
+     * `threshold` determines whether `proposal` is executed directly (`threshold < 2`)
+     * or put up for voting.
+     *
+     * ## Complexity
+     * - `O(B + M + P1)` or `O(B + M + P2)` where:
+     * - `B` is `proposal` size in bytes (length-fee-bounded)
+     * - `M` is members-count (code- and governance-bounded)
+     * - branching is influenced by `threshold` where:
+     * - `P1` is proposal execution complexity (`threshold < 2`)
+     * - `P2` is proposals-count (code-bounded) (`threshold >= 2`)
+     *
+     * @param {number} threshold
+     * @param {AstarRuntimeRuntimeCallLike} proposal
+     * @param {number} lengthBound
+     **/
+    propose: GenericTxCall<
+      Rv,
+      (
+        threshold: number,
+        proposal: AstarRuntimeRuntimeCallLike,
+        lengthBound: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Council';
+          palletCall: {
+            name: 'Propose';
+            params: { threshold: number; proposal: AstarRuntimeRuntimeCallLike; lengthBound: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Add an aye or nay vote for the sender to the given proposal.
+     *
+     * Requires the sender to be a member.
+     *
+     * Transaction fees will be waived if the member is voting on any particular proposal
+     * for the first time and the call is successful. Subsequent vote changes will charge a
+     * fee.
+     * ## Complexity
+     * - `O(M)` where `M` is members-count (code- and governance-bounded)
+     *
+     * @param {H256} proposal
+     * @param {number} index
+     * @param {boolean} approve
+     **/
+    vote: GenericTxCall<
+      Rv,
+      (
+        proposal: H256,
+        index: number,
+        approve: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Council';
+          palletCall: {
+            name: 'Vote';
+            params: { proposal: H256; index: number; approve: boolean };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Disapprove a proposal, close, and remove it from the system, regardless of its current
+     * state.
+     *
+     * Must be called by the Root origin.
+     *
+     * Parameters:
+     * * `proposal_hash`: The hash of the proposal that should be disapproved.
+     *
+     * ## Complexity
+     * O(P) where P is the number of max proposals
+     *
+     * @param {H256} proposalHash
+     **/
+    disapproveProposal: GenericTxCall<
+      Rv,
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Council';
+          palletCall: {
+            name: 'DisapproveProposal';
+            params: { proposalHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Close a vote that is either approved, disapproved or whose voting period has ended.
+     *
+     * May be called by any signed account in order to finish voting and close the proposal.
+     *
+     * If called before the end of the voting period it will only close the vote if it is
+     * has enough votes to be approved or disapproved.
+     *
+     * If called after the end of the voting period abstentions are counted as rejections
+     * unless there is a prime member set and the prime member cast an approval.
+     *
+     * If the close operation completes successfully with disapproval, the transaction fee will
+     * be waived. Otherwise execution of the approved operation will be charged to the caller.
+     *
+     * + `proposal_weight_bound`: The maximum amount of weight consumed by executing the closed
+     * proposal.
+     * + `length_bound`: The upper bound for the length of the proposal in storage. Checked via
+     * `storage::read` so it is `size_of::<u32>() == 4` larger than the pure length.
+     *
+     * ## Complexity
+     * - `O(B + M + P1 + P2)` where:
+     * - `B` is `proposal` size in bytes (length-fee-bounded)
+     * - `M` is members-count (code- and governance-bounded)
+     * - `P1` is the complexity of `proposal` preimage.
+     * - `P2` is proposal-count (code-bounded)
+     *
+     * @param {H256} proposalHash
+     * @param {number} index
+     * @param {SpWeightsWeightV2Weight} proposalWeightBound
+     * @param {number} lengthBound
+     **/
+    close: GenericTxCall<
+      Rv,
+      (
+        proposalHash: H256,
+        index: number,
+        proposalWeightBound: SpWeightsWeightV2Weight,
+        lengthBound: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Council';
+          palletCall: {
+            name: 'Close';
+            params: {
+              proposalHash: H256;
+              index: number;
+              proposalWeightBound: SpWeightsWeightV2Weight;
+              lengthBound: number;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `TechnicalCommittee`'s transaction calls
+   **/
+  technicalCommittee: {
+    /**
+     * Set the collective's membership.
+     *
+     * - `new_members`: The new member list. Be nice to the chain and provide it sorted.
+     * - `prime`: The prime member whose vote sets the default.
+     * - `old_count`: The upper bound for the previous number of members in storage. Used for
+     * weight estimation.
+     *
+     * The dispatch of this call must be `SetMembersOrigin`.
+     *
+     * NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but
+     * the weight estimations rely on it to estimate dispatchable weight.
+     *
+     * # WARNING:
+     *
+     * The `pallet-collective` can also be managed by logic outside of the pallet through the
+     * implementation of the trait [`ChangeMembers`].
+     * Any call to `set_members` must be careful that the member set doesn't get out of sync
+     * with other logic managing the member set.
+     *
+     * ## Complexity:
+     * - `O(MP + N)` where:
+     * - `M` old-members-count (code- and governance-bounded)
+     * - `N` new-members-count (code- and governance-bounded)
+     * - `P` proposals-count (code-bounded)
+     *
+     * @param {Array<AccountId32Like>} newMembers
+     * @param {AccountId32Like | undefined} prime
+     * @param {number} oldCount
+     **/
+    setMembers: GenericTxCall<
+      Rv,
+      (
+        newMembers: Array<AccountId32Like>,
+        prime: AccountId32Like | undefined,
+        oldCount: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommittee';
+          palletCall: {
+            name: 'SetMembers';
+            params: { newMembers: Array<AccountId32Like>; prime: AccountId32Like | undefined; oldCount: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Dispatch a proposal from a member using the `Member` origin.
+     *
+     * Origin must be a member of the collective.
+     *
+     * ## Complexity:
+     * - `O(B + M + P)` where:
+     * - `B` is `proposal` size in bytes (length-fee-bounded)
+     * - `M` members-count (code-bounded)
+     * - `P` complexity of dispatching `proposal`
+     *
+     * @param {AstarRuntimeRuntimeCallLike} proposal
+     * @param {number} lengthBound
+     **/
+    execute: GenericTxCall<
+      Rv,
+      (
+        proposal: AstarRuntimeRuntimeCallLike,
+        lengthBound: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommittee';
+          palletCall: {
+            name: 'Execute';
+            params: { proposal: AstarRuntimeRuntimeCallLike; lengthBound: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Add a new proposal to either be voted on or executed directly.
+     *
+     * Requires the sender to be member.
+     *
+     * `threshold` determines whether `proposal` is executed directly (`threshold < 2`)
+     * or put up for voting.
+     *
+     * ## Complexity
+     * - `O(B + M + P1)` or `O(B + M + P2)` where:
+     * - `B` is `proposal` size in bytes (length-fee-bounded)
+     * - `M` is members-count (code- and governance-bounded)
+     * - branching is influenced by `threshold` where:
+     * - `P1` is proposal execution complexity (`threshold < 2`)
+     * - `P2` is proposals-count (code-bounded) (`threshold >= 2`)
+     *
+     * @param {number} threshold
+     * @param {AstarRuntimeRuntimeCallLike} proposal
+     * @param {number} lengthBound
+     **/
+    propose: GenericTxCall<
+      Rv,
+      (
+        threshold: number,
+        proposal: AstarRuntimeRuntimeCallLike,
+        lengthBound: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommittee';
+          palletCall: {
+            name: 'Propose';
+            params: { threshold: number; proposal: AstarRuntimeRuntimeCallLike; lengthBound: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Add an aye or nay vote for the sender to the given proposal.
+     *
+     * Requires the sender to be a member.
+     *
+     * Transaction fees will be waived if the member is voting on any particular proposal
+     * for the first time and the call is successful. Subsequent vote changes will charge a
+     * fee.
+     * ## Complexity
+     * - `O(M)` where `M` is members-count (code- and governance-bounded)
+     *
+     * @param {H256} proposal
+     * @param {number} index
+     * @param {boolean} approve
+     **/
+    vote: GenericTxCall<
+      Rv,
+      (
+        proposal: H256,
+        index: number,
+        approve: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommittee';
+          palletCall: {
+            name: 'Vote';
+            params: { proposal: H256; index: number; approve: boolean };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Disapprove a proposal, close, and remove it from the system, regardless of its current
+     * state.
+     *
+     * Must be called by the Root origin.
+     *
+     * Parameters:
+     * * `proposal_hash`: The hash of the proposal that should be disapproved.
+     *
+     * ## Complexity
+     * O(P) where P is the number of max proposals
+     *
+     * @param {H256} proposalHash
+     **/
+    disapproveProposal: GenericTxCall<
+      Rv,
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommittee';
+          palletCall: {
+            name: 'DisapproveProposal';
+            params: { proposalHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Close a vote that is either approved, disapproved or whose voting period has ended.
+     *
+     * May be called by any signed account in order to finish voting and close the proposal.
+     *
+     * If called before the end of the voting period it will only close the vote if it is
+     * has enough votes to be approved or disapproved.
+     *
+     * If called after the end of the voting period abstentions are counted as rejections
+     * unless there is a prime member set and the prime member cast an approval.
+     *
+     * If the close operation completes successfully with disapproval, the transaction fee will
+     * be waived. Otherwise execution of the approved operation will be charged to the caller.
+     *
+     * + `proposal_weight_bound`: The maximum amount of weight consumed by executing the closed
+     * proposal.
+     * + `length_bound`: The upper bound for the length of the proposal in storage. Checked via
+     * `storage::read` so it is `size_of::<u32>() == 4` larger than the pure length.
+     *
+     * ## Complexity
+     * - `O(B + M + P1 + P2)` where:
+     * - `B` is `proposal` size in bytes (length-fee-bounded)
+     * - `M` is members-count (code- and governance-bounded)
+     * - `P1` is the complexity of `proposal` preimage.
+     * - `P2` is proposal-count (code-bounded)
+     *
+     * @param {H256} proposalHash
+     * @param {number} index
+     * @param {SpWeightsWeightV2Weight} proposalWeightBound
+     * @param {number} lengthBound
+     **/
+    close: GenericTxCall<
+      Rv,
+      (
+        proposalHash: H256,
+        index: number,
+        proposalWeightBound: SpWeightsWeightV2Weight,
+        lengthBound: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommittee';
+          palletCall: {
+            name: 'Close';
+            params: {
+              proposalHash: H256;
+              index: number;
+              proposalWeightBound: SpWeightsWeightV2Weight;
+              lengthBound: number;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `CommunityCouncil`'s transaction calls
+   **/
+  communityCouncil: {
+    /**
+     * Set the collective's membership.
+     *
+     * - `new_members`: The new member list. Be nice to the chain and provide it sorted.
+     * - `prime`: The prime member whose vote sets the default.
+     * - `old_count`: The upper bound for the previous number of members in storage. Used for
+     * weight estimation.
+     *
+     * The dispatch of this call must be `SetMembersOrigin`.
+     *
+     * NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but
+     * the weight estimations rely on it to estimate dispatchable weight.
+     *
+     * # WARNING:
+     *
+     * The `pallet-collective` can also be managed by logic outside of the pallet through the
+     * implementation of the trait [`ChangeMembers`].
+     * Any call to `set_members` must be careful that the member set doesn't get out of sync
+     * with other logic managing the member set.
+     *
+     * ## Complexity:
+     * - `O(MP + N)` where:
+     * - `M` old-members-count (code- and governance-bounded)
+     * - `N` new-members-count (code- and governance-bounded)
+     * - `P` proposals-count (code-bounded)
+     *
+     * @param {Array<AccountId32Like>} newMembers
+     * @param {AccountId32Like | undefined} prime
+     * @param {number} oldCount
+     **/
+    setMembers: GenericTxCall<
+      Rv,
+      (
+        newMembers: Array<AccountId32Like>,
+        prime: AccountId32Like | undefined,
+        oldCount: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncil';
+          palletCall: {
+            name: 'SetMembers';
+            params: { newMembers: Array<AccountId32Like>; prime: AccountId32Like | undefined; oldCount: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Dispatch a proposal from a member using the `Member` origin.
+     *
+     * Origin must be a member of the collective.
+     *
+     * ## Complexity:
+     * - `O(B + M + P)` where:
+     * - `B` is `proposal` size in bytes (length-fee-bounded)
+     * - `M` members-count (code-bounded)
+     * - `P` complexity of dispatching `proposal`
+     *
+     * @param {AstarRuntimeRuntimeCallLike} proposal
+     * @param {number} lengthBound
+     **/
+    execute: GenericTxCall<
+      Rv,
+      (
+        proposal: AstarRuntimeRuntimeCallLike,
+        lengthBound: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncil';
+          palletCall: {
+            name: 'Execute';
+            params: { proposal: AstarRuntimeRuntimeCallLike; lengthBound: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Add a new proposal to either be voted on or executed directly.
+     *
+     * Requires the sender to be member.
+     *
+     * `threshold` determines whether `proposal` is executed directly (`threshold < 2`)
+     * or put up for voting.
+     *
+     * ## Complexity
+     * - `O(B + M + P1)` or `O(B + M + P2)` where:
+     * - `B` is `proposal` size in bytes (length-fee-bounded)
+     * - `M` is members-count (code- and governance-bounded)
+     * - branching is influenced by `threshold` where:
+     * - `P1` is proposal execution complexity (`threshold < 2`)
+     * - `P2` is proposals-count (code-bounded) (`threshold >= 2`)
+     *
+     * @param {number} threshold
+     * @param {AstarRuntimeRuntimeCallLike} proposal
+     * @param {number} lengthBound
+     **/
+    propose: GenericTxCall<
+      Rv,
+      (
+        threshold: number,
+        proposal: AstarRuntimeRuntimeCallLike,
+        lengthBound: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncil';
+          palletCall: {
+            name: 'Propose';
+            params: { threshold: number; proposal: AstarRuntimeRuntimeCallLike; lengthBound: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Add an aye or nay vote for the sender to the given proposal.
+     *
+     * Requires the sender to be a member.
+     *
+     * Transaction fees will be waived if the member is voting on any particular proposal
+     * for the first time and the call is successful. Subsequent vote changes will charge a
+     * fee.
+     * ## Complexity
+     * - `O(M)` where `M` is members-count (code- and governance-bounded)
+     *
+     * @param {H256} proposal
+     * @param {number} index
+     * @param {boolean} approve
+     **/
+    vote: GenericTxCall<
+      Rv,
+      (
+        proposal: H256,
+        index: number,
+        approve: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncil';
+          palletCall: {
+            name: 'Vote';
+            params: { proposal: H256; index: number; approve: boolean };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Disapprove a proposal, close, and remove it from the system, regardless of its current
+     * state.
+     *
+     * Must be called by the Root origin.
+     *
+     * Parameters:
+     * * `proposal_hash`: The hash of the proposal that should be disapproved.
+     *
+     * ## Complexity
+     * O(P) where P is the number of max proposals
+     *
+     * @param {H256} proposalHash
+     **/
+    disapproveProposal: GenericTxCall<
+      Rv,
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncil';
+          palletCall: {
+            name: 'DisapproveProposal';
+            params: { proposalHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Close a vote that is either approved, disapproved or whose voting period has ended.
+     *
+     * May be called by any signed account in order to finish voting and close the proposal.
+     *
+     * If called before the end of the voting period it will only close the vote if it is
+     * has enough votes to be approved or disapproved.
+     *
+     * If called after the end of the voting period abstentions are counted as rejections
+     * unless there is a prime member set and the prime member cast an approval.
+     *
+     * If the close operation completes successfully with disapproval, the transaction fee will
+     * be waived. Otherwise execution of the approved operation will be charged to the caller.
+     *
+     * + `proposal_weight_bound`: The maximum amount of weight consumed by executing the closed
+     * proposal.
+     * + `length_bound`: The upper bound for the length of the proposal in storage. Checked via
+     * `storage::read` so it is `size_of::<u32>() == 4` larger than the pure length.
+     *
+     * ## Complexity
+     * - `O(B + M + P1 + P2)` where:
+     * - `B` is `proposal` size in bytes (length-fee-bounded)
+     * - `M` is members-count (code- and governance-bounded)
+     * - `P1` is the complexity of `proposal` preimage.
+     * - `P2` is proposal-count (code-bounded)
+     *
+     * @param {H256} proposalHash
+     * @param {number} index
+     * @param {SpWeightsWeightV2Weight} proposalWeightBound
+     * @param {number} lengthBound
+     **/
+    close: GenericTxCall<
+      Rv,
+      (
+        proposalHash: H256,
+        index: number,
+        proposalWeightBound: SpWeightsWeightV2Weight,
+        lengthBound: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncil';
+          palletCall: {
+            name: 'Close';
+            params: {
+              proposalHash: H256;
+              index: number;
+              proposalWeightBound: SpWeightsWeightV2Weight;
+              lengthBound: number;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Democracy`'s transaction calls
+   **/
+  democracy: {
+    /**
+     * Propose a sensitive action to be taken.
+     *
+     * The dispatch origin of this call must be _Signed_ and the sender must
+     * have funds to cover the deposit.
+     *
+     * - `proposal_hash`: The hash of the proposal preimage.
+     * - `value`: The amount of deposit (must be at least `MinimumDeposit`).
+     *
+     * Emits `Proposed`.
+     *
+     * @param {FrameSupportPreimagesBounded} proposal
+     * @param {bigint} value
+     **/
+    propose: GenericTxCall<
+      Rv,
+      (
+        proposal: FrameSupportPreimagesBounded,
+        value: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'Propose';
+            params: { proposal: FrameSupportPreimagesBounded; value: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Signals agreement with a particular proposal.
+     *
+     * The dispatch origin of this call must be _Signed_ and the sender
+     * must have funds to cover the deposit, equal to the original deposit.
+     *
+     * - `proposal`: The index of the proposal to second.
+     *
+     * @param {number} proposal
+     **/
+    second: GenericTxCall<
+      Rv,
+      (proposal: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'Second';
+            params: { proposal: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Vote in a referendum. If `vote.is_aye()`, the vote is to enact the proposal;
+     * otherwise it is a vote to keep the status quo.
+     *
+     * The dispatch origin of this call must be _Signed_.
+     *
+     * - `ref_index`: The index of the referendum to vote for.
+     * - `vote`: The vote configuration.
+     *
+     * @param {number} refIndex
+     * @param {PalletDemocracyVoteAccountVote} vote
+     **/
+    vote: GenericTxCall<
+      Rv,
+      (
+        refIndex: number,
+        vote: PalletDemocracyVoteAccountVote,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'Vote';
+            params: { refIndex: number; vote: PalletDemocracyVoteAccountVote };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Schedule an emergency cancellation of a referendum. Cannot happen twice to the same
+     * referendum.
+     *
+     * The dispatch origin of this call must be `CancellationOrigin`.
+     *
+     * -`ref_index`: The index of the referendum to cancel.
+     *
+     * Weight: `O(1)`.
+     *
+     * @param {number} refIndex
+     **/
+    emergencyCancel: GenericTxCall<
+      Rv,
+      (refIndex: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'EmergencyCancel';
+            params: { refIndex: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Schedule a referendum to be tabled once it is legal to schedule an external
+     * referendum.
+     *
+     * The dispatch origin of this call must be `ExternalOrigin`.
+     *
+     * - `proposal_hash`: The preimage hash of the proposal.
+     *
+     * @param {FrameSupportPreimagesBounded} proposal
+     **/
+    externalPropose: GenericTxCall<
+      Rv,
+      (proposal: FrameSupportPreimagesBounded) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'ExternalPropose';
+            params: { proposal: FrameSupportPreimagesBounded };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Schedule a majority-carries referendum to be tabled next once it is legal to schedule
+     * an external referendum.
+     *
+     * The dispatch of this call must be `ExternalMajorityOrigin`.
+     *
+     * - `proposal_hash`: The preimage hash of the proposal.
+     *
+     * Unlike `external_propose`, blacklisting has no effect on this and it may replace a
+     * pre-scheduled `external_propose` call.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {FrameSupportPreimagesBounded} proposal
+     **/
+    externalProposeMajority: GenericTxCall<
+      Rv,
+      (proposal: FrameSupportPreimagesBounded) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'ExternalProposeMajority';
+            params: { proposal: FrameSupportPreimagesBounded };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Schedule a negative-turnout-bias referendum to be tabled next once it is legal to
+     * schedule an external referendum.
+     *
+     * The dispatch of this call must be `ExternalDefaultOrigin`.
+     *
+     * - `proposal_hash`: The preimage hash of the proposal.
+     *
+     * Unlike `external_propose`, blacklisting has no effect on this and it may replace a
+     * pre-scheduled `external_propose` call.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {FrameSupportPreimagesBounded} proposal
+     **/
+    externalProposeDefault: GenericTxCall<
+      Rv,
+      (proposal: FrameSupportPreimagesBounded) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'ExternalProposeDefault';
+            params: { proposal: FrameSupportPreimagesBounded };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Schedule the currently externally-proposed majority-carries referendum to be tabled
+     * immediately. If there is no externally-proposed referendum currently, or if there is one
+     * but it is not a majority-carries referendum then it fails.
+     *
+     * The dispatch of this call must be `FastTrackOrigin`.
+     *
+     * - `proposal_hash`: The hash of the current external proposal.
+     * - `voting_period`: The period that is allowed for voting on this proposal. Increased to
+     * Must be always greater than zero.
+     * For `FastTrackOrigin` must be equal or greater than `FastTrackVotingPeriod`.
+     * - `delay`: The number of block after voting has ended in approval and this should be
+     * enacted. This doesn't have a minimum amount.
+     *
+     * Emits `Started`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {H256} proposalHash
+     * @param {number} votingPeriod
+     * @param {number} delay
+     **/
+    fastTrack: GenericTxCall<
+      Rv,
+      (
+        proposalHash: H256,
+        votingPeriod: number,
+        delay: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'FastTrack';
+            params: { proposalHash: H256; votingPeriod: number; delay: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Veto and blacklist the external proposal hash.
+     *
+     * The dispatch origin of this call must be `VetoOrigin`.
+     *
+     * - `proposal_hash`: The preimage hash of the proposal to veto and blacklist.
+     *
+     * Emits `Vetoed`.
+     *
+     * Weight: `O(V + log(V))` where V is number of `existing vetoers`
+     *
+     * @param {H256} proposalHash
+     **/
+    vetoExternal: GenericTxCall<
+      Rv,
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'VetoExternal';
+            params: { proposalHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a referendum.
+     *
+     * The dispatch origin of this call must be _Root_.
+     *
+     * - `ref_index`: The index of the referendum to cancel.
+     *
+     * # Weight: `O(1)`.
+     *
+     * @param {number} refIndex
+     **/
+    cancelReferendum: GenericTxCall<
+      Rv,
+      (refIndex: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'CancelReferendum';
+            params: { refIndex: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Delegate the voting power (with some given conviction) of the sending account.
+     *
+     * The balance delegated is locked for as long as it's delegated, and thereafter for the
+     * time appropriate for the conviction's lock period.
+     *
+     * The dispatch origin of this call must be _Signed_, and the signing account must either:
+     * - be delegating already; or
+     * - have no voting activity (if there is, then it will need to be removed/consolidated
+     * through `reap_vote` or `unvote`).
+     *
+     * - `to`: The account whose voting the `target` account's voting power will follow.
+     * - `conviction`: The conviction that will be attached to the delegated votes. When the
+     * account is undelegated, the funds will be locked for the corresponding period.
+     * - `balance`: The amount of the account's balance to be used in delegating. This must not
+     * be more than the account's current balance.
+     *
+     * Emits `Delegated`.
+     *
+     * Weight: `O(R)` where R is the number of referendums the voter delegating to has
+     * voted on. Weight is charged as if maximum votes.
+     *
+     * @param {MultiAddressLike} to
+     * @param {PalletDemocracyConviction} conviction
+     * @param {bigint} balance
+     **/
+    delegate: GenericTxCall<
+      Rv,
+      (
+        to: MultiAddressLike,
+        conviction: PalletDemocracyConviction,
+        balance: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'Delegate';
+            params: { to: MultiAddressLike; conviction: PalletDemocracyConviction; balance: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Undelegate the voting power of the sending account.
+     *
+     * Tokens may be unlocked following once an amount of time consistent with the lock period
+     * of the conviction with which the delegation was issued.
+     *
+     * The dispatch origin of this call must be _Signed_ and the signing account must be
+     * currently delegating.
+     *
+     * Emits `Undelegated`.
+     *
+     * Weight: `O(R)` where R is the number of referendums the voter delegating to has
+     * voted on. Weight is charged as if maximum votes.
+     *
+     **/
+    undelegate: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'Undelegate';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Clears all public proposals.
+     *
+     * The dispatch origin of this call must be _Root_.
+     *
+     * Weight: `O(1)`.
+     *
+     **/
+    clearPublicProposals: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'ClearPublicProposals';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Unlock tokens that have an expired lock.
+     *
+     * The dispatch origin of this call must be _Signed_.
+     *
+     * - `target`: The account to remove the lock on.
+     *
+     * Weight: `O(R)` with R number of vote of target.
+     *
+     * @param {MultiAddressLike} target
+     **/
+    unlock: GenericTxCall<
+      Rv,
+      (target: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'Unlock';
+            params: { target: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a vote for a referendum.
+     *
+     * If:
+     * - the referendum was cancelled, or
+     * - the referendum is ongoing, or
+     * - the referendum has ended such that
+     * - the vote of the account was in opposition to the result; or
+     * - there was no conviction to the account's vote; or
+     * - the account made a split vote
+     * ...then the vote is removed cleanly and a following call to `unlock` may result in more
+     * funds being available.
+     *
+     * If, however, the referendum has ended and:
+     * - it finished corresponding to the vote of the account, and
+     * - the account made a standard vote with conviction, and
+     * - the lock period of the conviction is not over
+     * ...then the lock will be aggregated into the overall account's lock, which may involve
+     * *overlocking* (where the two locks are combined into a single lock that is the maximum
+     * of both the amount locked and the time is it locked for).
+     *
+     * The dispatch origin of this call must be _Signed_, and the signer must have a vote
+     * registered for referendum `index`.
+     *
+     * - `index`: The index of referendum of the vote to be removed.
+     *
+     * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
+     * Weight is calculated for the maximum number of vote.
+     *
+     * @param {number} index
+     **/
+    removeVote: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'RemoveVote';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a vote for a referendum.
+     *
+     * If the `target` is equal to the signer, then this function is exactly equivalent to
+     * `remove_vote`. If not equal to the signer, then the vote must have expired,
+     * either because the referendum was cancelled, because the voter lost the referendum or
+     * because the conviction period is over.
+     *
+     * The dispatch origin of this call must be _Signed_.
+     *
+     * - `target`: The account of the vote to be removed; this account must have voted for
+     * referendum `index`.
+     * - `index`: The index of referendum of the vote to be removed.
+     *
+     * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
+     * Weight is calculated for the maximum number of vote.
+     *
+     * @param {MultiAddressLike} target
+     * @param {number} index
+     **/
+    removeOtherVote: GenericTxCall<
+      Rv,
+      (
+        target: MultiAddressLike,
+        index: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'RemoveOtherVote';
+            params: { target: MultiAddressLike; index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Permanently place a proposal into the blacklist. This prevents it from ever being
+     * proposed again.
+     *
+     * If called on a queued public or external proposal, then this will result in it being
+     * removed. If the `ref_index` supplied is an active referendum with the proposal hash,
+     * then it will be cancelled.
+     *
+     * The dispatch origin of this call must be `BlacklistOrigin`.
+     *
+     * - `proposal_hash`: The proposal hash to blacklist permanently.
+     * - `ref_index`: An ongoing referendum whose hash is `proposal_hash`, which will be
+     * cancelled.
+     *
+     * Weight: `O(p)` (though as this is an high-privilege dispatch, we assume it has a
+     * reasonable value).
+     *
+     * @param {H256} proposalHash
+     * @param {number | undefined} maybeRefIndex
+     **/
+    blacklist: GenericTxCall<
+      Rv,
+      (
+        proposalHash: H256,
+        maybeRefIndex: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'Blacklist';
+            params: { proposalHash: H256; maybeRefIndex: number | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a proposal.
+     *
+     * The dispatch origin of this call must be `CancelProposalOrigin`.
+     *
+     * - `prop_index`: The index of the proposal to cancel.
+     *
+     * Weight: `O(p)` where `p = PublicProps::<T>::decode_len()`
+     *
+     * @param {number} propIndex
+     **/
+    cancelProposal: GenericTxCall<
+      Rv,
+      (propIndex: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'CancelProposal';
+            params: { propIndex: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set or clear a metadata of a proposal or a referendum.
+     *
+     * Parameters:
+     * - `origin`: Must correspond to the `MetadataOwner`.
+     * - `ExternalOrigin` for an external proposal with the `SuperMajorityApprove`
+     * threshold.
+     * - `ExternalDefaultOrigin` for an external proposal with the `SuperMajorityAgainst`
+     * threshold.
+     * - `ExternalMajorityOrigin` for an external proposal with the `SimpleMajority`
+     * threshold.
+     * - `Signed` by a creator for a public proposal.
+     * - `Signed` to clear a metadata for a finished referendum.
+     * - `Root` to set a metadata for an ongoing referendum.
+     * - `owner`: an identifier of a metadata owner.
+     * - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
+     *
+     * @param {PalletDemocracyMetadataOwner} owner
+     * @param {H256 | undefined} maybeHash
+     **/
+    setMetadata: GenericTxCall<
+      Rv,
+      (
+        owner: PalletDemocracyMetadataOwner,
+        maybeHash: H256 | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Democracy';
+          palletCall: {
+            name: 'SetMetadata';
+            params: { owner: PalletDemocracyMetadataOwner; maybeHash: H256 | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Treasury`'s transaction calls
+   **/
+  treasury: {
+    /**
+     * Put forward a suggestion for spending.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed.
+     *
+     * ## Details
+     * A deposit proportional to the value is reserved and slashed if the proposal is rejected.
+     * It is returned once the proposal is awarded.
+     *
+     * ### Complexity
+     * - O(1)
+     *
+     * ## Events
+     *
+     * Emits [`Event::Proposed`] if successful.
+     *
+     * @param {bigint} value
+     * @param {MultiAddressLike} beneficiary
+     **/
+    proposeSpend: GenericTxCall<
+      Rv,
+      (
+        value: bigint,
+        beneficiary: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'ProposeSpend';
+            params: { value: bigint; beneficiary: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Reject a proposed spend.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::RejectOrigin`].
+     *
+     * ## Details
+     * The original deposit will be slashed.
+     *
+     * ### Complexity
+     * - O(1)
+     *
+     * ## Events
+     *
+     * Emits [`Event::Rejected`] if successful.
+     *
+     * @param {number} proposalId
+     **/
+    rejectProposal: GenericTxCall<
+      Rv,
+      (proposalId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'RejectProposal';
+            params: { proposalId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Approve a proposal.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::ApproveOrigin`].
+     *
+     * ## Details
+     *
+     * At a later time, the proposal will be allocated to the beneficiary and the original
+     * deposit will be returned.
+     *
+     * ### Complexity
+     * - O(1).
+     *
+     * ## Events
+     *
+     * No events are emitted from this dispatch.
+     *
+     * @param {number} proposalId
+     **/
+    approveProposal: GenericTxCall<
+      Rv,
+      (proposalId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'ApproveProposal';
+            params: { proposalId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Propose and approve a spend of treasury funds.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`.
+     *
+     * ### Details
+     * NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the
+     * beneficiary.
+     *
+     * ### Parameters
+     * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
+     * - `beneficiary`: The destination account for the transfer.
+     *
+     * ## Events
+     *
+     * Emits [`Event::SpendApproved`] if successful.
+     *
+     * @param {bigint} amount
+     * @param {MultiAddressLike} beneficiary
+     **/
+    spendLocal: GenericTxCall<
+      Rv,
+      (
+        amount: bigint,
+        beneficiary: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'SpendLocal';
+            params: { amount: bigint; beneficiary: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force a previously approved proposal to be removed from the approval queue.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::RejectOrigin`].
+     *
+     * ## Details
+     *
+     * The original deposit will no longer be returned.
+     *
+     * ### Parameters
+     * - `proposal_id`: The index of a proposal
+     *
+     * ### Complexity
+     * - O(A) where `A` is the number of approvals
+     *
+     * ### Errors
+     * - [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the
+     * approval queue, i.e., the proposal has not been approved. This could also mean the
+     * proposal does not exist altogether, thus there is no way it would have been approved
+     * in the first place.
+     *
+     * @param {number} proposalId
+     **/
+    removeApproval: GenericTxCall<
+      Rv,
+      (proposalId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'RemoveApproval';
+            params: { proposalId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Propose and approve a spend of treasury funds.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::SpendOrigin`] with the `Success` value being at least
+     * `amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted
+     * for assertion using the [`Config::BalanceConverter`].
+     *
+     * ## Details
+     *
+     * Create an approved spend for transferring a specific `amount` of `asset_kind` to a
+     * designated beneficiary. The spend must be claimed using the `payout` dispatchable within
+     * the [`Config::PayoutPeriod`].
+     *
+     * ### Parameters
+     * - `asset_kind`: An indicator of the specific asset class to be spent.
+     * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
+     * - `beneficiary`: The beneficiary of the spend.
+     * - `valid_from`: The block number from which the spend can be claimed. It can refer to
+     * the past if the resulting spend has not yet expired according to the
+     * [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after
+     * approval.
+     *
+     * ## Events
+     *
+     * Emits [`Event::AssetSpendApproved`] if successful.
+     *
+     * @param {[]} assetKind
+     * @param {bigint} amount
+     * @param {AccountId32Like} beneficiary
+     * @param {number | undefined} validFrom
+     **/
+    spend: GenericTxCall<
+      Rv,
+      (
+        assetKind: [],
+        amount: bigint,
+        beneficiary: AccountId32Like,
+        validFrom: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'Spend';
+            params: { assetKind: []; amount: bigint; beneficiary: AccountId32Like; validFrom: number | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Claim a spend.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed.
+     *
+     * ## Details
+     *
+     * Spends must be claimed within some temporal bounds. A spend may be claimed within one
+     * [`Config::PayoutPeriod`] from the `valid_from` block.
+     * In case of a payout failure, the spend status must be updated with the `check_status`
+     * dispatchable before retrying with the current function.
+     *
+     * ### Parameters
+     * - `index`: The spend index.
+     *
+     * ## Events
+     *
+     * Emits [`Event::Paid`] if successful.
+     *
+     * @param {number} index
+     **/
+    payout: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'Payout';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Check the status of the spend and remove it from the storage if processed.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed.
+     *
+     * ## Details
+     *
+     * The status check is a prerequisite for retrying a failed payout.
+     * If a spend has either succeeded or expired, it is removed from the storage by this
+     * function. In such instances, transaction fees are refunded.
+     *
+     * ### Parameters
+     * - `index`: The spend index.
+     *
+     * ## Events
+     *
+     * Emits [`Event::PaymentFailed`] if the spend payout has failed.
+     * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
+     *
+     * @param {number} index
+     **/
+    checkStatus: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'CheckStatus';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Void previously approved spend.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::RejectOrigin`].
+     *
+     * ## Details
+     *
+     * A spend void is only possible if the payout has not been attempted yet.
+     *
+     * ### Parameters
+     * - `index`: The spend index.
+     *
+     * ## Events
+     *
+     * Emits [`Event::AssetSpendVoided`] if successful.
+     *
+     * @param {number} index
+     **/
+    voidSpend: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'VoidSpend';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `CommunityTreasury`'s transaction calls
+   **/
+  communityTreasury: {
+    /**
+     * Put forward a suggestion for spending.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed.
+     *
+     * ## Details
+     * A deposit proportional to the value is reserved and slashed if the proposal is rejected.
+     * It is returned once the proposal is awarded.
+     *
+     * ### Complexity
+     * - O(1)
+     *
+     * ## Events
+     *
+     * Emits [`Event::Proposed`] if successful.
+     *
+     * @param {bigint} value
+     * @param {MultiAddressLike} beneficiary
+     **/
+    proposeSpend: GenericTxCall<
+      Rv,
+      (
+        value: bigint,
+        beneficiary: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityTreasury';
+          palletCall: {
+            name: 'ProposeSpend';
+            params: { value: bigint; beneficiary: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Reject a proposed spend.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::RejectOrigin`].
+     *
+     * ## Details
+     * The original deposit will be slashed.
+     *
+     * ### Complexity
+     * - O(1)
+     *
+     * ## Events
+     *
+     * Emits [`Event::Rejected`] if successful.
+     *
+     * @param {number} proposalId
+     **/
+    rejectProposal: GenericTxCall<
+      Rv,
+      (proposalId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityTreasury';
+          palletCall: {
+            name: 'RejectProposal';
+            params: { proposalId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Approve a proposal.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::ApproveOrigin`].
+     *
+     * ## Details
+     *
+     * At a later time, the proposal will be allocated to the beneficiary and the original
+     * deposit will be returned.
+     *
+     * ### Complexity
+     * - O(1).
+     *
+     * ## Events
+     *
+     * No events are emitted from this dispatch.
+     *
+     * @param {number} proposalId
+     **/
+    approveProposal: GenericTxCall<
+      Rv,
+      (proposalId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityTreasury';
+          palletCall: {
+            name: 'ApproveProposal';
+            params: { proposalId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Propose and approve a spend of treasury funds.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`.
+     *
+     * ### Details
+     * NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the
+     * beneficiary.
+     *
+     * ### Parameters
+     * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
+     * - `beneficiary`: The destination account for the transfer.
+     *
+     * ## Events
+     *
+     * Emits [`Event::SpendApproved`] if successful.
+     *
+     * @param {bigint} amount
+     * @param {MultiAddressLike} beneficiary
+     **/
+    spendLocal: GenericTxCall<
+      Rv,
+      (
+        amount: bigint,
+        beneficiary: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityTreasury';
+          palletCall: {
+            name: 'SpendLocal';
+            params: { amount: bigint; beneficiary: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force a previously approved proposal to be removed from the approval queue.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::RejectOrigin`].
+     *
+     * ## Details
+     *
+     * The original deposit will no longer be returned.
+     *
+     * ### Parameters
+     * - `proposal_id`: The index of a proposal
+     *
+     * ### Complexity
+     * - O(A) where `A` is the number of approvals
+     *
+     * ### Errors
+     * - [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the
+     * approval queue, i.e., the proposal has not been approved. This could also mean the
+     * proposal does not exist altogether, thus there is no way it would have been approved
+     * in the first place.
+     *
+     * @param {number} proposalId
+     **/
+    removeApproval: GenericTxCall<
+      Rv,
+      (proposalId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityTreasury';
+          palletCall: {
+            name: 'RemoveApproval';
+            params: { proposalId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Propose and approve a spend of treasury funds.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::SpendOrigin`] with the `Success` value being at least
+     * `amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted
+     * for assertion using the [`Config::BalanceConverter`].
+     *
+     * ## Details
+     *
+     * Create an approved spend for transferring a specific `amount` of `asset_kind` to a
+     * designated beneficiary. The spend must be claimed using the `payout` dispatchable within
+     * the [`Config::PayoutPeriod`].
+     *
+     * ### Parameters
+     * - `asset_kind`: An indicator of the specific asset class to be spent.
+     * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
+     * - `beneficiary`: The beneficiary of the spend.
+     * - `valid_from`: The block number from which the spend can be claimed. It can refer to
+     * the past if the resulting spend has not yet expired according to the
+     * [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after
+     * approval.
+     *
+     * ## Events
+     *
+     * Emits [`Event::AssetSpendApproved`] if successful.
+     *
+     * @param {[]} assetKind
+     * @param {bigint} amount
+     * @param {AccountId32Like} beneficiary
+     * @param {number | undefined} validFrom
+     **/
+    spend: GenericTxCall<
+      Rv,
+      (
+        assetKind: [],
+        amount: bigint,
+        beneficiary: AccountId32Like,
+        validFrom: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityTreasury';
+          palletCall: {
+            name: 'Spend';
+            params: { assetKind: []; amount: bigint; beneficiary: AccountId32Like; validFrom: number | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Claim a spend.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed.
+     *
+     * ## Details
+     *
+     * Spends must be claimed within some temporal bounds. A spend may be claimed within one
+     * [`Config::PayoutPeriod`] from the `valid_from` block.
+     * In case of a payout failure, the spend status must be updated with the `check_status`
+     * dispatchable before retrying with the current function.
+     *
+     * ### Parameters
+     * - `index`: The spend index.
+     *
+     * ## Events
+     *
+     * Emits [`Event::Paid`] if successful.
+     *
+     * @param {number} index
+     **/
+    payout: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityTreasury';
+          palletCall: {
+            name: 'Payout';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Check the status of the spend and remove it from the storage if processed.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed.
+     *
+     * ## Details
+     *
+     * The status check is a prerequisite for retrying a failed payout.
+     * If a spend has either succeeded or expired, it is removed from the storage by this
+     * function. In such instances, transaction fees are refunded.
+     *
+     * ### Parameters
+     * - `index`: The spend index.
+     *
+     * ## Events
+     *
+     * Emits [`Event::PaymentFailed`] if the spend payout has failed.
+     * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
+     *
+     * @param {number} index
+     **/
+    checkStatus: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityTreasury';
+          palletCall: {
+            name: 'CheckStatus';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Void previously approved spend.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::RejectOrigin`].
+     *
+     * ## Details
+     *
+     * A spend void is only possible if the payout has not been attempted yet.
+     *
+     * ### Parameters
+     * - `index`: The spend index.
+     *
+     * ## Events
+     *
+     * Emits [`Event::AssetSpendVoided`] if successful.
+     *
+     * @param {number} index
+     **/
+    voidSpend: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityTreasury';
+          palletCall: {
+            name: 'VoidSpend';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `CollectiveProxy`'s transaction calls
+   **/
+  collectiveProxy: {
+    /**
+     * Executes the call on a behalf of an aliased account.
+     *
+     * The `origin` of the call is supposed to be a _collective_ (but can be anything) which can dispatch `call` on behalf of the aliased account.
+     * It's essentially a proxy call that can be made by arbitrary origin type.
+     *
+     * @param {AstarRuntimeRuntimeCallLike} call
+     **/
+    executeCall: GenericTxCall<
+      Rv,
+      (call: AstarRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CollectiveProxy';
+          palletCall: {
+            name: 'ExecuteCall';
+            params: { call: AstarRuntimeRuntimeCallLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s transaction calls
+   **/
+  multiBlockMigrations: {
+    /**
+     * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+     *
+     * Should normally not be needed and is only in place as emergency measure. Note that
+     * restarting the migration process in this manner will not call the
+     * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+     *
+     * @param {PalletMigrationsMigrationCursor | undefined} cursor
+     **/
+    forceSetCursor: GenericTxCall<
+      Rv,
+      (cursor: PalletMigrationsMigrationCursor | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceSetCursor';
+            params: { cursor: PalletMigrationsMigrationCursor | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Allows root to set an active cursor to forcefully start/forward the migration process.
+     *
+     * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+     * `started_at` value to the next block number. Otherwise this would not be possible, since
+     * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+     * indicates that the current block number plus one should be used.
+     *
+     * @param {number} index
+     * @param {BytesLike | undefined} innerCursor
+     * @param {number | undefined} startedAt
+     **/
+    forceSetActiveCursor: GenericTxCall<
+      Rv,
+      (
+        index: number,
+        innerCursor: BytesLike | undefined,
+        startedAt: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceSetActiveCursor';
+            params: { index: number; innerCursor: BytesLike | undefined; startedAt: number | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Forces the onboarding of the migrations.
+     *
+     * This process happens automatically on a runtime upgrade. It is in place as an emergency
+     * measurement. The cursor needs to be `None` for this to succeed.
+     *
+     **/
+    forceOnboardMbms: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceOnboardMbms';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Clears the `Historic` set.
+     *
+     * `map_cursor` must be set to the last value that was returned by the
+     * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+     * way that will result in a sensible weight.
+     *
+     * @param {PalletMigrationsHistoricCleanupSelector} selector
+     **/
+    clearHistoric: GenericTxCall<
+      Rv,
+      (selector: PalletMigrationsHistoricCleanupSelector) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ClearHistoric';
+            params: { selector: PalletMigrationsHistoricCleanupSelector };
           };
         }
       >

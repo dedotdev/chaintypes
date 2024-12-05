@@ -48,10 +48,14 @@ import type {
   PalletContractsPrimitivesContractAccessError,
   AstarPrimitivesDappStakingRankedTier,
   XcmVersionedAssetId,
-  XcmFeePaymentRuntimeApiError,
+  XcmRuntimeApisFeesError,
   XcmVersionedXcm,
   XcmVersionedAssets,
   XcmVersionedLocation,
+  XcmRuntimeApisDryRunCallDryRunEffects,
+  XcmRuntimeApisDryRunError,
+  AstarRuntimeOriginCaller,
+  XcmRuntimeApisDryRunXcmDryRunEffects,
 } from './types';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
@@ -634,6 +638,18 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     >;
 
     /**
+     * Initialize the pending block.
+     * The behavior should be the same as the runtime api Core_initialize_block but
+     * for a "pending" block.
+     * If your project don't need to have a different behavior to initialize "pending" blocks,
+     * you can copy your Core_initialize_block implementation.
+     *
+     * @callname: EthereumRuntimeRPCApi_initialize_pending_block
+     * @param {Header} header
+     **/
+    initializePendingBlock: GenericRuntimeApiMethod<Rv, (header: Header) => Promise<[]>>;
+
+    /**
      * Generic runtime api call
      **/
     [method: string]: GenericRuntimeApiMethod<Rv>;
@@ -821,7 +837,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     queryAcceptablePaymentAssets: GenericRuntimeApiMethod<
       Rv,
-      (xcmVersion: number) => Promise<Result<Array<XcmVersionedAssetId>, XcmFeePaymentRuntimeApiError>>
+      (xcmVersion: number) => Promise<Result<Array<XcmVersionedAssetId>, XcmRuntimeApisFeesError>>
     >;
 
     /**
@@ -836,7 +852,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     queryXcmWeight: GenericRuntimeApiMethod<
       Rv,
-      (message: XcmVersionedXcm) => Promise<Result<SpWeightsWeightV2Weight, XcmFeePaymentRuntimeApiError>>
+      (message: XcmVersionedXcm) => Promise<Result<SpWeightsWeightV2Weight, XcmRuntimeApisFeesError>>
     >;
 
     /**
@@ -853,10 +869,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     queryWeightToAssetFee: GenericRuntimeApiMethod<
       Rv,
-      (
-        weight: SpWeightsWeightV2Weight,
-        asset: XcmVersionedAssetId,
-      ) => Promise<Result<bigint, XcmFeePaymentRuntimeApiError>>
+      (weight: SpWeightsWeightV2Weight, asset: XcmVersionedAssetId) => Promise<Result<bigint, XcmRuntimeApisFeesError>>
     >;
 
     /**
@@ -878,7 +891,46 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       (
         destination: XcmVersionedLocation,
         message: XcmVersionedXcm,
-      ) => Promise<Result<XcmVersionedAssets, XcmFeePaymentRuntimeApiError>>
+      ) => Promise<Result<XcmVersionedAssets, XcmRuntimeApisFeesError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: DryRunApi - 0x91b1c8b16328eb92
+   **/
+  dryRunApi: {
+    /**
+     * Dry run call.
+     *
+     * @callname: DryRunApi_dry_run_call
+     * @param {AstarRuntimeOriginCaller} origin
+     * @param {AstarRuntimeRuntimeCallLike} call
+     **/
+    dryRunCall: GenericRuntimeApiMethod<
+      Rv,
+      (
+        origin: AstarRuntimeOriginCaller,
+        call: AstarRuntimeRuntimeCallLike,
+      ) => Promise<Result<XcmRuntimeApisDryRunCallDryRunEffects, XcmRuntimeApisDryRunError>>
+    >;
+
+    /**
+     * Dry run XCM program
+     *
+     * @callname: DryRunApi_dry_run_xcm
+     * @param {XcmVersionedLocation} origin_location
+     * @param {XcmVersionedXcm} xcm
+     **/
+    dryRunXcm: GenericRuntimeApiMethod<
+      Rv,
+      (
+        originLocation: XcmVersionedLocation,
+        xcm: XcmVersionedXcm,
+      ) => Promise<Result<XcmRuntimeApisDryRunXcmDryRunEffects, XcmRuntimeApisDryRunError>>
     >;
 
     /**

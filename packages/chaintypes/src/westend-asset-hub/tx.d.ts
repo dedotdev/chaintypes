@@ -8994,7 +8994,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * # Parameters
      *
-     * * `payload`: The RLP-encoded [`crate::evm::TransactionLegacySigned`].
+     * * `payload`: The encoded [`crate::evm::TransactionSigned`].
      * * `gas_limit`: The gas limit enforced during contract execution.
      * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
      * storage usage.

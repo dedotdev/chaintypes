@@ -54,7 +54,9 @@ import type {
   PalletRevivePrimitivesContractResult,
   PalletRevivePrimitivesContractResultInstantiateReturnValue,
   PalletRevivePrimitivesCode,
-  PalletRevivePrimitivesEthContractResult,
+  PalletRevivePrimitivesEthTransactInfo,
+  PalletRevivePrimitivesEthTransactError,
+  PalletReviveEvmApiRpcTypesGenGenericTransaction,
   PalletRevivePrimitivesCodeUploadReturnValue,
   PalletRevivePrimitivesContractAccessError,
 } from './types';
@@ -950,23 +952,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * See [`crate::Pallet::bare_eth_transact`]
      *
      * @callname: ReviveApi_eth_transact
-     * @param {H160} origin
-     * @param {H160 | undefined} dest
-     * @param {U256} value
-     * @param {BytesLike} input
-     * @param {SpWeightsWeightV2Weight | undefined} gas_limit
-     * @param {bigint | undefined} storage_deposit_limit
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
      **/
     ethTransact: GenericRuntimeApiMethod<
       Rv,
       (
-        origin: H160,
-        dest: H160 | undefined,
-        value: U256,
-        input: BytesLike,
-        gasLimit?: SpWeightsWeightV2Weight | undefined,
-        storageDepositLimit?: bigint | undefined,
-      ) => Promise<PalletRevivePrimitivesEthContractResult>
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+      ) => Promise<Result<PalletRevivePrimitivesEthTransactInfo, PalletRevivePrimitivesEthTransactError>>
     >;
 
     /**

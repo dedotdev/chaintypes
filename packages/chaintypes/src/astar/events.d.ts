@@ -19,9 +19,9 @@ import type {
   SpWeightsWeightV2Weight,
   FrameSupportTokensMiscBalanceStatus,
   PalletInflationInflationConfiguration,
-  PalletDappStakingV3Subperiod,
+  PalletDappStakingSubperiod,
   AstarPrimitivesDappStakingSmartContract,
-  PalletDappStakingV3ForcingType,
+  PalletDappStakingForcingType,
   AstarPrimitivesOracleCurrencyId,
   StagingXcmV4TraitsOutcome,
   StagingXcmV4Location,
@@ -37,6 +37,9 @@ import type {
   EthereumLog,
   EvmCoreErrorExitReason,
   PalletContractsOrigin,
+  PalletDemocracyVoteThreshold,
+  PalletDemocracyVoteAccountVote,
+  PalletDemocracyMetadataOwner,
 } from './types';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -371,6 +374,96 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
+   * Pallet `Scheduler`'s events
+   **/
+  scheduler: {
+    /**
+     * Scheduled some task.
+     **/
+    Scheduled: GenericPalletEvent<Rv, 'Scheduler', 'Scheduled', { when: number; index: number }>;
+
+    /**
+     * Canceled some task.
+     **/
+    Canceled: GenericPalletEvent<Rv, 'Scheduler', 'Canceled', { when: number; index: number }>;
+
+    /**
+     * Dispatched some task.
+     **/
+    Dispatched: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'Dispatched',
+      { task: [number, number]; id?: FixedBytes<32> | undefined; result: Result<[], DispatchError> }
+    >;
+
+    /**
+     * Set a retry configuration for some task.
+     **/
+    RetrySet: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetrySet',
+      { task: [number, number]; id?: FixedBytes<32> | undefined; period: number; retries: number }
+    >;
+
+    /**
+     * Cancel a retry configuration for some task.
+     **/
+    RetryCancelled: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetryCancelled',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
+     * The call for the provided hash was not found so the task has been aborted.
+     **/
+    CallUnavailable: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'CallUnavailable',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
+     * The given task was unable to be renewed since the agenda is full at that block.
+     **/
+    PeriodicFailed: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'PeriodicFailed',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
+     * The given task was unable to be retried since the agenda is full at that block or there
+     * was not enough weight to reschedule it.
+     **/
+    RetryFailed: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetryFailed',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
+     * The given task can never be executed since it is overweight.
+     **/
+    PermanentlyOverweight: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'PermanentlyOverweight',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
    * Pallet `ParachainSystem`'s events
    **/
   parachainSystem: {
@@ -655,7 +748,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'DappStaking',
       'NewSubperiod',
-      { subperiod: PalletDappStakingV3Subperiod; number: number }
+      { subperiod: PalletDappStakingSubperiod; number: number }
     >;
 
     /**
@@ -793,7 +886,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * Privileged origin has forced a new era and possibly a subperiod to start from next block.
      **/
-    Force: GenericPalletEvent<Rv, 'DappStaking', 'Force', { forcingType: PalletDappStakingV3ForcingType }>;
+    Force: GenericPalletEvent<Rv, 'DappStaking', 'Force', { forcingType: PalletDappStakingForcingType }>;
 
     /**
      * Generic pallet event
@@ -969,6 +1062,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * Some account `who` was blocked.
      **/
     Blocked: GenericPalletEvent<Rv, 'Assets', 'Blocked', { assetId: bigint; who: AccountId32 }>;
+
+    /**
+     * Some assets were deposited (e.g. for transaction fees).
+     **/
+    Deposited: GenericPalletEvent<Rv, 'Assets', 'Deposited', { assetId: bigint; who: AccountId32; amount: bigint }>;
+
+    /**
+     * Some assets were withdrawn from the account (e.g. for transaction fees).
+     **/
+    Withdrawn: GenericPalletEvent<Rv, 'Assets', 'Withdrawn', { assetId: bigint; who: AccountId32; amount: bigint }>;
 
     /**
      * Generic pallet event
@@ -1875,6 +1978,30 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
+   * Pallet `Preimage`'s events
+   **/
+  preimage: {
+    /**
+     * A preimage has been noted.
+     **/
+    Noted: GenericPalletEvent<Rv, 'Preimage', 'Noted', { hash: H256 }>;
+
+    /**
+     * A preimage has been requested.
+     **/
+    Requested: GenericPalletEvent<Rv, 'Preimage', 'Requested', { hash: H256 }>;
+
+    /**
+     * A preimage has ben cleared.
+     **/
+    Cleared: GenericPalletEvent<Rv, 'Preimage', 'Cleared', { hash: H256 }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
    * Pallet `Sudo`'s events
    **/
   sudo: {
@@ -1930,6 +2057,824 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
          * The result of the call made by the sudo user.
          **/
         sudoResult: Result<[], DispatchError>;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `CouncilMembership`'s events
+   **/
+  councilMembership: {
+    /**
+     * The given member was added; see the transaction for who.
+     **/
+    MemberAdded: GenericPalletEvent<Rv, 'CouncilMembership', 'MemberAdded', undefined>;
+
+    /**
+     * The given member was removed; see the transaction for who.
+     **/
+    MemberRemoved: GenericPalletEvent<Rv, 'CouncilMembership', 'MemberRemoved', undefined>;
+
+    /**
+     * Two members were swapped; see the transaction for who.
+     **/
+    MembersSwapped: GenericPalletEvent<Rv, 'CouncilMembership', 'MembersSwapped', undefined>;
+
+    /**
+     * The membership was reset; see the transaction for who the new set is.
+     **/
+    MembersReset: GenericPalletEvent<Rv, 'CouncilMembership', 'MembersReset', undefined>;
+
+    /**
+     * One of the members' keys changed.
+     **/
+    KeyChanged: GenericPalletEvent<Rv, 'CouncilMembership', 'KeyChanged', undefined>;
+
+    /**
+     * Phantom member, never used.
+     **/
+    Dummy: GenericPalletEvent<Rv, 'CouncilMembership', 'Dummy', undefined>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `TechnicalCommitteeMembership`'s events
+   **/
+  technicalCommitteeMembership: {
+    /**
+     * The given member was added; see the transaction for who.
+     **/
+    MemberAdded: GenericPalletEvent<Rv, 'TechnicalCommitteeMembership', 'MemberAdded', undefined>;
+
+    /**
+     * The given member was removed; see the transaction for who.
+     **/
+    MemberRemoved: GenericPalletEvent<Rv, 'TechnicalCommitteeMembership', 'MemberRemoved', undefined>;
+
+    /**
+     * Two members were swapped; see the transaction for who.
+     **/
+    MembersSwapped: GenericPalletEvent<Rv, 'TechnicalCommitteeMembership', 'MembersSwapped', undefined>;
+
+    /**
+     * The membership was reset; see the transaction for who the new set is.
+     **/
+    MembersReset: GenericPalletEvent<Rv, 'TechnicalCommitteeMembership', 'MembersReset', undefined>;
+
+    /**
+     * One of the members' keys changed.
+     **/
+    KeyChanged: GenericPalletEvent<Rv, 'TechnicalCommitteeMembership', 'KeyChanged', undefined>;
+
+    /**
+     * Phantom member, never used.
+     **/
+    Dummy: GenericPalletEvent<Rv, 'TechnicalCommitteeMembership', 'Dummy', undefined>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `CommunityCouncilMembership`'s events
+   **/
+  communityCouncilMembership: {
+    /**
+     * The given member was added; see the transaction for who.
+     **/
+    MemberAdded: GenericPalletEvent<Rv, 'CommunityCouncilMembership', 'MemberAdded', undefined>;
+
+    /**
+     * The given member was removed; see the transaction for who.
+     **/
+    MemberRemoved: GenericPalletEvent<Rv, 'CommunityCouncilMembership', 'MemberRemoved', undefined>;
+
+    /**
+     * Two members were swapped; see the transaction for who.
+     **/
+    MembersSwapped: GenericPalletEvent<Rv, 'CommunityCouncilMembership', 'MembersSwapped', undefined>;
+
+    /**
+     * The membership was reset; see the transaction for who the new set is.
+     **/
+    MembersReset: GenericPalletEvent<Rv, 'CommunityCouncilMembership', 'MembersReset', undefined>;
+
+    /**
+     * One of the members' keys changed.
+     **/
+    KeyChanged: GenericPalletEvent<Rv, 'CommunityCouncilMembership', 'KeyChanged', undefined>;
+
+    /**
+     * Phantom member, never used.
+     **/
+    Dummy: GenericPalletEvent<Rv, 'CommunityCouncilMembership', 'Dummy', undefined>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Council`'s events
+   **/
+  council: {
+    /**
+     * A motion (given hash) has been proposed (by given account) with a threshold (given
+     * `MemberCount`).
+     **/
+    Proposed: GenericPalletEvent<
+      Rv,
+      'Council',
+      'Proposed',
+      { account: AccountId32; proposalIndex: number; proposalHash: H256; threshold: number }
+    >;
+
+    /**
+     * A motion (given hash) has been voted on by given account, leaving
+     * a tally (yes votes and no votes given respectively as `MemberCount`).
+     **/
+    Voted: GenericPalletEvent<
+      Rv,
+      'Council',
+      'Voted',
+      { account: AccountId32; proposalHash: H256; voted: boolean; yes: number; no: number }
+    >;
+
+    /**
+     * A motion was approved by the required threshold.
+     **/
+    Approved: GenericPalletEvent<Rv, 'Council', 'Approved', { proposalHash: H256 }>;
+
+    /**
+     * A motion was not approved by the required threshold.
+     **/
+    Disapproved: GenericPalletEvent<Rv, 'Council', 'Disapproved', { proposalHash: H256 }>;
+
+    /**
+     * A motion was executed; result will be `Ok` if it returned without error.
+     **/
+    Executed: GenericPalletEvent<Rv, 'Council', 'Executed', { proposalHash: H256; result: Result<[], DispatchError> }>;
+
+    /**
+     * A single member did some action; result will be `Ok` if it returned without error.
+     **/
+    MemberExecuted: GenericPalletEvent<
+      Rv,
+      'Council',
+      'MemberExecuted',
+      { proposalHash: H256; result: Result<[], DispatchError> }
+    >;
+
+    /**
+     * A proposal was closed because its threshold was reached or after its duration was up.
+     **/
+    Closed: GenericPalletEvent<Rv, 'Council', 'Closed', { proposalHash: H256; yes: number; no: number }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `TechnicalCommittee`'s events
+   **/
+  technicalCommittee: {
+    /**
+     * A motion (given hash) has been proposed (by given account) with a threshold (given
+     * `MemberCount`).
+     **/
+    Proposed: GenericPalletEvent<
+      Rv,
+      'TechnicalCommittee',
+      'Proposed',
+      { account: AccountId32; proposalIndex: number; proposalHash: H256; threshold: number }
+    >;
+
+    /**
+     * A motion (given hash) has been voted on by given account, leaving
+     * a tally (yes votes and no votes given respectively as `MemberCount`).
+     **/
+    Voted: GenericPalletEvent<
+      Rv,
+      'TechnicalCommittee',
+      'Voted',
+      { account: AccountId32; proposalHash: H256; voted: boolean; yes: number; no: number }
+    >;
+
+    /**
+     * A motion was approved by the required threshold.
+     **/
+    Approved: GenericPalletEvent<Rv, 'TechnicalCommittee', 'Approved', { proposalHash: H256 }>;
+
+    /**
+     * A motion was not approved by the required threshold.
+     **/
+    Disapproved: GenericPalletEvent<Rv, 'TechnicalCommittee', 'Disapproved', { proposalHash: H256 }>;
+
+    /**
+     * A motion was executed; result will be `Ok` if it returned without error.
+     **/
+    Executed: GenericPalletEvent<
+      Rv,
+      'TechnicalCommittee',
+      'Executed',
+      { proposalHash: H256; result: Result<[], DispatchError> }
+    >;
+
+    /**
+     * A single member did some action; result will be `Ok` if it returned without error.
+     **/
+    MemberExecuted: GenericPalletEvent<
+      Rv,
+      'TechnicalCommittee',
+      'MemberExecuted',
+      { proposalHash: H256; result: Result<[], DispatchError> }
+    >;
+
+    /**
+     * A proposal was closed because its threshold was reached or after its duration was up.
+     **/
+    Closed: GenericPalletEvent<Rv, 'TechnicalCommittee', 'Closed', { proposalHash: H256; yes: number; no: number }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `CommunityCouncil`'s events
+   **/
+  communityCouncil: {
+    /**
+     * A motion (given hash) has been proposed (by given account) with a threshold (given
+     * `MemberCount`).
+     **/
+    Proposed: GenericPalletEvent<
+      Rv,
+      'CommunityCouncil',
+      'Proposed',
+      { account: AccountId32; proposalIndex: number; proposalHash: H256; threshold: number }
+    >;
+
+    /**
+     * A motion (given hash) has been voted on by given account, leaving
+     * a tally (yes votes and no votes given respectively as `MemberCount`).
+     **/
+    Voted: GenericPalletEvent<
+      Rv,
+      'CommunityCouncil',
+      'Voted',
+      { account: AccountId32; proposalHash: H256; voted: boolean; yes: number; no: number }
+    >;
+
+    /**
+     * A motion was approved by the required threshold.
+     **/
+    Approved: GenericPalletEvent<Rv, 'CommunityCouncil', 'Approved', { proposalHash: H256 }>;
+
+    /**
+     * A motion was not approved by the required threshold.
+     **/
+    Disapproved: GenericPalletEvent<Rv, 'CommunityCouncil', 'Disapproved', { proposalHash: H256 }>;
+
+    /**
+     * A motion was executed; result will be `Ok` if it returned without error.
+     **/
+    Executed: GenericPalletEvent<
+      Rv,
+      'CommunityCouncil',
+      'Executed',
+      { proposalHash: H256; result: Result<[], DispatchError> }
+    >;
+
+    /**
+     * A single member did some action; result will be `Ok` if it returned without error.
+     **/
+    MemberExecuted: GenericPalletEvent<
+      Rv,
+      'CommunityCouncil',
+      'MemberExecuted',
+      { proposalHash: H256; result: Result<[], DispatchError> }
+    >;
+
+    /**
+     * A proposal was closed because its threshold was reached or after its duration was up.
+     **/
+    Closed: GenericPalletEvent<Rv, 'CommunityCouncil', 'Closed', { proposalHash: H256; yes: number; no: number }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Democracy`'s events
+   **/
+  democracy: {
+    /**
+     * A motion has been proposed by a public account.
+     **/
+    Proposed: GenericPalletEvent<Rv, 'Democracy', 'Proposed', { proposalIndex: number; deposit: bigint }>;
+
+    /**
+     * A public proposal has been tabled for referendum vote.
+     **/
+    Tabled: GenericPalletEvent<Rv, 'Democracy', 'Tabled', { proposalIndex: number; deposit: bigint }>;
+
+    /**
+     * An external proposal has been tabled.
+     **/
+    ExternalTabled: GenericPalletEvent<Rv, 'Democracy', 'ExternalTabled', null>;
+
+    /**
+     * A referendum has begun.
+     **/
+    Started: GenericPalletEvent<
+      Rv,
+      'Democracy',
+      'Started',
+      { refIndex: number; threshold: PalletDemocracyVoteThreshold }
+    >;
+
+    /**
+     * A proposal has been approved by referendum.
+     **/
+    Passed: GenericPalletEvent<Rv, 'Democracy', 'Passed', { refIndex: number }>;
+
+    /**
+     * A proposal has been rejected by referendum.
+     **/
+    NotPassed: GenericPalletEvent<Rv, 'Democracy', 'NotPassed', { refIndex: number }>;
+
+    /**
+     * A referendum has been cancelled.
+     **/
+    Cancelled: GenericPalletEvent<Rv, 'Democracy', 'Cancelled', { refIndex: number }>;
+
+    /**
+     * An account has delegated their vote to another account.
+     **/
+    Delegated: GenericPalletEvent<Rv, 'Democracy', 'Delegated', { who: AccountId32; target: AccountId32 }>;
+
+    /**
+     * An account has cancelled a previous delegation operation.
+     **/
+    Undelegated: GenericPalletEvent<Rv, 'Democracy', 'Undelegated', { account: AccountId32 }>;
+
+    /**
+     * An external proposal has been vetoed.
+     **/
+    Vetoed: GenericPalletEvent<Rv, 'Democracy', 'Vetoed', { who: AccountId32; proposalHash: H256; until: number }>;
+
+    /**
+     * A proposal_hash has been blacklisted permanently.
+     **/
+    Blacklisted: GenericPalletEvent<Rv, 'Democracy', 'Blacklisted', { proposalHash: H256 }>;
+
+    /**
+     * An account has voted in a referendum
+     **/
+    Voted: GenericPalletEvent<
+      Rv,
+      'Democracy',
+      'Voted',
+      { voter: AccountId32; refIndex: number; vote: PalletDemocracyVoteAccountVote }
+    >;
+
+    /**
+     * An account has seconded a proposal
+     **/
+    Seconded: GenericPalletEvent<Rv, 'Democracy', 'Seconded', { seconder: AccountId32; propIndex: number }>;
+
+    /**
+     * A proposal got canceled.
+     **/
+    ProposalCanceled: GenericPalletEvent<Rv, 'Democracy', 'ProposalCanceled', { propIndex: number }>;
+
+    /**
+     * Metadata for a proposal or a referendum has been set.
+     **/
+    MetadataSet: GenericPalletEvent<
+      Rv,
+      'Democracy',
+      'MetadataSet',
+      {
+        /**
+         * Metadata owner.
+         **/
+        owner: PalletDemocracyMetadataOwner;
+
+        /**
+         * Preimage hash.
+         **/
+        hash: H256;
+      }
+    >;
+
+    /**
+     * Metadata for a proposal or a referendum has been cleared.
+     **/
+    MetadataCleared: GenericPalletEvent<
+      Rv,
+      'Democracy',
+      'MetadataCleared',
+      {
+        /**
+         * Metadata owner.
+         **/
+        owner: PalletDemocracyMetadataOwner;
+
+        /**
+         * Preimage hash.
+         **/
+        hash: H256;
+      }
+    >;
+
+    /**
+     * Metadata has been transferred to new owner.
+     **/
+    MetadataTransferred: GenericPalletEvent<
+      Rv,
+      'Democracy',
+      'MetadataTransferred',
+      {
+        /**
+         * Previous metadata owner.
+         **/
+        prevOwner: PalletDemocracyMetadataOwner;
+
+        /**
+         * New metadata owner.
+         **/
+        owner: PalletDemocracyMetadataOwner;
+
+        /**
+         * Preimage hash.
+         **/
+        hash: H256;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Treasury`'s events
+   **/
+  treasury: {
+    /**
+     * New proposal.
+     **/
+    Proposed: GenericPalletEvent<Rv, 'Treasury', 'Proposed', { proposalIndex: number }>;
+
+    /**
+     * We have ended a spend period and will now allocate funds.
+     **/
+    Spending: GenericPalletEvent<Rv, 'Treasury', 'Spending', { budgetRemaining: bigint }>;
+
+    /**
+     * Some funds have been allocated.
+     **/
+    Awarded: GenericPalletEvent<
+      Rv,
+      'Treasury',
+      'Awarded',
+      { proposalIndex: number; award: bigint; account: AccountId32 }
+    >;
+
+    /**
+     * A proposal was rejected; funds were slashed.
+     **/
+    Rejected: GenericPalletEvent<Rv, 'Treasury', 'Rejected', { proposalIndex: number; slashed: bigint }>;
+
+    /**
+     * Some of our funds have been burnt.
+     **/
+    Burnt: GenericPalletEvent<Rv, 'Treasury', 'Burnt', { burntFunds: bigint }>;
+
+    /**
+     * Spending has finished; this is the amount that rolls over until next spend.
+     **/
+    Rollover: GenericPalletEvent<Rv, 'Treasury', 'Rollover', { rolloverBalance: bigint }>;
+
+    /**
+     * Some funds have been deposited.
+     **/
+    Deposit: GenericPalletEvent<Rv, 'Treasury', 'Deposit', { value: bigint }>;
+
+    /**
+     * A new spend proposal has been approved.
+     **/
+    SpendApproved: GenericPalletEvent<
+      Rv,
+      'Treasury',
+      'SpendApproved',
+      { proposalIndex: number; amount: bigint; beneficiary: AccountId32 }
+    >;
+
+    /**
+     * The inactive funds of the pallet have been updated.
+     **/
+    UpdatedInactive: GenericPalletEvent<
+      Rv,
+      'Treasury',
+      'UpdatedInactive',
+      { reactivated: bigint; deactivated: bigint }
+    >;
+
+    /**
+     * A new asset spend proposal has been approved.
+     **/
+    AssetSpendApproved: GenericPalletEvent<
+      Rv,
+      'Treasury',
+      'AssetSpendApproved',
+      { index: number; assetKind: []; amount: bigint; beneficiary: AccountId32; validFrom: number; expireAt: number }
+    >;
+
+    /**
+     * An approved spend was voided.
+     **/
+    AssetSpendVoided: GenericPalletEvent<Rv, 'Treasury', 'AssetSpendVoided', { index: number }>;
+
+    /**
+     * A payment happened.
+     **/
+    Paid: GenericPalletEvent<Rv, 'Treasury', 'Paid', { index: number; paymentId: [] }>;
+
+    /**
+     * A payment failed and can be retried.
+     **/
+    PaymentFailed: GenericPalletEvent<Rv, 'Treasury', 'PaymentFailed', { index: number; paymentId: [] }>;
+
+    /**
+     * A spend was processed and removed from the storage. It might have been successfully
+     * paid or it may have expired.
+     **/
+    SpendProcessed: GenericPalletEvent<Rv, 'Treasury', 'SpendProcessed', { index: number }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `CommunityTreasury`'s events
+   **/
+  communityTreasury: {
+    /**
+     * New proposal.
+     **/
+    Proposed: GenericPalletEvent<Rv, 'CommunityTreasury', 'Proposed', { proposalIndex: number }>;
+
+    /**
+     * We have ended a spend period and will now allocate funds.
+     **/
+    Spending: GenericPalletEvent<Rv, 'CommunityTreasury', 'Spending', { budgetRemaining: bigint }>;
+
+    /**
+     * Some funds have been allocated.
+     **/
+    Awarded: GenericPalletEvent<
+      Rv,
+      'CommunityTreasury',
+      'Awarded',
+      { proposalIndex: number; award: bigint; account: AccountId32 }
+    >;
+
+    /**
+     * A proposal was rejected; funds were slashed.
+     **/
+    Rejected: GenericPalletEvent<Rv, 'CommunityTreasury', 'Rejected', { proposalIndex: number; slashed: bigint }>;
+
+    /**
+     * Some of our funds have been burnt.
+     **/
+    Burnt: GenericPalletEvent<Rv, 'CommunityTreasury', 'Burnt', { burntFunds: bigint }>;
+
+    /**
+     * Spending has finished; this is the amount that rolls over until next spend.
+     **/
+    Rollover: GenericPalletEvent<Rv, 'CommunityTreasury', 'Rollover', { rolloverBalance: bigint }>;
+
+    /**
+     * Some funds have been deposited.
+     **/
+    Deposit: GenericPalletEvent<Rv, 'CommunityTreasury', 'Deposit', { value: bigint }>;
+
+    /**
+     * A new spend proposal has been approved.
+     **/
+    SpendApproved: GenericPalletEvent<
+      Rv,
+      'CommunityTreasury',
+      'SpendApproved',
+      { proposalIndex: number; amount: bigint; beneficiary: AccountId32 }
+    >;
+
+    /**
+     * The inactive funds of the pallet have been updated.
+     **/
+    UpdatedInactive: GenericPalletEvent<
+      Rv,
+      'CommunityTreasury',
+      'UpdatedInactive',
+      { reactivated: bigint; deactivated: bigint }
+    >;
+
+    /**
+     * A new asset spend proposal has been approved.
+     **/
+    AssetSpendApproved: GenericPalletEvent<
+      Rv,
+      'CommunityTreasury',
+      'AssetSpendApproved',
+      { index: number; assetKind: []; amount: bigint; beneficiary: AccountId32; validFrom: number; expireAt: number }
+    >;
+
+    /**
+     * An approved spend was voided.
+     **/
+    AssetSpendVoided: GenericPalletEvent<Rv, 'CommunityTreasury', 'AssetSpendVoided', { index: number }>;
+
+    /**
+     * A payment happened.
+     **/
+    Paid: GenericPalletEvent<Rv, 'CommunityTreasury', 'Paid', { index: number; paymentId: [] }>;
+
+    /**
+     * A payment failed and can be retried.
+     **/
+    PaymentFailed: GenericPalletEvent<Rv, 'CommunityTreasury', 'PaymentFailed', { index: number; paymentId: [] }>;
+
+    /**
+     * A spend was processed and removed from the storage. It might have been successfully
+     * paid or it may have expired.
+     **/
+    SpendProcessed: GenericPalletEvent<Rv, 'CommunityTreasury', 'SpendProcessed', { index: number }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `CollectiveProxy`'s events
+   **/
+  collectiveProxy: {
+    /**
+     * Community proxy call executed successfully.
+     **/
+    CollectiveProxyExecuted: GenericPalletEvent<
+      Rv,
+      'CollectiveProxy',
+      'CollectiveProxyExecuted',
+      { result: Result<[], DispatchError> }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s events
+   **/
+  multiBlockMigrations: {
+    /**
+     * A Runtime upgrade started.
+     *
+     * Its end is indicated by `UpgradeCompleted` or `UpgradeFailed`.
+     **/
+    UpgradeStarted: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'UpgradeStarted',
+      {
+        /**
+         * The number of migrations that this upgrade contains.
+         *
+         * This can be used to design a progress indicator in combination with counting the
+         * `MigrationCompleted` and `MigrationSkipped` events.
+         **/
+        migrations: number;
+      }
+    >;
+
+    /**
+     * The current runtime upgrade completed.
+     *
+     * This implies that all of its migrations completed successfully as well.
+     **/
+    UpgradeCompleted: GenericPalletEvent<Rv, 'MultiBlockMigrations', 'UpgradeCompleted', null>;
+
+    /**
+     * Runtime upgrade failed.
+     *
+     * This is very bad and will require governance intervention.
+     **/
+    UpgradeFailed: GenericPalletEvent<Rv, 'MultiBlockMigrations', 'UpgradeFailed', null>;
+
+    /**
+     * A migration was skipped since it was already executed in the past.
+     **/
+    MigrationSkipped: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'MigrationSkipped',
+      {
+        /**
+         * The index of the skipped migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+      }
+    >;
+
+    /**
+     * A migration progressed.
+     **/
+    MigrationAdvanced: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'MigrationAdvanced',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * A Migration completed.
+     **/
+    MigrationCompleted: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'MigrationCompleted',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * A Migration failed.
+     *
+     * This implies that the whole upgrade failed and governance intervention is required.
+     **/
+    MigrationFailed: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'MigrationFailed',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * The set of historical migrations has been cleared.
+     **/
+    HistoricCleared: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'HistoricCleared',
+      {
+        /**
+         * Should be passed to `clear_historic` in a successive call.
+         **/
+        nextCursor?: Bytes | undefined;
       }
     >;
 

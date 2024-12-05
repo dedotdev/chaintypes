@@ -27,6 +27,8 @@ import type {
   PalletMultisigMultisig,
   PalletProxyProxyDefinition,
   PalletProxyAnnouncement,
+  PalletSchedulerScheduled,
+  PalletSchedulerRetryConfig,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
   PolkadotPrimitivesV7PersistedValidationData,
@@ -43,25 +45,25 @@ import type {
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
-  PalletBalancesIdAmount,
-  PalletBalancesIdAmountRuntimeFreezeReason,
+  FrameSupportTokensMiscIdAmount,
+  FrameSupportTokensMiscIdAmountRuntimeFreezeReason,
   PalletVestingVestingInfo,
   PalletVestingReleases,
   PalletInflationInflationConfiguration,
   PalletInflationInflationParameters,
-  PalletDappStakingV3ProtocolState,
-  PalletDappStakingV3DAppInfo,
+  PalletDappStakingProtocolState,
+  PalletDappStakingDAppInfo,
   AstarPrimitivesDappStakingSmartContract,
-  PalletDappStakingV3AccountLedger,
-  PalletDappStakingV3SingularStakingInfo,
-  PalletDappStakingV3ContractStakeAmount,
-  PalletDappStakingV3EraInfo,
-  PalletDappStakingV3EraRewardSpan,
-  PalletDappStakingV3PeriodEndInfo,
-  PalletDappStakingV3TierParameters,
-  PalletDappStakingV3TiersConfiguration,
-  PalletDappStakingV3DAppTierRewards,
-  PalletDappStakingV3CleanupMarker,
+  PalletDappStakingAccountLedger,
+  PalletDappStakingSingularStakingInfo,
+  PalletDappStakingContractStakeAmount,
+  PalletDappStakingEraInfo,
+  PalletDappStakingEraRewardSpan,
+  PalletDappStakingPeriodEndInfo,
+  PalletDappStakingTierParameters,
+  PalletDappStakingTiersConfiguration,
+  PalletDappStakingDAppTierRewards,
+  PalletDappStakingCleanupMarker,
   PalletAssetsAssetDetails,
   PalletAssetsAssetAccount,
   PalletAssetsApproval,
@@ -83,6 +85,7 @@ import type {
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
+  StagingXcmV4Xcm,
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMessageQueuePage,
@@ -94,6 +97,18 @@ import type {
   PalletContractsWasmCodeInfo,
   PalletContractsStorageContractInfo,
   PalletContractsStorageDeletionQueueManager,
+  PalletPreimageOldRequestStatus,
+  PalletPreimageRequestStatus,
+  AstarRuntimeRuntimeCall,
+  PalletCollectiveVotes,
+  FrameSupportPreimagesBounded,
+  PalletDemocracyReferendumInfo,
+  PalletDemocracyVoteVoting,
+  PalletDemocracyVoteThreshold,
+  PalletDemocracyMetadataOwner,
+  PalletTreasuryProposal,
+  PalletTreasurySpendStatus,
+  PalletMigrationsMigrationCursor,
 } from './types';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
@@ -419,6 +434,52 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       (arg: AccountId32Like) => [Array<PalletProxyAnnouncement>, bigint],
       AccountId32
     >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Scheduler`'s storage queries
+   **/
+  scheduler: {
+    /**
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    incompleteSince: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Items to be executed, indexed by the block number that they should be executed on.
+     *
+     * @param {number} arg
+     * @param {Callback<Array<PalletSchedulerScheduled | undefined>> =} callback
+     **/
+    agenda: GenericStorageQuery<Rv, (arg: number) => Array<PalletSchedulerScheduled | undefined>, number>;
+
+    /**
+     * Retry configurations for items to be executed, indexed by task address.
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<PalletSchedulerRetryConfig | undefined> =} callback
+     **/
+    retries: GenericStorageQuery<
+      Rv,
+      (arg: [number, number]) => PalletSchedulerRetryConfig | undefined,
+      [number, number]
+    >;
+
+    /**
+     * Lookup from a name to the block number and index of the task.
+     *
+     * For v3 -> v4 the previously unbounded identities are Blake2-256 hashed to form the v4
+     * identities.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<[number, number] | undefined> =} callback
+     **/
+    lookup: GenericStorageQuery<Rv, (arg: FixedBytes<32>) => [number, number] | undefined, FixedBytes<32>>;
 
     /**
      * Generic pallet storage query
@@ -786,19 +847,19 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Holds on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<PalletBalancesIdAmount>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
      **/
-    holds: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<PalletBalancesIdAmount>, AccountId32>;
+    holds: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount>, AccountId32>;
 
     /**
      * Freeze locks on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<PalletBalancesIdAmountRuntimeFreezeReason>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>> =} callback
      **/
     freezes: GenericStorageQuery<
       Rv,
-      (arg: AccountId32Like) => Array<PalletBalancesIdAmountRuntimeFreezeReason>,
+      (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>,
       AccountId32
     >;
 
@@ -875,9 +936,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * General information about dApp staking protocol state.
      *
-     * @param {Callback<PalletDappStakingV3ProtocolState> =} callback
+     * @param {Callback<PalletDappStakingProtocolState> =} callback
      **/
-    activeProtocolState: GenericStorageQuery<Rv, () => PalletDappStakingV3ProtocolState>;
+    activeProtocolState: GenericStorageQuery<Rv, () => PalletDappStakingProtocolState>;
 
     /**
      * Counter for unique dApp identifiers.
@@ -893,11 +954,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * It might have been unregistered at some point in history.
      *
      * @param {AstarPrimitivesDappStakingSmartContract} arg
-     * @param {Callback<PalletDappStakingV3DAppInfo | undefined> =} callback
+     * @param {Callback<PalletDappStakingDAppInfo | undefined> =} callback
      **/
     integratedDApps: GenericStorageQuery<
       Rv,
-      (arg: AstarPrimitivesDappStakingSmartContract) => PalletDappStakingV3DAppInfo | undefined,
+      (arg: AstarPrimitivesDappStakingSmartContract) => PalletDappStakingDAppInfo | undefined,
       AstarPrimitivesDappStakingSmartContract
     >;
 
@@ -912,21 +973,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * General locked/staked information for each account.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<PalletDappStakingV3AccountLedger> =} callback
+     * @param {Callback<PalletDappStakingAccountLedger> =} callback
      **/
-    ledger: GenericStorageQuery<Rv, (arg: AccountId32Like) => PalletDappStakingV3AccountLedger, AccountId32>;
+    ledger: GenericStorageQuery<Rv, (arg: AccountId32Like) => PalletDappStakingAccountLedger, AccountId32>;
 
     /**
      * Information about how much each staker has staked for each smart contract in some period.
      *
      * @param {[AccountId32Like, AstarPrimitivesDappStakingSmartContract]} arg
-     * @param {Callback<PalletDappStakingV3SingularStakingInfo | undefined> =} callback
+     * @param {Callback<PalletDappStakingSingularStakingInfo | undefined> =} callback
      **/
     stakerInfo: GenericStorageQuery<
       Rv,
       (
         arg: [AccountId32Like, AstarPrimitivesDappStakingSmartContract],
-      ) => PalletDappStakingV3SingularStakingInfo | undefined,
+      ) => PalletDappStakingSingularStakingInfo | undefined,
       [AccountId32, AstarPrimitivesDappStakingSmartContract]
     >;
 
@@ -934,16 +995,16 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Information about how much has been staked on a smart contract in some era or period.
      *
      * @param {number} arg
-     * @param {Callback<PalletDappStakingV3ContractStakeAmount> =} callback
+     * @param {Callback<PalletDappStakingContractStakeAmount> =} callback
      **/
-    contractStake: GenericStorageQuery<Rv, (arg: number) => PalletDappStakingV3ContractStakeAmount, number>;
+    contractStake: GenericStorageQuery<Rv, (arg: number) => PalletDappStakingContractStakeAmount, number>;
 
     /**
      * General information about the current era.
      *
-     * @param {Callback<PalletDappStakingV3EraInfo> =} callback
+     * @param {Callback<PalletDappStakingEraInfo> =} callback
      **/
-    currentEraInfo: GenericStorageQuery<Rv, () => PalletDappStakingV3EraInfo>;
+    currentEraInfo: GenericStorageQuery<Rv, () => PalletDappStakingEraInfo>;
 
     /**
      * Information about rewards for each era.
@@ -957,46 +1018,46 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Eras 1-7 will be stored in the same entry as era 0, eras 9-15 will be stored in the same entry as era 8, etc.
      *
      * @param {number} arg
-     * @param {Callback<PalletDappStakingV3EraRewardSpan | undefined> =} callback
+     * @param {Callback<PalletDappStakingEraRewardSpan | undefined> =} callback
      **/
-    eraRewards: GenericStorageQuery<Rv, (arg: number) => PalletDappStakingV3EraRewardSpan | undefined, number>;
+    eraRewards: GenericStorageQuery<Rv, (arg: number) => PalletDappStakingEraRewardSpan | undefined, number>;
 
     /**
      * Information about period's end.
      *
      * @param {number} arg
-     * @param {Callback<PalletDappStakingV3PeriodEndInfo | undefined> =} callback
+     * @param {Callback<PalletDappStakingPeriodEndInfo | undefined> =} callback
      **/
-    periodEnd: GenericStorageQuery<Rv, (arg: number) => PalletDappStakingV3PeriodEndInfo | undefined, number>;
+    periodEnd: GenericStorageQuery<Rv, (arg: number) => PalletDappStakingPeriodEndInfo | undefined, number>;
 
     /**
      * Static tier parameters used to calculate tier configuration.
      *
-     * @param {Callback<PalletDappStakingV3TierParameters> =} callback
+     * @param {Callback<PalletDappStakingTierParameters> =} callback
      **/
-    staticTierParams: GenericStorageQuery<Rv, () => PalletDappStakingV3TierParameters>;
+    staticTierParams: GenericStorageQuery<Rv, () => PalletDappStakingTierParameters>;
 
     /**
      * Tier configuration user for current & preceding eras.
      *
-     * @param {Callback<PalletDappStakingV3TiersConfiguration> =} callback
+     * @param {Callback<PalletDappStakingTiersConfiguration> =} callback
      **/
-    tierConfig: GenericStorageQuery<Rv, () => PalletDappStakingV3TiersConfiguration>;
+    tierConfig: GenericStorageQuery<Rv, () => PalletDappStakingTiersConfiguration>;
 
     /**
      * Information about which tier a dApp belonged to in a specific era.
      *
      * @param {number} arg
-     * @param {Callback<PalletDappStakingV3DAppTierRewards | undefined> =} callback
+     * @param {Callback<PalletDappStakingDAppTierRewards | undefined> =} callback
      **/
-    dAppTiers: GenericStorageQuery<Rv, (arg: number) => PalletDappStakingV3DAppTierRewards | undefined, number>;
+    dAppTiers: GenericStorageQuery<Rv, (arg: number) => PalletDappStakingDAppTierRewards | undefined, number>;
 
     /**
      * History cleanup marker - holds information about which DB entries should be cleaned up next, when applicable.
      *
-     * @param {Callback<PalletDappStakingV3CleanupMarker> =} callback
+     * @param {Callback<PalletDappStakingCleanupMarker> =} callback
      **/
-    historyCleanupMarker: GenericStorageQuery<Rv, () => PalletDappStakingV3CleanupMarker>;
+    historyCleanupMarker: GenericStorageQuery<Rv, () => PalletDappStakingCleanupMarker>;
 
     /**
      * Safeguard to prevent unwanted operations in production.
@@ -1057,6 +1118,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<PalletAssetsAssetMetadata> =} callback
      **/
     metadata: GenericStorageQuery<Rv, (arg: bigint) => PalletAssetsAssetMetadata, bigint>;
+
+    /**
+     * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
+     * item has no effect.
+     *
+     * This can be useful for setting up constraints for IDs of the new assets. For example, by
+     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
+     * auto-increment model can be applied to all new asset IDs.
+     *
+     * The initial next asset ID can be set using the [`GenesisConfig`] or the
+     * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
+     *
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    nextAssetId: GenericStorageQuery<Rv, () => bigint | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1568,6 +1644,31 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     xcmExecutionSuspended: GenericStorageQuery<Rv, () => boolean>;
 
     /**
+     * Whether or not incoming XCMs (both executed locally and received) should be recorded.
+     * Only one XCM program will be recorded at a time.
+     * This is meant to be used in runtime APIs, and it's advised it stays false
+     * for all other use cases, so as to not degrade regular performance.
+     *
+     * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
+     * implementation in the XCM executor configuration.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    shouldRecordXcm: GenericStorageQuery<Rv, () => boolean>;
+
+    /**
+     * If [`ShouldRecordXcm`] is set to true, then the last XCM program executed locally
+     * will be stored here.
+     * Runtime APIs can fetch the XCM that was executed by accessing this value.
+     *
+     * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
+     * implementation in the XCM executor configuration.
+     *
+     * @param {Callback<StagingXcmV4Xcm | undefined> =} callback
+     **/
+    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV4Xcm | undefined>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -1850,6 +1951,38 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
+   * Pallet `Preimage`'s storage queries
+   **/
+  preimage: {
+    /**
+     * The request status of a given hash.
+     *
+     * @param {H256} arg
+     * @param {Callback<PalletPreimageOldRequestStatus | undefined> =} callback
+     **/
+    statusFor: GenericStorageQuery<Rv, (arg: H256) => PalletPreimageOldRequestStatus | undefined, H256>;
+
+    /**
+     * The request status of a given hash.
+     *
+     * @param {H256} arg
+     * @param {Callback<PalletPreimageRequestStatus | undefined> =} callback
+     **/
+    requestStatusFor: GenericStorageQuery<Rv, (arg: H256) => PalletPreimageRequestStatus | undefined, H256>;
+
+    /**
+     *
+     * @param {[H256, number]} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    preimageFor: GenericStorageQuery<Rv, (arg: [H256, number]) => Bytes | undefined, [H256, number]>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
    * Pallet `Sudo`'s storage queries
    **/
   sudo: {
@@ -1859,6 +1992,493 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<AccountId32 | undefined> =} callback
      **/
     key: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `CouncilMembership`'s storage queries
+   **/
+  councilMembership: {
+    /**
+     * The current membership, stored as an ordered Vec.
+     *
+     * @param {Callback<Array<AccountId32>> =} callback
+     **/
+    members: GenericStorageQuery<Rv, () => Array<AccountId32>>;
+
+    /**
+     * The current prime member, if one exists.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    prime: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `TechnicalCommitteeMembership`'s storage queries
+   **/
+  technicalCommitteeMembership: {
+    /**
+     * The current membership, stored as an ordered Vec.
+     *
+     * @param {Callback<Array<AccountId32>> =} callback
+     **/
+    members: GenericStorageQuery<Rv, () => Array<AccountId32>>;
+
+    /**
+     * The current prime member, if one exists.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    prime: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `CommunityCouncilMembership`'s storage queries
+   **/
+  communityCouncilMembership: {
+    /**
+     * The current membership, stored as an ordered Vec.
+     *
+     * @param {Callback<Array<AccountId32>> =} callback
+     **/
+    members: GenericStorageQuery<Rv, () => Array<AccountId32>>;
+
+    /**
+     * The current prime member, if one exists.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    prime: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Council`'s storage queries
+   **/
+  council: {
+    /**
+     * The hashes of the active proposals.
+     *
+     * @param {Callback<Array<H256>> =} callback
+     **/
+    proposals: GenericStorageQuery<Rv, () => Array<H256>>;
+
+    /**
+     * Actual proposal for a given hash, if it's current.
+     *
+     * @param {H256} arg
+     * @param {Callback<AstarRuntimeRuntimeCall | undefined> =} callback
+     **/
+    proposalOf: GenericStorageQuery<Rv, (arg: H256) => AstarRuntimeRuntimeCall | undefined, H256>;
+
+    /**
+     * Votes on a given proposal, if it is ongoing.
+     *
+     * @param {H256} arg
+     * @param {Callback<PalletCollectiveVotes | undefined> =} callback
+     **/
+    voting: GenericStorageQuery<Rv, (arg: H256) => PalletCollectiveVotes | undefined, H256>;
+
+    /**
+     * Proposals so far.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    proposalCount: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * The current members of the collective. This is stored sorted (just by value).
+     *
+     * @param {Callback<Array<AccountId32>> =} callback
+     **/
+    members: GenericStorageQuery<Rv, () => Array<AccountId32>>;
+
+    /**
+     * The prime member that helps determine the default vote behavior in case of abstentions.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    prime: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `TechnicalCommittee`'s storage queries
+   **/
+  technicalCommittee: {
+    /**
+     * The hashes of the active proposals.
+     *
+     * @param {Callback<Array<H256>> =} callback
+     **/
+    proposals: GenericStorageQuery<Rv, () => Array<H256>>;
+
+    /**
+     * Actual proposal for a given hash, if it's current.
+     *
+     * @param {H256} arg
+     * @param {Callback<AstarRuntimeRuntimeCall | undefined> =} callback
+     **/
+    proposalOf: GenericStorageQuery<Rv, (arg: H256) => AstarRuntimeRuntimeCall | undefined, H256>;
+
+    /**
+     * Votes on a given proposal, if it is ongoing.
+     *
+     * @param {H256} arg
+     * @param {Callback<PalletCollectiveVotes | undefined> =} callback
+     **/
+    voting: GenericStorageQuery<Rv, (arg: H256) => PalletCollectiveVotes | undefined, H256>;
+
+    /**
+     * Proposals so far.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    proposalCount: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * The current members of the collective. This is stored sorted (just by value).
+     *
+     * @param {Callback<Array<AccountId32>> =} callback
+     **/
+    members: GenericStorageQuery<Rv, () => Array<AccountId32>>;
+
+    /**
+     * The prime member that helps determine the default vote behavior in case of abstentions.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    prime: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `CommunityCouncil`'s storage queries
+   **/
+  communityCouncil: {
+    /**
+     * The hashes of the active proposals.
+     *
+     * @param {Callback<Array<H256>> =} callback
+     **/
+    proposals: GenericStorageQuery<Rv, () => Array<H256>>;
+
+    /**
+     * Actual proposal for a given hash, if it's current.
+     *
+     * @param {H256} arg
+     * @param {Callback<AstarRuntimeRuntimeCall | undefined> =} callback
+     **/
+    proposalOf: GenericStorageQuery<Rv, (arg: H256) => AstarRuntimeRuntimeCall | undefined, H256>;
+
+    /**
+     * Votes on a given proposal, if it is ongoing.
+     *
+     * @param {H256} arg
+     * @param {Callback<PalletCollectiveVotes | undefined> =} callback
+     **/
+    voting: GenericStorageQuery<Rv, (arg: H256) => PalletCollectiveVotes | undefined, H256>;
+
+    /**
+     * Proposals so far.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    proposalCount: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * The current members of the collective. This is stored sorted (just by value).
+     *
+     * @param {Callback<Array<AccountId32>> =} callback
+     **/
+    members: GenericStorageQuery<Rv, () => Array<AccountId32>>;
+
+    /**
+     * The prime member that helps determine the default vote behavior in case of abstentions.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    prime: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Democracy`'s storage queries
+   **/
+  democracy: {
+    /**
+     * The number of (public) proposals that have been made so far.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    publicPropCount: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * The public proposals. Unsorted. The second item is the proposal.
+     *
+     * @param {Callback<Array<[number, FrameSupportPreimagesBounded, AccountId32]>> =} callback
+     **/
+    publicProps: GenericStorageQuery<Rv, () => Array<[number, FrameSupportPreimagesBounded, AccountId32]>>;
+
+    /**
+     * Those who have locked a deposit.
+     *
+     * TWOX-NOTE: Safe, as increasing integer keys are safe.
+     *
+     * @param {number} arg
+     * @param {Callback<[Array<AccountId32>, bigint] | undefined> =} callback
+     **/
+    depositOf: GenericStorageQuery<Rv, (arg: number) => [Array<AccountId32>, bigint] | undefined, number>;
+
+    /**
+     * The next free referendum index, aka the number of referenda started so far.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    referendumCount: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * The lowest referendum index representing an unbaked referendum. Equal to
+     * `ReferendumCount` if there isn't a unbaked referendum.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    lowestUnbaked: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Information concerning any given referendum.
+     *
+     * TWOX-NOTE: SAFE as indexes are not under an attacker’s control.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletDemocracyReferendumInfo | undefined> =} callback
+     **/
+    referendumInfoOf: GenericStorageQuery<Rv, (arg: number) => PalletDemocracyReferendumInfo | undefined, number>;
+
+    /**
+     * All votes for a particular voter. We store the balance for the number of votes that we
+     * have recorded. The second item is the total amount of delegations, that will be added.
+     *
+     * TWOX-NOTE: SAFE as `AccountId`s are crypto hashes anyway.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletDemocracyVoteVoting> =} callback
+     **/
+    votingOf: GenericStorageQuery<Rv, (arg: AccountId32Like) => PalletDemocracyVoteVoting, AccountId32>;
+
+    /**
+     * True if the last referendum tabled was submitted externally. False if it was a public
+     * proposal.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    lastTabledWasExternal: GenericStorageQuery<Rv, () => boolean>;
+
+    /**
+     * The referendum to be tabled whenever it would be valid to table an external proposal.
+     * This happens when a referendum needs to be tabled and one of two conditions are met:
+     * - `LastTabledWasExternal` is `false`; or
+     * - `PublicProps` is empty.
+     *
+     * @param {Callback<[FrameSupportPreimagesBounded, PalletDemocracyVoteThreshold] | undefined> =} callback
+     **/
+    nextExternal: GenericStorageQuery<
+      Rv,
+      () => [FrameSupportPreimagesBounded, PalletDemocracyVoteThreshold] | undefined
+    >;
+
+    /**
+     * A record of who vetoed what. Maps proposal hash to a possible existent block number
+     * (until when it may not be resubmitted) and who vetoed it.
+     *
+     * @param {H256} arg
+     * @param {Callback<[number, Array<AccountId32>] | undefined> =} callback
+     **/
+    blacklist: GenericStorageQuery<Rv, (arg: H256) => [number, Array<AccountId32>] | undefined, H256>;
+
+    /**
+     * Record of all proposals that have been subject to emergency cancellation.
+     *
+     * @param {H256} arg
+     * @param {Callback<boolean> =} callback
+     **/
+    cancellations: GenericStorageQuery<Rv, (arg: H256) => boolean, H256>;
+
+    /**
+     * General information concerning any proposal or referendum.
+     * The `Hash` refers to the preimage of the `Preimages` provider which can be a JSON
+     * dump or IPFS hash of a JSON file.
+     *
+     * Consider a garbage collection for a metadata of finished referendums to `unrequest` (remove)
+     * large preimages.
+     *
+     * @param {PalletDemocracyMetadataOwner} arg
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    metadataOf: GenericStorageQuery<
+      Rv,
+      (arg: PalletDemocracyMetadataOwner) => H256 | undefined,
+      PalletDemocracyMetadataOwner
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Treasury`'s storage queries
+   **/
+  treasury: {
+    /**
+     * Number of proposals that have been made.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    proposalCount: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Proposals that have been made.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletTreasuryProposal | undefined> =} callback
+     **/
+    proposals: GenericStorageQuery<Rv, (arg: number) => PalletTreasuryProposal | undefined, number>;
+
+    /**
+     * The amount which has been reported as inactive to Currency.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    deactivated: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     * Proposal indices that have been approved but not yet awarded.
+     *
+     * @param {Callback<Array<number>> =} callback
+     **/
+    approvals: GenericStorageQuery<Rv, () => Array<number>>;
+
+    /**
+     * The count of spends that have been made.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    spendCount: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Spends that have been approved and being processed.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletTreasurySpendStatus | undefined> =} callback
+     **/
+    spends: GenericStorageQuery<Rv, (arg: number) => PalletTreasurySpendStatus | undefined, number>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `CommunityTreasury`'s storage queries
+   **/
+  communityTreasury: {
+    /**
+     * Number of proposals that have been made.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    proposalCount: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Proposals that have been made.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletTreasuryProposal | undefined> =} callback
+     **/
+    proposals: GenericStorageQuery<Rv, (arg: number) => PalletTreasuryProposal | undefined, number>;
+
+    /**
+     * The amount which has been reported as inactive to Currency.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    deactivated: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     * Proposal indices that have been approved but not yet awarded.
+     *
+     * @param {Callback<Array<number>> =} callback
+     **/
+    approvals: GenericStorageQuery<Rv, () => Array<number>>;
+
+    /**
+     * The count of spends that have been made.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    spendCount: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Spends that have been approved and being processed.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletTreasurySpendStatus | undefined> =} callback
+     **/
+    spends: GenericStorageQuery<Rv, (arg: number) => PalletTreasurySpendStatus | undefined, number>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s storage queries
+   **/
+  multiBlockMigrations: {
+    /**
+     * The currently active migration to run and its cursor.
+     *
+     * `None` indicates that no migration is running.
+     *
+     * @param {Callback<PalletMigrationsMigrationCursor | undefined> =} callback
+     **/
+    cursor: GenericStorageQuery<Rv, () => PalletMigrationsMigrationCursor | undefined>;
+
+    /**
+     * Set of all successfully executed migrations.
+     *
+     * This is used as blacklist, to not re-execute migrations that have not been removed from the
+     * codebase yet. Governance can regularly clear this out via `clear_historic`.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    historic: GenericStorageQuery<Rv, (arg: BytesLike) => [] | undefined, Bytes>;
 
     /**
      * Generic pallet storage query

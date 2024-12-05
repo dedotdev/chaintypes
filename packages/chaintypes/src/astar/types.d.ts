@@ -59,12 +59,13 @@ export type AstarRuntimeRuntimeEvent =
   | { pallet: 'Identity'; palletEvent: PalletIdentityEvent }
   | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
   | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
+  | { pallet: 'Scheduler'; palletEvent: PalletSchedulerEvent }
   | { pallet: 'ParachainSystem'; palletEvent: CumulusPalletParachainSystemEvent }
   | { pallet: 'TransactionPayment'; palletEvent: PalletTransactionPaymentEvent }
   | { pallet: 'Balances'; palletEvent: PalletBalancesEvent }
   | { pallet: 'Vesting'; palletEvent: PalletVestingEvent }
   | { pallet: 'Inflation'; palletEvent: PalletInflationEvent }
-  | { pallet: 'DappStaking'; palletEvent: PalletDappStakingV3Event }
+  | { pallet: 'DappStaking'; palletEvent: PalletDappStakingEvent }
   | { pallet: 'Assets'; palletEvent: PalletAssetsEvent }
   | { pallet: 'PriceAggregator'; palletEvent: PalletPriceAggregatorEvent }
   | { pallet: 'Oracle'; palletEvent: OrmlOracleModuleEvent }
@@ -81,7 +82,19 @@ export type AstarRuntimeRuntimeEvent =
   | { pallet: 'Ethereum'; palletEvent: PalletEthereumEvent }
   | { pallet: 'DynamicEvmBaseFee'; palletEvent: PalletDynamicEvmBaseFeeEvent }
   | { pallet: 'Contracts'; palletEvent: PalletContractsEvent }
-  | { pallet: 'Sudo'; palletEvent: PalletSudoEvent };
+  | { pallet: 'Preimage'; palletEvent: PalletPreimageEvent }
+  | { pallet: 'Sudo'; palletEvent: PalletSudoEvent }
+  | { pallet: 'CouncilMembership'; palletEvent: PalletMembershipEvent }
+  | { pallet: 'TechnicalCommitteeMembership'; palletEvent: PalletMembershipEvent }
+  | { pallet: 'CommunityCouncilMembership'; palletEvent: PalletMembershipEvent }
+  | { pallet: 'Council'; palletEvent: PalletCollectiveEvent }
+  | { pallet: 'TechnicalCommittee'; palletEvent: PalletCollectiveEvent }
+  | { pallet: 'CommunityCouncil'; palletEvent: PalletCollectiveEvent }
+  | { pallet: 'Democracy'; palletEvent: PalletDemocracyEvent }
+  | { pallet: 'Treasury'; palletEvent: PalletTreasuryEvent }
+  | { pallet: 'CommunityTreasury'; palletEvent: PalletTreasuryEvent }
+  | { pallet: 'CollectiveProxy'; palletEvent: PalletCollectiveProxyEvent }
+  | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent };
 
 /**
  * Event for the System pallet.
@@ -316,7 +329,56 @@ export type AstarRuntimeProxyType =
   | 'IdentityJudgement'
   | 'CancelProxy'
   | 'DappStaking'
-  | 'StakerRewardClaim';
+  | 'StakerRewardClaim'
+  | 'Governance';
+
+/**
+ * Events type.
+ **/
+export type PalletSchedulerEvent =
+  /**
+   * Scheduled some task.
+   **/
+  | { name: 'Scheduled'; data: { when: number; index: number } }
+  /**
+   * Canceled some task.
+   **/
+  | { name: 'Canceled'; data: { when: number; index: number } }
+  /**
+   * Dispatched some task.
+   **/
+  | {
+      name: 'Dispatched';
+      data: { task: [number, number]; id?: FixedBytes<32> | undefined; result: Result<[], DispatchError> };
+    }
+  /**
+   * Set a retry configuration for some task.
+   **/
+  | {
+      name: 'RetrySet';
+      data: { task: [number, number]; id?: FixedBytes<32> | undefined; period: number; retries: number };
+    }
+  /**
+   * Cancel a retry configuration for some task.
+   **/
+  | { name: 'RetryCancelled'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } }
+  /**
+   * The call for the provided hash was not found so the task has been aborted.
+   **/
+  | { name: 'CallUnavailable'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } }
+  /**
+   * The given task was unable to be renewed since the agenda is full at that block.
+   **/
+  | { name: 'PeriodicFailed'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } }
+  /**
+   * The given task was unable to be retried since the agenda is full at that block or there
+   * was not enough weight to reschedule it.
+   **/
+  | { name: 'RetryFailed'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } }
+  /**
+   * The given task can never be executed since it is overweight.
+   **/
+  | { name: 'PermanentlyOverweight'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } };
 
 /**
  * The `Event` enum of this pallet
@@ -512,7 +574,7 @@ export type PalletInflationInflationConfiguration = {
 /**
  * The `Event` enum of this pallet
  **/
-export type PalletDappStakingV3Event =
+export type PalletDappStakingEvent =
   /**
    * Maintenance mode has been either enabled or disabled.
    **/
@@ -524,7 +586,7 @@ export type PalletDappStakingV3Event =
   /**
    * New subperiod has started.
    **/
-  | { name: 'NewSubperiod'; data: { subperiod: PalletDappStakingV3Subperiod; number: number } }
+  | { name: 'NewSubperiod'; data: { subperiod: PalletDappStakingSubperiod; number: number } }
   /**
    * A smart contract has been registered for dApp staking
    **/
@@ -624,15 +686,15 @@ export type PalletDappStakingV3Event =
   /**
    * Privileged origin has forced a new era and possibly a subperiod to start from next block.
    **/
-  | { name: 'Force'; data: { forcingType: PalletDappStakingV3ForcingType } };
+  | { name: 'Force'; data: { forcingType: PalletDappStakingForcingType } };
 
-export type PalletDappStakingV3Subperiod = 'Voting' | 'BuildAndEarn';
+export type PalletDappStakingSubperiod = 'Voting' | 'BuildAndEarn';
 
 export type AstarPrimitivesDappStakingSmartContract =
   | { type: 'Evm'; value: H160 }
   | { type: 'Wasm'; value: AccountId32 };
 
-export type PalletDappStakingV3ForcingType = 'Era' | 'Subperiod';
+export type PalletDappStakingForcingType = 'Era' | 'Subperiod';
 
 /**
  * The `Event` enum of this pallet
@@ -737,7 +799,15 @@ export type PalletAssetsEvent =
   /**
    * Some account `who` was blocked.
    **/
-  | { name: 'Blocked'; data: { assetId: bigint; who: AccountId32 } };
+  | { name: 'Blocked'; data: { assetId: bigint; who: AccountId32 } }
+  /**
+   * Some assets were deposited (e.g. for transaction fees).
+   **/
+  | { name: 'Deposited'; data: { assetId: bigint; who: AccountId32; amount: bigint } }
+  /**
+   * Some assets were withdrawn from the account (e.g. for transaction fees).
+   **/
+  | { name: 'Withdrawn'; data: { assetId: bigint; who: AccountId32; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -1140,7 +1210,7 @@ export type StagingXcmV4Instruction =
     }
   | {
       type: 'Transact';
-      value: { originKind: XcmV2OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
+      value: { originKind: XcmV3OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
     }
   | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
   | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
@@ -1248,7 +1318,7 @@ export type XcmV3MaybeErrorCode =
   | { type: 'Error'; value: Bytes }
   | { type: 'TruncatedError'; value: Bytes };
 
-export type XcmV2OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
+export type XcmV3OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
 
 export type XcmDoubleEncoded = { encoded: Bytes };
 
@@ -1621,7 +1691,8 @@ export type FrameSupportMessagesProcessMessageError =
   | { type: 'Corrupt' }
   | { type: 'Unsupported' }
   | { type: 'Overweight'; value: SpWeightsWeightV2Weight }
-  | { type: 'Yield' };
+  | { type: 'Yield' }
+  | { type: 'StackLimitReached' };
 
 /**
  * The `Event` enum of this pallet
@@ -1848,6 +1919,23 @@ export type AstarRuntimeRuntime = {};
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletPreimageEvent =
+  /**
+   * A preimage has been noted.
+   **/
+  | { name: 'Noted'; data: { hash: H256 } }
+  /**
+   * A preimage has been requested.
+   **/
+  | { name: 'Requested'; data: { hash: H256 } }
+  /**
+   * A preimage has ben cleared.
+   **/
+  | { name: 'Cleared'; data: { hash: H256 } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PalletSudoEvent =
   /**
    * A sudo call just took place.
@@ -1892,6 +1980,363 @@ export type PalletSudoEvent =
          * The result of the call made by the sudo user.
          **/
         sudoResult: Result<[], DispatchError>;
+      };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletCollectiveEvent =
+  /**
+   * A motion (given hash) has been proposed (by given account) with a threshold (given
+   * `MemberCount`).
+   **/
+  | { name: 'Proposed'; data: { account: AccountId32; proposalIndex: number; proposalHash: H256; threshold: number } }
+  /**
+   * A motion (given hash) has been voted on by given account, leaving
+   * a tally (yes votes and no votes given respectively as `MemberCount`).
+   **/
+  | { name: 'Voted'; data: { account: AccountId32; proposalHash: H256; voted: boolean; yes: number; no: number } }
+  /**
+   * A motion was approved by the required threshold.
+   **/
+  | { name: 'Approved'; data: { proposalHash: H256 } }
+  /**
+   * A motion was not approved by the required threshold.
+   **/
+  | { name: 'Disapproved'; data: { proposalHash: H256 } }
+  /**
+   * A motion was executed; result will be `Ok` if it returned without error.
+   **/
+  | { name: 'Executed'; data: { proposalHash: H256; result: Result<[], DispatchError> } }
+  /**
+   * A single member did some action; result will be `Ok` if it returned without error.
+   **/
+  | { name: 'MemberExecuted'; data: { proposalHash: H256; result: Result<[], DispatchError> } }
+  /**
+   * A proposal was closed because its threshold was reached or after its duration was up.
+   **/
+  | { name: 'Closed'; data: { proposalHash: H256; yes: number; no: number } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletDemocracyEvent =
+  /**
+   * A motion has been proposed by a public account.
+   **/
+  | { name: 'Proposed'; data: { proposalIndex: number; deposit: bigint } }
+  /**
+   * A public proposal has been tabled for referendum vote.
+   **/
+  | { name: 'Tabled'; data: { proposalIndex: number; deposit: bigint } }
+  /**
+   * An external proposal has been tabled.
+   **/
+  | { name: 'ExternalTabled' }
+  /**
+   * A referendum has begun.
+   **/
+  | { name: 'Started'; data: { refIndex: number; threshold: PalletDemocracyVoteThreshold } }
+  /**
+   * A proposal has been approved by referendum.
+   **/
+  | { name: 'Passed'; data: { refIndex: number } }
+  /**
+   * A proposal has been rejected by referendum.
+   **/
+  | { name: 'NotPassed'; data: { refIndex: number } }
+  /**
+   * A referendum has been cancelled.
+   **/
+  | { name: 'Cancelled'; data: { refIndex: number } }
+  /**
+   * An account has delegated their vote to another account.
+   **/
+  | { name: 'Delegated'; data: { who: AccountId32; target: AccountId32 } }
+  /**
+   * An account has cancelled a previous delegation operation.
+   **/
+  | { name: 'Undelegated'; data: { account: AccountId32 } }
+  /**
+   * An external proposal has been vetoed.
+   **/
+  | { name: 'Vetoed'; data: { who: AccountId32; proposalHash: H256; until: number } }
+  /**
+   * A proposal_hash has been blacklisted permanently.
+   **/
+  | { name: 'Blacklisted'; data: { proposalHash: H256 } }
+  /**
+   * An account has voted in a referendum
+   **/
+  | { name: 'Voted'; data: { voter: AccountId32; refIndex: number; vote: PalletDemocracyVoteAccountVote } }
+  /**
+   * An account has seconded a proposal
+   **/
+  | { name: 'Seconded'; data: { seconder: AccountId32; propIndex: number } }
+  /**
+   * A proposal got canceled.
+   **/
+  | { name: 'ProposalCanceled'; data: { propIndex: number } }
+  /**
+   * Metadata for a proposal or a referendum has been set.
+   **/
+  | {
+      name: 'MetadataSet';
+      data: {
+        /**
+         * Metadata owner.
+         **/
+        owner: PalletDemocracyMetadataOwner;
+
+        /**
+         * Preimage hash.
+         **/
+        hash: H256;
+      };
+    }
+  /**
+   * Metadata for a proposal or a referendum has been cleared.
+   **/
+  | {
+      name: 'MetadataCleared';
+      data: {
+        /**
+         * Metadata owner.
+         **/
+        owner: PalletDemocracyMetadataOwner;
+
+        /**
+         * Preimage hash.
+         **/
+        hash: H256;
+      };
+    }
+  /**
+   * Metadata has been transferred to new owner.
+   **/
+  | {
+      name: 'MetadataTransferred';
+      data: {
+        /**
+         * Previous metadata owner.
+         **/
+        prevOwner: PalletDemocracyMetadataOwner;
+
+        /**
+         * New metadata owner.
+         **/
+        owner: PalletDemocracyMetadataOwner;
+
+        /**
+         * Preimage hash.
+         **/
+        hash: H256;
+      };
+    };
+
+export type PalletDemocracyVoteThreshold = 'SuperMajorityApprove' | 'SuperMajorityAgainst' | 'SimpleMajority';
+
+export type PalletDemocracyVoteAccountVote =
+  | { type: 'Standard'; value: { vote: PalletDemocracyVote; balance: bigint } }
+  | { type: 'Split'; value: { aye: bigint; nay: bigint } };
+
+export type PalletDemocracyVote = number;
+
+export type PalletDemocracyMetadataOwner =
+  | { type: 'External' }
+  | { type: 'Proposal'; value: number }
+  | { type: 'Referendum'; value: number };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletTreasuryEvent =
+  /**
+   * New proposal.
+   **/
+  | { name: 'Proposed'; data: { proposalIndex: number } }
+  /**
+   * We have ended a spend period and will now allocate funds.
+   **/
+  | { name: 'Spending'; data: { budgetRemaining: bigint } }
+  /**
+   * Some funds have been allocated.
+   **/
+  | { name: 'Awarded'; data: { proposalIndex: number; award: bigint; account: AccountId32 } }
+  /**
+   * A proposal was rejected; funds were slashed.
+   **/
+  | { name: 'Rejected'; data: { proposalIndex: number; slashed: bigint } }
+  /**
+   * Some of our funds have been burnt.
+   **/
+  | { name: 'Burnt'; data: { burntFunds: bigint } }
+  /**
+   * Spending has finished; this is the amount that rolls over until next spend.
+   **/
+  | { name: 'Rollover'; data: { rolloverBalance: bigint } }
+  /**
+   * Some funds have been deposited.
+   **/
+  | { name: 'Deposit'; data: { value: bigint } }
+  /**
+   * A new spend proposal has been approved.
+   **/
+  | { name: 'SpendApproved'; data: { proposalIndex: number; amount: bigint; beneficiary: AccountId32 } }
+  /**
+   * The inactive funds of the pallet have been updated.
+   **/
+  | { name: 'UpdatedInactive'; data: { reactivated: bigint; deactivated: bigint } }
+  /**
+   * A new asset spend proposal has been approved.
+   **/
+  | {
+      name: 'AssetSpendApproved';
+      data: {
+        index: number;
+        assetKind: [];
+        amount: bigint;
+        beneficiary: AccountId32;
+        validFrom: number;
+        expireAt: number;
+      };
+    }
+  /**
+   * An approved spend was voided.
+   **/
+  | { name: 'AssetSpendVoided'; data: { index: number } }
+  /**
+   * A payment happened.
+   **/
+  | { name: 'Paid'; data: { index: number; paymentId: [] } }
+  /**
+   * A payment failed and can be retried.
+   **/
+  | { name: 'PaymentFailed'; data: { index: number; paymentId: [] } }
+  /**
+   * A spend was processed and removed from the storage. It might have been successfully
+   * paid or it may have expired.
+   **/
+  | { name: 'SpendProcessed'; data: { index: number } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletCollectiveProxyEvent =
+  /**
+   * Community proxy call executed successfully.
+   **/
+  { name: 'CollectiveProxyExecuted'; data: { result: Result<[], DispatchError> } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletMigrationsEvent =
+  /**
+   * A Runtime upgrade started.
+   *
+   * Its end is indicated by `UpgradeCompleted` or `UpgradeFailed`.
+   **/
+  | {
+      name: 'UpgradeStarted';
+      data: {
+        /**
+         * The number of migrations that this upgrade contains.
+         *
+         * This can be used to design a progress indicator in combination with counting the
+         * `MigrationCompleted` and `MigrationSkipped` events.
+         **/
+        migrations: number;
+      };
+    }
+  /**
+   * The current runtime upgrade completed.
+   *
+   * This implies that all of its migrations completed successfully as well.
+   **/
+  | { name: 'UpgradeCompleted' }
+  /**
+   * Runtime upgrade failed.
+   *
+   * This is very bad and will require governance intervention.
+   **/
+  | { name: 'UpgradeFailed' }
+  /**
+   * A migration was skipped since it was already executed in the past.
+   **/
+  | {
+      name: 'MigrationSkipped';
+      data: {
+        /**
+         * The index of the skipped migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+      };
+    }
+  /**
+   * A migration progressed.
+   **/
+  | {
+      name: 'MigrationAdvanced';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * A Migration completed.
+   **/
+  | {
+      name: 'MigrationCompleted';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * A Migration failed.
+   *
+   * This implies that the whole upgrade failed and governance intervention is required.
+   **/
+  | {
+      name: 'MigrationFailed';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * The set of historical migrations has been cleared.
+   **/
+  | {
+      name: 'HistoricCleared';
+      data: {
+        /**
+         * Should be passed to `clear_historic` in a successive call.
+         **/
+        nextCursor?: Bytes | undefined;
       };
     };
 
@@ -2304,12 +2749,13 @@ export type AstarRuntimeRuntimeCall =
   | { pallet: 'Timestamp'; palletCall: PalletTimestampCall }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
   | { pallet: 'Proxy'; palletCall: PalletProxyCall }
+  | { pallet: 'Scheduler'; palletCall: PalletSchedulerCall }
   | { pallet: 'ParachainSystem'; palletCall: CumulusPalletParachainSystemCall }
   | { pallet: 'ParachainInfo'; palletCall: StagingParachainInfoCall }
   | { pallet: 'Balances'; palletCall: PalletBalancesCall }
   | { pallet: 'Vesting'; palletCall: PalletVestingCall }
   | { pallet: 'Inflation'; palletCall: PalletInflationCall }
-  | { pallet: 'DappStaking'; palletCall: PalletDappStakingV3Call }
+  | { pallet: 'DappStaking'; palletCall: PalletDappStakingCall }
   | { pallet: 'Assets'; palletCall: PalletAssetsCall }
   | { pallet: 'Oracle'; palletCall: OrmlOracleModuleCall }
   | { pallet: 'OracleMembership'; palletCall: PalletMembershipCall }
@@ -2325,7 +2771,19 @@ export type AstarRuntimeRuntimeCall =
   | { pallet: 'Ethereum'; palletCall: PalletEthereumCall }
   | { pallet: 'DynamicEvmBaseFee'; palletCall: PalletDynamicEvmBaseFeeCall }
   | { pallet: 'Contracts'; palletCall: PalletContractsCall }
-  | { pallet: 'Sudo'; palletCall: PalletSudoCall };
+  | { pallet: 'Preimage'; palletCall: PalletPreimageCall }
+  | { pallet: 'Sudo'; palletCall: PalletSudoCall }
+  | { pallet: 'CouncilMembership'; palletCall: PalletMembershipCall }
+  | { pallet: 'TechnicalCommitteeMembership'; palletCall: PalletMembershipCall }
+  | { pallet: 'CommunityCouncilMembership'; palletCall: PalletMembershipCall }
+  | { pallet: 'Council'; palletCall: PalletCollectiveCall }
+  | { pallet: 'TechnicalCommittee'; palletCall: PalletCollectiveCall }
+  | { pallet: 'CommunityCouncil'; palletCall: PalletCollectiveCall }
+  | { pallet: 'Democracy'; palletCall: PalletDemocracyCall }
+  | { pallet: 'Treasury'; palletCall: PalletTreasuryCall }
+  | { pallet: 'CommunityTreasury'; palletCall: PalletTreasuryCall }
+  | { pallet: 'CollectiveProxy'; palletCall: PalletCollectiveProxyCall }
+  | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCall };
 
 export type AstarRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -2334,12 +2792,13 @@ export type AstarRuntimeRuntimeCallLike =
   | { pallet: 'Timestamp'; palletCall: PalletTimestampCallLike }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
   | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
+  | { pallet: 'Scheduler'; palletCall: PalletSchedulerCallLike }
   | { pallet: 'ParachainSystem'; palletCall: CumulusPalletParachainSystemCallLike }
   | { pallet: 'ParachainInfo'; palletCall: StagingParachainInfoCallLike }
   | { pallet: 'Balances'; palletCall: PalletBalancesCallLike }
   | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
   | { pallet: 'Inflation'; palletCall: PalletInflationCallLike }
-  | { pallet: 'DappStaking'; palletCall: PalletDappStakingV3CallLike }
+  | { pallet: 'DappStaking'; palletCall: PalletDappStakingCallLike }
   | { pallet: 'Assets'; palletCall: PalletAssetsCallLike }
   | { pallet: 'Oracle'; palletCall: OrmlOracleModuleCallLike }
   | { pallet: 'OracleMembership'; palletCall: PalletMembershipCallLike }
@@ -2355,7 +2814,19 @@ export type AstarRuntimeRuntimeCallLike =
   | { pallet: 'Ethereum'; palletCall: PalletEthereumCallLike }
   | { pallet: 'DynamicEvmBaseFee'; palletCall: PalletDynamicEvmBaseFeeCallLike }
   | { pallet: 'Contracts'; palletCall: PalletContractsCallLike }
-  | { pallet: 'Sudo'; palletCall: PalletSudoCallLike };
+  | { pallet: 'Preimage'; palletCall: PalletPreimageCallLike }
+  | { pallet: 'Sudo'; palletCall: PalletSudoCallLike }
+  | { pallet: 'CouncilMembership'; palletCall: PalletMembershipCallLike }
+  | { pallet: 'TechnicalCommitteeMembership'; palletCall: PalletMembershipCallLike }
+  | { pallet: 'CommunityCouncilMembership'; palletCall: PalletMembershipCallLike }
+  | { pallet: 'Council'; palletCall: PalletCollectiveCallLike }
+  | { pallet: 'TechnicalCommittee'; palletCall: PalletCollectiveCallLike }
+  | { pallet: 'CommunityCouncil'; palletCall: PalletCollectiveCallLike }
+  | { pallet: 'Democracy'; palletCall: PalletDemocracyCallLike }
+  | { pallet: 'Treasury'; palletCall: PalletTreasuryCallLike }
+  | { pallet: 'CommunityTreasury'; palletCall: PalletTreasuryCallLike }
+  | { pallet: 'CollectiveProxy'; palletCall: PalletCollectiveProxyCallLike }
+  | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCallLike };
 
 /**
  * Identity pallet declaration.
@@ -3527,6 +3998,205 @@ export type PalletProxyCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletSchedulerCall =
+  /**
+   * Anonymously schedule a task.
+   **/
+  | {
+      name: 'Schedule';
+      params: {
+        when: number;
+        maybePeriodic?: [number, number] | undefined;
+        priority: number;
+        call: AstarRuntimeRuntimeCall;
+      };
+    }
+  /**
+   * Cancel an anonymously scheduled task.
+   **/
+  | { name: 'Cancel'; params: { when: number; index: number } }
+  /**
+   * Schedule a named task.
+   **/
+  | {
+      name: 'ScheduleNamed';
+      params: {
+        id: FixedBytes<32>;
+        when: number;
+        maybePeriodic?: [number, number] | undefined;
+        priority: number;
+        call: AstarRuntimeRuntimeCall;
+      };
+    }
+  /**
+   * Cancel a named scheduled task.
+   **/
+  | { name: 'CancelNamed'; params: { id: FixedBytes<32> } }
+  /**
+   * Anonymously schedule a task after a delay.
+   **/
+  | {
+      name: 'ScheduleAfter';
+      params: {
+        after: number;
+        maybePeriodic?: [number, number] | undefined;
+        priority: number;
+        call: AstarRuntimeRuntimeCall;
+      };
+    }
+  /**
+   * Schedule a named task after a delay.
+   **/
+  | {
+      name: 'ScheduleNamedAfter';
+      params: {
+        id: FixedBytes<32>;
+        after: number;
+        maybePeriodic?: [number, number] | undefined;
+        priority: number;
+        call: AstarRuntimeRuntimeCall;
+      };
+    }
+  /**
+   * Set a retry configuration for a task so that, in case its scheduled run fails, it will
+   * be retried after `period` blocks, for a total amount of `retries` retries or until it
+   * succeeds.
+   *
+   * Tasks which need to be scheduled for a retry are still subject to weight metering and
+   * agenda space, same as a regular task. If a periodic task fails, it will be scheduled
+   * normally while the task is retrying.
+   *
+   * Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic
+   * clones of the original task. Their retry configuration will be derived from the
+   * original task's configuration, but will have a lower value for `remaining` than the
+   * original `total_retries`.
+   **/
+  | { name: 'SetRetry'; params: { task: [number, number]; retries: number; period: number } }
+  /**
+   * Set a retry configuration for a named task so that, in case its scheduled run fails, it
+   * will be retried after `period` blocks, for a total amount of `retries` retries or until
+   * it succeeds.
+   *
+   * Tasks which need to be scheduled for a retry are still subject to weight metering and
+   * agenda space, same as a regular task. If a periodic task fails, it will be scheduled
+   * normally while the task is retrying.
+   *
+   * Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic
+   * clones of the original task. Their retry configuration will be derived from the
+   * original task's configuration, but will have a lower value for `remaining` than the
+   * original `total_retries`.
+   **/
+  | { name: 'SetRetryNamed'; params: { id: FixedBytes<32>; retries: number; period: number } }
+  /**
+   * Removes the retry configuration of a task.
+   **/
+  | { name: 'CancelRetry'; params: { task: [number, number] } }
+  /**
+   * Cancel the retry configuration of a named task.
+   **/
+  | { name: 'CancelRetryNamed'; params: { id: FixedBytes<32> } };
+
+export type PalletSchedulerCallLike =
+  /**
+   * Anonymously schedule a task.
+   **/
+  | {
+      name: 'Schedule';
+      params: {
+        when: number;
+        maybePeriodic?: [number, number] | undefined;
+        priority: number;
+        call: AstarRuntimeRuntimeCallLike;
+      };
+    }
+  /**
+   * Cancel an anonymously scheduled task.
+   **/
+  | { name: 'Cancel'; params: { when: number; index: number } }
+  /**
+   * Schedule a named task.
+   **/
+  | {
+      name: 'ScheduleNamed';
+      params: {
+        id: FixedBytes<32>;
+        when: number;
+        maybePeriodic?: [number, number] | undefined;
+        priority: number;
+        call: AstarRuntimeRuntimeCallLike;
+      };
+    }
+  /**
+   * Cancel a named scheduled task.
+   **/
+  | { name: 'CancelNamed'; params: { id: FixedBytes<32> } }
+  /**
+   * Anonymously schedule a task after a delay.
+   **/
+  | {
+      name: 'ScheduleAfter';
+      params: {
+        after: number;
+        maybePeriodic?: [number, number] | undefined;
+        priority: number;
+        call: AstarRuntimeRuntimeCallLike;
+      };
+    }
+  /**
+   * Schedule a named task after a delay.
+   **/
+  | {
+      name: 'ScheduleNamedAfter';
+      params: {
+        id: FixedBytes<32>;
+        after: number;
+        maybePeriodic?: [number, number] | undefined;
+        priority: number;
+        call: AstarRuntimeRuntimeCallLike;
+      };
+    }
+  /**
+   * Set a retry configuration for a task so that, in case its scheduled run fails, it will
+   * be retried after `period` blocks, for a total amount of `retries` retries or until it
+   * succeeds.
+   *
+   * Tasks which need to be scheduled for a retry are still subject to weight metering and
+   * agenda space, same as a regular task. If a periodic task fails, it will be scheduled
+   * normally while the task is retrying.
+   *
+   * Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic
+   * clones of the original task. Their retry configuration will be derived from the
+   * original task's configuration, but will have a lower value for `remaining` than the
+   * original `total_retries`.
+   **/
+  | { name: 'SetRetry'; params: { task: [number, number]; retries: number; period: number } }
+  /**
+   * Set a retry configuration for a named task so that, in case its scheduled run fails, it
+   * will be retried after `period` blocks, for a total amount of `retries` retries or until
+   * it succeeds.
+   *
+   * Tasks which need to be scheduled for a retry are still subject to weight metering and
+   * agenda space, same as a regular task. If a periodic task fails, it will be scheduled
+   * normally while the task is retrying.
+   *
+   * Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic
+   * clones of the original task. Their retry configuration will be derived from the
+   * original task's configuration, but will have a lower value for `remaining` than the
+   * original `total_retries`.
+   **/
+  | { name: 'SetRetryNamed'; params: { id: FixedBytes<32>; retries: number; period: number } }
+  /**
+   * Removes the retry configuration of a task.
+   **/
+  | { name: 'CancelRetry'; params: { task: [number, number] } }
+  /**
+   * Cancel the retry configuration of a named task.
+   **/
+  | { name: 'CancelRetryNamed'; params: { id: FixedBytes<32> } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type CumulusPalletParachainSystemCall =
   /**
    * Set the current validation data.
@@ -3709,7 +4379,16 @@ export type PalletBalancesCall =
    * # Example
    **/
   | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } }
-  | { name: 'Burn'; params: { value: bigint; ignorable: boolean } };
+  /**
+   * Burn the specified liquid free balance from the origin account.
+   *
+   * If the origin's account ends up below the existential deposit as a result
+   * of the burn and `keep_alive` is false, the account will be reaped.
+   *
+   * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+   * this `burn` operation will reduce total issuance by the amount _burned_.
+   **/
+  | { name: 'Burn'; params: { value: bigint; keepAlive: boolean } };
 
 export type PalletBalancesCallLike =
   /**
@@ -3785,7 +4464,16 @@ export type PalletBalancesCallLike =
    * # Example
    **/
   | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } }
-  | { name: 'Burn'; params: { value: bigint; ignorable: boolean } };
+  /**
+   * Burn the specified liquid free balance from the origin account.
+   *
+   * If the origin's account ends up below the existential deposit as a result
+   * of the burn and `keep_alive` is false, the account will be reaped.
+   *
+   * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
+   * this `burn` operation will reduce total issuance by the amount _burned_.
+   **/
+  | { name: 'Burn'; params: { value: bigint; keepAlive: boolean } };
 
 export type PalletBalancesAdjustmentDirection = 'Increase' | 'Decrease';
 
@@ -4045,7 +4733,7 @@ export type PalletInflationInflationParameters = {
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletDappStakingV3Call =
+export type PalletDappStakingCall =
   /**
    * Wrapper around _legacy-like_ `unbond_and_unstake`.
    *
@@ -4178,7 +4866,7 @@ export type PalletDappStakingV3Call =
    *
    * Can only be called by the root origin.
    **/
-  | { name: 'Force'; params: { forcingType: PalletDappStakingV3ForcingType } }
+  | { name: 'Force'; params: { forcingType: PalletDappStakingForcingType } }
   /**
    * Claims some staker rewards for the specified account, if they have any.
    * In the case of a successful call, at least one era will be claimed, with the possibility of multiple claims happening.
@@ -4190,22 +4878,9 @@ export type PalletDappStakingV3Call =
   | {
       name: 'ClaimBonusRewardFor';
       params: { account: AccountId32; smartContract: AstarPrimitivesDappStakingSmartContract };
-    }
-  /**
-   * A call used to fix accounts with inconsistent state, where frozen balance is actually higher than what's available.
-   *
-   * The approach is as simple as possible:
-   * 1. Caller provides an account to fix.
-   * 2. If account is eligible for the fix, all unlocking chunks are modified to be claimable immediately.
-   * 3. The `claim_unlocked` call is executed using the provided account as the origin.
-   * 4. All states are updated accordingly, and the account is no longer in an inconsistent state.
-   *
-   * The benchmarked weight of the `claim_unlocked` call is used as a base, and additional overestimated weight is added.
-   * Call doesn't touch any storage items that aren't already touched by the `claim_unlocked` call, hence the simplified approach.
-   **/
-  | { name: 'FixAccount'; params: { account: AccountId32 } };
+    };
 
-export type PalletDappStakingV3CallLike =
+export type PalletDappStakingCallLike =
   /**
    * Wrapper around _legacy-like_ `unbond_and_unstake`.
    *
@@ -4341,7 +5016,7 @@ export type PalletDappStakingV3CallLike =
    *
    * Can only be called by the root origin.
    **/
-  | { name: 'Force'; params: { forcingType: PalletDappStakingV3ForcingType } }
+  | { name: 'Force'; params: { forcingType: PalletDappStakingForcingType } }
   /**
    * Claims some staker rewards for the specified account, if they have any.
    * In the case of a successful call, at least one era will be claimed, with the possibility of multiple claims happening.
@@ -4353,20 +5028,7 @@ export type PalletDappStakingV3CallLike =
   | {
       name: 'ClaimBonusRewardFor';
       params: { account: AccountId32Like; smartContract: AstarPrimitivesDappStakingSmartContract };
-    }
-  /**
-   * A call used to fix accounts with inconsistent state, where frozen balance is actually higher than what's available.
-   *
-   * The approach is as simple as possible:
-   * 1. Caller provides an account to fix.
-   * 2. If account is eligible for the fix, all unlocking chunks are modified to be claimable immediately.
-   * 3. The `claim_unlocked` call is executed using the provided account as the origin.
-   * 4. All states are updated accordingly, and the account is no longer in an inconsistent state.
-   *
-   * The benchmarked weight of the `claim_unlocked` call is used as a base, and additional overestimated weight is added.
-   * Call doesn't touch any storage items that aren't already touched by the `claim_unlocked` call, hence the simplified approach.
-   **/
-  | { name: 'FixAccount'; params: { account: AccountId32Like } };
+    };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4383,7 +5045,7 @@ export type PalletAssetsCall =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -4404,7 +5066,7 @@ export type PalletAssetsCall =
    * Unlike `create`, no funds are reserved.
    *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -4922,7 +5584,7 @@ export type PalletAssetsCallLike =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -4943,7 +5605,7 @@ export type PalletAssetsCallLike =
    * Unlike `create`, no funds are reserved.
    *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset.
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -6106,7 +6768,7 @@ export type PalletXcmCall =
    * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
    * fee on the `dest` (and possibly reserve) chains.
    * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
-   * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+   * - `remote_fees_id`: One of the included `assets` to be used to pay fees.
    * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
    * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
    * transfer, which also determines what happens to the assets on the destination chain.
@@ -6418,7 +7080,7 @@ export type PalletXcmCallLike =
    * - `assets`: The assets to be withdrawn. This should include the assets used to pay the
    * fee on the `dest` (and possibly reserve) chains.
    * - `assets_transfer_type`: The XCM `TransferType` used to transfer the `assets`.
-   * - `remote_fees_id`: One of the included `assets` to be be used to pay fees.
+   * - `remote_fees_id`: One of the included `assets` to be used to pay fees.
    * - `fees_transfer_type`: The XCM `TransferType` used to transfer the `fees` assets.
    * - `custom_xcm_on_dest`: The XCM to be executed on `dest` chain as the last step of the
    * transfer, which also determines what happens to the assets on the destination chain.
@@ -6546,6 +7208,8 @@ export type XcmV2TraitsError =
   | { type: 'Barrier' }
   | { type: 'WeightNotComputable' };
 
+export type XcmV2OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
+
 export type XcmV2MultiassetMultiAssetFilter =
   | { type: 'Definite'; value: XcmV2MultiassetMultiAssets }
   | { type: 'Wild'; value: XcmV2MultiassetWildMultiAsset };
@@ -6583,7 +7247,7 @@ export type XcmV3Instruction =
     }
   | {
       type: 'Transact';
-      value: { originKind: XcmV2OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
+      value: { originKind: XcmV3OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
     }
   | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
   | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
@@ -7734,6 +8398,83 @@ export type PalletContractsWasmDeterminism = 'Enforced' | 'Relaxed';
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletPreimageCall =
+  /**
+   * Register a preimage on-chain.
+   *
+   * If the preimage was previously requested, no fees or deposits are taken for providing
+   * the preimage. Otherwise, a deposit is taken proportional to the size of the preimage.
+   **/
+  | { name: 'NotePreimage'; params: { bytes: Bytes } }
+  /**
+   * Clear an unrequested preimage from the runtime storage.
+   *
+   * If `len` is provided, then it will be a much cheaper operation.
+   *
+   * - `hash`: The hash of the preimage to be removed from the store.
+   * - `len`: The length of the preimage of `hash`.
+   **/
+  | { name: 'UnnotePreimage'; params: { hash: H256 } }
+  /**
+   * Request a preimage be uploaded to the chain without paying any fees or deposits.
+   *
+   * If the preimage requests has already been provided on-chain, we unreserve any deposit
+   * a user may have paid, and take the control of the preimage out of their hands.
+   **/
+  | { name: 'RequestPreimage'; params: { hash: H256 } }
+  /**
+   * Clear a previously made request for a preimage.
+   *
+   * NOTE: THIS MUST NOT BE CALLED ON `hash` MORE TIMES THAN `request_preimage`.
+   **/
+  | { name: 'UnrequestPreimage'; params: { hash: H256 } }
+  /**
+   * Ensure that the a bulk of pre-images is upgraded.
+   *
+   * The caller pays no fee if at least 90% of pre-images were successfully updated.
+   **/
+  | { name: 'EnsureUpdated'; params: { hashes: Array<H256> } };
+
+export type PalletPreimageCallLike =
+  /**
+   * Register a preimage on-chain.
+   *
+   * If the preimage was previously requested, no fees or deposits are taken for providing
+   * the preimage. Otherwise, a deposit is taken proportional to the size of the preimage.
+   **/
+  | { name: 'NotePreimage'; params: { bytes: BytesLike } }
+  /**
+   * Clear an unrequested preimage from the runtime storage.
+   *
+   * If `len` is provided, then it will be a much cheaper operation.
+   *
+   * - `hash`: The hash of the preimage to be removed from the store.
+   * - `len`: The length of the preimage of `hash`.
+   **/
+  | { name: 'UnnotePreimage'; params: { hash: H256 } }
+  /**
+   * Request a preimage be uploaded to the chain without paying any fees or deposits.
+   *
+   * If the preimage requests has already been provided on-chain, we unreserve any deposit
+   * a user may have paid, and take the control of the preimage out of their hands.
+   **/
+  | { name: 'RequestPreimage'; params: { hash: H256 } }
+  /**
+   * Clear a previously made request for a preimage.
+   *
+   * NOTE: THIS MUST NOT BE CALLED ON `hash` MORE TIMES THAN `request_preimage`.
+   **/
+  | { name: 'UnrequestPreimage'; params: { hash: H256 } }
+  /**
+   * Ensure that the a bulk of pre-images is upgraded.
+   *
+   * The caller pays no fee if at least 90% of pre-images were successfully updated.
+   **/
+  | { name: 'EnsureUpdated'; params: { hashes: Array<H256> } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletSudoCall =
   /**
    * Authenticates the sudo key and dispatches a function call with `Root` origin.
@@ -7798,11 +8539,1319 @@ export type PalletSudoCallLike =
    **/
   | { name: 'RemoveKey' };
 
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletCollectiveCall =
+  /**
+   * Set the collective's membership.
+   *
+   * - `new_members`: The new member list. Be nice to the chain and provide it sorted.
+   * - `prime`: The prime member whose vote sets the default.
+   * - `old_count`: The upper bound for the previous number of members in storage. Used for
+   * weight estimation.
+   *
+   * The dispatch of this call must be `SetMembersOrigin`.
+   *
+   * NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but
+   * the weight estimations rely on it to estimate dispatchable weight.
+   *
+   * # WARNING:
+   *
+   * The `pallet-collective` can also be managed by logic outside of the pallet through the
+   * implementation of the trait [`ChangeMembers`].
+   * Any call to `set_members` must be careful that the member set doesn't get out of sync
+   * with other logic managing the member set.
+   *
+   * ## Complexity:
+   * - `O(MP + N)` where:
+   * - `M` old-members-count (code- and governance-bounded)
+   * - `N` new-members-count (code- and governance-bounded)
+   * - `P` proposals-count (code-bounded)
+   **/
+  | {
+      name: 'SetMembers';
+      params: { newMembers: Array<AccountId32>; prime?: AccountId32 | undefined; oldCount: number };
+    }
+  /**
+   * Dispatch a proposal from a member using the `Member` origin.
+   *
+   * Origin must be a member of the collective.
+   *
+   * ## Complexity:
+   * - `O(B + M + P)` where:
+   * - `B` is `proposal` size in bytes (length-fee-bounded)
+   * - `M` members-count (code-bounded)
+   * - `P` complexity of dispatching `proposal`
+   **/
+  | { name: 'Execute'; params: { proposal: AstarRuntimeRuntimeCall; lengthBound: number } }
+  /**
+   * Add a new proposal to either be voted on or executed directly.
+   *
+   * Requires the sender to be member.
+   *
+   * `threshold` determines whether `proposal` is executed directly (`threshold < 2`)
+   * or put up for voting.
+   *
+   * ## Complexity
+   * - `O(B + M + P1)` or `O(B + M + P2)` where:
+   * - `B` is `proposal` size in bytes (length-fee-bounded)
+   * - `M` is members-count (code- and governance-bounded)
+   * - branching is influenced by `threshold` where:
+   * - `P1` is proposal execution complexity (`threshold < 2`)
+   * - `P2` is proposals-count (code-bounded) (`threshold >= 2`)
+   **/
+  | { name: 'Propose'; params: { threshold: number; proposal: AstarRuntimeRuntimeCall; lengthBound: number } }
+  /**
+   * Add an aye or nay vote for the sender to the given proposal.
+   *
+   * Requires the sender to be a member.
+   *
+   * Transaction fees will be waived if the member is voting on any particular proposal
+   * for the first time and the call is successful. Subsequent vote changes will charge a
+   * fee.
+   * ## Complexity
+   * - `O(M)` where `M` is members-count (code- and governance-bounded)
+   **/
+  | { name: 'Vote'; params: { proposal: H256; index: number; approve: boolean } }
+  /**
+   * Disapprove a proposal, close, and remove it from the system, regardless of its current
+   * state.
+   *
+   * Must be called by the Root origin.
+   *
+   * Parameters:
+   * * `proposal_hash`: The hash of the proposal that should be disapproved.
+   *
+   * ## Complexity
+   * O(P) where P is the number of max proposals
+   **/
+  | { name: 'DisapproveProposal'; params: { proposalHash: H256 } }
+  /**
+   * Close a vote that is either approved, disapproved or whose voting period has ended.
+   *
+   * May be called by any signed account in order to finish voting and close the proposal.
+   *
+   * If called before the end of the voting period it will only close the vote if it is
+   * has enough votes to be approved or disapproved.
+   *
+   * If called after the end of the voting period abstentions are counted as rejections
+   * unless there is a prime member set and the prime member cast an approval.
+   *
+   * If the close operation completes successfully with disapproval, the transaction fee will
+   * be waived. Otherwise execution of the approved operation will be charged to the caller.
+   *
+   * + `proposal_weight_bound`: The maximum amount of weight consumed by executing the closed
+   * proposal.
+   * + `length_bound`: The upper bound for the length of the proposal in storage. Checked via
+   * `storage::read` so it is `size_of::<u32>() == 4` larger than the pure length.
+   *
+   * ## Complexity
+   * - `O(B + M + P1 + P2)` where:
+   * - `B` is `proposal` size in bytes (length-fee-bounded)
+   * - `M` is members-count (code- and governance-bounded)
+   * - `P1` is the complexity of `proposal` preimage.
+   * - `P2` is proposal-count (code-bounded)
+   **/
+  | {
+      name: 'Close';
+      params: { proposalHash: H256; index: number; proposalWeightBound: SpWeightsWeightV2Weight; lengthBound: number };
+    };
+
+export type PalletCollectiveCallLike =
+  /**
+   * Set the collective's membership.
+   *
+   * - `new_members`: The new member list. Be nice to the chain and provide it sorted.
+   * - `prime`: The prime member whose vote sets the default.
+   * - `old_count`: The upper bound for the previous number of members in storage. Used for
+   * weight estimation.
+   *
+   * The dispatch of this call must be `SetMembersOrigin`.
+   *
+   * NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but
+   * the weight estimations rely on it to estimate dispatchable weight.
+   *
+   * # WARNING:
+   *
+   * The `pallet-collective` can also be managed by logic outside of the pallet through the
+   * implementation of the trait [`ChangeMembers`].
+   * Any call to `set_members` must be careful that the member set doesn't get out of sync
+   * with other logic managing the member set.
+   *
+   * ## Complexity:
+   * - `O(MP + N)` where:
+   * - `M` old-members-count (code- and governance-bounded)
+   * - `N` new-members-count (code- and governance-bounded)
+   * - `P` proposals-count (code-bounded)
+   **/
+  | {
+      name: 'SetMembers';
+      params: { newMembers: Array<AccountId32Like>; prime?: AccountId32Like | undefined; oldCount: number };
+    }
+  /**
+   * Dispatch a proposal from a member using the `Member` origin.
+   *
+   * Origin must be a member of the collective.
+   *
+   * ## Complexity:
+   * - `O(B + M + P)` where:
+   * - `B` is `proposal` size in bytes (length-fee-bounded)
+   * - `M` members-count (code-bounded)
+   * - `P` complexity of dispatching `proposal`
+   **/
+  | { name: 'Execute'; params: { proposal: AstarRuntimeRuntimeCallLike; lengthBound: number } }
+  /**
+   * Add a new proposal to either be voted on or executed directly.
+   *
+   * Requires the sender to be member.
+   *
+   * `threshold` determines whether `proposal` is executed directly (`threshold < 2`)
+   * or put up for voting.
+   *
+   * ## Complexity
+   * - `O(B + M + P1)` or `O(B + M + P2)` where:
+   * - `B` is `proposal` size in bytes (length-fee-bounded)
+   * - `M` is members-count (code- and governance-bounded)
+   * - branching is influenced by `threshold` where:
+   * - `P1` is proposal execution complexity (`threshold < 2`)
+   * - `P2` is proposals-count (code-bounded) (`threshold >= 2`)
+   **/
+  | { name: 'Propose'; params: { threshold: number; proposal: AstarRuntimeRuntimeCallLike; lengthBound: number } }
+  /**
+   * Add an aye or nay vote for the sender to the given proposal.
+   *
+   * Requires the sender to be a member.
+   *
+   * Transaction fees will be waived if the member is voting on any particular proposal
+   * for the first time and the call is successful. Subsequent vote changes will charge a
+   * fee.
+   * ## Complexity
+   * - `O(M)` where `M` is members-count (code- and governance-bounded)
+   **/
+  | { name: 'Vote'; params: { proposal: H256; index: number; approve: boolean } }
+  /**
+   * Disapprove a proposal, close, and remove it from the system, regardless of its current
+   * state.
+   *
+   * Must be called by the Root origin.
+   *
+   * Parameters:
+   * * `proposal_hash`: The hash of the proposal that should be disapproved.
+   *
+   * ## Complexity
+   * O(P) where P is the number of max proposals
+   **/
+  | { name: 'DisapproveProposal'; params: { proposalHash: H256 } }
+  /**
+   * Close a vote that is either approved, disapproved or whose voting period has ended.
+   *
+   * May be called by any signed account in order to finish voting and close the proposal.
+   *
+   * If called before the end of the voting period it will only close the vote if it is
+   * has enough votes to be approved or disapproved.
+   *
+   * If called after the end of the voting period abstentions are counted as rejections
+   * unless there is a prime member set and the prime member cast an approval.
+   *
+   * If the close operation completes successfully with disapproval, the transaction fee will
+   * be waived. Otherwise execution of the approved operation will be charged to the caller.
+   *
+   * + `proposal_weight_bound`: The maximum amount of weight consumed by executing the closed
+   * proposal.
+   * + `length_bound`: The upper bound for the length of the proposal in storage. Checked via
+   * `storage::read` so it is `size_of::<u32>() == 4` larger than the pure length.
+   *
+   * ## Complexity
+   * - `O(B + M + P1 + P2)` where:
+   * - `B` is `proposal` size in bytes (length-fee-bounded)
+   * - `M` is members-count (code- and governance-bounded)
+   * - `P1` is the complexity of `proposal` preimage.
+   * - `P2` is proposal-count (code-bounded)
+   **/
+  | {
+      name: 'Close';
+      params: { proposalHash: H256; index: number; proposalWeightBound: SpWeightsWeightV2Weight; lengthBound: number };
+    };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletDemocracyCall =
+  /**
+   * Propose a sensitive action to be taken.
+   *
+   * The dispatch origin of this call must be _Signed_ and the sender must
+   * have funds to cover the deposit.
+   *
+   * - `proposal_hash`: The hash of the proposal preimage.
+   * - `value`: The amount of deposit (must be at least `MinimumDeposit`).
+   *
+   * Emits `Proposed`.
+   **/
+  | { name: 'Propose'; params: { proposal: FrameSupportPreimagesBounded; value: bigint } }
+  /**
+   * Signals agreement with a particular proposal.
+   *
+   * The dispatch origin of this call must be _Signed_ and the sender
+   * must have funds to cover the deposit, equal to the original deposit.
+   *
+   * - `proposal`: The index of the proposal to second.
+   **/
+  | { name: 'Second'; params: { proposal: number } }
+  /**
+   * Vote in a referendum. If `vote.is_aye()`, the vote is to enact the proposal;
+   * otherwise it is a vote to keep the status quo.
+   *
+   * The dispatch origin of this call must be _Signed_.
+   *
+   * - `ref_index`: The index of the referendum to vote for.
+   * - `vote`: The vote configuration.
+   **/
+  | { name: 'Vote'; params: { refIndex: number; vote: PalletDemocracyVoteAccountVote } }
+  /**
+   * Schedule an emergency cancellation of a referendum. Cannot happen twice to the same
+   * referendum.
+   *
+   * The dispatch origin of this call must be `CancellationOrigin`.
+   *
+   * -`ref_index`: The index of the referendum to cancel.
+   *
+   * Weight: `O(1)`.
+   **/
+  | { name: 'EmergencyCancel'; params: { refIndex: number } }
+  /**
+   * Schedule a referendum to be tabled once it is legal to schedule an external
+   * referendum.
+   *
+   * The dispatch origin of this call must be `ExternalOrigin`.
+   *
+   * - `proposal_hash`: The preimage hash of the proposal.
+   **/
+  | { name: 'ExternalPropose'; params: { proposal: FrameSupportPreimagesBounded } }
+  /**
+   * Schedule a majority-carries referendum to be tabled next once it is legal to schedule
+   * an external referendum.
+   *
+   * The dispatch of this call must be `ExternalMajorityOrigin`.
+   *
+   * - `proposal_hash`: The preimage hash of the proposal.
+   *
+   * Unlike `external_propose`, blacklisting has no effect on this and it may replace a
+   * pre-scheduled `external_propose` call.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ExternalProposeMajority'; params: { proposal: FrameSupportPreimagesBounded } }
+  /**
+   * Schedule a negative-turnout-bias referendum to be tabled next once it is legal to
+   * schedule an external referendum.
+   *
+   * The dispatch of this call must be `ExternalDefaultOrigin`.
+   *
+   * - `proposal_hash`: The preimage hash of the proposal.
+   *
+   * Unlike `external_propose`, blacklisting has no effect on this and it may replace a
+   * pre-scheduled `external_propose` call.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ExternalProposeDefault'; params: { proposal: FrameSupportPreimagesBounded } }
+  /**
+   * Schedule the currently externally-proposed majority-carries referendum to be tabled
+   * immediately. If there is no externally-proposed referendum currently, or if there is one
+   * but it is not a majority-carries referendum then it fails.
+   *
+   * The dispatch of this call must be `FastTrackOrigin`.
+   *
+   * - `proposal_hash`: The hash of the current external proposal.
+   * - `voting_period`: The period that is allowed for voting on this proposal. Increased to
+   * Must be always greater than zero.
+   * For `FastTrackOrigin` must be equal or greater than `FastTrackVotingPeriod`.
+   * - `delay`: The number of block after voting has ended in approval and this should be
+   * enacted. This doesn't have a minimum amount.
+   *
+   * Emits `Started`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'FastTrack'; params: { proposalHash: H256; votingPeriod: number; delay: number } }
+  /**
+   * Veto and blacklist the external proposal hash.
+   *
+   * The dispatch origin of this call must be `VetoOrigin`.
+   *
+   * - `proposal_hash`: The preimage hash of the proposal to veto and blacklist.
+   *
+   * Emits `Vetoed`.
+   *
+   * Weight: `O(V + log(V))` where V is number of `existing vetoers`
+   **/
+  | { name: 'VetoExternal'; params: { proposalHash: H256 } }
+  /**
+   * Remove a referendum.
+   *
+   * The dispatch origin of this call must be _Root_.
+   *
+   * - `ref_index`: The index of the referendum to cancel.
+   *
+   * # Weight: `O(1)`.
+   **/
+  | { name: 'CancelReferendum'; params: { refIndex: number } }
+  /**
+   * Delegate the voting power (with some given conviction) of the sending account.
+   *
+   * The balance delegated is locked for as long as it's delegated, and thereafter for the
+   * time appropriate for the conviction's lock period.
+   *
+   * The dispatch origin of this call must be _Signed_, and the signing account must either:
+   * - be delegating already; or
+   * - have no voting activity (if there is, then it will need to be removed/consolidated
+   * through `reap_vote` or `unvote`).
+   *
+   * - `to`: The account whose voting the `target` account's voting power will follow.
+   * - `conviction`: The conviction that will be attached to the delegated votes. When the
+   * account is undelegated, the funds will be locked for the corresponding period.
+   * - `balance`: The amount of the account's balance to be used in delegating. This must not
+   * be more than the account's current balance.
+   *
+   * Emits `Delegated`.
+   *
+   * Weight: `O(R)` where R is the number of referendums the voter delegating to has
+   * voted on. Weight is charged as if maximum votes.
+   **/
+  | { name: 'Delegate'; params: { to: MultiAddress; conviction: PalletDemocracyConviction; balance: bigint } }
+  /**
+   * Undelegate the voting power of the sending account.
+   *
+   * Tokens may be unlocked following once an amount of time consistent with the lock period
+   * of the conviction with which the delegation was issued.
+   *
+   * The dispatch origin of this call must be _Signed_ and the signing account must be
+   * currently delegating.
+   *
+   * Emits `Undelegated`.
+   *
+   * Weight: `O(R)` where R is the number of referendums the voter delegating to has
+   * voted on. Weight is charged as if maximum votes.
+   **/
+  | { name: 'Undelegate' }
+  /**
+   * Clears all public proposals.
+   *
+   * The dispatch origin of this call must be _Root_.
+   *
+   * Weight: `O(1)`.
+   **/
+  | { name: 'ClearPublicProposals' }
+  /**
+   * Unlock tokens that have an expired lock.
+   *
+   * The dispatch origin of this call must be _Signed_.
+   *
+   * - `target`: The account to remove the lock on.
+   *
+   * Weight: `O(R)` with R number of vote of target.
+   **/
+  | { name: 'Unlock'; params: { target: MultiAddress } }
+  /**
+   * Remove a vote for a referendum.
+   *
+   * If:
+   * - the referendum was cancelled, or
+   * - the referendum is ongoing, or
+   * - the referendum has ended such that
+   * - the vote of the account was in opposition to the result; or
+   * - there was no conviction to the account's vote; or
+   * - the account made a split vote
+   * ...then the vote is removed cleanly and a following call to `unlock` may result in more
+   * funds being available.
+   *
+   * If, however, the referendum has ended and:
+   * - it finished corresponding to the vote of the account, and
+   * - the account made a standard vote with conviction, and
+   * - the lock period of the conviction is not over
+   * ...then the lock will be aggregated into the overall account's lock, which may involve
+   * *overlocking* (where the two locks are combined into a single lock that is the maximum
+   * of both the amount locked and the time is it locked for).
+   *
+   * The dispatch origin of this call must be _Signed_, and the signer must have a vote
+   * registered for referendum `index`.
+   *
+   * - `index`: The index of referendum of the vote to be removed.
+   *
+   * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
+   * Weight is calculated for the maximum number of vote.
+   **/
+  | { name: 'RemoveVote'; params: { index: number } }
+  /**
+   * Remove a vote for a referendum.
+   *
+   * If the `target` is equal to the signer, then this function is exactly equivalent to
+   * `remove_vote`. If not equal to the signer, then the vote must have expired,
+   * either because the referendum was cancelled, because the voter lost the referendum or
+   * because the conviction period is over.
+   *
+   * The dispatch origin of this call must be _Signed_.
+   *
+   * - `target`: The account of the vote to be removed; this account must have voted for
+   * referendum `index`.
+   * - `index`: The index of referendum of the vote to be removed.
+   *
+   * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
+   * Weight is calculated for the maximum number of vote.
+   **/
+  | { name: 'RemoveOtherVote'; params: { target: MultiAddress; index: number } }
+  /**
+   * Permanently place a proposal into the blacklist. This prevents it from ever being
+   * proposed again.
+   *
+   * If called on a queued public or external proposal, then this will result in it being
+   * removed. If the `ref_index` supplied is an active referendum with the proposal hash,
+   * then it will be cancelled.
+   *
+   * The dispatch origin of this call must be `BlacklistOrigin`.
+   *
+   * - `proposal_hash`: The proposal hash to blacklist permanently.
+   * - `ref_index`: An ongoing referendum whose hash is `proposal_hash`, which will be
+   * cancelled.
+   *
+   * Weight: `O(p)` (though as this is an high-privilege dispatch, we assume it has a
+   * reasonable value).
+   **/
+  | { name: 'Blacklist'; params: { proposalHash: H256; maybeRefIndex?: number | undefined } }
+  /**
+   * Remove a proposal.
+   *
+   * The dispatch origin of this call must be `CancelProposalOrigin`.
+   *
+   * - `prop_index`: The index of the proposal to cancel.
+   *
+   * Weight: `O(p)` where `p = PublicProps::<T>::decode_len()`
+   **/
+  | { name: 'CancelProposal'; params: { propIndex: number } }
+  /**
+   * Set or clear a metadata of a proposal or a referendum.
+   *
+   * Parameters:
+   * - `origin`: Must correspond to the `MetadataOwner`.
+   * - `ExternalOrigin` for an external proposal with the `SuperMajorityApprove`
+   * threshold.
+   * - `ExternalDefaultOrigin` for an external proposal with the `SuperMajorityAgainst`
+   * threshold.
+   * - `ExternalMajorityOrigin` for an external proposal with the `SimpleMajority`
+   * threshold.
+   * - `Signed` by a creator for a public proposal.
+   * - `Signed` to clear a metadata for a finished referendum.
+   * - `Root` to set a metadata for an ongoing referendum.
+   * - `owner`: an identifier of a metadata owner.
+   * - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
+   **/
+  | { name: 'SetMetadata'; params: { owner: PalletDemocracyMetadataOwner; maybeHash?: H256 | undefined } };
+
+export type PalletDemocracyCallLike =
+  /**
+   * Propose a sensitive action to be taken.
+   *
+   * The dispatch origin of this call must be _Signed_ and the sender must
+   * have funds to cover the deposit.
+   *
+   * - `proposal_hash`: The hash of the proposal preimage.
+   * - `value`: The amount of deposit (must be at least `MinimumDeposit`).
+   *
+   * Emits `Proposed`.
+   **/
+  | { name: 'Propose'; params: { proposal: FrameSupportPreimagesBounded; value: bigint } }
+  /**
+   * Signals agreement with a particular proposal.
+   *
+   * The dispatch origin of this call must be _Signed_ and the sender
+   * must have funds to cover the deposit, equal to the original deposit.
+   *
+   * - `proposal`: The index of the proposal to second.
+   **/
+  | { name: 'Second'; params: { proposal: number } }
+  /**
+   * Vote in a referendum. If `vote.is_aye()`, the vote is to enact the proposal;
+   * otherwise it is a vote to keep the status quo.
+   *
+   * The dispatch origin of this call must be _Signed_.
+   *
+   * - `ref_index`: The index of the referendum to vote for.
+   * - `vote`: The vote configuration.
+   **/
+  | { name: 'Vote'; params: { refIndex: number; vote: PalletDemocracyVoteAccountVote } }
+  /**
+   * Schedule an emergency cancellation of a referendum. Cannot happen twice to the same
+   * referendum.
+   *
+   * The dispatch origin of this call must be `CancellationOrigin`.
+   *
+   * -`ref_index`: The index of the referendum to cancel.
+   *
+   * Weight: `O(1)`.
+   **/
+  | { name: 'EmergencyCancel'; params: { refIndex: number } }
+  /**
+   * Schedule a referendum to be tabled once it is legal to schedule an external
+   * referendum.
+   *
+   * The dispatch origin of this call must be `ExternalOrigin`.
+   *
+   * - `proposal_hash`: The preimage hash of the proposal.
+   **/
+  | { name: 'ExternalPropose'; params: { proposal: FrameSupportPreimagesBounded } }
+  /**
+   * Schedule a majority-carries referendum to be tabled next once it is legal to schedule
+   * an external referendum.
+   *
+   * The dispatch of this call must be `ExternalMajorityOrigin`.
+   *
+   * - `proposal_hash`: The preimage hash of the proposal.
+   *
+   * Unlike `external_propose`, blacklisting has no effect on this and it may replace a
+   * pre-scheduled `external_propose` call.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ExternalProposeMajority'; params: { proposal: FrameSupportPreimagesBounded } }
+  /**
+   * Schedule a negative-turnout-bias referendum to be tabled next once it is legal to
+   * schedule an external referendum.
+   *
+   * The dispatch of this call must be `ExternalDefaultOrigin`.
+   *
+   * - `proposal_hash`: The preimage hash of the proposal.
+   *
+   * Unlike `external_propose`, blacklisting has no effect on this and it may replace a
+   * pre-scheduled `external_propose` call.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ExternalProposeDefault'; params: { proposal: FrameSupportPreimagesBounded } }
+  /**
+   * Schedule the currently externally-proposed majority-carries referendum to be tabled
+   * immediately. If there is no externally-proposed referendum currently, or if there is one
+   * but it is not a majority-carries referendum then it fails.
+   *
+   * The dispatch of this call must be `FastTrackOrigin`.
+   *
+   * - `proposal_hash`: The hash of the current external proposal.
+   * - `voting_period`: The period that is allowed for voting on this proposal. Increased to
+   * Must be always greater than zero.
+   * For `FastTrackOrigin` must be equal or greater than `FastTrackVotingPeriod`.
+   * - `delay`: The number of block after voting has ended in approval and this should be
+   * enacted. This doesn't have a minimum amount.
+   *
+   * Emits `Started`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'FastTrack'; params: { proposalHash: H256; votingPeriod: number; delay: number } }
+  /**
+   * Veto and blacklist the external proposal hash.
+   *
+   * The dispatch origin of this call must be `VetoOrigin`.
+   *
+   * - `proposal_hash`: The preimage hash of the proposal to veto and blacklist.
+   *
+   * Emits `Vetoed`.
+   *
+   * Weight: `O(V + log(V))` where V is number of `existing vetoers`
+   **/
+  | { name: 'VetoExternal'; params: { proposalHash: H256 } }
+  /**
+   * Remove a referendum.
+   *
+   * The dispatch origin of this call must be _Root_.
+   *
+   * - `ref_index`: The index of the referendum to cancel.
+   *
+   * # Weight: `O(1)`.
+   **/
+  | { name: 'CancelReferendum'; params: { refIndex: number } }
+  /**
+   * Delegate the voting power (with some given conviction) of the sending account.
+   *
+   * The balance delegated is locked for as long as it's delegated, and thereafter for the
+   * time appropriate for the conviction's lock period.
+   *
+   * The dispatch origin of this call must be _Signed_, and the signing account must either:
+   * - be delegating already; or
+   * - have no voting activity (if there is, then it will need to be removed/consolidated
+   * through `reap_vote` or `unvote`).
+   *
+   * - `to`: The account whose voting the `target` account's voting power will follow.
+   * - `conviction`: The conviction that will be attached to the delegated votes. When the
+   * account is undelegated, the funds will be locked for the corresponding period.
+   * - `balance`: The amount of the account's balance to be used in delegating. This must not
+   * be more than the account's current balance.
+   *
+   * Emits `Delegated`.
+   *
+   * Weight: `O(R)` where R is the number of referendums the voter delegating to has
+   * voted on. Weight is charged as if maximum votes.
+   **/
+  | { name: 'Delegate'; params: { to: MultiAddressLike; conviction: PalletDemocracyConviction; balance: bigint } }
+  /**
+   * Undelegate the voting power of the sending account.
+   *
+   * Tokens may be unlocked following once an amount of time consistent with the lock period
+   * of the conviction with which the delegation was issued.
+   *
+   * The dispatch origin of this call must be _Signed_ and the signing account must be
+   * currently delegating.
+   *
+   * Emits `Undelegated`.
+   *
+   * Weight: `O(R)` where R is the number of referendums the voter delegating to has
+   * voted on. Weight is charged as if maximum votes.
+   **/
+  | { name: 'Undelegate' }
+  /**
+   * Clears all public proposals.
+   *
+   * The dispatch origin of this call must be _Root_.
+   *
+   * Weight: `O(1)`.
+   **/
+  | { name: 'ClearPublicProposals' }
+  /**
+   * Unlock tokens that have an expired lock.
+   *
+   * The dispatch origin of this call must be _Signed_.
+   *
+   * - `target`: The account to remove the lock on.
+   *
+   * Weight: `O(R)` with R number of vote of target.
+   **/
+  | { name: 'Unlock'; params: { target: MultiAddressLike } }
+  /**
+   * Remove a vote for a referendum.
+   *
+   * If:
+   * - the referendum was cancelled, or
+   * - the referendum is ongoing, or
+   * - the referendum has ended such that
+   * - the vote of the account was in opposition to the result; or
+   * - there was no conviction to the account's vote; or
+   * - the account made a split vote
+   * ...then the vote is removed cleanly and a following call to `unlock` may result in more
+   * funds being available.
+   *
+   * If, however, the referendum has ended and:
+   * - it finished corresponding to the vote of the account, and
+   * - the account made a standard vote with conviction, and
+   * - the lock period of the conviction is not over
+   * ...then the lock will be aggregated into the overall account's lock, which may involve
+   * *overlocking* (where the two locks are combined into a single lock that is the maximum
+   * of both the amount locked and the time is it locked for).
+   *
+   * The dispatch origin of this call must be _Signed_, and the signer must have a vote
+   * registered for referendum `index`.
+   *
+   * - `index`: The index of referendum of the vote to be removed.
+   *
+   * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
+   * Weight is calculated for the maximum number of vote.
+   **/
+  | { name: 'RemoveVote'; params: { index: number } }
+  /**
+   * Remove a vote for a referendum.
+   *
+   * If the `target` is equal to the signer, then this function is exactly equivalent to
+   * `remove_vote`. If not equal to the signer, then the vote must have expired,
+   * either because the referendum was cancelled, because the voter lost the referendum or
+   * because the conviction period is over.
+   *
+   * The dispatch origin of this call must be _Signed_.
+   *
+   * - `target`: The account of the vote to be removed; this account must have voted for
+   * referendum `index`.
+   * - `index`: The index of referendum of the vote to be removed.
+   *
+   * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
+   * Weight is calculated for the maximum number of vote.
+   **/
+  | { name: 'RemoveOtherVote'; params: { target: MultiAddressLike; index: number } }
+  /**
+   * Permanently place a proposal into the blacklist. This prevents it from ever being
+   * proposed again.
+   *
+   * If called on a queued public or external proposal, then this will result in it being
+   * removed. If the `ref_index` supplied is an active referendum with the proposal hash,
+   * then it will be cancelled.
+   *
+   * The dispatch origin of this call must be `BlacklistOrigin`.
+   *
+   * - `proposal_hash`: The proposal hash to blacklist permanently.
+   * - `ref_index`: An ongoing referendum whose hash is `proposal_hash`, which will be
+   * cancelled.
+   *
+   * Weight: `O(p)` (though as this is an high-privilege dispatch, we assume it has a
+   * reasonable value).
+   **/
+  | { name: 'Blacklist'; params: { proposalHash: H256; maybeRefIndex?: number | undefined } }
+  /**
+   * Remove a proposal.
+   *
+   * The dispatch origin of this call must be `CancelProposalOrigin`.
+   *
+   * - `prop_index`: The index of the proposal to cancel.
+   *
+   * Weight: `O(p)` where `p = PublicProps::<T>::decode_len()`
+   **/
+  | { name: 'CancelProposal'; params: { propIndex: number } }
+  /**
+   * Set or clear a metadata of a proposal or a referendum.
+   *
+   * Parameters:
+   * - `origin`: Must correspond to the `MetadataOwner`.
+   * - `ExternalOrigin` for an external proposal with the `SuperMajorityApprove`
+   * threshold.
+   * - `ExternalDefaultOrigin` for an external proposal with the `SuperMajorityAgainst`
+   * threshold.
+   * - `ExternalMajorityOrigin` for an external proposal with the `SimpleMajority`
+   * threshold.
+   * - `Signed` by a creator for a public proposal.
+   * - `Signed` to clear a metadata for a finished referendum.
+   * - `Root` to set a metadata for an ongoing referendum.
+   * - `owner`: an identifier of a metadata owner.
+   * - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
+   **/
+  | { name: 'SetMetadata'; params: { owner: PalletDemocracyMetadataOwner; maybeHash?: H256 | undefined } };
+
+export type FrameSupportPreimagesBounded =
+  | { type: 'Legacy'; value: { hash: H256 } }
+  | { type: 'Inline'; value: Bytes }
+  | { type: 'Lookup'; value: { hash: H256; len: number } };
+
+export type SpRuntimeBlakeTwo256 = {};
+
+export type PalletDemocracyConviction =
+  | 'None'
+  | 'Locked1x'
+  | 'Locked2x'
+  | 'Locked3x'
+  | 'Locked4x'
+  | 'Locked5x'
+  | 'Locked6x';
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletTreasuryCall =
+  /**
+   * Put forward a suggestion for spending.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed.
+   *
+   * ## Details
+   * A deposit proportional to the value is reserved and slashed if the proposal is rejected.
+   * It is returned once the proposal is awarded.
+   *
+   * ### Complexity
+   * - O(1)
+   *
+   * ## Events
+   *
+   * Emits [`Event::Proposed`] if successful.
+   **/
+  | { name: 'ProposeSpend'; params: { value: bigint; beneficiary: MultiAddress } }
+  /**
+   * Reject a proposed spend.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::RejectOrigin`].
+   *
+   * ## Details
+   * The original deposit will be slashed.
+   *
+   * ### Complexity
+   * - O(1)
+   *
+   * ## Events
+   *
+   * Emits [`Event::Rejected`] if successful.
+   **/
+  | { name: 'RejectProposal'; params: { proposalId: number } }
+  /**
+   * Approve a proposal.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ApproveOrigin`].
+   *
+   * ## Details
+   *
+   * At a later time, the proposal will be allocated to the beneficiary and the original
+   * deposit will be returned.
+   *
+   * ### Complexity
+   * - O(1).
+   *
+   * ## Events
+   *
+   * No events are emitted from this dispatch.
+   **/
+  | { name: 'ApproveProposal'; params: { proposalId: number } }
+  /**
+   * Propose and approve a spend of treasury funds.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`.
+   *
+   * ### Details
+   * NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the
+   * beneficiary.
+   *
+   * ### Parameters
+   * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
+   * - `beneficiary`: The destination account for the transfer.
+   *
+   * ## Events
+   *
+   * Emits [`Event::SpendApproved`] if successful.
+   **/
+  | { name: 'SpendLocal'; params: { amount: bigint; beneficiary: MultiAddress } }
+  /**
+   * Force a previously approved proposal to be removed from the approval queue.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::RejectOrigin`].
+   *
+   * ## Details
+   *
+   * The original deposit will no longer be returned.
+   *
+   * ### Parameters
+   * - `proposal_id`: The index of a proposal
+   *
+   * ### Complexity
+   * - O(A) where `A` is the number of approvals
+   *
+   * ### Errors
+   * - [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the
+   * approval queue, i.e., the proposal has not been approved. This could also mean the
+   * proposal does not exist altogether, thus there is no way it would have been approved
+   * in the first place.
+   **/
+  | { name: 'RemoveApproval'; params: { proposalId: number } }
+  /**
+   * Propose and approve a spend of treasury funds.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::SpendOrigin`] with the `Success` value being at least
+   * `amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted
+   * for assertion using the [`Config::BalanceConverter`].
+   *
+   * ## Details
+   *
+   * Create an approved spend for transferring a specific `amount` of `asset_kind` to a
+   * designated beneficiary. The spend must be claimed using the `payout` dispatchable within
+   * the [`Config::PayoutPeriod`].
+   *
+   * ### Parameters
+   * - `asset_kind`: An indicator of the specific asset class to be spent.
+   * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
+   * - `beneficiary`: The beneficiary of the spend.
+   * - `valid_from`: The block number from which the spend can be claimed. It can refer to
+   * the past if the resulting spend has not yet expired according to the
+   * [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after
+   * approval.
+   *
+   * ## Events
+   *
+   * Emits [`Event::AssetSpendApproved`] if successful.
+   **/
+  | {
+      name: 'Spend';
+      params: { assetKind: []; amount: bigint; beneficiary: AccountId32; validFrom?: number | undefined };
+    }
+  /**
+   * Claim a spend.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed.
+   *
+   * ## Details
+   *
+   * Spends must be claimed within some temporal bounds. A spend may be claimed within one
+   * [`Config::PayoutPeriod`] from the `valid_from` block.
+   * In case of a payout failure, the spend status must be updated with the `check_status`
+   * dispatchable before retrying with the current function.
+   *
+   * ### Parameters
+   * - `index`: The spend index.
+   *
+   * ## Events
+   *
+   * Emits [`Event::Paid`] if successful.
+   **/
+  | { name: 'Payout'; params: { index: number } }
+  /**
+   * Check the status of the spend and remove it from the storage if processed.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed.
+   *
+   * ## Details
+   *
+   * The status check is a prerequisite for retrying a failed payout.
+   * If a spend has either succeeded or expired, it is removed from the storage by this
+   * function. In such instances, transaction fees are refunded.
+   *
+   * ### Parameters
+   * - `index`: The spend index.
+   *
+   * ## Events
+   *
+   * Emits [`Event::PaymentFailed`] if the spend payout has failed.
+   * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
+   **/
+  | { name: 'CheckStatus'; params: { index: number } }
+  /**
+   * Void previously approved spend.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::RejectOrigin`].
+   *
+   * ## Details
+   *
+   * A spend void is only possible if the payout has not been attempted yet.
+   *
+   * ### Parameters
+   * - `index`: The spend index.
+   *
+   * ## Events
+   *
+   * Emits [`Event::AssetSpendVoided`] if successful.
+   **/
+  | { name: 'VoidSpend'; params: { index: number } };
+
+export type PalletTreasuryCallLike =
+  /**
+   * Put forward a suggestion for spending.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed.
+   *
+   * ## Details
+   * A deposit proportional to the value is reserved and slashed if the proposal is rejected.
+   * It is returned once the proposal is awarded.
+   *
+   * ### Complexity
+   * - O(1)
+   *
+   * ## Events
+   *
+   * Emits [`Event::Proposed`] if successful.
+   **/
+  | { name: 'ProposeSpend'; params: { value: bigint; beneficiary: MultiAddressLike } }
+  /**
+   * Reject a proposed spend.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::RejectOrigin`].
+   *
+   * ## Details
+   * The original deposit will be slashed.
+   *
+   * ### Complexity
+   * - O(1)
+   *
+   * ## Events
+   *
+   * Emits [`Event::Rejected`] if successful.
+   **/
+  | { name: 'RejectProposal'; params: { proposalId: number } }
+  /**
+   * Approve a proposal.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ApproveOrigin`].
+   *
+   * ## Details
+   *
+   * At a later time, the proposal will be allocated to the beneficiary and the original
+   * deposit will be returned.
+   *
+   * ### Complexity
+   * - O(1).
+   *
+   * ## Events
+   *
+   * No events are emitted from this dispatch.
+   **/
+  | { name: 'ApproveProposal'; params: { proposalId: number } }
+  /**
+   * Propose and approve a spend of treasury funds.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`.
+   *
+   * ### Details
+   * NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the
+   * beneficiary.
+   *
+   * ### Parameters
+   * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
+   * - `beneficiary`: The destination account for the transfer.
+   *
+   * ## Events
+   *
+   * Emits [`Event::SpendApproved`] if successful.
+   **/
+  | { name: 'SpendLocal'; params: { amount: bigint; beneficiary: MultiAddressLike } }
+  /**
+   * Force a previously approved proposal to be removed from the approval queue.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::RejectOrigin`].
+   *
+   * ## Details
+   *
+   * The original deposit will no longer be returned.
+   *
+   * ### Parameters
+   * - `proposal_id`: The index of a proposal
+   *
+   * ### Complexity
+   * - O(A) where `A` is the number of approvals
+   *
+   * ### Errors
+   * - [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the
+   * approval queue, i.e., the proposal has not been approved. This could also mean the
+   * proposal does not exist altogether, thus there is no way it would have been approved
+   * in the first place.
+   **/
+  | { name: 'RemoveApproval'; params: { proposalId: number } }
+  /**
+   * Propose and approve a spend of treasury funds.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::SpendOrigin`] with the `Success` value being at least
+   * `amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted
+   * for assertion using the [`Config::BalanceConverter`].
+   *
+   * ## Details
+   *
+   * Create an approved spend for transferring a specific `amount` of `asset_kind` to a
+   * designated beneficiary. The spend must be claimed using the `payout` dispatchable within
+   * the [`Config::PayoutPeriod`].
+   *
+   * ### Parameters
+   * - `asset_kind`: An indicator of the specific asset class to be spent.
+   * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
+   * - `beneficiary`: The beneficiary of the spend.
+   * - `valid_from`: The block number from which the spend can be claimed. It can refer to
+   * the past if the resulting spend has not yet expired according to the
+   * [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after
+   * approval.
+   *
+   * ## Events
+   *
+   * Emits [`Event::AssetSpendApproved`] if successful.
+   **/
+  | {
+      name: 'Spend';
+      params: { assetKind: []; amount: bigint; beneficiary: AccountId32Like; validFrom?: number | undefined };
+    }
+  /**
+   * Claim a spend.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed.
+   *
+   * ## Details
+   *
+   * Spends must be claimed within some temporal bounds. A spend may be claimed within one
+   * [`Config::PayoutPeriod`] from the `valid_from` block.
+   * In case of a payout failure, the spend status must be updated with the `check_status`
+   * dispatchable before retrying with the current function.
+   *
+   * ### Parameters
+   * - `index`: The spend index.
+   *
+   * ## Events
+   *
+   * Emits [`Event::Paid`] if successful.
+   **/
+  | { name: 'Payout'; params: { index: number } }
+  /**
+   * Check the status of the spend and remove it from the storage if processed.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed.
+   *
+   * ## Details
+   *
+   * The status check is a prerequisite for retrying a failed payout.
+   * If a spend has either succeeded or expired, it is removed from the storage by this
+   * function. In such instances, transaction fees are refunded.
+   *
+   * ### Parameters
+   * - `index`: The spend index.
+   *
+   * ## Events
+   *
+   * Emits [`Event::PaymentFailed`] if the spend payout has failed.
+   * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
+   **/
+  | { name: 'CheckStatus'; params: { index: number } }
+  /**
+   * Void previously approved spend.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::RejectOrigin`].
+   *
+   * ## Details
+   *
+   * A spend void is only possible if the payout has not been attempted yet.
+   *
+   * ### Parameters
+   * - `index`: The spend index.
+   *
+   * ## Events
+   *
+   * Emits [`Event::AssetSpendVoided`] if successful.
+   **/
+  | { name: 'VoidSpend'; params: { index: number } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletCollectiveProxyCall =
+  /**
+   * Executes the call on a behalf of an aliased account.
+   *
+   * The `origin` of the call is supposed to be a _collective_ (but can be anything) which can dispatch `call` on behalf of the aliased account.
+   * It's essentially a proxy call that can be made by arbitrary origin type.
+   **/
+  { name: 'ExecuteCall'; params: { call: AstarRuntimeRuntimeCall } };
+
+export type PalletCollectiveProxyCallLike =
+  /**
+   * Executes the call on a behalf of an aliased account.
+   *
+   * The `origin` of the call is supposed to be a _collective_ (but can be anything) which can dispatch `call` on behalf of the aliased account.
+   * It's essentially a proxy call that can be made by arbitrary origin type.
+   **/
+  { name: 'ExecuteCall'; params: { call: AstarRuntimeRuntimeCallLike } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletMigrationsCall =
+  /**
+   * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+   *
+   * Should normally not be needed and is only in place as emergency measure. Note that
+   * restarting the migration process in this manner will not call the
+   * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+   **/
+  | { name: 'ForceSetCursor'; params: { cursor?: PalletMigrationsMigrationCursor | undefined } }
+  /**
+   * Allows root to set an active cursor to forcefully start/forward the migration process.
+   *
+   * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+   * `started_at` value to the next block number. Otherwise this would not be possible, since
+   * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+   * indicates that the current block number plus one should be used.
+   **/
+  | {
+      name: 'ForceSetActiveCursor';
+      params: { index: number; innerCursor?: Bytes | undefined; startedAt?: number | undefined };
+    }
+  /**
+   * Forces the onboarding of the migrations.
+   *
+   * This process happens automatically on a runtime upgrade. It is in place as an emergency
+   * measurement. The cursor needs to be `None` for this to succeed.
+   **/
+  | { name: 'ForceOnboardMbms' }
+  /**
+   * Clears the `Historic` set.
+   *
+   * `map_cursor` must be set to the last value that was returned by the
+   * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+   * way that will result in a sensible weight.
+   **/
+  | { name: 'ClearHistoric'; params: { selector: PalletMigrationsHistoricCleanupSelector } };
+
+export type PalletMigrationsCallLike =
+  /**
+   * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+   *
+   * Should normally not be needed and is only in place as emergency measure. Note that
+   * restarting the migration process in this manner will not call the
+   * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+   **/
+  | { name: 'ForceSetCursor'; params: { cursor?: PalletMigrationsMigrationCursor | undefined } }
+  /**
+   * Allows root to set an active cursor to forcefully start/forward the migration process.
+   *
+   * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+   * `started_at` value to the next block number. Otherwise this would not be possible, since
+   * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+   * indicates that the current block number plus one should be used.
+   **/
+  | {
+      name: 'ForceSetActiveCursor';
+      params: { index: number; innerCursor?: BytesLike | undefined; startedAt?: number | undefined };
+    }
+  /**
+   * Forces the onboarding of the migrations.
+   *
+   * This process happens automatically on a runtime upgrade. It is in place as an emergency
+   * measurement. The cursor needs to be `None` for this to succeed.
+   **/
+  | { name: 'ForceOnboardMbms' }
+  /**
+   * Clears the `Historic` set.
+   *
+   * `map_cursor` must be set to the last value that was returned by the
+   * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+   * way that will result in a sensible weight.
+   **/
+  | { name: 'ClearHistoric'; params: { selector: PalletMigrationsHistoricCleanupSelector } };
+
+export type PalletMigrationsMigrationCursor =
+  | { type: 'Active'; value: PalletMigrationsActiveCursor }
+  | { type: 'Stuck' };
+
+export type PalletMigrationsActiveCursor = { index: number; innerCursor?: Bytes | undefined; startedAt: number };
+
+export type PalletMigrationsHistoricCleanupSelector =
+  | { type: 'Specific'; value: Array<Bytes> }
+  | { type: 'Wildcard'; value: { limit?: number | undefined; previousCursor?: Bytes | undefined } };
+
 export type AstarRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
   | { type: 'PolkadotXcm'; value: PalletXcmOrigin }
   | { type: 'CumulusXcm'; value: CumulusPalletXcmOrigin }
   | { type: 'Ethereum'; value: PalletEthereumRawOrigin }
+  | { type: 'Council'; value: PalletCollectiveRawOrigin }
+  | { type: 'TechnicalCommittee'; value: PalletCollectiveRawOrigin }
+  | { type: 'CommunityCouncil'; value: PalletCollectiveRawOrigin }
   | { type: 'Void'; value: SpCoreVoid };
 
 export type FrameSupportDispatchRawOrigin =
@@ -7819,6 +9868,11 @@ export type CumulusPalletXcmOrigin =
   | { type: 'SiblingParachain'; value: PolkadotParachainPrimitivesPrimitivesId };
 
 export type PalletEthereumRawOrigin = { type: 'EthereumTransaction'; value: H160 };
+
+export type PalletCollectiveRawOrigin =
+  | { type: 'Members'; value: [number, number] }
+  | { type: 'Member'; value: AccountId32 }
+  | { type: 'Phantom' };
 
 export type SpCoreVoid = null;
 
@@ -8059,6 +10113,41 @@ export type PalletProxyError =
    **/
   | 'NoSelfProxy';
 
+export type PalletSchedulerScheduled = {
+  maybeId?: FixedBytes<32> | undefined;
+  priority: number;
+  call: FrameSupportPreimagesBounded;
+  maybePeriodic?: [number, number] | undefined;
+  origin: AstarRuntimeOriginCaller;
+};
+
+export type PalletSchedulerRetryConfig = { totalRetries: number; remaining: number; period: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletSchedulerError =
+  /**
+   * Failed to schedule a call
+   **/
+  | 'FailedToSchedule'
+  /**
+   * Cannot find the scheduled call.
+   **/
+  | 'NotFound'
+  /**
+   * Given target block number is in the past.
+   **/
+  | 'TargetBlockNumberInPast'
+  /**
+   * Reschedule failed because it does not change scheduled time.
+   **/
+  | 'RescheduleNoChange'
+  /**
+   * Attempt to use a non-named function on a named task.
+   **/
+  | 'Named';
+
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
@@ -8177,17 +10266,21 @@ export type PalletBalancesReasons = 'Fee' | 'Misc' | 'All';
 
 export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
-export type PalletBalancesIdAmount = { id: AstarRuntimeRuntimeHoldReason; amount: bigint };
+export type FrameSupportTokensMiscIdAmount = { id: AstarRuntimeRuntimeHoldReason; amount: bigint };
 
-export type AstarRuntimeRuntimeHoldReason = { type: 'Contracts'; value: PalletContractsHoldReason };
+export type AstarRuntimeRuntimeHoldReason =
+  | { type: 'Contracts'; value: PalletContractsHoldReason }
+  | { type: 'Preimage'; value: PalletPreimageHoldReason };
 
 export type PalletContractsHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve';
 
-export type PalletBalancesIdAmountRuntimeFreezeReason = { id: AstarRuntimeRuntimeFreezeReason; amount: bigint };
+export type PalletPreimageHoldReason = 'Preimage';
 
-export type AstarRuntimeRuntimeFreezeReason = { type: 'DappStaking'; value: PalletDappStakingV3FreezeReason };
+export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = { id: AstarRuntimeRuntimeFreezeReason; amount: bigint };
 
-export type PalletDappStakingV3FreezeReason = 'DAppStaking';
+export type AstarRuntimeRuntimeFreezeReason = { type: 'DappStaking'; value: PalletDappStakingFreezeReason };
+
+export type PalletDappStakingFreezeReason = 'DAppStaking';
 
 /**
  * The `Error` enum of this pallet.
@@ -8279,82 +10372,78 @@ export type PalletInflationError =
    **/
   'InvalidInflationParameters';
 
-export type PalletDappStakingV3ProtocolState = {
+export type PalletDappStakingProtocolState = {
   era: number;
   nextEraStart: number;
-  periodInfo: PalletDappStakingV3PeriodInfo;
+  periodInfo: PalletDappStakingPeriodInfo;
   maintenance: boolean;
 };
 
-export type PalletDappStakingV3PeriodInfo = {
+export type PalletDappStakingPeriodInfo = {
   number: number;
-  subperiod: PalletDappStakingV3Subperiod;
+  subperiod: PalletDappStakingSubperiod;
   nextSubperiodStartEra: number;
 };
 
-export type PalletDappStakingV3DAppInfo = {
-  owner: AccountId32;
-  id: number;
-  rewardBeneficiary?: AccountId32 | undefined;
-};
+export type PalletDappStakingDAppInfo = { owner: AccountId32; id: number; rewardBeneficiary?: AccountId32 | undefined };
 
-export type PalletDappStakingV3AccountLedger = {
+export type PalletDappStakingAccountLedger = {
   locked: bigint;
-  unlocking: Array<PalletDappStakingV3UnlockingChunk>;
-  staked: PalletDappStakingV3StakeAmount;
-  stakedFuture?: PalletDappStakingV3StakeAmount | undefined;
+  unlocking: Array<PalletDappStakingUnlockingChunk>;
+  staked: PalletDappStakingStakeAmount;
+  stakedFuture?: PalletDappStakingStakeAmount | undefined;
   contractStakeCount: number;
 };
 
-export type PalletDappStakingV3UnlockingChunk = { amount: bigint; unlockBlock: number };
+export type PalletDappStakingUnlockingChunk = { amount: bigint; unlockBlock: number };
 
-export type PalletDappStakingV3StakeAmount = { voting: bigint; buildAndEarn: bigint; era: number; period: number };
+export type PalletDappStakingStakeAmount = { voting: bigint; buildAndEarn: bigint; era: number; period: number };
 
-export type PalletDappStakingV3SingularStakingInfo = {
-  previousStaked: PalletDappStakingV3StakeAmount;
-  staked: PalletDappStakingV3StakeAmount;
+export type PalletDappStakingSingularStakingInfo = {
+  previousStaked: PalletDappStakingStakeAmount;
+  staked: PalletDappStakingStakeAmount;
   loyalStaker: boolean;
 };
 
-export type PalletDappStakingV3ContractStakeAmount = {
-  staked: PalletDappStakingV3StakeAmount;
-  stakedFuture?: PalletDappStakingV3StakeAmount | undefined;
+export type PalletDappStakingContractStakeAmount = {
+  staked: PalletDappStakingStakeAmount;
+  stakedFuture?: PalletDappStakingStakeAmount | undefined;
 };
 
-export type PalletDappStakingV3EraInfo = {
+export type PalletDappStakingEraInfo = {
   totalLocked: bigint;
   unlocking: bigint;
-  currentStakeAmount: PalletDappStakingV3StakeAmount;
-  nextStakeAmount: PalletDappStakingV3StakeAmount;
+  currentStakeAmount: PalletDappStakingStakeAmount;
+  nextStakeAmount: PalletDappStakingStakeAmount;
 };
 
-export type PalletDappStakingV3EraRewardSpan = {
-  span: Array<PalletDappStakingV3EraReward>;
+export type PalletDappStakingEraRewardSpan = {
+  span: Array<PalletDappStakingEraReward>;
   firstEra: number;
   lastEra: number;
 };
 
-export type PalletDappStakingV3EraReward = { stakerRewardPool: bigint; staked: bigint; dappRewardPool: bigint };
+export type PalletDappStakingEraReward = { stakerRewardPool: bigint; staked: bigint; dappRewardPool: bigint };
 
-export type PalletDappStakingV3PeriodEndInfo = { bonusRewardPool: bigint; totalVpStake: bigint; finalEra: number };
+export type PalletDappStakingPeriodEndInfo = { bonusRewardPool: bigint; totalVpStake: bigint; finalEra: number };
 
-export type PalletDappStakingV3TierParameters = {
+export type PalletDappStakingTierParameters = {
   rewardPortion: Array<Permill>;
   slotDistribution: Array<Permill>;
-  tierThresholds: Array<PalletDappStakingV3TierThreshold>;
+  tierThresholds: Array<PalletDappStakingTierThreshold>;
 };
 
-export type PalletDappStakingV3TierThreshold =
+export type PalletDappStakingTierThreshold =
   | { type: 'FixedPercentage'; value: { requiredPercentage: Perbill } }
   | { type: 'DynamicPercentage'; value: { percentage: Perbill; minimumRequiredPercentage: Perbill } };
 
-export type PalletDappStakingV3TiersConfiguration = {
+export type PalletDappStakingTiersConfiguration = {
   slotsPerTier: Array<number>;
   rewardPortion: Array<Permill>;
   tierThresholds: Array<bigint>;
 };
 
-export type PalletDappStakingV3DAppTierRewards = {
+export type PalletDappStakingDAppTierRewards = {
   dapps: Array<[number, AstarPrimitivesDappStakingRankedTier]>;
   rewards: Array<bigint>;
   period: number;
@@ -8363,16 +10452,12 @@ export type PalletDappStakingV3DAppTierRewards = {
 
 export type AstarPrimitivesDappStakingRankedTier = number;
 
-export type PalletDappStakingV3CleanupMarker = {
-  eraRewardIndex: number;
-  dappTiersIndex: number;
-  oldestValidEra: number;
-};
+export type PalletDappStakingCleanupMarker = { eraRewardIndex: number; dappTiersIndex: number; oldestValidEra: number };
 
 /**
  * The `Error` enum of this pallet.
  **/
-export type PalletDappStakingV3Error =
+export type PalletDappStakingError =
   /**
    * Pallet is disabled/in maintenance mode.
    **/
@@ -8514,11 +10599,7 @@ export type PalletDappStakingV3Error =
   /**
    * Force call is not allowed in production.
    **/
-  | 'ForceNotAllowed'
-  /**
-   * Account doesn't have the freeze inconsistency
-   **/
-  | 'AccountNotInconsistent';
+  | 'ForceNotAllowed';
 
 export type PalletAssetsAssetDetails = {
   owner: AccountId32;
@@ -8649,7 +10730,11 @@ export type PalletAssetsError =
   /**
    * Callback action resulted in error
    **/
-  | 'CallbackFailed';
+  | 'CallbackFailed'
+  /**
+   * The asset ID must be equal to the [`NextAssetId`].
+   **/
+  | 'BadAssetId';
 
 export type PalletPriceAggregatorValueAggregator = { total: FixedU128; count: number; limitBlock: number };
 
@@ -8804,7 +10889,15 @@ export type CumulusPalletXcmpQueueError =
   /**
    * The execution is already resumed.
    **/
-  | 'AlreadyResumed';
+  | 'AlreadyResumed'
+  /**
+   * There are too many active outbound channels.
+   **/
+  | 'TooManyActiveOutboundChannels'
+  /**
+   * The message is too big.
+   **/
+  | 'TooBig';
 
 export type PalletXcmQueryStatus =
   | {
@@ -9271,7 +11364,6 @@ export type PalletContractsStorageDeletionQueueManager = { insertCounter: number
 export type PalletContractsSchedule = {
   limits: PalletContractsScheduleLimits;
   instructionWeights: PalletContractsScheduleInstructionWeights;
-  hostFnWeights: PalletContractsScheduleHostFnWeights;
 };
 
 export type PalletContractsScheduleLimits = {
@@ -9283,72 +11375,6 @@ export type PalletContractsScheduleLimits = {
 };
 
 export type PalletContractsScheduleInstructionWeights = { base: number };
-
-export type PalletContractsScheduleHostFnWeights = {
-  caller: SpWeightsWeightV2Weight;
-  isContract: SpWeightsWeightV2Weight;
-  codeHash: SpWeightsWeightV2Weight;
-  ownCodeHash: SpWeightsWeightV2Weight;
-  callerIsOrigin: SpWeightsWeightV2Weight;
-  callerIsRoot: SpWeightsWeightV2Weight;
-  address: SpWeightsWeightV2Weight;
-  gasLeft: SpWeightsWeightV2Weight;
-  balance: SpWeightsWeightV2Weight;
-  valueTransferred: SpWeightsWeightV2Weight;
-  minimumBalance: SpWeightsWeightV2Weight;
-  blockNumber: SpWeightsWeightV2Weight;
-  now: SpWeightsWeightV2Weight;
-  weightToFee: SpWeightsWeightV2Weight;
-  input: SpWeightsWeightV2Weight;
-  inputPerByte: SpWeightsWeightV2Weight;
-  rReturn: SpWeightsWeightV2Weight;
-  returnPerByte: SpWeightsWeightV2Weight;
-  terminate: SpWeightsWeightV2Weight;
-  random: SpWeightsWeightV2Weight;
-  depositEvent: SpWeightsWeightV2Weight;
-  depositEventPerTopic: SpWeightsWeightV2Weight;
-  depositEventPerByte: SpWeightsWeightV2Weight;
-  debugMessage: SpWeightsWeightV2Weight;
-  debugMessagePerByte: SpWeightsWeightV2Weight;
-  setStorage: SpWeightsWeightV2Weight;
-  setStoragePerNewByte: SpWeightsWeightV2Weight;
-  setStoragePerOldByte: SpWeightsWeightV2Weight;
-  setCodeHash: SpWeightsWeightV2Weight;
-  clearStorage: SpWeightsWeightV2Weight;
-  clearStoragePerByte: SpWeightsWeightV2Weight;
-  containsStorage: SpWeightsWeightV2Weight;
-  containsStoragePerByte: SpWeightsWeightV2Weight;
-  getStorage: SpWeightsWeightV2Weight;
-  getStoragePerByte: SpWeightsWeightV2Weight;
-  takeStorage: SpWeightsWeightV2Weight;
-  takeStoragePerByte: SpWeightsWeightV2Weight;
-  transfer: SpWeightsWeightV2Weight;
-  call: SpWeightsWeightV2Weight;
-  delegateCall: SpWeightsWeightV2Weight;
-  callTransferSurcharge: SpWeightsWeightV2Weight;
-  callPerClonedByte: SpWeightsWeightV2Weight;
-  instantiate: SpWeightsWeightV2Weight;
-  instantiateTransferSurcharge: SpWeightsWeightV2Weight;
-  instantiatePerInputByte: SpWeightsWeightV2Weight;
-  instantiatePerSaltByte: SpWeightsWeightV2Weight;
-  hashSha2256: SpWeightsWeightV2Weight;
-  hashSha2256PerByte: SpWeightsWeightV2Weight;
-  hashKeccak256: SpWeightsWeightV2Weight;
-  hashKeccak256PerByte: SpWeightsWeightV2Weight;
-  hashBlake2256: SpWeightsWeightV2Weight;
-  hashBlake2256PerByte: SpWeightsWeightV2Weight;
-  hashBlake2128: SpWeightsWeightV2Weight;
-  hashBlake2128PerByte: SpWeightsWeightV2Weight;
-  ecdsaRecover: SpWeightsWeightV2Weight;
-  ecdsaToEthAddress: SpWeightsWeightV2Weight;
-  sr25519Verify: SpWeightsWeightV2Weight;
-  sr25519VerifyPerByte: SpWeightsWeightV2Weight;
-  reentranceCount: SpWeightsWeightV2Weight;
-  accountReentranceCount: SpWeightsWeightV2Weight;
-  instantiationNonce: SpWeightsWeightV2Weight;
-  lockDelegateDependency: SpWeightsWeightV2Weight;
-  unlockDelegateDependency: SpWeightsWeightV2Weight;
-};
 
 export type PalletContractsEnvironment = {
   accountId: PalletContractsEnvironmentType;
@@ -9366,8 +11392,6 @@ export type PalletContractsEnvironmentTypeU128 = {};
 export type PalletContractsEnvironmentTypeH256 = {};
 
 export type PalletContractsEnvironmentTypeBlakeTwo256 = {};
-
-export type SpRuntimeBlakeTwo256 = {};
 
 export type PalletContractsEnvironmentTypeU64 = {};
 
@@ -9483,6 +11507,10 @@ export type PalletContractsError =
    **/
   | 'ReentranceDenied'
   /**
+   * A contract attempted to invoke a state modifying API while being in read-only mode.
+   **/
+  | 'StateChangeDenied'
+  /**
    * Origin doesn't have enough balance to pay the required storage deposits.
    **/
   | 'StorageDepositNotEnoughFunds'
@@ -9539,7 +11567,72 @@ export type PalletContractsError =
   /**
    * Can not add a delegate dependency to the code hash of the contract itself.
    **/
-  | 'CannotAddSelfAsDelegateDependency';
+  | 'CannotAddSelfAsDelegateDependency'
+  /**
+   * Can not add more data to transient storage.
+   **/
+  | 'OutOfTransientStorage';
+
+export type PalletPreimageOldRequestStatus =
+  | { type: 'Unrequested'; value: { deposit: [AccountId32, bigint]; len: number } }
+  | {
+      type: 'Requested';
+      value: { deposit?: [AccountId32, bigint] | undefined; count: number; len?: number | undefined };
+    };
+
+export type PalletPreimageRequestStatus =
+  | { type: 'Unrequested'; value: { ticket: [AccountId32, FrameSupportTokensFungibleHoldConsideration]; len: number } }
+  | {
+      type: 'Requested';
+      value: {
+        maybeTicket?: [AccountId32, FrameSupportTokensFungibleHoldConsideration] | undefined;
+        count: number;
+        maybeLen?: number | undefined;
+      };
+    };
+
+export type FrameSupportTokensFungibleHoldConsideration = bigint;
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletPreimageError =
+  /**
+   * Preimage is too large to store on-chain.
+   **/
+  | 'TooBig'
+  /**
+   * Preimage has already been noted on-chain.
+   **/
+  | 'AlreadyNoted'
+  /**
+   * The user is not authorized to perform this action.
+   **/
+  | 'NotAuthorized'
+  /**
+   * The preimage cannot be removed since it has not yet been noted.
+   **/
+  | 'NotNoted'
+  /**
+   * A preimage may not be removed when there are outstanding requests.
+   **/
+  | 'Requested'
+  /**
+   * The preimage request cannot be removed since no outstanding requests exist.
+   **/
+  | 'NotRequested'
+  /**
+   * More than `MAX_HASH_UPGRADE_BULK_COUNT` hashes were requested to be upgraded at once.
+   **/
+  | 'TooMany'
+  /**
+   * Too few hashes were requested to be upgraded (i.e. zero).
+   **/
+  | 'TooFew'
+  /**
+   * No ticket with a cost was returned by [`Config::Consideration`] to store the preimage.
+   **/
+  | 'NoCost';
 
 /**
  * Error for the Sudo pallet.
@@ -9549,6 +11642,284 @@ export type PalletSudoError =
    * Sender must be the Sudo account.
    **/
   'RequireSudo';
+
+export type PalletCollectiveVotes = {
+  index: number;
+  threshold: number;
+  ayes: Array<AccountId32>;
+  nays: Array<AccountId32>;
+  end: number;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletCollectiveError =
+  /**
+   * Account is not a member
+   **/
+  | 'NotMember'
+  /**
+   * Duplicate proposals not allowed
+   **/
+  | 'DuplicateProposal'
+  /**
+   * Proposal must exist
+   **/
+  | 'ProposalMissing'
+  /**
+   * Mismatched index
+   **/
+  | 'WrongIndex'
+  /**
+   * Duplicate vote ignored
+   **/
+  | 'DuplicateVote'
+  /**
+   * Members are already initialized!
+   **/
+  | 'AlreadyInitialized'
+  /**
+   * The close call was made too early, before the end of the voting.
+   **/
+  | 'TooEarly'
+  /**
+   * There can only be a maximum of `MaxProposals` active proposals.
+   **/
+  | 'TooManyProposals'
+  /**
+   * The given weight bound for the proposal was too low.
+   **/
+  | 'WrongProposalWeight'
+  /**
+   * The given length bound for the proposal was too low.
+   **/
+  | 'WrongProposalLength'
+  /**
+   * Prime account is not a member
+   **/
+  | 'PrimeAccountNotMember';
+
+export type PalletDemocracyReferendumInfo =
+  | { type: 'Ongoing'; value: PalletDemocracyReferendumStatus }
+  | { type: 'Finished'; value: { approved: boolean; end: number } };
+
+export type PalletDemocracyReferendumStatus = {
+  end: number;
+  proposal: FrameSupportPreimagesBounded;
+  threshold: PalletDemocracyVoteThreshold;
+  delay: number;
+  tally: PalletDemocracyTally;
+};
+
+export type PalletDemocracyTally = { ayes: bigint; nays: bigint; turnout: bigint };
+
+export type PalletDemocracyVoteVoting =
+  | {
+      type: 'Direct';
+      value: {
+        votes: Array<[number, PalletDemocracyVoteAccountVote]>;
+        delegations: PalletDemocracyDelegations;
+        prior: PalletDemocracyVotePriorLock;
+      };
+    }
+  | {
+      type: 'Delegating';
+      value: {
+        balance: bigint;
+        target: AccountId32;
+        conviction: PalletDemocracyConviction;
+        delegations: PalletDemocracyDelegations;
+        prior: PalletDemocracyVotePriorLock;
+      };
+    };
+
+export type PalletDemocracyDelegations = { votes: bigint; capital: bigint };
+
+export type PalletDemocracyVotePriorLock = [number, bigint];
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletDemocracyError =
+  /**
+   * Value too low
+   **/
+  | 'ValueLow'
+  /**
+   * Proposal does not exist
+   **/
+  | 'ProposalMissing'
+  /**
+   * Cannot cancel the same proposal twice
+   **/
+  | 'AlreadyCanceled'
+  /**
+   * Proposal already made
+   **/
+  | 'DuplicateProposal'
+  /**
+   * Proposal still blacklisted
+   **/
+  | 'ProposalBlacklisted'
+  /**
+   * Next external proposal not simple majority
+   **/
+  | 'NotSimpleMajority'
+  /**
+   * Invalid hash
+   **/
+  | 'InvalidHash'
+  /**
+   * No external proposal
+   **/
+  | 'NoProposal'
+  /**
+   * Identity may not veto a proposal twice
+   **/
+  | 'AlreadyVetoed'
+  /**
+   * Vote given for invalid referendum
+   **/
+  | 'ReferendumInvalid'
+  /**
+   * No proposals waiting
+   **/
+  | 'NoneWaiting'
+  /**
+   * The given account did not vote on the referendum.
+   **/
+  | 'NotVoter'
+  /**
+   * The actor has no permission to conduct the action.
+   **/
+  | 'NoPermission'
+  /**
+   * The account is already delegating.
+   **/
+  | 'AlreadyDelegating'
+  /**
+   * Too high a balance was provided that the account cannot afford.
+   **/
+  | 'InsufficientFunds'
+  /**
+   * The account is not currently delegating.
+   **/
+  | 'NotDelegating'
+  /**
+   * The account currently has votes attached to it and the operation cannot succeed until
+   * these are removed, either through `unvote` or `reap_vote`.
+   **/
+  | 'VotesExist'
+  /**
+   * The instant referendum origin is currently disallowed.
+   **/
+  | 'InstantNotAllowed'
+  /**
+   * Delegation to oneself makes no sense.
+   **/
+  | 'Nonsense'
+  /**
+   * Invalid upper bound.
+   **/
+  | 'WrongUpperBound'
+  /**
+   * Maximum number of votes reached.
+   **/
+  | 'MaxVotesReached'
+  /**
+   * Maximum number of items reached.
+   **/
+  | 'TooMany'
+  /**
+   * Voting period too low
+   **/
+  | 'VotingPeriodLow'
+  /**
+   * The preimage does not exist.
+   **/
+  | 'PreimageNotExist';
+
+export type PalletTreasuryProposal = { proposer: AccountId32; value: bigint; beneficiary: AccountId32; bond: bigint };
+
+export type PalletTreasurySpendStatus = {
+  assetKind: [];
+  amount: bigint;
+  beneficiary: AccountId32;
+  validFrom: number;
+  expireAt: number;
+  status: PalletTreasuryPaymentState;
+};
+
+export type PalletTreasuryPaymentState =
+  | { type: 'Pending' }
+  | { type: 'Attempted'; value: { id: [] } }
+  | { type: 'Failed' };
+
+export type FrameSupportPalletId = FixedBytes<8>;
+
+/**
+ * Error for the treasury pallet.
+ **/
+export type PalletTreasuryError =
+  /**
+   * Proposer's balance is too low.
+   **/
+  | 'InsufficientProposersBalance'
+  /**
+   * No proposal, bounty or spend at that index.
+   **/
+  | 'InvalidIndex'
+  /**
+   * Too many approvals in the queue.
+   **/
+  | 'TooManyApprovals'
+  /**
+   * The spend origin is valid but the amount it is allowed to spend is lower than the
+   * amount to be spent.
+   **/
+  | 'InsufficientPermission'
+  /**
+   * Proposal has not been approved.
+   **/
+  | 'ProposalNotApproved'
+  /**
+   * The balance of the asset kind is not convertible to the balance of the native asset.
+   **/
+  | 'FailedToConvertBalance'
+  /**
+   * The spend has expired and cannot be claimed.
+   **/
+  | 'SpendExpired'
+  /**
+   * The spend is not yet eligible for payout.
+   **/
+  | 'EarlyPayout'
+  /**
+   * The payment has already been attempted.
+   **/
+  | 'AlreadyAttempted'
+  /**
+   * There was some issue with the mechanism of payment.
+   **/
+  | 'PayoutError'
+  /**
+   * The payout was not yet attempted/claimed.
+   **/
+  | 'NotAttempted'
+  /**
+   * The payment has neither failed nor succeeded yet.
+   **/
+  | 'Inconclusive';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletMigrationsError =
+  /**
+   * The operation cannot complete since some MBMs are ongoing.
+   **/
+  'Ongoing';
 
 export type FrameSystemExtensionsCheckSpecVersion = {};
 
@@ -9702,7 +12073,7 @@ export type PalletContractsPrimitivesCodeUploadReturnValue = { codeHash: H256; d
 
 export type PalletContractsPrimitivesContractAccessError = 'DoesntExist' | 'KeyDecodingFailed' | 'MigrationInProgress';
 
-export type XcmFeePaymentRuntimeApiError =
+export type XcmRuntimeApisFeesError =
   | 'Unimplemented'
   | 'VersionedConversionFailed'
   | 'WeightNotComputable'
@@ -9710,17 +12081,43 @@ export type XcmFeePaymentRuntimeApiError =
   | 'AssetNotFound'
   | 'Unroutable';
 
+export type XcmRuntimeApisDryRunCallDryRunEffects = {
+  executionResult: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
+  emittedEvents: Array<AstarRuntimeRuntimeEvent>;
+  localXcm?: XcmVersionedXcm | undefined;
+  forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
+};
+
+export type FrameSupportDispatchPostDispatchInfo = {
+  actualWeight?: SpWeightsWeightV2Weight | undefined;
+  paysFee: FrameSupportDispatchPays;
+};
+
+export type SpRuntimeDispatchErrorWithPostInfo = {
+  postInfo: FrameSupportDispatchPostDispatchInfo;
+  error: DispatchError;
+};
+
+export type XcmRuntimeApisDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
+
+export type XcmRuntimeApisDryRunXcmDryRunEffects = {
+  executionResult: StagingXcmV4TraitsOutcome;
+  emittedEvents: Array<AstarRuntimeRuntimeEvent>;
+  forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
+};
+
 export type AstarRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }
   | { pallet: 'Utility'; palletError: PalletUtilityError }
   | { pallet: 'Identity'; palletError: PalletIdentityError }
   | { pallet: 'Multisig'; palletError: PalletMultisigError }
   | { pallet: 'Proxy'; palletError: PalletProxyError }
+  | { pallet: 'Scheduler'; palletError: PalletSchedulerError }
   | { pallet: 'ParachainSystem'; palletError: CumulusPalletParachainSystemError }
   | { pallet: 'Balances'; palletError: PalletBalancesError }
   | { pallet: 'Vesting'; palletError: PalletVestingError }
   | { pallet: 'Inflation'; palletError: PalletInflationError }
-  | { pallet: 'DappStaking'; palletError: PalletDappStakingV3Error }
+  | { pallet: 'DappStaking'; palletError: PalletDappStakingError }
   | { pallet: 'Assets'; palletError: PalletAssetsError }
   | { pallet: 'Oracle'; palletError: OrmlOracleModuleError }
   | { pallet: 'OracleMembership'; palletError: PalletMembershipError }
@@ -9735,4 +12132,15 @@ export type AstarRuntimeRuntimeError =
   | { pallet: 'Ethereum'; palletError: PalletEthereumError }
   | { pallet: 'DynamicEvmBaseFee'; palletError: PalletDynamicEvmBaseFeeError }
   | { pallet: 'Contracts'; palletError: PalletContractsError }
-  | { pallet: 'Sudo'; palletError: PalletSudoError };
+  | { pallet: 'Preimage'; palletError: PalletPreimageError }
+  | { pallet: 'Sudo'; palletError: PalletSudoError }
+  | { pallet: 'CouncilMembership'; palletError: PalletMembershipError }
+  | { pallet: 'TechnicalCommitteeMembership'; palletError: PalletMembershipError }
+  | { pallet: 'CommunityCouncilMembership'; palletError: PalletMembershipError }
+  | { pallet: 'Council'; palletError: PalletCollectiveError }
+  | { pallet: 'TechnicalCommittee'; palletError: PalletCollectiveError }
+  | { pallet: 'CommunityCouncil'; palletError: PalletCollectiveError }
+  | { pallet: 'Democracy'; palletError: PalletDemocracyError }
+  | { pallet: 'Treasury'; palletError: PalletTreasuryError }
+  | { pallet: 'CommunityTreasury'; palletError: PalletTreasuryError }
+  | { pallet: 'MultiBlockMigrations'; palletError: PalletMigrationsError };

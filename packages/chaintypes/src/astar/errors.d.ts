@@ -343,6 +343,40 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `Scheduler`'s errors
+   **/
+  scheduler: {
+    /**
+     * Failed to schedule a call
+     **/
+    FailedToSchedule: GenericPalletError<Rv>;
+
+    /**
+     * Cannot find the scheduled call.
+     **/
+    NotFound: GenericPalletError<Rv>;
+
+    /**
+     * Given target block number is in the past.
+     **/
+    TargetBlockNumberInPast: GenericPalletError<Rv>;
+
+    /**
+     * Reschedule failed because it does not change scheduled time.
+     **/
+    RescheduleNoChange: GenericPalletError<Rv>;
+
+    /**
+     * Attempt to use a non-named function on a named task.
+     **/
+    Named: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `ParachainSystem`'s errors
    **/
   parachainSystem: {
@@ -692,11 +726,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ForceNotAllowed: GenericPalletError<Rv>;
 
     /**
-     * Account doesn't have the freeze inconsistency
-     **/
-    AccountNotInconsistent: GenericPalletError<Rv>;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -807,6 +836,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Callback action resulted in error
      **/
     CallbackFailed: GenericPalletError<Rv>;
+
+    /**
+     * The asset ID must be equal to the [`NextAssetId`].
+     **/
+    BadAssetId: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -977,6 +1011,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The execution is already resumed.
      **/
     AlreadyResumed: GenericPalletError<Rv>;
+
+    /**
+     * There are too many active outbound channels.
+     **/
+    TooManyActiveOutboundChannels: GenericPalletError<Rv>;
+
+    /**
+     * The message is too big.
+     **/
+    TooBig: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1549,6 +1593,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ReentranceDenied: GenericPalletError<Rv>;
 
     /**
+     * A contract attempted to invoke a state modifying API while being in read-only mode.
+     **/
+    StateChangeDenied: GenericPalletError<Rv>;
+
+    /**
      * Origin doesn't have enough balance to pay the required storage deposits.
      **/
     StorageDepositNotEnoughFunds: GenericPalletError<Rv>;
@@ -1619,6 +1668,65 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CannotAddSelfAsDelegateDependency: GenericPalletError<Rv>;
 
     /**
+     * Can not add more data to transient storage.
+     **/
+    OutOfTransientStorage: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Preimage`'s errors
+   **/
+  preimage: {
+    /**
+     * Preimage is too large to store on-chain.
+     **/
+    TooBig: GenericPalletError<Rv>;
+
+    /**
+     * Preimage has already been noted on-chain.
+     **/
+    AlreadyNoted: GenericPalletError<Rv>;
+
+    /**
+     * The user is not authorized to perform this action.
+     **/
+    NotAuthorized: GenericPalletError<Rv>;
+
+    /**
+     * The preimage cannot be removed since it has not yet been noted.
+     **/
+    NotNoted: GenericPalletError<Rv>;
+
+    /**
+     * A preimage may not be removed when there are outstanding requests.
+     **/
+    Requested: GenericPalletError<Rv>;
+
+    /**
+     * The preimage request cannot be removed since no outstanding requests exist.
+     **/
+    NotRequested: GenericPalletError<Rv>;
+
+    /**
+     * More than `MAX_HASH_UPGRADE_BULK_COUNT` hashes were requested to be upgraded at once.
+     **/
+    TooMany: GenericPalletError<Rv>;
+
+    /**
+     * Too few hashes were requested to be upgraded (i.e. zero).
+     **/
+    TooFew: GenericPalletError<Rv>;
+
+    /**
+     * No ticket with a cost was returned by [`Config::Consideration`] to store the preimage.
+     **/
+    NoCost: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1631,6 +1739,554 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Sender must be the Sudo account.
      **/
     RequireSudo: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `CouncilMembership`'s errors
+   **/
+  councilMembership: {
+    /**
+     * Already a member.
+     **/
+    AlreadyMember: GenericPalletError<Rv>;
+
+    /**
+     * Not a member.
+     **/
+    NotMember: GenericPalletError<Rv>;
+
+    /**
+     * Too many members.
+     **/
+    TooManyMembers: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `TechnicalCommitteeMembership`'s errors
+   **/
+  technicalCommitteeMembership: {
+    /**
+     * Already a member.
+     **/
+    AlreadyMember: GenericPalletError<Rv>;
+
+    /**
+     * Not a member.
+     **/
+    NotMember: GenericPalletError<Rv>;
+
+    /**
+     * Too many members.
+     **/
+    TooManyMembers: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `CommunityCouncilMembership`'s errors
+   **/
+  communityCouncilMembership: {
+    /**
+     * Already a member.
+     **/
+    AlreadyMember: GenericPalletError<Rv>;
+
+    /**
+     * Not a member.
+     **/
+    NotMember: GenericPalletError<Rv>;
+
+    /**
+     * Too many members.
+     **/
+    TooManyMembers: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Council`'s errors
+   **/
+  council: {
+    /**
+     * Account is not a member
+     **/
+    NotMember: GenericPalletError<Rv>;
+
+    /**
+     * Duplicate proposals not allowed
+     **/
+    DuplicateProposal: GenericPalletError<Rv>;
+
+    /**
+     * Proposal must exist
+     **/
+    ProposalMissing: GenericPalletError<Rv>;
+
+    /**
+     * Mismatched index
+     **/
+    WrongIndex: GenericPalletError<Rv>;
+
+    /**
+     * Duplicate vote ignored
+     **/
+    DuplicateVote: GenericPalletError<Rv>;
+
+    /**
+     * Members are already initialized!
+     **/
+    AlreadyInitialized: GenericPalletError<Rv>;
+
+    /**
+     * The close call was made too early, before the end of the voting.
+     **/
+    TooEarly: GenericPalletError<Rv>;
+
+    /**
+     * There can only be a maximum of `MaxProposals` active proposals.
+     **/
+    TooManyProposals: GenericPalletError<Rv>;
+
+    /**
+     * The given weight bound for the proposal was too low.
+     **/
+    WrongProposalWeight: GenericPalletError<Rv>;
+
+    /**
+     * The given length bound for the proposal was too low.
+     **/
+    WrongProposalLength: GenericPalletError<Rv>;
+
+    /**
+     * Prime account is not a member
+     **/
+    PrimeAccountNotMember: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `TechnicalCommittee`'s errors
+   **/
+  technicalCommittee: {
+    /**
+     * Account is not a member
+     **/
+    NotMember: GenericPalletError<Rv>;
+
+    /**
+     * Duplicate proposals not allowed
+     **/
+    DuplicateProposal: GenericPalletError<Rv>;
+
+    /**
+     * Proposal must exist
+     **/
+    ProposalMissing: GenericPalletError<Rv>;
+
+    /**
+     * Mismatched index
+     **/
+    WrongIndex: GenericPalletError<Rv>;
+
+    /**
+     * Duplicate vote ignored
+     **/
+    DuplicateVote: GenericPalletError<Rv>;
+
+    /**
+     * Members are already initialized!
+     **/
+    AlreadyInitialized: GenericPalletError<Rv>;
+
+    /**
+     * The close call was made too early, before the end of the voting.
+     **/
+    TooEarly: GenericPalletError<Rv>;
+
+    /**
+     * There can only be a maximum of `MaxProposals` active proposals.
+     **/
+    TooManyProposals: GenericPalletError<Rv>;
+
+    /**
+     * The given weight bound for the proposal was too low.
+     **/
+    WrongProposalWeight: GenericPalletError<Rv>;
+
+    /**
+     * The given length bound for the proposal was too low.
+     **/
+    WrongProposalLength: GenericPalletError<Rv>;
+
+    /**
+     * Prime account is not a member
+     **/
+    PrimeAccountNotMember: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `CommunityCouncil`'s errors
+   **/
+  communityCouncil: {
+    /**
+     * Account is not a member
+     **/
+    NotMember: GenericPalletError<Rv>;
+
+    /**
+     * Duplicate proposals not allowed
+     **/
+    DuplicateProposal: GenericPalletError<Rv>;
+
+    /**
+     * Proposal must exist
+     **/
+    ProposalMissing: GenericPalletError<Rv>;
+
+    /**
+     * Mismatched index
+     **/
+    WrongIndex: GenericPalletError<Rv>;
+
+    /**
+     * Duplicate vote ignored
+     **/
+    DuplicateVote: GenericPalletError<Rv>;
+
+    /**
+     * Members are already initialized!
+     **/
+    AlreadyInitialized: GenericPalletError<Rv>;
+
+    /**
+     * The close call was made too early, before the end of the voting.
+     **/
+    TooEarly: GenericPalletError<Rv>;
+
+    /**
+     * There can only be a maximum of `MaxProposals` active proposals.
+     **/
+    TooManyProposals: GenericPalletError<Rv>;
+
+    /**
+     * The given weight bound for the proposal was too low.
+     **/
+    WrongProposalWeight: GenericPalletError<Rv>;
+
+    /**
+     * The given length bound for the proposal was too low.
+     **/
+    WrongProposalLength: GenericPalletError<Rv>;
+
+    /**
+     * Prime account is not a member
+     **/
+    PrimeAccountNotMember: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Democracy`'s errors
+   **/
+  democracy: {
+    /**
+     * Value too low
+     **/
+    ValueLow: GenericPalletError<Rv>;
+
+    /**
+     * Proposal does not exist
+     **/
+    ProposalMissing: GenericPalletError<Rv>;
+
+    /**
+     * Cannot cancel the same proposal twice
+     **/
+    AlreadyCanceled: GenericPalletError<Rv>;
+
+    /**
+     * Proposal already made
+     **/
+    DuplicateProposal: GenericPalletError<Rv>;
+
+    /**
+     * Proposal still blacklisted
+     **/
+    ProposalBlacklisted: GenericPalletError<Rv>;
+
+    /**
+     * Next external proposal not simple majority
+     **/
+    NotSimpleMajority: GenericPalletError<Rv>;
+
+    /**
+     * Invalid hash
+     **/
+    InvalidHash: GenericPalletError<Rv>;
+
+    /**
+     * No external proposal
+     **/
+    NoProposal: GenericPalletError<Rv>;
+
+    /**
+     * Identity may not veto a proposal twice
+     **/
+    AlreadyVetoed: GenericPalletError<Rv>;
+
+    /**
+     * Vote given for invalid referendum
+     **/
+    ReferendumInvalid: GenericPalletError<Rv>;
+
+    /**
+     * No proposals waiting
+     **/
+    NoneWaiting: GenericPalletError<Rv>;
+
+    /**
+     * The given account did not vote on the referendum.
+     **/
+    NotVoter: GenericPalletError<Rv>;
+
+    /**
+     * The actor has no permission to conduct the action.
+     **/
+    NoPermission: GenericPalletError<Rv>;
+
+    /**
+     * The account is already delegating.
+     **/
+    AlreadyDelegating: GenericPalletError<Rv>;
+
+    /**
+     * Too high a balance was provided that the account cannot afford.
+     **/
+    InsufficientFunds: GenericPalletError<Rv>;
+
+    /**
+     * The account is not currently delegating.
+     **/
+    NotDelegating: GenericPalletError<Rv>;
+
+    /**
+     * The account currently has votes attached to it and the operation cannot succeed until
+     * these are removed, either through `unvote` or `reap_vote`.
+     **/
+    VotesExist: GenericPalletError<Rv>;
+
+    /**
+     * The instant referendum origin is currently disallowed.
+     **/
+    InstantNotAllowed: GenericPalletError<Rv>;
+
+    /**
+     * Delegation to oneself makes no sense.
+     **/
+    Nonsense: GenericPalletError<Rv>;
+
+    /**
+     * Invalid upper bound.
+     **/
+    WrongUpperBound: GenericPalletError<Rv>;
+
+    /**
+     * Maximum number of votes reached.
+     **/
+    MaxVotesReached: GenericPalletError<Rv>;
+
+    /**
+     * Maximum number of items reached.
+     **/
+    TooMany: GenericPalletError<Rv>;
+
+    /**
+     * Voting period too low
+     **/
+    VotingPeriodLow: GenericPalletError<Rv>;
+
+    /**
+     * The preimage does not exist.
+     **/
+    PreimageNotExist: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Treasury`'s errors
+   **/
+  treasury: {
+    /**
+     * Proposer's balance is too low.
+     **/
+    InsufficientProposersBalance: GenericPalletError<Rv>;
+
+    /**
+     * No proposal, bounty or spend at that index.
+     **/
+    InvalidIndex: GenericPalletError<Rv>;
+
+    /**
+     * Too many approvals in the queue.
+     **/
+    TooManyApprovals: GenericPalletError<Rv>;
+
+    /**
+     * The spend origin is valid but the amount it is allowed to spend is lower than the
+     * amount to be spent.
+     **/
+    InsufficientPermission: GenericPalletError<Rv>;
+
+    /**
+     * Proposal has not been approved.
+     **/
+    ProposalNotApproved: GenericPalletError<Rv>;
+
+    /**
+     * The balance of the asset kind is not convertible to the balance of the native asset.
+     **/
+    FailedToConvertBalance: GenericPalletError<Rv>;
+
+    /**
+     * The spend has expired and cannot be claimed.
+     **/
+    SpendExpired: GenericPalletError<Rv>;
+
+    /**
+     * The spend is not yet eligible for payout.
+     **/
+    EarlyPayout: GenericPalletError<Rv>;
+
+    /**
+     * The payment has already been attempted.
+     **/
+    AlreadyAttempted: GenericPalletError<Rv>;
+
+    /**
+     * There was some issue with the mechanism of payment.
+     **/
+    PayoutError: GenericPalletError<Rv>;
+
+    /**
+     * The payout was not yet attempted/claimed.
+     **/
+    NotAttempted: GenericPalletError<Rv>;
+
+    /**
+     * The payment has neither failed nor succeeded yet.
+     **/
+    Inconclusive: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `CommunityTreasury`'s errors
+   **/
+  communityTreasury: {
+    /**
+     * Proposer's balance is too low.
+     **/
+    InsufficientProposersBalance: GenericPalletError<Rv>;
+
+    /**
+     * No proposal, bounty or spend at that index.
+     **/
+    InvalidIndex: GenericPalletError<Rv>;
+
+    /**
+     * Too many approvals in the queue.
+     **/
+    TooManyApprovals: GenericPalletError<Rv>;
+
+    /**
+     * The spend origin is valid but the amount it is allowed to spend is lower than the
+     * amount to be spent.
+     **/
+    InsufficientPermission: GenericPalletError<Rv>;
+
+    /**
+     * Proposal has not been approved.
+     **/
+    ProposalNotApproved: GenericPalletError<Rv>;
+
+    /**
+     * The balance of the asset kind is not convertible to the balance of the native asset.
+     **/
+    FailedToConvertBalance: GenericPalletError<Rv>;
+
+    /**
+     * The spend has expired and cannot be claimed.
+     **/
+    SpendExpired: GenericPalletError<Rv>;
+
+    /**
+     * The spend is not yet eligible for payout.
+     **/
+    EarlyPayout: GenericPalletError<Rv>;
+
+    /**
+     * The payment has already been attempted.
+     **/
+    AlreadyAttempted: GenericPalletError<Rv>;
+
+    /**
+     * There was some issue with the mechanism of payment.
+     **/
+    PayoutError: GenericPalletError<Rv>;
+
+    /**
+     * The payout was not yet attempted/claimed.
+     **/
+    NotAttempted: GenericPalletError<Rv>;
+
+    /**
+     * The payment has neither failed nor succeeded yet.
+     **/
+    Inconclusive: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s errors
+   **/
+  multiBlockMigrations: {
+    /**
+     * The operation cannot complete since some MBMs are ongoing.
+     **/
+    Ongoing: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

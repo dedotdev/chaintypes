@@ -9519,7 +9519,14 @@ export type StagingXcmV5Instruction =
       type: 'TransferReserveAsset';
       value: { assets: StagingXcmV5AssetAssets; dest: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
     }
-  | { type: 'Transact'; value: { originKind: XcmV3OriginKind; call: XcmDoubleEncoded } }
+  | {
+      type: 'Transact';
+      value: {
+        originKind: XcmV3OriginKind;
+        fallbackMaxWeight?: SpWeightsWeightV2Weight | undefined;
+        call: XcmDoubleEncoded;
+      };
+    }
   | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
   | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
   | { type: 'HrmpChannelClosing'; value: { initiator: number; sender: number; recipient: number } }
@@ -9552,7 +9559,6 @@ export type StagingXcmV5Instruction =
   | { type: 'SetErrorHandler'; value: StagingXcmV5Xcm }
   | { type: 'SetAppendix'; value: StagingXcmV5Xcm }
   | { type: 'ClearError' }
-  | { type: 'SetAssetClaimer'; value: { location: StagingXcmV5Location } }
   | { type: 'ClaimAsset'; value: { assets: StagingXcmV5AssetAssets; ticket: StagingXcmV5Location } }
   | { type: 'Trap'; value: bigint }
   | { type: 'SubscribeVersion'; value: { queryId: bigint; maxResponseWeight: SpWeightsWeightV2Weight } }
@@ -9597,10 +9603,8 @@ export type StagingXcmV5Instruction =
         remoteXcm: StagingXcmV5Xcm;
       };
     }
-  | {
-      type: 'ExecuteWithOrigin';
-      value: { descendantOrigin?: StagingXcmV5Junctions | undefined; xcm: StagingXcmV5Xcm };
-    };
+  | { type: 'ExecuteWithOrigin'; value: { descendantOrigin?: StagingXcmV5Junctions | undefined; xcm: StagingXcmV5Xcm } }
+  | { type: 'SetHints'; value: { hints: Array<StagingXcmV5Hint> } };
 
 export type StagingXcmV5AssetAssets = Array<StagingXcmV5Asset>;
 
@@ -9703,6 +9707,8 @@ export type StagingXcmV5AssetAssetTransferFilter =
   | { type: 'Teleport'; value: StagingXcmV5AssetAssetFilter }
   | { type: 'ReserveDeposit'; value: StagingXcmV5AssetAssetFilter }
   | { type: 'ReserveWithdraw'; value: StagingXcmV5AssetAssetFilter };
+
+export type StagingXcmV5Hint = { type: 'AssetClaimer'; value: { location: StagingXcmV5Location } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.

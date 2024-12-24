@@ -49,7 +49,7 @@ import type {
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
-  StagingXcmV4Xcm,
+  StagingXcmV5Xcm,
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMessageQueuePage,
@@ -59,6 +59,9 @@ import type {
   PalletIdentityRegistration,
   PalletIdentityRegistrarInfo,
   PalletIdentityAuthorityProperties,
+  PalletIdentityUsernameInformation,
+  PalletIdentityProvider,
+  PalletMigrationsMigrationCursor,
 } from './types';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
@@ -1046,9 +1049,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
      * implementation in the XCM executor configuration.
      *
-     * @param {Callback<StagingXcmV4Xcm | undefined> =} callback
+     * @param {Callback<StagingXcmV5Xcm | undefined> =} callback
      **/
-    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV4Xcm | undefined>;
+    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV5Xcm | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1161,13 +1164,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * TWOX-NOTE: OK ― `AccountId` is a secure hash.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<[PalletIdentityRegistration, Bytes | undefined] | undefined> =} callback
+     * @param {Callback<PalletIdentityRegistration | undefined> =} callback
      **/
-    identityOf: GenericStorageQuery<
-      Rv,
-      (arg: AccountId32Like) => [PalletIdentityRegistration, Bytes | undefined] | undefined,
-      AccountId32
-    >;
+    identityOf: GenericStorageQuery<Rv, (arg: AccountId32Like) => PalletIdentityRegistration | undefined, AccountId32>;
+
+    /**
+     * Identifies the primary username of an account.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    usernameOf: GenericStorageQuery<Rv, (arg: AccountId32Like) => Bytes | undefined, AccountId32>;
 
     /**
      * The super-identity of an alternative "sub" identity together with its name, within that
@@ -1203,39 +1210,80 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * A map of the accounts who are authorized to grant usernames.
      *
-     * @param {AccountId32Like} arg
+     * @param {BytesLike} arg
      * @param {Callback<PalletIdentityAuthorityProperties | undefined> =} callback
      **/
-    usernameAuthorities: GenericStorageQuery<
-      Rv,
-      (arg: AccountId32Like) => PalletIdentityAuthorityProperties | undefined,
-      AccountId32
-    >;
+    authorityOf: GenericStorageQuery<Rv, (arg: BytesLike) => PalletIdentityAuthorityProperties | undefined, Bytes>;
 
     /**
-     * Reverse lookup from `username` to the `AccountId` that has registered it. The value should
-     * be a key in the `IdentityOf` map, but it may not if the user has cleared their identity.
+     * Reverse lookup from `username` to the `AccountId` that has registered it and the provider of
+     * the username. The `owner` value should be a key in the `UsernameOf` map, but it may not if
+     * the user has cleared their username or it has been removed.
      *
-     * Multiple usernames may map to the same `AccountId`, but `IdentityOf` will only map to one
+     * Multiple usernames may map to the same `AccountId`, but `UsernameOf` will only map to one
      * primary username.
      *
      * @param {BytesLike} arg
-     * @param {Callback<AccountId32 | undefined> =} callback
+     * @param {Callback<PalletIdentityUsernameInformation | undefined> =} callback
      **/
-    accountOfUsername: GenericStorageQuery<Rv, (arg: BytesLike) => AccountId32 | undefined, Bytes>;
+    usernameInfoOf: GenericStorageQuery<Rv, (arg: BytesLike) => PalletIdentityUsernameInformation | undefined, Bytes>;
 
     /**
      * Usernames that an authority has granted, but that the account controller has not confirmed
      * that they want it. Used primarily in cases where the `AccountId` cannot provide a signature
      * because they are a pure proxy, multisig, etc. In order to confirm it, they should call
-     * [`Call::accept_username`].
+     * [accept_username](`Call::accept_username`).
      *
      * First tuple item is the account and second is the acceptance deadline.
      *
      * @param {BytesLike} arg
-     * @param {Callback<[AccountId32, number] | undefined> =} callback
+     * @param {Callback<[AccountId32, number, PalletIdentityProvider] | undefined> =} callback
      **/
-    pendingUsernames: GenericStorageQuery<Rv, (arg: BytesLike) => [AccountId32, number] | undefined, Bytes>;
+    pendingUsernames: GenericStorageQuery<
+      Rv,
+      (arg: BytesLike) => [AccountId32, number, PalletIdentityProvider] | undefined,
+      Bytes
+    >;
+
+    /**
+     * Usernames for which the authority that granted them has started the removal process by
+     * unbinding them. Each unbinding username maps to its grace period expiry, which is the first
+     * block in which the username could be deleted through a
+     * [remove_username](`Call::remove_username`) call.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    unbindingUsernames: GenericStorageQuery<Rv, (arg: BytesLike) => number | undefined, Bytes>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s storage queries
+   **/
+  multiBlockMigrations: {
+    /**
+     * The currently active migration to run and its cursor.
+     *
+     * `None` indicates that no migration is running.
+     *
+     * @param {Callback<PalletMigrationsMigrationCursor | undefined> =} callback
+     **/
+    cursor: GenericStorageQuery<Rv, () => PalletMigrationsMigrationCursor | undefined>;
+
+    /**
+     * Set of all successfully executed migrations.
+     *
+     * This is used as blacklist, to not re-execute migrations that have not been removed from the
+     * codebase yet. Governance can regularly clear this out via `clear_historic`.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    historic: GenericStorageQuery<Rv, (arg: BytesLike) => [] | undefined, Bytes>;
 
     /**
      * Generic pallet storage query

@@ -811,6 +811,41 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NotExpired: GenericPalletError<Rv>;
 
     /**
+     * The username cannot be removed because it's still in the grace period.
+     **/
+    TooEarly: GenericPalletError<Rv>;
+
+    /**
+     * The username cannot be removed because it is not unbinding.
+     **/
+    NotUnbinding: GenericPalletError<Rv>;
+
+    /**
+     * The username cannot be unbound because it is already unbinding.
+     **/
+    AlreadyUnbinding: GenericPalletError<Rv>;
+
+    /**
+     * The action cannot be performed because of insufficient privileges (e.g. authority
+     * trying to unbind a username provided by the system).
+     **/
+    InsufficientPrivileges: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s errors
+   **/
+  multiBlockMigrations: {
+    /**
+     * The operation cannot complete since some MBMs are ongoing.
+     **/
+    Ongoing: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;

@@ -50,6 +50,7 @@ import type {
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
   StagingXcmV5Xcm,
+  BpXcmBridgeHubRouterBridgeState,
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMessageQueuePage,
@@ -1084,40 +1085,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   toRococoXcmRouter: {
     /**
-     * The number to multiply the base delivery fee by.
+     * Bridge that we are using.
      *
-     * This factor is shared by all bridges, served by this pallet. For example, if this
-     * chain (`Config::UniversalLocation`) opens two bridges (
-     * `X2(GlobalConsensus(Config::BridgedNetworkId::get()), Parachain(1000))` and
-     * `X2(GlobalConsensus(Config::BridgedNetworkId::get()), Parachain(2000))`), then they
-     * both will be sharing the same fee factor. This is because both bridges are sharing
-     * the same local XCM channel with the child/sibling bridge hub, which we are using
-     * to detect congestion:
+     * **bridges-v1** assumptions: all outbound messages through this router are using single lane
+     * and to single remote consensus. If there is some other remote consensus that uses the same
+     * bridge hub, the separate pallet instance shall be used, In `v2` we'll have all required
+     * primitives (lane-id aka bridge-id, derived from XCM locations) to support multiple bridges
+     * by the same pallet instance.
      *
-     * ```nocompile
-     * ThisChain --- Local XCM channel --> Sibling Bridge Hub ------
-     * | |
-     * | |
-     * | |
-     * Lane1 Lane2
-     * | |
-     * | |
-     * | |
-     * \ / |
-     * Parachain1 <-- Local XCM channel --- Remote Bridge Hub <------
-     * |
-     * |
-     * Parachain1 <-- Local XCM channel ---------
-     * ```
-     *
-     * If at least one of other channels is congested, the local XCM channel with sibling
-     * bridge hub eventually becomes congested too. And we have no means to detect - which
-     * bridge exactly causes the congestion. So the best solution here is not to make
-     * any differences between all bridges, started by this chain.
-     *
-     * @param {Callback<FixedU128> =} callback
+     * @param {Callback<BpXcmBridgeHubRouterBridgeState> =} callback
      **/
-    deliveryFeeFactor: GenericStorageQuery<Rv, () => FixedU128>;
+    bridge: GenericStorageQuery<Rv, () => BpXcmBridgeHubRouterBridgeState>;
 
     /**
      * Generic pallet storage query

@@ -1689,6 +1689,38 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
+   * Pallet `ToRococoXcmRouter`'s transaction calls
+   **/
+  toRococoXcmRouter: {
+    /**
+     * Notification about congested bridge queue.
+     *
+     * @param {H256} bridgeId
+     * @param {boolean} isCongested
+     **/
+    reportBridgeStatus: GenericTxCall<
+      Rv,
+      (
+        bridgeId: H256,
+        isCongested: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'ToRococoXcmRouter';
+          palletCall: {
+            name: 'ReportBridgeStatus';
+            params: { bridgeId: H256; isCongested: boolean };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
    * Pallet `MessageQueue`'s transaction calls
    **/
   messageQueue: {
@@ -8994,7 +9026,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * # Parameters
      *
-     * * `payload`: The encoded [`crate::evm::TransactionSigned`].
+     * * `payload`: The RLP-encoded [`crate::evm::TransactionLegacySigned`].
      * * `gas_limit`: The gas limit enforced during contract execution.
      * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
      * storage usage.

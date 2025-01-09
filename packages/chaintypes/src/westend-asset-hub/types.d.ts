@@ -19,7 +19,6 @@ import type {
   Era,
   Header,
   UncheckedExtrinsic,
-  U256,
 } from 'dedot/codecs';
 
 export type FrameSystemAccountInfo = {
@@ -664,7 +663,14 @@ export type StagingXcmV5Instruction =
       type: 'TransferReserveAsset';
       value: { assets: StagingXcmV5AssetAssets; dest: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
     }
-  | { type: 'Transact'; value: { originKind: XcmV3OriginKind; call: XcmDoubleEncoded } }
+  | {
+      type: 'Transact';
+      value: {
+        originKind: XcmV3OriginKind;
+        fallbackMaxWeight?: SpWeightsWeightV2Weight | undefined;
+        call: XcmDoubleEncoded;
+      };
+    }
   | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
   | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
   | { type: 'HrmpChannelClosing'; value: { initiator: number; sender: number; recipient: number } }
@@ -697,7 +703,6 @@ export type StagingXcmV5Instruction =
   | { type: 'SetErrorHandler'; value: StagingXcmV5Xcm }
   | { type: 'SetAppendix'; value: StagingXcmV5Xcm }
   | { type: 'ClearError' }
-  | { type: 'SetAssetClaimer'; value: { location: StagingXcmV5Location } }
   | { type: 'ClaimAsset'; value: { assets: StagingXcmV5AssetAssets; ticket: StagingXcmV5Location } }
   | { type: 'Trap'; value: bigint }
   | { type: 'SubscribeVersion'; value: { queryId: bigint; maxResponseWeight: SpWeightsWeightV2Weight } }
@@ -742,10 +747,8 @@ export type StagingXcmV5Instruction =
         remoteXcm: StagingXcmV5Xcm;
       };
     }
-  | {
-      type: 'ExecuteWithOrigin';
-      value: { descendantOrigin?: StagingXcmV5Junctions | undefined; xcm: StagingXcmV5Xcm };
-    };
+  | { type: 'ExecuteWithOrigin'; value: { descendantOrigin?: StagingXcmV5Junctions | undefined; xcm: StagingXcmV5Xcm } }
+  | { type: 'SetHints'; value: { hints: Array<StagingXcmV5Hint> } };
 
 export type StagingXcmV5AssetAssets = Array<StagingXcmV5Asset>;
 
@@ -818,6 +821,8 @@ export type StagingXcmV5AssetAssetTransferFilter =
   | { type: 'Teleport'; value: StagingXcmV5AssetAssetFilter }
   | { type: 'ReserveDeposit'; value: StagingXcmV5AssetAssetFilter }
   | { type: 'ReserveWithdraw'; value: StagingXcmV5AssetAssetFilter };
+
+export type StagingXcmV5Hint = { type: 'AssetClaimer'; value: { location: StagingXcmV5Location } };
 
 export type XcmVersionedAssets =
   | { type: 'V3'; value: XcmV3MultiassetMultiAssets }
@@ -4595,6 +4600,23 @@ export type CumulusPalletXcmCall = null;
 
 export type CumulusPalletXcmCallLike = null;
 
+export type BpXcmBridgeHubRouterBridgeState = { deliveryFeeFactor: FixedU128; isCongested: boolean };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletXcmBridgeHubRouterCall =
+  /**
+   * Notification about congested bridge queue.
+   **/
+  { name: 'ReportBridgeStatus'; params: { bridgeId: H256; isCongested: boolean } };
+
+export type PalletXcmBridgeHubRouterCallLike =
+  /**
+   * Notification about congested bridge queue.
+   **/
+  { name: 'ReportBridgeStatus'; params: { bridgeId: H256; isCongested: boolean } };
+
 export type PalletMessageQueueBookState = {
   begin: number;
   end: number;
@@ -4926,6 +4948,7 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCall }
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCall }
   | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCall }
+  | { pallet: 'ToRococoXcmRouter'; palletCall: PalletXcmBridgeHubRouterCall }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
   | { pallet: 'Utility'; palletCall: PalletUtilityCall }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
@@ -4952,6 +4975,7 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCallLike }
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCallLike }
   | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCallLike }
+  | { pallet: 'ToRococoXcmRouter'; palletCall: PalletXcmBridgeHubRouterCallLike }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
   | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
@@ -11714,7 +11738,7 @@ export type PalletReviveCall =
    *
    * # Parameters
    *
-   * * `payload`: The encoded [`crate::evm::TransactionSigned`].
+   * * `payload`: The RLP-encoded [`crate::evm::TransactionLegacySigned`].
    * * `gas_limit`: The gas limit enforced during contract execution.
    * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
    * storage usage.
@@ -11877,7 +11901,7 @@ export type PalletReviveCallLike =
    *
    * # Parameters
    *
-   * * `payload`: The encoded [`crate::evm::TransactionSigned`].
+   * * `payload`: The RLP-encoded [`crate::evm::TransactionLegacySigned`].
    * * `gas_limit`: The gas limit enforced during contract execution.
    * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
    * storage usage.
@@ -13178,10 +13202,6 @@ export type PalletReviveError =
    **/
   | 'BalanceConversionFailed'
   /**
-   * Failed to convert an EVM balance to a native balance.
-   **/
-  | 'DecimalPrecisionLoss'
-  /**
    * Immutable data can only be set during deploys and only be read during calls.
    * Additionally, it is only valid to set the data once and it must not be empty.
    **/
@@ -13394,40 +13414,12 @@ export type PalletRevivePrimitivesInstantiateReturnValue = {
   addr: H160;
 };
 
-export type PalletReviveEvmApiRpcTypesGenGenericTransaction = {
-  accessList?: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry> | undefined;
-  blobVersionedHashes: Array<H256>;
-  blobs: Array<PalletReviveEvmApiByteBytes>;
-  chainId?: U256 | undefined;
-  from?: H160 | undefined;
-  gas?: U256 | undefined;
-  gasPrice?: U256 | undefined;
-  input?: PalletReviveEvmApiByteBytes | undefined;
-  maxFeePerBlobGas?: U256 | undefined;
-  maxFeePerGas?: U256 | undefined;
-  maxPriorityFeePerGas?: U256 | undefined;
-  nonce?: U256 | undefined;
-  to?: H160 | undefined;
-  rType?: PalletReviveEvmApiByte | undefined;
-  value?: U256 | undefined;
-};
-
-export type PalletReviveEvmApiRpcTypesGenAccessListEntry = { address: H160; storageKeys: Array<H256> };
-
-export type PalletReviveEvmApiByteBytes = Bytes;
-
-export type PalletReviveEvmApiByte = number;
-
-export type PalletRevivePrimitivesEthTransactInfo = {
+export type PalletRevivePrimitivesEthContractResult = {
+  fee: bigint;
   gasRequired: SpWeightsWeightV2Weight;
   storageDeposit: bigint;
-  ethGas: U256;
-  data: Bytes;
+  result: Result<Bytes, DispatchError>;
 };
-
-export type PalletRevivePrimitivesEthTransactError =
-  | { type: 'Data'; value: Bytes }
-  | { type: 'Message'; value: string };
 
 export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
 

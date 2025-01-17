@@ -100,6 +100,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
+   * Pallet `WeightReclaim`'s constants
+   **/
+  weightReclaim: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Balances`'s constants
    **/
   balances: {
@@ -878,7 +887,22 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * The ratio between the decimal representation of the native token and the ETH token.
      **/
     nativeToEthRatio: number;
-    apiVersion: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `AssetRewards`'s constants
+   **/
+  assetRewards: {
+    /**
+     * The pallet's unique identifier, used to derive the pool's account ID.
+     *
+     * The account ID is derived once during pool creation and stored in the storage.
+     **/
+    palletId: FrameSupportPalletId;
 
     /**
      * Generic pallet constant

@@ -19,6 +19,7 @@ import type {
   FrameSystemEventRecord,
   FrameSystemLastRuntimeUpgradeInfo,
   FrameSystemCodeUpgradeAuthorization,
+  SpWeightsWeightV2Weight,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
   PolkadotPrimitivesV8PersistedValidationData,
@@ -30,12 +31,11 @@ import type {
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
-  SpWeightsWeightV2Weight,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
   FrameSupportTokensMiscIdAmount,
-  FrameSupportTokensMiscIdAmount002,
+  FrameSupportTokensMiscIdAmountRuntimeFreezeReason,
   PalletTransactionPaymentReleases,
   PalletCollatorSelectionCandidateInfo,
   AssetHubWestendRuntimeSessionKeys,
@@ -78,10 +78,12 @@ import type {
   StagingXcmV5Location,
   PalletNftFractionalizationDetails,
   PalletAssetConversionPoolInfo,
-  FrameSupportTokensMiscIdAmountRuntimeFreezeReason,
   PalletReviveWasmCodeInfo,
   PalletReviveStorageContractInfo,
   PalletReviveStorageDeletionQueueManager,
+  PalletAssetRewardsPoolStakerInfo,
+  PalletAssetRewardsPoolInfo,
+  FrameSupportTokensFungibleHoldConsideration,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationMigrationLimits,
 } from './types';
@@ -236,6 +238,19 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<FrameSystemCodeUpgradeAuthorization | undefined> =} callback
      **/
     authorizedUpgrade: GenericStorageQuery<Rv, () => FrameSystemCodeUpgradeAuthorization | undefined>;
+
+    /**
+     * The weight reclaimed for the extrinsic.
+     *
+     * This information is available until the end of the extrinsic execution.
+     * More precisely this information is removed in `note_applied_extrinsic`.
+     *
+     * Logic doing some post dispatch weight reduction must update this storage to avoid duplicate
+     * reduction.
+     *
+     * @param {Callback<SpWeightsWeightV2Weight> =} callback
+     **/
+    extrinsicWeightReclaimed: GenericStorageQuery<Rv, () => SpWeightsWeightV2Weight>;
 
     /**
      * Generic pallet storage query
@@ -616,9 +631,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Freeze locks on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<FrameSupportTokensMiscIdAmount002>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>> =} callback
      **/
-    freezes: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount002>, AccountId32>;
+    freezes: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>,
+      AccountId32
+    >;
 
     /**
      * Generic pallet storage query
@@ -830,13 +849,14 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     authorities: GenericStorageQuery<Rv, () => Array<SpConsensusAuraSr25519AppSr25519Public>>;
 
     /**
-     * Current slot paired with a number of authored blocks.
+     * Current relay chain slot paired with a number of authored blocks.
      *
-     * Updated on each block initialization.
+     * This is updated in [`FixedVelocityConsensusHook::on_state_proof`] with the current relay
+     * chain slot as provided by the relay chain state proof.
      *
      * @param {Callback<[SpConsensusSlotsSlot, number] | undefined> =} callback
      **/
-    slotInfo: GenericStorageQuery<Rv, () => [SpConsensusSlotsSlot, number] | undefined>;
+    relaySlotInfo: GenericStorageQuery<Rv, () => [SpConsensusSlotsSlot, number] | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1888,6 +1908,59 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<FixedBytes<12> | undefined> =} callback
      **/
     addressSuffix: GenericStorageQuery<Rv, (arg: H160) => FixedBytes<12> | undefined, H160>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `AssetRewards`'s storage queries
+   **/
+  assetRewards: {
+    /**
+     * State of pool stakers.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<PalletAssetRewardsPoolStakerInfo | undefined> =} callback
+     **/
+    poolStakers: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like]) => PalletAssetRewardsPoolStakerInfo | undefined,
+      [number, AccountId32]
+    >;
+
+    /**
+     * State and configuration of each staking pool.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletAssetRewardsPoolInfo | undefined> =} callback
+     **/
+    pools: GenericStorageQuery<Rv, (arg: number) => PalletAssetRewardsPoolInfo | undefined, number>;
+
+    /**
+     * The cost associated with storing pool information on-chain which was incurred by the pool
+     * creator.
+     *
+     * This cost may be [`None`], as determined by [`Config::Consideration`].
+     *
+     * @param {number} arg
+     * @param {Callback<[AccountId32, FrameSupportTokensFungibleHoldConsideration] | undefined> =} callback
+     **/
+    poolCost: GenericStorageQuery<
+      Rv,
+      (arg: number) => [AccountId32, FrameSupportTokensFungibleHoldConsideration] | undefined,
+      number
+    >;
+
+    /**
+     * Stores the [`PoolId`] to use for the next pool.
+     *
+     * Incremented when a new pool is created.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    nextPoolId: GenericStorageQuery<Rv, () => number>;
 
     /**
      * Generic pallet storage query

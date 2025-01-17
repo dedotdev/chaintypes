@@ -13,6 +13,7 @@ import type {
   BytesLike,
   AccountId32Like,
   AccountId32,
+  U256,
   H160,
   FixedBytes,
 } from 'dedot/codecs';
@@ -53,7 +54,9 @@ import type {
   PalletRevivePrimitivesContractResult,
   PalletRevivePrimitivesContractResultInstantiateReturnValue,
   PalletRevivePrimitivesCode,
-  PalletRevivePrimitivesEthContractResult,
+  PalletRevivePrimitivesEthTransactInfo,
+  PalletRevivePrimitivesEthTransactError,
+  PalletReviveEvmApiRpcTypesGenGenericTransaction,
   PalletRevivePrimitivesCodeUploadReturnValue,
   PalletRevivePrimitivesContractAccessError,
 } from './types';
@@ -91,7 +94,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     /**
      * Whether it is legal to extend the chain, assuming the given block is the most
      * recently included one as-of the relay parent that will be built against, and
-     * the given slot.
+     * the given relay chain slot.
      *
      * This should be consistent with the logic the runtime uses when validating blocks to
      * avoid issues.
@@ -749,6 +752,24 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
+   * @runtimeapi: AssetRewards - 0x65f855d6e093c2f1
+   **/
+  assetRewards: {
+    /**
+     * Get the cost of creating a pool.
+     *
+     * This is especially useful when the cost is dynamic.
+     *
+     * @callname: AssetRewards_pool_creation_cost
+     **/
+    poolCreationCost: GenericRuntimeApiMethod<Rv, () => Promise<bigint>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
    * @runtimeapi: GetCoreSelectorApi - 0x695c80446b8b3d4e
    **/
   getCoreSelectorApi: {
@@ -876,12 +897,12 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
    **/
   reviveApi: {
     /**
-     * Returns the free balance of the given `[H160]` address.
+     * Returns the free balance of the given `[H160]` address, using EVM decimals.
      *
      * @callname: ReviveApi_balance
      * @param {H160} address
      **/
-    balance: GenericRuntimeApiMethod<Rv, (address: H160) => Promise<bigint>>;
+    balance: GenericRuntimeApiMethod<Rv, (address: H160) => Promise<U256>>;
 
     /**
      * Returns the nonce of the given `[H160]` address.
@@ -949,23 +970,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * See [`crate::Pallet::bare_eth_transact`]
      *
      * @callname: ReviveApi_eth_transact
-     * @param {H160} origin
-     * @param {H160 | undefined} dest
-     * @param {bigint} value
-     * @param {BytesLike} input
-     * @param {SpWeightsWeightV2Weight | undefined} gas_limit
-     * @param {bigint | undefined} storage_deposit_limit
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
      **/
     ethTransact: GenericRuntimeApiMethod<
       Rv,
       (
-        origin: H160,
-        dest: H160 | undefined,
-        value: bigint,
-        input: BytesLike,
-        gasLimit?: SpWeightsWeightV2Weight | undefined,
-        storageDepositLimit?: bigint | undefined,
-      ) => Promise<PalletRevivePrimitivesEthContractResult>
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+      ) => Promise<Result<PalletRevivePrimitivesEthTransactInfo, PalletRevivePrimitivesEthTransactError>>
     >;
 
     /**

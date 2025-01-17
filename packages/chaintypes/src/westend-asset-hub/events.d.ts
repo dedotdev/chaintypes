@@ -31,7 +31,6 @@ import type {
   PalletNftsAttributeNamespace,
   PalletNftsPriceWithDirection,
   PalletNftsPalletAttributes,
-  PalletReviveExecOrigin,
   PalletStateTrieMigrationMigrationCompute,
   PalletStateTrieMigrationError,
 } from './types';
@@ -2557,41 +2556,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
    **/
   revive: {
     /**
-     * Contract deployed by address at the specified address.
-     **/
-    Instantiated: GenericPalletEvent<Rv, 'Revive', 'Instantiated', { deployer: H160; contract: H160 }>;
-
-    /**
-     * Contract has been removed.
-     *
-     * # Note
-     *
-     * The only way for a contract to be removed and emitting this event is by calling
-     * `seal_terminate`.
-     **/
-    Terminated: GenericPalletEvent<
-      Rv,
-      'Revive',
-      'Terminated',
-      {
-        /**
-         * The contract that was terminated.
-         **/
-        contract: H160;
-
-        /**
-         * The account that received the contracts remaining balance
-         **/
-        beneficiary: H160;
-      }
-    >;
-
-    /**
-     * Code with the specified hash has been stored.
-     **/
-    CodeStored: GenericPalletEvent<Rv, 'Revive', 'CodeStored', { codeHash: H256; depositHeld: bigint; uploader: H160 }>;
-
-    /**
      * A custom event emitted by the contract.
      **/
     ContractEmitted: GenericPalletEvent<
@@ -2619,111 +2583,217 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
-     * A code with the specified hash was removed.
+     * Generic pallet event
      **/
-    CodeRemoved: GenericPalletEvent<
-      Rv,
-      'Revive',
-      'CodeRemoved',
-      { codeHash: H256; depositReleased: bigint; remover: H160 }
-    >;
-
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `AssetRewards`'s events
+   **/
+  assetRewards: {
     /**
-     * A contract's code was updated.
+     * An account staked some tokens in a pool.
      **/
-    ContractCodeUpdated: GenericPalletEvent<
+    Staked: GenericPalletEvent<
       Rv,
-      'Revive',
-      'ContractCodeUpdated',
+      'AssetRewards',
+      'Staked',
       {
         /**
-         * The contract that has been updated.
+         * The account that staked assets.
          **/
-        contract: H160;
+        staker: AccountId32;
 
         /**
-         * New code hash that was set for the contract.
+         * The pool.
          **/
-        newCodeHash: H256;
+        poolId: number;
 
         /**
-         * Previous code hash of the contract.
+         * The staked asset amount.
          **/
-        oldCodeHash: H256;
+        amount: bigint;
       }
     >;
 
     /**
-     * A contract was called either by a plain account or another contract.
-     *
-     * # Note
-     *
-     * Please keep in mind that like all events this is only emitted for successful
-     * calls. This is because on failure all storage changes including events are
-     * rolled back.
+     * An account unstaked some tokens from a pool.
      **/
-    Called: GenericPalletEvent<
+    Unstaked: GenericPalletEvent<
       Rv,
-      'Revive',
-      'Called',
+      'AssetRewards',
+      'Unstaked',
       {
         /**
-         * The caller of the `contract`.
+         * The account that signed transaction.
          **/
-        caller: PalletReviveExecOrigin;
+        caller: AccountId32;
 
         /**
-         * The contract that was called.
+         * The account that unstaked assets.
          **/
-        contract: H160;
+        staker: AccountId32;
+
+        /**
+         * The pool.
+         **/
+        poolId: number;
+
+        /**
+         * The unstaked asset amount.
+         **/
+        amount: bigint;
       }
     >;
 
     /**
-     * A contract delegate called a code hash.
-     *
-     * # Note
-     *
-     * Please keep in mind that like all events this is only emitted for successful
-     * calls. This is because on failure all storage changes including events are
-     * rolled back.
+     * An account harvested some rewards.
      **/
-    DelegateCalled: GenericPalletEvent<
+    RewardsHarvested: GenericPalletEvent<
       Rv,
-      'Revive',
-      'DelegateCalled',
+      'AssetRewards',
+      'RewardsHarvested',
       {
         /**
-         * The contract that performed the delegate call and hence in whose context
-         * the `code_hash` is executed.
+         * The account that signed transaction.
          **/
-        contract: H160;
+        caller: AccountId32;
 
         /**
-         * The code hash that was delegate called.
+         * The staker whos rewards were harvested.
          **/
-        codeHash: H256;
+        staker: AccountId32;
+
+        /**
+         * The pool.
+         **/
+        poolId: number;
+
+        /**
+         * The amount of harvested tokens.
+         **/
+        amount: bigint;
       }
     >;
 
     /**
-     * Some funds have been transferred and held as storage deposit.
+     * A new reward pool was created.
      **/
-    StorageDepositTransferredAndHeld: GenericPalletEvent<
+    PoolCreated: GenericPalletEvent<
       Rv,
-      'Revive',
-      'StorageDepositTransferredAndHeld',
-      { from: H160; to: H160; amount: bigint }
+      'AssetRewards',
+      'PoolCreated',
+      {
+        /**
+         * The account that created the pool.
+         **/
+        creator: AccountId32;
+
+        /**
+         * The unique ID for the new pool.
+         **/
+        poolId: number;
+
+        /**
+         * The staking asset.
+         **/
+        stakedAssetId: StagingXcmV5Location;
+
+        /**
+         * The reward asset.
+         **/
+        rewardAssetId: StagingXcmV5Location;
+
+        /**
+         * The initial reward rate per block.
+         **/
+        rewardRatePerBlock: bigint;
+
+        /**
+         * The block the pool will cease to accumulate rewards.
+         **/
+        expiryBlock: number;
+
+        /**
+         * The account allowed to modify the pool.
+         **/
+        admin: AccountId32;
+      }
     >;
 
     /**
-     * Some storage deposit funds have been transferred and released.
+     * A pool reward rate was modified by the admin.
      **/
-    StorageDepositTransferredAndReleased: GenericPalletEvent<
+    PoolRewardRateModified: GenericPalletEvent<
       Rv,
-      'Revive',
-      'StorageDepositTransferredAndReleased',
-      { from: H160; to: H160; amount: bigint }
+      'AssetRewards',
+      'PoolRewardRateModified',
+      {
+        /**
+         * The modified pool.
+         **/
+        poolId: number;
+
+        /**
+         * The new reward rate per block.
+         **/
+        newRewardRatePerBlock: bigint;
+      }
+    >;
+
+    /**
+     * A pool admin was modified.
+     **/
+    PoolAdminModified: GenericPalletEvent<
+      Rv,
+      'AssetRewards',
+      'PoolAdminModified',
+      {
+        /**
+         * The modified pool.
+         **/
+        poolId: number;
+
+        /**
+         * The new admin.
+         **/
+        newAdmin: AccountId32;
+      }
+    >;
+
+    /**
+     * A pool expiry block was modified by the admin.
+     **/
+    PoolExpiryBlockModified: GenericPalletEvent<
+      Rv,
+      'AssetRewards',
+      'PoolExpiryBlockModified',
+      {
+        /**
+         * The modified pool.
+         **/
+        poolId: number;
+
+        /**
+         * The new expiry block.
+         **/
+        newExpiryBlock: number;
+      }
+    >;
+
+    /**
+     * A pool information was cleared after it's completion.
+     **/
+    PoolCleanedUp: GenericPalletEvent<
+      Rv,
+      'AssetRewards',
+      'PoolCleanedUp',
+      {
+        /**
+         * The cleared pool.
+         **/
+        poolId: number;
+      }
     >;
 
     /**

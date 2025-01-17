@@ -43,6 +43,7 @@ import type {
   PalletNftsPriceWithDirection,
   PalletNftsPreSignedMint,
   PalletNftsPreSignedAttributes,
+  FrameSupportScheduleDispatchTime,
   PalletStateTrieMigrationMigrationLimits,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationProgress,
@@ -9026,7 +9027,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * # Parameters
      *
-     * * `payload`: The RLP-encoded [`crate::evm::TransactionLegacySigned`].
+     * * `payload`: The encoded [`crate::evm::TransactionSigned`].
      * * `gas_limit`: The gas limit enforced during contract execution.
      * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
      * storage usage.
@@ -9039,22 +9040,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * signer and validating the transaction.
      *
      * @param {BytesLike} payload
-     * @param {SpWeightsWeightV2Weight} gasLimit
-     * @param {bigint} storageDepositLimit
      **/
     ethTransact: GenericTxCall<
       Rv,
-      (
-        payload: BytesLike,
-        gasLimit: SpWeightsWeightV2Weight,
-        storageDepositLimit: bigint,
-      ) => ChainSubmittableExtrinsic<
+      (payload: BytesLike) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Revive';
           palletCall: {
             name: 'EthTransact';
-            params: { payload: BytesLike; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint };
+            params: { payload: BytesLike };
           };
         }
       >
@@ -9362,6 +9357,277 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'DispatchAsFallbackAccount';
             params: { call: AssetHubWestendRuntimeRuntimeCallLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `AssetRewards`'s transaction calls
+   **/
+  assetRewards: {
+    /**
+     * Create a new reward pool.
+     *
+     * Parameters:
+     * - `origin`: must be `Config::CreatePoolOrigin`;
+     * - `staked_asset_id`: the asset to be staked in the pool;
+     * - `reward_asset_id`: the asset to be distributed as rewards;
+     * - `reward_rate_per_block`: the amount of reward tokens distributed per block;
+     * - `expiry`: the block number at which the pool will cease to accumulate rewards. The
+     * [`DispatchTime::After`] variant evaluated at the execution time.
+     * - `admin`: the account allowed to extend the pool expiration, increase the rewards rate
+     * and receive the unutilized reward tokens back after the pool completion. If `None`,
+     * the caller is set as an admin.
+     *
+     * @param {StagingXcmV5Location} stakedAssetId
+     * @param {StagingXcmV5Location} rewardAssetId
+     * @param {bigint} rewardRatePerBlock
+     * @param {FrameSupportScheduleDispatchTime} expiry
+     * @param {AccountId32Like | undefined} admin
+     **/
+    createPool: GenericTxCall<
+      Rv,
+      (
+        stakedAssetId: StagingXcmV5Location,
+        rewardAssetId: StagingXcmV5Location,
+        rewardRatePerBlock: bigint,
+        expiry: FrameSupportScheduleDispatchTime,
+        admin: AccountId32Like | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetRewards';
+          palletCall: {
+            name: 'CreatePool';
+            params: {
+              stakedAssetId: StagingXcmV5Location;
+              rewardAssetId: StagingXcmV5Location;
+              rewardRatePerBlock: bigint;
+              expiry: FrameSupportScheduleDispatchTime;
+              admin: AccountId32Like | undefined;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Stake additional tokens in a pool.
+     *
+     * A freeze is placed on the staked tokens.
+     *
+     * @param {number} poolId
+     * @param {bigint} amount
+     **/
+    stake: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetRewards';
+          palletCall: {
+            name: 'Stake';
+            params: { poolId: number; amount: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Unstake tokens from a pool.
+     *
+     * Removes the freeze on the staked tokens.
+     *
+     * Parameters:
+     * - origin: must be the `staker` if the pool is still active. Otherwise, any account.
+     * - pool_id: the pool to unstake from.
+     * - amount: the amount of tokens to unstake.
+     * - staker: the account to unstake from. If `None`, the caller is used.
+     *
+     * @param {number} poolId
+     * @param {bigint} amount
+     * @param {AccountId32Like | undefined} staker
+     **/
+    unstake: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        amount: bigint,
+        staker: AccountId32Like | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetRewards';
+          palletCall: {
+            name: 'Unstake';
+            params: { poolId: number; amount: bigint; staker: AccountId32Like | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Harvest unclaimed pool rewards.
+     *
+     * Parameters:
+     * - origin: must be the `staker` if the pool is still active. Otherwise, any account.
+     * - pool_id: the pool to harvest from.
+     * - staker: the account for which to harvest rewards. If `None`, the caller is used.
+     *
+     * @param {number} poolId
+     * @param {AccountId32Like | undefined} staker
+     **/
+    harvestRewards: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        staker: AccountId32Like | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetRewards';
+          palletCall: {
+            name: 'HarvestRewards';
+            params: { poolId: number; staker: AccountId32Like | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Modify a pool reward rate.
+     *
+     * Currently the reward rate can only be increased.
+     *
+     * Only the pool admin may perform this operation.
+     *
+     * @param {number} poolId
+     * @param {bigint} newRewardRatePerBlock
+     **/
+    setPoolRewardRatePerBlock: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        newRewardRatePerBlock: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetRewards';
+          palletCall: {
+            name: 'SetPoolRewardRatePerBlock';
+            params: { poolId: number; newRewardRatePerBlock: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Modify a pool admin.
+     *
+     * Only the pool admin may perform this operation.
+     *
+     * @param {number} poolId
+     * @param {AccountId32Like} newAdmin
+     **/
+    setPoolAdmin: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        newAdmin: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetRewards';
+          palletCall: {
+            name: 'SetPoolAdmin';
+            params: { poolId: number; newAdmin: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set when the pool should expire.
+     *
+     * Currently the expiry block can only be extended.
+     *
+     * Only the pool admin may perform this operation.
+     *
+     * @param {number} poolId
+     * @param {FrameSupportScheduleDispatchTime} newExpiry
+     **/
+    setPoolExpiryBlock: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        newExpiry: FrameSupportScheduleDispatchTime,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetRewards';
+          palletCall: {
+            name: 'SetPoolExpiryBlock';
+            params: { poolId: number; newExpiry: FrameSupportScheduleDispatchTime };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Convenience method to deposit reward tokens into a pool.
+     *
+     * This method is not strictly necessary (tokens could be transferred directly to the
+     * pool pot address), but is provided for convenience so manual derivation of the
+     * account id is not required.
+     *
+     * @param {number} poolId
+     * @param {bigint} amount
+     **/
+    depositRewardTokens: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetRewards';
+          palletCall: {
+            name: 'DepositRewardTokens';
+            params: { poolId: number; amount: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Cleanup a pool.
+     *
+     * Origin must be the pool admin.
+     *
+     * Cleanup storage, release any associated storage cost and return the remaining reward
+     * tokens to the admin.
+     *
+     * @param {number} poolId
+     **/
+    cleanupPool: GenericTxCall<
+      Rv,
+      (poolId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetRewards';
+          palletCall: {
+            name: 'CleanupPool';
+            params: { poolId: number };
           };
         }
       >

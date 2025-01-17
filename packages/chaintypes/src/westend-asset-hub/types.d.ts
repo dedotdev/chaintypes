@@ -19,6 +19,7 @@ import type {
   Era,
   Header,
   UncheckedExtrinsic,
+  U256,
 } from 'dedot/codecs';
 
 export type FrameSystemAccountInfo = {
@@ -75,6 +76,7 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'ForeignAssetsFreezer'; palletEvent: PalletAssetsFreezerEvent002 }
   | { pallet: 'PoolAssetsFreezer'; palletEvent: PalletAssetsFreezerEvent }
   | { pallet: 'Revive'; palletEvent: PalletReviveEvent }
+  | { pallet: 'AssetRewards'; palletEvent: PalletAssetRewardsEvent }
   | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent }
   | { pallet: 'AssetConversionMigration'; palletEvent: PalletAssetConversionOpsEvent };
 
@@ -2121,144 +2123,215 @@ export type PalletAssetsFreezerEvent002 =
  **/
 export type PalletReviveEvent =
   /**
-   * Contract deployed by address at the specified address.
-   **/
-  | { name: 'Instantiated'; data: { deployer: H160; contract: H160 } }
-  /**
-   * Contract has been removed.
-   *
-   * # Note
-   *
-   * The only way for a contract to be removed and emitting this event is by calling
-   * `seal_terminate`.
-   **/
-  | {
-      name: 'Terminated';
-      data: {
-        /**
-         * The contract that was terminated.
-         **/
-        contract: H160;
-
-        /**
-         * The account that received the contracts remaining balance
-         **/
-        beneficiary: H160;
-      };
-    }
-  /**
-   * Code with the specified hash has been stored.
-   **/
-  | { name: 'CodeStored'; data: { codeHash: H256; depositHeld: bigint; uploader: H160 } }
-  /**
    * A custom event emitted by the contract.
    **/
+  {
+    name: 'ContractEmitted';
+    data: {
+      /**
+       * The contract that emitted the event.
+       **/
+      contract: H160;
+
+      /**
+       * Data supplied by the contract. Metadata generated during contract compilation
+       * is needed to decode it.
+       **/
+      data: Bytes;
+
+      /**
+       * A list of topics used to index the event.
+       * Number of topics is capped by [`limits::NUM_EVENT_TOPICS`].
+       **/
+      topics: Array<H256>;
+    };
+  };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAssetRewardsEvent =
+  /**
+   * An account staked some tokens in a pool.
+   **/
   | {
-      name: 'ContractEmitted';
+      name: 'Staked';
       data: {
         /**
-         * The contract that emitted the event.
+         * The account that staked assets.
          **/
-        contract: H160;
+        staker: AccountId32;
 
         /**
-         * Data supplied by the contract. Metadata generated during contract compilation
-         * is needed to decode it.
+         * The pool.
          **/
-        data: Bytes;
+        poolId: number;
 
         /**
-         * A list of topics used to index the event.
-         * Number of topics is capped by [`limits::NUM_EVENT_TOPICS`].
+         * The staked asset amount.
          **/
-        topics: Array<H256>;
+        amount: bigint;
       };
     }
   /**
-   * A code with the specified hash was removed.
-   **/
-  | { name: 'CodeRemoved'; data: { codeHash: H256; depositReleased: bigint; remover: H160 } }
-  /**
-   * A contract's code was updated.
+   * An account unstaked some tokens from a pool.
    **/
   | {
-      name: 'ContractCodeUpdated';
+      name: 'Unstaked';
       data: {
         /**
-         * The contract that has been updated.
+         * The account that signed transaction.
          **/
-        contract: H160;
+        caller: AccountId32;
 
         /**
-         * New code hash that was set for the contract.
+         * The account that unstaked assets.
          **/
-        newCodeHash: H256;
+        staker: AccountId32;
 
         /**
-         * Previous code hash of the contract.
+         * The pool.
          **/
-        oldCodeHash: H256;
+        poolId: number;
+
+        /**
+         * The unstaked asset amount.
+         **/
+        amount: bigint;
       };
     }
   /**
-   * A contract was called either by a plain account or another contract.
-   *
-   * # Note
-   *
-   * Please keep in mind that like all events this is only emitted for successful
-   * calls. This is because on failure all storage changes including events are
-   * rolled back.
+   * An account harvested some rewards.
    **/
   | {
-      name: 'Called';
+      name: 'RewardsHarvested';
       data: {
         /**
-         * The caller of the `contract`.
+         * The account that signed transaction.
          **/
-        caller: PalletReviveExecOrigin;
+        caller: AccountId32;
 
         /**
-         * The contract that was called.
+         * The staker whos rewards were harvested.
          **/
-        contract: H160;
+        staker: AccountId32;
+
+        /**
+         * The pool.
+         **/
+        poolId: number;
+
+        /**
+         * The amount of harvested tokens.
+         **/
+        amount: bigint;
       };
     }
   /**
-   * A contract delegate called a code hash.
-   *
-   * # Note
-   *
-   * Please keep in mind that like all events this is only emitted for successful
-   * calls. This is because on failure all storage changes including events are
-   * rolled back.
+   * A new reward pool was created.
    **/
   | {
-      name: 'DelegateCalled';
+      name: 'PoolCreated';
       data: {
         /**
-         * The contract that performed the delegate call and hence in whose context
-         * the `code_hash` is executed.
+         * The account that created the pool.
          **/
-        contract: H160;
+        creator: AccountId32;
 
         /**
-         * The code hash that was delegate called.
+         * The unique ID for the new pool.
          **/
-        codeHash: H256;
+        poolId: number;
+
+        /**
+         * The staking asset.
+         **/
+        stakedAssetId: StagingXcmV5Location;
+
+        /**
+         * The reward asset.
+         **/
+        rewardAssetId: StagingXcmV5Location;
+
+        /**
+         * The initial reward rate per block.
+         **/
+        rewardRatePerBlock: bigint;
+
+        /**
+         * The block the pool will cease to accumulate rewards.
+         **/
+        expiryBlock: number;
+
+        /**
+         * The account allowed to modify the pool.
+         **/
+        admin: AccountId32;
       };
     }
   /**
-   * Some funds have been transferred and held as storage deposit.
+   * A pool reward rate was modified by the admin.
    **/
-  | { name: 'StorageDepositTransferredAndHeld'; data: { from: H160; to: H160; amount: bigint } }
+  | {
+      name: 'PoolRewardRateModified';
+      data: {
+        /**
+         * The modified pool.
+         **/
+        poolId: number;
+
+        /**
+         * The new reward rate per block.
+         **/
+        newRewardRatePerBlock: bigint;
+      };
+    }
   /**
-   * Some storage deposit funds have been transferred and released.
+   * A pool admin was modified.
    **/
-  | { name: 'StorageDepositTransferredAndReleased'; data: { from: H160; to: H160; amount: bigint } };
+  | {
+      name: 'PoolAdminModified';
+      data: {
+        /**
+         * The modified pool.
+         **/
+        poolId: number;
 
-export type PalletReviveExecOrigin = { type: 'Root' } | { type: 'Signed'; value: AccountId32 };
+        /**
+         * The new admin.
+         **/
+        newAdmin: AccountId32;
+      };
+    }
+  /**
+   * A pool expiry block was modified by the admin.
+   **/
+  | {
+      name: 'PoolExpiryBlockModified';
+      data: {
+        /**
+         * The modified pool.
+         **/
+        poolId: number;
 
-export type AssetHubWestendRuntimeRuntime = {};
+        /**
+         * The new expiry block.
+         **/
+        newExpiryBlock: number;
+      };
+    }
+  /**
+   * A pool information was cleared after it's completion.
+   **/
+  | {
+      name: 'PoolCleanedUp';
+      data: {
+        /**
+         * The cleared pool.
+         **/
+        poolId: number;
+      };
+    };
 
 /**
  * Inner events of this pallet.
@@ -2801,15 +2874,25 @@ export type FrameSupportTokensMiscIdAmount = { id: AssetHubWestendRuntimeRuntime
 export type AssetHubWestendRuntimeRuntimeHoldReason =
   | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
   | { type: 'Revive'; value: PalletReviveHoldReason }
+  | { type: 'AssetRewards'; value: PalletAssetRewardsHoldReason }
   | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason };
 
 export type PalletNftFractionalizationHoldReason = 'Fractionalized';
 
 export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
 
+export type PalletAssetRewardsHoldReason = 'PoolCreation';
+
 export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
 
-export type FrameSupportTokensMiscIdAmount002 = { id: []; amount: bigint };
+export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
+  id: AssetHubWestendRuntimeRuntimeFreezeReason;
+  amount: bigint;
+};
+
+export type AssetHubWestendRuntimeRuntimeFreezeReason = { type: 'AssetRewards'; value: PalletAssetRewardsFreezeReason };
+
+export type PalletAssetRewardsFreezeReason = 'Staked';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4961,6 +5044,7 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCall003 }
   | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall }
   | { pallet: 'Revive'; palletCall: PalletReviveCall }
+  | { pallet: 'AssetRewards'; palletCall: PalletAssetRewardsCall }
   | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall }
   | { pallet: 'AssetConversionMigration'; palletCall: PalletAssetConversionOpsCall };
 
@@ -4988,6 +5072,7 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCallLike003 }
   | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike }
   | { pallet: 'Revive'; palletCall: PalletReviveCallLike }
+  | { pallet: 'AssetRewards'; palletCall: PalletAssetRewardsCallLike }
   | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike }
   | { pallet: 'AssetConversionMigration'; palletCall: PalletAssetConversionOpsCallLike };
 
@@ -11738,7 +11823,7 @@ export type PalletReviveCall =
    *
    * # Parameters
    *
-   * * `payload`: The RLP-encoded [`crate::evm::TransactionLegacySigned`].
+   * * `payload`: The encoded [`crate::evm::TransactionSigned`].
    * * `gas_limit`: The gas limit enforced during contract execution.
    * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
    * storage usage.
@@ -11750,7 +11835,7 @@ export type PalletReviveCall =
    * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
    * signer and validating the transaction.
    **/
-  | { name: 'EthTransact'; params: { payload: Bytes; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint } }
+  | { name: 'EthTransact'; params: { payload: Bytes } }
   /**
    * Makes a call to an account, optionally transferring some balance.
    *
@@ -11901,7 +11986,7 @@ export type PalletReviveCallLike =
    *
    * # Parameters
    *
-   * * `payload`: The RLP-encoded [`crate::evm::TransactionLegacySigned`].
+   * * `payload`: The encoded [`crate::evm::TransactionSigned`].
    * * `gas_limit`: The gas limit enforced during contract execution.
    * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
    * storage usage.
@@ -11913,10 +11998,7 @@ export type PalletReviveCallLike =
    * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
    * signer and validating the transaction.
    **/
-  | {
-      name: 'EthTransact';
-      params: { payload: BytesLike; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint };
-    }
+  | { name: 'EthTransact'; params: { payload: BytesLike } }
   /**
    * Makes a call to an account, optionally transferring some balance.
    *
@@ -12060,6 +12142,195 @@ export type PalletReviveCallLike =
    * recovery function in case an `AccountId20` was used without creating a mapping first.
    **/
   | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubWestendRuntimeRuntimeCallLike } };
+
+/**
+ * Pallet's callable functions.
+ **/
+export type PalletAssetRewardsCall =
+  /**
+   * Create a new reward pool.
+   *
+   * Parameters:
+   * - `origin`: must be `Config::CreatePoolOrigin`;
+   * - `staked_asset_id`: the asset to be staked in the pool;
+   * - `reward_asset_id`: the asset to be distributed as rewards;
+   * - `reward_rate_per_block`: the amount of reward tokens distributed per block;
+   * - `expiry`: the block number at which the pool will cease to accumulate rewards. The
+   * [`DispatchTime::After`] variant evaluated at the execution time.
+   * - `admin`: the account allowed to extend the pool expiration, increase the rewards rate
+   * and receive the unutilized reward tokens back after the pool completion. If `None`,
+   * the caller is set as an admin.
+   **/
+  | {
+      name: 'CreatePool';
+      params: {
+        stakedAssetId: StagingXcmV5Location;
+        rewardAssetId: StagingXcmV5Location;
+        rewardRatePerBlock: bigint;
+        expiry: FrameSupportScheduleDispatchTime;
+        admin?: AccountId32 | undefined;
+      };
+    }
+  /**
+   * Stake additional tokens in a pool.
+   *
+   * A freeze is placed on the staked tokens.
+   **/
+  | { name: 'Stake'; params: { poolId: number; amount: bigint } }
+  /**
+   * Unstake tokens from a pool.
+   *
+   * Removes the freeze on the staked tokens.
+   *
+   * Parameters:
+   * - origin: must be the `staker` if the pool is still active. Otherwise, any account.
+   * - pool_id: the pool to unstake from.
+   * - amount: the amount of tokens to unstake.
+   * - staker: the account to unstake from. If `None`, the caller is used.
+   **/
+  | { name: 'Unstake'; params: { poolId: number; amount: bigint; staker?: AccountId32 | undefined } }
+  /**
+   * Harvest unclaimed pool rewards.
+   *
+   * Parameters:
+   * - origin: must be the `staker` if the pool is still active. Otherwise, any account.
+   * - pool_id: the pool to harvest from.
+   * - staker: the account for which to harvest rewards. If `None`, the caller is used.
+   **/
+  | { name: 'HarvestRewards'; params: { poolId: number; staker?: AccountId32 | undefined } }
+  /**
+   * Modify a pool reward rate.
+   *
+   * Currently the reward rate can only be increased.
+   *
+   * Only the pool admin may perform this operation.
+   **/
+  | { name: 'SetPoolRewardRatePerBlock'; params: { poolId: number; newRewardRatePerBlock: bigint } }
+  /**
+   * Modify a pool admin.
+   *
+   * Only the pool admin may perform this operation.
+   **/
+  | { name: 'SetPoolAdmin'; params: { poolId: number; newAdmin: AccountId32 } }
+  /**
+   * Set when the pool should expire.
+   *
+   * Currently the expiry block can only be extended.
+   *
+   * Only the pool admin may perform this operation.
+   **/
+  | { name: 'SetPoolExpiryBlock'; params: { poolId: number; newExpiry: FrameSupportScheduleDispatchTime } }
+  /**
+   * Convenience method to deposit reward tokens into a pool.
+   *
+   * This method is not strictly necessary (tokens could be transferred directly to the
+   * pool pot address), but is provided for convenience so manual derivation of the
+   * account id is not required.
+   **/
+  | { name: 'DepositRewardTokens'; params: { poolId: number; amount: bigint } }
+  /**
+   * Cleanup a pool.
+   *
+   * Origin must be the pool admin.
+   *
+   * Cleanup storage, release any associated storage cost and return the remaining reward
+   * tokens to the admin.
+   **/
+  | { name: 'CleanupPool'; params: { poolId: number } };
+
+export type PalletAssetRewardsCallLike =
+  /**
+   * Create a new reward pool.
+   *
+   * Parameters:
+   * - `origin`: must be `Config::CreatePoolOrigin`;
+   * - `staked_asset_id`: the asset to be staked in the pool;
+   * - `reward_asset_id`: the asset to be distributed as rewards;
+   * - `reward_rate_per_block`: the amount of reward tokens distributed per block;
+   * - `expiry`: the block number at which the pool will cease to accumulate rewards. The
+   * [`DispatchTime::After`] variant evaluated at the execution time.
+   * - `admin`: the account allowed to extend the pool expiration, increase the rewards rate
+   * and receive the unutilized reward tokens back after the pool completion. If `None`,
+   * the caller is set as an admin.
+   **/
+  | {
+      name: 'CreatePool';
+      params: {
+        stakedAssetId: StagingXcmV5Location;
+        rewardAssetId: StagingXcmV5Location;
+        rewardRatePerBlock: bigint;
+        expiry: FrameSupportScheduleDispatchTime;
+        admin?: AccountId32Like | undefined;
+      };
+    }
+  /**
+   * Stake additional tokens in a pool.
+   *
+   * A freeze is placed on the staked tokens.
+   **/
+  | { name: 'Stake'; params: { poolId: number; amount: bigint } }
+  /**
+   * Unstake tokens from a pool.
+   *
+   * Removes the freeze on the staked tokens.
+   *
+   * Parameters:
+   * - origin: must be the `staker` if the pool is still active. Otherwise, any account.
+   * - pool_id: the pool to unstake from.
+   * - amount: the amount of tokens to unstake.
+   * - staker: the account to unstake from. If `None`, the caller is used.
+   **/
+  | { name: 'Unstake'; params: { poolId: number; amount: bigint; staker?: AccountId32Like | undefined } }
+  /**
+   * Harvest unclaimed pool rewards.
+   *
+   * Parameters:
+   * - origin: must be the `staker` if the pool is still active. Otherwise, any account.
+   * - pool_id: the pool to harvest from.
+   * - staker: the account for which to harvest rewards. If `None`, the caller is used.
+   **/
+  | { name: 'HarvestRewards'; params: { poolId: number; staker?: AccountId32Like | undefined } }
+  /**
+   * Modify a pool reward rate.
+   *
+   * Currently the reward rate can only be increased.
+   *
+   * Only the pool admin may perform this operation.
+   **/
+  | { name: 'SetPoolRewardRatePerBlock'; params: { poolId: number; newRewardRatePerBlock: bigint } }
+  /**
+   * Modify a pool admin.
+   *
+   * Only the pool admin may perform this operation.
+   **/
+  | { name: 'SetPoolAdmin'; params: { poolId: number; newAdmin: AccountId32Like } }
+  /**
+   * Set when the pool should expire.
+   *
+   * Currently the expiry block can only be extended.
+   *
+   * Only the pool admin may perform this operation.
+   **/
+  | { name: 'SetPoolExpiryBlock'; params: { poolId: number; newExpiry: FrameSupportScheduleDispatchTime } }
+  /**
+   * Convenience method to deposit reward tokens into a pool.
+   *
+   * This method is not strictly necessary (tokens could be transferred directly to the
+   * pool pot address), but is provided for convenience so manual derivation of the
+   * account id is not required.
+   **/
+  | { name: 'DepositRewardTokens'; params: { poolId: number; amount: bigint } }
+  /**
+   * Cleanup a pool.
+   *
+   * Origin must be the pool admin.
+   *
+   * Cleanup storage, release any associated storage cost and return the remaining reward
+   * tokens to the admin.
+   **/
+  | { name: 'CleanupPool'; params: { poolId: number } };
+
+export type FrameSupportScheduleDispatchTime = { type: 'At'; value: number } | { type: 'After'; value: number };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -12984,13 +13255,6 @@ export type PalletAssetConversionError =
    **/
   | 'BelowMinimum';
 
-export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
-  id: AssetHubWestendRuntimeRuntimeFreezeReason;
-  amount: bigint;
-};
-
-export type AssetHubWestendRuntimeRuntimeFreezeReason = null;
-
 /**
  * The `Error` enum of this pallet.
  **/
@@ -13005,7 +13269,6 @@ export type PalletReviveWasmCodeInfo = {
   deposit: bigint;
   refcount: bigint;
   codeLen: number;
-  apiVersion: number;
   behaviourVersion: number;
 };
 
@@ -13202,6 +13465,10 @@ export type PalletReviveError =
    **/
   | 'BalanceConversionFailed'
   /**
+   * Failed to convert an EVM balance to a native balance.
+   **/
+  | 'DecimalPrecisionLoss'
+  /**
    * Immutable data can only be set during deploys and only be read during calls.
    * Additionally, it is only valid to set the data once and it must not be empty.
    **/
@@ -13215,7 +13482,72 @@ export type PalletReviveError =
   /**
    * Tried to map an account that is already mapped.
    **/
-  | 'AccountAlreadyMapped';
+  | 'AccountAlreadyMapped'
+  /**
+   * The transaction used to dry-run a contract is invalid.
+   **/
+  | 'InvalidGenericTransaction';
+
+export type PalletAssetRewardsPoolStakerInfo = { amount: bigint; rewards: bigint; rewardPerTokenPaid: bigint };
+
+export type PalletAssetRewardsPoolInfo = {
+  stakedAssetId: StagingXcmV5Location;
+  rewardAssetId: StagingXcmV5Location;
+  rewardRatePerBlock: bigint;
+  expiryBlock: number;
+  admin: AccountId32;
+  totalTokensStaked: bigint;
+  rewardPerTokenStored: bigint;
+  lastUpdateBlock: number;
+  account: AccountId32;
+};
+
+export type FrameSupportTokensFungibleHoldConsideration = bigint;
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletAssetRewardsError =
+  /**
+   * The staker does not have enough tokens to perform the operation.
+   **/
+  | 'NotEnoughTokens'
+  /**
+   * An operation was attempted on a non-existent pool.
+   **/
+  | 'NonExistentPool'
+  /**
+   * An operation was attempted for a non-existent staker.
+   **/
+  | 'NonExistentStaker'
+  /**
+   * An operation was attempted with a non-existent asset.
+   **/
+  | 'NonExistentAsset'
+  /**
+   * There was an error converting a block number.
+   **/
+  | 'BlockNumberConversionError'
+  /**
+   * The expiry block must be in the future.
+   **/
+  | 'ExpiryBlockMustBeInTheFuture'
+  /**
+   * Insufficient funds to create the freeze.
+   **/
+  | 'InsufficientFunds'
+  /**
+   * The expiry block can be only extended.
+   **/
+  | 'ExpiryCut'
+  /**
+   * The reward rate per block can be only increased.
+   **/
+  | 'RewardRateCut'
+  /**
+   * The pool still has staked tokens or rewards.
+   **/
+  | 'NonEmptyPool';
 
 /**
  * The `Error` enum of this pallet.
@@ -13238,6 +13570,18 @@ export type PalletAssetConversionOpsError =
    **/
   | 'PartialTransfer';
 
+export type CumulusPalletWeightReclaimStorageWeightReclaim = [
+  FrameSystemExtensionsCheckNonZeroSender,
+  FrameSystemExtensionsCheckSpecVersion,
+  FrameSystemExtensionsCheckTxVersion,
+  FrameSystemExtensionsCheckGenesis,
+  FrameSystemExtensionsCheckMortality,
+  FrameSystemExtensionsCheckNonce,
+  FrameSystemExtensionsCheckWeight,
+  PalletAssetConversionTxPaymentChargeAssetTxPayment,
+  FrameMetadataHashExtensionCheckMetadataHash,
+];
+
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
 export type FrameSystemExtensionsCheckSpecVersion = {};
@@ -13257,11 +13601,11 @@ export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
   assetId?: StagingXcmV5Location | undefined;
 };
 
-export type CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim = {};
-
 export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
 
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
+
+export type AssetHubWestendRuntimeRuntime = {};
 
 export type SpConsensusSlotsSlotDuration = bigint;
 
@@ -13385,9 +13729,7 @@ export type PalletRevivePrimitivesContractResult = {
   gasConsumed: SpWeightsWeightV2Weight;
   gasRequired: SpWeightsWeightV2Weight;
   storageDeposit: PalletRevivePrimitivesStorageDeposit;
-  debugMessage: Bytes;
   result: Result<PalletRevivePrimitivesExecReturnValue, DispatchError>;
-  events?: Array<FrameSystemEventRecord> | undefined;
 };
 
 export type PalletRevivePrimitivesExecReturnValue = { flags: PalletReviveUapiFlagsReturnFlags; data: Bytes };
@@ -13404,9 +13746,7 @@ export type PalletRevivePrimitivesContractResultInstantiateReturnValue = {
   gasConsumed: SpWeightsWeightV2Weight;
   gasRequired: SpWeightsWeightV2Weight;
   storageDeposit: PalletRevivePrimitivesStorageDeposit;
-  debugMessage: Bytes;
   result: Result<PalletRevivePrimitivesInstantiateReturnValue, DispatchError>;
-  events?: Array<FrameSystemEventRecord> | undefined;
 };
 
 export type PalletRevivePrimitivesInstantiateReturnValue = {
@@ -13414,12 +13754,40 @@ export type PalletRevivePrimitivesInstantiateReturnValue = {
   addr: H160;
 };
 
-export type PalletRevivePrimitivesEthContractResult = {
-  fee: bigint;
+export type PalletReviveEvmApiRpcTypesGenGenericTransaction = {
+  accessList?: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry> | undefined;
+  blobVersionedHashes: Array<H256>;
+  blobs: Array<PalletReviveEvmApiByteBytes>;
+  chainId?: U256 | undefined;
+  from?: H160 | undefined;
+  gas?: U256 | undefined;
+  gasPrice?: U256 | undefined;
+  input?: PalletReviveEvmApiByteBytes | undefined;
+  maxFeePerBlobGas?: U256 | undefined;
+  maxFeePerGas?: U256 | undefined;
+  maxPriorityFeePerGas?: U256 | undefined;
+  nonce?: U256 | undefined;
+  to?: H160 | undefined;
+  rType?: PalletReviveEvmApiByte | undefined;
+  value?: U256 | undefined;
+};
+
+export type PalletReviveEvmApiRpcTypesGenAccessListEntry = { address: H160; storageKeys: Array<H256> };
+
+export type PalletReviveEvmApiByteBytes = Bytes;
+
+export type PalletReviveEvmApiByte = number;
+
+export type PalletRevivePrimitivesEthTransactInfo = {
   gasRequired: SpWeightsWeightV2Weight;
   storageDeposit: bigint;
-  result: Result<Bytes, DispatchError>;
+  ethGas: U256;
+  data: Bytes;
 };
+
+export type PalletRevivePrimitivesEthTransactError =
+  | { type: 'Data'; value: Bytes }
+  | { type: 'Message'; value: string };
 
 export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
 
@@ -13448,5 +13816,6 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'ForeignAssetsFreezer'; palletError: PalletAssetsFreezerError }
   | { pallet: 'PoolAssetsFreezer'; palletError: PalletAssetsFreezerError }
   | { pallet: 'Revive'; palletError: PalletReviveError }
+  | { pallet: 'AssetRewards'; palletError: PalletAssetRewardsError }
   | { pallet: 'StateTrieMigration'; palletError: PalletStateTrieMigrationError }
   | { pallet: 'AssetConversionMigration'; palletError: PalletAssetConversionOpsError };

@@ -1777,6 +1777,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     BalanceConversionFailed: GenericPalletError<Rv>;
 
     /**
+     * Failed to convert an EVM balance to a native balance.
+     **/
+    DecimalPrecisionLoss: GenericPalletError<Rv>;
+
+    /**
      * Immutable data can only be set during deploys and only be read during calls.
      * Additionally, it is only valid to set the data once and it must not be empty.
      **/
@@ -1793,6 +1798,70 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Tried to map an account that is already mapped.
      **/
     AccountAlreadyMapped: GenericPalletError<Rv>;
+
+    /**
+     * The transaction used to dry-run a contract is invalid.
+     **/
+    InvalidGenericTransaction: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `AssetRewards`'s errors
+   **/
+  assetRewards: {
+    /**
+     * The staker does not have enough tokens to perform the operation.
+     **/
+    NotEnoughTokens: GenericPalletError<Rv>;
+
+    /**
+     * An operation was attempted on a non-existent pool.
+     **/
+    NonExistentPool: GenericPalletError<Rv>;
+
+    /**
+     * An operation was attempted for a non-existent staker.
+     **/
+    NonExistentStaker: GenericPalletError<Rv>;
+
+    /**
+     * An operation was attempted with a non-existent asset.
+     **/
+    NonExistentAsset: GenericPalletError<Rv>;
+
+    /**
+     * There was an error converting a block number.
+     **/
+    BlockNumberConversionError: GenericPalletError<Rv>;
+
+    /**
+     * The expiry block must be in the future.
+     **/
+    ExpiryBlockMustBeInTheFuture: GenericPalletError<Rv>;
+
+    /**
+     * Insufficient funds to create the freeze.
+     **/
+    InsufficientFunds: GenericPalletError<Rv>;
+
+    /**
+     * The expiry block can be only extended.
+     **/
+    ExpiryCut: GenericPalletError<Rv>;
+
+    /**
+     * The reward rate per block can be only increased.
+     **/
+    RewardRateCut: GenericPalletError<Rv>;
+
+    /**
+     * The pool still has staked tokens or rewards.
+     **/
+    NonEmptyPool: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

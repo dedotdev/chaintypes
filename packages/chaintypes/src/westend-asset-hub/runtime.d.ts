@@ -897,6 +897,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
    **/
   reviveApi: {
     /**
+     * Returns the block gas limit.
+     *
+     * @callname: ReviveApi_block_gas_limit
+     **/
+    blockGasLimit: GenericRuntimeApiMethod<Rv, () => Promise<U256>>;
+
+    /**
      * Returns the free balance of the given `[H160]` address, using EVM decimals.
      *
      * @callname: ReviveApi_balance

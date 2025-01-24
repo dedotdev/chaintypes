@@ -3299,6 +3299,8 @@ export type PalletCollatorSelectionCallLike =
    **/
   | { name: 'TakeCandidateSlot'; params: { deposit: bigint; target: AccountId32Like } };
 
+export type FrameSupportPalletId = FixedBytes<8>;
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -13129,8 +13131,6 @@ export type PalletNftFractionalizationDetails = {
   deposit: bigint;
   assetCreator: AccountId32;
 };
-
-export type FrameSupportPalletId = FixedBytes<8>;
 
 /**
  * The `Error` enum of this pallet.

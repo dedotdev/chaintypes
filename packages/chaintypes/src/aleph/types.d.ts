@@ -68,6 +68,8 @@ export type AlephRuntimeRuntimeEvent =
   | { pallet: 'Identity'; palletEvent: PalletIdentityEvent }
   | { pallet: 'CommitteeManagement'; palletEvent: PalletCommitteeManagementEvent }
   | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
+  | { pallet: 'SafeMode'; palletEvent: PalletSafeModeEvent }
+  | { pallet: 'TxPause'; palletEvent: PalletTxPauseEvent }
   | { pallet: 'Operations'; palletEvent: PalletOperationsEvent };
 
 /**
@@ -97,7 +99,11 @@ export type FrameSystemEvent =
   /**
    * On on-chain remark happened.
    **/
-  | { name: 'Remarked'; data: { sender: AccountId32; hash: H256 } };
+  | { name: 'Remarked'; data: { sender: AccountId32; hash: H256 } }
+  /**
+   * An upgrade was authorized.
+   **/
+  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } };
 
 export type FrameSupportDispatchDispatchClass = 'Normal' | 'Operational' | 'Mandatory';
 
@@ -416,7 +422,38 @@ export type PalletTreasuryEvent =
   /**
    * The inactive funds of the pallet have been updated.
    **/
-  | { name: 'UpdatedInactive'; data: { reactivated: bigint; deactivated: bigint } };
+  | { name: 'UpdatedInactive'; data: { reactivated: bigint; deactivated: bigint } }
+  /**
+   * A new asset spend proposal has been approved.
+   **/
+  | {
+      name: 'AssetSpendApproved';
+      data: {
+        index: number;
+        assetKind: [];
+        amount: bigint;
+        beneficiary: AccountId32;
+        validFrom: number;
+        expireAt: number;
+      };
+    }
+  /**
+   * An approved spend was voided.
+   **/
+  | { name: 'AssetSpendVoided'; data: { index: number } }
+  /**
+   * A payment happened.
+   **/
+  | { name: 'Paid'; data: { index: number; paymentId: [] } }
+  /**
+   * A payment failed and can be retried.
+   **/
+  | { name: 'PaymentFailed'; data: { index: number; paymentId: [] } }
+  /**
+   * A spend was processed and removed from the storage. It might have been successfully
+   * paid or it may have expired.
+   **/
+  | { name: 'SpendProcessed'; data: { index: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -533,11 +570,20 @@ export type PalletSudoEvent =
       name: 'KeyChanged';
       data: {
         /**
-         * The old sudo key if one was previously set.
+         * The old sudo key (if one was previously set).
          **/
-        oldSudoer?: AccountId32 | undefined;
+        old?: AccountId32 | undefined;
+
+        /**
+         * The new sudo key (if one was set).
+         **/
+        new: AccountId32;
       };
     }
+  /**
+   * The key was permanently removed.
+   **/
+  | { name: 'KeyRemoved' }
   /**
    * A [sudo_as](Pallet::sudo_as) call just took place.
    **/
@@ -774,13 +820,32 @@ export type PalletNominationPoolsEvent =
       data: { poolId: number; changeRate: PalletNominationPoolsCommissionChangeRate };
     }
   /**
+   * Pool commission claim permission has been updated.
+   **/
+  | {
+      name: 'PoolCommissionClaimPermissionUpdated';
+      data: { poolId: number; permission?: PalletNominationPoolsCommissionClaimPermission | undefined };
+    }
+  /**
    * Pool commission has been claimed.
    **/
-  | { name: 'PoolCommissionClaimed'; data: { poolId: number; commission: bigint } };
+  | { name: 'PoolCommissionClaimed'; data: { poolId: number; commission: bigint } }
+  /**
+   * Topped up deficit in frozen ED of the reward pool.
+   **/
+  | { name: 'MinBalanceDeficitAdjusted'; data: { poolId: number; amount: bigint } }
+  /**
+   * Claimed excess frozen ED of af the reward pool.
+   **/
+  | { name: 'MinBalanceExcessAdjusted'; data: { poolId: number; amount: bigint } };
 
 export type PalletNominationPoolsPoolState = 'Open' | 'Blocked' | 'Destroying';
 
 export type PalletNominationPoolsCommissionChangeRate = { maxIncrease: Perbill; minDelay: number };
+
+export type PalletNominationPoolsCommissionClaimPermission =
+  | { type: 'Permissionless' }
+  | { type: 'Account'; value: AccountId32 };
 
 /**
  * The `Event` enum of this pallet
@@ -826,7 +891,36 @@ export type PalletIdentityEvent =
    * A sub-identity was cleared, and the given deposit repatriated from the
    * main identity account to the sub-identity account.
    **/
-  | { name: 'SubIdentityRevoked'; data: { sub: AccountId32; main: AccountId32; deposit: bigint } };
+  | { name: 'SubIdentityRevoked'; data: { sub: AccountId32; main: AccountId32; deposit: bigint } }
+  /**
+   * A username authority was added.
+   **/
+  | { name: 'AuthorityAdded'; data: { authority: AccountId32 } }
+  /**
+   * A username authority was removed.
+   **/
+  | { name: 'AuthorityRemoved'; data: { authority: AccountId32 } }
+  /**
+   * A username was set for `who`.
+   **/
+  | { name: 'UsernameSet'; data: { who: AccountId32; username: Bytes } }
+  /**
+   * A username was queued, but `who` must accept it prior to `expiration`.
+   **/
+  | { name: 'UsernameQueued'; data: { who: AccountId32; username: Bytes; expiration: number } }
+  /**
+   * A queued username passed its expiration without being claimed and was removed.
+   **/
+  | { name: 'PreapprovalExpired'; data: { whose: AccountId32 } }
+  /**
+   * A username was set as a primary and can be looked up from `who`.
+   **/
+  | { name: 'PrimaryUsernameSet'; data: { who: AccountId32; username: Bytes } }
+  /**
+   * A dangling username (as in, a username corresponding to an account that has removed its
+   * identity) has been removed.
+   **/
+  | { name: 'DanglingUsernameRemoved'; data: { who: AccountId32; username: Bytes } };
 
 /**
  * The `Event` enum of this pallet
@@ -892,13 +986,75 @@ export type AlephRuntimeProxyType = 'Any' | 'NonTransfer' | 'Staking' | 'Nominat
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletSafeModeEvent =
+  /**
+   * The safe-mode was entered until inclusively this block.
+   **/
+  | { name: 'Entered'; data: { until: number } }
+  /**
+   * The safe-mode was extended until inclusively this block.
+   **/
+  | { name: 'Extended'; data: { until: number } }
+  /**
+   * Exited the safe-mode for a specific reason.
+   **/
+  | { name: 'Exited'; data: { reason: PalletSafeModeExitReason } }
+  /**
+   * An account reserved funds for either entering or extending the safe-mode.
+   **/
+  | { name: 'DepositPlaced'; data: { account: AccountId32; amount: bigint } }
+  /**
+   * An account had a reserve released that was reserved.
+   **/
+  | { name: 'DepositReleased'; data: { account: AccountId32; amount: bigint } }
+  /**
+   * An account had reserve slashed that was reserved.
+   **/
+  | { name: 'DepositSlashed'; data: { account: AccountId32; amount: bigint } }
+  /**
+   * Could not hold funds for entering or extending the safe-mode.
+   *
+   * This error comes from the underlying `Currency`.
+   **/
+  | { name: 'CannotDeposit' }
+  /**
+   * Could not release funds for entering or extending the safe-mode.
+   *
+   * This error comes from the underlying `Currency`.
+   **/
+  | { name: 'CannotRelease' };
+
+export type PalletSafeModeExitReason = 'Timeout' | 'Force';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletTxPauseEvent =
+  /**
+   * This pallet, or a specific call is now paused.
+   **/
+  | { name: 'CallPaused'; data: { fullName: [Bytes, Bytes] } }
+  /**
+   * This pallet, or a specific call is now unpaused.
+   **/
+  | { name: 'CallUnpaused'; data: { fullName: [Bytes, Bytes] } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PalletOperationsEvent =
   /**
-   * An account has fixed its consumers counter underflow
+   * A consumers counter was incremented for an account
    **/
-  { name: 'ConsumersUnderflowFixed'; data: { who: AccountId32 } };
+  | { name: 'ConsumersCounterIncremented'; data: { who: AccountId32 } }
+  /**
+   * A consumers counter was decremented for an account
+   **/
+  | { name: 'ConsumersCounterDecremented'; data: { who: AccountId32 } };
 
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
+
+export type FrameSystemCodeUpgradeAuthorization = { codeHash: H256; checkVersion: boolean };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -935,7 +1091,19 @@ export type FrameSystemCall =
   /**
    * See [`Pallet::remark_with_event`].
    **/
-  | { name: 'RemarkWithEvent'; params: { remark: Bytes } };
+  | { name: 'RemarkWithEvent'; params: { remark: Bytes } }
+  /**
+   * See [`Pallet::authorize_upgrade`].
+   **/
+  | { name: 'AuthorizeUpgrade'; params: { codeHash: H256 } }
+  /**
+   * See [`Pallet::authorize_upgrade_without_checks`].
+   **/
+  | { name: 'AuthorizeUpgradeWithoutChecks'; params: { codeHash: H256 } }
+  /**
+   * See [`Pallet::apply_authorized_upgrade`].
+   **/
+  | { name: 'ApplyAuthorizedUpgrade'; params: { code: Bytes } };
 
 export type FrameSystemCallLike =
   /**
@@ -969,7 +1137,19 @@ export type FrameSystemCallLike =
   /**
    * See [`Pallet::remark_with_event`].
    **/
-  | { name: 'RemarkWithEvent'; params: { remark: BytesLike } };
+  | { name: 'RemarkWithEvent'; params: { remark: BytesLike } }
+  /**
+   * See [`Pallet::authorize_upgrade`].
+   **/
+  | { name: 'AuthorizeUpgrade'; params: { codeHash: H256 } }
+  /**
+   * See [`Pallet::authorize_upgrade_without_checks`].
+   **/
+  | { name: 'AuthorizeUpgradeWithoutChecks'; params: { codeHash: H256 } }
+  /**
+   * See [`Pallet::apply_authorized_upgrade`].
+   **/
+  | { name: 'ApplyAuthorizedUpgrade'; params: { code: BytesLike } };
 
 export type FrameSystemLimitsBlockWeights = {
   baseBlock: SpWeightsWeightV2Weight;
@@ -1027,7 +1207,15 @@ export type FrameSystemError =
   /**
    * The origin filter prevent the call to be dispatched.
    **/
-  | 'CallFiltered';
+  | 'CallFiltered'
+  /**
+   * No upgrade authorized.
+   **/
+  | 'NothingAuthorized'
+  /**
+   * The submitted code is not authorized.
+   **/
+  | 'Unauthorized';
 
 export type PalletSchedulerScheduled = {
   maybeId?: FixedBytes<32> | undefined;
@@ -1061,6 +1249,8 @@ export type AlephRuntimeRuntimeCall =
   | { pallet: 'Identity'; palletCall: PalletIdentityCall }
   | { pallet: 'CommitteeManagement'; palletCall: PalletCommitteeManagementCall }
   | { pallet: 'Proxy'; palletCall: PalletProxyCall }
+  | { pallet: 'SafeMode'; palletCall: PalletSafeModeCall }
+  | { pallet: 'TxPause'; palletCall: PalletTxPauseCall }
   | { pallet: 'Operations'; palletCall: PalletOperationsCall };
 
 export type AlephRuntimeRuntimeCallLike =
@@ -1082,6 +1272,8 @@ export type AlephRuntimeRuntimeCallLike =
   | { pallet: 'Identity'; palletCall: PalletIdentityCallLike }
   | { pallet: 'CommitteeManagement'; palletCall: PalletCommitteeManagementCallLike }
   | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
+  | { pallet: 'SafeMode'; palletCall: PalletSafeModeCallLike }
+  | { pallet: 'TxPause'; palletCall: PalletTxPauseCallLike }
   | { pallet: 'Operations'; palletCall: PalletOperationsCallLike };
 
 /**
@@ -1394,7 +1586,7 @@ export type PalletStakingPalletCall =
   /**
    * See [`Pallet::chill_other`].
    **/
-  | { name: 'ChillOther'; params: { controller: AccountId32 } }
+  | { name: 'ChillOther'; params: { stash: AccountId32 } }
   /**
    * See [`Pallet::force_apply_min_commission`].
    **/
@@ -1402,7 +1594,19 @@ export type PalletStakingPalletCall =
   /**
    * See [`Pallet::set_min_commission`].
    **/
-  | { name: 'SetMinCommission'; params: { new: Perbill } };
+  | { name: 'SetMinCommission'; params: { new: Perbill } }
+  /**
+   * See [`Pallet::payout_stakers_by_page`].
+   **/
+  | { name: 'PayoutStakersByPage'; params: { validatorStash: AccountId32; era: number; page: number } }
+  /**
+   * See [`Pallet::update_payee`].
+   **/
+  | { name: 'UpdatePayee'; params: { controller: AccountId32 } }
+  /**
+   * See [`Pallet::deprecate_controller_batch`].
+   **/
+  | { name: 'DeprecateControllerBatch'; params: { controllers: Array<AccountId32> } };
 
 export type PalletStakingPalletCallLike =
   /**
@@ -1510,7 +1714,7 @@ export type PalletStakingPalletCallLike =
   /**
    * See [`Pallet::chill_other`].
    **/
-  | { name: 'ChillOther'; params: { controller: AccountId32Like } }
+  | { name: 'ChillOther'; params: { stash: AccountId32Like } }
   /**
    * See [`Pallet::force_apply_min_commission`].
    **/
@@ -1518,7 +1722,19 @@ export type PalletStakingPalletCallLike =
   /**
    * See [`Pallet::set_min_commission`].
    **/
-  | { name: 'SetMinCommission'; params: { new: Perbill } };
+  | { name: 'SetMinCommission'; params: { new: Perbill } }
+  /**
+   * See [`Pallet::payout_stakers_by_page`].
+   **/
+  | { name: 'PayoutStakersByPage'; params: { validatorStash: AccountId32Like; era: number; page: number } }
+  /**
+   * See [`Pallet::update_payee`].
+   **/
+  | { name: 'UpdatePayee'; params: { controller: AccountId32Like } }
+  /**
+   * See [`Pallet::deprecate_controller_batch`].
+   **/
+  | { name: 'DeprecateControllerBatch'; params: { controllers: Array<AccountId32Like> } };
 
 export type PalletStakingPalletConfigOp = { type: 'Noop' } | { type: 'Set'; value: bigint } | { type: 'Remove' };
 
@@ -1541,7 +1757,7 @@ export type PalletSessionCall =
   /**
    * See [`Pallet::set_keys`].
    **/
-  | { name: 'SetKeys'; params: { keys: AlephRuntimeSessionKeys; proof: Bytes } }
+  | { name: 'SetKeys'; params: { keys: PrimitivesAlephNodeSessionKeys; proof: Bytes } }
   /**
    * See [`Pallet::purge_keys`].
    **/
@@ -1551,13 +1767,16 @@ export type PalletSessionCallLike =
   /**
    * See [`Pallet::set_keys`].
    **/
-  | { name: 'SetKeys'; params: { keys: AlephRuntimeSessionKeys; proof: BytesLike } }
+  | { name: 'SetKeys'; params: { keys: PrimitivesAlephNodeSessionKeys; proof: BytesLike } }
   /**
    * See [`Pallet::purge_keys`].
    **/
   | { name: 'PurgeKeys' };
 
-export type AlephRuntimeSessionKeys = { aura: SpConsensusAuraSr25519AppSr25519Public; aleph: PrimitivesAppPublic };
+export type PrimitivesAlephNodeSessionKeys = {
+  aura: SpConsensusAuraSr25519AppSr25519Public;
+  aleph: PrimitivesAppPublic;
+};
 
 export type SpConsensusAuraSr25519AppSr25519Public = SpCoreSr25519Public;
 
@@ -1656,13 +1875,32 @@ export type PalletTreasuryCall =
    **/
   | { name: 'ApproveProposal'; params: { proposalId: number } }
   /**
-   * See [`Pallet::spend`].
+   * See [`Pallet::spend_local`].
    **/
-  | { name: 'Spend'; params: { amount: bigint; beneficiary: MultiAddress } }
+  | { name: 'SpendLocal'; params: { amount: bigint; beneficiary: MultiAddress } }
   /**
    * See [`Pallet::remove_approval`].
    **/
-  | { name: 'RemoveApproval'; params: { proposalId: number } };
+  | { name: 'RemoveApproval'; params: { proposalId: number } }
+  /**
+   * See [`Pallet::spend`].
+   **/
+  | {
+      name: 'Spend';
+      params: { assetKind: []; amount: bigint; beneficiary: AccountId32; validFrom?: number | undefined };
+    }
+  /**
+   * See [`Pallet::payout`].
+   **/
+  | { name: 'Payout'; params: { index: number } }
+  /**
+   * See [`Pallet::check_status`].
+   **/
+  | { name: 'CheckStatus'; params: { index: number } }
+  /**
+   * See [`Pallet::void_spend`].
+   **/
+  | { name: 'VoidSpend'; params: { index: number } };
 
 export type PalletTreasuryCallLike =
   /**
@@ -1678,13 +1916,32 @@ export type PalletTreasuryCallLike =
    **/
   | { name: 'ApproveProposal'; params: { proposalId: number } }
   /**
-   * See [`Pallet::spend`].
+   * See [`Pallet::spend_local`].
    **/
-  | { name: 'Spend'; params: { amount: bigint; beneficiary: MultiAddressLike } }
+  | { name: 'SpendLocal'; params: { amount: bigint; beneficiary: MultiAddressLike } }
   /**
    * See [`Pallet::remove_approval`].
    **/
-  | { name: 'RemoveApproval'; params: { proposalId: number } };
+  | { name: 'RemoveApproval'; params: { proposalId: number } }
+  /**
+   * See [`Pallet::spend`].
+   **/
+  | {
+      name: 'Spend';
+      params: { assetKind: []; amount: bigint; beneficiary: AccountId32Like; validFrom?: number | undefined };
+    }
+  /**
+   * See [`Pallet::payout`].
+   **/
+  | { name: 'Payout'; params: { index: number } }
+  /**
+   * See [`Pallet::check_status`].
+   **/
+  | { name: 'CheckStatus'; params: { index: number } }
+  /**
+   * See [`Pallet::void_spend`].
+   **/
+  | { name: 'VoidSpend'; params: { index: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -1712,7 +1969,11 @@ export type PalletVestingCall =
   /**
    * See [`Pallet::merge_schedules`].
    **/
-  | { name: 'MergeSchedules'; params: { schedule1Index: number; schedule2Index: number } };
+  | { name: 'MergeSchedules'; params: { schedule1Index: number; schedule2Index: number } }
+  /**
+   * See [`Pallet::force_remove_vesting_schedule`].
+   **/
+  | { name: 'ForceRemoveVestingSchedule'; params: { target: MultiAddress; scheduleIndex: number } };
 
 export type PalletVestingCallLike =
   /**
@@ -1737,7 +1998,11 @@ export type PalletVestingCallLike =
   /**
    * See [`Pallet::merge_schedules`].
    **/
-  | { name: 'MergeSchedules'; params: { schedule1Index: number; schedule2Index: number } };
+  | { name: 'MergeSchedules'; params: { schedule1Index: number; schedule2Index: number } }
+  /**
+   * See [`Pallet::force_remove_vesting_schedule`].
+   **/
+  | { name: 'ForceRemoveVestingSchedule'; params: { target: MultiAddressLike; scheduleIndex: number } };
 
 export type PalletVestingVestingInfo = { locked: bigint; perBlock: bigint; startingBlock: number };
 
@@ -1920,7 +2185,11 @@ export type PalletSudoCall =
   /**
    * See [`Pallet::sudo_as`].
    **/
-  | { name: 'SudoAs'; params: { who: MultiAddress; call: AlephRuntimeRuntimeCall } };
+  | { name: 'SudoAs'; params: { who: MultiAddress; call: AlephRuntimeRuntimeCall } }
+  /**
+   * See [`Pallet::remove_key`].
+   **/
+  | { name: 'RemoveKey' };
 
 export type PalletSudoCallLike =
   /**
@@ -1938,7 +2207,11 @@ export type PalletSudoCallLike =
   /**
    * See [`Pallet::sudo_as`].
    **/
-  | { name: 'SudoAs'; params: { who: MultiAddressLike; call: AlephRuntimeRuntimeCallLike } };
+  | { name: 'SudoAs'; params: { who: MultiAddressLike; call: AlephRuntimeRuntimeCallLike } }
+  /**
+   * See [`Pallet::remove_key`].
+   **/
+  | { name: 'RemoveKey' };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2266,7 +2539,18 @@ export type PalletNominationPoolsCall =
   /**
    * See [`Pallet::claim_commission`].
    **/
-  | { name: 'ClaimCommission'; params: { poolId: number } };
+  | { name: 'ClaimCommission'; params: { poolId: number } }
+  /**
+   * See [`Pallet::adjust_pool_deposit`].
+   **/
+  | { name: 'AdjustPoolDeposit'; params: { poolId: number } }
+  /**
+   * See [`Pallet::set_commission_claim_permission`].
+   **/
+  | {
+      name: 'SetCommissionClaimPermission';
+      params: { poolId: number; permission?: PalletNominationPoolsCommissionClaimPermission | undefined };
+    };
 
 export type PalletNominationPoolsCallLike =
   /**
@@ -2385,7 +2669,18 @@ export type PalletNominationPoolsCallLike =
   /**
    * See [`Pallet::claim_commission`].
    **/
-  | { name: 'ClaimCommission'; params: { poolId: number } };
+  | { name: 'ClaimCommission'; params: { poolId: number } }
+  /**
+   * See [`Pallet::adjust_pool_deposit`].
+   **/
+  | { name: 'AdjustPoolDeposit'; params: { poolId: number } }
+  /**
+   * See [`Pallet::set_commission_claim_permission`].
+   **/
+  | {
+      name: 'SetCommissionClaimPermission';
+      params: { poolId: number; permission?: PalletNominationPoolsCommissionClaimPermission | undefined };
+    };
 
 export type PalletNominationPoolsBondExtra = { type: 'FreeBalance'; value: bigint } | { type: 'Rewards' };
 
@@ -2420,7 +2715,7 @@ export type PalletIdentityCall =
   /**
    * See [`Pallet::set_identity`].
    **/
-  | { name: 'SetIdentity'; params: { info: PalletIdentityIdentityInfo } }
+  | { name: 'SetIdentity'; params: { info: PalletIdentityLegacyIdentityInfo } }
   /**
    * See [`Pallet::set_subs`].
    **/
@@ -2448,7 +2743,7 @@ export type PalletIdentityCall =
   /**
    * See [`Pallet::set_fields`].
    **/
-  | { name: 'SetFields'; params: { index: number; fields: PalletIdentityBitFlags } }
+  | { name: 'SetFields'; params: { index: number; fields: bigint } }
   /**
    * See [`Pallet::provide_judgement`].
    **/
@@ -2475,7 +2770,38 @@ export type PalletIdentityCall =
   /**
    * See [`Pallet::quit_sub`].
    **/
-  | { name: 'QuitSub' };
+  | { name: 'QuitSub' }
+  /**
+   * See [`Pallet::add_username_authority`].
+   **/
+  | { name: 'AddUsernameAuthority'; params: { authority: MultiAddress; suffix: Bytes; allocation: number } }
+  /**
+   * See [`Pallet::remove_username_authority`].
+   **/
+  | { name: 'RemoveUsernameAuthority'; params: { authority: MultiAddress } }
+  /**
+   * See [`Pallet::set_username_for`].
+   **/
+  | {
+      name: 'SetUsernameFor';
+      params: { who: MultiAddress; username: Bytes; signature?: SpRuntimeMultiSignature | undefined };
+    }
+  /**
+   * See [`Pallet::accept_username`].
+   **/
+  | { name: 'AcceptUsername'; params: { username: Bytes } }
+  /**
+   * See [`Pallet::remove_expired_approval`].
+   **/
+  | { name: 'RemoveExpiredApproval'; params: { username: Bytes } }
+  /**
+   * See [`Pallet::set_primary_username`].
+   **/
+  | { name: 'SetPrimaryUsername'; params: { username: Bytes } }
+  /**
+   * See [`Pallet::remove_dangling_username`].
+   **/
+  | { name: 'RemoveDanglingUsername'; params: { username: Bytes } };
 
 export type PalletIdentityCallLike =
   /**
@@ -2485,7 +2811,7 @@ export type PalletIdentityCallLike =
   /**
    * See [`Pallet::set_identity`].
    **/
-  | { name: 'SetIdentity'; params: { info: PalletIdentityIdentityInfo } }
+  | { name: 'SetIdentity'; params: { info: PalletIdentityLegacyIdentityInfo } }
   /**
    * See [`Pallet::set_subs`].
    **/
@@ -2513,7 +2839,7 @@ export type PalletIdentityCallLike =
   /**
    * See [`Pallet::set_fields`].
    **/
-  | { name: 'SetFields'; params: { index: number; fields: PalletIdentityBitFlags } }
+  | { name: 'SetFields'; params: { index: number; fields: bigint } }
   /**
    * See [`Pallet::provide_judgement`].
    **/
@@ -2540,9 +2866,40 @@ export type PalletIdentityCallLike =
   /**
    * See [`Pallet::quit_sub`].
    **/
-  | { name: 'QuitSub' };
+  | { name: 'QuitSub' }
+  /**
+   * See [`Pallet::add_username_authority`].
+   **/
+  | { name: 'AddUsernameAuthority'; params: { authority: MultiAddressLike; suffix: BytesLike; allocation: number } }
+  /**
+   * See [`Pallet::remove_username_authority`].
+   **/
+  | { name: 'RemoveUsernameAuthority'; params: { authority: MultiAddressLike } }
+  /**
+   * See [`Pallet::set_username_for`].
+   **/
+  | {
+      name: 'SetUsernameFor';
+      params: { who: MultiAddressLike; username: BytesLike; signature?: SpRuntimeMultiSignature | undefined };
+    }
+  /**
+   * See [`Pallet::accept_username`].
+   **/
+  | { name: 'AcceptUsername'; params: { username: BytesLike } }
+  /**
+   * See [`Pallet::remove_expired_approval`].
+   **/
+  | { name: 'RemoveExpiredApproval'; params: { username: BytesLike } }
+  /**
+   * See [`Pallet::set_primary_username`].
+   **/
+  | { name: 'SetPrimaryUsername'; params: { username: BytesLike } }
+  /**
+   * See [`Pallet::remove_dangling_username`].
+   **/
+  | { name: 'RemoveDanglingUsername'; params: { username: BytesLike } };
 
-export type PalletIdentityIdentityInfo = {
+export type PalletIdentityLegacyIdentityInfo = {
   additional: Array<[Data, Data]>;
   display: Data;
   legal: Data;
@@ -2554,18 +2911,6 @@ export type PalletIdentityIdentityInfo = {
   twitter: Data;
 };
 
-export type PalletIdentityBitFlags = bigint;
-
-export type PalletIdentityIdentityField =
-  | 'Display'
-  | 'Legal'
-  | 'Web'
-  | 'Riot'
-  | 'Email'
-  | 'PgpFingerprint'
-  | 'Image'
-  | 'Twitter';
-
 export type PalletIdentityJudgement =
   | { type: 'Unknown' }
   | { type: 'FeePaid'; value: bigint }
@@ -2574,6 +2919,17 @@ export type PalletIdentityJudgement =
   | { type: 'OutOfDate' }
   | { type: 'LowQuality' }
   | { type: 'Erroneous' };
+
+export type SpRuntimeMultiSignature =
+  | { type: 'Ed25519'; value: SpCoreEd25519Signature }
+  | { type: 'Sr25519'; value: SpCoreSr25519Signature }
+  | { type: 'Ecdsa'; value: SpCoreEcdsaSignature };
+
+export type SpCoreEd25519Signature = FixedBytes<64>;
+
+export type SpCoreSr25519Signature = FixedBytes<64>;
+
+export type SpCoreEcdsaSignature = FixedBytes<65>;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2764,17 +3120,111 @@ export type PalletProxyCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletSafeModeCall =
+  /**
+   * See [`Pallet::enter`].
+   **/
+  | { name: 'Enter' }
+  /**
+   * See [`Pallet::force_enter`].
+   **/
+  | { name: 'ForceEnter' }
+  /**
+   * See [`Pallet::extend`].
+   **/
+  | { name: 'Extend' }
+  /**
+   * See [`Pallet::force_extend`].
+   **/
+  | { name: 'ForceExtend' }
+  /**
+   * See [`Pallet::force_exit`].
+   **/
+  | { name: 'ForceExit' }
+  /**
+   * See [`Pallet::force_slash_deposit`].
+   **/
+  | { name: 'ForceSlashDeposit'; params: { account: AccountId32; block: number } }
+  /**
+   * See [`Pallet::release_deposit`].
+   **/
+  | { name: 'ReleaseDeposit'; params: { account: AccountId32; block: number } }
+  /**
+   * See [`Pallet::force_release_deposit`].
+   **/
+  | { name: 'ForceReleaseDeposit'; params: { account: AccountId32; block: number } };
+
+export type PalletSafeModeCallLike =
+  /**
+   * See [`Pallet::enter`].
+   **/
+  | { name: 'Enter' }
+  /**
+   * See [`Pallet::force_enter`].
+   **/
+  | { name: 'ForceEnter' }
+  /**
+   * See [`Pallet::extend`].
+   **/
+  | { name: 'Extend' }
+  /**
+   * See [`Pallet::force_extend`].
+   **/
+  | { name: 'ForceExtend' }
+  /**
+   * See [`Pallet::force_exit`].
+   **/
+  | { name: 'ForceExit' }
+  /**
+   * See [`Pallet::force_slash_deposit`].
+   **/
+  | { name: 'ForceSlashDeposit'; params: { account: AccountId32Like; block: number } }
+  /**
+   * See [`Pallet::release_deposit`].
+   **/
+  | { name: 'ReleaseDeposit'; params: { account: AccountId32Like; block: number } }
+  /**
+   * See [`Pallet::force_release_deposit`].
+   **/
+  | { name: 'ForceReleaseDeposit'; params: { account: AccountId32Like; block: number } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletTxPauseCall =
+  /**
+   * See [`Pallet::pause`].
+   **/
+  | { name: 'Pause'; params: { fullName: [Bytes, Bytes] } }
+  /**
+   * See [`Pallet::unpause`].
+   **/
+  | { name: 'Unpause'; params: { ident: [Bytes, Bytes] } };
+
+export type PalletTxPauseCallLike =
+  /**
+   * See [`Pallet::pause`].
+   **/
+  | { name: 'Pause'; params: { fullName: [BytesLike, BytesLike] } }
+  /**
+   * See [`Pallet::unpause`].
+   **/
+  | { name: 'Unpause'; params: { ident: [BytesLike, BytesLike] } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletOperationsCall =
   /**
-   * See [`Pallet::fix_accounts_consumers_underflow`].
+   * See [`Pallet::fix_accounts_consumers_counter`].
    **/
-  { name: 'FixAccountsConsumersUnderflow'; params: { who: AccountId32 } };
+  { name: 'FixAccountsConsumersCounter'; params: { who: AccountId32 } };
 
 export type PalletOperationsCallLike =
   /**
-   * See [`Pallet::fix_accounts_consumers_underflow`].
+   * See [`Pallet::fix_accounts_consumers_counter`].
    **/
-  { name: 'FixAccountsConsumersUnderflow'; params: { who: AccountId32Like } };
+  { name: 'FixAccountsConsumersCounter'; params: { who: AccountId32Like } };
 
 export type SpRuntimeBlakeTwo256 = {};
 
@@ -2813,11 +3263,19 @@ export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
 export type PalletBalancesIdAmount = { id: AlephRuntimeRuntimeHoldReason; amount: bigint };
 
-export type AlephRuntimeRuntimeHoldReason = { type: 'Contracts'; value: PalletContractsHoldReason };
+export type AlephRuntimeRuntimeHoldReason =
+  | { type: 'Contracts'; value: PalletContractsHoldReason }
+  | { type: 'SafeMode'; value: PalletSafeModeHoldReason };
 
 export type PalletContractsHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve';
 
-export type PalletBalancesIdAmount002 = { id: []; amount: bigint };
+export type PalletSafeModeHoldReason = 'EnterOrExtend';
+
+export type PalletBalancesIdAmountRuntimeFreezeReason = { id: AlephRuntimeRuntimeFreezeReason; amount: bigint };
+
+export type AlephRuntimeRuntimeFreezeReason = { type: 'NominationPools'; value: PalletNominationPoolsFreezeReason };
+
+export type PalletNominationPoolsFreezeReason = 'PoolMinBalance';
 
 /**
  * The `Error` enum of this pallet.
@@ -2871,7 +3329,7 @@ export type PalletStakingStakingLedger = {
   total: bigint;
   active: bigint;
   unlocking: Array<PalletStakingUnlockChunk>;
-  claimedRewards: Array<number>;
+  legacyClaimedRewards: Array<number>;
 };
 
 export type PalletStakingUnlockChunk = { value: bigint; era: number };
@@ -2880,9 +3338,13 @@ export type PalletStakingNominations = { targets: Array<AccountId32>; submittedI
 
 export type PalletStakingActiveEraInfo = { index: number; start?: bigint | undefined };
 
-export type PalletStakingExposure = { total: bigint; own: bigint; others: Array<PalletStakingIndividualExposure> };
+export type SpStakingExposure = { total: bigint; own: bigint; others: Array<SpStakingIndividualExposure> };
 
-export type PalletStakingIndividualExposure = { who: AccountId32; value: bigint };
+export type SpStakingIndividualExposure = { who: AccountId32; value: bigint };
+
+export type SpStakingPagedExposureMetadata = { total: bigint; own: bigint; nominatorCount: number; pageCount: number };
+
+export type SpStakingExposurePage = { pageTotal: bigint; others: Array<SpStakingIndividualExposure> };
 
 export type PalletStakingEraRewardPoints = { total: number; individual: Array<[AccountId32, number]> };
 
@@ -2970,6 +3432,10 @@ export type PalletStakingPalletError =
    **/
   | 'AlreadyClaimed'
   /**
+   * No nominators exist on this page.
+   **/
+  | 'InvalidPage'
+  /**
    * Incorrect previous history depth input provided.
    **/
   | 'IncorrectHistoryDepth'
@@ -3010,7 +3476,11 @@ export type PalletStakingPalletError =
   /**
    * Some bound is not met.
    **/
-  | 'BoundNotMet';
+  | 'BoundNotMet'
+  /**
+   * Used when attempting to use deprecated controller account logic.
+   **/
+  | 'ControllerDeprecated';
 
 export type SpCoreCryptoKeyTypeId = FixedBytes<4>;
 
@@ -3053,6 +3523,20 @@ export type PalletElectionsError =
 
 export type PalletTreasuryProposal = { proposer: AccountId32; value: bigint; beneficiary: AccountId32; bond: bigint };
 
+export type PalletTreasurySpendStatus = {
+  assetKind: [];
+  amount: bigint;
+  beneficiary: AccountId32;
+  validFrom: number;
+  expireAt: number;
+  status: PalletTreasuryPaymentState;
+};
+
+export type PalletTreasuryPaymentState =
+  | { type: 'Pending' }
+  | { type: 'Attempted'; value: { id: [] } }
+  | { type: 'Failed' };
+
 export type FrameSupportPalletId = FixedBytes<8>;
 
 /**
@@ -3064,7 +3548,7 @@ export type PalletTreasuryError =
    **/
   | 'InsufficientProposersBalance'
   /**
-   * No proposal or bounty at that index.
+   * No proposal, bounty or spend at that index.
    **/
   | 'InvalidIndex'
   /**
@@ -3079,7 +3563,35 @@ export type PalletTreasuryError =
   /**
    * Proposal has not been approved.
    **/
-  | 'ProposalNotApproved';
+  | 'ProposalNotApproved'
+  /**
+   * The balance of the asset kind is not convertible to the balance of the native asset.
+   **/
+  | 'FailedToConvertBalance'
+  /**
+   * The spend has expired and cannot be claimed.
+   **/
+  | 'SpendExpired'
+  /**
+   * The spend is not yet eligible for payout.
+   **/
+  | 'EarlyPayout'
+  /**
+   * The payment has already been attempted.
+   **/
+  | 'AlreadyAttempted'
+  /**
+   * There was some issue with the mechanism of payment.
+   **/
+  | 'PayoutError'
+  /**
+   * The payout was not yet attempted/claimed.
+   **/
+  | 'NotAttempted'
+  /**
+   * The payment has neither failed nor succeeded yet.
+   **/
+  | 'Inconclusive';
 
 export type PalletVestingReleases = 'V0' | 'V1';
 
@@ -3187,11 +3699,11 @@ export type PalletMultisigError =
   | 'AlreadyStored';
 
 /**
- * Error for the Sudo pallet
+ * Error for the Sudo pallet.
  **/
 export type PalletSudoError =
   /**
-   * Sender must be the Sudo account
+   * Sender must be the Sudo account.
    **/
   'RequireSudo';
 
@@ -3411,6 +3923,10 @@ export type PalletContractsError =
    **/
   | 'NoChainExtension'
   /**
+   * Failed to decode the XCM program.
+   **/
+  | 'XcmDecodeFailed'
+  /**
    * A contract with the same AccountId already exists.
    **/
   | 'DuplicateContract'
@@ -3506,6 +4022,7 @@ export type PalletNominationPoolsCommission = {
   max?: Perbill | undefined;
   changeRate?: PalletNominationPoolsCommissionChangeRate | undefined;
   throttleFrom?: number | undefined;
+  claimPermission?: PalletNominationPoolsCommissionClaimPermission | undefined;
 };
 
 export type PalletNominationPoolsPoolRoles = {
@@ -3571,9 +4088,9 @@ export type PalletNominationPoolsError =
   /**
    * The amount does not meet the minimum bond to either join or create a pool.
    *
-   * The depositor can never unbond to a value less than
-   * `Pallet::depositor_min_bond`. The caller does not have nominating
-   * permissions for the pool. Members can never unbond to a value below `MinJoinBond`.
+   * The depositor can never unbond to a value less than `Pallet::depositor_min_bond`. The
+   * caller does not have nominating permissions for the pool. Members can never unbond to a
+   * value below `MinJoinBond`.
    **/
   | { name: 'MinimumBondNotMet' }
   /**
@@ -3665,7 +4182,11 @@ export type PalletNominationPoolsError =
   /**
    * Bonding extra is restricted to the exact pending reward amount.
    **/
-  | { name: 'BondExtraRestricted' };
+  | { name: 'BondExtraRestricted' }
+  /**
+   * No imbalance in the ED deposit for the pool.
+   **/
+  | { name: 'NothingToAdjust' };
 
 export type PalletNominationPoolsDefensiveError =
   | 'NotEnoughSpaceInUnbondPool'
@@ -3677,10 +4198,12 @@ export type PalletNominationPoolsDefensiveError =
 export type PalletIdentityRegistration = {
   judgements: Array<[number, PalletIdentityJudgement]>;
   deposit: bigint;
-  info: PalletIdentityIdentityInfo;
+  info: PalletIdentityLegacyIdentityInfo;
 };
 
-export type PalletIdentityRegistrarInfo = { account: AccountId32; fee: bigint; fields: PalletIdentityBitFlags };
+export type PalletIdentityRegistrarInfo = { account: AccountId32; fee: bigint; fields: bigint };
+
+export type PalletIdentityAuthorityProperties = { suffix: Bytes; allocation: number };
 
 /**
  * The `Error` enum of this pallet.
@@ -3731,10 +4254,6 @@ export type PalletIdentityError =
    **/
   | 'InvalidTarget'
   /**
-   * Too many additional fields.
-   **/
-  | 'TooManyFields'
-  /**
    * Maximum amount of registrars reached. Cannot add any more.
    **/
   | 'TooManyRegistrars'
@@ -3757,7 +4276,43 @@ export type PalletIdentityError =
   /**
    * Error that occurs when there is an issue paying for judgement.
    **/
-  | 'JudgementPaymentFailed';
+  | 'JudgementPaymentFailed'
+  /**
+   * The provided suffix is too long.
+   **/
+  | 'InvalidSuffix'
+  /**
+   * The sender does not have permission to issue a username.
+   **/
+  | 'NotUsernameAuthority'
+  /**
+   * The authority cannot allocate any more usernames.
+   **/
+  | 'NoAllocation'
+  /**
+   * The signature on a username was not valid.
+   **/
+  | 'InvalidSignature'
+  /**
+   * Setting this username requires a signature, but none was provided.
+   **/
+  | 'RequiresSignature'
+  /**
+   * The username does not meet the requirements.
+   **/
+  | 'InvalidUsername'
+  /**
+   * The username is already taken.
+   **/
+  | 'UsernameTaken'
+  /**
+   * The requested username does not exist.
+   **/
+  | 'NoUsername'
+  /**
+   * The username cannot be forcefully removed because it can still be accepted.
+   **/
+  | 'NotExpired';
 
 export type PalletCommitteeManagementValidatorTotalRewards = Array<[AccountId32, number]>;
 
@@ -3830,16 +4385,56 @@ export type PalletProxyError =
    **/
   | 'NoSelfProxy';
 
-export type SpRuntimeMultiSignature =
-  | { type: 'Ed25519'; value: SpCoreEd25519Signature }
-  | { type: 'Sr25519'; value: SpCoreSr25519Signature }
-  | { type: 'Ecdsa'; value: SpCoreEcdsaSignature };
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletSafeModeError =
+  /**
+   * The safe-mode is (already or still) entered.
+   **/
+  | 'Entered'
+  /**
+   * The safe-mode is (already or still) exited.
+   **/
+  | 'Exited'
+  /**
+   * This functionality of the pallet is disabled by the configuration.
+   **/
+  | 'NotConfigured'
+  /**
+   * There is no balance reserved.
+   **/
+  | 'NoDeposit'
+  /**
+   * The account already has a deposit reserved and can therefore not enter or extend again.
+   **/
+  | 'AlreadyDeposited'
+  /**
+   * This deposit cannot be released yet.
+   **/
+  | 'CannotReleaseYet'
+  /**
+   * An error from the underlying `Currency`.
+   **/
+  | 'CurrencyError';
 
-export type SpCoreEd25519Signature = FixedBytes<64>;
-
-export type SpCoreSr25519Signature = FixedBytes<64>;
-
-export type SpCoreEcdsaSignature = FixedBytes<65>;
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletTxPauseError =
+  /**
+   * The call is paused.
+   **/
+  | 'IsPaused'
+  /**
+   * The call is unpaused.
+   **/
+  | 'IsUnpaused'
+  /**
+   * The call is whitelisted and cannot be paused.
+   **/
+  | 'Unpausable'
+  | 'NotFound';
 
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
@@ -3934,9 +4529,9 @@ export type PalletContractsPrimitivesContractResult = {
   events?: Array<FrameSystemEventRecord> | undefined;
 };
 
-export type PalletContractsPrimitivesExecReturnValue = { flags: PalletContractsPrimitivesReturnFlags; data: Bytes };
+export type PalletContractsPrimitivesExecReturnValue = { flags: PalletContractsUapiFlagsReturnFlags; data: Bytes };
 
-export type PalletContractsPrimitivesReturnFlags = { bits: number };
+export type PalletContractsUapiFlagsReturnFlags = { bits: number };
 
 export type PalletContractsPrimitivesStorageDeposit =
   | { type: 'Refund'; value: bigint }
@@ -3978,4 +4573,6 @@ export type AlephRuntimeRuntimeError =
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }
   | { pallet: 'Identity'; palletError: PalletIdentityError }
   | { pallet: 'CommitteeManagement'; palletError: PalletCommitteeManagementError }
-  | { pallet: 'Proxy'; palletError: PalletProxyError };
+  | { pallet: 'Proxy'; palletError: PalletProxyError }
+  | { pallet: 'SafeMode'; palletError: PalletSafeModeError }
+  | { pallet: 'TxPause'; palletError: PalletTxPauseError };

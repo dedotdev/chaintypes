@@ -14,11 +14,11 @@ import type {
   MultiAddressLike,
   Extrinsic,
   BytesLike,
+  H256,
   FixedBytes,
   AccountId32Like,
   Percent,
   Perbill,
-  H256,
   Data,
 } from 'dedot/codecs';
 import type {
@@ -31,7 +31,7 @@ import type {
   PalletStakingPalletConfigOpU32,
   PalletStakingPalletConfigOpPercent,
   PalletStakingPalletConfigOpPerbill,
-  AlephRuntimeSessionKeys,
+  PrimitivesAlephNodeSessionKeys,
   PrimitivesAppPublic,
   PrimitivesCommitteeSeats,
   PrimitivesElectionOpenness,
@@ -48,8 +48,8 @@ import type {
   PalletNominationPoolsConfigOp004,
   PalletNominationPoolsClaimPermission,
   PalletNominationPoolsCommissionChangeRate,
-  PalletIdentityIdentityInfo,
-  PalletIdentityBitFlags,
+  PalletNominationPoolsCommissionClaimPermission,
+  PalletIdentityLegacyIdentityInfo,
   PalletIdentityJudgement,
   AlephRuntimeProxyType,
 } from './types';
@@ -220,6 +220,63 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'RemarkWithEvent';
             params: { remark: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::authorize_upgrade`].
+     *
+     * @param {H256} codeHash
+     **/
+    authorizeUpgrade: GenericTxCall<
+      Rv,
+      (codeHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'System';
+          palletCall: {
+            name: 'AuthorizeUpgrade';
+            params: { codeHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::authorize_upgrade_without_checks`].
+     *
+     * @param {H256} codeHash
+     **/
+    authorizeUpgradeWithoutChecks: GenericTxCall<
+      Rv,
+      (codeHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'System';
+          palletCall: {
+            name: 'AuthorizeUpgradeWithoutChecks';
+            params: { codeHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::apply_authorized_upgrade`].
+     *
+     * @param {BytesLike} code
+     **/
+    applyAuthorizedUpgrade: GenericTxCall<
+      Rv,
+      (code: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'System';
+          palletCall: {
+            name: 'ApplyAuthorizedUpgrade';
+            params: { code: BytesLike };
           };
         }
       >
@@ -1084,17 +1141,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * See [`Pallet::chill_other`].
      *
-     * @param {AccountId32Like} controller
+     * @param {AccountId32Like} stash
      **/
     chillOther: GenericTxCall<
       Rv,
-      (controller: AccountId32Like) => ChainSubmittableExtrinsic<
+      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'ChillOther';
-            params: { controller: AccountId32Like };
+            params: { stash: AccountId32Like };
           };
         }
       >
@@ -1139,6 +1196,69 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * See [`Pallet::payout_stakers_by_page`].
+     *
+     * @param {AccountId32Like} validatorStash
+     * @param {number} era
+     * @param {number} page
+     **/
+    payoutStakersByPage: GenericTxCall<
+      Rv,
+      (
+        validatorStash: AccountId32Like,
+        era: number,
+        page: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'PayoutStakersByPage';
+            params: { validatorStash: AccountId32Like; era: number; page: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::update_payee`].
+     *
+     * @param {AccountId32Like} controller
+     **/
+    updatePayee: GenericTxCall<
+      Rv,
+      (controller: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'UpdatePayee';
+            params: { controller: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::deprecate_controller_batch`].
+     *
+     * @param {Array<AccountId32Like>} controllers
+     **/
+    deprecateControllerBatch: GenericTxCall<
+      Rv,
+      (controllers: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'DeprecateControllerBatch';
+            params: { controllers: Array<AccountId32Like> };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -1150,13 +1270,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * See [`Pallet::set_keys`].
      *
-     * @param {AlephRuntimeSessionKeys} keys
+     * @param {PrimitivesAlephNodeSessionKeys} keys
      * @param {BytesLike} proof
      **/
     setKeys: GenericTxCall<
       Rv,
       (
-        keys: AlephRuntimeSessionKeys,
+        keys: PrimitivesAlephNodeSessionKeys,
         proof: BytesLike,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -1164,7 +1284,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Session';
           palletCall: {
             name: 'SetKeys';
-            params: { keys: AlephRuntimeSessionKeys; proof: BytesLike };
+            params: { keys: PrimitivesAlephNodeSessionKeys; proof: BytesLike };
           };
         }
       >
@@ -1389,12 +1509,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * See [`Pallet::spend`].
+     * See [`Pallet::spend_local`].
      *
      * @param {bigint} amount
      * @param {MultiAddressLike} beneficiary
      **/
-    spend: GenericTxCall<
+    spendLocal: GenericTxCall<
       Rv,
       (
         amount: bigint,
@@ -1404,7 +1524,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         {
           pallet: 'Treasury';
           palletCall: {
-            name: 'Spend';
+            name: 'SpendLocal';
             params: { amount: bigint; beneficiary: MultiAddressLike };
           };
         }
@@ -1425,6 +1545,90 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'RemoveApproval';
             params: { proposalId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::spend`].
+     *
+     * @param {[]} assetKind
+     * @param {bigint} amount
+     * @param {AccountId32Like} beneficiary
+     * @param {number | undefined} validFrom
+     **/
+    spend: GenericTxCall<
+      Rv,
+      (
+        assetKind: [],
+        amount: bigint,
+        beneficiary: AccountId32Like,
+        validFrom: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'Spend';
+            params: { assetKind: []; amount: bigint; beneficiary: AccountId32Like; validFrom: number | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::payout`].
+     *
+     * @param {number} index
+     **/
+    payout: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'Payout';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::check_status`].
+     *
+     * @param {number} index
+     **/
+    checkStatus: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'CheckStatus';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::void_spend`].
+     *
+     * @param {number} index
+     **/
+    voidSpend: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'VoidSpend';
+            params: { index: number };
           };
         }
       >
@@ -1541,6 +1745,29 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'MergeSchedules';
             params: { schedule1Index: number; schedule2Index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::force_remove_vesting_schedule`].
+     *
+     * @param {MultiAddressLike} target
+     * @param {number} scheduleIndex
+     **/
+    forceRemoveVestingSchedule: GenericTxCall<
+      Rv,
+      (
+        target: MultiAddressLike,
+        scheduleIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Vesting';
+          palletCall: {
+            name: 'ForceRemoveVestingSchedule';
+            params: { target: MultiAddressLike; scheduleIndex: number };
           };
         }
       >
@@ -1903,6 +2130,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SudoAs';
             params: { who: MultiAddressLike; call: AlephRuntimeRuntimeCallLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::remove_key`].
+     *
+     **/
+    removeKey: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Sudo';
+          palletCall: {
+            name: 'RemoveKey';
           };
         }
       >
@@ -2736,6 +2980,48 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * See [`Pallet::adjust_pool_deposit`].
+     *
+     * @param {number} poolId
+     **/
+    adjustPoolDeposit: GenericTxCall<
+      Rv,
+      (poolId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'AdjustPoolDeposit';
+            params: { poolId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::set_commission_claim_permission`].
+     *
+     * @param {number} poolId
+     * @param {PalletNominationPoolsCommissionClaimPermission | undefined} permission
+     **/
+    setCommissionClaimPermission: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        permission: PalletNominationPoolsCommissionClaimPermission | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'SetCommissionClaimPermission';
+            params: { poolId: number; permission: PalletNominationPoolsCommissionClaimPermission | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -2766,17 +3052,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * See [`Pallet::set_identity`].
      *
-     * @param {PalletIdentityIdentityInfo} info
+     * @param {PalletIdentityLegacyIdentityInfo} info
      **/
     setIdentity: GenericTxCall<
       Rv,
-      (info: PalletIdentityIdentityInfo) => ChainSubmittableExtrinsic<
+      (info: PalletIdentityLegacyIdentityInfo) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Identity';
           palletCall: {
             name: 'SetIdentity';
-            params: { info: PalletIdentityIdentityInfo };
+            params: { info: PalletIdentityLegacyIdentityInfo };
           };
         }
       >
@@ -2910,20 +3196,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * See [`Pallet::set_fields`].
      *
      * @param {number} index
-     * @param {PalletIdentityBitFlags} fields
+     * @param {bigint} fields
      **/
     setFields: GenericTxCall<
       Rv,
       (
         index: number,
-        fields: PalletIdentityBitFlags,
+        fields: bigint,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Identity';
           palletCall: {
             name: 'SetFields';
-            params: { index: number; fields: PalletIdentityBitFlags };
+            params: { index: number; fields: bigint };
           };
         }
       >
@@ -3052,6 +3338,151 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Identity';
           palletCall: {
             name: 'QuitSub';
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::add_username_authority`].
+     *
+     * @param {MultiAddressLike} authority
+     * @param {BytesLike} suffix
+     * @param {number} allocation
+     **/
+    addUsernameAuthority: GenericTxCall<
+      Rv,
+      (
+        authority: MultiAddressLike,
+        suffix: BytesLike,
+        allocation: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'AddUsernameAuthority';
+            params: { authority: MultiAddressLike; suffix: BytesLike; allocation: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::remove_username_authority`].
+     *
+     * @param {MultiAddressLike} authority
+     **/
+    removeUsernameAuthority: GenericTxCall<
+      Rv,
+      (authority: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'RemoveUsernameAuthority';
+            params: { authority: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::set_username_for`].
+     *
+     * @param {MultiAddressLike} who
+     * @param {BytesLike} username
+     * @param {SpRuntimeMultiSignature | undefined} signature
+     **/
+    setUsernameFor: GenericTxCall<
+      Rv,
+      (
+        who: MultiAddressLike,
+        username: BytesLike,
+        signature: SpRuntimeMultiSignature | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'SetUsernameFor';
+            params: { who: MultiAddressLike; username: BytesLike; signature: SpRuntimeMultiSignature | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::accept_username`].
+     *
+     * @param {BytesLike} username
+     **/
+    acceptUsername: GenericTxCall<
+      Rv,
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'AcceptUsername';
+            params: { username: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::remove_expired_approval`].
+     *
+     * @param {BytesLike} username
+     **/
+    removeExpiredApproval: GenericTxCall<
+      Rv,
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'RemoveExpiredApproval';
+            params: { username: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::set_primary_username`].
+     *
+     * @param {BytesLike} username
+     **/
+    setPrimaryUsername: GenericTxCall<
+      Rv,
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'SetPrimaryUsername';
+            params: { username: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::remove_dangling_username`].
+     *
+     * @param {BytesLike} username
+     **/
+    removeDanglingUsername: GenericTxCall<
+      Rv,
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'RemoveDanglingUsername';
+            params: { username: BytesLike };
           };
         }
       >
@@ -3431,22 +3862,232 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
+   * Pallet `SafeMode`'s transaction calls
+   **/
+  safeMode: {
+    /**
+     * See [`Pallet::enter`].
+     *
+     **/
+    enter: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'Enter';
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::force_enter`].
+     *
+     **/
+    forceEnter: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'ForceEnter';
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::extend`].
+     *
+     **/
+    extend: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'Extend';
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::force_extend`].
+     *
+     **/
+    forceExtend: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'ForceExtend';
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::force_exit`].
+     *
+     **/
+    forceExit: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'ForceExit';
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::force_slash_deposit`].
+     *
+     * @param {AccountId32Like} account
+     * @param {number} block
+     **/
+    forceSlashDeposit: GenericTxCall<
+      Rv,
+      (
+        account: AccountId32Like,
+        block: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'ForceSlashDeposit';
+            params: { account: AccountId32Like; block: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::release_deposit`].
+     *
+     * @param {AccountId32Like} account
+     * @param {number} block
+     **/
+    releaseDeposit: GenericTxCall<
+      Rv,
+      (
+        account: AccountId32Like,
+        block: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'ReleaseDeposit';
+            params: { account: AccountId32Like; block: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::force_release_deposit`].
+     *
+     * @param {AccountId32Like} account
+     * @param {number} block
+     **/
+    forceReleaseDeposit: GenericTxCall<
+      Rv,
+      (
+        account: AccountId32Like,
+        block: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'ForceReleaseDeposit';
+            params: { account: AccountId32Like; block: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `TxPause`'s transaction calls
+   **/
+  txPause: {
+    /**
+     * See [`Pallet::pause`].
+     *
+     * @param {[BytesLike, BytesLike]} fullName
+     **/
+    pause: GenericTxCall<
+      Rv,
+      (fullName: [BytesLike, BytesLike]) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TxPause';
+          palletCall: {
+            name: 'Pause';
+            params: { fullName: [BytesLike, BytesLike] };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::unpause`].
+     *
+     * @param {[BytesLike, BytesLike]} ident
+     **/
+    unpause: GenericTxCall<
+      Rv,
+      (ident: [BytesLike, BytesLike]) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TxPause';
+          palletCall: {
+            name: 'Unpause';
+            params: { ident: [BytesLike, BytesLike] };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
    * Pallet `Operations`'s transaction calls
    **/
   operations: {
     /**
-     * See [`Pallet::fix_accounts_consumers_underflow`].
+     * See [`Pallet::fix_accounts_consumers_counter`].
      *
      * @param {AccountId32Like} who
      **/
-    fixAccountsConsumersUnderflow: GenericTxCall<
+    fixAccountsConsumersCounter: GenericTxCall<
       Rv,
       (who: AccountId32Like) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Operations';
           palletCall: {
-            name: 'FixAccountsConsumersUnderflow';
+            name: 'FixAccountsConsumersCounter';
             params: { who: AccountId32Like };
           };
         }

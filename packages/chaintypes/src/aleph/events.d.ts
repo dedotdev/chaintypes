@@ -14,9 +14,11 @@ import type {
   PalletContractsOrigin,
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
+  PalletNominationPoolsCommissionClaimPermission,
   PrimitivesBanConfig,
   PrimitivesBanInfo,
   AlephRuntimeProxyType,
+  PalletSafeModeExitReason,
 } from './types';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -58,6 +60,11 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * On on-chain remark happened.
      **/
     Remarked: GenericPalletEvent<Rv, 'System', 'Remarked', { sender: AccountId32; hash: H256 }>;
+
+    /**
+     * An upgrade was authorized.
+     **/
+    UpgradeAuthorized: GenericPalletEvent<Rv, 'System', 'UpgradeAuthorized', { codeHash: H256; checkVersion: boolean }>;
 
     /**
      * Generic pallet event
@@ -513,6 +520,37 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * A new asset spend proposal has been approved.
+     **/
+    AssetSpendApproved: GenericPalletEvent<
+      Rv,
+      'Treasury',
+      'AssetSpendApproved',
+      { index: number; assetKind: []; amount: bigint; beneficiary: AccountId32; validFrom: number; expireAt: number }
+    >;
+
+    /**
+     * An approved spend was voided.
+     **/
+    AssetSpendVoided: GenericPalletEvent<Rv, 'Treasury', 'AssetSpendVoided', { index: number }>;
+
+    /**
+     * A payment happened.
+     **/
+    Paid: GenericPalletEvent<Rv, 'Treasury', 'Paid', { index: number; paymentId: [] }>;
+
+    /**
+     * A payment failed and can be retried.
+     **/
+    PaymentFailed: GenericPalletEvent<Rv, 'Treasury', 'PaymentFailed', { index: number; paymentId: [] }>;
+
+    /**
+     * A spend was processed and removed from the storage. It might have been successfully
+     * paid or it may have expired.
+     **/
+    SpendProcessed: GenericPalletEvent<Rv, 'Treasury', 'SpendProcessed', { index: number }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -660,11 +698,21 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'KeyChanged',
       {
         /**
-         * The old sudo key if one was previously set.
+         * The old sudo key (if one was previously set).
          **/
-        oldSudoer?: AccountId32 | undefined;
+        old?: AccountId32 | undefined;
+
+        /**
+         * The new sudo key (if one was set).
+         **/
+        new: AccountId32;
       }
     >;
+
+    /**
+     * The key was permanently removed.
+     **/
+    KeyRemoved: GenericPalletEvent<Rv, 'Sudo', 'KeyRemoved', null>;
 
     /**
      * A [sudo_as](Pallet::sudo_as) call just took place.
@@ -1007,6 +1055,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * Pool commission claim permission has been updated.
+     **/
+    PoolCommissionClaimPermissionUpdated: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'PoolCommissionClaimPermissionUpdated',
+      { poolId: number; permission?: PalletNominationPoolsCommissionClaimPermission | undefined }
+    >;
+
+    /**
      * Pool commission has been claimed.
      **/
     PoolCommissionClaimed: GenericPalletEvent<
@@ -1014,6 +1072,26 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'NominationPools',
       'PoolCommissionClaimed',
       { poolId: number; commission: bigint }
+    >;
+
+    /**
+     * Topped up deficit in frozen ED of the reward pool.
+     **/
+    MinBalanceDeficitAdjusted: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'MinBalanceDeficitAdjusted',
+      { poolId: number; amount: bigint }
+    >;
+
+    /**
+     * Claimed excess frozen ED of af the reward pool.
+     **/
+    MinBalanceExcessAdjusted: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'MinBalanceExcessAdjusted',
+      { poolId: number; amount: bigint }
     >;
 
     /**
@@ -1107,6 +1185,52 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * A username authority was added.
+     **/
+    AuthorityAdded: GenericPalletEvent<Rv, 'Identity', 'AuthorityAdded', { authority: AccountId32 }>;
+
+    /**
+     * A username authority was removed.
+     **/
+    AuthorityRemoved: GenericPalletEvent<Rv, 'Identity', 'AuthorityRemoved', { authority: AccountId32 }>;
+
+    /**
+     * A username was set for `who`.
+     **/
+    UsernameSet: GenericPalletEvent<Rv, 'Identity', 'UsernameSet', { who: AccountId32; username: Bytes }>;
+
+    /**
+     * A username was queued, but `who` must accept it prior to `expiration`.
+     **/
+    UsernameQueued: GenericPalletEvent<
+      Rv,
+      'Identity',
+      'UsernameQueued',
+      { who: AccountId32; username: Bytes; expiration: number }
+    >;
+
+    /**
+     * A queued username passed its expiration without being claimed and was removed.
+     **/
+    PreapprovalExpired: GenericPalletEvent<Rv, 'Identity', 'PreapprovalExpired', { whose: AccountId32 }>;
+
+    /**
+     * A username was set as a primary and can be looked up from `who`.
+     **/
+    PrimaryUsernameSet: GenericPalletEvent<Rv, 'Identity', 'PrimaryUsernameSet', { who: AccountId32; username: Bytes }>;
+
+    /**
+     * A dangling username (as in, a username corresponding to an account that has removed its
+     * identity) has been removed.
+     **/
+    DanglingUsernameRemoved: GenericPalletEvent<
+      Rv,
+      'Identity',
+      'DanglingUsernameRemoved',
+      { who: AccountId32; username: Bytes }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -1186,13 +1310,100 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
+   * Pallet `SafeMode`'s events
+   **/
+  safeMode: {
+    /**
+     * The safe-mode was entered until inclusively this block.
+     **/
+    Entered: GenericPalletEvent<Rv, 'SafeMode', 'Entered', { until: number }>;
+
+    /**
+     * The safe-mode was extended until inclusively this block.
+     **/
+    Extended: GenericPalletEvent<Rv, 'SafeMode', 'Extended', { until: number }>;
+
+    /**
+     * Exited the safe-mode for a specific reason.
+     **/
+    Exited: GenericPalletEvent<Rv, 'SafeMode', 'Exited', { reason: PalletSafeModeExitReason }>;
+
+    /**
+     * An account reserved funds for either entering or extending the safe-mode.
+     **/
+    DepositPlaced: GenericPalletEvent<Rv, 'SafeMode', 'DepositPlaced', { account: AccountId32; amount: bigint }>;
+
+    /**
+     * An account had a reserve released that was reserved.
+     **/
+    DepositReleased: GenericPalletEvent<Rv, 'SafeMode', 'DepositReleased', { account: AccountId32; amount: bigint }>;
+
+    /**
+     * An account had reserve slashed that was reserved.
+     **/
+    DepositSlashed: GenericPalletEvent<Rv, 'SafeMode', 'DepositSlashed', { account: AccountId32; amount: bigint }>;
+
+    /**
+     * Could not hold funds for entering or extending the safe-mode.
+     *
+     * This error comes from the underlying `Currency`.
+     **/
+    CannotDeposit: GenericPalletEvent<Rv, 'SafeMode', 'CannotDeposit', null>;
+
+    /**
+     * Could not release funds for entering or extending the safe-mode.
+     *
+     * This error comes from the underlying `Currency`.
+     **/
+    CannotRelease: GenericPalletEvent<Rv, 'SafeMode', 'CannotRelease', null>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `TxPause`'s events
+   **/
+  txPause: {
+    /**
+     * This pallet, or a specific call is now paused.
+     **/
+    CallPaused: GenericPalletEvent<Rv, 'TxPause', 'CallPaused', { fullName: [Bytes, Bytes] }>;
+
+    /**
+     * This pallet, or a specific call is now unpaused.
+     **/
+    CallUnpaused: GenericPalletEvent<Rv, 'TxPause', 'CallUnpaused', { fullName: [Bytes, Bytes] }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
    * Pallet `Operations`'s events
    **/
   operations: {
     /**
-     * An account has fixed its consumers counter underflow
+     * A consumers counter was incremented for an account
      **/
-    ConsumersUnderflowFixed: GenericPalletEvent<Rv, 'Operations', 'ConsumersUnderflowFixed', { who: AccountId32 }>;
+    ConsumersCounterIncremented: GenericPalletEvent<
+      Rv,
+      'Operations',
+      'ConsumersCounterIncremented',
+      { who: AccountId32 }
+    >;
+
+    /**
+     * A consumers counter was decremented for an account
+     **/
+    ConsumersCounterDecremented: GenericPalletEvent<
+      Rv,
+      'Operations',
+      'ConsumersCounterDecremented',
+      { who: AccountId32 }
+    >;
 
     /**
      * Generic pallet event

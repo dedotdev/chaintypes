@@ -42,6 +42,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CallFiltered: GenericPalletError<Rv>;
 
     /**
+     * No upgrade authorized.
+     **/
+    NothingAuthorized: GenericPalletError<Rv>;
+
+    /**
+     * The submitted code is not authorized.
+     **/
+    Unauthorized: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -221,6 +231,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     AlreadyClaimed: GenericPalletError<Rv>;
 
     /**
+     * No nominators exist on this page.
+     **/
+    InvalidPage: GenericPalletError<Rv>;
+
+    /**
      * Incorrect previous history depth input provided.
      **/
     IncorrectHistoryDepth: GenericPalletError<Rv>;
@@ -271,6 +286,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Some bound is not met.
      **/
     BoundNotMet: GenericPalletError<Rv>;
+
+    /**
+     * Used when attempting to use deprecated controller account logic.
+     **/
+    ControllerDeprecated: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -336,7 +356,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     InsufficientProposersBalance: GenericPalletError<Rv>;
 
     /**
-     * No proposal or bounty at that index.
+     * No proposal, bounty or spend at that index.
      **/
     InvalidIndex: GenericPalletError<Rv>;
 
@@ -355,6 +375,41 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Proposal has not been approved.
      **/
     ProposalNotApproved: GenericPalletError<Rv>;
+
+    /**
+     * The balance of the asset kind is not convertible to the balance of the native asset.
+     **/
+    FailedToConvertBalance: GenericPalletError<Rv>;
+
+    /**
+     * The spend has expired and cannot be claimed.
+     **/
+    SpendExpired: GenericPalletError<Rv>;
+
+    /**
+     * The spend is not yet eligible for payout.
+     **/
+    EarlyPayout: GenericPalletError<Rv>;
+
+    /**
+     * The payment has already been attempted.
+     **/
+    AlreadyAttempted: GenericPalletError<Rv>;
+
+    /**
+     * There was some issue with the mechanism of payment.
+     **/
+    PayoutError: GenericPalletError<Rv>;
+
+    /**
+     * The payout was not yet attempted/claimed.
+     **/
+    NotAttempted: GenericPalletError<Rv>;
+
+    /**
+     * The payment has neither failed nor succeeded yet.
+     **/
+    Inconclusive: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -494,7 +549,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
    **/
   sudo: {
     /**
-     * Sender must be the Sudo account
+     * Sender must be the Sudo account.
      **/
     RequireSudo: GenericPalletError<Rv>;
 
@@ -607,6 +662,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * is rejected.
      **/
     NoChainExtension: GenericPalletError<Rv>;
+
+    /**
+     * Failed to decode the XCM program.
+     **/
+    XcmDecodeFailed: GenericPalletError<Rv>;
 
     /**
      * A contract with the same AccountId already exists.
@@ -752,9 +812,9 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     /**
      * The amount does not meet the minimum bond to either join or create a pool.
      *
-     * The depositor can never unbond to a value less than
-     * `Pallet::depositor_min_bond`. The caller does not have nominating
-     * permissions for the pool. Members can never unbond to a value below `MinJoinBond`.
+     * The depositor can never unbond to a value less than `Pallet::depositor_min_bond`. The
+     * caller does not have nominating permissions for the pool. Members can never unbond to a
+     * value below `MinJoinBond`.
      **/
     MinimumBondNotMet: GenericPalletError<Rv>;
 
@@ -871,6 +931,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     BondExtraRestricted: GenericPalletError<Rv>;
 
     /**
+     * No imbalance in the ED deposit for the pool.
+     **/
+    NothingToAdjust: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -935,11 +1000,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     InvalidTarget: GenericPalletError<Rv>;
 
     /**
-     * Too many additional fields.
-     **/
-    TooManyFields: GenericPalletError<Rv>;
-
-    /**
      * Maximum amount of registrars reached. Cannot add any more.
      **/
     TooManyRegistrars: GenericPalletError<Rv>;
@@ -968,6 +1028,51 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Error that occurs when there is an issue paying for judgement.
      **/
     JudgementPaymentFailed: GenericPalletError<Rv>;
+
+    /**
+     * The provided suffix is too long.
+     **/
+    InvalidSuffix: GenericPalletError<Rv>;
+
+    /**
+     * The sender does not have permission to issue a username.
+     **/
+    NotUsernameAuthority: GenericPalletError<Rv>;
+
+    /**
+     * The authority cannot allocate any more usernames.
+     **/
+    NoAllocation: GenericPalletError<Rv>;
+
+    /**
+     * The signature on a username was not valid.
+     **/
+    InvalidSignature: GenericPalletError<Rv>;
+
+    /**
+     * Setting this username requires a signature, but none was provided.
+     **/
+    RequiresSignature: GenericPalletError<Rv>;
+
+    /**
+     * The username does not meet the requirements.
+     **/
+    InvalidUsername: GenericPalletError<Rv>;
+
+    /**
+     * The username is already taken.
+     **/
+    UsernameTaken: GenericPalletError<Rv>;
+
+    /**
+     * The requested username does not exist.
+     **/
+    NoUsername: GenericPalletError<Rv>;
+
+    /**
+     * The username cannot be forcefully removed because it can still be accepted.
+     **/
+    NotExpired: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1045,6 +1150,75 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Cannot add self as proxy.
      **/
     NoSelfProxy: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `SafeMode`'s errors
+   **/
+  safeMode: {
+    /**
+     * The safe-mode is (already or still) entered.
+     **/
+    Entered: GenericPalletError<Rv>;
+
+    /**
+     * The safe-mode is (already or still) exited.
+     **/
+    Exited: GenericPalletError<Rv>;
+
+    /**
+     * This functionality of the pallet is disabled by the configuration.
+     **/
+    NotConfigured: GenericPalletError<Rv>;
+
+    /**
+     * There is no balance reserved.
+     **/
+    NoDeposit: GenericPalletError<Rv>;
+
+    /**
+     * The account already has a deposit reserved and can therefore not enter or extend again.
+     **/
+    AlreadyDeposited: GenericPalletError<Rv>;
+
+    /**
+     * This deposit cannot be released yet.
+     **/
+    CannotReleaseYet: GenericPalletError<Rv>;
+
+    /**
+     * An error from the underlying `Currency`.
+     **/
+    CurrencyError: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `TxPause`'s errors
+   **/
+  txPause: {
+    /**
+     * The call is paused.
+     **/
+    IsPaused: GenericPalletError<Rv>;
+
+    /**
+     * The call is unpaused.
+     **/
+    IsUnpaused: GenericPalletError<Rv>;
+
+    /**
+     * The call is whitelisted and cannot be paused.
+     **/
+    Unpausable: GenericPalletError<Rv>;
+    NotFound: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

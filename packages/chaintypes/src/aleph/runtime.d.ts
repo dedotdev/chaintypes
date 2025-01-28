@@ -503,6 +503,15 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     nominationsQuota: GenericRuntimeApiMethod<Rv, (balance: bigint) => Promise<number>>;
 
     /**
+     * Returns the page count of exposures for a validator in a given era.
+     *
+     * @callname: StakingApi_eras_stakers_page_count
+     * @param {number} era
+     * @param {AccountId32Like} account
+     **/
+    erasStakersPageCount: GenericRuntimeApiMethod<Rv, (era: number, account: AccountId32Like) => Promise<number>>;
+
+    /**
      * Generic runtime api call
      **/
     [method: string]: GenericRuntimeApiMethod<Rv>;
@@ -602,6 +611,39 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
         key: BytesLike,
       ) => Promise<Result<Bytes | undefined, PalletContractsPrimitivesContractAccessError>>
     >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: GenesisBuilder - 0xfbc577b9d747efd6
+   **/
+  genesisBuilder: {
+    /**
+     * Creates the default `GenesisConfig` and returns it as a JSON blob.
+     *
+     * This function instantiates the default `GenesisConfig` struct for the runtime and serializes it into a JSON
+     * blob. It returns a `Vec<u8>` containing the JSON representation of the default `GenesisConfig`.
+     *
+     * @callname: GenesisBuilder_create_default_config
+     **/
+    createDefaultConfig: GenericRuntimeApiMethod<Rv, () => Promise<Bytes>>;
+
+    /**
+     * Build `GenesisConfig` from a JSON blob not using any defaults and store it in the storage.
+     *
+     * This function deserializes the full `GenesisConfig` from the given JSON blob and puts it into the storage.
+     * If the provided JSON blob is incorrect or incomplete or the deserialization fails, an error is returned.
+     * It is recommended to log any errors encountered during the process.
+     *
+     * Please note that provided json blob must contain all `GenesisConfig` fields, no defaults will be used.
+     *
+     * @callname: GenesisBuilder_build_config
+     * @param {BytesLike} json
+     **/
+    buildConfig: GenericRuntimeApiMethod<Rv, (json: BytesLike) => Promise<Result<[], string>>>;
 
     /**
      * Generic runtime api call

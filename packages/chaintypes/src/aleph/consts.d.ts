@@ -163,10 +163,10 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   transactionPayment: {
     /**
-     * A fee mulitplier for `Operational` extrinsics to compute "virtual tip" to boost their
+     * A fee multiplier for `Operational` extrinsics to compute "virtual tip" to boost their
      * `priority`
      *
-     * This value is multipled by the `final_fee` to obtain a "virtual tip" that is later
+     * This value is multiplied by the `final_fee` to obtain a "virtual tip" that is later
      * added to a tip component in regular `priority` calculations.
      * It means that a `Normal` transaction can front-run a similarly-sized `Operational`
      * extrinsic (with no tip), by including a tip value greater than the virtual tip.
@@ -211,8 +211,8 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * Following information is kept for eras in `[current_era -
      * HistoryDepth, current_era]`: `ErasStakers`, `ErasStakersClipped`,
      * `ErasValidatorPrefs`, `ErasValidatorReward`, `ErasRewardPoints`,
-     * `ErasTotalStake`, `ErasStartSessionIndex`,
-     * `StakingLedger.claimed_rewards`.
+     * `ErasTotalStake`, `ErasStartSessionIndex`, `ClaimedRewards`, `ErasStakersPaged`,
+     * `ErasStakersOverview`.
      *
      * Must be more than the number of eras delayed by session.
      * I.e. active era must always be in history. I.e. `active_era >
@@ -222,7 +222,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * this should be set to same value or greater as in storage.
      *
      * Note: `HistoryDepth` is used as the upper bound for the `BoundedVec`
-     * item `StakingLedger.claimed_rewards`. Setting this value lower than
+     * item `StakingLedger.legacy_claimed_rewards`. Setting this value lower than
      * the existing value can lead to inconsistencies in the
      * `StakingLedger` and will need to be handled properly in a migration.
      * The test `reducing_history_depth_abrupt` shows this effect.
@@ -248,12 +248,19 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     slashDeferDuration: number;
 
     /**
-     * The maximum number of nominators rewarded for each validator.
+     * The maximum size of each `T::ExposurePage`.
      *
-     * For each validator only the `$MaxNominatorRewardedPerValidator` biggest stakers can
-     * claim their reward. This used to limit the i/o cost for the nominator payout.
+     * An `ExposurePage` is weakly bounded to a maximum of `MaxExposurePageSize`
+     * nominators.
+     *
+     * For older non-paged exposure, a reward payout was restricted to the top
+     * `MaxExposurePageSize` nominators. This is to limit the i/o cost for the
+     * nominator payout.
+     *
+     * Note: `MaxExposurePageSize` is used to bound `ClaimedRewards` and is unsafe to reduce
+     * without handling it in a migration.
      **/
-    maxNominatorRewardedPerValidator: number;
+    maxExposurePageSize: number;
 
     /**
      * The maximum number of `unlocking` chunks a [`StakingLedger`] can
@@ -359,6 +366,11 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * NOTE: This parameter is also used within the Bounties Pallet extension if enabled.
      **/
     maxApprovals: number;
+
+    /**
+     * The period during which an approved treasury spend has to be claimed.
+     **/
+    payoutPeriod: number;
 
     /**
      * Generic pallet constant
@@ -551,6 +563,11 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     maxPointsToBalance: number;
 
     /**
+     * The maximum number of simultaneous unbonding chunks that can exist per member.
+     **/
+    maxUnbonding: number;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -560,14 +577,14 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   identity: {
     /**
-     * The amount held on deposit for a registered identity
+     * The amount held on deposit for a registered identity.
      **/
     basicDeposit: bigint;
 
     /**
-     * The amount held on deposit per additional field for a registered identity.
+     * The amount held on deposit per encoded byte for a registered identity.
      **/
-    fieldDeposit: bigint;
+    byteDeposit: bigint;
 
     /**
      * The amount held on deposit for a registered subaccount. This should account for the fact
@@ -582,16 +599,25 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     maxSubAccounts: number;
 
     /**
-     * Maximum number of additional fields that may be stored in an ID. Needed to bound the I/O
-     * required to access an identity, but can be pretty high.
-     **/
-    maxAdditionalFields: number;
-
-    /**
      * Maxmimum number of registrars allowed in the system. Needed to bound the complexity
      * of, e.g., updating judgements.
      **/
     maxRegistrars: number;
+
+    /**
+     * The number of blocks within which a username grant must be accepted.
+     **/
+    pendingUsernameExpiration: number;
+
+    /**
+     * The maximum length of a suffix.
+     **/
+    maxSuffixLength: number;
+
+    /**
+     * The maximum length of a username, including its suffix and any system-added delimiters.
+     **/
+    maxUsernameLength: number;
 
     /**
      * Generic pallet constant
@@ -658,6 +684,69 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * into a pre-existing storage value.
      **/
     announcementDepositFactor: bigint;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `SafeMode`'s constants
+   **/
+  safeMode: {
+    /**
+     * For how many blocks the safe-mode will be entered by [`Pallet::enter`].
+     **/
+    enterDuration: number;
+
+    /**
+     * For how many blocks the safe-mode can be extended by each [`Pallet::extend`] call.
+     *
+     * This does not impose a hard limit as the safe-mode can be extended multiple times.
+     **/
+    extendDuration: number;
+
+    /**
+     * The amount that will be reserved upon calling [`Pallet::enter`].
+     *
+     * `None` disallows permissionlessly enabling the safe-mode and is a sane default.
+     **/
+    enterDepositAmount: bigint | undefined;
+
+    /**
+     * The amount that will be reserved upon calling [`Pallet::extend`].
+     *
+     * `None` disallows permissionlessly extending the safe-mode and is a sane default.
+     **/
+    extendDepositAmount: bigint | undefined;
+
+    /**
+     * The minimal duration a deposit will remain reserved after safe-mode is entered or
+     * extended, unless [`Pallet::force_release_deposit`] is successfully called sooner.
+     *
+     * Every deposit is tied to a specific activation or extension, thus each deposit can be
+     * released independently after the delay for it has passed.
+     *
+     * `None` disallows permissionlessly releasing the safe-mode deposits and is a sane
+     * default.
+     **/
+    releaseDelay: number | undefined;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `TxPause`'s constants
+   **/
+  txPause: {
+    /**
+     * Maximum length for pallet name and call name SCALE encoded string names.
+     *
+     * TOO LONG NAMES WILL BE TREATED AS PAUSED.
+     **/
+    maxNameLen: number;
 
     /**
      * Generic pallet constant

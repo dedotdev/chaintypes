@@ -21,6 +21,7 @@ import type {
   FrameSupportDispatchPerDispatchClass,
   FrameSystemEventRecord,
   FrameSystemLastRuntimeUpgradeInfo,
+  FrameSystemCodeUpgradeAuthorization,
   PalletSchedulerScheduled,
   SpConsensusAuraSr25519AppSr25519Public,
   SpConsensusSlotsSlot,
@@ -28,20 +29,22 @@ import type {
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
   PalletBalancesIdAmount,
-  PalletBalancesIdAmount002,
+  PalletBalancesIdAmountRuntimeFreezeReason,
   PalletTransactionPaymentReleases,
   PalletStakingStakingLedger,
   PalletStakingRewardDestination,
   PalletStakingValidatorPrefs,
   PalletStakingNominations,
   PalletStakingActiveEraInfo,
-  PalletStakingExposure,
+  SpStakingExposure,
+  SpStakingPagedExposureMetadata,
+  SpStakingExposurePage,
   PalletStakingEraRewardPoints,
   PalletStakingForcing,
   PalletStakingUnappliedSlash,
   PalletStakingSlashingSlashingSpans,
   PalletStakingSlashingSpanRecord,
-  AlephRuntimeSessionKeys,
+  PrimitivesAlephNodeSessionKeys,
   SpCoreCryptoKeyTypeId,
   PrimitivesAppPublic,
   PrimitivesVersionChange,
@@ -49,6 +52,7 @@ import type {
   PrimitivesEraValidators,
   PrimitivesElectionOpenness,
   PalletTreasuryProposal,
+  PalletTreasurySpendStatus,
   PalletVestingVestingInfo,
   PalletVestingReleases,
   PalletMultisigMultisig,
@@ -62,6 +66,7 @@ import type {
   PalletNominationPoolsClaimPermission,
   PalletIdentityRegistration,
   PalletIdentityRegistrarInfo,
+  PalletIdentityAuthorityProperties,
   PalletCommitteeManagementValidatorTotalRewards,
   PrimitivesBanConfig,
   PrimitivesBanInfo,
@@ -206,6 +211,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<Phase | undefined> =} callback
      **/
     executionPhase: GenericStorageQuery<Rv, () => Phase | undefined>;
+
+    /**
+     * `Some` if a code upgrade has been authorized.
+     *
+     * @param {Callback<FrameSystemCodeUpgradeAuthorization | undefined> =} callback
+     **/
+    authorizedUpgrade: GenericStorageQuery<Rv, () => FrameSystemCodeUpgradeAuthorization | undefined>;
 
     /**
      * Generic pallet storage query
@@ -393,9 +405,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Freeze locks on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<PalletBalancesIdAmount002>> =} callback
+     * @param {Callback<Array<PalletBalancesIdAmountRuntimeFreezeReason>> =} callback
      **/
-    freezes: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<PalletBalancesIdAmount002>, AccountId32>;
+    freezes: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => Array<PalletBalancesIdAmountRuntimeFreezeReason>,
+      AccountId32
+    >;
 
     /**
      * Generic pallet storage query
@@ -509,6 +525,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * Map from all (unlocked) "controller" accounts to the info regarding the staking.
      *
+     * Note: All the reads and mutations to this storage *MUST* be done through the methods exposed
+     * by [`StakingLedger`] to ensure data and lock consistency.
+     *
      * @param {AccountId32Like} arg
      * @param {Callback<PalletStakingStakingLedger | undefined> =} callback
      **/
@@ -613,7 +632,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     activeEra: GenericStorageQuery<Rv, () => PalletStakingActiveEraInfo | undefined>;
 
     /**
-     * The session index at which the era start for the last `HISTORY_DEPTH` eras.
+     * The session index at which the era start for the last [`Config::HistoryDepth`] eras.
      *
      * Note: This tracks the starting session (i.e. session index when era start being active)
      * for the eras in `[CurrentEra - HISTORY_DEPTH, CurrentEra]`.
@@ -628,46 +647,102 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      *
      * This is keyed first by the era index to allow bulk deletion and then the stash account.
      *
-     * Is it removed after `HISTORY_DEPTH` eras.
+     * Is it removed after [`Config::HistoryDepth`] eras.
      * If stakers hasn't been set or has been removed then empty exposure is returned.
      *
+     * Note: Deprecated since v14. Use `EraInfo` instead to work with exposures.
+     *
      * @param {[number, AccountId32Like]} arg
-     * @param {Callback<PalletStakingExposure> =} callback
+     * @param {Callback<SpStakingExposure> =} callback
      **/
-    erasStakers: GenericStorageQuery<
+    erasStakers: GenericStorageQuery<Rv, (arg: [number, AccountId32Like]) => SpStakingExposure, [number, AccountId32]>;
+
+    /**
+     * Summary of validator exposure at a given era.
+     *
+     * This contains the total stake in support of the validator and their own stake. In addition,
+     * it can also be used to get the number of nominators backing this validator and the number of
+     * exposure pages they are divided into. The page count is useful to determine the number of
+     * pages of rewards that needs to be claimed.
+     *
+     * This is keyed first by the era index to allow bulk deletion and then the stash account.
+     * Should only be accessed through `EraInfo`.
+     *
+     * Is it removed after [`Config::HistoryDepth`] eras.
+     * If stakers hasn't been set or has been removed then empty overview is returned.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<SpStakingPagedExposureMetadata | undefined> =} callback
+     **/
+    erasStakersOverview: GenericStorageQuery<
       Rv,
-      (arg: [number, AccountId32Like]) => PalletStakingExposure,
+      (arg: [number, AccountId32Like]) => SpStakingPagedExposureMetadata | undefined,
       [number, AccountId32]
     >;
 
     /**
      * Clipped Exposure of validator at era.
      *
+     * Note: This is deprecated, should be used as read-only and will be removed in the future.
+     * New `Exposure`s are stored in a paged manner in `ErasStakersPaged` instead.
+     *
      * This is similar to [`ErasStakers`] but number of nominators exposed is reduced to the
-     * `T::MaxNominatorRewardedPerValidator` biggest stakers.
+     * `T::MaxExposurePageSize` biggest stakers.
      * (Note: the field `total` and `own` of the exposure remains unchanged).
      * This is used to limit the i/o cost for the nominator payout.
      *
      * This is keyed fist by the era index to allow bulk deletion and then the stash account.
      *
-     * Is it removed after `HISTORY_DEPTH` eras.
+     * It is removed after [`Config::HistoryDepth`] eras.
      * If stakers hasn't been set or has been removed then empty exposure is returned.
      *
+     * Note: Deprecated since v14. Use `EraInfo` instead to work with exposures.
+     *
      * @param {[number, AccountId32Like]} arg
-     * @param {Callback<PalletStakingExposure> =} callback
+     * @param {Callback<SpStakingExposure> =} callback
      **/
     erasStakersClipped: GenericStorageQuery<
       Rv,
-      (arg: [number, AccountId32Like]) => PalletStakingExposure,
+      (arg: [number, AccountId32Like]) => SpStakingExposure,
       [number, AccountId32]
     >;
+
+    /**
+     * Paginated exposure of a validator at given era.
+     *
+     * This is keyed first by the era index to allow bulk deletion, then stash account and finally
+     * the page. Should only be accessed through `EraInfo`.
+     *
+     * This is cleared after [`Config::HistoryDepth`] eras.
+     *
+     * @param {[number, AccountId32Like, number]} arg
+     * @param {Callback<SpStakingExposurePage | undefined> =} callback
+     **/
+    erasStakersPaged: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like, number]) => SpStakingExposurePage | undefined,
+      [number, AccountId32, number]
+    >;
+
+    /**
+     * History of claimed paged rewards by era and validator.
+     *
+     * This is keyed by era and validator stash which maps to the set of page indexes which have
+     * been claimed.
+     *
+     * It is removed after [`Config::HistoryDepth`] eras.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<Array<number>> =} callback
+     **/
+    claimedRewards: GenericStorageQuery<Rv, (arg: [number, AccountId32Like]) => Array<number>, [number, AccountId32]>;
 
     /**
      * Similar to `ErasStakers`, this holds the preferences of validators.
      *
      * This is keyed first by the era index to allow bulk deletion and then the stash account.
      *
-     * Is it removed after `HISTORY_DEPTH` eras.
+     * Is it removed after [`Config::HistoryDepth`] eras.
      *
      * @param {[number, AccountId32Like]} arg
      * @param {Callback<PalletStakingValidatorPrefs> =} callback
@@ -679,7 +754,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     >;
 
     /**
-     * The total validator era payout for the last `HISTORY_DEPTH` eras.
+     * The total validator era payout for the last [`Config::HistoryDepth`] eras.
      *
      * Eras that haven't finished yet or has been removed doesn't have reward.
      *
@@ -689,7 +764,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     erasValidatorReward: GenericStorageQuery<Rv, (arg: number) => bigint | undefined, number>;
 
     /**
-     * Rewards for the last `HISTORY_DEPTH` eras.
+     * Rewards for the last [`Config::HistoryDepth`] eras.
      * If reward hasn't been set or has been removed then 0 reward is returned.
      *
      * @param {number} arg
@@ -698,7 +773,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     erasRewardPoints: GenericStorageQuery<Rv, (arg: number) => PalletStakingEraRewardPoints, number>;
 
     /**
-     * The total amount staked for the last `HISTORY_DEPTH` eras.
+     * The total amount staked for the last [`Config::HistoryDepth`] eras.
      * If total hasn't been set or has been removed then 0 stake is returned.
      *
      * @param {number} arg
@@ -890,9 +965,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * The queued keys for the next session. When the next session begins, these keys
      * will be used to determine the validator's session keys.
      *
-     * @param {Callback<Array<[AccountId32, AlephRuntimeSessionKeys]>> =} callback
+     * @param {Callback<Array<[AccountId32, PrimitivesAlephNodeSessionKeys]>> =} callback
      **/
-    queuedKeys: GenericStorageQuery<Rv, () => Array<[AccountId32, AlephRuntimeSessionKeys]>>;
+    queuedKeys: GenericStorageQuery<Rv, () => Array<[AccountId32, PrimitivesAlephNodeSessionKeys]>>;
 
     /**
      * Indices of disabled validators.
@@ -909,9 +984,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * The next session keys for a validator.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<AlephRuntimeSessionKeys | undefined> =} callback
+     * @param {Callback<PrimitivesAlephNodeSessionKeys | undefined> =} callback
      **/
-    nextKeys: GenericStorageQuery<Rv, (arg: AccountId32Like) => AlephRuntimeSessionKeys | undefined, AccountId32>;
+    nextKeys: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => PrimitivesAlephNodeSessionKeys | undefined,
+      AccountId32
+    >;
 
     /**
      * The owner of a key. The key is the `KeyTypeId` + the encoded key.
@@ -1088,6 +1167,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     approvals: GenericStorageQuery<Rv, () => Array<number>>;
 
     /**
+     * The count of spends that have been made.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    spendCount: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Spends that have been approved and being processed.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletTreasurySpendStatus | undefined> =} callback
+     **/
+    spends: GenericStorageQuery<Rv, (arg: number) => PalletTreasurySpendStatus | undefined, number>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -1257,6 +1351,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    * Pallet `NominationPools`'s storage queries
    **/
   nominationPools: {
+    /**
+     * The sum of funds across all pools.
+     *
+     * This might be lower but never higher than the sum of `total_balance` of all [`PoolMembers`]
+     * because calling `pool_withdraw_unbonded` might decrease the total stake of the pool's
+     * `bonded_account` without adjusting the pallet-internal `UnbondingPool`'s.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    totalValueLocked: GenericStorageQuery<Rv, () => bigint>;
+
     /**
      * Minimum amount to bond to join a pool.
      *
@@ -1440,14 +1545,19 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   identity: {
     /**
-     * Information that is pertinent to identify the entity behind an account.
+     * Information that is pertinent to identify the entity behind an account. First item is the
+     * registration, second is the account's primary username.
      *
      * TWOX-NOTE: OK ― `AccountId` is a secure hash.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<PalletIdentityRegistration | undefined> =} callback
+     * @param {Callback<[PalletIdentityRegistration, Bytes | undefined] | undefined> =} callback
      **/
-    identityOf: GenericStorageQuery<Rv, (arg: AccountId32Like) => PalletIdentityRegistration | undefined, AccountId32>;
+    identityOf: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => [PalletIdentityRegistration, Bytes | undefined] | undefined,
+      AccountId32
+    >;
 
     /**
      * The super-identity of an alternative "sub" identity together with its name, within that
@@ -1479,6 +1589,43 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<Array<PalletIdentityRegistrarInfo | undefined>> =} callback
      **/
     registrars: GenericStorageQuery<Rv, () => Array<PalletIdentityRegistrarInfo | undefined>>;
+
+    /**
+     * A map of the accounts who are authorized to grant usernames.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletIdentityAuthorityProperties | undefined> =} callback
+     **/
+    usernameAuthorities: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => PalletIdentityAuthorityProperties | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Reverse lookup from `username` to the `AccountId` that has registered it. The value should
+     * be a key in the `IdentityOf` map, but it may not if the user has cleared their identity.
+     *
+     * Multiple usernames may map to the same `AccountId`, but `IdentityOf` will only map to one
+     * primary username.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    accountOfUsername: GenericStorageQuery<Rv, (arg: BytesLike) => AccountId32 | undefined, Bytes>;
+
+    /**
+     * Usernames that an authority has granted, but that the account controller has not confirmed
+     * that they want it. Used primarily in cases where the `AccountId` cannot provide a signature
+     * because they are a pure proxy, multisig, etc. In order to confirm it, they should call
+     * [`Call::accept_username`].
+     *
+     * First tuple item is the account and second is the acceptance deadline.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<[AccountId32, number] | undefined> =} callback
+     **/
+    pendingUsernames: GenericStorageQuery<Rv, (arg: BytesLike) => [AccountId32, number] | undefined, Bytes>;
 
     /**
      * Generic pallet storage query
@@ -1576,6 +1723,54 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       (arg: AccountId32Like) => [Array<PalletProxyAnnouncement>, bigint],
       AccountId32
     >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `SafeMode`'s storage queries
+   **/
+  safeMode: {
+    /**
+     * Contains the last block number that the safe-mode will remain entered in.
+     *
+     * Set to `None` when safe-mode is exited.
+     *
+     * Safe-mode is automatically exited when the current block number exceeds this value.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    enteredUntil: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Holds the reserve that was taken from an account at a specific block number.
+     *
+     * This helps governance to have an overview of outstanding deposits that should be returned or
+     * slashed.
+     *
+     * @param {[AccountId32Like, number]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    deposits: GenericStorageQuery<Rv, (arg: [AccountId32Like, number]) => bigint | undefined, [AccountId32, number]>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `TxPause`'s storage queries
+   **/
+  txPause: {
+    /**
+     * The set of calls that are explicitly paused.
+     *
+     * @param {[BytesLike, BytesLike]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    pausedCalls: GenericStorageQuery<Rv, (arg: [BytesLike, BytesLike]) => [] | undefined, [Bytes, Bytes]>;
 
     /**
      * Generic pallet storage query

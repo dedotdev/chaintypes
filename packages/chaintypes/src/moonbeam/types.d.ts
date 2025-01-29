@@ -3890,12 +3890,20 @@ export type PalletMultisigCallLike =
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
 export type PalletMoonbeamLazyMigrationsCall =
-  | { name: 'ClearSuicidedStorage'; params: { addresses: Array<H160>; limit: number } }
-  | { name: 'CreateContractMetadata'; params: { address: H160 } };
+  | { name: 'CreateContractMetadata'; params: { address: H160 } }
+  | { name: 'ApproveAssetsToMigrate'; params: { assets: Array<bigint> } }
+  | { name: 'StartForeignAssetsMigration'; params: { assetId: bigint } }
+  | { name: 'MigrateForeignAssetBalances'; params: { limit: number } }
+  | { name: 'MigrateForeignAssetApprovals'; params: { limit: number } }
+  | { name: 'FinishForeignAssetsMigration' };
 
 export type PalletMoonbeamLazyMigrationsCallLike =
-  | { name: 'ClearSuicidedStorage'; params: { addresses: Array<H160>; limit: number } }
-  | { name: 'CreateContractMetadata'; params: { address: H160 } };
+  | { name: 'CreateContractMetadata'; params: { address: H160 } }
+  | { name: 'ApproveAssetsToMigrate'; params: { assets: Array<bigint> } }
+  | { name: 'StartForeignAssetsMigration'; params: { assetId: bigint } }
+  | { name: 'MigrateForeignAssetBalances'; params: { limit: number } }
+  | { name: 'MigrateForeignAssetApprovals'; params: { limit: number } }
+  | { name: 'FinishForeignAssetsMigration' };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10056,6 +10064,16 @@ export type PalletMoonbeamLazyMigrationsStateMigrationStatus =
   | { type: 'Error'; value: Bytes }
   | { type: 'Complete' };
 
+export type PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationStatus =
+  | { type: 'Idle' }
+  | { type: 'Migrating'; value: PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationInfo };
+
+export type PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationInfo = {
+  assetId: bigint;
+  remainingBalances: number;
+  remainingApprovals: number;
+};
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -10064,14 +10082,6 @@ export type PalletMoonbeamLazyMigrationsError =
    * The limit cannot be zero
    **/
   | 'LimitCannotBeZero'
-  /**
-   * There must be at least one address
-   **/
-  | 'AddressesLengthCannotBeZero'
-  /**
-   * The contract is not corrupted (Still exist or properly suicided)
-   **/
-  | 'ContractNotCorrupted'
   /**
    * The contract already have metadata
    **/
@@ -10083,7 +10093,43 @@ export type PalletMoonbeamLazyMigrationsError =
   /**
    * The key lengths exceeds the maximum allowed
    **/
-  | 'KeyTooLong';
+  | 'KeyTooLong'
+  /**
+   * The symbol length exceeds the maximum allowed
+   **/
+  | 'SymbolTooLong'
+  /**
+   * The name length exceeds the maximum allowed
+   **/
+  | 'NameTooLong'
+  /**
+   * The asset type was not found
+   **/
+  | 'AssetTypeNotFound'
+  /**
+   * Asset not found
+   **/
+  | 'AssetNotFound'
+  /**
+   * The location of the asset was not found
+   **/
+  | 'LocationNotFound'
+  /**
+   * Migration is not finished yet
+   **/
+  | 'MigrationNotFinished'
+  /**
+   * No migration in progress
+   **/
+  | 'NoMigrationInProgress'
+  /**
+   * Fail to mint the foreign asset
+   **/
+  | 'MintFailed'
+  /**
+   * Fail to add an approval
+   **/
+  | 'ApprovalFailed';
 
 export type PalletEvmCodeMetadata = { size: bigint; hash: H256 };
 

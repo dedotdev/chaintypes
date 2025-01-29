@@ -3272,28 +3272,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
   moonbeamLazyMigrations: {
     /**
      *
-     * @param {Array<H160>} addresses
-     * @param {number} limit
-     **/
-    clearSuicidedStorage: GenericTxCall<
-      Rv,
-      (
-        addresses: Array<H160>,
-        limit: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'MoonbeamLazyMigrations';
-          palletCall: {
-            name: 'ClearSuicidedStorage';
-            params: { addresses: Array<H160>; limit: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
      * @param {H160} address
      **/
     createContractMetadata: GenericTxCall<
@@ -3305,6 +3283,94 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'CreateContractMetadata';
             params: { address: H160 };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<bigint>} assets
+     **/
+    approveAssetsToMigrate: GenericTxCall<
+      Rv,
+      (assets: Array<bigint>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MoonbeamLazyMigrations';
+          palletCall: {
+            name: 'ApproveAssetsToMigrate';
+            params: { assets: Array<bigint> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {bigint} assetId
+     **/
+    startForeignAssetsMigration: GenericTxCall<
+      Rv,
+      (assetId: bigint) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MoonbeamLazyMigrations';
+          palletCall: {
+            name: 'StartForeignAssetsMigration';
+            params: { assetId: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {number} limit
+     **/
+    migrateForeignAssetBalances: GenericTxCall<
+      Rv,
+      (limit: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MoonbeamLazyMigrations';
+          palletCall: {
+            name: 'MigrateForeignAssetBalances';
+            params: { limit: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {number} limit
+     **/
+    migrateForeignAssetApprovals: GenericTxCall<
+      Rv,
+      (limit: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MoonbeamLazyMigrations';
+          palletCall: {
+            name: 'MigrateForeignAssetApprovals';
+            params: { limit: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     **/
+    finishForeignAssetsMigration: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MoonbeamLazyMigrations';
+          palletCall: {
+            name: 'FinishForeignAssetsMigration';
           };
         }
       >

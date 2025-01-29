@@ -64,6 +64,7 @@ import type {
   PalletIdentityAuthorityProperties,
   PalletMultisigMultisig,
   PalletMoonbeamLazyMigrationsStateMigrationStatus,
+  PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationStatus,
   MoonbeamRuntimeRuntimeParamsRuntimeParametersValue,
   MoonbeamRuntimeRuntimeParamsRuntimeParametersKey,
   PalletEvmCodeMetadata,
@@ -1241,13 +1242,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   moonbeamLazyMigrations: {
     /**
-     * The total number of suicided contracts that were removed
-     *
-     * @param {Callback<number> =} callback
-     **/
-    suicidedContractsRemoved: GenericStorageQuery<Rv, () => number>;
-
-    /**
      *
      * @param {Callback<[PalletMoonbeamLazyMigrationsStateMigrationStatus, bigint]> =} callback
      **/
@@ -1255,6 +1249,22 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       Rv,
       () => [PalletMoonbeamLazyMigrationsStateMigrationStatus, bigint]
     >;
+
+    /**
+     *
+     * @param {Callback<PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationStatus> =} callback
+     **/
+    foreignAssetMigrationStatusValue: GenericStorageQuery<
+      Rv,
+      () => PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationStatus
+    >;
+
+    /**
+     *
+     * @param {bigint} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    approvedForeignAssets: GenericStorageQuery<Rv, (arg: bigint) => [] | undefined, bigint>;
 
     /**
      * Generic pallet storage query

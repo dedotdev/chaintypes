@@ -713,16 +713,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     LimitCannotBeZero: GenericPalletError<Rv>;
 
     /**
-     * There must be at least one address
-     **/
-    AddressesLengthCannotBeZero: GenericPalletError<Rv>;
-
-    /**
-     * The contract is not corrupted (Still exist or properly suicided)
-     **/
-    ContractNotCorrupted: GenericPalletError<Rv>;
-
-    /**
      * The contract already have metadata
      **/
     ContractMetadataAlreadySet: GenericPalletError<Rv>;
@@ -736,6 +726,51 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The key lengths exceeds the maximum allowed
      **/
     KeyTooLong: GenericPalletError<Rv>;
+
+    /**
+     * The symbol length exceeds the maximum allowed
+     **/
+    SymbolTooLong: GenericPalletError<Rv>;
+
+    /**
+     * The name length exceeds the maximum allowed
+     **/
+    NameTooLong: GenericPalletError<Rv>;
+
+    /**
+     * The asset type was not found
+     **/
+    AssetTypeNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Asset not found
+     **/
+    AssetNotFound: GenericPalletError<Rv>;
+
+    /**
+     * The location of the asset was not found
+     **/
+    LocationNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Migration is not finished yet
+     **/
+    MigrationNotFinished: GenericPalletError<Rv>;
+
+    /**
+     * No migration in progress
+     **/
+    NoMigrationInProgress: GenericPalletError<Rv>;
+
+    /**
+     * Fail to mint the foreign asset
+     **/
+    MintFailed: GenericPalletError<Rv>;
+
+    /**
+     * Fail to add an approval
+     **/
+    ApprovalFailed: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

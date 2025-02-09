@@ -1,5 +1,6 @@
 import { rpc } from '@polkadot/types-support/metadata/static-substrate';
 import staticSubstrate from '@polkadot/types-support/metadata/v15/substrate-hex';
+import { unwrapOpaqueMetadata } from 'dedot/codecs'
 
 type NetworkInfo = {
   chain: string;
@@ -14,7 +15,7 @@ export const networks: NetworkInfo[] = [
   {
     chain: 'substrate',
     staticData: {
-      metadataHex: staticSubstrate,
+      metadataHex: unwrapOpaqueMetadata(staticSubstrate),
       rpcMethods: rpc.methods,
     },
   },

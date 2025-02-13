@@ -112,6 +112,20 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `MultiBlockMigrations`'s errors
+   **/
+  multiBlockMigrations: {
+    /**
+     * The operation cannot complete since some MBMs are ongoing.
+     **/
+    Ongoing: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `Balances`'s errors
    **/
   balances: {
@@ -1803,6 +1817,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The transaction used to dry-run a contract is invalid.
      **/
     InvalidGenericTransaction: GenericPalletError<Rv>;
+
+    /**
+     * The refcount of a code either over or underflowed.
+     **/
+    RefcountOverOrUnderflow: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

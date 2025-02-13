@@ -59,6 +59,8 @@ import type {
   PalletReviveEvmApiRpcTypesGenGenericTransaction,
   PalletRevivePrimitivesCodeUploadReturnValue,
   PalletRevivePrimitivesContractAccessError,
+  PalletReviveEvmApiDebugRpcTypesCallTrace,
+  PalletReviveEvmApiDebugRpcTypesTracerConfig,
 } from './types';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
@@ -912,6 +914,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     balance: GenericRuntimeApiMethod<Rv, (address: H160) => Promise<U256>>;
 
     /**
+     * Returns the gas price.
+     *
+     * @callname: ReviveApi_gas_price
+     **/
+    gasPrice: GenericRuntimeApiMethod<Rv, () => Promise<U256>>;
+
+    /**
      * Returns the nonce of the given `[H160]` address.
      *
      * @callname: ReviveApi_nonce
@@ -1022,6 +1031,65 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
         address: H160,
         key: FixedBytes<32>,
       ) => Promise<Result<Bytes | undefined, PalletRevivePrimitivesContractAccessError>>
+    >;
+
+    /**
+     * Traces the execution of an entire block and returns call traces.
+     *
+     * This is intended to be called through `state_call` to replay the block from the
+     * parent block.
+     *
+     * See eth-rpc `debug_traceBlockByNumber` for usage.
+     *
+     * @callname: ReviveApi_trace_block
+     * @param {SpRuntimeBlock} block
+     * @param {PalletReviveEvmApiDebugRpcTypesTracerConfig} config
+     **/
+    traceBlock: GenericRuntimeApiMethod<
+      Rv,
+      (
+        block: SpRuntimeBlock,
+        config: PalletReviveEvmApiDebugRpcTypesTracerConfig,
+      ) => Promise<Array<[number, PalletReviveEvmApiDebugRpcTypesCallTrace]>>
+    >;
+
+    /**
+     * Traces the execution of a specific transaction within a block.
+     *
+     * This is intended to be called through `state_call` to replay the block from the
+     * parent hash up to the transaction.
+     *
+     * See eth-rpc `debug_traceTransaction` for usage.
+     *
+     * @callname: ReviveApi_trace_tx
+     * @param {SpRuntimeBlock} block
+     * @param {number} tx_index
+     * @param {PalletReviveEvmApiDebugRpcTypesTracerConfig} config
+     **/
+    traceTx: GenericRuntimeApiMethod<
+      Rv,
+      (
+        block: SpRuntimeBlock,
+        txIndex: number,
+        config: PalletReviveEvmApiDebugRpcTypesTracerConfig,
+      ) => Promise<PalletReviveEvmApiDebugRpcTypesCallTrace | undefined>
+    >;
+
+    /**
+     * Dry run and return the trace of the given call.
+     *
+     * See eth-rpc `debug_traceCall` for usage.
+     *
+     * @callname: ReviveApi_trace_call
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
+     * @param {PalletReviveEvmApiDebugRpcTypesTracerConfig} config
+     **/
+    traceCall: GenericRuntimeApiMethod<
+      Rv,
+      (
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+        config: PalletReviveEvmApiDebugRpcTypesTracerConfig,
+      ) => Promise<Result<PalletReviveEvmApiDebugRpcTypesCallTrace, PalletRevivePrimitivesEthTransactError>>
     >;
 
     /**

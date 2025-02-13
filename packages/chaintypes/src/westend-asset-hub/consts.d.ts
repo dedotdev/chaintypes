@@ -109,6 +109,31 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
+   * Pallet `MultiBlockMigrations`'s constants
+   **/
+  multiBlockMigrations: {
+    /**
+     * The maximal length of an encoded cursor.
+     *
+     * A good default needs to selected such that no migration will ever have a cursor with MEL
+     * above this limit. This is statically checked in `integrity_test`.
+     **/
+    cursorMaxLen: number;
+
+    /**
+     * The maximal length of an encoded identifier.
+     *
+     * A good default needs to selected such that no migration will ever have an identifier
+     * with MEL above this limit. This is statically checked in `integrity_test`.
+     **/
+    identifierMaxLen: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Balances`'s constants
    **/
   balances: {
@@ -886,9 +911,8 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
 
     /**
      * The percentage of the storage deposit that should be held for using a code hash.
-     * Instantiating a contract, or calling [`chain_extension::Ext::lock_delegate_dependency`]
-     * protects the code from being removed. In order to prevent abuse these actions are
-     * protected with a percentage of the code deposit.
+     * Instantiating a contract, protects the code from being removed. In order to prevent
+     * abuse these actions are protected with a percentage of the code deposit.
      **/
     codeHashLockupDepositPercent: Perbill;
 

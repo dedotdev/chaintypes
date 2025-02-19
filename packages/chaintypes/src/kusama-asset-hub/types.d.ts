@@ -9,13 +9,13 @@ import type {
   FixedBytes,
   FixedArray,
   Bytes,
+  FixedU128,
   Result,
   Permill,
   BytesLike,
   MultiAddress,
   MultiAddressLike,
   AccountId32Like,
-  FixedU128,
   Era,
   Header,
   UncheckedExtrinsic,
@@ -60,6 +60,7 @@ export type AssetHubKusamaRuntimeRuntimeEvent =
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
   | { pallet: 'PolkadotXcm'; palletEvent: PalletXcmEvent }
   | { pallet: 'CumulusXcm'; palletEvent: CumulusPalletXcmEvent }
+  | { pallet: 'ToPolkadotXcmRouter'; palletEvent: PalletXcmBridgeHubRouterEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
   | { pallet: 'Utility'; palletEvent: PalletUtilityEvent }
   | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
@@ -975,6 +976,35 @@ export type CumulusPalletXcmEvent =
    * \[ id, outcome \]
    **/
   | { name: 'ExecutedDownward'; data: [FixedBytes<32>, StagingXcmV4TraitsOutcome] };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletXcmBridgeHubRouterEvent =
+  /**
+   * Delivery fee factor has been decreased.
+   **/
+  | {
+      name: 'DeliveryFeeFactorDecreased';
+      data: {
+        /**
+         * New value of the `DeliveryFeeFactor`.
+         **/
+        newValue: FixedU128;
+      };
+    }
+  /**
+   * Delivery fee factor has been increased.
+   **/
+  | {
+      name: 'DeliveryFeeFactorIncreased';
+      data: {
+        /**
+         * New value of the `DeliveryFeeFactor`.
+         **/
+        newValue: FixedU128;
+      };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -2290,7 +2320,7 @@ export type FrameSystemError =
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV7UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
 };
 
 export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
@@ -2303,15 +2333,15 @@ export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
 
 export type CumulusPalletParachainSystemUnincludedSegmentHrmpChannelUpdate = { msgCount: number; totalBytes: number };
 
-export type PolkadotPrimitivesV7UpgradeGoAhead = 'Abort' | 'GoAhead';
+export type PolkadotPrimitivesV8UpgradeGoAhead = 'Abort' | 'GoAhead';
 
 export type CumulusPalletParachainSystemUnincludedSegmentSegmentTracker = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   hrmpWatermark?: number | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV7UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
 };
 
-export type PolkadotPrimitivesV7PersistedValidationData = {
+export type PolkadotPrimitivesV8PersistedValidationData = {
   parentHead: PolkadotParachainPrimitivesPrimitivesHeadData;
   relayParentNumber: number;
   relayParentStorageRoot: H256;
@@ -2320,15 +2350,15 @@ export type PolkadotPrimitivesV7PersistedValidationData = {
 
 export type PolkadotParachainPrimitivesPrimitivesHeadData = Bytes;
 
-export type PolkadotPrimitivesV7UpgradeRestriction = 'Present';
+export type PolkadotPrimitivesV8UpgradeRestriction = 'Present';
 
 export type SpTrieStorageProof = { trieNodes: Array<Bytes> };
 
 export type CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot = {
   dmqMqcHead: H256;
   relayDispatchQueueRemainingCapacity: CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity;
-  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV7AbridgedHrmpChannel]>;
-  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV7AbridgedHrmpChannel]>;
+  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
+  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
 };
 
 export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity = {
@@ -2336,7 +2366,7 @@ export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRema
   remainingSize: number;
 };
 
-export type PolkadotPrimitivesV7AbridgedHrmpChannel = {
+export type PolkadotPrimitivesV8AbridgedHrmpChannel = {
   maxCapacity: number;
   maxTotalSize: number;
   maxMessageSize: number;
@@ -2345,7 +2375,7 @@ export type PolkadotPrimitivesV7AbridgedHrmpChannel = {
   mqcHead?: H256 | undefined;
 };
 
-export type PolkadotPrimitivesV7AbridgedHostConfiguration = {
+export type PolkadotPrimitivesV8AbridgedHostConfiguration = {
   maxCodeSize: number;
   maxHeadDataSize: number;
   maxUpwardQueueCount: number;
@@ -2355,10 +2385,10 @@ export type PolkadotPrimitivesV7AbridgedHostConfiguration = {
   hrmpMaxMessageNumPerCandidate: number;
   validationUpgradeCooldown: number;
   validationUpgradeDelay: number;
-  asyncBackingParams: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams;
+  asyncBackingParams: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams;
 };
 
-export type PolkadotPrimitivesV7AsyncBackingAsyncBackingParams = {
+export type PolkadotPrimitivesV8AsyncBackingAsyncBackingParams = {
   maxCandidateDepth: number;
   allowedAncestryLen: number;
 };
@@ -2386,30 +2416,7 @@ export type CumulusPalletParachainSystemCall =
    * if the appropriate time has come.
    **/
   | { name: 'SetValidationData'; params: { data: CumulusPrimitivesParachainInherentParachainInherentData } }
-  | { name: 'SudoSendUpwardMessage'; params: { message: Bytes } }
-  /**
-   * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
-   * later.
-   *
-   * The `check_version` parameter sets a boolean flag for whether or not the runtime's spec
-   * version and name should be verified on upgrade. Since the authorization only has a hash,
-   * it cannot actually perform the verification.
-   *
-   * This call requires Root origin.
-   **/
-  | { name: 'AuthorizeUpgrade'; params: { codeHash: H256; checkVersion: boolean } }
-  /**
-   * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
-   *
-   * If the authorization required a version check, this call will ensure the spec name
-   * remains unchanged and that the spec version has increased.
-   *
-   * Note that this function will not apply the new `code`, but only attempt to schedule the
-   * upgrade with the Relay Chain.
-   *
-   * All origins are allowed.
-   **/
-  | { name: 'EnactAuthorizedUpgrade'; params: { code: Bytes } };
+  | { name: 'SudoSendUpwardMessage'; params: { message: Bytes } };
 
 export type CumulusPalletParachainSystemCallLike =
   /**
@@ -2424,33 +2431,10 @@ export type CumulusPalletParachainSystemCallLike =
    * if the appropriate time has come.
    **/
   | { name: 'SetValidationData'; params: { data: CumulusPrimitivesParachainInherentParachainInherentData } }
-  | { name: 'SudoSendUpwardMessage'; params: { message: BytesLike } }
-  /**
-   * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
-   * later.
-   *
-   * The `check_version` parameter sets a boolean flag for whether or not the runtime's spec
-   * version and name should be verified on upgrade. Since the authorization only has a hash,
-   * it cannot actually perform the verification.
-   *
-   * This call requires Root origin.
-   **/
-  | { name: 'AuthorizeUpgrade'; params: { codeHash: H256; checkVersion: boolean } }
-  /**
-   * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
-   *
-   * If the authorization required a version check, this call will ensure the spec name
-   * remains unchanged and that the spec version has increased.
-   *
-   * Note that this function will not apply the new `code`, but only attempt to schedule the
-   * upgrade with the Relay Chain.
-   *
-   * All origins are allowed.
-   **/
-  | { name: 'EnactAuthorizedUpgrade'; params: { code: BytesLike } };
+  | { name: 'SudoSendUpwardMessage'; params: { message: BytesLike } };
 
 export type CumulusPrimitivesParachainInherentParachainInherentData = {
-  validationData: PolkadotPrimitivesV7PersistedValidationData;
+  validationData: PolkadotPrimitivesV8PersistedValidationData;
   relayChainState: SpTrieStorageProof;
   downwardMessages: Array<PolkadotCorePrimitivesInboundDownwardMessage>;
   horizontalMessages: Array<[PolkadotParachainPrimitivesPrimitivesId, Array<PolkadotCorePrimitivesInboundHrmpMessage>]>;
@@ -5621,8 +5605,6 @@ export type PalletAssetsCall =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
-   *
-   * The asset class must be frozen before calling `start_destroy`.
    **/
   | { name: 'StartDestroy'; params: { id: number } }
   /**
@@ -6103,7 +6085,26 @@ export type PalletAssetsCall =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Block'; params: { id: number; who: MultiAddress } };
+  | { name: 'Block'; params: { id: number; who: MultiAddress } }
+  /**
+   * Transfer the entire transferable balance from the caller asset account.
+   *
+   * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+   * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+   * transferred by this function. To ensure that this function results in a killed account,
+   * you might need to prepare the account by removing any reference counters, storage
+   * deposits, etc...
+   *
+   * The dispatch origin of this call must be Signed.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `dest`: The recipient of the transfer.
+   * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+   * of the funds the asset account has, causing the sender asset account to be killed
+   * (false), or transfer everything except at least the minimum balance, which will
+   * guarantee to keep the sender asset account alive (true).
+   **/
+  | { name: 'TransferAll'; params: { id: number; dest: MultiAddress; keepAlive: boolean } };
 
 export type PalletAssetsCallLike =
   /**
@@ -6160,8 +6161,6 @@ export type PalletAssetsCallLike =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
-   *
-   * The asset class must be frozen before calling `start_destroy`.
    **/
   | { name: 'StartDestroy'; params: { id: number } }
   /**
@@ -6648,7 +6647,26 @@ export type PalletAssetsCallLike =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Block'; params: { id: number; who: MultiAddressLike } };
+  | { name: 'Block'; params: { id: number; who: MultiAddressLike } }
+  /**
+   * Transfer the entire transferable balance from the caller asset account.
+   *
+   * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+   * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+   * transferred by this function. To ensure that this function results in a killed account,
+   * you might need to prepare the account by removing any reference counters, storage
+   * deposits, etc...
+   *
+   * The dispatch origin of this call must be Signed.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `dest`: The recipient of the transfer.
+   * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+   * of the funds the asset account has, causing the sender asset account to be killed
+   * (false), or transfer everything except at least the minimum balance, which will
+   * guarantee to keep the sender asset account alive (true).
+   **/
+  | { name: 'TransferAll'; params: { id: number; dest: MultiAddressLike; keepAlive: boolean } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -9112,8 +9130,6 @@ export type PalletAssetsCall002 =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
-   *
-   * The asset class must be frozen before calling `start_destroy`.
    **/
   | { name: 'StartDestroy'; params: { id: StagingXcmV4Location } }
   /**
@@ -9603,7 +9619,26 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Block'; params: { id: StagingXcmV4Location; who: MultiAddress } };
+  | { name: 'Block'; params: { id: StagingXcmV4Location; who: MultiAddress } }
+  /**
+   * Transfer the entire transferable balance from the caller asset account.
+   *
+   * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+   * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+   * transferred by this function. To ensure that this function results in a killed account,
+   * you might need to prepare the account by removing any reference counters, storage
+   * deposits, etc...
+   *
+   * The dispatch origin of this call must be Signed.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `dest`: The recipient of the transfer.
+   * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+   * of the funds the asset account has, causing the sender asset account to be killed
+   * (false), or transfer everything except at least the minimum balance, which will
+   * guarantee to keep the sender asset account alive (true).
+   **/
+  | { name: 'TransferAll'; params: { id: StagingXcmV4Location; dest: MultiAddress; keepAlive: boolean } };
 
 export type PalletAssetsCallLike002 =
   /**
@@ -9663,8 +9698,6 @@ export type PalletAssetsCallLike002 =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
-   *
-   * The asset class must be frozen before calling `start_destroy`.
    **/
   | { name: 'StartDestroy'; params: { id: StagingXcmV4Location } }
   /**
@@ -10162,7 +10195,26 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Block'; params: { id: StagingXcmV4Location; who: MultiAddressLike } };
+  | { name: 'Block'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
+  /**
+   * Transfer the entire transferable balance from the caller asset account.
+   *
+   * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+   * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+   * transferred by this function. To ensure that this function results in a killed account,
+   * you might need to prepare the account by removing any reference counters, storage
+   * deposits, etc...
+   *
+   * The dispatch origin of this call must be Signed.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `dest`: The recipient of the transfer.
+   * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+   * of the funds the asset account has, causing the sender asset account to be killed
+   * (false), or transfer everything except at least the minimum balance, which will
+   * guarantee to keep the sender asset account alive (true).
+   **/
+  | { name: 'TransferAll'; params: { id: StagingXcmV4Location; dest: MultiAddressLike; keepAlive: boolean } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10322,8 +10374,6 @@ export type PalletAssetsCall003 =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
-   *
-   * The asset class must be frozen before calling `start_destroy`.
    **/
   | { name: 'StartDestroy'; params: { id: number } }
   /**
@@ -10804,7 +10854,26 @@ export type PalletAssetsCall003 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Block'; params: { id: number; who: MultiAddress } };
+  | { name: 'Block'; params: { id: number; who: MultiAddress } }
+  /**
+   * Transfer the entire transferable balance from the caller asset account.
+   *
+   * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+   * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+   * transferred by this function. To ensure that this function results in a killed account,
+   * you might need to prepare the account by removing any reference counters, storage
+   * deposits, etc...
+   *
+   * The dispatch origin of this call must be Signed.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `dest`: The recipient of the transfer.
+   * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+   * of the funds the asset account has, causing the sender asset account to be killed
+   * (false), or transfer everything except at least the minimum balance, which will
+   * guarantee to keep the sender asset account alive (true).
+   **/
+  | { name: 'TransferAll'; params: { id: number; dest: MultiAddress; keepAlive: boolean } };
 
 export type PalletAssetsCallLike003 =
   /**
@@ -10861,8 +10930,6 @@ export type PalletAssetsCallLike003 =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
-   *
-   * The asset class must be frozen before calling `start_destroy`.
    **/
   | { name: 'StartDestroy'; params: { id: number } }
   /**
@@ -11349,7 +11416,26 @@ export type PalletAssetsCallLike003 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Block'; params: { id: number; who: MultiAddressLike } };
+  | { name: 'Block'; params: { id: number; who: MultiAddressLike } }
+  /**
+   * Transfer the entire transferable balance from the caller asset account.
+   *
+   * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+   * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+   * transferred by this function. To ensure that this function results in a killed account,
+   * you might need to prepare the account by removing any reference counters, storage
+   * deposits, etc...
+   *
+   * The dispatch origin of this call must be Signed.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `dest`: The recipient of the transfer.
+   * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+   * of the funds the asset account has, causing the sender asset account to be killed
+   * (false), or transfer everything except at least the minimum balance, which will
+   * guarantee to keep the sender asset account alive (true).
+   **/
+  | { name: 'TransferAll'; params: { id: number; dest: MultiAddressLike; keepAlive: boolean } };
 
 /**
  * Pallet's callable functions.
@@ -11376,7 +11462,7 @@ export type PalletAssetConversionCall =
    * calls to render the liquidity withdrawable and rectify the exchange rate.
    *
    * Once liquidity is added, someone may successfully call
-   * [`Pallet::swap_exact_tokens_for_tokens`] successfully.
+   * [`Pallet::swap_exact_tokens_for_tokens`].
    **/
   | {
       name: 'AddLiquidity';
@@ -11479,7 +11565,7 @@ export type PalletAssetConversionCallLike =
    * calls to render the liquidity withdrawable and rectify the exchange rate.
    *
    * Once liquidity is added, someone may successfully call
-   * [`Pallet::swap_exact_tokens_for_tokens`] successfully.
+   * [`Pallet::swap_exact_tokens_for_tokens`].
    **/
   | {
       name: 'AddLiquidity';

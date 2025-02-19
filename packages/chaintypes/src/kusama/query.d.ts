@@ -103,23 +103,25 @@ import type {
   PalletNominationPoolsSubPools,
   PalletNominationPoolsClaimPermission,
   PalletFastUnstakeUnstakeRequest,
+  PalletDelegatedStakingDelegation,
+  PalletDelegatedStakingAgentLedger,
   PolkadotRuntimeParachainsConfigurationHostConfiguration,
-  PolkadotPrimitivesV7ValidatorIndex,
-  PolkadotPrimitivesV7ValidatorAppPublic,
+  PolkadotPrimitivesV8ValidatorIndex,
+  PolkadotPrimitivesV8ValidatorAppPublic,
   PolkadotRuntimeParachainsSharedAllowedRelayParentsTracker,
   PolkadotRuntimeParachainsInclusionCandidatePendingAvailability,
   PolkadotParachainPrimitivesPrimitivesId,
-  PolkadotPrimitivesV7ScrapedOnChainVotes,
+  PolkadotPrimitivesV8ScrapedOnChainVotes,
   PolkadotRuntimeParachainsSchedulerPalletCoreOccupied,
-  PolkadotPrimitivesV7CoreIndex,
+  PolkadotPrimitivesV8CoreIndex,
   PolkadotRuntimeParachainsSchedulerPalletParasEntry,
   PolkadotRuntimeParachainsParasPvfCheckActiveVoteState,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotRuntimeParachainsParasParaLifecycle,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotRuntimeParachainsParasParaPastCodeMeta,
-  PolkadotPrimitivesV7UpgradeGoAhead,
-  PolkadotPrimitivesV7UpgradeRestriction,
+  PolkadotPrimitivesV8UpgradeGoAhead,
+  PolkadotPrimitivesV8UpgradeRestriction,
   PolkadotRuntimeParachainsParasParaGenesisArgs,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
   PolkadotRuntimeParachainsInitializerBufferedSessionChange,
@@ -128,14 +130,14 @@ import type {
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
   PolkadotRuntimeParachainsHrmpHrmpChannel,
   PolkadotCorePrimitivesInboundHrmpMessage,
-  PolkadotPrimitivesV7AssignmentAppPublic,
-  PolkadotPrimitivesV7SessionInfo,
-  PolkadotPrimitivesV7ExecutorParams,
-  PolkadotPrimitivesV7DisputeState,
+  PolkadotPrimitivesV8AssignmentAppPublic,
+  PolkadotPrimitivesV8SessionInfo,
+  PolkadotPrimitivesV8ExecutorParams,
+  PolkadotPrimitivesV8DisputeState,
   PolkadotCorePrimitivesCandidateHash,
-  PolkadotPrimitivesV7SlashingPendingSlashes,
-  PolkadotRuntimeParachainsAssignerOnDemandTypesCoreAffinityCount,
-  PolkadotRuntimeParachainsAssignerOnDemandTypesQueueStatusType,
+  PolkadotPrimitivesV8SlashingPendingSlashes,
+  PolkadotRuntimeParachainsOnDemandTypesCoreAffinityCount,
+  PolkadotRuntimeParachainsOnDemandTypesQueueStatusType,
   BinaryHeapEnqueuedOrder,
   PolkadotRuntimeParachainsAssignerCoretimeSchedule,
   PolkadotRuntimeParachainsAssignerCoretimeCoreDescriptor,
@@ -2722,6 +2724,56 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
+   * Pallet `DelegatedStaking`'s storage queries
+   **/
+  delegatedStaking: {
+    /**
+     * Map of Delegators to their `Delegation`.
+     *
+     * Implementation note: We are not using a double map with `delegator` and `agent` account
+     * as keys since we want to restrict delegators to delegate only to one account at a time.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletDelegatedStakingDelegation | undefined> =} callback
+     **/
+    delegators: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => PalletDelegatedStakingDelegation | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForDelegators: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Map of `Agent` to their `Ledger`.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletDelegatedStakingAgentLedger | undefined> =} callback
+     **/
+    agents: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => PalletDelegatedStakingAgentLedger | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForAgents: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
    * Pallet `Configuration`'s storage queries
    **/
   configuration: {
@@ -2776,17 +2828,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * All the validators actively participating in parachain consensus.
      * Indices are into the broader validator set.
      *
-     * @param {Callback<Array<PolkadotPrimitivesV7ValidatorIndex>> =} callback
+     * @param {Callback<Array<PolkadotPrimitivesV8ValidatorIndex>> =} callback
      **/
-    activeValidatorIndices: GenericStorageQuery<Rv, () => Array<PolkadotPrimitivesV7ValidatorIndex>>;
+    activeValidatorIndices: GenericStorageQuery<Rv, () => Array<PolkadotPrimitivesV8ValidatorIndex>>;
 
     /**
      * The parachain attestation keys of the validators actively participating in parachain
      * consensus. This should be the same length as `ActiveValidatorIndices`.
      *
-     * @param {Callback<Array<PolkadotPrimitivesV7ValidatorAppPublic>> =} callback
+     * @param {Callback<Array<PolkadotPrimitivesV8ValidatorAppPublic>> =} callback
      **/
-    activeValidatorKeys: GenericStorageQuery<Rv, () => Array<PolkadotPrimitivesV7ValidatorAppPublic>>;
+    activeValidatorKeys: GenericStorageQuery<Rv, () => Array<PolkadotPrimitivesV8ValidatorAppPublic>>;
 
     /**
      * All allowed relay-parents.
@@ -2846,9 +2898,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * Scraped on chain data for extracting resolved disputes as well as backing votes.
      *
-     * @param {Callback<PolkadotPrimitivesV7ScrapedOnChainVotes | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8ScrapedOnChainVotes | undefined> =} callback
      **/
-    onChainVotes: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7ScrapedOnChainVotes | undefined>;
+    onChainVotes: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8ScrapedOnChainVotes | undefined>;
 
     /**
      * Generic pallet storage query
@@ -2868,9 +2920,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * multiplexers. Reasonably, 100-1000. The dominant factor is the number of validators: safe
      * upper bound at 10k.
      *
-     * @param {Callback<Array<Array<PolkadotPrimitivesV7ValidatorIndex>>> =} callback
+     * @param {Callback<Array<Array<PolkadotPrimitivesV8ValidatorIndex>>> =} callback
      **/
-    validatorGroups: GenericStorageQuery<Rv, () => Array<Array<PolkadotPrimitivesV7ValidatorIndex>>>;
+    validatorGroups: GenericStorageQuery<Rv, () => Array<Array<PolkadotPrimitivesV8ValidatorIndex>>>;
 
     /**
      * One entry for each availability core. The i'th parachain belongs to the i'th core, with the
@@ -2902,11 +2954,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * scheduled on that core. The value contained here will not be valid after the end of
      * a block. Runtime APIs should be used to determine scheduled cores for the upcoming block.
      *
-     * @param {Callback<Array<[PolkadotPrimitivesV7CoreIndex, Array<PolkadotRuntimeParachainsSchedulerPalletParasEntry>]>> =} callback
+     * @param {Callback<Array<[PolkadotPrimitivesV8CoreIndex, Array<PolkadotRuntimeParachainsSchedulerPalletParasEntry>]>> =} callback
      **/
     claimQueue: GenericStorageQuery<
       Rv,
-      () => Array<[PolkadotPrimitivesV7CoreIndex, Array<PolkadotRuntimeParachainsSchedulerPalletParasEntry>]>
+      () => Array<[PolkadotPrimitivesV8CoreIndex, Array<PolkadotRuntimeParachainsSchedulerPalletParasEntry>]>
     >;
 
     /**
@@ -3105,11 +3157,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * the format will require migration of parachains.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} arg
-     * @param {Callback<PolkadotPrimitivesV7UpgradeGoAhead | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8UpgradeGoAhead | undefined> =} callback
      **/
     upgradeGoAheadSignal: GenericStorageQuery<
       Rv,
-      (arg: PolkadotParachainPrimitivesPrimitivesId) => PolkadotPrimitivesV7UpgradeGoAhead | undefined,
+      (arg: PolkadotParachainPrimitivesPrimitivesId) => PolkadotPrimitivesV8UpgradeGoAhead | undefined,
       PolkadotParachainPrimitivesPrimitivesId
     >;
 
@@ -3125,11 +3177,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * the format will require migration of parachains.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} arg
-     * @param {Callback<PolkadotPrimitivesV7UpgradeRestriction | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8UpgradeRestriction | undefined> =} callback
      **/
     upgradeRestrictionSignal: GenericStorageQuery<
       Rv,
-      (arg: PolkadotParachainPrimitivesPrimitivesId) => PolkadotPrimitivesV7UpgradeRestriction | undefined,
+      (arg: PolkadotParachainPrimitivesPrimitivesId) => PolkadotPrimitivesV8UpgradeRestriction | undefined,
       PolkadotParachainPrimitivesPrimitivesId
     >;
 
@@ -3496,9 +3548,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Note that this API is private due to it being prone to 'off-by-one' at session boundaries.
      * When in doubt, use `Sessions` API instead.
      *
-     * @param {Callback<Array<PolkadotPrimitivesV7AssignmentAppPublic>> =} callback
+     * @param {Callback<Array<PolkadotPrimitivesV8AssignmentAppPublic>> =} callback
      **/
-    assignmentKeysUnsafe: GenericStorageQuery<Rv, () => Array<PolkadotPrimitivesV7AssignmentAppPublic>>;
+    assignmentKeysUnsafe: GenericStorageQuery<Rv, () => Array<PolkadotPrimitivesV8AssignmentAppPublic>>;
 
     /**
      * The earliest session for which previous session info is stored.
@@ -3513,9 +3565,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Does not have any entries before the session index in the first session change notification.
      *
      * @param {number} arg
-     * @param {Callback<PolkadotPrimitivesV7SessionInfo | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8SessionInfo | undefined> =} callback
      **/
-    sessions: GenericStorageQuery<Rv, (arg: number) => PolkadotPrimitivesV7SessionInfo | undefined, number>;
+    sessions: GenericStorageQuery<Rv, (arg: number) => PolkadotPrimitivesV8SessionInfo | undefined, number>;
 
     /**
      * The validator account keys of the validators actively participating in parachain consensus.
@@ -3529,11 +3581,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Executor parameter set for a given session index
      *
      * @param {number} arg
-     * @param {Callback<PolkadotPrimitivesV7ExecutorParams | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8ExecutorParams | undefined> =} callback
      **/
     sessionExecutorParams: GenericStorageQuery<
       Rv,
-      (arg: number) => PolkadotPrimitivesV7ExecutorParams | undefined,
+      (arg: number) => PolkadotPrimitivesV8ExecutorParams | undefined,
       number
     >;
 
@@ -3558,11 +3610,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * All ongoing or concluded disputes for the last several sessions.
      *
      * @param {[number, PolkadotCorePrimitivesCandidateHash]} arg
-     * @param {Callback<PolkadotPrimitivesV7DisputeState | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8DisputeState | undefined> =} callback
      **/
     disputes: GenericStorageQuery<
       Rv,
-      (arg: [number, PolkadotCorePrimitivesCandidateHash]) => PolkadotPrimitivesV7DisputeState | undefined,
+      (arg: [number, PolkadotCorePrimitivesCandidateHash]) => PolkadotPrimitivesV8DisputeState | undefined,
       [number, PolkadotCorePrimitivesCandidateHash]
     >;
 
@@ -3571,11 +3623,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * This storage is used for slashing.
      *
      * @param {[number, PolkadotCorePrimitivesCandidateHash]} arg
-     * @param {Callback<Array<PolkadotPrimitivesV7ValidatorIndex> | undefined> =} callback
+     * @param {Callback<Array<PolkadotPrimitivesV8ValidatorIndex> | undefined> =} callback
      **/
     backersOnDisputes: GenericStorageQuery<
       Rv,
-      (arg: [number, PolkadotCorePrimitivesCandidateHash]) => Array<PolkadotPrimitivesV7ValidatorIndex> | undefined,
+      (arg: [number, PolkadotCorePrimitivesCandidateHash]) => Array<PolkadotPrimitivesV8ValidatorIndex> | undefined,
       [number, PolkadotCorePrimitivesCandidateHash]
     >;
 
@@ -3615,11 +3667,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Validators pending dispute slashes.
      *
      * @param {[number, PolkadotCorePrimitivesCandidateHash]} arg
-     * @param {Callback<PolkadotPrimitivesV7SlashingPendingSlashes | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8SlashingPendingSlashes | undefined> =} callback
      **/
     unappliedSlashes: GenericStorageQuery<
       Rv,
-      (arg: [number, PolkadotCorePrimitivesCandidateHash]) => PolkadotPrimitivesV7SlashingPendingSlashes | undefined,
+      (arg: [number, PolkadotCorePrimitivesCandidateHash]) => PolkadotPrimitivesV8SlashingPendingSlashes | undefined,
       [number, PolkadotCorePrimitivesCandidateHash]
     >;
 
@@ -3646,22 +3698,22 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * `ParaId` on two or more `CoreIndex`es.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} arg
-     * @param {Callback<PolkadotRuntimeParachainsAssignerOnDemandTypesCoreAffinityCount | undefined> =} callback
+     * @param {Callback<PolkadotRuntimeParachainsOnDemandTypesCoreAffinityCount | undefined> =} callback
      **/
     paraIdAffinity: GenericStorageQuery<
       Rv,
       (
         arg: PolkadotParachainPrimitivesPrimitivesId,
-      ) => PolkadotRuntimeParachainsAssignerOnDemandTypesCoreAffinityCount | undefined,
+      ) => PolkadotRuntimeParachainsOnDemandTypesCoreAffinityCount | undefined,
       PolkadotParachainPrimitivesPrimitivesId
     >;
 
     /**
      * Overall status of queue (both free + affinity entries)
      *
-     * @param {Callback<PolkadotRuntimeParachainsAssignerOnDemandTypesQueueStatusType> =} callback
+     * @param {Callback<PolkadotRuntimeParachainsOnDemandTypesQueueStatusType> =} callback
      **/
-    queueStatus: GenericStorageQuery<Rv, () => PolkadotRuntimeParachainsAssignerOnDemandTypesQueueStatusType>;
+    queueStatus: GenericStorageQuery<Rv, () => PolkadotRuntimeParachainsOnDemandTypesQueueStatusType>;
 
     /**
      * Priority queue for all orders which don't yet (or not any more) have any core affinity.
@@ -3673,13 +3725,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * Queue entries that are currently bound to a particular core due to core affinity.
      *
-     * @param {PolkadotPrimitivesV7CoreIndex} arg
+     * @param {PolkadotPrimitivesV8CoreIndex} arg
      * @param {Callback<BinaryHeapEnqueuedOrder> =} callback
      **/
     affinityEntries: GenericStorageQuery<
       Rv,
-      (arg: PolkadotPrimitivesV7CoreIndex) => BinaryHeapEnqueuedOrder,
-      PolkadotPrimitivesV7CoreIndex
+      (arg: PolkadotPrimitivesV8CoreIndex) => BinaryHeapEnqueuedOrder,
+      PolkadotPrimitivesV8CoreIndex
     >;
 
     /**
@@ -3704,13 +3756,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Assignments as of the given block number. They will go into state once the block number is
      * reached (and replace whatever was in there before).
      *
-     * @param {[number, PolkadotPrimitivesV7CoreIndex]} arg
+     * @param {[number, PolkadotPrimitivesV8CoreIndex]} arg
      * @param {Callback<PolkadotRuntimeParachainsAssignerCoretimeSchedule | undefined> =} callback
      **/
     coreSchedules: GenericStorageQuery<
       Rv,
-      (arg: [number, PolkadotPrimitivesV7CoreIndex]) => PolkadotRuntimeParachainsAssignerCoretimeSchedule | undefined,
-      [number, PolkadotPrimitivesV7CoreIndex]
+      (arg: [number, PolkadotPrimitivesV8CoreIndex]) => PolkadotRuntimeParachainsAssignerCoretimeSchedule | undefined,
+      [number, PolkadotPrimitivesV8CoreIndex]
     >;
 
     /**
@@ -3719,13 +3771,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * They will be picked from `PendingAssignments` once we reach the scheduled block number in
      * `PendingAssignments`.
      *
-     * @param {PolkadotPrimitivesV7CoreIndex} arg
+     * @param {PolkadotPrimitivesV8CoreIndex} arg
      * @param {Callback<PolkadotRuntimeParachainsAssignerCoretimeCoreDescriptor> =} callback
      **/
     coreDescriptors: GenericStorageQuery<
       Rv,
-      (arg: PolkadotPrimitivesV7CoreIndex) => PolkadotRuntimeParachainsAssignerCoretimeCoreDescriptor,
-      PolkadotPrimitivesV7CoreIndex
+      (arg: PolkadotPrimitivesV8CoreIndex) => PolkadotRuntimeParachainsAssignerCoretimeCoreDescriptor,
+      PolkadotPrimitivesV8CoreIndex
     >;
 
     /**

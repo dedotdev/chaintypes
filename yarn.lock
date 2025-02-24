@@ -169,36 +169,36 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@dedot/api@npm:0.7.0":
-  version: 0.7.0
-  resolution: "@dedot/api@npm:0.7.0"
+"@dedot/api@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@dedot/api@npm:0.7.1"
   dependencies:
-    "@dedot/codecs": "npm:0.7.0"
-    "@dedot/providers": "npm:0.7.0"
-    "@dedot/runtime-specs": "npm:0.7.0"
-    "@dedot/shape": "npm:0.7.0"
-    "@dedot/storage": "npm:0.7.0"
-    "@dedot/types": "npm:0.7.0"
-    "@dedot/utils": "npm:0.7.0"
-  checksum: 10/4001e4dc0bffb4a86aca4f552713e0a04f0fe75b71de1a6c74b11f5e640cf488fe6ebac63e610419c70dcdfe78c59fa545de0edf6f97254e55464cabef45ca2f
+    "@dedot/codecs": "npm:0.7.1"
+    "@dedot/providers": "npm:0.7.1"
+    "@dedot/runtime-specs": "npm:0.7.1"
+    "@dedot/shape": "npm:0.7.1"
+    "@dedot/storage": "npm:0.7.1"
+    "@dedot/types": "npm:0.7.1"
+    "@dedot/utils": "npm:0.7.1"
+  checksum: 10/8e9636e1e72bdf76450c99a1051fd6b874c48c974e53e7b575516aa7e677c413fcb8b40d84d51ed9c864070872f37c319f865b741aa64248023388aa6873f980
   languageName: node
   linkType: hard
 
 "@dedot/chaintypes@workspace:packages/chaintypes":
   version: 0.0.0-use.local
   resolution: "@dedot/chaintypes@workspace:packages/chaintypes"
-  dependencies:
-    dedot: "npm:^0.7.0"
+  peerDependencies:
+    dedot: ">=0.7.1"
   languageName: unknown
   linkType: soft
 
-"@dedot/cli@npm:0.7.0":
-  version: 0.7.0
-  resolution: "@dedot/cli@npm:0.7.0"
+"@dedot/cli@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@dedot/cli@npm:0.7.1"
   dependencies:
-    "@dedot/api": "npm:0.7.0"
-    "@dedot/codecs": "npm:0.7.0"
-    "@dedot/codegen": "npm:0.7.0"
+    "@dedot/api": "npm:0.7.1"
+    "@dedot/codecs": "npm:0.7.1"
+    "@dedot/codegen": "npm:0.7.1"
     "@polkadot-api/wasm-executor": "npm:^0.1.2"
     "@polkadot/types-support": "npm:^15.5.2"
     ora: "npm:^8.2.0"
@@ -206,107 +206,107 @@ __metadata:
   bin:
     dedot: bin/dedot.mjs
     djs: bin/dedot.mjs
-  checksum: 10/0b4e27d4c80f0419287611d13b44ec51f3ba7087a791788ad0aa3db1db672ad7bfb79bf0b0244cbc8e8ae12eb0ffae4d73bc729b326129c90f7231fae86d0c0c
+  checksum: 10/af807fdc239c2f915a6cd5bc8adf0cf8404b29caad7767431cc09e994f19789622c012d02fbc5213bcf1f24436be4d38ba5e2121328da2cd57e147a1db6ccd42
   languageName: node
   linkType: hard
 
-"@dedot/codecs@npm:0.7.0":
-  version: 0.7.0
-  resolution: "@dedot/codecs@npm:0.7.0"
+"@dedot/codecs@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@dedot/codecs@npm:0.7.1"
   dependencies:
-    "@dedot/shape": "npm:0.7.0"
-    "@dedot/utils": "npm:0.7.0"
-  checksum: 10/0cb4d03724518c1e9e8369e7f06b0a28da901e6c322e67c65a7eb656bc973f81fb8307b238ba9cf99687c70dfa1bdc7d9317af485c6fd9114f01a935063b8b5d
+    "@dedot/shape": "npm:0.7.1"
+    "@dedot/utils": "npm:0.7.1"
+  checksum: 10/8361e3e8b054b2184815e3b7d897b19484c50f65f7e20250608111a44bc0ac036a0e5f25f62009b1d8ce669dda75cfe69b3c5ea021456c40027dc85548504104
   languageName: node
   linkType: hard
 
-"@dedot/codegen@npm:0.7.0, @dedot/codegen@npm:^0.7.0":
-  version: 0.7.0
-  resolution: "@dedot/codegen@npm:0.7.0"
+"@dedot/codegen@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@dedot/codegen@npm:0.7.1"
   dependencies:
-    "@dedot/api": "npm:0.7.0"
-    "@dedot/codecs": "npm:0.7.0"
-    "@dedot/contracts": "npm:0.7.0"
-    "@dedot/providers": "npm:0.7.0"
-    "@dedot/runtime-specs": "npm:0.7.0"
-    "@dedot/shape": "npm:0.7.0"
-    "@dedot/types": "npm:0.7.0"
-    "@dedot/utils": "npm:0.7.0"
+    "@dedot/api": "npm:0.7.1"
+    "@dedot/codecs": "npm:0.7.1"
+    "@dedot/contracts": "npm:0.7.1"
+    "@dedot/providers": "npm:0.7.1"
+    "@dedot/runtime-specs": "npm:0.7.1"
+    "@dedot/shape": "npm:0.7.1"
+    "@dedot/types": "npm:0.7.1"
+    "@dedot/utils": "npm:0.7.1"
     handlebars: "npm:^4.7.8"
     prettier: "npm:^3.4.2"
-  checksum: 10/3bb9c381ea4d423dc70d4142e9f616d75898d350ca9e82da74322bbfbe510120eced5b4f01880ae2612ad1c6fb50452a704a20ce4b253bf701eee0e503e2d92a
+  checksum: 10/a3fc815f9ae8ca1cfbfbf7b4bd39af142724a43ab3f1664f246ece353ef34d05e798260e8163187cd71eeb64a6b7f0f3ce5dab6f32771d499e74852b53873781
   languageName: node
   linkType: hard
 
-"@dedot/contracts@npm:0.7.0":
-  version: 0.7.0
-  resolution: "@dedot/contracts@npm:0.7.0"
+"@dedot/contracts@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@dedot/contracts@npm:0.7.1"
   dependencies:
-    "@dedot/api": "npm:0.7.0"
-    "@dedot/codecs": "npm:0.7.0"
-    "@dedot/types": "npm:0.7.0"
-    "@dedot/utils": "npm:0.7.0"
-  checksum: 10/2efc491669afd74a40f4278ab81562fea9523b4a6295a0146fe4732b143ee2f9f8bbbd5637a1a3afd801e446d61369f985e18d002e67d4fc63f0e614651c75f5
+    "@dedot/api": "npm:0.7.1"
+    "@dedot/codecs": "npm:0.7.1"
+    "@dedot/types": "npm:0.7.1"
+    "@dedot/utils": "npm:0.7.1"
+  checksum: 10/c06519fb0462d6303e56fd5a2af5e4a7c9ae60a83292aa610abd036baf1329682b4f771185bcd9cc8f026282fcda95ca3ce5222487ccaac7b87afccf38077130
   languageName: node
   linkType: hard
 
-"@dedot/providers@npm:0.7.0":
-  version: 0.7.0
-  resolution: "@dedot/providers@npm:0.7.0"
+"@dedot/providers@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@dedot/providers@npm:0.7.1"
   dependencies:
-    "@dedot/utils": "npm:0.7.0"
-    "@polkadot/x-ws": "npm:^13.3.1"
-  checksum: 10/a7f8acad1e03a453dba7751ef35aee47688e126c1f5587f7b0721aa1030de49eff3d7bfb918fb0b6749c52b6af0f58cf97bd070b8abad2482e878da93bb9742e
+    "@dedot/utils": "npm:0.7.1"
+    "@polkadot/x-ws": "npm:^13.4.3"
+  checksum: 10/1482e7be5713ce77fa919ba019a34a4672d16865bdeff60aaeec93139a5f3e4a1302c7111c2ef117d08301e5340dd7fd4d17cebadd87b3e48bada555485fcaac
   languageName: node
   linkType: hard
 
-"@dedot/runtime-specs@npm:0.7.0":
-  version: 0.7.0
-  resolution: "@dedot/runtime-specs@npm:0.7.0"
+"@dedot/runtime-specs@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@dedot/runtime-specs@npm:0.7.1"
   dependencies:
-    "@dedot/codecs": "npm:0.7.0"
-    "@dedot/shape": "npm:0.7.0"
-    "@dedot/types": "npm:0.7.0"
-  checksum: 10/253f9a15f62a63d8853c171bb1868efb3874cb45892592f851c223ae9e34a7e0bfff27ab2127cb57bd5fbb1661bb73586be5e234134d74feb839cbfce4e90b8a
+    "@dedot/codecs": "npm:0.7.1"
+    "@dedot/shape": "npm:0.7.1"
+    "@dedot/types": "npm:0.7.1"
+  checksum: 10/08c4941d35a6ebd9a4f7ec3319de1acf4d6280b6ba14f694c19e9618a90fb0a49923203823bc3461e25a6f394e70b1466b89d32a9e8c88853eaa1bd56fc981d1
   languageName: node
   linkType: hard
 
-"@dedot/shape@npm:0.7.0":
-  version: 0.7.0
-  resolution: "@dedot/shape@npm:0.7.0"
+"@dedot/shape@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@dedot/shape@npm:0.7.1"
   dependencies:
-    "@dedot/utils": "npm:0.7.0"
+    "@dedot/utils": "npm:0.7.1"
     deshape: "npm:^0.0.1"
-  checksum: 10/93d17285da6fe31ec8e8fc5c36b9885433eeec15b2e32945f020d4adf1f76f31aa945041ece5e3264667eb4f3616440e12b961aba74040dd11a1dc1df3d4c394
+  checksum: 10/f740d6af8fc7f2bd4f3212df84089b809e290c1b932197b304bb88b5668e65445a3ad47cbf28abf39363c2fc272a2dd0783e0454a358aee6319574071b2d203f
   languageName: node
   linkType: hard
 
-"@dedot/storage@npm:0.7.0":
-  version: 0.7.0
-  resolution: "@dedot/storage@npm:0.7.0"
-  checksum: 10/cef31e90b255ad802c4b252f1944dbc644687d7ae4a49b2eb665ab25457d74ec1a2e827c08b9c1dcd7d92b19af60bae997a0dda16aa83d68512ce6b7e1fe9d39
+"@dedot/storage@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@dedot/storage@npm:0.7.1"
+  checksum: 10/3a9abe3e14f234e3e3320c524dbc01615618589c99ddf2f55dc4a42ff438e76e8de4aa8d320a211eb6f435b8f5998c32fe55354e29e021c325e38890e1d90222
   languageName: node
   linkType: hard
 
-"@dedot/types@npm:0.7.0":
-  version: 0.7.0
-  resolution: "@dedot/types@npm:0.7.0"
+"@dedot/types@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@dedot/types@npm:0.7.1"
   dependencies:
-    "@dedot/codecs": "npm:0.7.0"
-    "@dedot/shape": "npm:0.7.0"
-    "@dedot/utils": "npm:0.7.0"
-  checksum: 10/46a36c638cf33b98a9d167d3d99e65afafbc4123322cea5f89e837fa3a102775e62024c141e08fc290e5a93da3f7d3e1d38be5d461bc479f4587b2c582d28051
+    "@dedot/codecs": "npm:0.7.1"
+    "@dedot/shape": "npm:0.7.1"
+    "@dedot/utils": "npm:0.7.1"
+  checksum: 10/40533bacdadc1f1417b475f7ee573ba4d56c2ea3c51e6d12a2b3811b2e5ecadcdcebd227a970d511c204c3665d5b2375e328d03de2f555173cc3006b19ab2cb6
   languageName: node
   linkType: hard
 
-"@dedot/utils@npm:0.7.0":
-  version: 0.7.0
-  resolution: "@dedot/utils@npm:0.7.0"
+"@dedot/utils@npm:0.7.1":
+  version: 0.7.1
+  resolution: "@dedot/utils@npm:0.7.1"
   dependencies:
     "@noble/hashes": "npm:^1.7.1"
     "@scure/base": "npm:^1.2.4"
     eventemitter3: "npm:^5.0.1"
-  checksum: 10/d0a2f1a77ee7a0feff4c7575d2b4c0a92de04e4d77da119c88f5d4a282cad7f7d92232016a9bf2044b475d22842717f66b01d4643645c4fa875810d31937eaec
+  checksum: 10/0e1563ea0bc70314e7bc030a7e89d22f733b5f6745b7ae13e64d48f37570679247ee8498bfb09f7b38729220f6f4d07c72840554fbee2d79600639492fbeccf0
   languageName: node
   linkType: hard
 
@@ -901,7 +901,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/types-support@npm:^15.5.2, @polkadot/types-support@npm:~15.5.2":
+"@polkadot/types-support@npm:^15.5.2":
+  version: 15.6.1
+  resolution: "@polkadot/types-support@npm:15.6.1"
+  dependencies:
+    "@polkadot/util": "npm:^13.4.3"
+    tslib: "npm:^2.8.1"
+  checksum: 10/aafa9c9a3d3820a80aa8e7eafc31fcd6e0a8bb9e25c973debe575b36ce0b51b92f18eca658f68523960e410ec3851c751fc35fb1b3ddf08dd17ae473491eb06a
+  languageName: node
+  linkType: hard
+
+"@polkadot/types-support@npm:~15.5.2":
   version: 15.5.2
   resolution: "@polkadot/types-support@npm:15.5.2"
   dependencies:
@@ -926,6 +936,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@polkadot/util@npm:^13.4.3":
+  version: 13.4.3
+  resolution: "@polkadot/util@npm:13.4.3"
+  dependencies:
+    "@polkadot/x-bigint": "npm:13.4.3"
+    "@polkadot/x-global": "npm:13.4.3"
+    "@polkadot/x-textdecoder": "npm:13.4.3"
+    "@polkadot/x-textencoder": "npm:13.4.3"
+    "@types/bn.js": "npm:^5.1.6"
+    bn.js: "npm:^5.2.1"
+    tslib: "npm:^2.8.0"
+  checksum: 10/187e1a978edc19654ebf042eb3c9fa3c164e68630eff94891b89c3584bb09fc7e32717fdd36cba5e70fed85afa011299c47de116af9b04799d9087f916b8e104
+  languageName: node
+  linkType: hard
+
 "@polkadot/x-bigint@npm:13.3.1":
   version: 13.3.1
   resolution: "@polkadot/x-bigint@npm:13.3.1"
@@ -936,12 +961,31 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@polkadot/x-bigint@npm:13.4.3":
+  version: 13.4.3
+  resolution: "@polkadot/x-bigint@npm:13.4.3"
+  dependencies:
+    "@polkadot/x-global": "npm:13.4.3"
+    tslib: "npm:^2.8.0"
+  checksum: 10/6c299309c9913f8ea899032b5f0aa510178499431e9d8c525583109949a3148bc07cf3683fb672c07f670683f181886df98fd49397c587e1701a36472cdf12e6
+  languageName: node
+  linkType: hard
+
 "@polkadot/x-global@npm:13.3.1":
   version: 13.3.1
   resolution: "@polkadot/x-global@npm:13.3.1"
   dependencies:
     tslib: "npm:^2.8.0"
   checksum: 10/e8185a7529c3d3228c46c859d357e8fecb1d970aa52d4528a0c5eb8d0718d59038b7fa4e37c5239f6c017b1ade9bd9e41a0e005c963c24ab54967013c8356e5c
+  languageName: node
+  linkType: hard
+
+"@polkadot/x-global@npm:13.4.3":
+  version: 13.4.3
+  resolution: "@polkadot/x-global@npm:13.4.3"
+  dependencies:
+    tslib: "npm:^2.8.0"
+  checksum: 10/ce549dc41894880c66ae27e6d7114e77b91b36236da80914366a06f90b68f46398ad6a46f821c966287636621f208c5bbd85f05b60a372b86ba400e952245476
   languageName: node
   linkType: hard
 
@@ -955,6 +999,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@polkadot/x-textdecoder@npm:13.4.3":
+  version: 13.4.3
+  resolution: "@polkadot/x-textdecoder@npm:13.4.3"
+  dependencies:
+    "@polkadot/x-global": "npm:13.4.3"
+    tslib: "npm:^2.8.0"
+  checksum: 10/e7882607082a88d5e19843acba92fc519f354c2ada1af141dcd5eaf87cd14c782499e04641623d6e993404bed559b3c32ed584e79df70acc3d1d331654e0c967
+  languageName: node
+  linkType: hard
+
 "@polkadot/x-textencoder@npm:13.3.1":
   version: 13.3.1
   resolution: "@polkadot/x-textencoder@npm:13.3.1"
@@ -965,14 +1019,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/x-ws@npm:^13.3.1":
-  version: 13.3.1
-  resolution: "@polkadot/x-ws@npm:13.3.1"
+"@polkadot/x-textencoder@npm:13.4.3":
+  version: 13.4.3
+  resolution: "@polkadot/x-textencoder@npm:13.4.3"
   dependencies:
-    "@polkadot/x-global": "npm:13.3.1"
+    "@polkadot/x-global": "npm:13.4.3"
+    tslib: "npm:^2.8.0"
+  checksum: 10/ee3a7bebbc6d429eb37c68c9310e6484780ef1b9f8d6f92976c92a8dc14a9a5314d53f91bb64acfdc401b3bd13cbac71a08360b6eeefb1884af40d4ad881f016
+  languageName: node
+  linkType: hard
+
+"@polkadot/x-ws@npm:^13.4.3":
+  version: 13.4.3
+  resolution: "@polkadot/x-ws@npm:13.4.3"
+  dependencies:
+    "@polkadot/x-global": "npm:13.4.3"
     tslib: "npm:^2.8.0"
     ws: "npm:^8.18.0"
-  checksum: 10/b1e54016b7625b4c8c9f82bd5db2007a21ead89254dc0023cbe28a371778f4c8e442e26cd457e6eb8cef4c031e6c8be91c16847ca45a1ae031277c27bb33d69d
+  checksum: 10/724eae6cc1ccb36822bc902112ff9316d66c894f9a825de50347b0f43e38dd24516680ccb73b1e679c63cfd09a6bd5322083cf67c694894372d0eeea800c4a31
   languageName: node
   linkType: hard
 
@@ -1646,9 +1710,9 @@ __metadata:
   linkType: hard
 
 "chalk@npm:^5.3.0":
-  version: 5.3.0
-  resolution: "chalk@npm:5.3.0"
-  checksum: 10/6373caaab21bd64c405bfc4bd9672b145647fc9482657b5ea1d549b3b2765054e9d3d928870cdf764fb4aad67555f5061538ff247b8310f110c5c888d92397ea
+  version: 5.4.1
+  resolution: "chalk@npm:5.4.1"
+  checksum: 10/29df3ffcdf25656fed6e95962e2ef86d14dfe03cd50e7074b06bad9ffbbf6089adbb40f75c00744d843685c8d008adaf3aed31476780312553caf07fa86e5bc7
   languageName: node
   linkType: hard
 
@@ -2051,9 +2115,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "dedot.dev@workspace:."
   dependencies:
-    "@dedot/codegen": "npm:^0.7.0"
     "@polkadot/types-support": "npm:~15.5.2"
     "@trivago/prettier-plugin-sort-imports": "npm:^4.1.1"
+    dedot: "npm:^0.7.1"
     husky: "npm:^8.0.3"
     lerna: "npm:^7.4.2"
     prettier: "npm:^3.3.3"
@@ -2063,23 +2127,23 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"dedot@npm:^0.7.0":
-  version: 0.7.0
-  resolution: "dedot@npm:0.7.0"
+"dedot@npm:^0.7.1":
+  version: 0.7.1
+  resolution: "dedot@npm:0.7.1"
   dependencies:
-    "@dedot/api": "npm:0.7.0"
-    "@dedot/cli": "npm:0.7.0"
-    "@dedot/codecs": "npm:0.7.0"
-    "@dedot/contracts": "npm:0.7.0"
-    "@dedot/providers": "npm:0.7.0"
-    "@dedot/runtime-specs": "npm:0.7.0"
-    "@dedot/shape": "npm:0.7.0"
-    "@dedot/types": "npm:0.7.0"
-    "@dedot/utils": "npm:0.7.0"
+    "@dedot/api": "npm:0.7.1"
+    "@dedot/cli": "npm:0.7.1"
+    "@dedot/codecs": "npm:0.7.1"
+    "@dedot/contracts": "npm:0.7.1"
+    "@dedot/providers": "npm:0.7.1"
+    "@dedot/runtime-specs": "npm:0.7.1"
+    "@dedot/shape": "npm:0.7.1"
+    "@dedot/types": "npm:0.7.1"
+    "@dedot/utils": "npm:0.7.1"
   bin:
     dedot: bin/dedot.mjs
     djs: bin/dedot.mjs
-  checksum: 10/02a0a36541f16834c7e38377835197776e4eb060a60ea329bd476d0883f011f1eebaa73a33e7deb7d7c826e5165e2cb5f57974038b92d0c16fee353a88e0da49
+  checksum: 10/cac76f8ed61033ea75ebe91f8d1eb3e2d4a50bf706804db3140d6f4ce609277b7ce3d40d77d718bbf4b51a5a8e5379ead0b515ec13c6b04bd59918b2270e7392
   languageName: node
   linkType: hard
 
@@ -2206,9 +2270,9 @@ __metadata:
   linkType: hard
 
 "emoji-regex@npm:^10.3.0":
-  version: 10.3.0
-  resolution: "emoji-regex@npm:10.3.0"
-  checksum: 10/b9b084ebe904f13bb4b66ee4c29fb41a7a4a1165adcc33c1ce8056c0194b882cc91ebdc782f1a779b5d7ea7375c5064643a7734893d7c657b44c5c6b9d7bf1e7
+  version: 10.4.0
+  resolution: "emoji-regex@npm:10.4.0"
+  checksum: 10/76bb92c5bcf0b6980d37e535156231e4a9d0aa6ab3b9f5eabf7690231d5aa5d5b8e516f36e6804cbdd0f1c23dfef2a60c40ab7bb8aedd890584281a565b97c50
   languageName: node
   linkType: hard
 
@@ -2557,9 +2621,9 @@ __metadata:
   linkType: hard
 
 "get-east-asian-width@npm:^1.0.0":
-  version: 1.2.0
-  resolution: "get-east-asian-width@npm:1.2.0"
-  checksum: 10/c9b280e7c7c67fb89fa17e867c4a9d1c9f1321aba2a9ee27bff37fb6ca9552bccda328c70a80c1f83a0e39ba1b7e3427e60f47823402d19e7a41b83417ec047a
+  version: 1.3.0
+  resolution: "get-east-asian-width@npm:1.3.0"
+  checksum: 10/8e8e779eb28701db7fdb1c8cab879e39e6ae23f52dadd89c8aed05869671cee611a65d4f8557b83e981428623247d8bc5d0c7a4ef3ea7a41d826e73600112ad8
   languageName: node
   linkType: hard
 
@@ -3258,9 +3322,9 @@ __metadata:
   linkType: hard
 
 "is-unicode-supported@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "is-unicode-supported@npm:2.0.0"
-  checksum: 10/000b80639dedaf59a385f1c0a57f97a4d1435e0723716f24cc19ad94253a7a0a9f838bdc9ac49b10a29ac93b01f52ae9b2ed358a8876caf1eb74d73b4ede92b2
+  version: 2.1.0
+  resolution: "is-unicode-supported@npm:2.1.0"
+  checksum: 10/f254e3da6b0ab1a57a94f7273a7798dd35d1d45b227759f600d0fa9d5649f9c07fa8d3c8a6360b0e376adf916d151ec24fc9a50c5295c58bae7ca54a76a063f9
   languageName: node
   linkType: hard
 

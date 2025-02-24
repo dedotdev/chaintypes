@@ -11,8 +11,8 @@
     "clean": "rm -rf ./dist && rm -rf ./tsconfig.tsbuildinfo ./tsconfig.build.tsbuildinfo",
     "copy": "cp -R ./src/* ./dist"
   },
-  "dependencies": {
-    "dedot": "^0.7.0"
+  "peerDependencies": {
+    "dedot": "^0.7.1"
   },
   "publishConfig": {
     "access": "public",

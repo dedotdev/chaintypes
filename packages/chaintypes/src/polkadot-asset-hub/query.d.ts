@@ -20,12 +20,12 @@ import type {
   FrameSystemCodeUpgradeAuthorization,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
-  PolkadotPrimitivesV7PersistedValidationData,
-  PolkadotPrimitivesV7UpgradeRestriction,
-  PolkadotPrimitivesV7UpgradeGoAhead,
+  PolkadotPrimitivesV8PersistedValidationData,
+  PolkadotPrimitivesV8UpgradeRestriction,
+  PolkadotPrimitivesV8UpgradeGoAhead,
   SpTrieStorageProof,
   CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot,
-  PolkadotPrimitivesV7AbridgedHostConfiguration,
+  PolkadotPrimitivesV8AbridgedHostConfiguration,
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
@@ -292,9 +292,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * This value is expected to be set only once per block and it's never stored
      * in the trie.
      *
-     * @param {Callback<PolkadotPrimitivesV7PersistedValidationData | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8PersistedValidationData | undefined> =} callback
      **/
-    validationData: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7PersistedValidationData | undefined>;
+    validationData: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8PersistedValidationData | undefined>;
 
     /**
      * Were the validation data set to notify the relay chain?
@@ -321,9 +321,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV7UpgradeRestriction | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8UpgradeRestriction | undefined> =} callback
      **/
-    upgradeRestrictionSignal: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7UpgradeRestriction | undefined>;
+    upgradeRestrictionSignal: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8UpgradeRestriction | undefined>;
 
     /**
      * Optional upgrade go-ahead signal from the relay-chain.
@@ -332,9 +332,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV7UpgradeGoAhead | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8UpgradeGoAhead | undefined> =} callback
      **/
-    upgradeGoAhead: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7UpgradeGoAhead | undefined>;
+    upgradeGoAhead: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8UpgradeGoAhead | undefined>;
 
     /**
      * The state proof for the last relay parent block.
@@ -372,9 +372,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      *
      * This data is also absent from the genesis.
      *
-     * @param {Callback<PolkadotPrimitivesV7AbridgedHostConfiguration | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8AbridgedHostConfiguration | undefined> =} callback
      **/
-    hostConfiguration: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7AbridgedHostConfiguration | undefined>;
+    hostConfiguration: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8AbridgedHostConfiguration | undefined>;
 
     /**
      * The last downward message queue chain head we have observed.

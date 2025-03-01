@@ -357,6 +357,12 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     VirtualStakerNotAllowed: GenericPalletError<Rv>;
 
     /**
+     * Account is restricted from participation in staking. This may happen if the account is
+     * staking in another way already, such as via pool.
+     **/
+    Restricted: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1927,6 +1933,12 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * This call is not allowed in the current state of the pallet.
      **/
     NotSupported: GenericPalletError<Rv>;
+
+    /**
+     * Account is restricted from participation in pools. This may happen if the account is
+     * staking in another way already.
+     **/
+    Restricted: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

@@ -1849,6 +1849,30 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Adjusts the staking ledger by withdrawing any excess staked amount.
+     *
+     * This function corrects cases where a user's recorded stake in the ledger
+     * exceeds their actual staked funds. This situation can arise due to cases such as
+     * external slashing by another pallet, leading to an inconsistency between the ledger
+     * and the actual stake.
+     *
+     * @param {AccountId32Like} stash
+     **/
+    withdrawOverstake: GenericTxCall<
+      Rv,
+      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'WithdrawOverstake';
+            params: { stash: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -7073,8 +7097,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   nominationPools: {
     /**
-     * Stake funds with a pool. The amount to bond is transferred from the member to the pool
-     * account and immediately increases the pools bond.
+     * Stake funds with a pool. The amount to bond is delegated (or transferred based on
+     * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
+     * increases the pool's bond.
      *
      * The method of transferring the amount to the pool account is determined by
      * [`adapter::StakeStrategyType`]. If the pool is configured to use

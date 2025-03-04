@@ -4,14 +4,14 @@ import type { GenericRuntimeApis, GenericRuntimeApiMethod, RpcVersion } from 'de
 import type {
   RuntimeVersion,
   Header,
-  DispatchError,
+  Bytes,
   Result,
+  BytesLike,
+  DispatchError,
   UncheckedExtrinsicLike,
   UncheckedExtrinsic,
   H256,
   BitSequence,
-  Bytes,
-  BytesLike,
   AccountId32Like,
   AccountId32,
 } from 'dedot/codecs';
@@ -19,6 +19,8 @@ import type {
   SpRuntimeBlock,
   SpRuntimeExtrinsicInclusionMode,
   SpCoreOpaqueMetadata,
+  FrameSupportViewFunctionsViewFunctionDispatchError,
+  FrameSupportViewFunctionsViewFunctionId,
   SpRuntimeTransactionValidityTransactionValidityError,
   SpInherentsInherentData,
   SpInherentsCheckInherentsResult,
@@ -52,6 +54,7 @@ import type {
   PolkadotPrimitivesV8AsyncBackingAsyncBackingParams,
   PolkadotPrimitivesV8ApprovalVotingParams,
   PolkadotPrimitivesV8CoreIndex,
+  PolkadotPrimitivesVstagingAsyncBackingConstraints,
   SpConsensusBeefyValidatorSet,
   SpConsensusBeefyDoubleVotingProof,
   SpRuntimeOpaqueValue,
@@ -153,6 +156,30 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: Metadata_metadata_versions
      **/
     metadataVersions: GenericRuntimeApiMethod<Rv, () => Promise<Array<number>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: RuntimeViewFunction - 0xccd9de6396c899ca
+   **/
+  runtimeViewFunction: {
+    /**
+     * Execute a view function query.
+     *
+     * @callname: RuntimeViewFunction_execute_view_function
+     * @param {FrameSupportViewFunctionsViewFunctionId} query_id
+     * @param {BytesLike} input
+     **/
+    executeViewFunction: GenericRuntimeApiMethod<
+      Rv,
+      (
+        queryId: FrameSupportViewFunctionsViewFunctionId,
+        input: BytesLike,
+      ) => Promise<Result<Bytes, FrameSupportViewFunctionsViewFunctionDispatchError>>
+    >;
 
     /**
      * Generic runtime api call
@@ -635,6 +662,27 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
         paraId: PolkadotParachainPrimitivesPrimitivesId,
       ) => Promise<Array<PolkadotPrimitivesVstagingCommittedCandidateReceiptV2>>
     >;
+
+    /**
+     * Returns the constraints on the actions that can be taken by a new parachain
+     * block.
+     *
+     * @callname: ParachainHost_backing_constraints
+     * @param {PolkadotParachainPrimitivesPrimitivesId} para_id
+     **/
+    backingConstraints: GenericRuntimeApiMethod<
+      Rv,
+      (
+        paraId: PolkadotParachainPrimitivesPrimitivesId,
+      ) => Promise<PolkadotPrimitivesVstagingAsyncBackingConstraints | undefined>
+    >;
+
+    /**
+     * Retrieve the scheduling lookahead
+     *
+     * @callname: ParachainHost_scheduling_lookahead
+     **/
+    schedulingLookahead: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
 
     /**
      * Generic runtime api call
@@ -1272,17 +1320,19 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
    **/
   dryRunApi: {
     /**
-     * Dry run call.
+     * Dry run call V2.
      *
      * @callname: DryRunApi_dry_run_call
      * @param {WestendRuntimeOriginCaller} origin
      * @param {WestendRuntimeRuntimeCallLike} call
+     * @param {number} result_xcms_version
      **/
     dryRunCall: GenericRuntimeApiMethod<
       Rv,
       (
         origin: WestendRuntimeOriginCaller,
         call: WestendRuntimeRuntimeCallLike,
+        resultXcmsVersion: number,
       ) => Promise<Result<XcmRuntimeApisDryRunCallDryRunEffects, XcmRuntimeApisDryRunError>>
     >;
 
@@ -1366,6 +1416,9 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
 
     /**
      * Returns the pending slash for a given pool member.
+     *
+     * If pending slash of the member exceeds `ExistentialDeposit`, it can be reported on
+     * chain.
      *
      * @callname: NominationPoolsApi_member_pending_slash
      * @param {AccountId32Like} member

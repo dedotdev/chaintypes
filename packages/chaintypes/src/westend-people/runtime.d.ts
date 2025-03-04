@@ -81,7 +81,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     /**
      * Whether it is legal to extend the chain, assuming the given block is the most
      * recently included one as-of the relay parent that will be built against, and
-     * the given slot.
+     * the given relay chain slot.
      *
      * This should be consistent with the logic the runtime uses when validating blocks to
      * avoid issues.
@@ -507,17 +507,19 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
    **/
   dryRunApi: {
     /**
-     * Dry run call.
+     * Dry run call V2.
      *
      * @callname: DryRunApi_dry_run_call
      * @param {PeopleWestendRuntimeOriginCaller} origin
      * @param {PeopleWestendRuntimeRuntimeCallLike} call
+     * @param {number} result_xcms_version
      **/
     dryRunCall: GenericRuntimeApiMethod<
       Rv,
       (
         origin: PeopleWestendRuntimeOriginCaller,
         call: PeopleWestendRuntimeRuntimeCallLike,
+        resultXcmsVersion: number,
       ) => Promise<Result<XcmRuntimeApisDryRunCallDryRunEffects, XcmRuntimeApisDryRunError>>
     >;
 

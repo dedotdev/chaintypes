@@ -228,9 +228,9 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     DuplicateIndex: GenericPalletError<Rv>;
 
     /**
-     * Slash record index out of bounds.
+     * Slash record not found.
      **/
-    InvalidSlashIndex: GenericPalletError<Rv>;
+    InvalidSlashRecord: GenericPalletError<Rv>;
 
     /**
      * Cannot have a validator or nominator role, with value less than the minimum defined by
@@ -263,11 +263,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Invalid number of nominations.
      **/
     InvalidNumberOfNominations: GenericPalletError<Rv>;
-
-    /**
-     * Items are not sorted and unique.
-     **/
-    NotSortedAndUnique: GenericPalletError<Rv>;
 
     /**
      * Rewards for this era have already been claimed for this validator.
@@ -355,6 +350,27 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Operation not allowed for virtual stakers.
      **/
     VirtualStakerNotAllowed: GenericPalletError<Rv>;
+
+    /**
+     * Stash could not be reaped as other pallet might depend on it.
+     **/
+    CannotReapStash: GenericPalletError<Rv>;
+
+    /**
+     * The stake of this account is already migrated to `Fungible` holds.
+     **/
+    AlreadyMigrated: GenericPalletError<Rv>;
+
+    /**
+     * Era not yet started.
+     **/
+    EraNotStarted: GenericPalletError<Rv>;
+
+    /**
+     * Account is restricted from participation in staking. This may happen if the account is
+     * staking in another way already, such as via pool.
+     **/
+    Restricted: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1240,6 +1256,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NothingToSlash: GenericPalletError<Rv>;
 
     /**
+     * The slash amount is too low to be applied.
+     **/
+    SlashTooLow: GenericPalletError<Rv>;
+
+    /**
      * The pool or member delegation has already migrated to delegate stake.
      **/
     AlreadyMigrated: GenericPalletError<Rv>;
@@ -1253,6 +1274,12 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * This call is not allowed in the current state of the pallet.
      **/
     NotSupported: GenericPalletError<Rv>;
+
+    /**
+     * Account is restricted from participation in pools. This may happen if the account is
+     * staking in another way already.
+     **/
+    Restricted: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -2056,6 +2083,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     SpotPriceHigherThanMaxAmount: GenericPalletError<Rv>;
 
     /**
+     * The account doesn't have enough credits to purchase on-demand coretime.
+     **/
+    InsufficientCredits: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -2196,6 +2228,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * downward message.
      **/
     ExceedsMaxMessageSize: GenericPalletError<Rv>;
+
+    /**
+     * A DMP message couldn't be sent because the destination is unreachable.
+     **/
+    Unroutable: GenericPalletError<Rv>;
 
     /**
      * Could not schedule para cleanup.

@@ -8,7 +8,7 @@ import type {
   SpWeightsRuntimeDbWeight,
   SpWeightsWeightV2Weight,
   FrameSupportPalletId,
-  PalletReferendaTrackInfo,
+  PalletReferendaTrack,
   StagingXcmV5Junctions,
 } from './types';
 
@@ -216,10 +216,9 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * Number of eras to keep in history.
      *
      * Following information is kept for eras in `[current_era -
-     * HistoryDepth, current_era]`: `ErasStakers`, `ErasStakersClipped`,
-     * `ErasValidatorPrefs`, `ErasValidatorReward`, `ErasRewardPoints`,
-     * `ErasTotalStake`, `ErasStartSessionIndex`, `ClaimedRewards`, `ErasStakersPaged`,
-     * `ErasStakersOverview`.
+     * HistoryDepth, current_era]`: `ErasValidatorPrefs`, `ErasValidatorReward`,
+     * `ErasRewardPoints`, `ErasTotalStake`, `ErasStartSessionIndex`, `ClaimedRewards`,
+     * `ErasStakersPaged`, `ErasStakersOverview`.
      *
      * Must be more than the number of eras delayed by session.
      * I.e. active era must always be in history. I.e. `active_era >
@@ -270,6 +269,14 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     maxExposurePageSize: number;
 
     /**
+     * The absolute maximum of winner validators this pallet should return.
+     *
+     * As this pallet supports multi-block election, the set of winner validators *per
+     * election* is bounded by this type.
+     **/
+    maxValidatorSet: number;
+
+    /**
      * The maximum number of `unlocking` chunks a [`StakingLedger`] can
      * have. Effectively determines how many unique eras a staker may be
      * unbonding in.
@@ -282,6 +289,16 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * this effect.
      **/
     maxUnlockingChunks: number;
+
+    /**
+     * Maximum number of invulnerable validators.
+     **/
+    maxInvulnerables: number;
+
+    /**
+     * Maximum number of disabled validators.
+     **/
+    maxDisabledValidators: number;
 
     /**
      * Generic pallet constant
@@ -690,12 +707,18 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     signedDepositWeight: bigint;
 
     /**
-     * The maximum number of winners that can be elected by this `ElectionProvider`
-     * implementation.
+     * Maximum number of winners that an election supports.
      *
      * Note: This must always be greater or equal to `T::DataProvider::desired_targets()`.
      **/
     maxWinners: number;
+
+    /**
+     * Maximum number of voters that can support a winner in an election solution.
+     *
+     * This is needed to ensure election computation is bounded.
+     **/
+    maxBackersPerWinner: number;
     minerMaxLength: number;
     minerMaxWeight: SpWeightsWeightV2Weight;
     minerMaxVotesPerVoter: number;
@@ -863,11 +886,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * automatic referendum status changes. Explicit servicing instructions are unaffected.
      **/
     alarmInterval: number;
-
-    /**
-     * Information concerning the different referendum tracks.
-     **/
-    tracks: Array<[number, PalletReferendaTrackInfo]>;
+    tracks: Array<PalletReferendaTrack>;
 
     /**
      * Generic pallet constant

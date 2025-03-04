@@ -23,7 +23,7 @@ export interface VersionedWestendPeopleApi<Rv extends RpcVersion> extends Generi
 
 /**
  * @name: WestendPeopleApi
- * @specVersion: 1017001
+ * @specVersion: 1018000
  **/
 export interface WestendPeopleApi {
   legacy: VersionedWestendPeopleApi<RpcLegacy>;

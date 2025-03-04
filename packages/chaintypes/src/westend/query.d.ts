@@ -22,6 +22,7 @@ import type {
   FrameSystemEventRecord,
   FrameSystemLastRuntimeUpgradeInfo,
   FrameSystemCodeUpgradeAuthorization,
+  SpWeightsWeightV2Weight,
   SpConsensusBabeAppPublic,
   SpConsensusSlotsSlot,
   SpConsensusBabeDigestsNextConfigDescriptor,
@@ -38,18 +39,20 @@ import type {
   PalletStakingValidatorPrefs,
   PalletStakingNominations,
   PalletStakingActiveEraInfo,
-  SpStakingExposure,
   SpStakingPagedExposureMetadata,
   SpStakingExposurePage,
   PalletStakingEraRewardPoints,
   PalletStakingForcing,
+  PalletStakingSlashingOffenceRecord,
   PalletStakingUnappliedSlash,
   PalletStakingSlashingSlashingSpans,
   PalletStakingSlashingSpanRecord,
+  PalletStakingSnapshotStatus,
   SpStakingOffenceOffenceDetails,
   WestendRuntimeRuntimeParametersValue,
   WestendRuntimeRuntimeParametersKey,
   WestendRuntimeSessionKeys,
+  SpStakingOffenceOffenceSeverity,
   SpCoreCryptoKeyTypeId,
   PalletGrandpaStoredState,
   PalletGrandpaStoredPendingChange,
@@ -132,7 +135,6 @@ import type {
   PalletMigrationsMigrationCursor,
   PalletXcmQueryStatus,
   XcmVersionedLocation,
-  SpWeightsWeightV2Weight,
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
@@ -295,6 +297,19 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<FrameSystemCodeUpgradeAuthorization | undefined> =} callback
      **/
     authorizedUpgrade: GenericStorageQuery<Rv, () => FrameSystemCodeUpgradeAuthorization | undefined>;
+
+    /**
+     * The weight reclaimed for the extrinsic.
+     *
+     * This information is available until the end of the extrinsic execution.
+     * More precisely this information is removed in `note_applied_extrinsic`.
+     *
+     * Logic doing some post dispatch weight reduction must update this storage to avoid duplicate
+     * reduction.
+     *
+     * @param {Callback<SpWeightsWeightV2Weight> =} callback
+     **/
+    extrinsicWeightReclaimed: GenericStorageQuery<Rv, () => SpWeightsWeightV2Weight>;
 
     /**
      * Generic pallet storage query
@@ -852,21 +867,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     erasStartSessionIndex: GenericStorageQuery<Rv, (arg: number) => number | undefined, number>;
 
     /**
-     * Exposure of validator at era.
-     *
-     * This is keyed first by the era index to allow bulk deletion and then the stash account.
-     *
-     * Is it removed after [`Config::HistoryDepth`] eras.
-     * If stakers hasn't been set or has been removed then empty exposure is returned.
-     *
-     * Note: Deprecated since v14. Use `EraInfo` instead to work with exposures.
-     *
-     * @param {[number, AccountId32Like]} arg
-     * @param {Callback<SpStakingExposure> =} callback
-     **/
-    erasStakers: GenericStorageQuery<Rv, (arg: [number, AccountId32Like]) => SpStakingExposure, [number, AccountId32]>;
-
-    /**
      * Summary of validator exposure at a given era.
      *
      * This contains the total stake in support of the validator and their own stake. In addition,
@@ -886,33 +886,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     erasStakersOverview: GenericStorageQuery<
       Rv,
       (arg: [number, AccountId32Like]) => SpStakingPagedExposureMetadata | undefined,
-      [number, AccountId32]
-    >;
-
-    /**
-     * Clipped Exposure of validator at era.
-     *
-     * Note: This is deprecated, should be used as read-only and will be removed in the future.
-     * New `Exposure`s are stored in a paged manner in `ErasStakersPaged` instead.
-     *
-     * This is similar to [`ErasStakers`] but number of nominators exposed is reduced to the
-     * `T::MaxExposurePageSize` biggest stakers.
-     * (Note: the field `total` and `own` of the exposure remains unchanged).
-     * This is used to limit the i/o cost for the nominator payout.
-     *
-     * This is keyed fist by the era index to allow bulk deletion and then the stash account.
-     *
-     * It is removed after [`Config::HistoryDepth`] eras.
-     * If stakers hasn't been set or has been removed then empty exposure is returned.
-     *
-     * Note: Deprecated since v14. Use `EraInfo` instead to work with exposures.
-     *
-     * @param {[number, AccountId32Like]} arg
-     * @param {Callback<SpStakingExposure> =} callback
-     **/
-    erasStakersClipped: GenericStorageQuery<
-      Rv,
-      (arg: [number, AccountId32Like]) => SpStakingExposure,
       [number, AccountId32]
     >;
 
@@ -947,7 +920,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     claimedRewards: GenericStorageQuery<Rv, (arg: [number, AccountId32Like]) => Array<number>, [number, AccountId32]>;
 
     /**
-     * Similar to `ErasStakers`, this holds the preferences of validators.
+     * Exposure of validator at era with the preferences of validators.
      *
      * This is keyed first by the era index to allow bulk deletion and then the stash account.
      *
@@ -1024,12 +997,75 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     canceledSlashPayout: GenericStorageQuery<Rv, () => bigint>;
 
     /**
+     * Stores reported offences in a queue until they are processed in subsequent blocks.
+     *
+     * Each offence is recorded under the corresponding era index and the offending validator's
+     * account. If an offence spans multiple pages, only one page is processed at a time. Offences
+     * are handled sequentially, with their associated slashes computed and stored in
+     * `UnappliedSlashes`. These slashes are then applied in a future era as determined by
+     * `SlashDeferDuration`.
+     *
+     * Any offences tied to an era older than `BondingDuration` are automatically dropped.
+     * Processing always prioritizes the oldest era first.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<PalletStakingSlashingOffenceRecord | undefined> =} callback
+     **/
+    offenceQueue: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like]) => PalletStakingSlashingOffenceRecord | undefined,
+      [number, AccountId32]
+    >;
+
+    /**
+     * Tracks the eras that contain offences in `OffenceQueue`, sorted from **earliest to latest**.
+     *
+     * - This ensures efficient retrieval of the oldest offence without iterating through
+     * `OffenceQueue`.
+     * - When a new offence is added to `OffenceQueue`, its era is **inserted in sorted order**
+     * if not already present.
+     * - When all offences for an era are processed, it is **removed** from this list.
+     * - The maximum length of this vector is bounded by `BondingDuration`.
+     *
+     * This eliminates the need for expensive iteration and sorting when fetching the next offence
+     * to process.
+     *
+     * @param {Callback<Array<number> | undefined> =} callback
+     **/
+    offenceQueueEras: GenericStorageQuery<Rv, () => Array<number> | undefined>;
+
+    /**
+     * Tracks the currently processed offence record from the `OffenceQueue`.
+     *
+     * - When processing offences, an offence record is **popped** from the oldest era in
+     * `OffenceQueue` and stored here.
+     * - The function `process_offence` reads from this storage, processing one page of exposure at
+     * a time.
+     * - After processing a page, the `exposure_page` count is **decremented** until it reaches
+     * zero.
+     * - Once fully processed, the offence record is removed from this storage.
+     *
+     * This ensures that offences are processed incrementally, preventing excessive computation
+     * in a single block while maintaining correct slashing behavior.
+     *
+     * @param {Callback<[number, AccountId32, PalletStakingSlashingOffenceRecord] | undefined> =} callback
+     **/
+    processingOffence: GenericStorageQuery<
+      Rv,
+      () => [number, AccountId32, PalletStakingSlashingOffenceRecord] | undefined
+    >;
+
+    /**
      * All unapplied slashes that are queued for later.
      *
-     * @param {number} arg
-     * @param {Callback<Array<PalletStakingUnappliedSlash>> =} callback
+     * @param {[number, [AccountId32Like, Perbill, number]]} arg
+     * @param {Callback<PalletStakingUnappliedSlash | undefined> =} callback
      **/
-    unappliedSlashes: GenericStorageQuery<Rv, (arg: number) => Array<PalletStakingUnappliedSlash>, number>;
+    unappliedSlashes: GenericStorageQuery<
+      Rv,
+      (arg: [number, [AccountId32Like, Perbill, number]]) => PalletStakingUnappliedSlash | undefined,
+      [number, [AccountId32, Perbill, number]]
+    >;
 
     /**
      * A mapping from still-bonded eras to the first session index of that era.
@@ -1101,19 +1137,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     currentPlannedSession: GenericStorageQuery<Rv, () => number>;
 
     /**
-     * Indices of validators that have offended in the active era. The offenders are disabled for a
-     * whole era. For this reason they are kept here - only staking pallet knows about eras. The
-     * implementor of [`DisablingStrategy`] defines if a validator should be disabled which
-     * implicitly means that the implementor also controls the max number of disabled validators.
-     *
-     * The vec is always kept sorted so that we can find whether a given validator has previously
-     * offended using binary search.
-     *
-     * @param {Callback<Array<number>> =} callback
-     **/
-    disabledValidators: GenericStorageQuery<Rv, () => Array<number>>;
-
-    /**
      * The threshold for when users can start calling `chill_other` for other validators /
      * nominators. The threshold is compared to the actual number of validators / nominators
      * (`CountFor*`) in the system compared to the configured max (`Max*Count`).
@@ -1121,6 +1144,35 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<Percent | undefined> =} callback
      **/
     chillThreshold: GenericStorageQuery<Rv, () => Percent | undefined>;
+
+    /**
+     * Voter snapshot progress status.
+     *
+     * If the status is `Ongoing`, it keeps a cursor of the last voter retrieved to proceed when
+     * creating the next snapshot page.
+     *
+     * @param {Callback<PalletStakingSnapshotStatus> =} callback
+     **/
+    voterSnapshotStatus: GenericStorageQuery<Rv, () => PalletStakingSnapshotStatus>;
+
+    /**
+     * Keeps track of an ongoing multi-page election solution request.
+     *
+     * If `Some(_)``, it is the next page that we intend to elect. If `None`, we are not in the
+     * election process.
+     *
+     * This is only set in multi-block elections. Should always be `None` otherwise.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    nextElectionPage: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * A bounded list of the "electable" stashes that resulted from a successful election.
+     *
+     * @param {Callback<Array<AccountId32>> =} callback
+     **/
+    electableStashes: GenericStorageQuery<Rv, () => Array<AccountId32>>;
 
     /**
      * Generic pallet storage query
@@ -1242,9 +1294,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * disabled using binary search. It gets cleared when `on_session_ending` returns
      * a new set of identities.
      *
-     * @param {Callback<Array<number>> =} callback
+     * @param {Callback<Array<[number, SpStakingOffenceOffenceSeverity]>> =} callback
      **/
-    disabledValidators: GenericStorageQuery<Rv, () => Array<number>>;
+    disabledValidators: GenericStorageQuery<Rv, () => Array<[number, SpStakingOffenceOffenceSeverity]>>;
 
     /**
      * The next session keys for a validator.
@@ -3273,6 +3325,14 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<Array<bigint>> =} callback
      **/
     revenue: GenericStorageQuery<Rv, () => Array<bigint>>;
+
+    /**
+     * Keeps track of credits owned by each account.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    credits: GenericStorageQuery<Rv, (arg: AccountId32Like) => bigint, AccountId32>;
 
     /**
      * Generic pallet storage query

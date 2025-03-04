@@ -22,6 +22,7 @@ import type {
   PalletDappStakingSubperiod,
   AstarPrimitivesDappStakingSmartContract,
   PalletDappStakingForcingType,
+  PalletDappStakingTierParameters,
   AstarPrimitivesOracleCurrencyId,
   StagingXcmV4TraitsOutcome,
   StagingXcmV4Location,
@@ -837,7 +838,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Reward: GenericPalletEvent<Rv, 'DappStaking', 'Reward', { account: AccountId32; era: number; amount: bigint }>;
 
     /**
-     * Bonus reward has been paid out to a loyal staker.
+     * Bonus reward has been paid out to a staker with an eligible bonus status.
      **/
     BonusReward: GenericPalletEvent<
       Rv,
@@ -887,6 +888,31 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * Privileged origin has forced a new era and possibly a subperiod to start from next block.
      **/
     Force: GenericPalletEvent<Rv, 'DappStaking', 'Force', { forcingType: PalletDappStakingForcingType }>;
+
+    /**
+     * Account has moved some stake from a source smart contract to a destination smart contract.
+     **/
+    StakeMoved: GenericPalletEvent<
+      Rv,
+      'DappStaking',
+      'StakeMoved',
+      {
+        account: AccountId32;
+        sourceContract: AstarPrimitivesDappStakingSmartContract;
+        destinationContract: AstarPrimitivesDappStakingSmartContract;
+        amount: bigint;
+      }
+    >;
+
+    /**
+     * Tier parameters, used to calculate tier configuration, have been updated, and will be applicable from next era.
+     **/
+    NewTierParameters: GenericPalletEvent<
+      Rv,
+      'DappStaking',
+      'NewTierParameters',
+      { params: PalletDappStakingTierParameters }
+    >;
 
     /**
      * Generic pallet event
@@ -2575,15 +2601,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
 
     /**
      * A new spend proposal has been approved.
-     **/
-    SpendApproved: GenericPalletEvent<
-      Rv,
-      'Treasury',
-      'SpendApproved',
-      { proposalIndex: number; amount: bigint; beneficiary: AccountId32 }
-    >;
-
-    /**
      * The inactive funds of the pallet have been updated.
      **/
     UpdatedInactive: GenericPalletEvent<
@@ -2592,37 +2609,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'UpdatedInactive',
       { reactivated: bigint; deactivated: bigint }
     >;
-
-    /**
-     * A new asset spend proposal has been approved.
-     **/
-    AssetSpendApproved: GenericPalletEvent<
-      Rv,
-      'Treasury',
-      'AssetSpendApproved',
-      { index: number; assetKind: []; amount: bigint; beneficiary: AccountId32; validFrom: number; expireAt: number }
-    >;
-
-    /**
-     * An approved spend was voided.
-     **/
-    AssetSpendVoided: GenericPalletEvent<Rv, 'Treasury', 'AssetSpendVoided', { index: number }>;
-
-    /**
-     * A payment happened.
-     **/
-    Paid: GenericPalletEvent<Rv, 'Treasury', 'Paid', { index: number; paymentId: [] }>;
-
-    /**
-     * A payment failed and can be retried.
-     **/
-    PaymentFailed: GenericPalletEvent<Rv, 'Treasury', 'PaymentFailed', { index: number; paymentId: [] }>;
-
-    /**
-     * A spend was processed and removed from the storage. It might have been successfully
-     * paid or it may have expired.
-     **/
-    SpendProcessed: GenericPalletEvent<Rv, 'Treasury', 'SpendProcessed', { index: number }>;
 
     /**
      * Generic pallet event
@@ -2675,15 +2661,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
 
     /**
      * A new spend proposal has been approved.
-     **/
-    SpendApproved: GenericPalletEvent<
-      Rv,
-      'CommunityTreasury',
-      'SpendApproved',
-      { proposalIndex: number; amount: bigint; beneficiary: AccountId32 }
-    >;
-
-    /**
      * The inactive funds of the pallet have been updated.
      **/
     UpdatedInactive: GenericPalletEvent<
@@ -2692,37 +2669,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'UpdatedInactive',
       { reactivated: bigint; deactivated: bigint }
     >;
-
-    /**
-     * A new asset spend proposal has been approved.
-     **/
-    AssetSpendApproved: GenericPalletEvent<
-      Rv,
-      'CommunityTreasury',
-      'AssetSpendApproved',
-      { index: number; assetKind: []; amount: bigint; beneficiary: AccountId32; validFrom: number; expireAt: number }
-    >;
-
-    /**
-     * An approved spend was voided.
-     **/
-    AssetSpendVoided: GenericPalletEvent<Rv, 'CommunityTreasury', 'AssetSpendVoided', { index: number }>;
-
-    /**
-     * A payment happened.
-     **/
-    Paid: GenericPalletEvent<Rv, 'CommunityTreasury', 'Paid', { index: number; paymentId: [] }>;
-
-    /**
-     * A payment failed and can be retried.
-     **/
-    PaymentFailed: GenericPalletEvent<Rv, 'CommunityTreasury', 'PaymentFailed', { index: number; paymentId: [] }>;
-
-    /**
-     * A spend was processed and removed from the storage. It might have been successfully
-     * paid or it may have expired.
-     **/
-    SpendProcessed: GenericPalletEvent<Rv, 'CommunityTreasury', 'SpendProcessed', { index: number }>;
 
     /**
      * Generic pallet event

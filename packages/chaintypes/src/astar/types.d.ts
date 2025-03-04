@@ -11,6 +11,8 @@ import type {
   FixedBytes,
   Perquintill,
   H160,
+  Permill,
+  Perbill,
   FixedU128,
   FixedArray,
   U256,
@@ -19,8 +21,6 @@ import type {
   Data,
   MultiAddressLike,
   AccountId32Like,
-  Permill,
-  Perbill,
   Era,
   Header,
   UncheckedExtrinsic,
@@ -647,7 +647,7 @@ export type PalletDappStakingEvent =
    **/
   | { name: 'Reward'; data: { account: AccountId32; era: number; amount: bigint } }
   /**
-   * Bonus reward has been paid out to a loyal staker.
+   * Bonus reward has been paid out to a staker with an eligible bonus status.
    **/
   | {
       name: 'BonusReward';
@@ -686,7 +686,23 @@ export type PalletDappStakingEvent =
   /**
    * Privileged origin has forced a new era and possibly a subperiod to start from next block.
    **/
-  | { name: 'Force'; data: { forcingType: PalletDappStakingForcingType } };
+  | { name: 'Force'; data: { forcingType: PalletDappStakingForcingType } }
+  /**
+   * Account has moved some stake from a source smart contract to a destination smart contract.
+   **/
+  | {
+      name: 'StakeMoved';
+      data: {
+        account: AccountId32;
+        sourceContract: AstarPrimitivesDappStakingSmartContract;
+        destinationContract: AstarPrimitivesDappStakingSmartContract;
+        amount: bigint;
+      };
+    }
+  /**
+   * Tier parameters, used to calculate tier configuration, have been updated, and will be applicable from next era.
+   **/
+  | { name: 'NewTierParameters'; data: { params: PalletDappStakingTierParameters } };
 
 export type PalletDappStakingSubperiod = 'Voting' | 'BuildAndEarn';
 
@@ -695,6 +711,17 @@ export type AstarPrimitivesDappStakingSmartContract =
   | { type: 'Wasm'; value: AccountId32 };
 
 export type PalletDappStakingForcingType = 'Era' | 'Subperiod';
+
+export type PalletDappStakingTierParameters = {
+  rewardPortion: Array<Permill>;
+  slotDistribution: Array<Permill>;
+  tierThresholds: Array<PalletDappStakingTierThreshold>;
+  slotNumberArgs: [bigint, bigint];
+};
+
+export type PalletDappStakingTierThreshold =
+  | { type: 'FixedPercentage'; value: { requiredPercentage: Perbill } }
+  | { type: 'DynamicPercentage'; value: { percentage: Perbill; minimumRequiredPercentage: Perbill } };
 
 /**
  * The `Event` enum of this pallet
@@ -2182,43 +2209,9 @@ export type PalletTreasuryEvent =
   | { name: 'Deposit'; data: { value: bigint } }
   /**
    * A new spend proposal has been approved.
-   **/
-  | { name: 'SpendApproved'; data: { proposalIndex: number; amount: bigint; beneficiary: AccountId32 } }
-  /**
    * The inactive funds of the pallet have been updated.
    **/
-  | { name: 'UpdatedInactive'; data: { reactivated: bigint; deactivated: bigint } }
-  /**
-   * A new asset spend proposal has been approved.
-   **/
-  | {
-      name: 'AssetSpendApproved';
-      data: {
-        index: number;
-        assetKind: [];
-        amount: bigint;
-        beneficiary: AccountId32;
-        validFrom: number;
-        expireAt: number;
-      };
-    }
-  /**
-   * An approved spend was voided.
-   **/
-  | { name: 'AssetSpendVoided'; data: { index: number } }
-  /**
-   * A payment happened.
-   **/
-  | { name: 'Paid'; data: { index: number; paymentId: [] } }
-  /**
-   * A payment failed and can be retried.
-   **/
-  | { name: 'PaymentFailed'; data: { index: number; paymentId: [] } }
-  /**
-   * A spend was processed and removed from the storage. It might have been successfully
-   * paid or it may have expired.
-   **/
-  | { name: 'SpendProcessed'; data: { index: number } };
+  | { name: 'UpdatedInactive'; data: { reactivated: bigint; deactivated: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -4853,8 +4846,8 @@ export type PalletDappStakingCall =
    * Cleanup expired stake entries for the contract.
    *
    * Entry is considered to be expired if:
-   * 1. It's from a past period & the account wasn't a loyal staker, meaning there's no claimable bonus reward.
-   * 2. It's from a period older than the oldest claimable period, regardless whether the account was loyal or not.
+   * 1. It's from a past period & the account did not maintain an eligible bonus status, meaning there's no claimable bonus reward.
+   * 2. It's from a period older than the oldest claimable period, regardless of whether the account had an eligible bonus status or not.
    **/
   | { name: 'CleanupExpiredEntries' }
   /**
@@ -4878,7 +4871,38 @@ export type PalletDappStakingCall =
   | {
       name: 'ClaimBonusRewardFor';
       params: { account: AccountId32; smartContract: AstarPrimitivesDappStakingSmartContract };
-    };
+    }
+  /**
+   * Transfers stake between two smart contracts, ensuring bonus status preservation if eligible.
+   * Emits a `StakeMoved` event.
+   **/
+  | {
+      name: 'MoveStake';
+      params: {
+        sourceContract: AstarPrimitivesDappStakingSmartContract;
+        destinationContract: AstarPrimitivesDappStakingSmartContract;
+        amount: bigint;
+      };
+    }
+  /**
+   * Used to set static tier parameters, which are used to calculate tier configuration.
+   * Tier configuration defines tier entry threshold values, number of slots, and reward portions.
+   *
+   * This is a delicate call and great care should be taken when changing these
+   * values since it has a significant impact on the reward system.
+   **/
+  | { name: 'SetStaticTierParams'; params: { params: PalletDappStakingTierParameters } }
+  /**
+   * Active update `BonusStatus` according to the new MaxBonusSafeMovesPerPeriod from config
+   * for all already existing StakerInfo in steps, consuming up to the specified amount of
+   * weight.
+   *
+   * If no weight is specified, max allowed weight is used.
+   * In any case the weight_limit is clamped between the minimum & maximum allowed values.
+   *
+   * TODO: remove this extrinsic once BonusStatus update is done
+   **/
+  | { name: 'UpdateBonus'; params: { weightLimit?: SpWeightsWeightV2Weight | undefined } };
 
 export type PalletDappStakingCallLike =
   /**
@@ -5003,8 +5027,8 @@ export type PalletDappStakingCallLike =
    * Cleanup expired stake entries for the contract.
    *
    * Entry is considered to be expired if:
-   * 1. It's from a past period & the account wasn't a loyal staker, meaning there's no claimable bonus reward.
-   * 2. It's from a period older than the oldest claimable period, regardless whether the account was loyal or not.
+   * 1. It's from a past period & the account did not maintain an eligible bonus status, meaning there's no claimable bonus reward.
+   * 2. It's from a period older than the oldest claimable period, regardless of whether the account had an eligible bonus status or not.
    **/
   | { name: 'CleanupExpiredEntries' }
   /**
@@ -5028,7 +5052,38 @@ export type PalletDappStakingCallLike =
   | {
       name: 'ClaimBonusRewardFor';
       params: { account: AccountId32Like; smartContract: AstarPrimitivesDappStakingSmartContract };
-    };
+    }
+  /**
+   * Transfers stake between two smart contracts, ensuring bonus status preservation if eligible.
+   * Emits a `StakeMoved` event.
+   **/
+  | {
+      name: 'MoveStake';
+      params: {
+        sourceContract: AstarPrimitivesDappStakingSmartContract;
+        destinationContract: AstarPrimitivesDappStakingSmartContract;
+        amount: bigint;
+      };
+    }
+  /**
+   * Used to set static tier parameters, which are used to calculate tier configuration.
+   * Tier configuration defines tier entry threshold values, number of slots, and reward portions.
+   *
+   * This is a delicate call and great care should be taken when changing these
+   * values since it has a significant impact on the reward system.
+   **/
+  | { name: 'SetStaticTierParams'; params: { params: PalletDappStakingTierParameters } }
+  /**
+   * Active update `BonusStatus` according to the new MaxBonusSafeMovesPerPeriod from config
+   * for all already existing StakerInfo in steps, consuming up to the specified amount of
+   * weight.
+   *
+   * If no weight is specified, max allowed weight is used.
+   * In any case the weight_limit is clamped between the minimum & maximum allowed values.
+   *
+   * TODO: remove this extrinsic once BonusStatus update is done
+   **/
+  | { name: 'UpdateBonus'; params: { weightLimit?: SpWeightsWeightV2Weight | undefined } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -9397,146 +9452,7 @@ export type PalletTreasuryCall =
    *
    * No events are emitted from this dispatch.
    **/
-  | { name: 'ApproveProposal'; params: { proposalId: number } }
-  /**
-   * Propose and approve a spend of treasury funds.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`.
-   *
-   * ### Details
-   * NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the
-   * beneficiary.
-   *
-   * ### Parameters
-   * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
-   * - `beneficiary`: The destination account for the transfer.
-   *
-   * ## Events
-   *
-   * Emits [`Event::SpendApproved`] if successful.
-   **/
-  | { name: 'SpendLocal'; params: { amount: bigint; beneficiary: MultiAddress } }
-  /**
-   * Force a previously approved proposal to be removed from the approval queue.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::RejectOrigin`].
-   *
-   * ## Details
-   *
-   * The original deposit will no longer be returned.
-   *
-   * ### Parameters
-   * - `proposal_id`: The index of a proposal
-   *
-   * ### Complexity
-   * - O(A) where `A` is the number of approvals
-   *
-   * ### Errors
-   * - [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the
-   * approval queue, i.e., the proposal has not been approved. This could also mean the
-   * proposal does not exist altogether, thus there is no way it would have been approved
-   * in the first place.
-   **/
-  | { name: 'RemoveApproval'; params: { proposalId: number } }
-  /**
-   * Propose and approve a spend of treasury funds.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::SpendOrigin`] with the `Success` value being at least
-   * `amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted
-   * for assertion using the [`Config::BalanceConverter`].
-   *
-   * ## Details
-   *
-   * Create an approved spend for transferring a specific `amount` of `asset_kind` to a
-   * designated beneficiary. The spend must be claimed using the `payout` dispatchable within
-   * the [`Config::PayoutPeriod`].
-   *
-   * ### Parameters
-   * - `asset_kind`: An indicator of the specific asset class to be spent.
-   * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
-   * - `beneficiary`: The beneficiary of the spend.
-   * - `valid_from`: The block number from which the spend can be claimed. It can refer to
-   * the past if the resulting spend has not yet expired according to the
-   * [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after
-   * approval.
-   *
-   * ## Events
-   *
-   * Emits [`Event::AssetSpendApproved`] if successful.
-   **/
-  | {
-      name: 'Spend';
-      params: { assetKind: []; amount: bigint; beneficiary: AccountId32; validFrom?: number | undefined };
-    }
-  /**
-   * Claim a spend.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be signed.
-   *
-   * ## Details
-   *
-   * Spends must be claimed within some temporal bounds. A spend may be claimed within one
-   * [`Config::PayoutPeriod`] from the `valid_from` block.
-   * In case of a payout failure, the spend status must be updated with the `check_status`
-   * dispatchable before retrying with the current function.
-   *
-   * ### Parameters
-   * - `index`: The spend index.
-   *
-   * ## Events
-   *
-   * Emits [`Event::Paid`] if successful.
-   **/
-  | { name: 'Payout'; params: { index: number } }
-  /**
-   * Check the status of the spend and remove it from the storage if processed.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be signed.
-   *
-   * ## Details
-   *
-   * The status check is a prerequisite for retrying a failed payout.
-   * If a spend has either succeeded or expired, it is removed from the storage by this
-   * function. In such instances, transaction fees are refunded.
-   *
-   * ### Parameters
-   * - `index`: The spend index.
-   *
-   * ## Events
-   *
-   * Emits [`Event::PaymentFailed`] if the spend payout has failed.
-   * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
-   **/
-  | { name: 'CheckStatus'; params: { index: number } }
-  /**
-   * Void previously approved spend.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::RejectOrigin`].
-   *
-   * ## Details
-   *
-   * A spend void is only possible if the payout has not been attempted yet.
-   *
-   * ### Parameters
-   * - `index`: The spend index.
-   *
-   * ## Events
-   *
-   * Emits [`Event::AssetSpendVoided`] if successful.
-   **/
-  | { name: 'VoidSpend'; params: { index: number } };
+  | { name: 'ApproveProposal'; params: { proposalId: number } };
 
 export type PalletTreasuryCallLike =
   /**
@@ -9595,146 +9511,7 @@ export type PalletTreasuryCallLike =
    *
    * No events are emitted from this dispatch.
    **/
-  | { name: 'ApproveProposal'; params: { proposalId: number } }
-  /**
-   * Propose and approve a spend of treasury funds.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`.
-   *
-   * ### Details
-   * NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the
-   * beneficiary.
-   *
-   * ### Parameters
-   * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
-   * - `beneficiary`: The destination account for the transfer.
-   *
-   * ## Events
-   *
-   * Emits [`Event::SpendApproved`] if successful.
-   **/
-  | { name: 'SpendLocal'; params: { amount: bigint; beneficiary: MultiAddressLike } }
-  /**
-   * Force a previously approved proposal to be removed from the approval queue.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::RejectOrigin`].
-   *
-   * ## Details
-   *
-   * The original deposit will no longer be returned.
-   *
-   * ### Parameters
-   * - `proposal_id`: The index of a proposal
-   *
-   * ### Complexity
-   * - O(A) where `A` is the number of approvals
-   *
-   * ### Errors
-   * - [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the
-   * approval queue, i.e., the proposal has not been approved. This could also mean the
-   * proposal does not exist altogether, thus there is no way it would have been approved
-   * in the first place.
-   **/
-  | { name: 'RemoveApproval'; params: { proposalId: number } }
-  /**
-   * Propose and approve a spend of treasury funds.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::SpendOrigin`] with the `Success` value being at least
-   * `amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted
-   * for assertion using the [`Config::BalanceConverter`].
-   *
-   * ## Details
-   *
-   * Create an approved spend for transferring a specific `amount` of `asset_kind` to a
-   * designated beneficiary. The spend must be claimed using the `payout` dispatchable within
-   * the [`Config::PayoutPeriod`].
-   *
-   * ### Parameters
-   * - `asset_kind`: An indicator of the specific asset class to be spent.
-   * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
-   * - `beneficiary`: The beneficiary of the spend.
-   * - `valid_from`: The block number from which the spend can be claimed. It can refer to
-   * the past if the resulting spend has not yet expired according to the
-   * [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after
-   * approval.
-   *
-   * ## Events
-   *
-   * Emits [`Event::AssetSpendApproved`] if successful.
-   **/
-  | {
-      name: 'Spend';
-      params: { assetKind: []; amount: bigint; beneficiary: AccountId32Like; validFrom?: number | undefined };
-    }
-  /**
-   * Claim a spend.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be signed.
-   *
-   * ## Details
-   *
-   * Spends must be claimed within some temporal bounds. A spend may be claimed within one
-   * [`Config::PayoutPeriod`] from the `valid_from` block.
-   * In case of a payout failure, the spend status must be updated with the `check_status`
-   * dispatchable before retrying with the current function.
-   *
-   * ### Parameters
-   * - `index`: The spend index.
-   *
-   * ## Events
-   *
-   * Emits [`Event::Paid`] if successful.
-   **/
-  | { name: 'Payout'; params: { index: number } }
-  /**
-   * Check the status of the spend and remove it from the storage if processed.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be signed.
-   *
-   * ## Details
-   *
-   * The status check is a prerequisite for retrying a failed payout.
-   * If a spend has either succeeded or expired, it is removed from the storage by this
-   * function. In such instances, transaction fees are refunded.
-   *
-   * ### Parameters
-   * - `index`: The spend index.
-   *
-   * ## Events
-   *
-   * Emits [`Event::PaymentFailed`] if the spend payout has failed.
-   * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
-   **/
-  | { name: 'CheckStatus'; params: { index: number } }
-  /**
-   * Void previously approved spend.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::RejectOrigin`].
-   *
-   * ## Details
-   *
-   * A spend void is only possible if the payout has not been attempted yet.
-   *
-   * ### Parameters
-   * - `index`: The spend index.
-   *
-   * ## Events
-   *
-   * Emits [`Event::AssetSpendVoided`] if successful.
-   **/
-  | { name: 'VoidSpend'; params: { index: number } };
+  | { name: 'ApproveProposal'; params: { proposalId: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10402,7 +10179,7 @@ export type PalletDappStakingStakeAmount = { voting: bigint; buildAndEarn: bigin
 export type PalletDappStakingSingularStakingInfo = {
   previousStaked: PalletDappStakingStakeAmount;
   staked: PalletDappStakingStakeAmount;
-  loyalStaker: boolean;
+  bonusStatus: number;
 };
 
 export type PalletDappStakingContractStakeAmount = {
@@ -10427,16 +10204,6 @@ export type PalletDappStakingEraReward = { stakerRewardPool: bigint; staked: big
 
 export type PalletDappStakingPeriodEndInfo = { bonusRewardPool: bigint; totalVpStake: bigint; finalEra: number };
 
-export type PalletDappStakingTierParameters = {
-  rewardPortion: Array<Permill>;
-  slotDistribution: Array<Permill>;
-  tierThresholds: Array<PalletDappStakingTierThreshold>;
-};
-
-export type PalletDappStakingTierThreshold =
-  | { type: 'FixedPercentage'; value: { requiredPercentage: Perbill } }
-  | { type: 'DynamicPercentage'; value: { percentage: Perbill; minimumRequiredPercentage: Perbill } };
-
 export type PalletDappStakingTiersConfiguration = {
   slotsPerTier: Array<number>;
   rewardPortion: Array<Permill>;
@@ -10453,6 +10220,11 @@ export type PalletDappStakingDAppTierRewards = {
 export type AstarPrimitivesDappStakingRankedTier = number;
 
 export type PalletDappStakingCleanupMarker = { eraRewardIndex: number; dappTiersIndex: number; oldestValidEra: number };
+
+export type PalletDappStakingBonusUpdateState =
+  | { type: 'NotInProgress' }
+  | { type: 'InProgress'; value: [AccountId32, AstarPrimitivesDappStakingSmartContract] }
+  | { type: 'Finished' };
 
 /**
  * The `Error` enum of this pallet.
@@ -10599,7 +10371,15 @@ export type PalletDappStakingError =
   /**
    * Force call is not allowed in production.
    **/
-  | 'ForceNotAllowed';
+  | 'ForceNotAllowed'
+  /**
+   * Invalid tier parameters were provided. This can happen if any number exceeds 100% or if number of elements does not match the number of tiers.
+   **/
+  | 'InvalidTierParams'
+  /**
+   * Same contract specified as source and destination.
+   **/
+  | 'SameContracts';
 
 export type PalletAssetsAssetDetails = {
   owner: AccountId32;
@@ -11842,20 +11622,6 @@ export type PalletDemocracyError =
 
 export type PalletTreasuryProposal = { proposer: AccountId32; value: bigint; beneficiary: AccountId32; bond: bigint };
 
-export type PalletTreasurySpendStatus = {
-  assetKind: [];
-  amount: bigint;
-  beneficiary: AccountId32;
-  validFrom: number;
-  expireAt: number;
-  status: PalletTreasuryPaymentState;
-};
-
-export type PalletTreasuryPaymentState =
-  | { type: 'Pending' }
-  | { type: 'Attempted'; value: { id: [] } }
-  | { type: 'Failed' };
-
 export type FrameSupportPalletId = FixedBytes<8>;
 
 /**
@@ -11882,35 +11648,7 @@ export type PalletTreasuryError =
   /**
    * Proposal has not been approved.
    **/
-  | 'ProposalNotApproved'
-  /**
-   * The balance of the asset kind is not convertible to the balance of the native asset.
-   **/
-  | 'FailedToConvertBalance'
-  /**
-   * The spend has expired and cannot be claimed.
-   **/
-  | 'SpendExpired'
-  /**
-   * The spend is not yet eligible for payout.
-   **/
-  | 'EarlyPayout'
-  /**
-   * The payment has already been attempted.
-   **/
-  | 'AlreadyAttempted'
-  /**
-   * There was some issue with the mechanism of payment.
-   **/
-  | 'PayoutError'
-  /**
-   * The payout was not yet attempted/claimed.
-   **/
-  | 'NotAttempted'
-  /**
-   * The payment has neither failed nor succeeded yet.
-   **/
-  | 'Inconclusive';
+  | 'ProposalNotApproved';
 
 /**
  * The `Error` enum of this pallet.

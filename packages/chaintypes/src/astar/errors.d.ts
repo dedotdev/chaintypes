@@ -726,6 +726,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ForceNotAllowed: GenericPalletError<Rv>;
 
     /**
+     * Invalid tier parameters were provided. This can happen if any number exceeds 100% or if number of elements does not match the number of tiers.
+     **/
+    InvalidTierParams: GenericPalletError<Rv>;
+
+    /**
+     * Same contract specified as source and destination.
+     **/
+    SameContracts: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -2170,41 +2180,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ProposalNotApproved: GenericPalletError<Rv>;
 
     /**
-     * The balance of the asset kind is not convertible to the balance of the native asset.
-     **/
-    FailedToConvertBalance: GenericPalletError<Rv>;
-
-    /**
-     * The spend has expired and cannot be claimed.
-     **/
-    SpendExpired: GenericPalletError<Rv>;
-
-    /**
-     * The spend is not yet eligible for payout.
-     **/
-    EarlyPayout: GenericPalletError<Rv>;
-
-    /**
-     * The payment has already been attempted.
-     **/
-    AlreadyAttempted: GenericPalletError<Rv>;
-
-    /**
-     * There was some issue with the mechanism of payment.
-     **/
-    PayoutError: GenericPalletError<Rv>;
-
-    /**
-     * The payout was not yet attempted/claimed.
-     **/
-    NotAttempted: GenericPalletError<Rv>;
-
-    /**
-     * The payment has neither failed nor succeeded yet.
-     **/
-    Inconclusive: GenericPalletError<Rv>;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -2238,41 +2213,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Proposal has not been approved.
      **/
     ProposalNotApproved: GenericPalletError<Rv>;
-
-    /**
-     * The balance of the asset kind is not convertible to the balance of the native asset.
-     **/
-    FailedToConvertBalance: GenericPalletError<Rv>;
-
-    /**
-     * The spend has expired and cannot be claimed.
-     **/
-    SpendExpired: GenericPalletError<Rv>;
-
-    /**
-     * The spend is not yet eligible for payout.
-     **/
-    EarlyPayout: GenericPalletError<Rv>;
-
-    /**
-     * The payment has already been attempted.
-     **/
-    AlreadyAttempted: GenericPalletError<Rv>;
-
-    /**
-     * There was some issue with the mechanism of payment.
-     **/
-    PayoutError: GenericPalletError<Rv>;
-
-    /**
-     * The payout was not yet attempted/claimed.
-     **/
-    NotAttempted: GenericPalletError<Rv>;
-
-    /**
-     * The payment has neither failed nor succeeded yet.
-     **/
-    Inconclusive: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

@@ -441,6 +441,13 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     rankingEnabled: boolean;
 
     /**
+     * The maximum number of 'safe move actions' allowed within a single period while
+     * retaining eligibility for bonus rewards. Exceeding this limit will result in the
+     * forfeiture of the bonus rewards for the affected stake.
+     **/
+    maxBonusSafeMovesPerPeriod: number;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -1083,11 +1090,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     maxApprovals: number;
 
     /**
-     * The period during which an approved treasury spend has to be claimed.
-     **/
-    payoutPeriod: number;
-
-    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -1133,11 +1135,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * NOTE: This parameter is also used within the Bounties Pallet extension if enabled.
      **/
     maxApprovals: number;
-
-    /**
-     * The period during which an approved treasury spend has to be claimed.
-     **/
-    payoutPeriod: number;
 
     /**
      * Generic pallet constant

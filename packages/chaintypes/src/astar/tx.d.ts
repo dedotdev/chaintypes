@@ -38,6 +38,7 @@ import type {
   PalletInflationInflationParameters,
   AstarPrimitivesDappStakingSmartContract,
   PalletDappStakingForcingType,
+  PalletDappStakingTierParameters,
   AstarPrimitivesOracleCurrencyId,
   AstarRuntimeSessionKeys,
   XcmVersionedLocation,
@@ -3104,8 +3105,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Cleanup expired stake entries for the contract.
      *
      * Entry is considered to be expired if:
-     * 1. It's from a past period & the account wasn't a loyal staker, meaning there's no claimable bonus reward.
-     * 2. It's from a period older than the oldest claimable period, regardless whether the account was loyal or not.
+     * 1. It's from a past period & the account did not maintain an eligible bonus status, meaning there's no claimable bonus reward.
+     * 2. It's from a period older than the oldest claimable period, regardless of whether the account had an eligible bonus status or not.
      *
      **/
     cleanupExpiredEntries: GenericTxCall<
@@ -3184,6 +3185,85 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ClaimBonusRewardFor';
             params: { account: AccountId32Like; smartContract: AstarPrimitivesDappStakingSmartContract };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Transfers stake between two smart contracts, ensuring bonus status preservation if eligible.
+     * Emits a `StakeMoved` event.
+     *
+     * @param {AstarPrimitivesDappStakingSmartContract} sourceContract
+     * @param {AstarPrimitivesDappStakingSmartContract} destinationContract
+     * @param {bigint} amount
+     **/
+    moveStake: GenericTxCall<
+      Rv,
+      (
+        sourceContract: AstarPrimitivesDappStakingSmartContract,
+        destinationContract: AstarPrimitivesDappStakingSmartContract,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'DappStaking';
+          palletCall: {
+            name: 'MoveStake';
+            params: {
+              sourceContract: AstarPrimitivesDappStakingSmartContract;
+              destinationContract: AstarPrimitivesDappStakingSmartContract;
+              amount: bigint;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Used to set static tier parameters, which are used to calculate tier configuration.
+     * Tier configuration defines tier entry threshold values, number of slots, and reward portions.
+     *
+     * This is a delicate call and great care should be taken when changing these
+     * values since it has a significant impact on the reward system.
+     *
+     * @param {PalletDappStakingTierParameters} params
+     **/
+    setStaticTierParams: GenericTxCall<
+      Rv,
+      (params: PalletDappStakingTierParameters) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'DappStaking';
+          palletCall: {
+            name: 'SetStaticTierParams';
+            params: { params: PalletDappStakingTierParameters };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Active update `BonusStatus` according to the new MaxBonusSafeMovesPerPeriod from config
+     * for all already existing StakerInfo in steps, consuming up to the specified amount of
+     * weight.
+     *
+     * If no weight is specified, max allowed weight is used.
+     * In any case the weight_limit is clamped between the minimum & maximum allowed values.
+     *
+     * TODO: remove this extrinsic once BonusStatus update is done
+     *
+     * @param {SpWeightsWeightV2Weight | undefined} weightLimit
+     **/
+    updateBonus: GenericTxCall<
+      Rv,
+      (weightLimit: SpWeightsWeightV2Weight | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'DappStaking';
+          palletCall: {
+            name: 'UpdateBonus';
+            params: { weightLimit: SpWeightsWeightV2Weight | undefined };
           };
         }
       >
@@ -8755,244 +8835,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Propose and approve a spend of treasury funds.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`.
-     *
-     * ### Details
-     * NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the
-     * beneficiary.
-     *
-     * ### Parameters
-     * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
-     * - `beneficiary`: The destination account for the transfer.
-     *
-     * ## Events
-     *
-     * Emits [`Event::SpendApproved`] if successful.
-     *
-     * @param {bigint} amount
-     * @param {MultiAddressLike} beneficiary
-     **/
-    spendLocal: GenericTxCall<
-      Rv,
-      (
-        amount: bigint,
-        beneficiary: MultiAddressLike,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'SpendLocal';
-            params: { amount: bigint; beneficiary: MultiAddressLike };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Force a previously approved proposal to be removed from the approval queue.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be [`Config::RejectOrigin`].
-     *
-     * ## Details
-     *
-     * The original deposit will no longer be returned.
-     *
-     * ### Parameters
-     * - `proposal_id`: The index of a proposal
-     *
-     * ### Complexity
-     * - O(A) where `A` is the number of approvals
-     *
-     * ### Errors
-     * - [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the
-     * approval queue, i.e., the proposal has not been approved. This could also mean the
-     * proposal does not exist altogether, thus there is no way it would have been approved
-     * in the first place.
-     *
-     * @param {number} proposalId
-     **/
-    removeApproval: GenericTxCall<
-      Rv,
-      (proposalId: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'RemoveApproval';
-            params: { proposalId: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Propose and approve a spend of treasury funds.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be [`Config::SpendOrigin`] with the `Success` value being at least
-     * `amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted
-     * for assertion using the [`Config::BalanceConverter`].
-     *
-     * ## Details
-     *
-     * Create an approved spend for transferring a specific `amount` of `asset_kind` to a
-     * designated beneficiary. The spend must be claimed using the `payout` dispatchable within
-     * the [`Config::PayoutPeriod`].
-     *
-     * ### Parameters
-     * - `asset_kind`: An indicator of the specific asset class to be spent.
-     * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
-     * - `beneficiary`: The beneficiary of the spend.
-     * - `valid_from`: The block number from which the spend can be claimed. It can refer to
-     * the past if the resulting spend has not yet expired according to the
-     * [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after
-     * approval.
-     *
-     * ## Events
-     *
-     * Emits [`Event::AssetSpendApproved`] if successful.
-     *
-     * @param {[]} assetKind
-     * @param {bigint} amount
-     * @param {AccountId32Like} beneficiary
-     * @param {number | undefined} validFrom
-     **/
-    spend: GenericTxCall<
-      Rv,
-      (
-        assetKind: [],
-        amount: bigint,
-        beneficiary: AccountId32Like,
-        validFrom: number | undefined,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'Spend';
-            params: { assetKind: []; amount: bigint; beneficiary: AccountId32Like; validFrom: number | undefined };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Claim a spend.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be signed.
-     *
-     * ## Details
-     *
-     * Spends must be claimed within some temporal bounds. A spend may be claimed within one
-     * [`Config::PayoutPeriod`] from the `valid_from` block.
-     * In case of a payout failure, the spend status must be updated with the `check_status`
-     * dispatchable before retrying with the current function.
-     *
-     * ### Parameters
-     * - `index`: The spend index.
-     *
-     * ## Events
-     *
-     * Emits [`Event::Paid`] if successful.
-     *
-     * @param {number} index
-     **/
-    payout: GenericTxCall<
-      Rv,
-      (index: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'Payout';
-            params: { index: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Check the status of the spend and remove it from the storage if processed.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be signed.
-     *
-     * ## Details
-     *
-     * The status check is a prerequisite for retrying a failed payout.
-     * If a spend has either succeeded or expired, it is removed from the storage by this
-     * function. In such instances, transaction fees are refunded.
-     *
-     * ### Parameters
-     * - `index`: The spend index.
-     *
-     * ## Events
-     *
-     * Emits [`Event::PaymentFailed`] if the spend payout has failed.
-     * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
-     *
-     * @param {number} index
-     **/
-    checkStatus: GenericTxCall<
-      Rv,
-      (index: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'CheckStatus';
-            params: { index: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Void previously approved spend.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be [`Config::RejectOrigin`].
-     *
-     * ## Details
-     *
-     * A spend void is only possible if the payout has not been attempted yet.
-     *
-     * ### Parameters
-     * - `index`: The spend index.
-     *
-     * ## Events
-     *
-     * Emits [`Event::AssetSpendVoided`] if successful.
-     *
-     * @param {number} index
-     **/
-    voidSpend: GenericTxCall<
-      Rv,
-      (index: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Treasury';
-          palletCall: {
-            name: 'VoidSpend';
-            params: { index: number };
-          };
-        }
-      >
-    >;
-
-    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -9102,244 +8944,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ApproveProposal';
             params: { proposalId: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Propose and approve a spend of treasury funds.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`.
-     *
-     * ### Details
-     * NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the
-     * beneficiary.
-     *
-     * ### Parameters
-     * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
-     * - `beneficiary`: The destination account for the transfer.
-     *
-     * ## Events
-     *
-     * Emits [`Event::SpendApproved`] if successful.
-     *
-     * @param {bigint} amount
-     * @param {MultiAddressLike} beneficiary
-     **/
-    spendLocal: GenericTxCall<
-      Rv,
-      (
-        amount: bigint,
-        beneficiary: MultiAddressLike,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'CommunityTreasury';
-          palletCall: {
-            name: 'SpendLocal';
-            params: { amount: bigint; beneficiary: MultiAddressLike };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Force a previously approved proposal to be removed from the approval queue.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be [`Config::RejectOrigin`].
-     *
-     * ## Details
-     *
-     * The original deposit will no longer be returned.
-     *
-     * ### Parameters
-     * - `proposal_id`: The index of a proposal
-     *
-     * ### Complexity
-     * - O(A) where `A` is the number of approvals
-     *
-     * ### Errors
-     * - [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the
-     * approval queue, i.e., the proposal has not been approved. This could also mean the
-     * proposal does not exist altogether, thus there is no way it would have been approved
-     * in the first place.
-     *
-     * @param {number} proposalId
-     **/
-    removeApproval: GenericTxCall<
-      Rv,
-      (proposalId: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'CommunityTreasury';
-          palletCall: {
-            name: 'RemoveApproval';
-            params: { proposalId: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Propose and approve a spend of treasury funds.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be [`Config::SpendOrigin`] with the `Success` value being at least
-     * `amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted
-     * for assertion using the [`Config::BalanceConverter`].
-     *
-     * ## Details
-     *
-     * Create an approved spend for transferring a specific `amount` of `asset_kind` to a
-     * designated beneficiary. The spend must be claimed using the `payout` dispatchable within
-     * the [`Config::PayoutPeriod`].
-     *
-     * ### Parameters
-     * - `asset_kind`: An indicator of the specific asset class to be spent.
-     * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
-     * - `beneficiary`: The beneficiary of the spend.
-     * - `valid_from`: The block number from which the spend can be claimed. It can refer to
-     * the past if the resulting spend has not yet expired according to the
-     * [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after
-     * approval.
-     *
-     * ## Events
-     *
-     * Emits [`Event::AssetSpendApproved`] if successful.
-     *
-     * @param {[]} assetKind
-     * @param {bigint} amount
-     * @param {AccountId32Like} beneficiary
-     * @param {number | undefined} validFrom
-     **/
-    spend: GenericTxCall<
-      Rv,
-      (
-        assetKind: [],
-        amount: bigint,
-        beneficiary: AccountId32Like,
-        validFrom: number | undefined,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'CommunityTreasury';
-          palletCall: {
-            name: 'Spend';
-            params: { assetKind: []; amount: bigint; beneficiary: AccountId32Like; validFrom: number | undefined };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Claim a spend.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be signed.
-     *
-     * ## Details
-     *
-     * Spends must be claimed within some temporal bounds. A spend may be claimed within one
-     * [`Config::PayoutPeriod`] from the `valid_from` block.
-     * In case of a payout failure, the spend status must be updated with the `check_status`
-     * dispatchable before retrying with the current function.
-     *
-     * ### Parameters
-     * - `index`: The spend index.
-     *
-     * ## Events
-     *
-     * Emits [`Event::Paid`] if successful.
-     *
-     * @param {number} index
-     **/
-    payout: GenericTxCall<
-      Rv,
-      (index: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'CommunityTreasury';
-          palletCall: {
-            name: 'Payout';
-            params: { index: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Check the status of the spend and remove it from the storage if processed.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be signed.
-     *
-     * ## Details
-     *
-     * The status check is a prerequisite for retrying a failed payout.
-     * If a spend has either succeeded or expired, it is removed from the storage by this
-     * function. In such instances, transaction fees are refunded.
-     *
-     * ### Parameters
-     * - `index`: The spend index.
-     *
-     * ## Events
-     *
-     * Emits [`Event::PaymentFailed`] if the spend payout has failed.
-     * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
-     *
-     * @param {number} index
-     **/
-    checkStatus: GenericTxCall<
-      Rv,
-      (index: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'CommunityTreasury';
-          palletCall: {
-            name: 'CheckStatus';
-            params: { index: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Void previously approved spend.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be [`Config::RejectOrigin`].
-     *
-     * ## Details
-     *
-     * A spend void is only possible if the payout has not been attempted yet.
-     *
-     * ### Parameters
-     * - `index`: The spend index.
-     *
-     * ## Events
-     *
-     * Emits [`Event::AssetSpendVoided`] if successful.
-     *
-     * @param {number} index
-     **/
-    voidSpend: GenericTxCall<
-      Rv,
-      (index: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'CommunityTreasury';
-          palletCall: {
-            name: 'VoidSpend';
-            params: { index: number };
           };
         }
       >

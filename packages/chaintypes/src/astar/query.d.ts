@@ -64,6 +64,7 @@ import type {
   PalletDappStakingTiersConfiguration,
   PalletDappStakingDAppTierRewards,
   PalletDappStakingCleanupMarker,
+  PalletDappStakingBonusUpdateState,
   PalletAssetsAssetDetails,
   PalletAssetsAssetAccount,
   PalletAssetsApproval,
@@ -107,7 +108,6 @@ import type {
   PalletDemocracyVoteThreshold,
   PalletDemocracyMetadataOwner,
   PalletTreasuryProposal,
-  PalletTreasurySpendStatus,
   PalletMigrationsMigrationCursor,
 } from './types';
 
@@ -1067,6 +1067,14 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<boolean> =} callback
      **/
     safeguard: GenericStorageQuery<Rv, () => boolean>;
+
+    /**
+     * Temporary cursor to persist latest BonusStatus item updated.
+     * TODO: remove it once all BonusStatus are updated and this storage value is cleanup.
+     *
+     * @param {Callback<PalletDappStakingBonusUpdateState> =} callback
+     **/
+    activeBonusUpdateState: GenericStorageQuery<Rv, () => PalletDappStakingBonusUpdateState>;
 
     /**
      * Generic pallet storage query
@@ -2384,21 +2392,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     approvals: GenericStorageQuery<Rv, () => Array<number>>;
 
     /**
-     * The count of spends that have been made.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    spendCount: GenericStorageQuery<Rv, () => number>;
-
-    /**
-     * Spends that have been approved and being processed.
-     *
-     * @param {number} arg
-     * @param {Callback<PalletTreasurySpendStatus | undefined> =} callback
-     **/
-    spends: GenericStorageQuery<Rv, (arg: number) => PalletTreasurySpendStatus | undefined, number>;
-
-    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -2435,21 +2428,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<Array<number>> =} callback
      **/
     approvals: GenericStorageQuery<Rv, () => Array<number>>;
-
-    /**
-     * The count of spends that have been made.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    spendCount: GenericStorageQuery<Rv, () => number>;
-
-    /**
-     * Spends that have been approved and being processed.
-     *
-     * @param {number} arg
-     * @param {Callback<PalletTreasurySpendStatus | undefined> =} callback
-     **/
-    spends: GenericStorageQuery<Rv, (arg: number) => PalletTreasurySpendStatus | undefined, number>;
 
     /**
      * Generic pallet storage query

@@ -2479,7 +2479,16 @@ export type PalletStakingPalletCall =
         maybeTotal?: bigint | undefined;
         maybeUnlocking?: Array<PalletStakingUnlockChunk> | undefined;
       };
-    };
+    }
+  /**
+   * Adjusts the staking ledger by withdrawing any excess staked amount.
+   *
+   * This function corrects cases where a user's recorded stake in the ledger
+   * exceeds their actual staked funds. This situation can arise due to cases such as
+   * external slashing by another pallet, leading to an inconsistency between the ledger
+   * and the actual stake.
+   **/
+  | { name: 'WithdrawOverstake'; params: { stash: AccountId32 } };
 
 export type PalletStakingPalletCallLike =
   /**
@@ -2925,7 +2934,16 @@ export type PalletStakingPalletCallLike =
         maybeTotal?: bigint | undefined;
         maybeUnlocking?: Array<PalletStakingUnlockChunk> | undefined;
       };
-    };
+    }
+  /**
+   * Adjusts the staking ledger by withdrawing any excess staked amount.
+   *
+   * This function corrects cases where a user's recorded stake in the ledger
+   * exceeds their actual staked funds. This situation can arise due to cases such as
+   * external slashing by another pallet, leading to an inconsistency between the ledger
+   * and the actual stake.
+   **/
+  | { name: 'WithdrawOverstake'; params: { stash: AccountId32Like } };
 
 export type PalletStakingPalletConfigOp = { type: 'Noop' } | { type: 'Set'; value: bigint } | { type: 'Remove' };
 
@@ -6026,8 +6044,9 @@ export type PalletBagsListCallLike =
  **/
 export type PalletNominationPoolsCall =
   /**
-   * Stake funds with a pool. The amount to bond is transferred from the member to the pool
-   * account and immediately increases the pools bond.
+   * Stake funds with a pool. The amount to bond is delegated (or transferred based on
+   * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
+   * increases the pool's bond.
    *
    * The method of transferring the amount to the pool account is determined by
    * [`adapter::StakeStrategyType`]. If the pool is configured to use
@@ -6382,8 +6401,9 @@ export type PalletNominationPoolsCall =
 
 export type PalletNominationPoolsCallLike =
   /**
-   * Stake funds with a pool. The amount to bond is transferred from the member to the pool
-   * account and immediately increases the pools bond.
+   * Stake funds with a pool. The amount to bond is delegated (or transferred based on
+   * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
+   * increases the pool's bond.
    *
    * The method of transferring the amount to the pool account is determined by
    * [`adapter::StakeStrategyType`]. If the pool is configured to use
@@ -12179,7 +12199,12 @@ export type PalletStakingPalletError =
   /**
    * Operation not allowed for virtual stakers.
    **/
-  | 'VirtualStakerNotAllowed';
+  | 'VirtualStakerNotAllowed'
+  /**
+   * Account is restricted from participation in staking. This may happen if the account is
+   * staking in another way already, such as via pool.
+   **/
+  | 'Restricted';
 
 export type SpStakingOffenceOffenceDetails = {
   offender: [AccountId32, SpStakingExposure];
@@ -13116,7 +13141,12 @@ export type PalletNominationPoolsError =
   /**
    * This call is not allowed in the current state of the pallet.
    **/
-  | { name: 'NotSupported' };
+  | { name: 'NotSupported' }
+  /**
+   * Account is restricted from participation in pools. This may happen if the account is
+   * staking in another way already.
+   **/
+  | { name: 'Restricted' };
 
 export type PalletNominationPoolsDefensiveError =
   | 'NotEnoughSpaceInUnbondPool'

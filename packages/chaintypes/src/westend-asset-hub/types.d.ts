@@ -16,6 +16,7 @@ import type {
   MultiAddress,
   MultiAddressLike,
   AccountId32Like,
+  Perbill,
   Era,
   Header,
   UncheckedExtrinsic,
@@ -520,7 +521,15 @@ export type PalletSessionEvent =
    * New session has happened. Note that the argument is the session index, not the
    * block number as the type might suggest.
    **/
-  { name: 'NewSession'; data: { sessionIndex: number } };
+  | { name: 'NewSession'; data: { sessionIndex: number } }
+  /**
+   * Validator has been disabled.
+   **/
+  | { name: 'ValidatorDisabled'; data: { validator: AccountId32 } }
+  /**
+   * Validator has been re-enabled.
+   **/
+  | { name: 'ValidatorReenabled'; data: { validator: AccountId32 } };
 
 /**
  * The `Event` enum of this pallet
@@ -1275,7 +1284,15 @@ export type PalletUtilityEvent =
   /**
    * A call was dispatched.
    **/
-  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } };
+  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } }
+  /**
+   * Main call was dispatched.
+   **/
+  | { name: 'IfElseMainSuccess' }
+  /**
+   * The fallback call was dispatched.
+   **/
+  | { name: 'IfElseFallbackCalled'; data: { mainError: DispatchError } };
 
 /**
  * The `Event` enum of this pallet
@@ -3586,6 +3603,8 @@ export type AssetHubWestendRuntimeSessionKeys = { aura: SpConsensusAuraSr25519Ap
 
 export type SpConsensusAuraSr25519AppSr25519Public = FixedBytes<32>;
 
+export type SpStakingOffenceOffenceSeverity = Perbill;
+
 export type SpCoreCryptoKeyTypeId = FixedBytes<4>;
 
 /**
@@ -5136,7 +5155,44 @@ export type PalletUtilityCall =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: AssetHubWestendRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } };
+  | { name: 'WithWeight'; params: { call: AssetHubWestendRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | { name: 'IfElse'; params: { main: AssetHubWestendRuntimeRuntimeCall; fallback: AssetHubWestendRuntimeRuntimeCall } }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | {
+      name: 'DispatchAsFallible';
+      params: { asOrigin: AssetHubWestendRuntimeOriginCaller; call: AssetHubWestendRuntimeRuntimeCall };
+    };
 
 export type PalletUtilityCallLike =
   /**
@@ -5228,7 +5284,47 @@ export type PalletUtilityCallLike =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: AssetHubWestendRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } };
+  | { name: 'WithWeight'; params: { call: AssetHubWestendRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | {
+      name: 'IfElse';
+      params: { main: AssetHubWestendRuntimeRuntimeCallLike; fallback: AssetHubWestendRuntimeRuntimeCallLike };
+    }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | {
+      name: 'DispatchAsFallible';
+      params: { asOrigin: AssetHubWestendRuntimeOriginCaller; call: AssetHubWestendRuntimeRuntimeCallLike };
+    };
 
 export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'System'; palletCall: FrameSystemCall }
@@ -13696,7 +13792,11 @@ export type PalletReviveError =
   /**
    * The refcount of a code either over or underflowed.
    **/
-  | 'RefcountOverOrUnderflow';
+  | 'RefcountOverOrUnderflow'
+  /**
+   * Unsupported precompile address
+   **/
+  | 'UnsupportedPrecompileAddress';
 
 export type PalletAssetRewardsPoolStakerInfo = { amount: bigint; rewards: bigint; rewardPerTokenPaid: bigint };
 
@@ -14016,7 +14116,7 @@ export type PalletReviveEvmApiDebugRpcTypesCallTrace = {
   revertReason?: string | undefined;
   calls: Array<PalletReviveEvmApiDebugRpcTypesCallTrace>;
   logs: Array<PalletReviveEvmApiDebugRpcTypesCallLog>;
-  value: U256;
+  value?: U256 | undefined;
   callType: PalletReviveEvmApiDebugRpcTypesCallType;
 };
 

@@ -551,6 +551,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     NewSession: GenericPalletEvent<Rv, 'Session', 'NewSession', { sessionIndex: number }>;
 
     /**
+     * Validator has been disabled.
+     **/
+    ValidatorDisabled: GenericPalletEvent<Rv, 'Session', 'ValidatorDisabled', { validator: AccountId32 }>;
+
+    /**
+     * Validator has been re-enabled.
+     **/
+    ValidatorReenabled: GenericPalletEvent<Rv, 'Session', 'ValidatorReenabled', { validator: AccountId32 }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -1078,6 +1088,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * A call was dispatched.
      **/
     DispatchedAs: GenericPalletEvent<Rv, 'Utility', 'DispatchedAs', { result: Result<[], DispatchError> }>;
+
+    /**
+     * Main call was dispatched.
+     **/
+    IfElseMainSuccess: GenericPalletEvent<Rv, 'Utility', 'IfElseMainSuccess', null>;
+
+    /**
+     * The fallback call was dispatched.
+     **/
+    IfElseFallbackCalled: GenericPalletEvent<Rv, 'Utility', 'IfElseFallbackCalled', { mainError: DispatchError }>;
 
     /**
      * Generic pallet event

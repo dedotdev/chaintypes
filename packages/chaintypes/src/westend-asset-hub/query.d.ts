@@ -40,6 +40,7 @@ import type {
   PalletTransactionPaymentReleases,
   PalletCollatorSelectionCandidateInfo,
   AssetHubWestendRuntimeSessionKeys,
+  SpStakingOffenceOffenceSeverity,
   SpCoreCryptoKeyTypeId,
   SpConsensusAuraSr25519AppSr25519Public,
   SpConsensusSlotsSlot,
@@ -805,9 +806,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * disabled using binary search. It gets cleared when `on_session_ending` returns
      * a new set of identities.
      *
-     * @param {Callback<Array<number>> =} callback
+     * @param {Callback<Array<[number, SpStakingOffenceOffenceSeverity]>> =} callback
      **/
-    disabledValidators: GenericStorageQuery<Rv, () => Array<number>>;
+    disabledValidators: GenericStorageQuery<Rv, () => Array<[number, SpStakingOffenceOffenceSeverity]>>;
 
     /**
      * The next session keys for a validator.
@@ -1930,14 +1931,15 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * Map a Ethereum address to its original `AccountId32`.
      *
-     * Stores the last 12 byte for addresses that were originally an `AccountId32` instead
-     * of an `H160`. Register your `AccountId32` using [`Pallet::map_account`] in order to
+     * When deriving a `H160` from an `AccountId32` we use a hash function. In order to
+     * reconstruct the original account we need to store the reverse mapping here.
+     * Register your `AccountId32` using [`Pallet::map_account`] in order to
      * use it with this pallet.
      *
      * @param {H160} arg
-     * @param {Callback<FixedBytes<12> | undefined> =} callback
+     * @param {Callback<AccountId32 | undefined> =} callback
      **/
-    addressSuffix: GenericStorageQuery<Rv, (arg: H160) => FixedBytes<12> | undefined, H160>;
+    originalAccount: GenericStorageQuery<Rv, (arg: H160) => AccountId32 | undefined, H160>;
 
     /**
      * Generic pallet storage query

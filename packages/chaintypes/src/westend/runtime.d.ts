@@ -685,6 +685,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     schedulingLookahead: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
 
     /**
+     * Retrieve the maximum uncompressed code size.
+     *
+     * @callname: ParachainHost_validation_code_bomb_limit
+     **/
+    validationCodeBombLimit: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
+
+    /**
      * Generic runtime api call
      **/
     [method: string]: GenericRuntimeApiMethod<Rv>;

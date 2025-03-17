@@ -898,6 +898,25 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
+   * Pallet `DelegatedStaking`'s constants
+   **/
+  delegatedStaking: {
+    /**
+     * Injected identifier for the pallet.
+     **/
+    palletId: FrameSupportPalletId;
+
+    /**
+     * Fraction of the slash that is rewarded to the caller of pending slash to the agent.
+     **/
+    slashRewardFraction: Perbill;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `ParachainsOrigin`'s constants
    **/
   parachainsOrigin: {

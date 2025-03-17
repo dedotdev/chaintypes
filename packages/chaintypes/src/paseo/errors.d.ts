@@ -140,11 +140,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     TooFew: GenericPalletError<Rv>;
 
     /**
-     * No ticket with a cost was returned by [`Config::Consideration`] to store the preimage.
-     **/
-    NoCost: GenericPalletError<Rv>;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -443,6 +438,12 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Operation not allowed for virtual stakers.
      **/
     VirtualStakerNotAllowed: GenericPalletError<Rv>;
+
+    /**
+     * Account is restricted from participation in staking. This may happen if the account is
+     * staking in another way already, such as via pool.
+     **/
+    Restricted: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1359,6 +1360,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NothingToSlash: GenericPalletError<Rv>;
 
     /**
+     * The slash amount is too low to be applied.
+     **/
+    SlashTooLow: GenericPalletError<Rv>;
+
+    /**
      * The pool or member delegation has already migrated to delegate stake.
      **/
     AlreadyMigrated: GenericPalletError<Rv>;
@@ -1372,6 +1378,12 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * This call is not allowed in the current state of the pallet.
      **/
     NotSupported: GenericPalletError<Rv>;
+
+    /**
+     * Account is restricted from participation in pools. This may happen if the account is
+     * staking in another way already.
+     **/
+    Restricted: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1413,6 +1425,79 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The call is not allowed at this point because the pallet is not active.
      **/
     CallNotAllowed: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `DelegatedStaking`'s errors
+   **/
+  delegatedStaking: {
+    /**
+     * The account cannot perform this operation.
+     **/
+    NotAllowed: GenericPalletError<Rv>;
+
+    /**
+     * An existing staker cannot perform this action.
+     **/
+    AlreadyStaking: GenericPalletError<Rv>;
+
+    /**
+     * Reward Destination cannot be same as `Agent` account.
+     **/
+    InvalidRewardDestination: GenericPalletError<Rv>;
+
+    /**
+     * Delegation conditions are not met.
+     *
+     * Possible issues are
+     * 1) Cannot delegate to self,
+     * 2) Cannot delegate to multiple delegates.
+     **/
+    InvalidDelegation: GenericPalletError<Rv>;
+
+    /**
+     * The account does not have enough funds to perform the operation.
+     **/
+    NotEnoughFunds: GenericPalletError<Rv>;
+
+    /**
+     * Not an existing `Agent` account.
+     **/
+    NotAgent: GenericPalletError<Rv>;
+
+    /**
+     * Not a Delegator account.
+     **/
+    NotDelegator: GenericPalletError<Rv>;
+
+    /**
+     * Some corruption in internal state.
+     **/
+    BadState: GenericPalletError<Rv>;
+
+    /**
+     * Unapplied pending slash restricts operation on `Agent`.
+     **/
+    UnappliedSlash: GenericPalletError<Rv>;
+
+    /**
+     * `Agent` has no pending slash to be applied.
+     **/
+    NothingToSlash: GenericPalletError<Rv>;
+
+    /**
+     * Failed to withdraw amount from Core Staking.
+     **/
+    WithdrawFailed: GenericPalletError<Rv>;
+
+    /**
+     * Operation not supported by this pallet.
+     **/
+    NotSupported: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1488,11 +1573,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Invalid (bad signature, unknown validator, etc.) backing.
      **/
     InvalidBacking: GenericPalletError<Rv>;
-
-    /**
-     * Collator did not sign PoV.
-     **/
-    NotCollatorSigned: GenericPalletError<Rv>;
 
     /**
      * The validation data hash does not match expected.
@@ -2470,9 +2550,24 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     InvalidKeyOwnershipProof: GenericPalletError<Rv>;
 
     /**
-     * An equivocation proof provided as part of an equivocation report is invalid.
+     * A double voting proof provided as part of an equivocation report is invalid.
      **/
-    InvalidEquivocationProof: GenericPalletError<Rv>;
+    InvalidDoubleVotingProof: GenericPalletError<Rv>;
+
+    /**
+     * A fork voting proof provided as part of an equivocation report is invalid.
+     **/
+    InvalidForkVotingProof: GenericPalletError<Rv>;
+
+    /**
+     * A future block voting proof provided as part of an equivocation report is invalid.
+     **/
+    InvalidFutureBlockVotingProof: GenericPalletError<Rv>;
+
+    /**
+     * The session of the equivocation proof is invalid
+     **/
+    InvalidEquivocationProofSession: GenericPalletError<Rv>;
 
     /**
      * A given equivocation report is valid but already previously reported.

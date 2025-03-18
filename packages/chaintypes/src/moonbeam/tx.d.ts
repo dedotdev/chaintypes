@@ -371,63 +371,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
-     * later.
-     *
-     * The `check_version` parameter sets a boolean flag for whether or not the runtime's spec
-     * version and name should be verified on upgrade. Since the authorization only has a hash,
-     * it cannot actually perform the verification.
-     *
-     * This call requires Root origin.
-     *
-     * @param {H256} codeHash
-     * @param {boolean} checkVersion
-     **/
-    authorizeUpgrade: GenericTxCall<
-      Rv,
-      (
-        codeHash: H256,
-        checkVersion: boolean,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainSystem';
-          palletCall: {
-            name: 'AuthorizeUpgrade';
-            params: { codeHash: H256; checkVersion: boolean };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
-     *
-     * If the authorization required a version check, this call will ensure the spec name
-     * remains unchanged and that the spec version has increased.
-     *
-     * Note that this function will not apply the new `code`, but only attempt to schedule the
-     * upgrade with the Relay Chain.
-     *
-     * All origins are allowed.
-     *
-     * @param {BytesLike} code
-     **/
-    enactAuthorizedUpgrade: GenericTxCall<
-      Rv,
-      (code: BytesLike) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainSystem';
-          palletCall: {
-            name: 'EnactAuthorizedUpgrade';
-            params: { code: BytesLike };
-          };
-        }
-      >
-    >;
-
-    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -2552,7 +2495,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `max_fee`: The maximum fee that may be paid. This should just be auto-populated as:
      *
      * ```nocompile
-     * Self::registrars().get(reg_index).unwrap().fee
+     * Registrars::<T>::get().get(reg_index).unwrap().fee
      * ```
      *
      * Emits `JudgementRequested` if successful.
@@ -6181,8 +6124,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `id`: The identifier of the asset to be destroyed. This must identify an existing
      * asset.
      *
-     * The asset class must be frozen before calling `start_destroy`.
-     *
      * @param {bigint} id
      **/
     startDestroy: GenericTxCall<
@@ -7232,6 +7173,46 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'Block';
             params: { id: bigint; who: AccountId20Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Transfer the entire transferable balance from the caller asset account.
+     *
+     * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+     * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+     * transferred by this function. To ensure that this function results in a killed account,
+     * you might need to prepare the account by removing any reference counters, storage
+     * deposits, etc...
+     *
+     * The dispatch origin of this call must be Signed.
+     *
+     * - `id`: The identifier of the asset for the account holding a deposit.
+     * - `dest`: The recipient of the transfer.
+     * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+     * of the funds the asset account has, causing the sender asset account to be killed
+     * (false), or transfer everything except at least the minimum balance, which will
+     * guarantee to keep the sender asset account alive (true).
+     *
+     * @param {bigint} id
+     * @param {AccountId20Like} dest
+     * @param {boolean} keepAlive
+     **/
+    transferAll: GenericTxCall<
+      Rv,
+      (
+        id: bigint,
+        dest: AccountId20Like,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'TransferAll';
+            params: { id: bigint; dest: AccountId20Like; keepAlive: boolean };
           };
         }
       >

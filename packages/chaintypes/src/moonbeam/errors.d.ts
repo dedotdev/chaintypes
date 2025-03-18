@@ -723,11 +723,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ContractNotExist: GenericPalletError<Rv>;
 
     /**
-     * The key lengths exceeds the maximum allowed
-     **/
-    KeyTooLong: GenericPalletError<Rv>;
-
-    /**
      * The symbol length exceeds the maximum allowed
      **/
     SymbolTooLong: GenericPalletError<Rv>;
@@ -947,11 +942,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Too few hashes were requested to be upgraded (i.e. zero).
      **/
     TooFew: GenericPalletError<Rv>;
-
-    /**
-     * No ticket with a cost was returned by [`Config::Consideration`] to store the preimage.
-     **/
-    NoCost: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

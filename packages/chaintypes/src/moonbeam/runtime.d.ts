@@ -295,62 +295,6 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
-   * @runtimeapi: GenesisBuilder - 0xfbc577b9d747efd6
-   **/
-  genesisBuilder: {
-    /**
-     * Build `RuntimeGenesisConfig` from a JSON blob not using any defaults and store it in the
-     * storage.
-     *
-     * In the case of a FRAME-based runtime, this function deserializes the full `RuntimeGenesisConfig` from the given JSON blob and
-     * puts it into the storage. If the provided JSON blob is incorrect or incomplete or the
-     * deserialization fails, an error is returned.
-     *
-     * Please note that provided JSON blob must contain all `RuntimeGenesisConfig` fields, no
-     * defaults will be used.
-     *
-     * @callname: GenesisBuilder_build_state
-     * @param {BytesLike} json
-     **/
-    buildState: GenericRuntimeApiMethod<Rv, (json: BytesLike) => Promise<Result<[], string>>>;
-
-    /**
-     * Returns a JSON blob representation of the built-in `RuntimeGenesisConfig` identified by
-     * `id`.
-     *
-     * If `id` is `None` the function returns JSON blob representation of the default
-     * `RuntimeGenesisConfig` struct of the runtime. Implementation must provide default
-     * `RuntimeGenesisConfig`.
-     *
-     * Otherwise function returns a JSON representation of the built-in, named
-     * `RuntimeGenesisConfig` preset identified by `id`, or `None` if such preset does not
-     * exists. Returned `Vec<u8>` contains bytes of JSON blob (patch) which comprises a list of
-     * (potentially nested) key-value pairs that are intended for customizing the default
-     * runtime genesis config. The patch shall be merged (rfc7386) with the JSON representation
-     * of the default `RuntimeGenesisConfig` to create a comprehensive genesis config that can
-     * be used in `build_state` method.
-     *
-     * @callname: GenesisBuilder_get_preset
-     * @param {string | undefined} id
-     **/
-    getPreset: GenericRuntimeApiMethod<Rv, (id?: string | undefined) => Promise<Bytes | undefined>>;
-
-    /**
-     * Returns a list of identifiers for available builtin `RuntimeGenesisConfig` presets.
-     *
-     * The presets from the list can be queried with [`GenesisBuilder::get_preset`] method. If
-     * no named presets are provided by the runtime the list is empty.
-     *
-     * @callname: GenesisBuilder_preset_names
-     **/
-    presetNames: GenericRuntimeApiMethod<Rv, () => Promise<Array<string>>>;
-
-    /**
-     * Generic runtime api call
-     **/
-    [method: string]: GenericRuntimeApiMethod<Rv>;
-  };
-  /**
    * @runtimeapi: AccountNonceApi - 0xbc9d89904f5b923f
    **/
   accountNonceApi: {

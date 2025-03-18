@@ -28,6 +28,7 @@ import type {
   MoonbeamRuntimeRuntimeParamsRuntimeParametersValue,
   EthereumLog,
   EvmCoreErrorExitReason,
+  PalletConvictionVotingVoteAccountVote,
   FrameSupportPreimagesBounded,
   PalletConvictionVotingTally,
   FrameSupportDispatchPostDispatchInfo,
@@ -1379,6 +1380,26 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * An \[account\] has cancelled a previous delegation operation.
      **/
     Undelegated: GenericPalletEvent<Rv, 'ConvictionVoting', 'Undelegated', AccountId20>;
+
+    /**
+     * An account that has voted
+     **/
+    Voted: GenericPalletEvent<
+      Rv,
+      'ConvictionVoting',
+      'Voted',
+      { who: AccountId20; vote: PalletConvictionVotingVoteAccountVote }
+    >;
+
+    /**
+     * A vote that been removed
+     **/
+    VoteRemoved: GenericPalletEvent<
+      Rv,
+      'ConvictionVoting',
+      'VoteRemoved',
+      { who: AccountId20; vote: PalletConvictionVotingVoteAccountVote }
+    >;
 
     /**
      * Generic pallet event

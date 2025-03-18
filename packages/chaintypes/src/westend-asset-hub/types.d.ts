@@ -13796,7 +13796,11 @@ export type PalletReviveError =
   /**
    * Unsupported precompile address
    **/
-  | 'UnsupportedPrecompileAddress';
+  | 'UnsupportedPrecompileAddress'
+  /**
+   * Precompile Error
+   **/
+  | 'PrecompileFailure';
 
 export type PalletAssetRewardsPoolStakerInfo = { amount: bigint; rewards: bigint; rewardPerTokenPaid: bigint };
 
@@ -14072,7 +14076,7 @@ export type PalletReviveEvmApiRpcTypesGenGenericTransaction = {
   from?: H160 | undefined;
   gas?: U256 | undefined;
   gasPrice?: U256 | undefined;
-  input?: PalletReviveEvmApiByteBytes | undefined;
+  input: PalletReviveEvmApiRpcTypesGenInputOrData;
   maxFeePerBlobGas?: U256 | undefined;
   maxFeePerGas?: U256 | undefined;
   maxPriorityFeePerGas?: U256 | undefined;
@@ -14085,6 +14089,11 @@ export type PalletReviveEvmApiRpcTypesGenGenericTransaction = {
 export type PalletReviveEvmApiRpcTypesGenAccessListEntry = { address: H160; storageKeys: Array<H256> };
 
 export type PalletReviveEvmApiByteBytes = Bytes;
+
+export type PalletReviveEvmApiRpcTypesGenInputOrData = {
+  input?: PalletReviveEvmApiByteBytes | undefined;
+  data?: PalletReviveEvmApiByteBytes | undefined;
+};
 
 export type PalletReviveEvmApiByte = number;
 

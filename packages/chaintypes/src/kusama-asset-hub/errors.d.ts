@@ -712,6 +712,50 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `RemoteProxyRelayChain`'s errors
+   **/
+  remoteProxyRelayChain: {
+    /**
+     * The local account id could not converted to the remote account id.
+     **/
+    CouldNotConvertLocalToRemoteAccountId: GenericPalletError<Rv>;
+
+    /**
+     * The anchor block of the remote proof is unknown.
+     **/
+    UnknownProofAnchorBlock: GenericPalletError<Rv>;
+
+    /**
+     * The proxy definition could not be found in the proof.
+     **/
+    InvalidProof: GenericPalletError<Rv>;
+
+    /**
+     * Failed to decode the remote proxy definition from the proof.
+     **/
+    ProxyDefinitionDecodingFailed: GenericPalletError<Rv>;
+
+    /**
+     * Announcement, if made at all, was made too recently.
+     **/
+    Unannounced: GenericPalletError<Rv>;
+
+    /**
+     * Could not find any matching proxy definition in the proof.
+     **/
+    DidNotFindMatchingProxyDefinition: GenericPalletError<Rv>;
+
+    /**
+     * Proxy proof not registered.
+     **/
+    ProxyProofNotRegistered: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `Assets`'s errors
    **/
   assets: {
@@ -1545,6 +1589,51 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The destination account cannot exist with the swapped funds.
      **/
     BelowMinimum: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `StateTrieMigration`'s errors
+   **/
+  stateTrieMigration: {
+    /**
+     * Max signed limits not respected.
+     **/
+    MaxSignedLimits: GenericPalletError<Rv>;
+
+    /**
+     * A key was longer than the configured maximum.
+     *
+     * This means that the migration halted at the current [`Progress`] and
+     * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
+     * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
+     * The value should only be increased to avoid a storage migration for the currently
+     * stored [`crate::Progress::LastKey`].
+     **/
+    KeyTooLong: GenericPalletError<Rv>;
+
+    /**
+     * submitter does not have enough funds.
+     **/
+    NotEnoughFunds: GenericPalletError<Rv>;
+
+    /**
+     * Bad witness data provided.
+     **/
+    BadWitness: GenericPalletError<Rv>;
+
+    /**
+     * Signed migration is not allowed because the maximum limit is not set yet.
+     **/
+    SignedMigrationNotAllowed: GenericPalletError<Rv>;
+
+    /**
+     * Bad child root provided.
+     **/
+    BadChildRoot: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

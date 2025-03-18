@@ -71,7 +71,8 @@ export type AssetHubKusamaRuntimeRuntimeEvent =
   | { pallet: 'ForeignAssets'; palletEvent: PalletAssetsEvent002 }
   | { pallet: 'NftFractionalization'; palletEvent: PalletNftFractionalizationEvent }
   | { pallet: 'PoolAssets'; palletEvent: PalletAssetsEvent }
-  | { pallet: 'AssetConversion'; palletEvent: PalletAssetConversionEvent };
+  | { pallet: 'AssetConversion'; palletEvent: PalletAssetConversionEvent }
+  | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent };
 
 /**
  * Event for the System pallet.
@@ -2095,6 +2096,65 @@ export type PalletAssetConversionEvent =
         who: AccountId32;
       };
     };
+
+/**
+ * Inner events of this pallet.
+ **/
+export type PalletStateTrieMigrationEvent =
+  /**
+   * Given number of `(top, child)` keys were migrated respectively, with the given
+   * `compute`.
+   **/
+  | { name: 'Migrated'; data: { top: number; child: number; compute: PalletStateTrieMigrationMigrationCompute } }
+  /**
+   * Some account got slashed by the given amount.
+   **/
+  | { name: 'Slashed'; data: { who: AccountId32; amount: bigint } }
+  /**
+   * The auto migration task finished.
+   **/
+  | { name: 'AutoMigrationFinished' }
+  /**
+   * Migration got halted due to an error or miss-configuration.
+   **/
+  | { name: 'Halted'; data: { error: PalletStateTrieMigrationError } };
+
+export type PalletStateTrieMigrationMigrationCompute = 'Signed' | 'Auto';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletStateTrieMigrationError =
+  /**
+   * Max signed limits not respected.
+   **/
+  | 'MaxSignedLimits'
+  /**
+   * A key was longer than the configured maximum.
+   *
+   * This means that the migration halted at the current [`Progress`] and
+   * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
+   * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
+   * The value should only be increased to avoid a storage migration for the currently
+   * stored [`crate::Progress::LastKey`].
+   **/
+  | 'KeyTooLong'
+  /**
+   * submitter does not have enough funds.
+   **/
+  | 'NotEnoughFunds'
+  /**
+   * Bad witness data provided.
+   **/
+  | 'BadWitness'
+  /**
+   * Signed migration is not allowed because the maximum limit is not set yet.
+   **/
+  | 'SignedMigrationNotAllowed'
+  /**
+   * Bad child root provided.
+   **/
+  | 'BadChildRoot';
 
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
@@ -4875,13 +4935,15 @@ export type AssetHubKusamaRuntimeRuntimeCall =
   | { pallet: 'Utility'; palletCall: PalletUtilityCall }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
   | { pallet: 'Proxy'; palletCall: PalletProxyCall }
+  | { pallet: 'RemoteProxyRelayChain'; palletCall: PalletRemoteProxyCall }
   | { pallet: 'Assets'; palletCall: PalletAssetsCall }
   | { pallet: 'Uniques'; palletCall: PalletUniquesCall }
   | { pallet: 'Nfts'; palletCall: PalletNftsCall }
   | { pallet: 'ForeignAssets'; palletCall: PalletAssetsCall002 }
   | { pallet: 'NftFractionalization'; palletCall: PalletNftFractionalizationCall }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCall003 }
-  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall };
+  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall }
+  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall };
 
 export type AssetHubKusamaRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -4900,13 +4962,15 @@ export type AssetHubKusamaRuntimeRuntimeCallLike =
   | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
   | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
+  | { pallet: 'RemoteProxyRelayChain'; palletCall: PalletRemoteProxyCallLike }
   | { pallet: 'Assets'; palletCall: PalletAssetsCallLike }
   | { pallet: 'Uniques'; palletCall: PalletUniquesCallLike }
   | { pallet: 'Nfts'; palletCall: PalletNftsCallLike }
   | { pallet: 'ForeignAssets'; palletCall: PalletAssetsCallLike002 }
   | { pallet: 'NftFractionalization'; palletCall: PalletNftFractionalizationCallLike }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCallLike003 }
-  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike };
+  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike }
+  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5546,6 +5610,165 @@ export type PalletProxyCallLike =
         call: AssetHubKusamaRuntimeRuntimeCallLike;
       };
     };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletRemoteProxyCall =
+  /**
+   * Dispatch the given `call` from an account that the sender is authorised on a remote
+   * chain.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `real`: The account that the proxy will make a call on behalf of.
+   * - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
+   * - `call`: The call to be made by the `real` account.
+   * - `proof`: The proof from the remote chain about the existence of the proxy.
+   **/
+  | {
+      name: 'RemoteProxy';
+      params: {
+        real: MultiAddress;
+        forceProxyType?: AssetHubKusamaRuntimeProxyType | undefined;
+        call: AssetHubKusamaRuntimeRuntimeCall;
+        proof: PalletRemoteProxyRemoteProxyProof;
+      };
+    }
+  /**
+   * Register a given remote proxy proof in the current [`dispatch_context`].
+   *
+   * The registered remote proof can then be used later in the same context to execute a
+   * remote proxy call. This is for example useful when having a multisig operation. The
+   * multisig call can use [`Self::remote_proxy_with_registered_proof`] to get an approval by
+   * the members of the multisig. The final execution of the multisig call should be at least
+   * a batch of `register_remote_proxy_proof` and the multisig call that uses
+   * `remote_proxy_with_registered_proof`. This way the final approver can use a recent proof
+   * to prove the existence of the remote proxy. Otherwise it would require the multisig
+   * members to approve the call in [`Config::MaxStorageRootsToKeep`] amount of time.
+   *
+   * It is supported to register multiple proofs, but the proofs need to be consumed in the
+   * reverse order as they were registered. Basically this means last in, first out.
+   *
+   * The [`dispatch_context`] spans the entire lifetime of a transaction and every call in
+   * the transaction gets access to the same context.
+   *
+   * # Example
+   *
+   * ```ignore
+   * batch([
+   * register_remote_proxy_proof,
+   * as_multisig(remote_proxy_with_registered_proof(transfer))
+   * ])
+   * ```
+   *
+   * As `proofs` can not be verified indefinitely (the time the storage roots are stored is
+   * limited) this function provides the possibility to provide a "fresh proof" at time of
+   * dispatch. As in the example above, this could be useful for multisig operation that
+   * depend on multiple members to approve a certain action, which can take multiple days.
+   **/
+  | { name: 'RegisterRemoteProxyProof'; params: { proof: PalletRemoteProxyRemoteProxyProof } }
+  /**
+   * Dispatch the given `call` from an account that the sender is authorised on a remote
+   * chain.
+   *
+   * The dispatch origin for this call must be _Signed_. The difference to
+   * [`Self::remote_proxy`] is that the proof nees to registered before using
+   * [`Self::register_remote_proxy_proof`] (see for more information).
+   *
+   * Parameters:
+   * - `real`: The account that the proxy will make a call on behalf of.
+   * - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
+   * - `call`: The call to be made by the `real` account.
+   **/
+  | {
+      name: 'RemoteProxyWithRegisteredProof';
+      params: {
+        real: MultiAddress;
+        forceProxyType?: AssetHubKusamaRuntimeProxyType | undefined;
+        call: AssetHubKusamaRuntimeRuntimeCall;
+      };
+    };
+
+export type PalletRemoteProxyCallLike =
+  /**
+   * Dispatch the given `call` from an account that the sender is authorised on a remote
+   * chain.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `real`: The account that the proxy will make a call on behalf of.
+   * - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
+   * - `call`: The call to be made by the `real` account.
+   * - `proof`: The proof from the remote chain about the existence of the proxy.
+   **/
+  | {
+      name: 'RemoteProxy';
+      params: {
+        real: MultiAddressLike;
+        forceProxyType?: AssetHubKusamaRuntimeProxyType | undefined;
+        call: AssetHubKusamaRuntimeRuntimeCallLike;
+        proof: PalletRemoteProxyRemoteProxyProof;
+      };
+    }
+  /**
+   * Register a given remote proxy proof in the current [`dispatch_context`].
+   *
+   * The registered remote proof can then be used later in the same context to execute a
+   * remote proxy call. This is for example useful when having a multisig operation. The
+   * multisig call can use [`Self::remote_proxy_with_registered_proof`] to get an approval by
+   * the members of the multisig. The final execution of the multisig call should be at least
+   * a batch of `register_remote_proxy_proof` and the multisig call that uses
+   * `remote_proxy_with_registered_proof`. This way the final approver can use a recent proof
+   * to prove the existence of the remote proxy. Otherwise it would require the multisig
+   * members to approve the call in [`Config::MaxStorageRootsToKeep`] amount of time.
+   *
+   * It is supported to register multiple proofs, but the proofs need to be consumed in the
+   * reverse order as they were registered. Basically this means last in, first out.
+   *
+   * The [`dispatch_context`] spans the entire lifetime of a transaction and every call in
+   * the transaction gets access to the same context.
+   *
+   * # Example
+   *
+   * ```ignore
+   * batch([
+   * register_remote_proxy_proof,
+   * as_multisig(remote_proxy_with_registered_proof(transfer))
+   * ])
+   * ```
+   *
+   * As `proofs` can not be verified indefinitely (the time the storage roots are stored is
+   * limited) this function provides the possibility to provide a "fresh proof" at time of
+   * dispatch. As in the example above, this could be useful for multisig operation that
+   * depend on multiple members to approve a certain action, which can take multiple days.
+   **/
+  | { name: 'RegisterRemoteProxyProof'; params: { proof: PalletRemoteProxyRemoteProxyProof } }
+  /**
+   * Dispatch the given `call` from an account that the sender is authorised on a remote
+   * chain.
+   *
+   * The dispatch origin for this call must be _Signed_. The difference to
+   * [`Self::remote_proxy`] is that the proof nees to registered before using
+   * [`Self::register_remote_proxy_proof`] (see for more information).
+   *
+   * Parameters:
+   * - `real`: The account that the proxy will make a call on behalf of.
+   * - `force_proxy_type`: Specify the exact proxy type to be used and checked for this call.
+   * - `call`: The call to be made by the `real` account.
+   **/
+  | {
+      name: 'RemoteProxyWithRegisteredProof';
+      params: {
+        real: MultiAddressLike;
+        forceProxyType?: AssetHubKusamaRuntimeProxyType | undefined;
+        call: AssetHubKusamaRuntimeRuntimeCallLike;
+      };
+    };
+
+export type PalletRemoteProxyRemoteProxyProof = { type: 'RelayChain'; value: { proof: Array<Bytes>; block: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11646,6 +11869,172 @@ export type PalletAssetConversionCallLike =
    **/
   | { name: 'Touch'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } };
 
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletStateTrieMigrationCall =
+  /**
+   * Control the automatic migration.
+   *
+   * The dispatch origin of this call must be [`Config::ControlOrigin`].
+   **/
+  | { name: 'ControlAutoMigration'; params: { maybeConfig?: PalletStateTrieMigrationMigrationLimits | undefined } }
+  /**
+   * Continue the migration for the given `limits`.
+   *
+   * The dispatch origin of this call can be any signed account.
+   *
+   * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
+   * Upon successful execution, the transaction fee is returned.
+   *
+   * The (potentially over-estimated) of the byte length of all the data read must be
+   * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
+   * that executing the current `MigrationTask` with the given `limits` will not exceed
+   * `real_size_upper` bytes of read data.
+   *
+   * The `witness_task` is merely a helper to prevent the caller from being slashed or
+   * generally trigger a migration that they do not intend. This parameter is just a message
+   * from caller, saying that they believed `witness_task` was the last state of the
+   * migration, and they only wish for their transaction to do anything, if this assumption
+   * holds. In case `witness_task` does not match, the transaction fails.
+   *
+   * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
+   * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
+   * `size` limit can always be overwritten.
+   **/
+  | {
+      name: 'ContinueMigrate';
+      params: {
+        limits: PalletStateTrieMigrationMigrationLimits;
+        realSizeUpper: number;
+        witnessTask: PalletStateTrieMigrationMigrationTask;
+      };
+    }
+  /**
+   * Migrate the list of top keys by iterating each of them one by one.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomTop'; params: { keys: Array<Bytes>; witnessSize: number } }
+  /**
+   * Migrate the list of child keys by iterating each of them one by one.
+   *
+   * All of the given child keys must be present under one `child_root`.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomChild'; params: { root: Bytes; childKeys: Array<Bytes>; totalSize: number } }
+  /**
+   * Set the maximum limit of the signed migration.
+   **/
+  | { name: 'SetSignedMaxLimits'; params: { limits: PalletStateTrieMigrationMigrationLimits } }
+  /**
+   * Forcefully set the progress the running migration.
+   *
+   * This is only useful in one case: the next key to migrate is too big to be migrated with
+   * a signed account, in a parachain context, and we simply want to skip it. A reasonable
+   * example of this would be `:code:`, which is both very expensive to migrate, and commonly
+   * used, so probably it is already migrated.
+   *
+   * In case you mess things up, you can also, in principle, use this to reset the migration
+   * process.
+   **/
+  | {
+      name: 'ForceSetProgress';
+      params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
+    };
+
+export type PalletStateTrieMigrationCallLike =
+  /**
+   * Control the automatic migration.
+   *
+   * The dispatch origin of this call must be [`Config::ControlOrigin`].
+   **/
+  | { name: 'ControlAutoMigration'; params: { maybeConfig?: PalletStateTrieMigrationMigrationLimits | undefined } }
+  /**
+   * Continue the migration for the given `limits`.
+   *
+   * The dispatch origin of this call can be any signed account.
+   *
+   * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
+   * Upon successful execution, the transaction fee is returned.
+   *
+   * The (potentially over-estimated) of the byte length of all the data read must be
+   * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
+   * that executing the current `MigrationTask` with the given `limits` will not exceed
+   * `real_size_upper` bytes of read data.
+   *
+   * The `witness_task` is merely a helper to prevent the caller from being slashed or
+   * generally trigger a migration that they do not intend. This parameter is just a message
+   * from caller, saying that they believed `witness_task` was the last state of the
+   * migration, and they only wish for their transaction to do anything, if this assumption
+   * holds. In case `witness_task` does not match, the transaction fails.
+   *
+   * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
+   * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
+   * `size` limit can always be overwritten.
+   **/
+  | {
+      name: 'ContinueMigrate';
+      params: {
+        limits: PalletStateTrieMigrationMigrationLimits;
+        realSizeUpper: number;
+        witnessTask: PalletStateTrieMigrationMigrationTask;
+      };
+    }
+  /**
+   * Migrate the list of top keys by iterating each of them one by one.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomTop'; params: { keys: Array<BytesLike>; witnessSize: number } }
+  /**
+   * Migrate the list of child keys by iterating each of them one by one.
+   *
+   * All of the given child keys must be present under one `child_root`.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomChild'; params: { root: BytesLike; childKeys: Array<BytesLike>; totalSize: number } }
+  /**
+   * Set the maximum limit of the signed migration.
+   **/
+  | { name: 'SetSignedMaxLimits'; params: { limits: PalletStateTrieMigrationMigrationLimits } }
+  /**
+   * Forcefully set the progress the running migration.
+   *
+   * This is only useful in one case: the next key to migrate is too big to be migrated with
+   * a signed account, in a parachain context, and we simply want to skip it. A reasonable
+   * example of this would be `:code:`, which is both very expensive to migrate, and commonly
+   * used, so probably it is already migrated.
+   *
+   * In case you mess things up, you can also, in principle, use this to reset the migration
+   * process.
+   **/
+  | {
+      name: 'ForceSetProgress';
+      params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
+    };
+
+export type PalletStateTrieMigrationMigrationLimits = { size: number; item: number };
+
+export type PalletStateTrieMigrationMigrationTask = {
+  progressTop: PalletStateTrieMigrationProgress;
+  progressChild: PalletStateTrieMigrationProgress;
+  size: number;
+  topItems: number;
+  childItems: number;
+};
+
+export type PalletStateTrieMigrationProgress =
+  | { type: 'ToStart' }
+  | { type: 'LastKey'; value: Bytes }
+  | { type: 'Complete' };
+
 export type AssetHubKusamaRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
   | { type: 'PolkadotXcm'; value: PalletXcmOrigin }
@@ -11788,6 +12177,39 @@ export type PalletProxyError =
    * Cannot add self as proxy.
    **/
   | 'NoSelfProxy';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletRemoteProxyError =
+  /**
+   * The local account id could not converted to the remote account id.
+   **/
+  | 'CouldNotConvertLocalToRemoteAccountId'
+  /**
+   * The anchor block of the remote proof is unknown.
+   **/
+  | 'UnknownProofAnchorBlock'
+  /**
+   * The proxy definition could not be found in the proof.
+   **/
+  | 'InvalidProof'
+  /**
+   * Failed to decode the remote proxy definition from the proof.
+   **/
+  | 'ProxyDefinitionDecodingFailed'
+  /**
+   * Announcement, if made at all, was made too recently.
+   **/
+  | 'Unannounced'
+  /**
+   * Could not find any matching proxy definition in the proof.
+   **/
+  | 'DidNotFindMatchingProxyDefinition'
+  /**
+   * Proxy proof not registered.
+   **/
+  | 'ProxyProofNotRegistered';
 
 export type PalletAssetsAssetDetails = {
   owner: AccountId32;
@@ -12525,10 +12947,12 @@ export type AssetHubKusamaRuntimeRuntimeError =
   | { pallet: 'Utility'; palletError: PalletUtilityError }
   | { pallet: 'Multisig'; palletError: PalletMultisigError }
   | { pallet: 'Proxy'; palletError: PalletProxyError }
+  | { pallet: 'RemoteProxyRelayChain'; palletError: PalletRemoteProxyError }
   | { pallet: 'Assets'; palletError: PalletAssetsError }
   | { pallet: 'Uniques'; palletError: PalletUniquesError }
   | { pallet: 'Nfts'; palletError: PalletNftsError }
   | { pallet: 'ForeignAssets'; palletError: PalletAssetsError }
   | { pallet: 'NftFractionalization'; palletError: PalletNftFractionalizationError }
   | { pallet: 'PoolAssets'; palletError: PalletAssetsError }
-  | { pallet: 'AssetConversion'; palletError: PalletAssetConversionError };
+  | { pallet: 'AssetConversion'; palletError: PalletAssetConversionError }
+  | { pallet: 'StateTrieMigration'; palletError: PalletStateTrieMigrationError };

@@ -1829,6 +1829,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     UnsupportedPrecompileAddress: GenericPalletError<Rv>;
 
     /**
+     * Precompile Error
+     **/
+    PrecompileFailure: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;

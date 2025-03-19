@@ -929,22 +929,36 @@ export type PalletCommitteeManagementEvent =
   /**
    * Ban thresholds for the next era has changed
    **/
-  | { name: 'SetBanConfig'; data: PrimitivesBanConfig }
+  | { name: 'SetBanConfig'; data: PrimitivesProductionBanConfig }
+  /**
+   * Ban thresholds for the next era has changed
+   **/
+  | { name: 'SetFinalityBanConfig'; data: PrimitivesFinalityBanConfig }
   /**
    * Validators have been banned from the committee
    **/
   | { name: 'BanValidators'; data: Array<[AccountId32, PrimitivesBanInfo]> };
 
-export type PrimitivesBanConfig = {
+export type PrimitivesProductionBanConfig = {
   minimalExpectedPerformance: Perbill;
   underperformedSessionCountThreshold: number;
   cleanSessionCounterDelay: number;
   banPeriod: number;
 };
 
+export type PrimitivesFinalityBanConfig = {
+  minimalExpectedPerformance: number;
+  underperformedSessionCountThreshold: number;
+  banPeriod: number;
+  cleanSessionCounterDelay: number;
+};
+
 export type PrimitivesBanInfo = { reason: PrimitivesBanReason; start: number };
 
-export type PrimitivesBanReason = { type: 'InsufficientUptime'; value: number } | { type: 'OtherReason'; value: Bytes };
+export type PrimitivesBanReason =
+  | { type: 'InsufficientProduction'; value: number }
+  | { type: 'InsufficientFinalization'; value: number }
+  | { type: 'OtherReason'; value: Bytes };
 
 /**
  * The `Event` enum of this pallet
@@ -1797,10 +1811,11 @@ export type PalletAlephCall =
   /**
    * See [`Pallet::set_inflation_parameters`].
    **/
-  | {
-      name: 'SetInflationParameters';
-      params: { azeroCap?: bigint | undefined; horizonMillisecs?: bigint | undefined };
-    };
+  | { name: 'SetInflationParameters'; params: { azeroCap?: bigint | undefined; horizonMillisecs?: bigint | undefined } }
+  /**
+   * See [`Pallet::unsigned_submit_abft_score`].
+   **/
+  | { name: 'UnsignedSubmitAbftScore'; params: { score: PrimitivesScore; signature: PrimitivesCryptoSignatureSet } };
 
 export type PalletAlephCallLike =
   /**
@@ -1814,10 +1829,21 @@ export type PalletAlephCallLike =
   /**
    * See [`Pallet::set_inflation_parameters`].
    **/
-  | {
-      name: 'SetInflationParameters';
-      params: { azeroCap?: bigint | undefined; horizonMillisecs?: bigint | undefined };
-    };
+  | { name: 'SetInflationParameters'; params: { azeroCap?: bigint | undefined; horizonMillisecs?: bigint | undefined } }
+  /**
+   * See [`Pallet::unsigned_submit_abft_score`].
+   **/
+  | { name: 'UnsignedSubmitAbftScore'; params: { score: PrimitivesScore; signature: PrimitivesCryptoSignatureSet } };
+
+export type PrimitivesScore = { sessionId: number; nonce: number; points: Array<number> };
+
+export type PrimitivesCryptoSignatureSet = Array<PrimitivesCryptoIndexedSignature>;
+
+export type PrimitivesAppSignature = SpCoreEd25519Signature;
+
+export type SpCoreEd25519Signature = FixedBytes<64>;
+
+export type PrimitivesCryptoIndexedSignature = { index: bigint; signature: PrimitivesAppSignature };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2925,8 +2951,6 @@ export type SpRuntimeMultiSignature =
   | { type: 'Sr25519'; value: SpCoreSr25519Signature }
   | { type: 'Ecdsa'; value: SpCoreEcdsaSignature };
 
-export type SpCoreEd25519Signature = FixedBytes<64>;
-
 export type SpCoreSr25519Signature = FixedBytes<64>;
 
 export type SpCoreEcdsaSignature = FixedBytes<65>;
@@ -2958,7 +2982,19 @@ export type PalletCommitteeManagementCall =
   /**
    * See [`Pallet::set_lenient_threshold`].
    **/
-  | { name: 'SetLenientThreshold'; params: { thresholdPercent: number } };
+  | { name: 'SetLenientThreshold'; params: { thresholdPercent: number } }
+  /**
+   * See [`Pallet::set_finality_ban_config`].
+   **/
+  | {
+      name: 'SetFinalityBanConfig';
+      params: {
+        minimalExpectedPerformance?: number | undefined;
+        underperformedSessionCountThreshold?: number | undefined;
+        banPeriod?: number | undefined;
+        cleanSessionCounterDelay?: number | undefined;
+      };
+    };
 
 export type PalletCommitteeManagementCallLike =
   /**
@@ -2984,7 +3020,19 @@ export type PalletCommitteeManagementCallLike =
   /**
    * See [`Pallet::set_lenient_threshold`].
    **/
-  | { name: 'SetLenientThreshold'; params: { thresholdPercent: number } };
+  | { name: 'SetLenientThreshold'; params: { thresholdPercent: number } }
+  /**
+   * See [`Pallet::set_finality_ban_config`].
+   **/
+  | {
+      name: 'SetFinalityBanConfig';
+      params: {
+        minimalExpectedPerformance?: number | undefined;
+        underperformedSessionCountThreshold?: number | undefined;
+        banPeriod?: number | undefined;
+        cleanSessionCounterDelay?: number | undefined;
+      };
+    };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4321,14 +4369,18 @@ export type PalletCommitteeManagementCurrentAndNextSessionValidators = {
   current: PrimitivesSessionValidators;
 };
 
-export type PrimitivesSessionValidators = { committee: Array<AccountId32>; nonCommittee: Array<AccountId32> };
+export type PrimitivesSessionValidators = {
+  producers: Array<AccountId32>;
+  finalizers: Array<AccountId32>;
+  nonCommittee: Array<AccountId32>;
+};
 
 /**
  * The `Error` enum of this pallet.
  **/
 export type PalletCommitteeManagementError =
   /**
-   * Raised in any scenario [`BanConfig`] is invalid
+   * Raised in any scenario [`ProductionBanConfig`] is invalid
    * * `performance_ratio_threshold` must be a number in range [0; 100]
    * * `underperformed_session_count_threshold` must be a positive number,
    * * `clean_session_counter_delay` must be a positive number.
@@ -4514,7 +4566,7 @@ export type PrimitivesSessionAuthorityData = {
   emergencyFinalizer?: PrimitivesAppPublic | undefined;
 };
 
-export type PrimitivesSessionCommittee = { finalityCommittee: Array<AccountId32>; blockProducers: Array<AccountId32> };
+export type PrimitivesSessionCommittee = { finalizers: Array<AccountId32>; producers: Array<AccountId32> };
 
 export type PrimitivesSessionValidatorError =
   | { type: 'SessionNotWithinRange'; value: { lowerLimit: number; upperLimit: number } }

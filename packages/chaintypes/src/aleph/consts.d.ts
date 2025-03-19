@@ -303,6 +303,8 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    * Pallet `Aleph`'s constants
    **/
   aleph: {
+    scoreSubmissionPeriod: number;
+
     /**
      * Generic pallet constant
      **/

@@ -1084,7 +1084,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
    **/
   committeeManagement: {
     /**
-     * Raised in any scenario [`BanConfig`] is invalid
+     * Raised in any scenario [`ProductionBanConfig`] is invalid
      * * `performance_ratio_threshold` must be a number in range [0; 100]
      * * `underperformed_session_count_threshold` must be a positive number,
      * * `clean_session_counter_delay` must be a positive number.

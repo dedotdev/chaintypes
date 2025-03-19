@@ -33,6 +33,8 @@ import type {
   PalletStakingPalletConfigOpPerbill,
   PrimitivesAlephNodeSessionKeys,
   PrimitivesAppPublic,
+  PrimitivesScore,
+  PrimitivesCryptoSignatureSet,
   PrimitivesCommitteeSeats,
   PrimitivesElectionOpenness,
   PalletVestingVestingInfo,
@@ -1376,6 +1378,29 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SetInflationParameters';
             params: { azeroCap: bigint | undefined; horizonMillisecs: bigint | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::unsigned_submit_abft_score`].
+     *
+     * @param {PrimitivesScore} score
+     * @param {PrimitivesCryptoSignatureSet} signature
+     **/
+    unsignedSubmitAbftScore: GenericTxCall<
+      Rv,
+      (
+        score: PrimitivesScore,
+        signature: PrimitivesCryptoSignatureSet,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Aleph';
+          palletCall: {
+            name: 'UnsignedSubmitAbftScore';
+            params: { score: PrimitivesScore; signature: PrimitivesCryptoSignatureSet };
           };
         }
       >
@@ -3585,6 +3610,38 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SetLenientThreshold';
             params: { thresholdPercent: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * See [`Pallet::set_finality_ban_config`].
+     *
+     * @param {number | undefined} minimalExpectedPerformance
+     * @param {number | undefined} underperformedSessionCountThreshold
+     * @param {number | undefined} banPeriod
+     * @param {number | undefined} cleanSessionCounterDelay
+     **/
+    setFinalityBanConfig: GenericTxCall<
+      Rv,
+      (
+        minimalExpectedPerformance: number | undefined,
+        underperformedSessionCountThreshold: number | undefined,
+        banPeriod: number | undefined,
+        cleanSessionCounterDelay: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommitteeManagement';
+          palletCall: {
+            name: 'SetFinalityBanConfig';
+            params: {
+              minimalExpectedPerformance: number | undefined;
+              underperformedSessionCountThreshold: number | undefined;
+              banPeriod: number | undefined;
+              cleanSessionCounterDelay: number | undefined;
+            };
           };
         }
       >

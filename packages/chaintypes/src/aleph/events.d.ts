@@ -15,7 +15,8 @@ import type {
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
-  PrimitivesBanConfig,
+  PrimitivesProductionBanConfig,
+  PrimitivesFinalityBanConfig,
   PrimitivesBanInfo,
   AlephRuntimeProxyType,
   PalletSafeModeExitReason,
@@ -1242,7 +1243,17 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * Ban thresholds for the next era has changed
      **/
-    SetBanConfig: GenericPalletEvent<Rv, 'CommitteeManagement', 'SetBanConfig', PrimitivesBanConfig>;
+    SetBanConfig: GenericPalletEvent<Rv, 'CommitteeManagement', 'SetBanConfig', PrimitivesProductionBanConfig>;
+
+    /**
+     * Ban thresholds for the next era has changed
+     **/
+    SetFinalityBanConfig: GenericPalletEvent<
+      Rv,
+      'CommitteeManagement',
+      'SetFinalityBanConfig',
+      PrimitivesFinalityBanConfig
+    >;
 
     /**
      * Validators have been banned from the committee

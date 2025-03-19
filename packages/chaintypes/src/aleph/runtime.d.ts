@@ -34,6 +34,8 @@ import type {
   PrimitivesSessionAuthorityData,
   PrimitivesSessionCommittee,
   PrimitivesSessionValidatorError,
+  PrimitivesScore,
+  PrimitivesCryptoSignatureSet,
   PalletContractsPrimitivesContractResult,
   PalletContractsPrimitivesContractResultResult,
   PalletContractsPrimitivesCode,
@@ -401,6 +403,12 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     nextSessionFinalityVersion: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
 
     /**
+     *
+     * @callname: AlephSessionApi_score_submission_period
+     **/
+    scoreSubmissionPeriod: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
+
+    /**
      * Predict finality committee and block producers for the given session. `session` must be
      * within the current era (current, in the staking context).
      *
@@ -449,6 +457,18 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: AlephSessionApi_current_era_payout
      **/
     currentEraPayout: GenericRuntimeApiMethod<Rv, () => Promise<[bigint, bigint]>>;
+
+    /**
+     * Submits score for a nonce in a session of performance of finality committee members.
+     *
+     * @callname: AlephSessionApi_submit_abft_score
+     * @param {PrimitivesScore} score
+     * @param {PrimitivesCryptoSignatureSet} signature
+     **/
+    submitAbftScore: GenericRuntimeApiMethod<
+      Rv,
+      (score: PrimitivesScore, signature: PrimitivesCryptoSignatureSet) => Promise<[] | undefined>
+    >;
 
     /**
      * Generic runtime api call

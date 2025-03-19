@@ -48,6 +48,7 @@ import type {
   SpCoreCryptoKeyTypeId,
   PrimitivesAppPublic,
   PrimitivesVersionChange,
+  PrimitivesScore,
   PrimitivesCommitteeSeats,
   PrimitivesEraValidators,
   PrimitivesElectionOpenness,
@@ -68,9 +69,10 @@ import type {
   PalletIdentityRegistrarInfo,
   PalletIdentityAuthorityProperties,
   PalletCommitteeManagementValidatorTotalRewards,
-  PrimitivesBanConfig,
+  PrimitivesProductionBanConfig,
   PrimitivesBanInfo,
   PalletCommitteeManagementCurrentAndNextSessionValidators,
+  PrimitivesFinalityBanConfig,
   PalletProxyProxyDefinition,
   PalletProxyAnnouncement,
 } from './types';
@@ -1077,6 +1079,19 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     finalityScheduledVersionChange: GenericStorageQuery<Rv, () => PrimitivesVersionChange | undefined>;
 
     /**
+     *
+     * @param {number} arg
+     * @param {Callback<PrimitivesScore | undefined> =} callback
+     **/
+    abftScores: GenericStorageQuery<Rv, (arg: number) => PrimitivesScore | undefined, number>;
+
+    /**
+     *
+     * @param {Callback<number> =} callback
+     **/
+    lastScoreNonce: GenericStorageQuery<Rv, () => number>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -1658,14 +1673,14 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     validatorEraTotalReward: GenericStorageQuery<Rv, () => PalletCommitteeManagementValidatorTotalRewards | undefined>;
 
     /**
-     * Current era config for ban functionality, see [`BanConfig`]
+     * Current era config for ban functionality related to block production.
      *
-     * @param {Callback<PrimitivesBanConfig> =} callback
+     * @param {Callback<PrimitivesProductionBanConfig> =} callback
      **/
-    banConfig: GenericStorageQuery<Rv, () => PrimitivesBanConfig>;
+    productionBanConfig: GenericStorageQuery<Rv, () => PrimitivesProductionBanConfig>;
 
     /**
-     * A lookup for a number of underperformance sessions for a given validator
+     * A lookup for a number of underperformance sessions in block production for a given validator
      *
      * @param {AccountId32Like} arg
      * @param {Callback<number> =} callback
@@ -1689,6 +1704,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       Rv,
       () => PalletCommitteeManagementCurrentAndNextSessionValidators
     >;
+
+    /**
+     * A lookup for a number of underperformance sessions in block finalization for a given validator
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number> =} callback
+     **/
+    underperformedFinalizerSessionCount: GenericStorageQuery<Rv, (arg: AccountId32Like) => number, AccountId32>;
+
+    /**
+     * Current era config for ban functionality related to block finality.
+     *
+     * @param {Callback<PrimitivesFinalityBanConfig> =} callback
+     **/
+    finalityBanConfig: GenericStorageQuery<Rv, () => PrimitivesFinalityBanConfig>;
 
     /**
      * Generic pallet storage query

@@ -64,7 +64,6 @@ import type {
   PalletDappStakingTiersConfiguration,
   PalletDappStakingDAppTierRewards,
   PalletDappStakingCleanupMarker,
-  PalletDappStakingBonusUpdateState,
   PalletAssetsAssetDetails,
   PalletAssetsAssetAccount,
   PalletAssetsApproval,
@@ -1067,14 +1066,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<boolean> =} callback
      **/
     safeguard: GenericStorageQuery<Rv, () => boolean>;
-
-    /**
-     * Temporary cursor to persist latest BonusStatus item updated.
-     * TODO: remove it once all BonusStatus are updated and this storage value is cleanup.
-     *
-     * @param {Callback<PalletDappStakingBonusUpdateState> =} callback
-     **/
-    activeBonusUpdateState: GenericStorageQuery<Rv, () => PalletDappStakingBonusUpdateState>;
 
     /**
      * Generic pallet storage query

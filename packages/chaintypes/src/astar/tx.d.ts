@@ -2701,6 +2701,35 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Re-adjust the existing inflation configuration using the current inflation parameters.
+     *
+     * It might seem similar to forcing the inflation recalculation, but it's not.
+     * This function adjusts the existing configuration, respecting the `max_emission` value used to calculate the current inflation config.
+     * (The 'force' approach uses the current total issuance)
+     *
+     * This call should be used in case inflation parameters have changed during the cycle, and the configuration should be adjusted now.
+     *
+     * NOTE:
+     * The call will do the best possible approximation of what the calculated max emission was at the moment when last inflation recalculation was done.
+     * But due to rounding losses, it's not possible to get the exact same value. As a consequence, repeated calls to this function
+     * might result in changes to the configuration, even though the inflation parameters haven't changed.
+     * However, since this function isn't supposed to be called often, and changes are minimal, this is acceptable.
+     *
+     **/
+    forceReadjustConfig: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Inflation';
+          palletCall: {
+            name: 'ForceReadjustConfig';
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -3238,32 +3267,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SetStaticTierParams';
             params: { params: PalletDappStakingTierParameters };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Active update `BonusStatus` according to the new MaxBonusSafeMovesPerPeriod from config
-     * for all already existing StakerInfo in steps, consuming up to the specified amount of
-     * weight.
-     *
-     * If no weight is specified, max allowed weight is used.
-     * In any case the weight_limit is clamped between the minimum & maximum allowed values.
-     *
-     * TODO: remove this extrinsic once BonusStatus update is done
-     *
-     * @param {SpWeightsWeightV2Weight | undefined} weightLimit
-     **/
-    updateBonus: GenericTxCall<
-      Rv,
-      (weightLimit: SpWeightsWeightV2Weight | undefined) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'DappStaking';
-          palletCall: {
-            name: 'UpdateBonus';
-            params: { weightLimit: SpWeightsWeightV2Weight | undefined };
           };
         }
       >

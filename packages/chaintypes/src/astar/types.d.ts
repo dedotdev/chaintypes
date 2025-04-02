@@ -547,10 +547,6 @@ export type PalletInflationEvent =
    **/
   | { name: 'InflationParametersForceChanged' }
   /**
-   * Inflation configuration has been force changed. This will have an immediate effect from this block.
-   **/
-  | { name: 'InflationConfigurationForceChanged'; data: { config: PalletInflationInflationConfiguration } }
-  /**
    * Inflation recalculation has been forced.
    **/
   | { name: 'ForcedInflationRecalculation'; data: { config: PalletInflationInflationConfiguration } }
@@ -4690,7 +4686,23 @@ export type PalletInflationCall =
    *
    * Purpose of the call is testing & handling unforeseen circumstances.
    **/
-  | { name: 'ForceInflationRecalculation'; params: { nextEra: number } };
+  | { name: 'ForceInflationRecalculation'; params: { nextEra: number } }
+  /**
+   * Re-adjust the existing inflation configuration using the current inflation parameters.
+   *
+   * It might seem similar to forcing the inflation recalculation, but it's not.
+   * This function adjusts the existing configuration, respecting the `max_emission` value used to calculate the current inflation config.
+   * (The 'force' approach uses the current total issuance)
+   *
+   * This call should be used in case inflation parameters have changed during the cycle, and the configuration should be adjusted now.
+   *
+   * NOTE:
+   * The call will do the best possible approximation of what the calculated max emission was at the moment when last inflation recalculation was done.
+   * But due to rounding losses, it's not possible to get the exact same value. As a consequence, repeated calls to this function
+   * might result in changes to the configuration, even though the inflation parameters haven't changed.
+   * However, since this function isn't supposed to be called often, and changes are minimal, this is acceptable.
+   **/
+  | { name: 'ForceReadjustConfig' };
 
 export type PalletInflationCallLike =
   /**
@@ -4710,7 +4722,23 @@ export type PalletInflationCallLike =
    *
    * Purpose of the call is testing & handling unforeseen circumstances.
    **/
-  | { name: 'ForceInflationRecalculation'; params: { nextEra: number } };
+  | { name: 'ForceInflationRecalculation'; params: { nextEra: number } }
+  /**
+   * Re-adjust the existing inflation configuration using the current inflation parameters.
+   *
+   * It might seem similar to forcing the inflation recalculation, but it's not.
+   * This function adjusts the existing configuration, respecting the `max_emission` value used to calculate the current inflation config.
+   * (The 'force' approach uses the current total issuance)
+   *
+   * This call should be used in case inflation parameters have changed during the cycle, and the configuration should be adjusted now.
+   *
+   * NOTE:
+   * The call will do the best possible approximation of what the calculated max emission was at the moment when last inflation recalculation was done.
+   * But due to rounding losses, it's not possible to get the exact same value. As a consequence, repeated calls to this function
+   * might result in changes to the configuration, even though the inflation parameters haven't changed.
+   * However, since this function isn't supposed to be called often, and changes are minimal, this is acceptable.
+   **/
+  | { name: 'ForceReadjustConfig' };
 
 export type PalletInflationInflationParameters = {
   maxInflationRate: Perquintill;
@@ -4891,18 +4919,7 @@ export type PalletDappStakingCall =
    * This is a delicate call and great care should be taken when changing these
    * values since it has a significant impact on the reward system.
    **/
-  | { name: 'SetStaticTierParams'; params: { params: PalletDappStakingTierParameters } }
-  /**
-   * Active update `BonusStatus` according to the new MaxBonusSafeMovesPerPeriod from config
-   * for all already existing StakerInfo in steps, consuming up to the specified amount of
-   * weight.
-   *
-   * If no weight is specified, max allowed weight is used.
-   * In any case the weight_limit is clamped between the minimum & maximum allowed values.
-   *
-   * TODO: remove this extrinsic once BonusStatus update is done
-   **/
-  | { name: 'UpdateBonus'; params: { weightLimit?: SpWeightsWeightV2Weight | undefined } };
+  | { name: 'SetStaticTierParams'; params: { params: PalletDappStakingTierParameters } };
 
 export type PalletDappStakingCallLike =
   /**
@@ -5072,18 +5089,7 @@ export type PalletDappStakingCallLike =
    * This is a delicate call and great care should be taken when changing these
    * values since it has a significant impact on the reward system.
    **/
-  | { name: 'SetStaticTierParams'; params: { params: PalletDappStakingTierParameters } }
-  /**
-   * Active update `BonusStatus` according to the new MaxBonusSafeMovesPerPeriod from config
-   * for all already existing StakerInfo in steps, consuming up to the specified amount of
-   * weight.
-   *
-   * If no weight is specified, max allowed weight is used.
-   * In any case the weight_limit is clamped between the minimum & maximum allowed values.
-   *
-   * TODO: remove this extrinsic once BonusStatus update is done
-   **/
-  | { name: 'UpdateBonus'; params: { weightLimit?: SpWeightsWeightV2Weight | undefined } };
+  | { name: 'SetStaticTierParams'; params: { params: PalletDappStakingTierParameters } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10220,11 +10226,6 @@ export type PalletDappStakingDAppTierRewards = {
 export type AstarPrimitivesDappStakingRankedTier = number;
 
 export type PalletDappStakingCleanupMarker = { eraRewardIndex: number; dappTiersIndex: number; oldestValidEra: number };
-
-export type PalletDappStakingBonusUpdateState =
-  | { type: 'NotInProgress' }
-  | { type: 'InProgress'; value: [AccountId32, AstarPrimitivesDappStakingSmartContract] }
-  | { type: 'Finished' };
 
 /**
  * The `Error` enum of this pallet.

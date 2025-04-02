@@ -694,16 +694,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     InflationParametersForceChanged: GenericPalletEvent<Rv, 'Inflation', 'InflationParametersForceChanged', null>;
 
     /**
-     * Inflation configuration has been force changed. This will have an immediate effect from this block.
-     **/
-    InflationConfigurationForceChanged: GenericPalletEvent<
-      Rv,
-      'Inflation',
-      'InflationConfigurationForceChanged',
-      { config: PalletInflationInflationConfiguration }
-    >;
-
-    /**
      * Inflation recalculation has been forced.
      **/
     ForcedInflationRecalculation: GenericPalletEvent<

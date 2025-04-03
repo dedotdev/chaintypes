@@ -13,7 +13,7 @@ import type {
   PalletContractsEnvironment,
   PalletContractsApiVersion,
   FrameSupportPalletId,
-} from './types';
+} from './types.js';
 
 export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<Rv> {
   /**

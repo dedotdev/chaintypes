@@ -91,7 +91,7 @@ import type {
   XcmRuntimeApisConversionsError,
   XcmRuntimeApisTrustedQueryError,
   XcmVersionedAsset,
-} from './types';
+} from './types.js';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
   /**

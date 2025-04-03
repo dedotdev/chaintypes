@@ -156,7 +156,7 @@ import type {
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   SpConsensusBeefyEcdsaCryptoPublic,
   SpConsensusBeefyMmrBeefyAuthoritySet,
-} from './types';
+} from './types.js';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
   /**

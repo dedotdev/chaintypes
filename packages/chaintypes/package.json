@@ -9,7 +9,7 @@
   "scripts": {
     "build": "tsc --project tsconfig.build.json && yarn copy",
     "clean": "rm -rf ./dist && rm -rf ./tsconfig.tsbuildinfo ./tsconfig.build.tsbuildinfo",
-    "copy": "cp -R ./src/* ./dist"
+    "copy": "cp -R ./src/* ./dist && rm ./dist/index.ts"
   },
   "peerDependencies": {
     "dedot": ">=0.7.1"

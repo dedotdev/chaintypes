@@ -41,7 +41,7 @@ import type {
   PalletDemocracyVoteThreshold,
   PalletDemocracyVoteAccountVote,
   PalletDemocracyMetadataOwner,
-} from './types';
+} from './types.js';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
   /**

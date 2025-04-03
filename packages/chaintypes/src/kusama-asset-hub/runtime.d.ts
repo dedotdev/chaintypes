@@ -44,7 +44,7 @@ import type {
   XcmRuntimeApisConversionsError,
   AssetsCommonRuntimeApiFungiblesAccessError,
   CumulusPrimitivesCoreCollationInfo,
-} from './types';
+} from './types.js';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
   /**

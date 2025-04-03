@@ -60,7 +60,7 @@ import type {
   PalletXcmTransactorHrmpOperation,
   XcmPrimitivesEthereumXcmEthereumXcmTransaction,
   CumulusPrimitivesCoreAggregateMessageOrigin,
-} from './types';
+} from './types.js';
 
 export type ChainSubmittableExtrinsic<
   Rv extends RpcVersion,

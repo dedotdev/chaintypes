@@ -61,7 +61,7 @@ import type {
   PalletRevivePrimitivesContractAccessError,
   PalletReviveEvmApiDebugRpcTypesCallTrace,
   PalletReviveEvmApiDebugRpcTypesTracerConfig,
-} from './types';
+} from './types.js';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
   /**

@@ -33,7 +33,7 @@ import type {
   PalletNftsPalletAttributes,
   PalletStateTrieMigrationMigrationCompute,
   PalletStateTrieMigrationError,
-} from './types';
+} from './types.js';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
   /**

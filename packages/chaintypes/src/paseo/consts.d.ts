@@ -10,7 +10,7 @@ import type {
   FrameSupportPalletId,
   PalletReferendaTrackInfo,
   StagingXcmV4Junctions,
-} from './types';
+} from './types.js';
 
 export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<Rv> {
   /**

@@ -87,7 +87,7 @@ import type {
   PolkadotRuntimeOriginCaller,
   XcmRuntimeApisDryRunXcmDryRunEffects,
   XcmRuntimeApisConversionsError,
-} from './types';
+} from './types.js';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
   /**

@@ -54,7 +54,7 @@ import type {
   PalletIdentityLegacyIdentityInfo,
   PalletIdentityJudgement,
   AlephRuntimeProxyType,
-} from './types';
+} from './types.js';
 
 export type ChainSubmittableExtrinsic<
   Rv extends RpcVersion,

@@ -63,7 +63,7 @@ import type {
   PalletIdentityUsernameInformation,
   PalletIdentityProvider,
   PalletMigrationsMigrationCursor,
-} from './types';
+} from './types.js';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
   /**

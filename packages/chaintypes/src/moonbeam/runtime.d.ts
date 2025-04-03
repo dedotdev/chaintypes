@@ -52,7 +52,7 @@ import type {
   MoonbeamRuntimeRuntimeCallLike,
   XcmRuntimeApisDryRunXcmDryRunEffects,
   XcmRuntimeApisConversionsError,
-} from './types';
+} from './types.js';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
   /**

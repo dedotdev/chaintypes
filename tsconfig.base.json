@@ -1,8 +1,4 @@
 {
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
-  },
   "compilerOptions": {
     "target": "ESNext",
     "useDefineForClassFields": true,
@@ -10,10 +6,10 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "strict": true,
+    "strict": true, 
     "forceConsistentCasingInFileNames": true,
-    "module": "ESNext",
-    "moduleResolution": "Node",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": false,

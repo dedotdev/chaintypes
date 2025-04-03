@@ -34,7 +34,7 @@ import type {
   PalletIdentityJudgement,
   PalletMigrationsMigrationCursor,
   PalletMigrationsHistoricCleanupSelector,
-} from './types';
+} from './types.js';
 
 export type ChainSubmittableExtrinsic<
   Rv extends RpcVersion,

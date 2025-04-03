@@ -111,7 +111,7 @@ import type {
   PalletMixnetRegistration,
   SpMixnetAppSignature,
   KitchensinkRuntimeRuntimeParameters,
-} from './types';
+} from './types.js';
 
 export type ChainSubmittableExtrinsic<
   Rv extends RpcVersion,

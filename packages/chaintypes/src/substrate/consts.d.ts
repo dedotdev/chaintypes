@@ -14,7 +14,7 @@ import type {
   PalletNftsBitFlagsPalletFeature,
   PalletReferendaTrackInfo,
   FrameSupportTokensFungibleUnionOfNativeOrWithId,
-} from './types';
+} from './types.js';
 
 export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<Rv> {
   /**

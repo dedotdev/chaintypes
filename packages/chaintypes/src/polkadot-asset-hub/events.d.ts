@@ -30,6 +30,8 @@ import type {
   PalletNftsAttributeNamespace,
   PalletNftsPriceWithDirection,
   PalletNftsPalletAttributes,
+  PalletStateTrieMigrationMigrationCompute,
+  PalletStateTrieMigrationError,
 } from './types';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -2472,6 +2474,41 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
         who: AccountId32;
       }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `StateTrieMigration`'s events
+   **/
+  stateTrieMigration: {
+    /**
+     * Given number of `(top, child)` keys were migrated respectively, with the given
+     * `compute`.
+     **/
+    Migrated: GenericPalletEvent<
+      Rv,
+      'StateTrieMigration',
+      'Migrated',
+      { top: number; child: number; compute: PalletStateTrieMigrationMigrationCompute }
+    >;
+
+    /**
+     * Some account got slashed by the given amount.
+     **/
+    Slashed: GenericPalletEvent<Rv, 'StateTrieMigration', 'Slashed', { who: AccountId32; amount: bigint }>;
+
+    /**
+     * The auto migration task finished.
+     **/
+    AutoMigrationFinished: GenericPalletEvent<Rv, 'StateTrieMigration', 'AutoMigrationFinished', null>;
+
+    /**
+     * Migration got halted due to an error or miss-configuration.
+     **/
+    Halted: GenericPalletEvent<Rv, 'StateTrieMigration', 'Halted', { error: PalletStateTrieMigrationError }>;
 
     /**
      * Generic pallet event

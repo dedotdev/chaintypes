@@ -70,7 +70,8 @@ export type AssetHubPolkadotRuntimeRuntimeEvent =
   | { pallet: 'Nfts'; palletEvent: PalletNftsEvent }
   | { pallet: 'ForeignAssets'; palletEvent: PalletAssetsEvent002 }
   | { pallet: 'PoolAssets'; palletEvent: PalletAssetsEvent }
-  | { pallet: 'AssetConversion'; palletEvent: PalletAssetConversionEvent };
+  | { pallet: 'AssetConversion'; palletEvent: PalletAssetConversionEvent }
+  | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent };
 
 /**
  * Event for the System pallet.
@@ -2079,6 +2080,65 @@ export type PalletAssetConversionEvent =
       };
     };
 
+/**
+ * Inner events of this pallet.
+ **/
+export type PalletStateTrieMigrationEvent =
+  /**
+   * Given number of `(top, child)` keys were migrated respectively, with the given
+   * `compute`.
+   **/
+  | { name: 'Migrated'; data: { top: number; child: number; compute: PalletStateTrieMigrationMigrationCompute } }
+  /**
+   * Some account got slashed by the given amount.
+   **/
+  | { name: 'Slashed'; data: { who: AccountId32; amount: bigint } }
+  /**
+   * The auto migration task finished.
+   **/
+  | { name: 'AutoMigrationFinished' }
+  /**
+   * Migration got halted due to an error or miss-configuration.
+   **/
+  | { name: 'Halted'; data: { error: PalletStateTrieMigrationError } };
+
+export type PalletStateTrieMigrationMigrationCompute = 'Signed' | 'Auto';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletStateTrieMigrationError =
+  /**
+   * Max signed limits not respected.
+   **/
+  | 'MaxSignedLimits'
+  /**
+   * A key was longer than the configured maximum.
+   *
+   * This means that the migration halted at the current [`Progress`] and
+   * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
+   * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
+   * The value should only be increased to avoid a storage migration for the currently
+   * stored [`crate::Progress::LastKey`].
+   **/
+  | 'KeyTooLong'
+  /**
+   * submitter does not have enough funds.
+   **/
+  | 'NotEnoughFunds'
+  /**
+   * Bad witness data provided.
+   **/
+  | 'BadWitness'
+  /**
+   * Signed migration is not allowed because the maximum limit is not set yet.
+   **/
+  | 'SignedMigrationNotAllowed'
+  /**
+   * Bad child root provided.
+   **/
+  | 'BadChildRoot';
+
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
 export type FrameSystemCodeUpgradeAuthorization = { codeHash: H256; checkVersion: boolean };
@@ -2531,7 +2591,12 @@ export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
 export type FrameSupportTokensMiscIdAmount = { id: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint };
 
-export type AssetHubPolkadotRuntimeRuntimeHoldReason = null;
+export type AssetHubPolkadotRuntimeRuntimeHoldReason = {
+  type: 'StateTrieMigration';
+  value: PalletStateTrieMigrationHoldReason;
+};
+
+export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
 
 export type FrameSupportTokensMiscIdAmount002 = { id: []; amount: bigint };
 
@@ -4857,7 +4922,8 @@ export type AssetHubPolkadotRuntimeRuntimeCall =
   | { pallet: 'Nfts'; palletCall: PalletNftsCall }
   | { pallet: 'ForeignAssets'; palletCall: PalletAssetsCall002 }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCall003 }
-  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall };
+  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall }
+  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall };
 
 export type AssetHubPolkadotRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -4881,7 +4947,8 @@ export type AssetHubPolkadotRuntimeRuntimeCallLike =
   | { pallet: 'Nfts'; palletCall: PalletNftsCallLike }
   | { pallet: 'ForeignAssets'; palletCall: PalletAssetsCallLike002 }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCallLike003 }
-  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike };
+  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike }
+  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11521,6 +11588,172 @@ export type PalletAssetConversionCallLike =
    **/
   | { name: 'Touch'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } };
 
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletStateTrieMigrationCall =
+  /**
+   * Control the automatic migration.
+   *
+   * The dispatch origin of this call must be [`Config::ControlOrigin`].
+   **/
+  | { name: 'ControlAutoMigration'; params: { maybeConfig?: PalletStateTrieMigrationMigrationLimits | undefined } }
+  /**
+   * Continue the migration for the given `limits`.
+   *
+   * The dispatch origin of this call can be any signed account.
+   *
+   * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
+   * Upon successful execution, the transaction fee is returned.
+   *
+   * The (potentially over-estimated) of the byte length of all the data read must be
+   * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
+   * that executing the current `MigrationTask` with the given `limits` will not exceed
+   * `real_size_upper` bytes of read data.
+   *
+   * The `witness_task` is merely a helper to prevent the caller from being slashed or
+   * generally trigger a migration that they do not intend. This parameter is just a message
+   * from caller, saying that they believed `witness_task` was the last state of the
+   * migration, and they only wish for their transaction to do anything, if this assumption
+   * holds. In case `witness_task` does not match, the transaction fails.
+   *
+   * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
+   * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
+   * `size` limit can always be overwritten.
+   **/
+  | {
+      name: 'ContinueMigrate';
+      params: {
+        limits: PalletStateTrieMigrationMigrationLimits;
+        realSizeUpper: number;
+        witnessTask: PalletStateTrieMigrationMigrationTask;
+      };
+    }
+  /**
+   * Migrate the list of top keys by iterating each of them one by one.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomTop'; params: { keys: Array<Bytes>; witnessSize: number } }
+  /**
+   * Migrate the list of child keys by iterating each of them one by one.
+   *
+   * All of the given child keys must be present under one `child_root`.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomChild'; params: { root: Bytes; childKeys: Array<Bytes>; totalSize: number } }
+  /**
+   * Set the maximum limit of the signed migration.
+   **/
+  | { name: 'SetSignedMaxLimits'; params: { limits: PalletStateTrieMigrationMigrationLimits } }
+  /**
+   * Forcefully set the progress the running migration.
+   *
+   * This is only useful in one case: the next key to migrate is too big to be migrated with
+   * a signed account, in a parachain context, and we simply want to skip it. A reasonable
+   * example of this would be `:code:`, which is both very expensive to migrate, and commonly
+   * used, so probably it is already migrated.
+   *
+   * In case you mess things up, you can also, in principle, use this to reset the migration
+   * process.
+   **/
+  | {
+      name: 'ForceSetProgress';
+      params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
+    };
+
+export type PalletStateTrieMigrationCallLike =
+  /**
+   * Control the automatic migration.
+   *
+   * The dispatch origin of this call must be [`Config::ControlOrigin`].
+   **/
+  | { name: 'ControlAutoMigration'; params: { maybeConfig?: PalletStateTrieMigrationMigrationLimits | undefined } }
+  /**
+   * Continue the migration for the given `limits`.
+   *
+   * The dispatch origin of this call can be any signed account.
+   *
+   * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
+   * Upon successful execution, the transaction fee is returned.
+   *
+   * The (potentially over-estimated) of the byte length of all the data read must be
+   * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
+   * that executing the current `MigrationTask` with the given `limits` will not exceed
+   * `real_size_upper` bytes of read data.
+   *
+   * The `witness_task` is merely a helper to prevent the caller from being slashed or
+   * generally trigger a migration that they do not intend. This parameter is just a message
+   * from caller, saying that they believed `witness_task` was the last state of the
+   * migration, and they only wish for their transaction to do anything, if this assumption
+   * holds. In case `witness_task` does not match, the transaction fails.
+   *
+   * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
+   * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
+   * `size` limit can always be overwritten.
+   **/
+  | {
+      name: 'ContinueMigrate';
+      params: {
+        limits: PalletStateTrieMigrationMigrationLimits;
+        realSizeUpper: number;
+        witnessTask: PalletStateTrieMigrationMigrationTask;
+      };
+    }
+  /**
+   * Migrate the list of top keys by iterating each of them one by one.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomTop'; params: { keys: Array<BytesLike>; witnessSize: number } }
+  /**
+   * Migrate the list of child keys by iterating each of them one by one.
+   *
+   * All of the given child keys must be present under one `child_root`.
+   *
+   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
+   * should only be used in case any keys are leftover due to a bug.
+   **/
+  | { name: 'MigrateCustomChild'; params: { root: BytesLike; childKeys: Array<BytesLike>; totalSize: number } }
+  /**
+   * Set the maximum limit of the signed migration.
+   **/
+  | { name: 'SetSignedMaxLimits'; params: { limits: PalletStateTrieMigrationMigrationLimits } }
+  /**
+   * Forcefully set the progress the running migration.
+   *
+   * This is only useful in one case: the next key to migrate is too big to be migrated with
+   * a signed account, in a parachain context, and we simply want to skip it. A reasonable
+   * example of this would be `:code:`, which is both very expensive to migrate, and commonly
+   * used, so probably it is already migrated.
+   *
+   * In case you mess things up, you can also, in principle, use this to reset the migration
+   * process.
+   **/
+  | {
+      name: 'ForceSetProgress';
+      params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
+    };
+
+export type PalletStateTrieMigrationMigrationLimits = { size: number; item: number };
+
+export type PalletStateTrieMigrationMigrationTask = {
+  progressTop: PalletStateTrieMigrationProgress;
+  progressChild: PalletStateTrieMigrationProgress;
+  size: number;
+  topItems: number;
+  childItems: number;
+};
+
+export type PalletStateTrieMigrationProgress =
+  | { type: 'ToStart' }
+  | { type: 'LastKey'; value: Bytes }
+  | { type: 'Complete' };
+
 export type AssetHubPolkadotRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
   | { type: 'PolkadotXcm'; value: PalletXcmOrigin }
@@ -12377,4 +12610,5 @@ export type AssetHubPolkadotRuntimeRuntimeError =
   | { pallet: 'Nfts'; palletError: PalletNftsError }
   | { pallet: 'ForeignAssets'; palletError: PalletAssetsError }
   | { pallet: 'PoolAssets'; palletError: PalletAssetsError }
-  | { pallet: 'AssetConversion'; palletError: PalletAssetConversionError };
+  | { pallet: 'AssetConversion'; palletError: PalletAssetConversionError }
+  | { pallet: 'StateTrieMigration'; palletError: PalletStateTrieMigrationError };

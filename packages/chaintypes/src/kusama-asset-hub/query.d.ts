@@ -81,7 +81,7 @@ import type {
   PalletAssetConversionPoolInfo,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationMigrationLimits,
-} from './types';
+} from './types.js';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
   /**

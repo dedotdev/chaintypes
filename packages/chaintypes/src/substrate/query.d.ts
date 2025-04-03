@@ -177,7 +177,7 @@ import type {
   PalletReviveWasmCodeInfo,
   PalletReviveStorageContractInfo,
   PalletReviveStorageDeletionQueueManager,
-} from './types';
+} from './types.js';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
   /**

@@ -11,7 +11,7 @@ import type {
   PalletNftsBitFlagsPalletFeature,
   StagingXcmV4Location,
   FrameSupportPalletId,
-} from './types';
+} from './types.js';
 
 export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<Rv> {
   /**

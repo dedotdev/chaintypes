@@ -108,7 +108,7 @@ import type {
   PalletDemocracyMetadataOwner,
   PalletTreasuryProposal,
   PalletMigrationsMigrationCursor,
-} from './types';
+} from './types.js';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
   /**

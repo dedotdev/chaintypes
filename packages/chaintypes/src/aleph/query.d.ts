@@ -75,7 +75,7 @@ import type {
   PrimitivesFinalityBanConfig,
   PalletProxyProxyDefinition,
   PalletProxyAnnouncement,
-} from './types';
+} from './types.js';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
   /**

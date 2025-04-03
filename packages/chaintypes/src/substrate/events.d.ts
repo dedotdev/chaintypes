@@ -65,7 +65,7 @@ import type {
   KitchensinkRuntimeRuntimeParametersValue,
   KitchensinkRuntimeOriginCaller,
   PalletReviveExecOrigin,
-} from './types';
+} from './types.js';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
   /**

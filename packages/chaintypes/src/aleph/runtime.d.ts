@@ -42,7 +42,7 @@ import type {
   PalletContractsPrimitivesCodeUploadReturnValue,
   PalletContractsWasmDeterminism,
   PalletContractsPrimitivesContractAccessError,
-} from './types';
+} from './types.js';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
   /**

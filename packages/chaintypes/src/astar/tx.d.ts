@@ -58,7 +58,7 @@ import type {
   PalletDemocracyMetadataOwner,
   PalletMigrationsMigrationCursor,
   PalletMigrationsHistoricCleanupSelector,
-} from './types';
+} from './types.js';
 
 export type ChainSubmittableExtrinsic<
   Rv extends RpcVersion,

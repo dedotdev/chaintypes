@@ -56,7 +56,7 @@ import type {
   XcmV3TraitsError,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
-} from './types';
+} from './types.js';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
   /**

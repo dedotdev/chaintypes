@@ -24,8 +24,24 @@ export const networks: NetworkInfo[] = [
     endpoint: ['wss://rpc.polkadot.io'],
   },
   {
+    chain: 'polkadotAssetHub',
+    endpoint: ['wss://polkadot-asset-hub-rpc.polkadot.io/'],
+  },
+  {
+    chain: 'polkadotPeople',
+    endpoint: ['wss://polkadot-people-rpc.polkadot.io'],
+  },
+  {
     chain: 'kusama',
     endpoint: ['wss://kusama-rpc.polkadot.io'],
+  },
+  {
+    chain: 'kusamaAssetHub',
+    endpoint: ['wss://kusama-asset-hub-rpc.polkadot.io/'],
+  },
+  {
+    chain: 'kusamaPeople',
+    endpoint: ['wss://kusama-people-rpc.polkadot.io'],
   },
   {
     chain: 'astar',
@@ -34,14 +50,6 @@ export const networks: NetworkInfo[] = [
   {
     chain: 'moonbeam',
     endpoint: ['wss://wss.api.moonbeam.network'],
-  },
-  {
-    chain: 'polkadotAssetHub',
-    endpoint: ['wss://polkadot-asset-hub-rpc.polkadot.io/'],
-  },
-  {
-    chain: 'kusamaAssetHub',
-    endpoint: ['wss://kusama-asset-hub-rpc.polkadot.io/'],
   },
   {
     chain: 'aleph',
@@ -62,5 +70,13 @@ export const networks: NetworkInfo[] = [
   {
     chain: 'paseo',
     endpoint: ['wss://pas-rpc.stakeworld.io'],
+  },
+  {
+    chain: 'paseoAssetHub',
+    endpoint: ['wss://pas-rpc.stakeworld.io/assethub'],
+  },
+  {
+    chain: 'paseoPeople',
+    endpoint: ['wss://sys.ibp.network/people-paseo'],
   },
 ];

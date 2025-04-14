@@ -79,16 +79,20 @@ For more detailed information on connecting to networks, see the [official docum
 ## Supported Networks
 
 - Polkadot
-- Kusama
-- Astar
-- Moonbeam
 - Polkadot Asset Hub
+- Polkadot People
+- Kusama
 - Kusama Asset Hub
-- Aleph
+- Kusama People
 - Westend
 - Westend Asset Hub
 - Westend People
 - Paseo
+- Paseo Asset Hub
+- Paseo People
+- Astar
+- Moonbeam
+- Aleph
 
 > Don't see your network? We welcome Pull Requests to add support for additional PolkadotSDK-based networks!
 

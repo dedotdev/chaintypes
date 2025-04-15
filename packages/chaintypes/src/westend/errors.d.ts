@@ -228,9 +228,9 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     DuplicateIndex: GenericPalletError<Rv>;
 
     /**
-     * Slash record not found.
+     * Slash record index out of bounds.
      **/
-    InvalidSlashRecord: GenericPalletError<Rv>;
+    InvalidSlashIndex: GenericPalletError<Rv>;
 
     /**
      * Cannot have a validator or nominator role, with value less than the minimum defined by
@@ -263,6 +263,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Invalid number of nominations.
      **/
     InvalidNumberOfNominations: GenericPalletError<Rv>;
+
+    /**
+     * Items are not sorted and unique.
+     **/
+    NotSortedAndUnique: GenericPalletError<Rv>;
 
     /**
      * Rewards for this era have already been claimed for this validator.
@@ -360,11 +365,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The stake of this account is already migrated to `Fungible` holds.
      **/
     AlreadyMigrated: GenericPalletError<Rv>;
-
-    /**
-     * Era not yet started.
-     **/
-    EraNotStarted: GenericPalletError<Rv>;
 
     /**
      * Account is restricted from participation in staking. This may happen if the account is
@@ -941,12 +941,13 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     SenderInSignatories: GenericPalletError<Rv>;
 
     /**
-     * Multisig operation not found when attempting to cancel.
+     * Multisig operation not found in storage.
      **/
     NotFound: GenericPalletError<Rv>;
 
     /**
-     * Only the account that originally created the multisig is able to cancel it.
+     * Only the account that originally created the multisig is able to cancel it or update
+     * its deposits.
      **/
     NotOwner: GenericPalletError<Rv>;
 
@@ -2653,6 +2654,21 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     LocalExecutionIncomplete: GenericPalletError<Rv>;
 
     /**
+     * Too many locations authorized to alias origin.
+     **/
+    TooManyAuthorizedAliases: GenericPalletError<Rv>;
+
+    /**
+     * Expiry block number is in the past.
+     **/
+    ExpiresInPast: GenericPalletError<Rv>;
+
+    /**
+     * The alias to remove authorization for was not found.
+     **/
+    AliasNotFound: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -2735,6 +2751,45 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Overflow ocurred when calculating the inverse rate.
      **/
     Overflow: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `MetaTx`'s errors
+   **/
+  metaTx: {
+    /**
+     * Invalid proof (e.g. signature).
+     **/
+    BadProof: GenericPalletError<Rv>;
+
+    /**
+     * The meta transaction is not yet valid (e.g. nonce too high).
+     **/
+    Future: GenericPalletError<Rv>;
+
+    /**
+     * The meta transaction is outdated (e.g. nonce too low).
+     **/
+    Stale: GenericPalletError<Rv>;
+
+    /**
+     * The meta transactions's birth block is ancient.
+     **/
+    AncientBirthBlock: GenericPalletError<Rv>;
+
+    /**
+     * The transaction extension did not authorize any origin.
+     **/
+    UnknownOrigin: GenericPalletError<Rv>;
+
+    /**
+     * The meta transaction is invalid.
+     **/
+    Invalid: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

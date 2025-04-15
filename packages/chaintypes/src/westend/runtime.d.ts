@@ -664,6 +664,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     >;
 
     /**
+     * Retrieve the maximum uncompressed code size.
+     *
+     * @callname: ParachainHost_validation_code_bomb_limit
+     **/
+    validationCodeBombLimit: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
+
+    /**
      * Returns the constraints on the actions that can be taken by a new parachain
      * block.
      *
@@ -683,13 +690,6 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: ParachainHost_scheduling_lookahead
      **/
     schedulingLookahead: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
-
-    /**
-     * Retrieve the maximum uncompressed code size.
-     *
-     * @callname: ParachainHost_validation_code_bomb_limit
-     **/
-    validationCodeBombLimit: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
 
     /**
      * Generic runtime api call

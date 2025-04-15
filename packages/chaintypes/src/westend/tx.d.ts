@@ -93,6 +93,7 @@ import type {
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
+  PalletMetaTxMetaTx,
   SpConsensusBeefyDoubleVotingProof,
   SpConsensusBeefyForkVotingProof,
   SpConsensusBeefyFutureBlockVotingProof,
@@ -649,6 +650,34 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Indices';
           palletCall: {
             name: 'Freeze';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Poke the deposit reserved for an index.
+     *
+     * The dispatch origin for this call must be _Signed_ and the signing account must have a
+     * non-frozen account `index`.
+     *
+     * The transaction fees is waived if the deposit is changed after poking/reconsideration.
+     *
+     * - `index`: the index whose deposit is to be poked/reconsidered.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     * @param {number} index
+     **/
+    pokeDeposit: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Indices';
+          palletCall: {
+            name: 'PokeDeposit';
             params: { index: number };
           };
         }
@@ -1236,7 +1265,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
 
     /**
      * Increments the ideal number of validators up to maximum of
-     * `T::MaxValidatorSet`.
+     * `ElectionProviderBase::MaxWinners`.
      *
      * The dispatch origin must be Root.
      *
@@ -1261,7 +1290,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
 
     /**
      * Scale up the ideal number of validators by a factor up to maximum of
-     * `T::MaxValidatorSet`.
+     * `ElectionProviderBase::MaxWinners`.
      *
      * The dispatch origin must be Root.
      *
@@ -1420,31 +1449,27 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Cancels scheduled slashes for a given era before they are applied.
+     * Cancel enactment of a deferred slash.
      *
-     * This function allows `T::AdminOrigin` to selectively remove pending slashes from
-     * the `UnappliedSlashes` storage, preventing their enactment.
+     * Can be called by the `T::AdminOrigin`.
      *
-     * ## Parameters
-     * - `era`: The staking era for which slashes were deferred.
-     * - `slash_keys`: A list of slash keys identifying the slashes to remove. This is a tuple
-     * of `(stash, slash_fraction, page_index)`.
+     * Parameters: era and indices of the slashes for that era to kill.
      *
      * @param {number} era
-     * @param {Array<[AccountId32Like, Perbill, number]>} slashKeys
+     * @param {Array<number>} slashIndices
      **/
     cancelDeferredSlash: GenericTxCall<
       Rv,
       (
         era: number,
-        slashKeys: Array<[AccountId32Like, Perbill, number]>,
+        slashIndices: Array<number>,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'CancelDeferredSlash';
-            params: { era: number; slashKeys: Array<[AccountId32Like, Perbill, number]> };
+            params: { era: number; slashIndices: Array<number> };
           };
         }
       >
@@ -1856,11 +1881,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Migrates permissionlessly a stash from locks to holds.
+     * Removes the legacy Staking locks if they exist.
      *
-     * This removes the old lock on the stake and creates a hold on it atomically. If all
-     * stake cannot be held, the best effort is made to hold as much as possible. The remaining
-     * stake is removed from the ledger.
+     * This removes the legacy lock on the stake with [`Config::OldCurrency`] and creates a
+     * hold on it if needed. If all stake cannot be held, the best effort is made to hold as
+     * much as possible. The remaining stake is forced withdrawn from the ledger.
      *
      * The fee is waived if the migration is successful.
      *
@@ -1881,68 +1906,45 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Manually applies a deferred slash for a given era.
+     * This function allows governance to manually slash a validator and is a
+     * **fallback mechanism**.
      *
-     * Normally, slashes are automatically applied shortly after the start of the `slash_era`.
-     * This function exists as a **fallback mechanism** in case slashes were not applied due to
-     * unexpected reasons. It allows anyone to manually apply an unapplied slash.
+     * The dispatch origin must be `T::AdminOrigin`.
      *
      * ## Parameters
-     * - `slash_era`: The staking era in which the slash was originally scheduled.
-     * - `slash_key`: A unique identifier for the slash, represented as a tuple:
-     * - `stash`: The stash account of the validator being slashed.
-     * - `slash_fraction`: The fraction of the stake that was slashed.
-     * - `page_index`: The index of the exposure page being processed.
+     * - `validator_stash` - The stash account of the validator to slash.
+     * - `era` - The era in which the validator was in the active set.
+     * - `slash_fraction` - The percentage of the stake to slash, expressed as a Perbill.
      *
      * ## Behavior
-     * - The function is **permissionless**—anyone can call it.
-     * - The `slash_era` **must be the current era or a past era**. If it is in the future, the
-     * call fails with `EraNotStarted`.
-     * - The fee is waived if the slash is successfully applied.
      *
-     * ## TODO: Future Improvement
-     * - Implement an **off-chain worker (OCW) task** to automatically apply slashes when there
-     * is unused block space, improving efficiency.
+     * The slash will be applied using the standard slashing mechanics, respecting the
+     * configured `SlashDeferDuration`.
      *
-     * @param {number} slashEra
-     * @param {[AccountId32Like, Perbill, number]} slashKey
+     * This means:
+     * - If the validator was already slashed by a higher percentage for the same era, this
+     * slash will have no additional effect.
+     * - If the validator was previously slashed by a lower percentage, only the difference
+     * will be applied.
+     * - The slash will be deferred by `SlashDeferDuration` eras before being enacted.
+     *
+     * @param {AccountId32Like} validatorStash
+     * @param {number} era
+     * @param {Perbill} slashFraction
      **/
-    applySlash: GenericTxCall<
+    manualSlash: GenericTxCall<
       Rv,
       (
-        slashEra: number,
-        slashKey: [AccountId32Like, Perbill, number],
+        validatorStash: AccountId32Like,
+        era: number,
+        slashFraction: Perbill,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Staking';
           palletCall: {
-            name: 'ApplySlash';
-            params: { slashEra: number; slashKey: [AccountId32Like, Perbill, number] };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Adjusts the staking ledger by withdrawing any excess staked amount.
-     *
-     * This function corrects cases where a user's recorded stake in the ledger
-     * exceeds their actual staked funds. This situation can arise due to cases such as
-     * external slashing by another pallet, leading to an inconsistency between the ledger
-     * and the actual stake.
-     *
-     * @param {AccountId32Like} stash
-     **/
-    withdrawOverstake: GenericTxCall<
-      Rv,
-      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'WithdrawOverstake';
-            params: { stash: AccountId32Like };
+            name: 'ManualSlash';
+            params: { validatorStash: AccountId32Like; era: number; slashFraction: Perbill };
           };
         }
       >
@@ -4466,6 +4468,30 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Poke / Adjust deposits made for proxies and announcements based on current values.
+     * This can be used by accounts to possibly lower their locked amount.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * The transaction fee is waived if the deposit amount has changed.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     **/
+    pokeDeposit: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'PokeDeposit';
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -4698,6 +4724,43 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Poke the deposit reserved for an existing multisig operation.
+     *
+     * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+     * the multisig operation.
+     *
+     * The transaction fee is waived if the deposit amount has changed.
+     *
+     * - `threshold`: The total number of approvals needed for this multisig.
+     * - `other_signatories`: The accounts (other than the sender) who are part of the
+     * multisig.
+     * - `call_hash`: The hash of the call this deposit is reserved for.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     * @param {number} threshold
+     * @param {Array<AccountId32Like>} otherSignatories
+     * @param {FixedBytes<32>} callHash
+     **/
+    pokeDeposit: GenericTxCall<
+      Rv,
+      (
+        threshold: number,
+        otherSignatories: Array<AccountId32Like>,
+        callHash: FixedBytes<32>,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Multisig';
+          palletCall: {
+            name: 'PokeDeposit';
+            params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -4827,15 +4890,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
      * calling [`Call::set_emergency_election_result`].
      *
+     * @param {number | undefined} maybeMaxVoters
+     * @param {number | undefined} maybeMaxTargets
      **/
     governanceFallback: GenericTxCall<
       Rv,
-      () => ChainSubmittableExtrinsic<
+      (
+        maybeMaxVoters: number | undefined,
+        maybeMaxTargets: number | undefined,
+      ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ElectionProviderMultiPhase';
           palletCall: {
             name: 'GovernanceFallback';
+            params: { maybeMaxVoters: number | undefined; maybeMaxTargets: number | undefined };
           };
         }
       >
@@ -10305,6 +10374,77 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Authorize another `aliaser` location to alias into the local `origin` making this call.
+     * The `aliaser` is only authorized until the provided `expiry` block number.
+     * The call can also be used for a previously authorized alias in order to update its
+     * `expiry` block number.
+     *
+     * Usually useful to allow your local account to be aliased into from a remote location
+     * also under your control (like your account on another chain).
+     *
+     * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+     * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+     * `origin` in XCM programs executed on the local chain.
+     *
+     * @param {XcmVersionedLocation} aliaser
+     * @param {bigint | undefined} expires
+     **/
+    addAuthorizedAlias: GenericTxCall<
+      Rv,
+      (
+        aliaser: XcmVersionedLocation,
+        expires: bigint | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'XcmPallet';
+          palletCall: {
+            name: 'AddAuthorizedAlias';
+            params: { aliaser: XcmVersionedLocation; expires: bigint | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a previously authorized `aliaser` from the list of locations that can alias into
+     * the local `origin` making this call.
+     *
+     * @param {XcmVersionedLocation} aliaser
+     **/
+    removeAuthorizedAlias: GenericTxCall<
+      Rv,
+      (aliaser: XcmVersionedLocation) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'XcmPallet';
+          palletCall: {
+            name: 'RemoveAuthorizedAlias';
+            params: { aliaser: XcmVersionedLocation };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+     * making this call.
+     *
+     **/
+    removeAllAuthorizedAliases: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'XcmPallet';
+          palletCall: {
+            name: 'RemoveAllAuthorizedAliases';
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -10502,6 +10642,37 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'RootTesting';
           palletCall: {
             name: 'TriggerDefensive';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `MetaTx`'s transaction calls
+   **/
+  metaTx: {
+    /**
+     * Dispatch a given meta transaction.
+     *
+     * - `_origin`: Can be any kind of origin.
+     * - `meta_tx`: Meta Transaction with a target call to be dispatched.
+     *
+     * @param {PalletMetaTxMetaTx} metaTx
+     **/
+    dispatch: GenericTxCall<
+      Rv,
+      (metaTx: PalletMetaTxMetaTx) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MetaTx';
+          palletCall: {
+            name: 'Dispatch';
+            params: { metaTx: PalletMetaTxMetaTx };
           };
         }
       >

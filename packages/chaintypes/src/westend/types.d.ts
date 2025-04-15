@@ -5,11 +5,11 @@ import type {
   H256,
   DispatchError,
   AccountId32,
-  Result,
   Perbill,
   FixedBytes,
   Bytes,
   Perquintill,
+  Result,
   BytesLike,
   Header,
   MultiAddress,
@@ -21,8 +21,8 @@ import type {
   PerU16,
   BitSequence,
   FixedU128,
-  FixedI64,
   Era,
+  FixedI64,
   UncheckedExtrinsic,
 } from 'dedot/codecs';
 
@@ -97,6 +97,7 @@ export type WestendRuntimeRuntimeEvent =
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
   | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
   | { pallet: 'RootTesting'; palletEvent: PalletRootTestingEvent }
+  | { pallet: 'MetaTx'; palletEvent: PalletMetaTxEvent }
   | { pallet: 'IdentityMigrator'; palletEvent: PolkadotRuntimeCommonIdentityMigratorPalletEvent };
 
 /**
@@ -130,7 +131,11 @@ export type FrameSystemEvent =
   /**
    * An upgrade was authorized.
    **/
-  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } };
+  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } }
+  /**
+   * An invalid authorized upgrade was rejected while trying to apply it.
+   **/
+  | { name: 'RejectedInvalidAuthorizedUpgrade'; data: { codeHash: H256; error: DispatchError } };
 
 export type FrameSystemDispatchEventInfo = {
   weight: SpWeightsWeightV2Weight;
@@ -173,7 +178,11 @@ export type PalletIndicesEvent =
   /**
    * A account index has been frozen to its current account ID.
    **/
-  | { name: 'IndexFrozen'; data: { index: number; who: AccountId32 } };
+  | { name: 'IndexFrozen'; data: { index: number; who: AccountId32 } }
+  /**
+   * A deposit to reserve an index has been poked/reconsidered.
+   **/
+  | { name: 'DepositPoked'; data: { who: AccountId32; index: number; oldDeposit: bigint; newDeposit: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -308,6 +317,11 @@ export type PalletStakingPalletEvent =
    **/
   | { name: 'Slashed'; data: { staker: AccountId32; amount: bigint } }
   /**
+   * A slash for the given validator, for the given percentage of their stake, at the given
+   * era as been reported.
+   **/
+  | { name: 'SlashReported'; data: { validator: AccountId32; fraction: Perbill; slashEra: number } }
+  /**
    * An old slashing report from a prior era was discarded because it could
    * not be processed.
    **/
@@ -363,6 +377,9 @@ export type PalletStakingPalletEvent =
    * Targets size limit reached.
    **/
   | { name: 'SnapshotTargetsSizeExceeded'; data: { size: number } }
+  /**
+   * A new force era mode was set.
+   **/
   | { name: 'ForceEra'; data: { mode: PalletStakingForcing } }
   /**
    * Report of a controller batch deprecation.
@@ -372,32 +389,7 @@ export type PalletStakingPalletEvent =
    * Staking balance migrated from locks to holds, with any balance that could not be held
    * is force withdrawn.
    **/
-  | { name: 'CurrencyMigrated'; data: { stash: AccountId32; forceWithdraw: bigint } }
-  /**
-   * A page from a multi-page election was fetched. A number of these are followed by
-   * `StakersElected`.
-   *
-   * `Ok(count)` indicates the give number of stashes were added.
-   * `Err(index)` indicates that the stashes after index were dropped.
-   * `Err(0)` indicates that an error happened but no stashes were dropped nor added.
-   *
-   * The error indicates that a number of validators were dropped due to excess size, but
-   * the overall election will continue.
-   **/
-  | { name: 'PagedElectionProceeded'; data: { page: number; result: Result<number, number> } }
-  /**
-   * An offence for the given validator, for the given percentage of their stake, at the
-   * given era as been reported.
-   **/
-  | { name: 'OffenceReported'; data: { offenceEra: number; validator: AccountId32; fraction: Perbill } }
-  /**
-   * An offence has been processed and the corresponding slash has been computed.
-   **/
-  | { name: 'SlashComputed'; data: { offenceEra: number; slashEra: number; offender: AccountId32; page: number } }
-  /**
-   * An unapplied slash has been cancelled.
-   **/
-  | { name: 'SlashCancelled'; data: { slashEra: number; slashKey: [AccountId32, Perbill, number]; payout: bigint } };
+  | { name: 'CurrencyMigrated'; data: { stash: AccountId32; forceWithdraw: bigint } };
 
 export type PalletStakingRewardDestination =
   | { type: 'Staked' }
@@ -743,7 +735,11 @@ export type PalletSchedulerEvent =
   /**
    * The given task can never be executed since it is overweight.
    **/
-  | { name: 'PermanentlyOverweight'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } };
+  | { name: 'PermanentlyOverweight'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } }
+  /**
+   * Agenda is incomplete from `when`.
+   **/
+  | { name: 'AgendaIncomplete'; data: { when: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -845,6 +841,13 @@ export type PalletProxyEvent =
   | {
       name: 'ProxyRemoved';
       data: { delegator: AccountId32; delegatee: AccountId32; proxyType: WestendRuntimeProxyType; delay: number };
+    }
+  /**
+   * A deposit stored for proxies or announcements was poked / updated.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; kind: PalletProxyDepositKind; oldDeposit: bigint; newDeposit: bigint };
     };
 
 export type WestendRuntimeProxyType =
@@ -858,6 +861,8 @@ export type WestendRuntimeProxyType =
   | 'Auction'
   | 'NominationPools'
   | 'ParaRegistration';
+
+export type PalletProxyDepositKind = 'Proxies' | 'Announcements';
 
 /**
  * The `Event` enum of this pallet
@@ -903,6 +908,13 @@ export type PalletMultisigEvent =
         multisig: AccountId32;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * The deposit for a multisig operation has been updated/poked.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; callHash: FixedBytes<32>; oldDeposit: bigint; newDeposit: bigint };
     };
 
 export type PalletMultisigTimepoint = { height: number; index: number };
@@ -1539,6 +1551,7 @@ export type WestendRuntimeRuntimeCall =
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
   | { pallet: 'RootTesting'; palletCall: PalletRootTestingCall }
+  | { pallet: 'MetaTx'; palletCall: PalletMetaTxCall }
   | { pallet: 'Beefy'; palletCall: PalletBeefyCall }
   | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCall };
 
@@ -1591,6 +1604,7 @@ export type WestendRuntimeRuntimeCallLike =
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
   | { pallet: 'RootTesting'; palletCall: PalletRootTestingCallLike }
+  | { pallet: 'MetaTx'; palletCall: PalletMetaTxCallLike }
   | { pallet: 'Beefy'; palletCall: PalletBeefyCallLike }
   | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCallLike };
 
@@ -1963,7 +1977,20 @@ export type PalletIndicesCall =
    * ## Complexity
    * - `O(1)`.
    **/
-  | { name: 'Freeze'; params: { index: number } };
+  | { name: 'Freeze'; params: { index: number } }
+  /**
+   * Poke the deposit reserved for an index.
+   *
+   * The dispatch origin for this call must be _Signed_ and the signing account must have a
+   * non-frozen account `index`.
+   *
+   * The transaction fees is waived if the deposit is changed after poking/reconsideration.
+   *
+   * - `index`: the index whose deposit is to be poked/reconsidered.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit'; params: { index: number } };
 
 export type PalletIndicesCallLike =
   /**
@@ -2041,7 +2068,20 @@ export type PalletIndicesCallLike =
    * ## Complexity
    * - `O(1)`.
    **/
-  | { name: 'Freeze'; params: { index: number } };
+  | { name: 'Freeze'; params: { index: number } }
+  /**
+   * Poke the deposit reserved for an index.
+   *
+   * The dispatch origin for this call must be _Signed_ and the signing account must have a
+   * non-frozen account `index`.
+   *
+   * The transaction fees is waived if the deposit is changed after poking/reconsideration.
+   *
+   * - `index`: the index whose deposit is to be poked/reconsidered.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit'; params: { index: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2383,7 +2423,7 @@ export type PalletStakingPalletCall =
   | { name: 'SetValidatorCount'; params: { new: number } }
   /**
    * Increments the ideal number of validators up to maximum of
-   * `T::MaxValidatorSet`.
+   * `ElectionProviderBase::MaxWinners`.
    *
    * The dispatch origin must be Root.
    *
@@ -2393,7 +2433,7 @@ export type PalletStakingPalletCall =
   | { name: 'IncreaseValidatorCount'; params: { additional: number } }
   /**
    * Scale up the ideal number of validators by a factor up to maximum of
-   * `T::MaxValidatorSet`.
+   * `ElectionProviderBase::MaxWinners`.
    *
    * The dispatch origin must be Root.
    *
@@ -2464,17 +2504,13 @@ export type PalletStakingPalletCall =
    **/
   | { name: 'ForceNewEraAlways' }
   /**
-   * Cancels scheduled slashes for a given era before they are applied.
+   * Cancel enactment of a deferred slash.
    *
-   * This function allows `T::AdminOrigin` to selectively remove pending slashes from
-   * the `UnappliedSlashes` storage, preventing their enactment.
+   * Can be called by the `T::AdminOrigin`.
    *
-   * ## Parameters
-   * - `era`: The staking era for which slashes were deferred.
-   * - `slash_keys`: A list of slash keys identifying the slashes to remove. This is a tuple
-   * of `(stash, slash_fraction, page_index)`.
+   * Parameters: era and indices of the slashes for that era to kill.
    **/
-  | { name: 'CancelDeferredSlash'; params: { era: number; slashKeys: Array<[AccountId32, Perbill, number]> } }
+  | { name: 'CancelDeferredSlash'; params: { era: number; slashIndices: Array<number> } }
   /**
    * Pay out next page of the stakers behind a validator for the given era.
    *
@@ -2671,49 +2707,39 @@ export type PalletStakingPalletCall =
       };
     }
   /**
-   * Migrates permissionlessly a stash from locks to holds.
+   * Removes the legacy Staking locks if they exist.
    *
-   * This removes the old lock on the stake and creates a hold on it atomically. If all
-   * stake cannot be held, the best effort is made to hold as much as possible. The remaining
-   * stake is removed from the ledger.
+   * This removes the legacy lock on the stake with [`Config::OldCurrency`] and creates a
+   * hold on it if needed. If all stake cannot be held, the best effort is made to hold as
+   * much as possible. The remaining stake is forced withdrawn from the ledger.
    *
    * The fee is waived if the migration is successful.
    **/
   | { name: 'MigrateCurrency'; params: { stash: AccountId32 } }
   /**
-   * Manually applies a deferred slash for a given era.
+   * This function allows governance to manually slash a validator and is a
+   * **fallback mechanism**.
    *
-   * Normally, slashes are automatically applied shortly after the start of the `slash_era`.
-   * This function exists as a **fallback mechanism** in case slashes were not applied due to
-   * unexpected reasons. It allows anyone to manually apply an unapplied slash.
+   * The dispatch origin must be `T::AdminOrigin`.
    *
    * ## Parameters
-   * - `slash_era`: The staking era in which the slash was originally scheduled.
-   * - `slash_key`: A unique identifier for the slash, represented as a tuple:
-   * - `stash`: The stash account of the validator being slashed.
-   * - `slash_fraction`: The fraction of the stake that was slashed.
-   * - `page_index`: The index of the exposure page being processed.
+   * - `validator_stash` - The stash account of the validator to slash.
+   * - `era` - The era in which the validator was in the active set.
+   * - `slash_fraction` - The percentage of the stake to slash, expressed as a Perbill.
    *
    * ## Behavior
-   * - The function is **permissionless**—anyone can call it.
-   * - The `slash_era` **must be the current era or a past era**. If it is in the future, the
-   * call fails with `EraNotStarted`.
-   * - The fee is waived if the slash is successfully applied.
    *
-   * ## TODO: Future Improvement
-   * - Implement an **off-chain worker (OCW) task** to automatically apply slashes when there
-   * is unused block space, improving efficiency.
-   **/
-  | { name: 'ApplySlash'; params: { slashEra: number; slashKey: [AccountId32, Perbill, number] } }
-  /**
-   * Adjusts the staking ledger by withdrawing any excess staked amount.
+   * The slash will be applied using the standard slashing mechanics, respecting the
+   * configured `SlashDeferDuration`.
    *
-   * This function corrects cases where a user's recorded stake in the ledger
-   * exceeds their actual staked funds. This situation can arise due to cases such as
-   * external slashing by another pallet, leading to an inconsistency between the ledger
-   * and the actual stake.
+   * This means:
+   * - If the validator was already slashed by a higher percentage for the same era, this
+   * slash will have no additional effect.
+   * - If the validator was previously slashed by a lower percentage, only the difference
+   * will be applied.
+   * - The slash will be deferred by `SlashDeferDuration` eras before being enacted.
    **/
-  | { name: 'WithdrawOverstake'; params: { stash: AccountId32 } };
+  | { name: 'ManualSlash'; params: { validatorStash: AccountId32; era: number; slashFraction: Perbill } };
 
 export type PalletStakingPalletCallLike =
   /**
@@ -2877,7 +2903,7 @@ export type PalletStakingPalletCallLike =
   | { name: 'SetValidatorCount'; params: { new: number } }
   /**
    * Increments the ideal number of validators up to maximum of
-   * `T::MaxValidatorSet`.
+   * `ElectionProviderBase::MaxWinners`.
    *
    * The dispatch origin must be Root.
    *
@@ -2887,7 +2913,7 @@ export type PalletStakingPalletCallLike =
   | { name: 'IncreaseValidatorCount'; params: { additional: number } }
   /**
    * Scale up the ideal number of validators by a factor up to maximum of
-   * `T::MaxValidatorSet`.
+   * `ElectionProviderBase::MaxWinners`.
    *
    * The dispatch origin must be Root.
    *
@@ -2958,17 +2984,13 @@ export type PalletStakingPalletCallLike =
    **/
   | { name: 'ForceNewEraAlways' }
   /**
-   * Cancels scheduled slashes for a given era before they are applied.
+   * Cancel enactment of a deferred slash.
    *
-   * This function allows `T::AdminOrigin` to selectively remove pending slashes from
-   * the `UnappliedSlashes` storage, preventing their enactment.
+   * Can be called by the `T::AdminOrigin`.
    *
-   * ## Parameters
-   * - `era`: The staking era for which slashes were deferred.
-   * - `slash_keys`: A list of slash keys identifying the slashes to remove. This is a tuple
-   * of `(stash, slash_fraction, page_index)`.
+   * Parameters: era and indices of the slashes for that era to kill.
    **/
-  | { name: 'CancelDeferredSlash'; params: { era: number; slashKeys: Array<[AccountId32Like, Perbill, number]> } }
+  | { name: 'CancelDeferredSlash'; params: { era: number; slashIndices: Array<number> } }
   /**
    * Pay out next page of the stakers behind a validator for the given era.
    *
@@ -3165,49 +3187,39 @@ export type PalletStakingPalletCallLike =
       };
     }
   /**
-   * Migrates permissionlessly a stash from locks to holds.
+   * Removes the legacy Staking locks if they exist.
    *
-   * This removes the old lock on the stake and creates a hold on it atomically. If all
-   * stake cannot be held, the best effort is made to hold as much as possible. The remaining
-   * stake is removed from the ledger.
+   * This removes the legacy lock on the stake with [`Config::OldCurrency`] and creates a
+   * hold on it if needed. If all stake cannot be held, the best effort is made to hold as
+   * much as possible. The remaining stake is forced withdrawn from the ledger.
    *
    * The fee is waived if the migration is successful.
    **/
   | { name: 'MigrateCurrency'; params: { stash: AccountId32Like } }
   /**
-   * Manually applies a deferred slash for a given era.
+   * This function allows governance to manually slash a validator and is a
+   * **fallback mechanism**.
    *
-   * Normally, slashes are automatically applied shortly after the start of the `slash_era`.
-   * This function exists as a **fallback mechanism** in case slashes were not applied due to
-   * unexpected reasons. It allows anyone to manually apply an unapplied slash.
+   * The dispatch origin must be `T::AdminOrigin`.
    *
    * ## Parameters
-   * - `slash_era`: The staking era in which the slash was originally scheduled.
-   * - `slash_key`: A unique identifier for the slash, represented as a tuple:
-   * - `stash`: The stash account of the validator being slashed.
-   * - `slash_fraction`: The fraction of the stake that was slashed.
-   * - `page_index`: The index of the exposure page being processed.
+   * - `validator_stash` - The stash account of the validator to slash.
+   * - `era` - The era in which the validator was in the active set.
+   * - `slash_fraction` - The percentage of the stake to slash, expressed as a Perbill.
    *
    * ## Behavior
-   * - The function is **permissionless**—anyone can call it.
-   * - The `slash_era` **must be the current era or a past era**. If it is in the future, the
-   * call fails with `EraNotStarted`.
-   * - The fee is waived if the slash is successfully applied.
    *
-   * ## TODO: Future Improvement
-   * - Implement an **off-chain worker (OCW) task** to automatically apply slashes when there
-   * is unused block space, improving efficiency.
-   **/
-  | { name: 'ApplySlash'; params: { slashEra: number; slashKey: [AccountId32Like, Perbill, number] } }
-  /**
-   * Adjusts the staking ledger by withdrawing any excess staked amount.
+   * The slash will be applied using the standard slashing mechanics, respecting the
+   * configured `SlashDeferDuration`.
    *
-   * This function corrects cases where a user's recorded stake in the ledger
-   * exceeds their actual staked funds. This situation can arise due to cases such as
-   * external slashing by another pallet, leading to an inconsistency between the ledger
-   * and the actual stake.
+   * This means:
+   * - If the validator was already slashed by a higher percentage for the same era, this
+   * slash will have no additional effect.
+   * - If the validator was previously slashed by a lower percentage, only the difference
+   * will be applied.
+   * - The slash will be deferred by `SlashDeferDuration` eras before being enacted.
    **/
-  | { name: 'WithdrawOverstake'; params: { stash: AccountId32Like } };
+  | { name: 'ManualSlash'; params: { validatorStash: AccountId32Like; era: number; slashFraction: Perbill } };
 
 export type PalletStakingPalletConfigOp = { type: 'Noop' } | { type: 'Set'; value: bigint } | { type: 'Remove' };
 
@@ -5298,7 +5310,18 @@ export type PalletProxyCall =
         forceProxyType?: WestendRuntimeProxyType | undefined;
         call: WestendRuntimeRuntimeCall;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 export type PalletProxyCallLike =
   /**
@@ -5465,7 +5488,18 @@ export type PalletProxyCallLike =
         forceProxyType?: WestendRuntimeProxyType | undefined;
         call: WestendRuntimeRuntimeCallLike;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5610,6 +5644,25 @@ export type PalletMultisigCall =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId32>; callHash: FixedBytes<32> };
     };
 
 export type PalletMultisigCallLike =
@@ -5755,6 +5808,25 @@ export type PalletMultisigCallLike =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
     };
 
 /**
@@ -5821,7 +5893,10 @@ export type PalletElectionProviderMultiPhaseCall =
    * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
    * calling [`Call::set_emergency_election_result`].
    **/
-  | { name: 'GovernanceFallback' };
+  | {
+      name: 'GovernanceFallback';
+      params: { maybeMaxVoters?: number | undefined; maybeMaxTargets?: number | undefined };
+    };
 
 export type PalletElectionProviderMultiPhaseCallLike =
   /**
@@ -5884,7 +5959,10 @@ export type PalletElectionProviderMultiPhaseCallLike =
    * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
    * calling [`Call::set_emergency_election_result`].
    **/
-  | { name: 'GovernanceFallback' };
+  | {
+      name: 'GovernanceFallback';
+      params: { maybeMaxVoters?: number | undefined; maybeMaxTargets?: number | undefined };
+    };
 
 export type PalletElectionProviderMultiPhaseRawSolution = {
   solution: WestendRuntimeNposCompactSolution16;
@@ -10873,7 +10951,31 @@ export type PalletXcmCall =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type PalletXcmCallLike =
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
@@ -11185,7 +11287,31 @@ export type PalletXcmCallLike =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type XcmVersionedAssets =
   | { type: 'V3'; value: XcmV3MultiassetMultiAssets }
@@ -11345,6 +11471,65 @@ export type PalletRootTestingCallLike =
    * A dispatch that will fill the block weight up to the given ratio.
    **/
   { name: 'FillBlock'; params: { ratio: Perbill } } | { name: 'TriggerDefensive' };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletMetaTxCall =
+  /**
+   * Dispatch a given meta transaction.
+   *
+   * - `_origin`: Can be any kind of origin.
+   * - `meta_tx`: Meta Transaction with a target call to be dispatched.
+   **/
+  { name: 'Dispatch'; params: { metaTx: PalletMetaTxMetaTx } };
+
+export type PalletMetaTxCallLike =
+  /**
+   * Dispatch a given meta transaction.
+   *
+   * - `_origin`: Can be any kind of origin.
+   * - `meta_tx`: Meta Transaction with a target call to be dispatched.
+   **/
+  { name: 'Dispatch'; params: { metaTx: PalletMetaTxMetaTx } };
+
+export type PalletMetaTxMetaTx = {
+  call: WestendRuntimeRuntimeCall;
+  extensionVersion: number;
+  extension: [
+    PalletVerifySignatureExtensionVerifySignature,
+    PalletMetaTxExtensionMetaTxMarker,
+    FrameSystemExtensionsCheckNonZeroSender,
+    FrameSystemExtensionsCheckSpecVersion,
+    FrameSystemExtensionsCheckTxVersion,
+    FrameSystemExtensionsCheckGenesis,
+    FrameSystemExtensionsCheckMortality,
+    FrameSystemExtensionsCheckNonce,
+    FrameMetadataHashExtensionCheckMetadataHash,
+  ];
+};
+
+export type PalletVerifySignatureExtensionVerifySignature =
+  | { type: 'Signed'; value: { signature: SpRuntimeMultiSignature; account: AccountId32 } }
+  | { type: 'Disabled' };
+
+export type PalletMetaTxExtensionMetaTxMarker = {};
+
+export type FrameSystemExtensionsCheckNonZeroSender = {};
+
+export type FrameSystemExtensionsCheckSpecVersion = {};
+
+export type FrameSystemExtensionsCheckTxVersion = {};
+
+export type FrameSystemExtensionsCheckGenesis = {};
+
+export type FrameSystemExtensionsCheckMortality = Era;
+
+export type FrameSystemExtensionsCheckNonce = number;
+
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
+
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -12205,7 +12390,7 @@ export type PalletXcmEvent =
    **/
   | { name: 'Attempted'; data: { outcome: StagingXcmV5TraitsOutcome } }
   /**
-   * A XCM message was sent.
+   * An XCM message was sent.
    **/
   | {
       name: 'Sent';
@@ -12215,6 +12400,25 @@ export type PalletXcmEvent =
         message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       };
+    }
+  /**
+   * An XCM message failed to send.
+   **/
+  | {
+      name: 'SendFailed';
+      data: {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        error: XcmV3TraitsSendError;
+        messageId: FixedBytes<32>;
+      };
+    }
+  /**
+   * An XCM message failed to process.
+   **/
+  | {
+      name: 'ProcessXcmError';
+      data: { origin: StagingXcmV5Location; error: XcmV5TraitsError; messageId: FixedBytes<32> };
     }
   /**
    * Query response received which does not match a registered query. This may be because a
@@ -12372,12 +12576,37 @@ export type PalletXcmEvent =
   /**
    * A XCM version migration finished.
    **/
-  | { name: 'VersionMigrationFinished'; data: { version: number } };
+  | { name: 'VersionMigrationFinished'; data: { version: number } }
+  /**
+   * An `aliaser` location was authorized by `target` to alias it, authorization valid until
+   * `expiry` block number.
+   **/
+  | {
+      name: 'AliasAuthorized';
+      data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location; expiry?: bigint | undefined };
+    }
+  /**
+   * `target` removed alias authorization for `aliaser`.
+   **/
+  | { name: 'AliasAuthorizationRemoved'; data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location } }
+  /**
+   * `target` removed all alias authorizations.
+   **/
+  | { name: 'AliasesAuthorizationsRemoved'; data: { target: StagingXcmV5Location } };
 
 export type StagingXcmV5TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
   | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV5TraitsError } }
   | { type: 'Error'; value: { error: XcmV5TraitsError } };
+
+export type XcmV3TraitsSendError =
+  | 'NotApplicable'
+  | 'Transport'
+  | 'Unroutable'
+  | 'DestinationUnsupported'
+  | 'ExceedsMaxMessageSize'
+  | 'MissingArgument'
+  | 'Fees';
 
 /**
  * The `Event` enum of this pallet
@@ -12515,6 +12744,21 @@ export type PalletRootTestingEvent =
    * Event dispatched when the trigger_defensive extrinsic is called.
    **/
   'DefensiveTestCall';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletMetaTxEvent =
+  /**
+   * A meta transaction has been dispatched.
+   *
+   * Contains the dispatch result of the meta transaction along with post-dispatch
+   * information.
+   **/
+  {
+    name: 'Dispatched';
+    data: { result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo> };
+  };
 
 /**
  * The `Event` enum of this pallet
@@ -12684,13 +12928,16 @@ export type FrameSupportTokensMiscIdAmount = { id: WestendRuntimeRuntimeHoldReas
 export type WestendRuntimeRuntimeHoldReason =
   | { type: 'Staking'; value: PalletStakingPalletHoldReason }
   | { type: 'Preimage'; value: PalletPreimageHoldReason }
-  | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason };
+  | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
+  | { type: 'XcmPallet'; value: PalletXcmHoldReason };
 
 export type PalletStakingPalletHoldReason = 'Staking';
 
 export type PalletPreimageHoldReason = 'Preimage';
 
 export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
+
+export type PalletXcmHoldReason = 'AuthorizeAlias';
 
 export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
   id: WestendRuntimeRuntimeFreezeReason;
@@ -12768,27 +13015,21 @@ export type PalletStakingNominations = { targets: Array<AccountId32>; submittedI
 
 export type PalletStakingActiveEraInfo = { index: number; start?: bigint | undefined };
 
+export type SpStakingExposure = { total: bigint; own: bigint; others: Array<SpStakingIndividualExposure> };
+
+export type SpStakingIndividualExposure = { who: AccountId32; value: bigint };
+
 export type SpStakingPagedExposureMetadata = { total: bigint; own: bigint; nominatorCount: number; pageCount: number };
 
 export type SpStakingExposurePage = { pageTotal: bigint; others: Array<SpStakingIndividualExposure> };
 
-export type SpStakingIndividualExposure = { who: AccountId32; value: bigint };
-
 export type PalletStakingEraRewardPoints = { total: number; individual: Array<[AccountId32, number]> };
-
-export type PalletStakingSlashingOffenceRecord = {
-  reporter?: AccountId32 | undefined;
-  reportedEra: number;
-  exposurePage: number;
-  slashFraction: Perbill;
-  priorSlashFraction: Perbill;
-};
 
 export type PalletStakingUnappliedSlash = {
   validator: AccountId32;
   own: bigint;
   others: Array<[AccountId32, bigint]>;
-  reporter?: AccountId32 | undefined;
+  reporters: Array<AccountId32>;
   payout: bigint;
 };
 
@@ -12800,11 +13041,6 @@ export type PalletStakingSlashingSlashingSpans = {
 };
 
 export type PalletStakingSlashingSpanRecord = { slashed: bigint; paidOut: bigint };
-
-export type PalletStakingSnapshotStatus =
-  | { type: 'Ongoing'; value: AccountId32 }
-  | { type: 'Consumed' }
-  | { type: 'Waiting' };
 
 /**
  * The `Error` enum of this pallet.
@@ -12835,9 +13071,9 @@ export type PalletStakingPalletError =
    **/
   | 'DuplicateIndex'
   /**
-   * Slash record not found.
+   * Slash record index out of bounds.
    **/
-  | 'InvalidSlashRecord'
+  | 'InvalidSlashIndex'
   /**
    * Cannot have a validator or nominator role, with value less than the minimum defined by
    * governance (see `MinValidatorBond` and `MinNominatorBond`). If unbonding is the
@@ -12864,6 +13100,10 @@ export type PalletStakingPalletError =
    * Invalid number of nominations.
    **/
   | 'InvalidNumberOfNominations'
+  /**
+   * Items are not sorted and unique.
+   **/
+  | 'NotSortedAndUnique'
   /**
    * Rewards for this era have already been claimed for this validator.
    **/
@@ -12943,10 +13183,6 @@ export type PalletStakingPalletError =
    **/
   | 'AlreadyMigrated'
   /**
-   * Era not yet started.
-   **/
-  | 'EraNotStarted'
-  /**
    * Account is restricted from participation in staking. This may happen if the account is
    * staking in another way already, such as via pool.
    **/
@@ -12956,8 +13192,6 @@ export type SpStakingOffenceOffenceDetails = {
   offender: [AccountId32, SpStakingExposure];
   reporters: Array<AccountId32>;
 };
-
-export type SpStakingExposure = { total: bigint; own: bigint; others: Array<SpStakingIndividualExposure> };
 
 export type SpStakingOffenceOffenceSeverity = Perbill;
 
@@ -13476,11 +13710,12 @@ export type PalletMultisigError =
    **/
   | 'SenderInSignatories'
   /**
-   * Multisig operation not found when attempting to cancel.
+   * Multisig operation not found in storage.
    **/
   | 'NotFound'
   /**
-   * Only the account that originally created the multisig is able to cancel it.
+   * Only the account that originally created the multisig is able to cancel it or update
+   * its deposits.
    **/
   | 'NotOwner'
   /**
@@ -13505,16 +13740,10 @@ export type PalletMultisigError =
   | 'AlreadyStored';
 
 export type PalletElectionProviderMultiPhaseReadySolution = {
-  supports: FrameElectionProviderSupportBoundedSupports;
+  supports: Array<[AccountId32, SpNposElectionsSupport]>;
   score: SpNposElectionsElectionScore;
   compute: PalletElectionProviderMultiPhaseElectionCompute;
 };
-
-export type FrameElectionProviderSupportBoundedSupports = Array<
-  [AccountId32, FrameElectionProviderSupportBoundedSupport]
->;
-
-export type FrameElectionProviderSupportBoundedSupport = { total: bigint; voters: Array<[AccountId32, bigint]> };
 
 export type PalletElectionProviderMultiPhaseRoundSnapshot = {
   voters: Array<[AccountId32, bigint, Array<AccountId32>]>;
@@ -13971,10 +14200,8 @@ export type PalletReferendaDeposit = { who: AccountId32; amount: bigint };
 
 export type PalletReferendaDecidingStatus = { since: number; confirming?: number | undefined };
 
-export type PalletReferendaTrack = { id: number; info: PalletReferendaTrackInfo };
-
-export type PalletReferendaTrackInfo = {
-  name: FixedBytes<25>;
+export type PalletReferendaTrackDetails = {
+  name: string;
   maxDeciding: number;
   decisionDeposit: bigint;
   preparePeriod: number;
@@ -15174,6 +15401,20 @@ export type PalletXcmRemoteLockedFungibleRecord = {
   consumers: Array<[[], bigint]>;
 };
 
+export type PalletXcmAuthorizedAliasesEntry = {
+  aliasers: Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>;
+  ticket: FrameSupportStorageDisabled;
+};
+
+export type FrameSupportStorageDisabled = {};
+
+export type PalletXcmMaxAuthorizedAliases = {};
+
+export type XcmRuntimeApisAuthorizedAliasesOriginAliaser = {
+  location: XcmVersionedLocation;
+  expiry?: bigint | undefined;
+};
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -15276,7 +15517,19 @@ export type PalletXcmError =
   /**
    * Local XCM execution incomplete.
    **/
-  | 'LocalExecutionIncomplete';
+  | 'LocalExecutionIncomplete'
+  /**
+   * Too many locations authorized to alias origin.
+   **/
+  | 'TooManyAuthorizedAliases'
+  /**
+   * Expiry block number is in the past.
+   **/
+  | 'ExpiresInPast'
+  /**
+   * The alias to remove authorization for was not found.
+   **/
+  | 'AliasNotFound';
 
 export type PalletMessageQueueBookState = {
   begin: number;
@@ -15368,6 +15621,35 @@ export type PalletAssetRateError =
 /**
  * The `Error` enum of this pallet.
  **/
+export type PalletMetaTxError =
+  /**
+   * Invalid proof (e.g. signature).
+   **/
+  | 'BadProof'
+  /**
+   * The meta transaction is not yet valid (e.g. nonce too high).
+   **/
+  | 'Future'
+  /**
+   * The meta transaction is outdated (e.g. nonce too low).
+   **/
+  | 'Stale'
+  /**
+   * The meta transactions's birth block is ancient.
+   **/
+  | 'AncientBirthBlock'
+  /**
+   * The transaction extension did not authorize any origin.
+   **/
+  | 'UnknownOrigin'
+  /**
+   * The meta transaction is invalid.
+   **/
+  | 'Invalid';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
 export type PalletBeefyError =
   /**
    * A key ownership proof provided as part of an equivocation report is invalid.
@@ -15400,25 +15682,9 @@ export type PalletBeefyError =
 
 export type SpConsensusBeefyMmrBeefyAuthoritySet = { id: bigint; len: number; keysetCommitment: H256 };
 
-export type FrameSystemExtensionsCheckNonZeroSender = {};
-
-export type FrameSystemExtensionsCheckSpecVersion = {};
-
-export type FrameSystemExtensionsCheckTxVersion = {};
-
-export type FrameSystemExtensionsCheckGenesis = {};
-
-export type FrameSystemExtensionsCheckMortality = Era;
-
-export type FrameSystemExtensionsCheckNonce = number;
-
 export type FrameSystemExtensionsCheckWeight = {};
 
 export type PalletTransactionPaymentChargeTransactionPayment = bigint;
-
-export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
-
-export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
 export type FrameSystemExtensionsWeightReclaim = {};
 
@@ -15739,4 +16005,5 @@ export type WestendRuntimeRuntimeError =
   | { pallet: 'XcmPallet'; palletError: PalletXcmError }
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }
   | { pallet: 'AssetRate'; palletError: PalletAssetRateError }
+  | { pallet: 'MetaTx'; palletError: PalletMetaTxError }
   | { pallet: 'Beefy'; palletError: PalletBeefyError };

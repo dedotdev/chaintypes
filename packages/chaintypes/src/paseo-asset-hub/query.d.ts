@@ -20,12 +20,12 @@ import type {
   FrameSystemCodeUpgradeAuthorization,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
-  PolkadotPrimitivesV7PersistedValidationData,
-  PolkadotPrimitivesV7UpgradeRestriction,
-  PolkadotPrimitivesV7UpgradeGoAhead,
+  PolkadotPrimitivesV8PersistedValidationData,
+  PolkadotPrimitivesV8UpgradeRestriction,
+  PolkadotPrimitivesV8UpgradeGoAhead,
   SpTrieStorageProof,
   CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot,
-  PolkadotPrimitivesV7AbridgedHostConfiguration,
+  PolkadotPrimitivesV8AbridgedHostConfiguration,
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
@@ -76,8 +76,10 @@ import type {
   PalletNftsPendingSwap,
   PalletNftsCollectionConfig,
   PalletNftsItemConfig,
-  StagingXcmV3MultilocationMultiLocation,
+  StagingXcmV4Location,
   PalletAssetConversionPoolInfo,
+  PalletStateTrieMigrationMigrationTask,
+  PalletStateTrieMigrationMigrationLimits,
 } from './types.js';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
@@ -292,9 +294,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * This value is expected to be set only once per block and it's never stored
      * in the trie.
      *
-     * @param {Callback<PolkadotPrimitivesV7PersistedValidationData | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8PersistedValidationData | undefined> =} callback
      **/
-    validationData: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7PersistedValidationData | undefined>;
+    validationData: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8PersistedValidationData | undefined>;
 
     /**
      * Were the validation data set to notify the relay chain?
@@ -321,9 +323,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV7UpgradeRestriction | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8UpgradeRestriction | undefined> =} callback
      **/
-    upgradeRestrictionSignal: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7UpgradeRestriction | undefined>;
+    upgradeRestrictionSignal: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8UpgradeRestriction | undefined>;
 
     /**
      * Optional upgrade go-ahead signal from the relay-chain.
@@ -332,9 +334,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV7UpgradeGoAhead | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8UpgradeGoAhead | undefined> =} callback
      **/
-    upgradeGoAhead: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7UpgradeGoAhead | undefined>;
+    upgradeGoAhead: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8UpgradeGoAhead | undefined>;
 
     /**
      * The state proof for the last relay parent block.
@@ -372,9 +374,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      *
      * This data is also absent from the genesis.
      *
-     * @param {Callback<PolkadotPrimitivesV7AbridgedHostConfiguration | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8AbridgedHostConfiguration | undefined> =} callback
      **/
-    hostConfiguration: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7AbridgedHostConfiguration | undefined>;
+    hostConfiguration: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8AbridgedHostConfiguration | undefined>;
 
     /**
      * The last downward message queue chain head we have observed.
@@ -1567,25 +1569,25 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * Details of an asset.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} arg
+     * @param {StagingXcmV4Location} arg
      * @param {Callback<PalletAssetsAssetDetails | undefined> =} callback
      **/
     asset: GenericStorageQuery<
       Rv,
-      (arg: StagingXcmV3MultilocationMultiLocation) => PalletAssetsAssetDetails | undefined,
-      StagingXcmV3MultilocationMultiLocation
+      (arg: StagingXcmV4Location) => PalletAssetsAssetDetails | undefined,
+      StagingXcmV4Location
     >;
 
     /**
      * The holdings of a specific account for a specific asset.
      *
-     * @param {[StagingXcmV3MultilocationMultiLocation, AccountId32Like]} arg
+     * @param {[StagingXcmV4Location, AccountId32Like]} arg
      * @param {Callback<PalletAssetsAssetAccount | undefined> =} callback
      **/
     account: GenericStorageQuery<
       Rv,
-      (arg: [StagingXcmV3MultilocationMultiLocation, AccountId32Like]) => PalletAssetsAssetAccount | undefined,
-      [StagingXcmV3MultilocationMultiLocation, AccountId32]
+      (arg: [StagingXcmV4Location, AccountId32Like]) => PalletAssetsAssetAccount | undefined,
+      [StagingXcmV4Location, AccountId32]
     >;
 
     /**
@@ -1593,28 +1595,22 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * is the amount of `T::Currency` reserved for storing this.
      * First key is the asset ID, second key is the owner and third key is the delegate.
      *
-     * @param {[StagingXcmV3MultilocationMultiLocation, AccountId32Like, AccountId32Like]} arg
+     * @param {[StagingXcmV4Location, AccountId32Like, AccountId32Like]} arg
      * @param {Callback<PalletAssetsApproval | undefined> =} callback
      **/
     approvals: GenericStorageQuery<
       Rv,
-      (
-        arg: [StagingXcmV3MultilocationMultiLocation, AccountId32Like, AccountId32Like],
-      ) => PalletAssetsApproval | undefined,
-      [StagingXcmV3MultilocationMultiLocation, AccountId32, AccountId32]
+      (arg: [StagingXcmV4Location, AccountId32Like, AccountId32Like]) => PalletAssetsApproval | undefined,
+      [StagingXcmV4Location, AccountId32, AccountId32]
     >;
 
     /**
      * Metadata of an asset.
      *
-     * @param {StagingXcmV3MultilocationMultiLocation} arg
+     * @param {StagingXcmV4Location} arg
      * @param {Callback<PalletAssetsAssetMetadata> =} callback
      **/
-    metadata: GenericStorageQuery<
-      Rv,
-      (arg: StagingXcmV3MultilocationMultiLocation) => PalletAssetsAssetMetadata,
-      StagingXcmV3MultilocationMultiLocation
-    >;
+    metadata: GenericStorageQuery<Rv, (arg: StagingXcmV4Location) => PalletAssetsAssetMetadata, StagingXcmV4Location>;
 
     /**
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
@@ -1627,9 +1623,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * The initial next asset ID can be set using the [`GenesisConfig`] or the
      * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
      *
-     * @param {Callback<StagingXcmV3MultilocationMultiLocation | undefined> =} callback
+     * @param {Callback<StagingXcmV4Location | undefined> =} callback
      **/
-    nextAssetId: GenericStorageQuery<Rv, () => StagingXcmV3MultilocationMultiLocation | undefined>;
+    nextAssetId: GenericStorageQuery<Rv, () => StagingXcmV4Location | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1710,15 +1706,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Map from `PoolAssetId` to `PoolInfo`. This establishes whether a pool has been officially
      * created rather than people sending tokens directly to a pool's public account.
      *
-     * @param {[StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation]} arg
+     * @param {[StagingXcmV4Location, StagingXcmV4Location]} arg
      * @param {Callback<PalletAssetConversionPoolInfo | undefined> =} callback
      **/
     pools: GenericStorageQuery<
       Rv,
-      (
-        arg: [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation],
-      ) => PalletAssetConversionPoolInfo | undefined,
-      [StagingXcmV3MultilocationMultiLocation, StagingXcmV3MultilocationMultiLocation]
+      (arg: [StagingXcmV4Location, StagingXcmV4Location]) => PalletAssetConversionPoolInfo | undefined,
+      [StagingXcmV4Location, StagingXcmV4Location]
     >;
 
     /**
@@ -1728,6 +1722,43 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<number | undefined> =} callback
      **/
     nextPoolAssetId: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `StateTrieMigration`'s storage queries
+   **/
+  stateTrieMigration: {
+    /**
+     * Migration progress.
+     *
+     * This stores the snapshot of the last migrated keys. It can be set into motion and move
+     * forward by any of the means provided by this pallet.
+     *
+     * @param {Callback<PalletStateTrieMigrationMigrationTask> =} callback
+     **/
+    migrationProcess: GenericStorageQuery<Rv, () => PalletStateTrieMigrationMigrationTask>;
+
+    /**
+     * The limits that are imposed on automatic migrations.
+     *
+     * If set to None, then no automatic migration happens.
+     *
+     * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
+     **/
+    autoLimits: GenericStorageQuery<Rv, () => PalletStateTrieMigrationMigrationLimits | undefined>;
+
+    /**
+     * The maximum limits that the signed migration could use.
+     *
+     * If not set, no signed submission is allowed.
+     *
+     * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
+     **/
+    signedMigrationMaxLimits: GenericStorageQuery<Rv, () => PalletStateTrieMigrationMigrationLimits | undefined>;
 
     /**
      * Generic pallet storage query

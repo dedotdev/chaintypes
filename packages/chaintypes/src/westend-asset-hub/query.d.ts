@@ -52,10 +52,12 @@ import type {
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
   StagingXcmV5Xcm,
+  PalletXcmAuthorizedAliasesEntry,
   BpXcmBridgeHubRouterBridgeState,
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMessageQueuePage,
+  SnowbridgeCoreOperatingModeBasicOperatingMode,
   PalletMultisigMultisig,
   PalletProxyProxyDefinition,
   PalletProxyAnnouncement,
@@ -1127,6 +1129,20 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV5Xcm | undefined>;
 
     /**
+     * Map of authorized aliasers of local origins. Each local location can authorize a list of
+     * other locations to alias into it. Each aliaser is only valid until its inner `expiry`
+     * block number.
+     *
+     * @param {XcmVersionedLocation} arg
+     * @param {Callback<PalletXcmAuthorizedAliasesEntry | undefined> =} callback
+     **/
+    authorizedAliases: GenericStorageQuery<
+      Rv,
+      (arg: XcmVersionedLocation) => PalletXcmAuthorizedAliasesEntry | undefined,
+      XcmVersionedLocation
+    >;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -1187,6 +1203,22 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       (arg: [CumulusPrimitivesCoreAggregateMessageOrigin, number]) => PalletMessageQueuePage | undefined,
       [CumulusPrimitivesCoreAggregateMessageOrigin, number]
     >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `SnowbridgeSystemFrontend`'s storage queries
+   **/
+  snowbridgeSystemFrontend: {
+    /**
+     * The current operating mode for exporting to Ethereum.
+     *
+     * @param {Callback<SnowbridgeCoreOperatingModeBasicOperatingMode> =} callback
+     **/
+    exportOperatingMode: GenericStorageQuery<Rv, () => SnowbridgeCoreOperatingModeBasicOperatingMode>;
 
     /**
      * Generic pallet storage query

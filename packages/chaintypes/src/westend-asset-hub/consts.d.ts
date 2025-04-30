@@ -344,6 +344,12 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   polkadotXcm: {
     /**
+     * The latest supported version that we advertise. Generally just set it to
+     * `pallet_xcm::CurrentXcmVersion`.
+     **/
+    advertisedXcmVersion: number;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -405,6 +411,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      **/
     idleMaxServiceWeight: SpWeightsWeightV2Weight | undefined;
 
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `SnowbridgeSystemFrontend`'s constants
+   **/
+  snowbridgeSystemFrontend: {
     /**
      * Generic pallet constant
      **/

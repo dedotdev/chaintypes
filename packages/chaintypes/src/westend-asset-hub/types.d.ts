@@ -64,6 +64,7 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'CumulusXcm'; palletEvent: CumulusPalletXcmEvent }
   | { pallet: 'ToRococoXcmRouter'; palletEvent: PalletXcmBridgeHubRouterEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
+  | { pallet: 'SnowbridgeSystemFrontend'; palletEvent: SnowbridgePalletSystemFrontendEvent }
   | { pallet: 'Utility'; palletEvent: PalletUtilityEvent }
   | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
   | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
@@ -113,7 +114,11 @@ export type FrameSystemEvent =
   /**
    * An upgrade was authorized.
    **/
-  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } };
+  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } }
+  /**
+   * An invalid authorized upgrade was rejected while trying to apply it.
+   **/
+  | { name: 'RejectedInvalidAuthorizedUpgrade'; data: { codeHash: H256; error: DispatchError } };
 
 export type FrameSystemDispatchEventInfo = {
   weight: SpWeightsWeightV2Weight;
@@ -523,6 +528,11 @@ export type PalletSessionEvent =
    **/
   | { name: 'NewSession'; data: { sessionIndex: number } }
   /**
+   * The `NewSession` event in the current block also implies a new validator set to be
+   * queued.
+   **/
+  | { name: 'NewQueued' }
+  /**
    * Validator has been disabled.
    **/
   | { name: 'ValidatorDisabled'; data: { validator: AccountId32 } }
@@ -549,7 +559,7 @@ export type PalletXcmEvent =
    **/
   | { name: 'Attempted'; data: { outcome: StagingXcmV5TraitsOutcome } }
   /**
-   * A XCM message was sent.
+   * An XCM message was sent.
    **/
   | {
       name: 'Sent';
@@ -559,6 +569,25 @@ export type PalletXcmEvent =
         message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       };
+    }
+  /**
+   * An XCM message failed to send.
+   **/
+  | {
+      name: 'SendFailed';
+      data: {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        error: XcmV3TraitsSendError;
+        messageId: FixedBytes<32>;
+      };
+    }
+  /**
+   * An XCM message failed to process.
+   **/
+  | {
+      name: 'ProcessXcmError';
+      data: { origin: StagingXcmV5Location; error: XcmV5TraitsError; messageId: FixedBytes<32> };
     }
   /**
    * Query response received which does not match a registered query. This may be because a
@@ -716,7 +745,23 @@ export type PalletXcmEvent =
   /**
    * A XCM version migration finished.
    **/
-  | { name: 'VersionMigrationFinished'; data: { version: number } };
+  | { name: 'VersionMigrationFinished'; data: { version: number } }
+  /**
+   * An `aliaser` location was authorized by `target` to alias it, authorization valid until
+   * `expiry` block number.
+   **/
+  | {
+      name: 'AliasAuthorized';
+      data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location; expiry?: bigint | undefined };
+    }
+  /**
+   * `target` removed alias authorization for `aliaser`.
+   **/
+  | { name: 'AliasAuthorizationRemoved'; data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location } }
+  /**
+   * `target` removed all alias authorizations.
+   **/
+  | { name: 'AliasesAuthorizationsRemoved'; data: { target: StagingXcmV5Location } };
 
 export type StagingXcmV5TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
@@ -946,6 +991,15 @@ export type StagingXcmV5AssetAssetTransferFilter =
   | { type: 'ReserveWithdraw'; value: StagingXcmV5AssetAssetFilter };
 
 export type StagingXcmV5Hint = { type: 'AssetClaimer'; value: { location: StagingXcmV5Location } };
+
+export type XcmV3TraitsSendError =
+  | 'NotApplicable'
+  | 'Transport'
+  | 'Unroutable'
+  | 'DestinationUnsupported'
+  | 'ExceedsMaxMessageSize'
+  | 'MissingArgument'
+  | 'Fees';
 
 export type XcmVersionedAssets =
   | { type: 'V3'; value: XcmV3MultiassetMultiAssets }
@@ -1259,6 +1313,29 @@ export type FrameSupportMessagesProcessMessageError =
 /**
  * The `Event` enum of this pallet
  **/
+export type SnowbridgePalletSystemFrontendEvent =
+  /**
+   * An XCM was sent
+   **/
+  | {
+      name: 'MessageSent';
+      data: {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        message: StagingXcmV5Xcm;
+        messageId: FixedBytes<32>;
+      };
+    }
+  /**
+   * Set OperatingMode
+   **/
+  | { name: 'ExportOperatingModeChanged'; data: { mode: SnowbridgeCoreOperatingModeBasicOperatingMode } };
+
+export type SnowbridgeCoreOperatingModeBasicOperatingMode = 'Normal' | 'Halted';
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PalletUtilityEvent =
   /**
    * Batch of dispatches did not complete fully. Index of first failing dispatch given, as
@@ -1338,6 +1415,13 @@ export type PalletMultisigEvent =
         multisig: AccountId32;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * The deposit for a multisig operation has been updated/poked.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; callHash: FixedBytes<32>; oldDeposit: bigint; newDeposit: bigint };
     };
 
 export type PalletMultisigTimepoint = { height: number; index: number };
@@ -1359,6 +1443,18 @@ export type PalletProxyEvent =
       data: {
         pure: AccountId32;
         who: AccountId32;
+        proxyType: AssetHubWestendRuntimeProxyType;
+        disambiguationIndex: number;
+      };
+    }
+  /**
+   * A pure proxy was killed by its spawner.
+   **/
+  | {
+      name: 'PureKilled';
+      data: {
+        pure: AccountId32;
+        spawner: AccountId32;
         proxyType: AssetHubWestendRuntimeProxyType;
         disambiguationIndex: number;
       };
@@ -1390,6 +1486,13 @@ export type PalletProxyEvent =
         proxyType: AssetHubWestendRuntimeProxyType;
         delay: number;
       };
+    }
+  /**
+   * A deposit stored for proxies or announcements was poked / updated.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; kind: PalletProxyDepositKind; oldDeposit: bigint; newDeposit: bigint };
     };
 
 export type AssetHubWestendRuntimeProxyType =
@@ -1400,6 +1503,8 @@ export type AssetHubWestendRuntimeProxyType =
   | 'AssetOwner'
   | 'AssetManager'
   | 'Collator';
+
+export type PalletProxyDepositKind = 'Proxies' | 'Announcements';
 
 /**
  * The `Event` enum of this pallet
@@ -2924,15 +3029,7 @@ export type CumulusPalletParachainSystemError =
   /**
    * No validation function upgrade is currently scheduled.
    **/
-  | 'NotScheduled'
-  /**
-   * No code upgrade has been authorized.
-   **/
-  | 'NothingAuthorized'
-  /**
-   * The given code upgrade has not been authorized.
-   **/
-  | 'Unauthorized';
+  | 'NotScheduled';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3097,10 +3194,13 @@ export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 export type FrameSupportTokensMiscIdAmount = { id: AssetHubWestendRuntimeRuntimeHoldReason; amount: bigint };
 
 export type AssetHubWestendRuntimeRuntimeHoldReason =
+  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
   | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
   | { type: 'Revive'; value: PalletReviveHoldReason }
   | { type: 'AssetRewards'; value: PalletAssetRewardsHoldReason }
   | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason };
+
+export type PalletXcmHoldReason = 'AuthorizeAlias';
 
 export type PalletNftFractionalizationHoldReason = 'Fractionalized';
 
@@ -3931,6 +4031,20 @@ export type PalletXcmRemoteLockedFungibleRecord = {
   consumers: Array<[[], bigint]>;
 };
 
+export type PalletXcmAuthorizedAliasesEntry = {
+  aliasers: Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>;
+  ticket: FrameSupportTokensFungibleHoldConsideration;
+};
+
+export type FrameSupportTokensFungibleHoldConsideration = bigint;
+
+export type PalletXcmMaxAuthorizedAliases = {};
+
+export type XcmRuntimeApisAuthorizedAliasesOriginAliaser = {
+  location: XcmVersionedLocation;
+  expiry?: bigint | undefined;
+};
+
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
@@ -4244,7 +4358,31 @@ export type PalletXcmCall =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type PalletXcmCallLike =
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
@@ -4556,7 +4694,31 @@ export type PalletXcmCallLike =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type XcmVersionedXcm =
   | { type: 'V3'; value: XcmV3Xcm }
@@ -4903,7 +5065,19 @@ export type PalletXcmError =
   /**
    * Local XCM execution incomplete.
    **/
-  | 'LocalExecutionIncomplete';
+  | 'LocalExecutionIncomplete'
+  /**
+   * Too many locations authorized to alias origin.
+   **/
+  | 'TooManyAuthorizedAliases'
+  /**
+   * Expiry block number is in the past.
+   **/
+  | 'ExpiresInPast'
+  /**
+   * The alias to remove authorization for was not found.
+   **/
+  | 'AliasNotFound';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5061,6 +5235,77 @@ export type PalletMessageQueueError =
    * Another call is in progress and needs to finish before this call can happen.
    **/
   | 'RecursiveDisallowed';
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type SnowbridgePalletSystemFrontendCall =
+  /**
+   * Set the operating mode for exporting messages to Ethereum.
+   **/
+  | { name: 'SetOperatingMode'; params: { mode: SnowbridgeCoreOperatingModeBasicOperatingMode } }
+  /**
+   * Initiates the registration for a Polkadot-native token as a wrapped ERC20 token on
+   * Ethereum.
+   * - `asset_id`: Location of the asset
+   * - `metadata`: Metadata to include in the instantiated ERC20 contract on Ethereum
+   *
+   * All origins are allowed, however `asset_id` must be a location nested within the origin
+   * consensus system.
+   **/
+  | { name: 'RegisterToken'; params: { assetId: XcmVersionedLocation; metadata: SnowbridgeCoreAssetMetadata } };
+
+export type SnowbridgePalletSystemFrontendCallLike =
+  /**
+   * Set the operating mode for exporting messages to Ethereum.
+   **/
+  | { name: 'SetOperatingMode'; params: { mode: SnowbridgeCoreOperatingModeBasicOperatingMode } }
+  /**
+   * Initiates the registration for a Polkadot-native token as a wrapped ERC20 token on
+   * Ethereum.
+   * - `asset_id`: Location of the asset
+   * - `metadata`: Metadata to include in the instantiated ERC20 contract on Ethereum
+   *
+   * All origins are allowed, however `asset_id` must be a location nested within the origin
+   * consensus system.
+   **/
+  | { name: 'RegisterToken'; params: { assetId: XcmVersionedLocation; metadata: SnowbridgeCoreAssetMetadata } };
+
+export type SnowbridgeCoreAssetMetadata = { name: Bytes; symbol: Bytes; decimals: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type SnowbridgePalletSystemFrontendError =
+  /**
+   * Convert versioned location failure
+   **/
+  | 'UnsupportedLocationVersion'
+  /**
+   * Check location failure, should start from the dispatch origin as owner
+   **/
+  | 'InvalidAssetOwner'
+  /**
+   * Send xcm message failure
+   **/
+  | 'SendFailure'
+  /**
+   * Withdraw fee asset failure
+   **/
+  | 'FeesNotMet'
+  /**
+   * Convert to reanchored location failure
+   **/
+  | 'LocationConversionFailed'
+  /**
+   * Message export is halted
+   **/
+  | 'Halted'
+  /**
+   * The desired destination was unreachable, generally because there is a no way of routing
+   * to it.
+   **/
+  | 'Unreachable';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5340,6 +5585,7 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCall }
   | { pallet: 'ToRococoXcmRouter'; palletCall: PalletXcmBridgeHubRouterCall }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
+  | { pallet: 'SnowbridgeSystemFrontend'; palletCall: SnowbridgePalletSystemFrontendCall }
   | { pallet: 'Utility'; palletCall: PalletUtilityCall }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
   | { pallet: 'Proxy'; palletCall: PalletProxyCall }
@@ -5369,6 +5615,7 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCallLike }
   | { pallet: 'ToRococoXcmRouter'; palletCall: PalletXcmBridgeHubRouterCallLike }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
+  | { pallet: 'SnowbridgeSystemFrontend'; palletCall: SnowbridgePalletSystemFrontendCallLike }
   | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
   | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
@@ -5530,6 +5777,25 @@ export type PalletMultisigCall =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId32>; callHash: FixedBytes<32> };
     };
 
 export type PalletMultisigCallLike =
@@ -5675,6 +5941,25 @@ export type PalletMultisigCallLike =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
     };
 
 /**
@@ -5765,7 +6050,7 @@ export type PalletProxyCall =
    * `pure` with corresponding parameters.
    *
    * - `spawner`: The account that originally called `pure` to create this account.
-   * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+   * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
    * - `proxy_type`: The proxy type originally passed to `pure`.
    * - `height`: The height of the chain when the call to `pure` was processed.
    * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
@@ -5848,7 +6133,18 @@ export type PalletProxyCall =
         forceProxyType?: AssetHubWestendRuntimeProxyType | undefined;
         call: AssetHubWestendRuntimeRuntimeCall;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 export type PalletProxyCallLike =
   /**
@@ -5938,7 +6234,7 @@ export type PalletProxyCallLike =
    * `pure` with corresponding parameters.
    *
    * - `spawner`: The account that originally called `pure` to create this account.
-   * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+   * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
    * - `proxy_type`: The proxy type originally passed to `pure`.
    * - `height`: The height of the chain when the call to `pure` was processed.
    * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
@@ -6021,7 +6317,18 @@ export type PalletProxyCallLike =
         forceProxyType?: AssetHubWestendRuntimeProxyType | undefined;
         call: AssetHubWestendRuntimeRuntimeCallLike;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -6081,6 +6388,9 @@ export type PalletAssetsCall =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
    **/
   | { name: 'StartDestroy'; params: { id: number } }
   /**
@@ -6505,6 +6815,9 @@ export type PalletAssetsCall =
    * refunded.
    * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'Refund'; params: { id: number; allowBurn: boolean } }
@@ -6545,6 +6858,9 @@ export type PalletAssetsCall =
    *
    * - `id`: The identifier of the asset for the account holding a deposit.
    * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
    *
    * Emits `Refunded` event when successful.
    **/
@@ -6637,6 +6953,9 @@ export type PalletAssetsCallLike =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
    **/
   | { name: 'StartDestroy'; params: { id: number } }
   /**
@@ -7067,6 +7386,9 @@ export type PalletAssetsCallLike =
    * refunded.
    * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'Refund'; params: { id: number; allowBurn: boolean } }
@@ -7107,6 +7429,9 @@ export type PalletAssetsCallLike =
    *
    * - `id`: The identifier of the asset for the account holding a deposit.
    * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
    *
    * Emits `Refunded` event when successful.
    **/
@@ -9606,6 +9931,9 @@ export type PalletAssetsCall002 =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
    **/
   | { name: 'StartDestroy'; params: { id: StagingXcmV5Location } }
   /**
@@ -10039,6 +10367,9 @@ export type PalletAssetsCall002 =
    * refunded.
    * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'Refund'; params: { id: StagingXcmV5Location; allowBurn: boolean } }
@@ -10079,6 +10410,9 @@ export type PalletAssetsCall002 =
    *
    * - `id`: The identifier of the asset for the account holding a deposit.
    * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
    *
    * Emits `Refunded` event when successful.
    **/
@@ -10174,6 +10508,9 @@ export type PalletAssetsCallLike002 =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
    **/
   | { name: 'StartDestroy'; params: { id: StagingXcmV5Location } }
   /**
@@ -10615,6 +10952,9 @@ export type PalletAssetsCallLike002 =
    * refunded.
    * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'Refund'; params: { id: StagingXcmV5Location; allowBurn: boolean } }
@@ -10655,6 +10995,9 @@ export type PalletAssetsCallLike002 =
    *
    * - `id`: The identifier of the asset for the account holding a deposit.
    * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
    *
    * Emits `Refunded` event when successful.
    **/
@@ -10850,6 +11193,9 @@ export type PalletAssetsCall003 =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
    **/
   | { name: 'StartDestroy'; params: { id: number } }
   /**
@@ -11274,6 +11620,9 @@ export type PalletAssetsCall003 =
    * refunded.
    * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'Refund'; params: { id: number; allowBurn: boolean } }
@@ -11314,6 +11663,9 @@ export type PalletAssetsCall003 =
    *
    * - `id`: The identifier of the asset for the account holding a deposit.
    * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
    *
    * Emits `Refunded` event when successful.
    **/
@@ -11406,6 +11758,9 @@ export type PalletAssetsCallLike003 =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
    **/
   | { name: 'StartDestroy'; params: { id: number } }
   /**
@@ -11836,6 +12191,9 @@ export type PalletAssetsCallLike003 =
    * refunded.
    * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'Refund'; params: { id: number; allowBurn: boolean } }
@@ -11876,6 +12234,9 @@ export type PalletAssetsCallLike003 =
    *
    * - `id`: The identifier of the asset for the account holding a deposit.
    * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
    *
    * Emits `Refunded` event when successful.
    **/
@@ -12894,11 +13255,12 @@ export type PalletMultisigError =
    **/
   | 'SenderInSignatories'
   /**
-   * Multisig operation not found when attempting to cancel.
+   * Multisig operation not found in storage.
    **/
   | 'NotFound'
   /**
-   * Only the account that originally created the multisig is able to cancel it.
+   * Only the account that originally created the multisig is able to cancel it or update
+   * its deposits.
    **/
   | 'NotOwner'
   /**
@@ -13100,7 +13462,15 @@ export type PalletAssetsError =
   /**
    * The asset ID must be equal to the [`NextAssetId`].
    **/
-  | 'BadAssetId';
+  | 'BadAssetId'
+  /**
+   * The asset cannot be destroyed because some accounts for this asset contain freezes.
+   **/
+  | 'ContainsFreezes'
+  /**
+   * The asset cannot be destroyed because some accounts for this asset contain holds.
+   **/
+  | 'ContainsHolds';
 
 export type PalletUniquesCollectionDetails = {
   owner: AccountId32;
@@ -13201,7 +13571,23 @@ export type PalletUniquesError =
   /**
    * The provided bid is too low.
    **/
-  | 'BidTooLow';
+  | 'BidTooLow'
+  /**
+   * No metadata is found.
+   **/
+  | 'NoMetadata'
+  /**
+   * Wrong metadata key/value bytes supplied.
+   **/
+  | 'WrongMetadata'
+  /**
+   * An attribute is not found.
+   **/
+  | 'AttributeNotFound'
+  /**
+   * Wrong attribute key/value bytes supplied.
+   **/
+  | 'WrongAttribute';
 
 export type PalletNftsCollectionDetails = {
   owner: AccountId32;
@@ -13656,12 +14042,6 @@ export type PalletReviveError =
    **/
   | 'TooManyTopics'
   /**
-   * The chain does not provide a chain extension. Calling the chain extension results
-   * in this error. Note that this usually shouldn't happen as deploying such contracts
-   * is rejected.
-   **/
-  | 'NoChainExtension'
-  /**
    * Failed to decode the XCM program.
    **/
   | 'XcmDecodeFailed'
@@ -13796,11 +14176,7 @@ export type PalletReviveError =
   /**
    * Unsupported precompile address
    **/
-  | 'UnsupportedPrecompileAddress'
-  /**
-   * Precompile Error
-   **/
-  | 'PrecompileFailure';
+  | 'UnsupportedPrecompileAddress';
 
 export type PalletAssetRewardsPoolStakerInfo = { amount: bigint; rewards: bigint; rewardPerTokenPaid: bigint };
 
@@ -13815,8 +14191,6 @@ export type PalletAssetRewardsPoolInfo = {
   lastUpdateBlock: number;
   account: AccountId32;
 };
-
-export type FrameSupportTokensFungibleHoldConsideration = bigint;
 
 /**
  * The `Error` enum of this pallet.
@@ -14015,6 +14389,15 @@ export type XcmRuntimeApisDryRunXcmDryRunEffects = {
 
 export type XcmRuntimeApisConversionsError = 'Unsupported' | 'VersionedConversionFailed';
 
+export type XcmVersionedAsset =
+  | { type: 'V3'; value: XcmV3MultiassetMultiAsset }
+  | { type: 'V4'; value: StagingXcmV4Asset }
+  | { type: 'V5'; value: StagingXcmV5Asset };
+
+export type XcmRuntimeApisTrustedQueryError = 'VersionedAssetConversionFailed' | 'VersionedLocationConversionFailed';
+
+export type XcmRuntimeApisAuthorizedAliasesError = 'LocationVersionConversionFailed';
+
 export type AssetsCommonRuntimeApiFungiblesAccessError = 'AssetIdConversionFailed' | 'AmountToBalanceConversionFailed';
 
 export type CumulusPrimitivesCoreCollationInfo = {
@@ -14031,13 +14414,6 @@ export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
 export type PolkadotPrimitivesVstagingCoreSelector = number;
 
 export type PolkadotPrimitivesVstagingClaimQueueOffset = number;
-
-export type XcmVersionedAsset =
-  | { type: 'V3'; value: XcmV3MultiassetMultiAsset }
-  | { type: 'V4'; value: StagingXcmV4Asset }
-  | { type: 'V5'; value: StagingXcmV5Asset };
-
-export type XcmRuntimeApisTrustedQueryError = 'VersionedAssetConversionFailed' | 'VersionedLocationConversionFailed';
 
 export type PalletRevivePrimitivesContractResult = {
   gasConsumed: SpWeightsWeightV2Weight;
@@ -14112,7 +14488,19 @@ export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; depo
 
 export type PalletRevivePrimitivesContractAccessError = 'DoesntExist' | 'KeyDecodingFailed';
 
-export type PalletReviveEvmApiDebugRpcTypesTracerConfig = { type: 'CallTracer'; value: { withLogs: boolean } };
+export type PalletReviveEvmApiDebugRpcTypesTracerConfig = {
+  config: PalletReviveEvmApiDebugRpcTypesTracerType;
+  timeout?: Duration | undefined;
+};
+
+export type PalletReviveEvmApiDebugRpcTypesTracerType = {
+  type: 'CallTracer';
+  value?: PalletReviveEvmApiDebugRpcTypesCallTracerConfig | undefined;
+};
+
+export type PalletReviveEvmApiDebugRpcTypesCallTracerConfig = { withLogs: boolean; onlyTopCall: boolean };
+
+export type Duration = [bigint, number];
 
 export type PalletReviveEvmApiDebugRpcTypesCallTrace = {
   from: H160;
@@ -14148,6 +14536,7 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'XcmpQueue'; palletError: CumulusPalletXcmpQueueError }
   | { pallet: 'PolkadotXcm'; palletError: PalletXcmError }
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }
+  | { pallet: 'SnowbridgeSystemFrontend'; palletError: SnowbridgePalletSystemFrontendError }
   | { pallet: 'Utility'; palletError: PalletUtilityError }
   | { pallet: 'Multisig'; palletError: PalletMultisigError }
   | { pallet: 'Proxy'; palletError: PalletProxyError }

@@ -29,6 +29,8 @@ import type {
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
   CumulusPrimitivesCoreAggregateMessageOrigin,
+  SnowbridgeCoreOperatingModeBasicOperatingMode,
+  SnowbridgeCoreAssetMetadata,
   AssetHubWestendRuntimeOriginCaller,
   PalletMultisigTimepoint,
   AssetHubWestendRuntimeProxyType,
@@ -1783,6 +1785,77 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Authorize another `aliaser` location to alias into the local `origin` making this call.
+     * The `aliaser` is only authorized until the provided `expiry` block number.
+     * The call can also be used for a previously authorized alias in order to update its
+     * `expiry` block number.
+     *
+     * Usually useful to allow your local account to be aliased into from a remote location
+     * also under your control (like your account on another chain).
+     *
+     * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+     * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+     * `origin` in XCM programs executed on the local chain.
+     *
+     * @param {XcmVersionedLocation} aliaser
+     * @param {bigint | undefined} expires
+     **/
+    addAuthorizedAlias: GenericTxCall<
+      Rv,
+      (
+        aliaser: XcmVersionedLocation,
+        expires: bigint | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'AddAuthorizedAlias';
+            params: { aliaser: XcmVersionedLocation; expires: bigint | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a previously authorized `aliaser` from the list of locations that can alias into
+     * the local `origin` making this call.
+     *
+     * @param {XcmVersionedLocation} aliaser
+     **/
+    removeAuthorizedAlias: GenericTxCall<
+      Rv,
+      (aliaser: XcmVersionedLocation) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'RemoveAuthorizedAlias';
+            params: { aliaser: XcmVersionedLocation };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+     * making this call.
+     *
+     **/
+    removeAllAuthorizedAliases: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'RemoveAllAuthorizedAliases';
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -1894,6 +1967,63 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               index: number;
               weightLimit: SpWeightsWeightV2Weight;
             };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `SnowbridgeSystemFrontend`'s transaction calls
+   **/
+  snowbridgeSystemFrontend: {
+    /**
+     * Set the operating mode for exporting messages to Ethereum.
+     *
+     * @param {SnowbridgeCoreOperatingModeBasicOperatingMode} mode
+     **/
+    setOperatingMode: GenericTxCall<
+      Rv,
+      (mode: SnowbridgeCoreOperatingModeBasicOperatingMode) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SnowbridgeSystemFrontend';
+          palletCall: {
+            name: 'SetOperatingMode';
+            params: { mode: SnowbridgeCoreOperatingModeBasicOperatingMode };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Initiates the registration for a Polkadot-native token as a wrapped ERC20 token on
+     * Ethereum.
+     * - `asset_id`: Location of the asset
+     * - `metadata`: Metadata to include in the instantiated ERC20 contract on Ethereum
+     *
+     * All origins are allowed, however `asset_id` must be a location nested within the origin
+     * consensus system.
+     *
+     * @param {XcmVersionedLocation} assetId
+     * @param {SnowbridgeCoreAssetMetadata} metadata
+     **/
+    registerToken: GenericTxCall<
+      Rv,
+      (
+        assetId: XcmVersionedLocation,
+        metadata: SnowbridgeCoreAssetMetadata,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SnowbridgeSystemFrontend';
+          palletCall: {
+            name: 'RegisterToken';
+            params: { assetId: XcmVersionedLocation; metadata: SnowbridgeCoreAssetMetadata };
           };
         }
       >
@@ -2402,6 +2532,43 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Poke the deposit reserved for an existing multisig operation.
+     *
+     * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+     * the multisig operation.
+     *
+     * The transaction fee is waived if the deposit amount has changed.
+     *
+     * - `threshold`: The total number of approvals needed for this multisig.
+     * - `other_signatories`: The accounts (other than the sender) who are part of the
+     * multisig.
+     * - `call_hash`: The hash of the call this deposit is reserved for.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     * @param {number} threshold
+     * @param {Array<AccountId32Like>} otherSignatories
+     * @param {FixedBytes<32>} callHash
+     **/
+    pokeDeposit: GenericTxCall<
+      Rv,
+      (
+        threshold: number,
+        otherSignatories: Array<AccountId32Like>,
+        callHash: FixedBytes<32>,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Multisig';
+          palletCall: {
+            name: 'PokeDeposit';
+            params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -2585,7 +2752,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * `pure` with corresponding parameters.
      *
      * - `spawner`: The account that originally called `pure` to create this account.
-     * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+     * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
      * - `proxy_type`: The proxy type originally passed to `pure`.
      * - `height`: The height of the chain when the call to `pure` was processed.
      * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
@@ -2769,6 +2936,30 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Poke / Adjust deposits made for proxies and announcements based on current values.
+     * This can be used by accounts to possibly lower their locked amount.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * The transaction fee is waived if the deposit amount has changed.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     **/
+    pokeDeposit: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'PokeDeposit';
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -2875,6 +3066,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * - `id`: The identifier of the asset to be destroyed. This must identify an existing
      * asset.
+     *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * an account contains holds or freezes in place.
      *
      * @param {number} id
      **/
@@ -3778,6 +3972,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * refunded.
      * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
      *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * the asset account contains holds or freezes in place.
+     *
      * Emits `Refunded` event when successful.
      *
      * @param {number} id
@@ -3875,6 +4072,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * - `id`: The identifier of the asset for the account holding a deposit.
      * - `who`: The account to refund.
+     *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * the asset account contains holds or freezes in place.
      *
      * Emits `Refunded` event when successful.
      *
@@ -6536,6 +6736,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `id`: The identifier of the asset to be destroyed. This must identify an existing
      * asset.
      *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * an account contains holds or freezes in place.
+     *
      * @param {StagingXcmV5Location} id
      **/
     startDestroy: GenericTxCall<
@@ -7454,6 +7657,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * refunded.
      * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
      *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * the asset account contains holds or freezes in place.
+     *
      * Emits `Refunded` event when successful.
      *
      * @param {StagingXcmV5Location} id
@@ -7551,6 +7757,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * - `id`: The identifier of the asset for the account holding a deposit.
      * - `who`: The account to refund.
+     *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * the asset account contains holds or freezes in place.
      *
      * Emits `Refunded` event when successful.
      *
@@ -7855,6 +8064,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * - `id`: The identifier of the asset to be destroyed. This must identify an existing
      * asset.
+     *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * an account contains holds or freezes in place.
      *
      * @param {number} id
      **/
@@ -8758,6 +8970,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * refunded.
      * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
      *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * the asset account contains holds or freezes in place.
+     *
      * Emits `Refunded` event when successful.
      *
      * @param {number} id
@@ -8855,6 +9070,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * - `id`: The identifier of the asset for the account holding a deposit.
      * - `who`: The account to refund.
+     *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * the asset account contains holds or freezes in place.
      *
      * Emits `Refunded` event when successful.
      *

@@ -97,16 +97,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NotScheduled: GenericPalletError<Rv>;
 
     /**
-     * No code upgrade has been authorized.
-     **/
-    NothingAuthorized: GenericPalletError<Rv>;
-
-    /**
-     * The given code upgrade has not been authorized.
-     **/
-    Unauthorized: GenericPalletError<Rv>;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -484,6 +474,21 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     LocalExecutionIncomplete: GenericPalletError<Rv>;
 
     /**
+     * Too many locations authorized to alias origin.
+     **/
+    TooManyAuthorizedAliases: GenericPalletError<Rv>;
+
+    /**
+     * Expiry block number is in the past.
+     **/
+    ExpiresInPast: GenericPalletError<Rv>;
+
+    /**
+     * The alias to remove authorization for was not found.
+     **/
+    AliasNotFound: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -549,6 +554,51 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `SnowbridgeSystemFrontend`'s errors
+   **/
+  snowbridgeSystemFrontend: {
+    /**
+     * Convert versioned location failure
+     **/
+    UnsupportedLocationVersion: GenericPalletError<Rv>;
+
+    /**
+     * Check location failure, should start from the dispatch origin as owner
+     **/
+    InvalidAssetOwner: GenericPalletError<Rv>;
+
+    /**
+     * Send xcm message failure
+     **/
+    SendFailure: GenericPalletError<Rv>;
+
+    /**
+     * Withdraw fee asset failure
+     **/
+    FeesNotMet: GenericPalletError<Rv>;
+
+    /**
+     * Convert to reanchored location failure
+     **/
+    LocationConversionFailed: GenericPalletError<Rv>;
+
+    /**
+     * Message export is halted
+     **/
+    Halted: GenericPalletError<Rv>;
+
+    /**
+     * The desired destination was unreachable, generally because there is a no way of routing
+     * to it.
+     **/
+    Unreachable: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `Utility`'s errors
    **/
   utility: {
@@ -602,12 +652,13 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     SenderInSignatories: GenericPalletError<Rv>;
 
     /**
-     * Multisig operation not found when attempting to cancel.
+     * Multisig operation not found in storage.
      **/
     NotFound: GenericPalletError<Rv>;
 
     /**
-     * Only the account that originally created the multisig is able to cancel it.
+     * Only the account that originally created the multisig is able to cancel it or update
+     * its deposits.
      **/
     NotOwner: GenericPalletError<Rv>;
 
@@ -803,6 +854,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     BadAssetId: GenericPalletError<Rv>;
 
     /**
+     * The asset cannot be destroyed because some accounts for this asset contain freezes.
+     **/
+    ContainsFreezes: GenericPalletError<Rv>;
+
+    /**
+     * The asset cannot be destroyed because some accounts for this asset contain holds.
+     **/
+    ContainsHolds: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -900,6 +961,26 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The provided bid is too low.
      **/
     BidTooLow: GenericPalletError<Rv>;
+
+    /**
+     * No metadata is found.
+     **/
+    NoMetadata: GenericPalletError<Rv>;
+
+    /**
+     * Wrong metadata key/value bytes supplied.
+     **/
+    WrongMetadata: GenericPalletError<Rv>;
+
+    /**
+     * An attribute is not found.
+     **/
+    AttributeNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Wrong attribute key/value bytes supplied.
+     **/
+    WrongAttribute: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1253,6 +1334,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     BadAssetId: GenericPalletError<Rv>;
 
     /**
+     * The asset cannot be destroyed because some accounts for this asset contain freezes.
+     **/
+    ContainsFreezes: GenericPalletError<Rv>;
+
+    /**
+     * The asset cannot be destroyed because some accounts for this asset contain holds.
+     **/
+    ContainsHolds: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1397,6 +1488,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The asset ID must be equal to the [`NextAssetId`].
      **/
     BadAssetId: GenericPalletError<Rv>;
+
+    /**
+     * The asset cannot be destroyed because some accounts for this asset contain freezes.
+     **/
+    ContainsFreezes: GenericPalletError<Rv>;
+
+    /**
+     * The asset cannot be destroyed because some accounts for this asset contain holds.
+     **/
+    ContainsHolds: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1655,13 +1756,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     TooManyTopics: GenericPalletError<Rv>;
 
     /**
-     * The chain does not provide a chain extension. Calling the chain extension results
-     * in this error. Note that this usually shouldn't happen as deploying such contracts
-     * is rejected.
-     **/
-    NoChainExtension: GenericPalletError<Rv>;
-
-    /**
      * Failed to decode the XCM program.
      **/
     XcmDecodeFailed: GenericPalletError<Rv>;
@@ -1827,11 +1921,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Unsupported precompile address
      **/
     UnsupportedPrecompileAddress: GenericPalletError<Rv>;
-
-    /**
-     * Precompile Error
-     **/
-    PrecompileFailure: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

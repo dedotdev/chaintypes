@@ -45,12 +45,14 @@ import type {
   AssetHubWestendRuntimeRuntimeCallLike,
   XcmRuntimeApisDryRunXcmDryRunEffects,
   XcmRuntimeApisConversionsError,
+  XcmRuntimeApisTrustedQueryError,
+  XcmVersionedAsset,
+  XcmRuntimeApisAuthorizedAliasesOriginAliaser,
+  XcmRuntimeApisAuthorizedAliasesError,
   AssetsCommonRuntimeApiFungiblesAccessError,
   CumulusPrimitivesCoreCollationInfo,
   PolkadotPrimitivesVstagingCoreSelector,
   PolkadotPrimitivesVstagingClaimQueueOffset,
-  XcmRuntimeApisTrustedQueryError,
-  XcmVersionedAsset,
   PalletRevivePrimitivesContractResult,
   PalletRevivePrimitivesContractResultInstantiateReturnValue,
   PalletRevivePrimitivesCode,
@@ -667,6 +669,90 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
+   * @runtimeapi: TrustedQueryApi - 0x2609be83ac4468dc
+   **/
+  trustedQueryApi: {
+    /**
+     * Returns if the location is a trusted reserve for the asset.
+     *
+     * # Arguments
+     * * `asset`: `VersionedAsset`.
+     * * `location`: `VersionedLocation`.
+     *
+     * @callname: TrustedQueryApi_is_trusted_reserve
+     * @param {XcmVersionedAsset} asset
+     * @param {XcmVersionedLocation} location
+     **/
+    isTrustedReserve: GenericRuntimeApiMethod<
+      Rv,
+      (
+        asset: XcmVersionedAsset,
+        location: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
+    >;
+
+    /**
+     * Returns if the asset can be teleported to the location.
+     *
+     * # Arguments
+     * * `asset`: `VersionedAsset`.
+     * * `location`: `VersionedLocation`.
+     *
+     * @callname: TrustedQueryApi_is_trusted_teleporter
+     * @param {XcmVersionedAsset} asset
+     * @param {XcmVersionedLocation} location
+     **/
+    isTrustedTeleporter: GenericRuntimeApiMethod<
+      Rv,
+      (
+        asset: XcmVersionedAsset,
+        location: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: AuthorizedAliasersApi - 0x12c8e3d4d7e06de0
+   **/
+  authorizedAliasersApi: {
+    /**
+     * Returns locations allowed to alias into and act as `target`.
+     *
+     * @callname: AuthorizedAliasersApi_authorized_aliasers
+     * @param {XcmVersionedLocation} target
+     **/
+    authorizedAliasers: GenericRuntimeApiMethod<
+      Rv,
+      (
+        target: XcmVersionedLocation,
+      ) => Promise<Result<Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>, XcmRuntimeApisAuthorizedAliasesError>>
+    >;
+
+    /**
+     * Returns whether `origin` is allowed to alias into and act as `target`.
+     *
+     * @callname: AuthorizedAliasersApi_is_authorized_alias
+     * @param {XcmVersionedLocation} origin
+     * @param {XcmVersionedLocation} target
+     **/
+    isAuthorizedAlias: GenericRuntimeApiMethod<
+      Rv,
+      (
+        origin: XcmVersionedLocation,
+        target: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisAuthorizedAliasesError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
    * @runtimeapi: TransactionPaymentCallApi - 0xf3ff14d5ab527059
    **/
   transactionPaymentCallApi: {
@@ -850,53 +936,6 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
-   * @runtimeapi: TrustedQueryApi - 0x2609be83ac4468dc
-   **/
-  trustedQueryApi: {
-    /**
-     * Returns if the location is a trusted reserve for the asset.
-     *
-     * # Arguments
-     * * `asset`: `VersionedAsset`.
-     * * `location`: `VersionedLocation`.
-     *
-     * @callname: TrustedQueryApi_is_trusted_reserve
-     * @param {XcmVersionedAsset} asset
-     * @param {XcmVersionedLocation} location
-     **/
-    isTrustedReserve: GenericRuntimeApiMethod<
-      Rv,
-      (
-        asset: XcmVersionedAsset,
-        location: XcmVersionedLocation,
-      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
-    >;
-
-    /**
-     * Returns if the asset can be teleported to the location.
-     *
-     * # Arguments
-     * * `asset`: `VersionedAsset`.
-     * * `location`: `VersionedLocation`.
-     *
-     * @callname: TrustedQueryApi_is_trusted_teleporter
-     * @param {XcmVersionedAsset} asset
-     * @param {XcmVersionedLocation} location
-     **/
-    isTrustedTeleporter: GenericRuntimeApiMethod<
-      Rv,
-      (
-        asset: XcmVersionedAsset,
-        location: XcmVersionedLocation,
-      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
-    >;
-
-    /**
-     * Generic runtime api call
-     **/
-    [method: string]: GenericRuntimeApiMethod<Rv>;
-  };
-  /**
    * @runtimeapi: ReviveApi - 0x8c403e5c4a9fd442
    **/
   reviveApi: {
@@ -1033,6 +1072,22 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
         address: H160,
         key: FixedBytes<32>,
       ) => Promise<Result<Bytes | undefined, PalletRevivePrimitivesContractAccessError>>
+    >;
+
+    /**
+     * Query a given variable-sized storage key in a given contract.
+     *
+     * Returns `Ok(Some(Vec<u8>))` if the storage value exists under the given key in the
+     * specified account and `Ok(None)` if it doesn't. If the account specified by the address
+     * doesn't exist, or doesn't have a contract then `Err` is returned.
+     *
+     * @callname: ReviveApi_get_storage_var_key
+     * @param {H160} address
+     * @param {BytesLike} key
+     **/
+    getStorageVarKey: GenericRuntimeApiMethod<
+      Rv,
+      (address: H160, key: BytesLike) => Promise<Result<Bytes | undefined, PalletRevivePrimitivesContractAccessError>>
     >;
 
     /**

@@ -79,6 +79,7 @@ export type ChainJsonRpcApis<Rv extends RpcVersion> = Pick<
   | 'eth_newBlockFilter'
   | 'eth_newFilter'
   | 'eth_newPendingTransactionFilter'
+  | 'eth_pendingTransactions'
   | 'eth_protocolVersion'
   | 'eth_sendRawTransaction'
   | 'eth_sendTransaction'

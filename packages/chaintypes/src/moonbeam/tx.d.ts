@@ -1068,40 +1068,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * DEPRECATED use delegateWithAutoCompound
-     * If caller is not a delegator and not a collator, then join the set of delegators
-     * If caller is a delegator, then makes delegation to change their delegation state
-     *
-     * @param {AccountId20Like} candidate
-     * @param {bigint} amount
-     * @param {number} candidateDelegationCount
-     * @param {number} delegationCount
-     **/
-    delegate: GenericTxCall<
-      Rv,
-      (
-        candidate: AccountId20Like,
-        amount: bigint,
-        candidateDelegationCount: number,
-        delegationCount: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainStaking';
-          palletCall: {
-            name: 'Delegate';
-            params: {
-              candidate: AccountId20Like;
-              amount: bigint;
-              candidateDelegationCount: number;
-              delegationCount: number;
-            };
-          };
-        }
-      >
-    >;
-
-    /**
      * If caller is not a delegator and not a collator, then join the set of delegators
      * If caller is a delegator, then makes delegation to change their delegation state
      * Sets the auto-compound config for the delegation
@@ -1136,57 +1102,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               candidateAutoCompoundingDelegationCount: number;
               delegationCount: number;
             };
-          };
-        }
-      >
-    >;
-
-    /**
-     * REMOVED, was schedule_leave_delegators
-     *
-     **/
-    removedCall19: GenericTxCall<
-      Rv,
-      () => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainStaking';
-          palletCall: {
-            name: 'RemovedCall19';
-          };
-        }
-      >
-    >;
-
-    /**
-     * REMOVED, was execute_leave_delegators
-     *
-     **/
-    removedCall20: GenericTxCall<
-      Rv,
-      () => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainStaking';
-          palletCall: {
-            name: 'RemovedCall20';
-          };
-        }
-      >
-    >;
-
-    /**
-     * REMOVED, was cancel_leave_delegators
-     *
-     **/
-    removedCall21: GenericTxCall<
-      Rv,
-      () => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainStaking';
-          palletCall: {
-            name: 'RemovedCall21';
           };
         }
       >
@@ -7852,7 +7767,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Create new asset with the ForeignAssetCreator
      *
      * @param {bigint} assetId
-     * @param {StagingXcmV4Location} xcmLocation
+     * @param {StagingXcmV4Location} assetXcmLocation
      * @param {number} decimals
      * @param {BytesLike} symbol
      * @param {BytesLike} name
@@ -7861,7 +7776,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       Rv,
       (
         assetId: bigint,
-        xcmLocation: StagingXcmV4Location,
+        assetXcmLocation: StagingXcmV4Location,
         decimals: number,
         symbol: BytesLike,
         name: BytesLike,
@@ -7873,7 +7788,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
             name: 'CreateForeignAsset';
             params: {
               assetId: bigint;
-              xcmLocation: StagingXcmV4Location;
+              assetXcmLocation: StagingXcmV4Location;
               decimals: number;
               symbol: BytesLike;
               name: BytesLike;

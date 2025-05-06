@@ -864,7 +864,8 @@ export type PalletParametersEvent =
 
 export type MoonbeamRuntimeRuntimeParamsRuntimeParametersKey =
   | { type: 'RuntimeConfig'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParametersKey }
-  | { type: 'PalletRandomness'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParametersKey };
+  | { type: 'PalletRandomness'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParametersKey }
+  | { type: 'XcmConfig'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsXcmConfigParametersKey };
 
 export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParametersKey = {
   type: 'FeesTreasuryProportion';
@@ -880,9 +881,17 @@ export type MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParametersK
 
 export type MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessDeposit = {};
 
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsXcmConfigParametersKey = {
+  type: 'ForeignAssetCreationDeposit';
+  value: MoonbeamRuntimeRuntimeParamsDynamicParamsXcmConfigForeignAssetCreationDeposit;
+};
+
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsXcmConfigForeignAssetCreationDeposit = {};
+
 export type MoonbeamRuntimeRuntimeParamsRuntimeParametersValue =
   | { type: 'RuntimeConfig'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParametersValue }
-  | { type: 'PalletRandomness'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParametersValue };
+  | { type: 'PalletRandomness'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParametersValue }
+  | { type: 'XcmConfig'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsXcmConfigParametersValue };
 
 export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParametersValue = {
   type: 'FeesTreasuryProportion';
@@ -895,6 +904,11 @@ export type MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParametersV
 };
 
 export type MoonbeamRuntimeCommonBoundedU128 = bigint;
+
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsXcmConfigParametersValue = {
+  type: 'ForeignAssetCreationDeposit';
+  value: bigint;
+};
 
 /**
  * The `Event` enum of this pallet
@@ -1965,15 +1979,6 @@ export type PalletParachainStakingCall =
    **/
   | { name: 'CancelCandidateBondLess' }
   /**
-   * DEPRECATED use delegateWithAutoCompound
-   * If caller is not a delegator and not a collator, then join the set of delegators
-   * If caller is a delegator, then makes delegation to change their delegation state
-   **/
-  | {
-      name: 'Delegate';
-      params: { candidate: AccountId20; amount: bigint; candidateDelegationCount: number; delegationCount: number };
-    }
-  /**
    * If caller is not a delegator and not a collator, then join the set of delegators
    * If caller is a delegator, then makes delegation to change their delegation state
    * Sets the auto-compound config for the delegation
@@ -1989,18 +1994,6 @@ export type PalletParachainStakingCall =
         delegationCount: number;
       };
     }
-  /**
-   * REMOVED, was schedule_leave_delegators
-   **/
-  | { name: 'RemovedCall19' }
-  /**
-   * REMOVED, was execute_leave_delegators
-   **/
-  | { name: 'RemovedCall20' }
-  /**
-   * REMOVED, was cancel_leave_delegators
-   **/
-  | { name: 'RemovedCall21' }
   /**
    * Request to revoke an existing delegation. If successful, the delegation is scheduled
    * to be allowed to be revoked via the `execute_delegation_request` extrinsic.
@@ -2142,15 +2135,6 @@ export type PalletParachainStakingCallLike =
    **/
   | { name: 'CancelCandidateBondLess' }
   /**
-   * DEPRECATED use delegateWithAutoCompound
-   * If caller is not a delegator and not a collator, then join the set of delegators
-   * If caller is a delegator, then makes delegation to change their delegation state
-   **/
-  | {
-      name: 'Delegate';
-      params: { candidate: AccountId20Like; amount: bigint; candidateDelegationCount: number; delegationCount: number };
-    }
-  /**
    * If caller is not a delegator and not a collator, then join the set of delegators
    * If caller is a delegator, then makes delegation to change their delegation state
    * Sets the auto-compound config for the delegation
@@ -2166,18 +2150,6 @@ export type PalletParachainStakingCallLike =
         delegationCount: number;
       };
     }
-  /**
-   * REMOVED, was schedule_leave_delegators
-   **/
-  | { name: 'RemovedCall19' }
-  /**
-   * REMOVED, was execute_leave_delegators
-   **/
-  | { name: 'RemovedCall20' }
-  /**
-   * REMOVED, was cancel_leave_delegators
-   **/
-  | { name: 'RemovedCall21' }
   /**
    * Request to revoke an existing delegation. If successful, the delegation is scheduled
    * to be allowed to be revoked via the `execute_delegation_request` extrinsic.
@@ -3897,7 +3869,8 @@ export type PalletParametersCallLike =
 
 export type MoonbeamRuntimeRuntimeParamsRuntimeParameters =
   | { type: 'RuntimeConfig'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParameters }
-  | { type: 'PalletRandomness'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParameters };
+  | { type: 'PalletRandomness'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParameters }
+  | { type: 'XcmConfig'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsXcmConfigParameters };
 
 export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParameters = {
   type: 'FeesTreasuryProportion';
@@ -3910,6 +3883,11 @@ export type MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParameters 
     MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessDeposit,
     MoonbeamRuntimeCommonBoundedU128 | undefined,
   ];
+};
+
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsXcmConfigParameters = {
+  type: 'ForeignAssetCreationDeposit';
+  value: [MoonbeamRuntimeRuntimeParamsDynamicParamsXcmConfigForeignAssetCreationDeposit, bigint | undefined];
 };
 
 /**
@@ -8389,7 +8367,7 @@ export type PalletMoonbeamForeignAssetsCall =
    **/
   | {
       name: 'CreateForeignAsset';
-      params: { assetId: bigint; xcmLocation: StagingXcmV4Location; decimals: number; symbol: Bytes; name: Bytes };
+      params: { assetId: bigint; assetXcmLocation: StagingXcmV4Location; decimals: number; symbol: Bytes; name: Bytes };
     }
   /**
    * Change the xcm type mapping for a given assetId
@@ -8414,7 +8392,7 @@ export type PalletMoonbeamForeignAssetsCallLike =
       name: 'CreateForeignAsset';
       params: {
         assetId: bigint;
-        xcmLocation: StagingXcmV4Location;
+        assetXcmLocation: StagingXcmV4Location;
         decimals: number;
         symbol: BytesLike;
         name: BytesLike;
@@ -9207,13 +9185,23 @@ export type PalletMoonbeamForeignAssetsEvent =
   /**
    * New asset with the asset manager is registered
    **/
-  | { name: 'ForeignAssetCreated'; data: { contractAddress: H160; assetId: bigint; xcmLocation: StagingXcmV4Location } }
+  | {
+      name: 'ForeignAssetCreated';
+      data: { contractAddress: H160; assetId: bigint; xcmLocation: StagingXcmV4Location; deposit?: bigint | undefined };
+    }
   /**
    * Changed the xcm type mapping for a given asset id
    **/
-  | { name: 'ForeignAssetXcmLocationChanged'; data: { assetId: bigint; newXcmLocation: StagingXcmV4Location } }
+  | {
+      name: 'ForeignAssetXcmLocationChanged';
+      data: { assetId: bigint; previousXcmLocation: StagingXcmV4Location; newXcmLocation: StagingXcmV4Location };
+    }
   | { name: 'ForeignAssetFrozen'; data: { assetId: bigint; xcmLocation: StagingXcmV4Location } }
-  | { name: 'ForeignAssetUnfrozen'; data: { assetId: bigint; xcmLocation: StagingXcmV4Location } };
+  | { name: 'ForeignAssetUnfrozen'; data: { assetId: bigint; xcmLocation: StagingXcmV4Location } }
+  /**
+   * Tokens have been locked for asset creation
+   **/
+  | { name: 'TokensLocked'; data: [AccountId20, bigint, U256] };
 
 /**
  * The `Event` enum of this pallet
@@ -9667,7 +9655,6 @@ export type PalletParachainStakingError =
   | 'TooLowCandidateCountWeightHintGoOffline'
   | 'CandidateLimitReached'
   | 'CannotSetAboveMaxCandidates'
-  | 'RemovedCall'
   | 'MarkingOfflineNotEnabled'
   | 'CurrentRoundTooLow';
 
@@ -11201,6 +11188,10 @@ export type PalletMessageQueueError =
 
 export type PalletMoonbeamForeignAssetsAssetStatus = 'Active' | 'FrozenXcmDepositAllowed' | 'FrozenXcmDepositForbidden';
 
+export type PalletMoonbeamForeignAssetsAssetDepositDetails = { depositAccount: AccountId20; deposit: bigint };
+
+export type MoonbeamRuntimeRuntime = {};
+
 /**
  * An error that can occur while executing the mapping pallet's logic.
  **/
@@ -11215,6 +11206,13 @@ export type PalletMoonbeamForeignAssetsError =
   | 'EvmCallPauseFail'
   | 'EvmCallUnpauseFail'
   | 'EvmInternalError'
+  /**
+   * Account has insufficient balance for locking
+   **/
+  | 'InsufficientBalance'
+  | 'CannotConvertLocationToAccount'
+  | 'LocationOutsideOfOrigin'
+  | 'AssetNotInSiblingPara'
   | 'InvalidSymbol'
   | 'InvalidTokenName'
   | 'LocationAlreadyExists'
@@ -11323,8 +11321,6 @@ export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataH
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
 export type CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim = {};
-
-export type MoonbeamRuntimeRuntime = {};
 
 export type SpRuntimeTransactionValidityTransactionSource = 'InBlock' | 'Local' | 'External';
 

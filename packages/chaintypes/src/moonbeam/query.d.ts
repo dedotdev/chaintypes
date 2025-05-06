@@ -103,6 +103,7 @@ import type {
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMessageQueuePage,
   PalletMoonbeamForeignAssetsAssetStatus,
+  PalletMoonbeamForeignAssetsAssetDepositDetails,
   PalletEmergencyParaXcmXcmMode,
   PalletRandomnessRequestState,
   PalletRandomnessRandomnessResult,
@@ -1363,12 +1364,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * Current building block's transactions and receipts.
      *
-     * @param {Callback<Array<[EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3]>> =} callback
+     * @param {number} arg
+     * @param {Callback<[EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3] | undefined> =} callback
      **/
     pending: GenericStorageQuery<
       Rv,
-      () => Array<[EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3]>
+      (arg: number) => [EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3] | undefined,
+      number
     >;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForPending: GenericStorageQuery<Rv, () => number>;
 
     /**
      * The current Ethereum block.
@@ -2302,6 +2312,18 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       Rv,
       (arg: StagingXcmV4Location) => [bigint, PalletMoonbeamForeignAssetsAssetStatus] | undefined,
       StagingXcmV4Location
+    >;
+
+    /**
+     * Mapping from an asset id to its creation details
+     *
+     * @param {bigint} arg
+     * @param {Callback<PalletMoonbeamForeignAssetsAssetDepositDetails | undefined> =} callback
+     **/
+    assetsCreationDetails: GenericStorageQuery<
+      Rv,
+      (arg: bigint) => PalletMoonbeamForeignAssetsAssetDepositDetails | undefined,
+      bigint
     >;
 
     /**

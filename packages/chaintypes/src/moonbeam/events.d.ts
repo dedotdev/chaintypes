@@ -12,6 +12,7 @@ import type {
   Result,
   Bytes,
   H160,
+  U256,
 } from 'dedot/codecs';
 import type {
   SpWeightsWeightV2Weight,
@@ -2891,7 +2892,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'EvmForeignAssets',
       'ForeignAssetCreated',
-      { contractAddress: H160; assetId: bigint; xcmLocation: StagingXcmV4Location }
+      { contractAddress: H160; assetId: bigint; xcmLocation: StagingXcmV4Location; deposit?: bigint | undefined }
     >;
 
     /**
@@ -2901,7 +2902,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'EvmForeignAssets',
       'ForeignAssetXcmLocationChanged',
-      { assetId: bigint; newXcmLocation: StagingXcmV4Location }
+      { assetId: bigint; previousXcmLocation: StagingXcmV4Location; newXcmLocation: StagingXcmV4Location }
     >;
     ForeignAssetFrozen: GenericPalletEvent<
       Rv,
@@ -2915,6 +2916,11 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ForeignAssetUnfrozen',
       { assetId: bigint; xcmLocation: StagingXcmV4Location }
     >;
+
+    /**
+     * Tokens have been locked for asset creation
+     **/
+    TokensLocked: GenericPalletEvent<Rv, 'EvmForeignAssets', 'TokensLocked', [AccountId20, bigint, U256]>;
 
     /**
      * Generic pallet event

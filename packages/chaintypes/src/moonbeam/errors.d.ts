@@ -237,7 +237,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     TooLowCandidateCountWeightHintGoOffline: GenericPalletError<Rv>;
     CandidateLimitReached: GenericPalletError<Rv>;
     CannotSetAboveMaxCandidates: GenericPalletError<Rv>;
-    RemovedCall: GenericPalletError<Rv>;
     MarkingOfflineNotEnabled: GenericPalletError<Rv>;
     CurrentRoundTooLow: GenericPalletError<Rv>;
 
@@ -1839,6 +1838,14 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     EvmCallPauseFail: GenericPalletError<Rv>;
     EvmCallUnpauseFail: GenericPalletError<Rv>;
     EvmInternalError: GenericPalletError<Rv>;
+
+    /**
+     * Account has insufficient balance for locking
+     **/
+    InsufficientBalance: GenericPalletError<Rv>;
+    CannotConvertLocationToAccount: GenericPalletError<Rv>;
+    LocationOutsideOfOrigin: GenericPalletError<Rv>;
+    AssetNotInSiblingPara: GenericPalletError<Rv>;
     InvalidSymbol: GenericPalletError<Rv>;
     InvalidTokenName: GenericPalletError<Rv>;
     LocationAlreadyExists: GenericPalletError<Rv>;

@@ -28,18 +28,18 @@ import type {
   PolkadotPrimitivesV8ValidatorAppPublic,
   PolkadotPrimitivesV8ValidatorIndex,
   PolkadotPrimitivesV8GroupRotationInfo,
-  PolkadotPrimitivesV8CoreState,
+  PolkadotPrimitivesVstagingCoreState,
   PolkadotPrimitivesV8PersistedValidationData,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotPrimitivesV8OccupiedCoreAssumption,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotPrimitivesV8CandidateCommitments,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
-  PolkadotPrimitivesV8CommittedCandidateReceipt,
-  PolkadotPrimitivesV8CandidateEvent,
+  PolkadotPrimitivesVstagingCommittedCandidateReceiptV2,
+  PolkadotPrimitivesVstagingCandidateEvent,
   PolkadotCorePrimitivesInboundDownwardMessage,
   PolkadotCorePrimitivesInboundHrmpMessage,
-  PolkadotPrimitivesV8ScrapedOnChainVotes,
+  PolkadotPrimitivesVstagingScrapedOnChainVotes,
   PolkadotPrimitivesV8SessionInfo,
   PolkadotPrimitivesV8PvfCheckStatement,
   PolkadotPrimitivesV8ValidatorAppSignature,
@@ -49,7 +49,7 @@ import type {
   PolkadotPrimitivesV8SlashingPendingSlashes,
   PolkadotPrimitivesV8SlashingOpaqueKeyOwnershipProof,
   PolkadotPrimitivesV8SlashingDisputeProof,
-  PolkadotPrimitivesV8AsyncBackingBackingState,
+  PolkadotPrimitivesVstagingAsyncBackingBackingState,
   PolkadotPrimitivesV8AsyncBackingAsyncBackingParams,
   PolkadotPrimitivesV8ApprovalVotingParams,
   PolkadotPrimitivesV8CoreIndex,
@@ -314,7 +314,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_availability_cores
      **/
-    availabilityCores: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesV8CoreState>>>;
+    availabilityCores: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesVstagingCoreState>>>;
 
     /**
      * Yields the persisted validation data for the given `ParaId` along with an assumption that
@@ -408,7 +408,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       Rv,
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-      ) => Promise<PolkadotPrimitivesV8CommittedCandidateReceipt | undefined>
+      ) => Promise<PolkadotPrimitivesVstagingCommittedCandidateReceiptV2 | undefined>
     >;
 
     /**
@@ -416,7 +416,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_candidate_events
      **/
-    candidateEvents: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesV8CandidateEvent>>>;
+    candidateEvents: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotPrimitivesVstagingCandidateEvent>>>;
 
     /**
      * Get all the pending inbound messages in the downward message queue for a para.
@@ -463,7 +463,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: ParachainHost_on_chain_votes
      **/
-    onChainVotes: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotPrimitivesV8ScrapedOnChainVotes | undefined>>;
+    onChainVotes: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotPrimitivesVstagingScrapedOnChainVotes | undefined>>;
 
     /**
      * Get the session info for the given session, if stored.
@@ -593,13 +593,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * Returns the state of parachain backing for a given para.
      *
      * @callname: ParachainHost_para_backing_state
-     * @param {PolkadotParachainPrimitivesPrimitivesId} _
+     * @param {PolkadotParachainPrimitivesPrimitivesId} __runtime_api_generated_name_0__
      **/
     paraBackingState: GenericRuntimeApiMethod<
       Rv,
       (
-        undefined: PolkadotParachainPrimitivesPrimitivesId,
-      ) => Promise<PolkadotPrimitivesV8AsyncBackingBackingState | undefined>
+        runtimeApiGeneratedName0: PolkadotParachainPrimitivesPrimitivesId,
+      ) => Promise<PolkadotPrimitivesVstagingAsyncBackingBackingState | undefined>
     >;
 
     /**
@@ -649,8 +649,17 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     candidatesPendingAvailability: GenericRuntimeApiMethod<
       Rv,
-      (paraId: PolkadotParachainPrimitivesPrimitivesId) => Promise<Array<PolkadotPrimitivesV8CommittedCandidateReceipt>>
+      (
+        paraId: PolkadotParachainPrimitivesPrimitivesId,
+      ) => Promise<Array<PolkadotPrimitivesVstagingCommittedCandidateReceiptV2>>
     >;
+
+    /**
+     * Retrieve the maximum uncompressed code size.
+     *
+     * @callname: ParachainHost_validation_code_bomb_limit
+     **/
+    validationCodeBombLimit: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
 
     /**
      * Generic runtime api call
@@ -1288,17 +1297,19 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
    **/
   dryRunApi: {
     /**
-     * Dry run call.
+     * Dry run call V2.
      *
      * @callname: DryRunApi_dry_run_call
      * @param {StagingKusamaRuntimeOriginCaller} origin
      * @param {StagingKusamaRuntimeRuntimeCallLike} call
+     * @param {number} result_xcms_version
      **/
     dryRunCall: GenericRuntimeApiMethod<
       Rv,
       (
         origin: StagingKusamaRuntimeOriginCaller,
         call: StagingKusamaRuntimeRuntimeCallLike,
+        resultXcmsVersion: number,
       ) => Promise<Result<XcmRuntimeApisDryRunCallDryRunEffects, XcmRuntimeApisDryRunError>>
     >;
 
@@ -1383,9 +1394,6 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     /**
      * Returns the pending slash for a given pool member.
      *
-     * If pending slash of the member exceeds `ExistentialDeposit`, it can be reported on
-     * chain.
-     *
      * @callname: NominationPoolsApi_member_pending_slash
      * @param {AccountId32Like} member
      **/
@@ -1437,6 +1445,14 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     poolBalance: GenericRuntimeApiMethod<Rv, (poolId: number) => Promise<bigint>>;
 
     /**
+     * Returns the bonded account and reward account associated with the pool_id.
+     *
+     * @callname: NominationPoolsApi_pool_accounts
+     * @param {number} pool_id
+     **/
+    poolAccounts: GenericRuntimeApiMethod<Rv, (poolId: number) => Promise<[AccountId32, AccountId32]>>;
+
+    /**
      * Generic runtime api call
      **/
     [method: string]: GenericRuntimeApiMethod<Rv>;
@@ -1484,9 +1500,10 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * Build `RuntimeGenesisConfig` from a JSON blob not using any defaults and store it in the
      * storage.
      *
-     * In the case of a FRAME-based runtime, this function deserializes the full `RuntimeGenesisConfig` from the given JSON blob and
-     * puts it into the storage. If the provided JSON blob is incorrect or incomplete or the
-     * deserialization fails, an error is returned.
+     * In the case of a FRAME-based runtime, this function deserializes the full
+     * `RuntimeGenesisConfig` from the given JSON blob and puts it into the storage. If the
+     * provided JSON blob is incorrect or incomplete or the deserialization fails, an error
+     * is returned.
      *
      * Please note that provided JSON blob must contain all `RuntimeGenesisConfig` fields, no
      * defaults will be used.
@@ -1500,7 +1517,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * Returns a JSON blob representation of the built-in `RuntimeGenesisConfig` identified by
      * `id`.
      *
-     * If `id` is `None` the function returns JSON blob representation of the default
+     * If `id` is `None` the function should return JSON blob representation of the default
      * `RuntimeGenesisConfig` struct of the runtime. Implementation must provide default
      * `RuntimeGenesisConfig`.
      *

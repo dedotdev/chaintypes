@@ -9,7 +9,7 @@ import type {
   FrameSupportPalletId,
   PalletReferendaTrackInfo,
   SpWeightsWeightV2Weight,
-  StagingXcmV4Junctions,
+  StagingXcmV5Junctions,
 } from './types.js';
 
 export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<Rv> {
@@ -373,6 +373,9 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     palletId: FrameSupportPalletId;
 
     /**
+     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+     *
      * The maximum number of approvals that can wait in the spending queue.
      *
      * NOTE: This parameter is also used within the Bounties Pallet extension if enabled.
@@ -1435,7 +1438,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     /**
      * The coretime chain pot location.
      **/
-    brokerPotLocation: StagingXcmV4Junctions;
+    brokerPotLocation: StagingXcmV5Junctions;
 
     /**
      * Generic pallet constant

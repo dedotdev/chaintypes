@@ -3,7 +3,6 @@
 import type {
   Phase,
   H256,
-  DispatchInfo,
   DispatchError,
   AccountId32,
   Perbill,
@@ -111,11 +110,11 @@ export type FrameSystemEvent =
   /**
    * An extrinsic completed successfully.
    **/
-  | { name: 'ExtrinsicSuccess'; data: { dispatchInfo: DispatchInfo } }
+  | { name: 'ExtrinsicSuccess'; data: { dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
    * An extrinsic failed.
    **/
-  | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: DispatchInfo } }
+  | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
    * `:code` was updated.
    **/
@@ -137,9 +136,31 @@ export type FrameSystemEvent =
    **/
   | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } };
 
+export type FrameSystemDispatchEventInfo = {
+  weight: SpWeightsWeightV2Weight;
+  class: FrameSupportDispatchDispatchClass;
+  paysFee: FrameSupportDispatchPays;
+};
+
 export type FrameSupportDispatchDispatchClass = 'Normal' | 'Operational' | 'Mandatory';
 
 export type FrameSupportDispatchPays = 'Yes' | 'No';
+
+export type SpRuntimeProvingTrieTrieError =
+  | 'InvalidStateRoot'
+  | 'IncompleteDatabase'
+  | 'ValueAtIncompleteKey'
+  | 'DecoderError'
+  | 'InvalidHash'
+  | 'DuplicateKey'
+  | 'ExtraneousNode'
+  | 'ExtraneousValue'
+  | 'ExtraneousHashReference'
+  | 'InvalidChildReference'
+  | 'ValueMismatch'
+  | 'IncompleteProof'
+  | 'RootMismatch'
+  | 'DecodeError';
 
 /**
  * The `Event` enum of this pallet
@@ -333,9 +354,12 @@ export type PalletStakingPalletEvent =
    **/
   | { name: 'Chilled'; data: { stash: AccountId32 } }
   /**
-   * The stakers' rewards are getting paid.
+   * A Page of stakers rewards are getting paid. `next` is `None` if all pages are claimed.
    **/
-  | { name: 'PayoutStarted'; data: { eraIndex: number; validatorStash: AccountId32 } }
+  | {
+      name: 'PayoutStarted';
+      data: { eraIndex: number; validatorStash: AccountId32; page: number; next?: number | undefined };
+    }
   /**
    * A validator has set their preferences.
    **/
@@ -474,7 +498,8 @@ export type PalletTreasuryEvent =
 
 export type PolkadotRuntimeCommonImplsVersionedLocatableAsset =
   | { type: 'V3'; value: { location: StagingXcmV3MultilocationMultiLocation; assetId: XcmV3MultiassetAssetId } }
-  | { type: 'V4'; value: { location: StagingXcmV4Location; assetId: StagingXcmV4AssetAssetId } };
+  | { type: 'V4'; value: { location: StagingXcmV4Location; assetId: StagingXcmV4AssetAssetId } }
+  | { type: 'V5'; value: { location: StagingXcmV5Location; assetId: StagingXcmV5AssetAssetId } };
 
 export type StagingXcmV3MultilocationMultiLocation = { parents: number; interior: XcmV3Junctions };
 
@@ -592,74 +617,47 @@ export type StagingXcmV4JunctionNetworkId =
 
 export type StagingXcmV4AssetAssetId = StagingXcmV4Location;
 
-export type XcmVersionedLocation =
-  | { type: 'V2'; value: XcmV2MultilocationMultiLocation }
-  | { type: 'V3'; value: StagingXcmV3MultilocationMultiLocation }
-  | { type: 'V4'; value: StagingXcmV4Location };
+export type StagingXcmV5Location = { parents: number; interior: StagingXcmV5Junctions };
 
-export type XcmV2MultilocationMultiLocation = { parents: number; interior: XcmV2MultilocationJunctions };
-
-export type XcmV2MultilocationJunctions =
+export type StagingXcmV5Junctions =
   | { type: 'Here' }
-  | { type: 'X1'; value: XcmV2Junction }
-  | { type: 'X2'; value: [XcmV2Junction, XcmV2Junction] }
-  | { type: 'X3'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | { type: 'X4'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | { type: 'X5'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | { type: 'X6'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | {
-      type: 'X7';
-      value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction];
-    }
-  | {
-      type: 'X8';
-      value: [
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-      ];
-    };
+  | { type: 'X1'; value: FixedArray<StagingXcmV5Junction, 1> }
+  | { type: 'X2'; value: FixedArray<StagingXcmV5Junction, 2> }
+  | { type: 'X3'; value: FixedArray<StagingXcmV5Junction, 3> }
+  | { type: 'X4'; value: FixedArray<StagingXcmV5Junction, 4> }
+  | { type: 'X5'; value: FixedArray<StagingXcmV5Junction, 5> }
+  | { type: 'X6'; value: FixedArray<StagingXcmV5Junction, 6> }
+  | { type: 'X7'; value: FixedArray<StagingXcmV5Junction, 7> }
+  | { type: 'X8'; value: FixedArray<StagingXcmV5Junction, 8> };
 
-export type XcmV2Junction =
+export type StagingXcmV5Junction =
   | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network: XcmV2NetworkId; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network: XcmV2NetworkId; index: bigint } }
-  | { type: 'AccountKey20'; value: { network: XcmV2NetworkId; key: FixedBytes<20> } }
+  | { type: 'AccountId32'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; key: FixedBytes<20> } }
   | { type: 'PalletInstance'; value: number }
   | { type: 'GeneralIndex'; value: bigint }
-  | { type: 'GeneralKey'; value: Bytes }
+  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
   | { type: 'OnlyChild' }
-  | { type: 'Plurality'; value: { id: XcmV2BodyId; part: XcmV2BodyPart } };
+  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
+  | { type: 'GlobalConsensus'; value: StagingXcmV5JunctionNetworkId };
 
-export type XcmV2NetworkId =
-  | { type: 'Any' }
-  | { type: 'Named'; value: Bytes }
+export type StagingXcmV5JunctionNetworkId =
+  | { type: 'ByGenesis'; value: FixedBytes<32> }
+  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
   | { type: 'Polkadot' }
-  | { type: 'Kusama' };
+  | { type: 'Kusama' }
+  | { type: 'Ethereum'; value: { chainId: bigint } }
+  | { type: 'BitcoinCore' }
+  | { type: 'BitcoinCash' }
+  | { type: 'PolkadotBulletin' };
 
-export type XcmV2BodyId =
-  | { type: 'Unit' }
-  | { type: 'Named'; value: Bytes }
-  | { type: 'Index'; value: number }
-  | { type: 'Executive' }
-  | { type: 'Technical' }
-  | { type: 'Legislative' }
-  | { type: 'Judicial' }
-  | { type: 'Defense' }
-  | { type: 'Administration' }
-  | { type: 'Treasury' };
+export type StagingXcmV5AssetAssetId = StagingXcmV5Location;
 
-export type XcmV2BodyPart =
-  | { type: 'Voice' }
-  | { type: 'Members'; value: { count: number } }
-  | { type: 'Fraction'; value: { nom: number; denom: number } }
-  | { type: 'AtLeastProportion'; value: { nom: number; denom: number } }
-  | { type: 'MoreThanProportion'; value: { nom: number; denom: number } };
+export type XcmVersionedLocation =
+  | { type: 'V3'; value: StagingXcmV3MultilocationMultiLocation }
+  | { type: 'V4'; value: StagingXcmV4Location }
+  | { type: 'V5'; value: StagingXcmV5Location };
 
 /**
  * The `Event` enum of this pallet
@@ -1753,7 +1751,7 @@ export type PalletStakingPalletCall =
   /**
    * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
    * period ends. If this leaves an amount actively bonded less than
-   * T::Currency::minimum_balance(), then it is increased to the full amount.
+   * [`asset::existential_deposit`], then it is increased to the full amount.
    *
    * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
    *
@@ -2208,7 +2206,7 @@ export type PalletStakingPalletCallLike =
   /**
    * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
    * period ends. If this leaves an amount actively bonded less than
-   * T::Currency::minimum_balance(), then it is increased to the full amount.
+   * [`asset::existential_deposit`], then it is increased to the full amount.
    *
    * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
    *
@@ -3588,8 +3586,7 @@ export type StagingKusamaRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
   | { type: 'Origins'; value: StagingKusamaRuntimeGovernanceOriginsPalletCustomOriginsOrigin }
   | { type: 'ParachainsOrigin'; value: PolkadotRuntimeParachainsOriginPalletOrigin }
-  | { type: 'XcmPallet'; value: PalletXcmOrigin }
-  | { type: 'Void'; value: SpCoreVoid };
+  | { type: 'XcmPallet'; value: PalletXcmOrigin };
 
 export type FrameSupportDispatchRawOrigin =
   | { type: 'Root' }
@@ -3634,10 +3631,8 @@ export type PolkadotRuntimeParachainsOriginPalletOrigin = {
 export type PolkadotParachainPrimitivesPrimitivesId = number;
 
 export type PalletXcmOrigin =
-  | { type: 'Xcm'; value: StagingXcmV4Location }
-  | { type: 'Response'; value: StagingXcmV4Location };
-
-export type SpCoreVoid = null;
+  | { type: 'Xcm'; value: StagingXcmV5Location }
+  | { type: 'Response'; value: StagingXcmV5Location };
 
 export type FrameSupportScheduleDispatchTime = { type: 'At'; value: number } | { type: 'After'; value: number };
 
@@ -3970,7 +3965,7 @@ export type PolkadotRuntimeCommonClaimsPalletCall =
    * Attest to a statement, needed to finalize the claims process.
    *
    * WARNING: Insecure unless your chain includes `PrevalidateAttests` as a
-   * `SignedExtension`.
+   * `TransactionExtension`.
    *
    * Unsigned Validation:
    * A call to attest is deemed valid if the sender has a `Preclaim` registered
@@ -4088,7 +4083,7 @@ export type PolkadotRuntimeCommonClaimsPalletCallLike =
    * Attest to a statement, needed to finalize the claims process.
    *
    * WARNING: Insecure unless your chain includes `PrevalidateAttests` as a
-   * `SignedExtension`.
+   * `TransactionExtension`.
    *
    * Unsigned Validation:
    * A call to attest is deemed valid if the sender has a `Preclaim` registered
@@ -5401,7 +5396,7 @@ export type PalletProxyCall =
       name: 'Proxy';
       params: {
         real: MultiAddress;
-        forceProxyType?: StagingKusamaRuntimeProxyType | undefined;
+        forceProxyType?: KusamaRuntimeConstantsProxyProxyType | undefined;
         call: StagingKusamaRuntimeRuntimeCall;
       };
     }
@@ -5416,7 +5411,10 @@ export type PalletProxyCall =
    * - `delay`: The announcement period required of the initial proxy. Will generally be
    * zero.
    **/
-  | { name: 'AddProxy'; params: { delegate: MultiAddress; proxyType: StagingKusamaRuntimeProxyType; delay: number } }
+  | {
+      name: 'AddProxy';
+      params: { delegate: MultiAddress; proxyType: KusamaRuntimeConstantsProxyProxyType; delay: number };
+    }
   /**
    * Unregister a proxy account for the sender.
    *
@@ -5426,7 +5424,10 @@ export type PalletProxyCall =
    * - `proxy`: The account that the `caller` would like to remove as a proxy.
    * - `proxy_type`: The permissions currently enabled for the removed proxy account.
    **/
-  | { name: 'RemoveProxy'; params: { delegate: MultiAddress; proxyType: StagingKusamaRuntimeProxyType; delay: number } }
+  | {
+      name: 'RemoveProxy';
+      params: { delegate: MultiAddress; proxyType: KusamaRuntimeConstantsProxyProxyType; delay: number };
+    }
   /**
    * Unregister all proxy accounts for the sender.
    *
@@ -5456,7 +5457,7 @@ export type PalletProxyCall =
    *
    * Fails if there are insufficient funds to pay for deposit.
    **/
-  | { name: 'CreatePure'; params: { proxyType: StagingKusamaRuntimeProxyType; delay: number; index: number } }
+  | { name: 'CreatePure'; params: { proxyType: KusamaRuntimeConstantsProxyProxyType; delay: number; index: number } }
   /**
    * Removes a previously spawned pure proxy.
    *
@@ -5479,7 +5480,7 @@ export type PalletProxyCall =
       name: 'KillPure';
       params: {
         spawner: MultiAddress;
-        proxyType: StagingKusamaRuntimeProxyType;
+        proxyType: KusamaRuntimeConstantsProxyProxyType;
         index: number;
         height: number;
         extIndex: number;
@@ -5547,7 +5548,7 @@ export type PalletProxyCall =
       params: {
         delegate: MultiAddress;
         real: MultiAddress;
-        forceProxyType?: StagingKusamaRuntimeProxyType | undefined;
+        forceProxyType?: KusamaRuntimeConstantsProxyProxyType | undefined;
         call: StagingKusamaRuntimeRuntimeCall;
       };
     };
@@ -5568,7 +5569,7 @@ export type PalletProxyCallLike =
       name: 'Proxy';
       params: {
         real: MultiAddressLike;
-        forceProxyType?: StagingKusamaRuntimeProxyType | undefined;
+        forceProxyType?: KusamaRuntimeConstantsProxyProxyType | undefined;
         call: StagingKusamaRuntimeRuntimeCallLike;
       };
     }
@@ -5585,7 +5586,7 @@ export type PalletProxyCallLike =
    **/
   | {
       name: 'AddProxy';
-      params: { delegate: MultiAddressLike; proxyType: StagingKusamaRuntimeProxyType; delay: number };
+      params: { delegate: MultiAddressLike; proxyType: KusamaRuntimeConstantsProxyProxyType; delay: number };
     }
   /**
    * Unregister a proxy account for the sender.
@@ -5598,7 +5599,7 @@ export type PalletProxyCallLike =
    **/
   | {
       name: 'RemoveProxy';
-      params: { delegate: MultiAddressLike; proxyType: StagingKusamaRuntimeProxyType; delay: number };
+      params: { delegate: MultiAddressLike; proxyType: KusamaRuntimeConstantsProxyProxyType; delay: number };
     }
   /**
    * Unregister all proxy accounts for the sender.
@@ -5629,7 +5630,7 @@ export type PalletProxyCallLike =
    *
    * Fails if there are insufficient funds to pay for deposit.
    **/
-  | { name: 'CreatePure'; params: { proxyType: StagingKusamaRuntimeProxyType; delay: number; index: number } }
+  | { name: 'CreatePure'; params: { proxyType: KusamaRuntimeConstantsProxyProxyType; delay: number; index: number } }
   /**
    * Removes a previously spawned pure proxy.
    *
@@ -5652,7 +5653,7 @@ export type PalletProxyCallLike =
       name: 'KillPure';
       params: {
         spawner: MultiAddressLike;
-        proxyType: StagingKusamaRuntimeProxyType;
+        proxyType: KusamaRuntimeConstantsProxyProxyType;
         index: number;
         height: number;
         extIndex: number;
@@ -5720,12 +5721,12 @@ export type PalletProxyCallLike =
       params: {
         delegate: MultiAddressLike;
         real: MultiAddressLike;
-        forceProxyType?: StagingKusamaRuntimeProxyType | undefined;
+        forceProxyType?: KusamaRuntimeConstantsProxyProxyType | undefined;
         call: StagingKusamaRuntimeRuntimeCallLike;
       };
     };
 
-export type StagingKusamaRuntimeProxyType =
+export type KusamaRuntimeConstantsProxyProxyType =
   | 'Any'
   | 'NonTransfer'
   | 'Governance'
@@ -6224,7 +6225,21 @@ export type PalletBountiesCall =
    * ## Complexity
    * - O(1).
    **/
-  | { name: 'ExtendBountyExpiry'; params: { bountyId: number; remark: Bytes } };
+  | { name: 'ExtendBountyExpiry'; params: { bountyId: number; remark: Bytes } }
+  /**
+   * Approve bountry and propose a curator simultaneously.
+   * This call is a shortcut to calling `approve_bounty` and `propose_curator` separately.
+   *
+   * May only be called from `T::SpendOrigin`.
+   *
+   * - `bounty_id`: Bounty ID to approve.
+   * - `curator`: The curator account whom will manage this bounty.
+   * - `fee`: The curator fee.
+   *
+   * ## Complexity
+   * - O(1).
+   **/
+  | { name: 'ApproveBountyWithCurator'; params: { bountyId: number; curator: MultiAddress; fee: bigint } };
 
 export type PalletBountiesCallLike =
   /**
@@ -6338,7 +6353,21 @@ export type PalletBountiesCallLike =
    * ## Complexity
    * - O(1).
    **/
-  | { name: 'ExtendBountyExpiry'; params: { bountyId: number; remark: BytesLike } };
+  | { name: 'ExtendBountyExpiry'; params: { bountyId: number; remark: BytesLike } }
+  /**
+   * Approve bountry and propose a curator simultaneously.
+   * This call is a shortcut to calling `approve_bounty` and `propose_curator` separately.
+   *
+   * May only be called from `T::SpendOrigin`.
+   *
+   * - `bounty_id`: Bounty ID to approve.
+   * - `curator`: The curator account whom will manage this bounty.
+   * - `fee`: The curator fee.
+   *
+   * ## Complexity
+   * - O(1).
+   **/
+  | { name: 'ApproveBountyWithCurator'; params: { bountyId: number; curator: MultiAddressLike; fee: bigint } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -7055,9 +7084,8 @@ export type PalletBagsListCallLike =
  **/
 export type PalletNominationPoolsCall =
   /**
-   * Stake funds with a pool. The amount to bond is delegated (or transferred based on
-   * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
-   * increases the pool's bond.
+   * Stake funds with a pool. The amount to bond is transferred from the member to the pool
+   * account and immediately increases the pools bond.
    *
    * The method of transferring the amount to the pool account is determined by
    * [`adapter::StakeStrategyType`]. If the pool is configured to use
@@ -7379,10 +7407,8 @@ export type PalletNominationPoolsCall =
    * Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:
    * [`adapter::StakeStrategyType::Delegate`].
    *
-   * The pending slash amount of the member must be equal or more than `ExistentialDeposit`.
-   * This call can be dispatched permissionlessly (i.e. by any account). If the execution
-   * is successful, fee is refunded and caller may be rewarded with a part of the slash
-   * based on the [`crate::pallet::Config::StakeAdapter`] configuration.
+   * This call can be dispatched permissionlessly (i.e. by any account). If the member has
+   * slash to be applied, caller may be rewarded with the part of the slash.
    **/
   | { name: 'ApplySlash'; params: { memberAccount: MultiAddress } }
   /**
@@ -7412,9 +7438,8 @@ export type PalletNominationPoolsCall =
 
 export type PalletNominationPoolsCallLike =
   /**
-   * Stake funds with a pool. The amount to bond is delegated (or transferred based on
-   * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
-   * increases the pool's bond.
+   * Stake funds with a pool. The amount to bond is transferred from the member to the pool
+   * account and immediately increases the pools bond.
    *
    * The method of transferring the amount to the pool account is determined by
    * [`adapter::StakeStrategyType`]. If the pool is configured to use
@@ -7745,10 +7770,8 @@ export type PalletNominationPoolsCallLike =
    * Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:
    * [`adapter::StakeStrategyType::Delegate`].
    *
-   * The pending slash amount of the member must be equal or more than `ExistentialDeposit`.
-   * This call can be dispatched permissionlessly (i.e. by any account). If the execution
-   * is successful, fee is refunded and caller may be rewarded with a part of the slash
-   * based on the [`crate::pallet::Config::StakeAdapter`] configuration.
+   * This call can be dispatched permissionlessly (i.e. by any account). If the member has
+   * slash to be applied, caller may be rewarded with the part of the slash.
    **/
   | { name: 'ApplySlash'; params: { memberAccount: MultiAddressLike } }
   /**
@@ -7981,10 +8004,6 @@ export type PolkadotRuntimeParachainsConfigurationPalletCall =
    **/
   | { name: 'SetCoretimeCores'; params: { new: number } }
   /**
-   * Set the max number of times a claim may timeout on a core before it is abandoned
-   **/
-  | { name: 'SetMaxAvailabilityTimeouts'; params: { new: number } }
-  /**
    * Set the parachain validator-group rotation frequency
    **/
   | { name: 'SetGroupRotationFrequency'; params: { new: number } }
@@ -8131,10 +8150,6 @@ export type PolkadotRuntimeParachainsConfigurationPalletCall =
    * Set the on demand (parathreads) fee variability.
    **/
   | { name: 'SetOnDemandTargetQueueUtilization'; params: { new: Perbill } }
-  /**
-   * Set the on demand (parathreads) ttl in the claimqueue.
-   **/
-  | { name: 'SetOnDemandTtl'; params: { new: number } }
   /**
    * Set the minimum backing votes threshold.
    **/
@@ -8185,10 +8200,6 @@ export type PolkadotRuntimeParachainsConfigurationPalletCallLike =
    **/
   | { name: 'SetCoretimeCores'; params: { new: number } }
   /**
-   * Set the max number of times a claim may timeout on a core before it is abandoned
-   **/
-  | { name: 'SetMaxAvailabilityTimeouts'; params: { new: number } }
-  /**
    * Set the parachain validator-group rotation frequency
    **/
   | { name: 'SetGroupRotationFrequency'; params: { new: number } }
@@ -8335,10 +8346,6 @@ export type PolkadotRuntimeParachainsConfigurationPalletCallLike =
    * Set the on demand (parathreads) fee variability.
    **/
   | { name: 'SetOnDemandTargetQueueUtilization'; params: { new: Perbill } }
-  /**
-   * Set the on demand (parathreads) ttl in the claimqueue.
-   **/
-  | { name: 'SetOnDemandTtl'; params: { new: number } }
   /**
    * Set the minimum backing votes threshold.
    **/
@@ -8413,17 +8420,17 @@ export type PolkadotRuntimeParachainsParasInherentPalletCall =
   /**
    * Enter the paras inherent. This will process bitfields and backed candidates.
    **/
-  { name: 'Enter'; params: { data: PolkadotPrimitivesV8InherentData } };
+  { name: 'Enter'; params: { data: PolkadotPrimitivesVstagingInherentData } };
 
 export type PolkadotRuntimeParachainsParasInherentPalletCallLike =
   /**
    * Enter the paras inherent. This will process bitfields and backed candidates.
    **/
-  { name: 'Enter'; params: { data: PolkadotPrimitivesV8InherentData } };
+  { name: 'Enter'; params: { data: PolkadotPrimitivesVstagingInherentData } };
 
-export type PolkadotPrimitivesV8InherentData = {
+export type PolkadotPrimitivesVstagingInherentData = {
   bitfields: Array<PolkadotPrimitivesV8SignedUncheckedSigned>;
-  backedCandidates: Array<PolkadotPrimitivesV8BackedCandidate>;
+  backedCandidates: Array<PolkadotPrimitivesVstagingBackedCandidate>;
   disputes: Array<PolkadotPrimitivesV8DisputeStatementSet>;
   parentHeader: Header;
 };
@@ -8442,32 +8449,33 @@ export type PolkadotPrimitivesV8ValidatorIndex = number;
 
 export type PolkadotPrimitivesV8ValidatorAppSignature = FixedBytes<64>;
 
-export type PolkadotPrimitivesV8BackedCandidate = {
-  candidate: PolkadotPrimitivesV8CommittedCandidateReceipt;
+export type PolkadotPrimitivesVstagingBackedCandidate = {
+  candidate: PolkadotPrimitivesVstagingCommittedCandidateReceiptV2;
   validityVotes: Array<PolkadotPrimitivesV8ValidityAttestation>;
   validatorIndices: BitSequence;
 };
 
-export type PolkadotPrimitivesV8CommittedCandidateReceipt = {
-  descriptor: PolkadotPrimitivesV8CandidateDescriptor;
+export type PolkadotPrimitivesVstagingCommittedCandidateReceiptV2 = {
+  descriptor: PolkadotPrimitivesVstagingCandidateDescriptorV2;
   commitments: PolkadotPrimitivesV8CandidateCommitments;
 };
 
-export type PolkadotPrimitivesV8CandidateDescriptor = {
+export type PolkadotPrimitivesVstagingCandidateDescriptorV2 = {
   paraId: PolkadotParachainPrimitivesPrimitivesId;
   relayParent: H256;
-  collator: PolkadotPrimitivesV8CollatorAppPublic;
+  version: PolkadotPrimitivesVstagingInternalVersion;
+  coreIndex: number;
+  sessionIndex: number;
+  reserved1: FixedBytes<25>;
   persistedValidationDataHash: H256;
   povHash: H256;
   erasureRoot: H256;
-  signature: PolkadotPrimitivesV8CollatorAppSignature;
+  reserved2: FixedBytes<64>;
   paraHead: H256;
   validationCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
 };
 
-export type PolkadotPrimitivesV8CollatorAppPublic = FixedBytes<32>;
-
-export type PolkadotPrimitivesV8CollatorAppSignature = FixedBytes<64>;
+export type PolkadotPrimitivesVstagingInternalVersion = number;
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCodeHash = H256;
 
@@ -9978,7 +9986,7 @@ export type PalletXcmCall =
    * - `location`: The destination that is being described.
    * - `xcm_version`: The latest version of XCM that `location` supports.
    **/
-  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV4Location; version: number } }
+  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV5Location; version: number } }
   /**
    * Set a safe XCM version (the version that XCM should be encoded with if the most recent
    * version a destination can accept is unknown).
@@ -10290,7 +10298,7 @@ export type PalletXcmCallLike =
    * - `location`: The destination that is being described.
    * - `xcm_version`: The latest version of XCM that `location` supports.
    **/
-  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV4Location; version: number } }
+  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV5Location; version: number } }
   /**
    * Set a safe XCM version (the version that XCM should be encoded with if the most recent
    * version a destination can accept is unknown).
@@ -10512,150 +10520,9 @@ export type PalletXcmCallLike =
     };
 
 export type XcmVersionedXcm =
-  | { type: 'V2'; value: XcmV2Xcm }
   | { type: 'V3'; value: XcmV3Xcm }
-  | { type: 'V4'; value: StagingXcmV4Xcm };
-
-export type XcmV2Xcm = Array<XcmV2Instruction>;
-
-export type XcmV2Instruction =
-  | { type: 'WithdrawAsset'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'ReserveAssetDeposited'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'ReceiveTeleportedAsset'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'QueryResponse'; value: { queryId: bigint; response: XcmV2Response; maxWeight: bigint } }
-  | {
-      type: 'TransferAsset';
-      value: { assets: XcmV2MultiassetMultiAssets; beneficiary: XcmV2MultilocationMultiLocation };
-    }
-  | {
-      type: 'TransferReserveAsset';
-      value: { assets: XcmV2MultiassetMultiAssets; dest: XcmV2MultilocationMultiLocation; xcm: XcmV2Xcm };
-    }
-  | { type: 'Transact'; value: { originType: XcmV2OriginKind; requireWeightAtMost: bigint; call: XcmDoubleEncoded } }
-  | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
-  | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
-  | { type: 'HrmpChannelClosing'; value: { initiator: number; sender: number; recipient: number } }
-  | { type: 'ClearOrigin' }
-  | { type: 'DescendOrigin'; value: XcmV2MultilocationJunctions }
-  | {
-      type: 'ReportError';
-      value: { queryId: bigint; dest: XcmV2MultilocationMultiLocation; maxResponseWeight: bigint };
-    }
-  | {
-      type: 'DepositAsset';
-      value: {
-        assets: XcmV2MultiassetMultiAssetFilter;
-        maxAssets: number;
-        beneficiary: XcmV2MultilocationMultiLocation;
-      };
-    }
-  | {
-      type: 'DepositReserveAsset';
-      value: {
-        assets: XcmV2MultiassetMultiAssetFilter;
-        maxAssets: number;
-        dest: XcmV2MultilocationMultiLocation;
-        xcm: XcmV2Xcm;
-      };
-    }
-  | { type: 'ExchangeAsset'; value: { give: XcmV2MultiassetMultiAssetFilter; receive: XcmV2MultiassetMultiAssets } }
-  | {
-      type: 'InitiateReserveWithdraw';
-      value: { assets: XcmV2MultiassetMultiAssetFilter; reserve: XcmV2MultilocationMultiLocation; xcm: XcmV2Xcm };
-    }
-  | {
-      type: 'InitiateTeleport';
-      value: { assets: XcmV2MultiassetMultiAssetFilter; dest: XcmV2MultilocationMultiLocation; xcm: XcmV2Xcm };
-    }
-  | {
-      type: 'QueryHolding';
-      value: {
-        queryId: bigint;
-        dest: XcmV2MultilocationMultiLocation;
-        assets: XcmV2MultiassetMultiAssetFilter;
-        maxResponseWeight: bigint;
-      };
-    }
-  | { type: 'BuyExecution'; value: { fees: XcmV2MultiassetMultiAsset; weightLimit: XcmV2WeightLimit } }
-  | { type: 'RefundSurplus' }
-  | { type: 'SetErrorHandler'; value: XcmV2Xcm }
-  | { type: 'SetAppendix'; value: XcmV2Xcm }
-  | { type: 'ClearError' }
-  | { type: 'ClaimAsset'; value: { assets: XcmV2MultiassetMultiAssets; ticket: XcmV2MultilocationMultiLocation } }
-  | { type: 'Trap'; value: bigint }
-  | { type: 'SubscribeVersion'; value: { queryId: bigint; maxResponseWeight: bigint } }
-  | { type: 'UnsubscribeVersion' };
-
-export type XcmV2MultiassetMultiAssets = Array<XcmV2MultiassetMultiAsset>;
-
-export type XcmV2MultiassetMultiAsset = { id: XcmV2MultiassetAssetId; fun: XcmV2MultiassetFungibility };
-
-export type XcmV2MultiassetAssetId =
-  | { type: 'Concrete'; value: XcmV2MultilocationMultiLocation }
-  | { type: 'Abstract'; value: Bytes };
-
-export type XcmV2MultiassetFungibility =
-  | { type: 'Fungible'; value: bigint }
-  | { type: 'NonFungible'; value: XcmV2MultiassetAssetInstance };
-
-export type XcmV2MultiassetAssetInstance =
-  | { type: 'Undefined' }
-  | { type: 'Index'; value: bigint }
-  | { type: 'Array4'; value: FixedBytes<4> }
-  | { type: 'Array8'; value: FixedBytes<8> }
-  | { type: 'Array16'; value: FixedBytes<16> }
-  | { type: 'Array32'; value: FixedBytes<32> }
-  | { type: 'Blob'; value: Bytes };
-
-export type XcmV2Response =
-  | { type: 'Null' }
-  | { type: 'Assets'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'ExecutionResult'; value?: [number, XcmV2TraitsError] | undefined }
-  | { type: 'Version'; value: number };
-
-export type XcmV2TraitsError =
-  | { type: 'Overflow' }
-  | { type: 'Unimplemented' }
-  | { type: 'UntrustedReserveLocation' }
-  | { type: 'UntrustedTeleportLocation' }
-  | { type: 'MultiLocationFull' }
-  | { type: 'MultiLocationNotInvertible' }
-  | { type: 'BadOrigin' }
-  | { type: 'InvalidLocation' }
-  | { type: 'AssetNotFound' }
-  | { type: 'FailedToTransactAsset' }
-  | { type: 'NotWithdrawable' }
-  | { type: 'LocationCannotHold' }
-  | { type: 'ExceedsMaxMessageSize' }
-  | { type: 'DestinationUnsupported' }
-  | { type: 'Transport' }
-  | { type: 'Unroutable' }
-  | { type: 'UnknownClaim' }
-  | { type: 'FailedToDecode' }
-  | { type: 'MaxWeightInvalid' }
-  | { type: 'NotHoldingFees' }
-  | { type: 'TooExpensive' }
-  | { type: 'Trap'; value: bigint }
-  | { type: 'UnhandledXcmVersion' }
-  | { type: 'WeightLimitReached'; value: bigint }
-  | { type: 'Barrier' }
-  | { type: 'WeightNotComputable' };
-
-export type XcmV2OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
-
-export type XcmDoubleEncoded = { encoded: Bytes };
-
-export type XcmV2MultiassetMultiAssetFilter =
-  | { type: 'Definite'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'Wild'; value: XcmV2MultiassetWildMultiAsset };
-
-export type XcmV2MultiassetWildMultiAsset =
-  | { type: 'All' }
-  | { type: 'AllOf'; value: { id: XcmV2MultiassetAssetId; fun: XcmV2MultiassetWildFungibility } };
-
-export type XcmV2MultiassetWildFungibility = 'Fungible' | 'NonFungible';
-
-export type XcmV2WeightLimit = { type: 'Unlimited' } | { type: 'Limited'; value: bigint };
+  | { type: 'V4'; value: StagingXcmV4Xcm }
+  | { type: 'V5'; value: StagingXcmV5Xcm };
 
 export type XcmV3Xcm = Array<XcmV3Instruction>;
 
@@ -10842,6 +10709,8 @@ export type XcmV3MaybeErrorCode =
 
 export type XcmV3OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
 
+export type XcmDoubleEncoded = { encoded: Bytes };
+
 export type XcmV3QueryResponseInfo = {
   destination: StagingXcmV3MultilocationMultiLocation;
   queryId: bigint;
@@ -11006,10 +10875,221 @@ export type StagingXcmV4AssetWildAsset =
 
 export type StagingXcmV4AssetWildFungibility = 'Fungible' | 'NonFungible';
 
+export type StagingXcmV5Xcm = Array<StagingXcmV5Instruction>;
+
+export type StagingXcmV5Instruction =
+  | { type: 'WithdrawAsset'; value: StagingXcmV5AssetAssets }
+  | { type: 'ReserveAssetDeposited'; value: StagingXcmV5AssetAssets }
+  | { type: 'ReceiveTeleportedAsset'; value: StagingXcmV5AssetAssets }
+  | {
+      type: 'QueryResponse';
+      value: {
+        queryId: bigint;
+        response: StagingXcmV5Response;
+        maxWeight: SpWeightsWeightV2Weight;
+        querier?: StagingXcmV5Location | undefined;
+      };
+    }
+  | { type: 'TransferAsset'; value: { assets: StagingXcmV5AssetAssets; beneficiary: StagingXcmV5Location } }
+  | {
+      type: 'TransferReserveAsset';
+      value: { assets: StagingXcmV5AssetAssets; dest: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
+    }
+  | {
+      type: 'Transact';
+      value: {
+        originKind: XcmV3OriginKind;
+        fallbackMaxWeight?: SpWeightsWeightV2Weight | undefined;
+        call: XcmDoubleEncoded;
+      };
+    }
+  | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
+  | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
+  | { type: 'HrmpChannelClosing'; value: { initiator: number; sender: number; recipient: number } }
+  | { type: 'ClearOrigin' }
+  | { type: 'DescendOrigin'; value: StagingXcmV5Junctions }
+  | { type: 'ReportError'; value: StagingXcmV5QueryResponseInfo }
+  | { type: 'DepositAsset'; value: { assets: StagingXcmV5AssetAssetFilter; beneficiary: StagingXcmV5Location } }
+  | {
+      type: 'DepositReserveAsset';
+      value: { assets: StagingXcmV5AssetAssetFilter; dest: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
+    }
+  | {
+      type: 'ExchangeAsset';
+      value: { give: StagingXcmV5AssetAssetFilter; want: StagingXcmV5AssetAssets; maximal: boolean };
+    }
+  | {
+      type: 'InitiateReserveWithdraw';
+      value: { assets: StagingXcmV5AssetAssetFilter; reserve: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
+    }
+  | {
+      type: 'InitiateTeleport';
+      value: { assets: StagingXcmV5AssetAssetFilter; dest: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
+    }
+  | {
+      type: 'ReportHolding';
+      value: { responseInfo: StagingXcmV5QueryResponseInfo; assets: StagingXcmV5AssetAssetFilter };
+    }
+  | { type: 'BuyExecution'; value: { fees: StagingXcmV5Asset; weightLimit: XcmV3WeightLimit } }
+  | { type: 'RefundSurplus' }
+  | { type: 'SetErrorHandler'; value: StagingXcmV5Xcm }
+  | { type: 'SetAppendix'; value: StagingXcmV5Xcm }
+  | { type: 'ClearError' }
+  | { type: 'ClaimAsset'; value: { assets: StagingXcmV5AssetAssets; ticket: StagingXcmV5Location } }
+  | { type: 'Trap'; value: bigint }
+  | { type: 'SubscribeVersion'; value: { queryId: bigint; maxResponseWeight: SpWeightsWeightV2Weight } }
+  | { type: 'UnsubscribeVersion' }
+  | { type: 'BurnAsset'; value: StagingXcmV5AssetAssets }
+  | { type: 'ExpectAsset'; value: StagingXcmV5AssetAssets }
+  | { type: 'ExpectOrigin'; value?: StagingXcmV5Location | undefined }
+  | { type: 'ExpectError'; value?: [number, XcmV5TraitsError] | undefined }
+  | { type: 'ExpectTransactStatus'; value: XcmV3MaybeErrorCode }
+  | { type: 'QueryPallet'; value: { moduleName: Bytes; responseInfo: StagingXcmV5QueryResponseInfo } }
+  | {
+      type: 'ExpectPallet';
+      value: { index: number; name: Bytes; moduleName: Bytes; crateMajor: number; minCrateMinor: number };
+    }
+  | { type: 'ReportTransactStatus'; value: StagingXcmV5QueryResponseInfo }
+  | { type: 'ClearTransactStatus' }
+  | { type: 'UniversalOrigin'; value: StagingXcmV5Junction }
+  | {
+      type: 'ExportMessage';
+      value: { network: StagingXcmV5JunctionNetworkId; destination: StagingXcmV5Junctions; xcm: StagingXcmV5Xcm };
+    }
+  | { type: 'LockAsset'; value: { asset: StagingXcmV5Asset; unlocker: StagingXcmV5Location } }
+  | { type: 'UnlockAsset'; value: { asset: StagingXcmV5Asset; target: StagingXcmV5Location } }
+  | { type: 'NoteUnlockable'; value: { asset: StagingXcmV5Asset; owner: StagingXcmV5Location } }
+  | { type: 'RequestUnlock'; value: { asset: StagingXcmV5Asset; locker: StagingXcmV5Location } }
+  | { type: 'SetFeesMode'; value: { jitWithdraw: boolean } }
+  | { type: 'SetTopic'; value: FixedBytes<32> }
+  | { type: 'ClearTopic' }
+  | { type: 'AliasOrigin'; value: StagingXcmV5Location }
+  | {
+      type: 'UnpaidExecution';
+      value: { weightLimit: XcmV3WeightLimit; checkOrigin?: StagingXcmV5Location | undefined };
+    }
+  | { type: 'PayFees'; value: { asset: StagingXcmV5Asset } }
+  | {
+      type: 'InitiateTransfer';
+      value: {
+        destination: StagingXcmV5Location;
+        remoteFees?: StagingXcmV5AssetAssetTransferFilter | undefined;
+        preserveOrigin: boolean;
+        assets: Array<StagingXcmV5AssetAssetTransferFilter>;
+        remoteXcm: StagingXcmV5Xcm;
+      };
+    }
+  | { type: 'ExecuteWithOrigin'; value: { descendantOrigin?: StagingXcmV5Junctions | undefined; xcm: StagingXcmV5Xcm } }
+  | { type: 'SetHints'; value: { hints: Array<StagingXcmV5Hint> } };
+
+export type StagingXcmV5AssetAssets = Array<StagingXcmV5Asset>;
+
+export type StagingXcmV5Asset = { id: StagingXcmV5AssetAssetId; fun: StagingXcmV5AssetFungibility };
+
+export type StagingXcmV5AssetFungibility =
+  | { type: 'Fungible'; value: bigint }
+  | { type: 'NonFungible'; value: StagingXcmV5AssetAssetInstance };
+
+export type StagingXcmV5AssetAssetInstance =
+  | { type: 'Undefined' }
+  | { type: 'Index'; value: bigint }
+  | { type: 'Array4'; value: FixedBytes<4> }
+  | { type: 'Array8'; value: FixedBytes<8> }
+  | { type: 'Array16'; value: FixedBytes<16> }
+  | { type: 'Array32'; value: FixedBytes<32> };
+
+export type StagingXcmV5Response =
+  | { type: 'Null' }
+  | { type: 'Assets'; value: StagingXcmV5AssetAssets }
+  | { type: 'ExecutionResult'; value?: [number, XcmV5TraitsError] | undefined }
+  | { type: 'Version'; value: number }
+  | { type: 'PalletsInfo'; value: Array<StagingXcmV5PalletInfo> }
+  | { type: 'DispatchResult'; value: XcmV3MaybeErrorCode };
+
+export type XcmV5TraitsError =
+  | { type: 'Overflow' }
+  | { type: 'Unimplemented' }
+  | { type: 'UntrustedReserveLocation' }
+  | { type: 'UntrustedTeleportLocation' }
+  | { type: 'LocationFull' }
+  | { type: 'LocationNotInvertible' }
+  | { type: 'BadOrigin' }
+  | { type: 'InvalidLocation' }
+  | { type: 'AssetNotFound' }
+  | { type: 'FailedToTransactAsset' }
+  | { type: 'NotWithdrawable' }
+  | { type: 'LocationCannotHold' }
+  | { type: 'ExceedsMaxMessageSize' }
+  | { type: 'DestinationUnsupported' }
+  | { type: 'Transport' }
+  | { type: 'Unroutable' }
+  | { type: 'UnknownClaim' }
+  | { type: 'FailedToDecode' }
+  | { type: 'MaxWeightInvalid' }
+  | { type: 'NotHoldingFees' }
+  | { type: 'TooExpensive' }
+  | { type: 'Trap'; value: bigint }
+  | { type: 'ExpectationFalse' }
+  | { type: 'PalletNotFound' }
+  | { type: 'NameMismatch' }
+  | { type: 'VersionIncompatible' }
+  | { type: 'HoldingWouldOverflow' }
+  | { type: 'ExportError' }
+  | { type: 'ReanchorFailed' }
+  | { type: 'NoDeal' }
+  | { type: 'FeesNotMet' }
+  | { type: 'LockError' }
+  | { type: 'NoPermission' }
+  | { type: 'Unanchored' }
+  | { type: 'NotDepositable' }
+  | { type: 'TooManyAssets' }
+  | { type: 'UnhandledXcmVersion' }
+  | { type: 'WeightLimitReached'; value: SpWeightsWeightV2Weight }
+  | { type: 'Barrier' }
+  | { type: 'WeightNotComputable' }
+  | { type: 'ExceedsStackLimit' };
+
+export type StagingXcmV5PalletInfo = {
+  index: number;
+  name: Bytes;
+  moduleName: Bytes;
+  major: number;
+  minor: number;
+  patch: number;
+};
+
+export type StagingXcmV5QueryResponseInfo = {
+  destination: StagingXcmV5Location;
+  queryId: bigint;
+  maxWeight: SpWeightsWeightV2Weight;
+};
+
+export type StagingXcmV5AssetAssetFilter =
+  | { type: 'Definite'; value: StagingXcmV5AssetAssets }
+  | { type: 'Wild'; value: StagingXcmV5AssetWildAsset };
+
+export type StagingXcmV5AssetWildAsset =
+  | { type: 'All' }
+  | { type: 'AllOf'; value: { id: StagingXcmV5AssetAssetId; fun: StagingXcmV5AssetWildFungibility } }
+  | { type: 'AllCounted'; value: number }
+  | {
+      type: 'AllOfCounted';
+      value: { id: StagingXcmV5AssetAssetId; fun: StagingXcmV5AssetWildFungibility; count: number };
+    };
+
+export type StagingXcmV5AssetWildFungibility = 'Fungible' | 'NonFungible';
+
+export type StagingXcmV5AssetAssetTransferFilter =
+  | { type: 'Teleport'; value: StagingXcmV5AssetAssetFilter }
+  | { type: 'ReserveDeposit'; value: StagingXcmV5AssetAssetFilter }
+  | { type: 'ReserveWithdraw'; value: StagingXcmV5AssetAssetFilter };
+
+export type StagingXcmV5Hint = { type: 'AssetClaimer'; value: { location: StagingXcmV5Location } };
+
 export type XcmVersionedAssets =
-  | { type: 'V2'; value: XcmV2MultiassetMultiAssets }
   | { type: 'V3'; value: XcmV3MultiassetMultiAssets }
-  | { type: 'V4'; value: StagingXcmV4AssetAssets };
+  | { type: 'V4'; value: StagingXcmV4AssetAssets }
+  | { type: 'V5'; value: StagingXcmV5AssetAssets };
 
 export type StagingXcmExecutorAssetTransferTransferType =
   | { type: 'Teleport' }
@@ -11019,7 +11099,8 @@ export type StagingXcmExecutorAssetTransferTransferType =
 
 export type XcmVersionedAssetId =
   | { type: 'V3'; value: XcmV3MultiassetAssetId }
-  | { type: 'V4'; value: StagingXcmV4AssetAssetId };
+  | { type: 'V4'; value: StagingXcmV4AssetAssetId }
+  | { type: 'V5'; value: StagingXcmV5AssetAssetId };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11989,7 +12070,7 @@ export type PalletProxyEvent =
       data: {
         pure: AccountId32;
         who: AccountId32;
-        proxyType: StagingKusamaRuntimeProxyType;
+        proxyType: KusamaRuntimeConstantsProxyProxyType;
         disambiguationIndex: number;
       };
     }
@@ -12002,14 +12083,24 @@ export type PalletProxyEvent =
    **/
   | {
       name: 'ProxyAdded';
-      data: { delegator: AccountId32; delegatee: AccountId32; proxyType: StagingKusamaRuntimeProxyType; delay: number };
+      data: {
+        delegator: AccountId32;
+        delegatee: AccountId32;
+        proxyType: KusamaRuntimeConstantsProxyProxyType;
+        delay: number;
+      };
     }
   /**
    * A proxy was removed.
    **/
   | {
       name: 'ProxyRemoved';
-      data: { delegator: AccountId32; delegatee: AccountId32; proxyType: StagingKusamaRuntimeProxyType; delay: number };
+      data: {
+        delegator: AccountId32;
+        delegatee: AccountId32;
+        proxyType: KusamaRuntimeConstantsProxyProxyType;
+        delay: number;
+      };
     };
 
 /**
@@ -12475,7 +12566,7 @@ export type PolkadotRuntimeParachainsInclusionPalletEvent =
   | {
       name: 'CandidateBacked';
       data: [
-        PolkadotPrimitivesV8CandidateReceipt,
+        PolkadotPrimitivesVstagingCandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
         PolkadotPrimitivesV8CoreIndex,
         PolkadotPrimitivesV8GroupIndex,
@@ -12487,7 +12578,7 @@ export type PolkadotRuntimeParachainsInclusionPalletEvent =
   | {
       name: 'CandidateIncluded';
       data: [
-        PolkadotPrimitivesV8CandidateReceipt,
+        PolkadotPrimitivesVstagingCandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
         PolkadotPrimitivesV8CoreIndex,
         PolkadotPrimitivesV8GroupIndex,
@@ -12499,7 +12590,7 @@ export type PolkadotRuntimeParachainsInclusionPalletEvent =
   | {
       name: 'CandidateTimedOut';
       data: [
-        PolkadotPrimitivesV8CandidateReceipt,
+        PolkadotPrimitivesVstagingCandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
         PolkadotPrimitivesV8CoreIndex,
       ];
@@ -12509,8 +12600,8 @@ export type PolkadotRuntimeParachainsInclusionPalletEvent =
    **/
   | { name: 'UpwardMessagesReceived'; data: { from: PolkadotParachainPrimitivesPrimitivesId; count: number } };
 
-export type PolkadotPrimitivesV8CandidateReceipt = {
-  descriptor: PolkadotPrimitivesV8CandidateDescriptor;
+export type PolkadotPrimitivesVstagingCandidateReceiptV2 = {
+  descriptor: PolkadotPrimitivesVstagingCandidateDescriptorV2;
   commitmentsHash: H256;
 };
 
@@ -12847,16 +12938,16 @@ export type PalletXcmEvent =
   /**
    * Execution of an XCM message was attempted.
    **/
-  | { name: 'Attempted'; data: { outcome: StagingXcmV4TraitsOutcome } }
+  | { name: 'Attempted'; data: { outcome: StagingXcmV5TraitsOutcome } }
   /**
    * A XCM message was sent.
    **/
   | {
       name: 'Sent';
       data: {
-        origin: StagingXcmV4Location;
-        destination: StagingXcmV4Location;
-        message: StagingXcmV4Xcm;
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       };
     }
@@ -12865,12 +12956,12 @@ export type PalletXcmEvent =
    * matching query was never registered, it may be because it is a duplicate response, or
    * because the query timed out.
    **/
-  | { name: 'UnexpectedResponse'; data: { origin: StagingXcmV4Location; queryId: bigint } }
+  | { name: 'UnexpectedResponse'; data: { origin: StagingXcmV5Location; queryId: bigint } }
   /**
    * Query response has been received and is ready for taking with `take_response`. There is
    * no registered notification call.
    **/
-  | { name: 'ResponseReady'; data: { queryId: bigint; response: StagingXcmV4Response } }
+  | { name: 'ResponseReady'; data: { queryId: bigint; response: StagingXcmV5Response } }
   /**
    * Query response has been received and query is removed. The registered notification has
    * been dispatched and executed successfully.
@@ -12909,7 +13000,7 @@ export type PalletXcmEvent =
    **/
   | {
       name: 'InvalidResponder';
-      data: { origin: StagingXcmV4Location; queryId: bigint; expectedLocation?: StagingXcmV4Location | undefined };
+      data: { origin: StagingXcmV5Location; queryId: bigint; expectedLocation?: StagingXcmV5Location | undefined };
     }
   /**
    * Expected query response has been received but the expected origin location placed in
@@ -12920,7 +13011,7 @@ export type PalletXcmEvent =
    * valid response will be dropped. Manual governance intervention is probably going to be
    * needed.
    **/
-  | { name: 'InvalidResponderVersion'; data: { origin: StagingXcmV4Location; queryId: bigint } }
+  | { name: 'InvalidResponderVersion'; data: { origin: StagingXcmV5Location; queryId: bigint } }
   /**
    * Received query response has been read and removed.
    **/
@@ -12928,7 +13019,7 @@ export type PalletXcmEvent =
   /**
    * Some assets have been placed in an asset trap.
    **/
-  | { name: 'AssetsTrapped'; data: { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets } }
+  | { name: 'AssetsTrapped'; data: { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets } }
   /**
    * An XCM version change notification message has been attempted to be sent.
    *
@@ -12937,9 +13028,9 @@ export type PalletXcmEvent =
   | {
       name: 'VersionChangeNotified';
       data: {
-        destination: StagingXcmV4Location;
+        destination: StagingXcmV5Location;
         result: number;
-        cost: StagingXcmV4AssetAssets;
+        cost: StagingXcmV5AssetAssets;
         messageId: FixedBytes<32>;
       };
     }
@@ -12947,12 +13038,12 @@ export type PalletXcmEvent =
    * The supported version of a location has been changed. This might be through an
    * automatic notification or a manual intervention.
    **/
-  | { name: 'SupportedVersionChanged'; data: { location: StagingXcmV4Location; version: number } }
+  | { name: 'SupportedVersionChanged'; data: { location: StagingXcmV5Location; version: number } }
   /**
    * A given location which had a version change subscription was dropped owing to an error
    * sending the notification to it.
    **/
-  | { name: 'NotifyTargetSendFail'; data: { location: StagingXcmV4Location; queryId: bigint; error: XcmV3TraitsError } }
+  | { name: 'NotifyTargetSendFail'; data: { location: StagingXcmV5Location; queryId: bigint; error: XcmV5TraitsError } }
   /**
    * A given location which had a version change subscription was dropped owing to an error
    * migrating the location to our new XCM format.
@@ -12967,7 +13058,7 @@ export type PalletXcmEvent =
    * valid response will be dropped. Manual governance intervention is probably going to be
    * needed.
    **/
-  | { name: 'InvalidQuerierVersion'; data: { origin: StagingXcmV4Location; queryId: bigint } }
+  | { name: 'InvalidQuerierVersion'; data: { origin: StagingXcmV5Location; queryId: bigint } }
   /**
    * Expected query response has been received but the querier location of the response does
    * not match the expected. The query remains registered for a later, valid, response to
@@ -12976,10 +13067,10 @@ export type PalletXcmEvent =
   | {
       name: 'InvalidQuerier';
       data: {
-        origin: StagingXcmV4Location;
+        origin: StagingXcmV5Location;
         queryId: bigint;
-        expectedQuerier: StagingXcmV4Location;
-        maybeActualQuerier?: StagingXcmV4Location | undefined;
+        expectedQuerier: StagingXcmV5Location;
+        maybeActualQuerier?: StagingXcmV5Location | undefined;
       };
     }
   /**
@@ -12988,14 +13079,14 @@ export type PalletXcmEvent =
    **/
   | {
       name: 'VersionNotifyStarted';
-      data: { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> };
+      data: { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> };
     }
   /**
    * We have requested that a remote chain send us XCM version change notifications.
    **/
   | {
       name: 'VersionNotifyRequested';
-      data: { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> };
+      data: { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> };
     }
   /**
    * We have requested that a remote chain stops sending us XCM version change
@@ -13003,25 +13094,25 @@ export type PalletXcmEvent =
    **/
   | {
       name: 'VersionNotifyUnrequested';
-      data: { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> };
+      data: { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> };
     }
   /**
    * Fees were paid from a location for an operation (often for using `SendXcm`).
    **/
-  | { name: 'FeesPaid'; data: { paying: StagingXcmV4Location; fees: StagingXcmV4AssetAssets } }
+  | { name: 'FeesPaid'; data: { paying: StagingXcmV5Location; fees: StagingXcmV5AssetAssets } }
   /**
    * Some assets have been claimed from an asset trap
    **/
-  | { name: 'AssetsClaimed'; data: { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets } }
+  | { name: 'AssetsClaimed'; data: { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets } }
   /**
    * A XCM version migration finished.
    **/
   | { name: 'VersionMigrationFinished'; data: { version: number } };
 
-export type StagingXcmV4TraitsOutcome =
+export type StagingXcmV5TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
-  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV3TraitsError } }
-  | { type: 'Error'; value: { error: XcmV3TraitsError } };
+  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV5TraitsError } }
+  | { type: 'Error'; value: { error: XcmV5TraitsError } };
 
 /**
  * The `Event` enum of this pallet
@@ -13550,12 +13641,7 @@ export type PalletStakingPalletError =
   /**
    * Operation not allowed for virtual stakers.
    **/
-  | 'VirtualStakerNotAllowed'
-  /**
-   * Account is restricted from participation in staking. This may happen if the account is
-   * staking in another way already, such as via pool.
-   **/
-  | 'Restricted';
+  | 'VirtualStakerNotAllowed';
 
 export type SpStakingOffenceOffenceDetails = {
   offender: [AccountId32, SpStakingExposure];
@@ -14327,7 +14413,7 @@ export type PalletSchedulerError =
 
 export type PalletProxyProxyDefinition = {
   delegate: AccountId32;
-  proxyType: StagingKusamaRuntimeProxyType;
+  proxyType: KusamaRuntimeConstantsProxyProxyType;
   delay: number;
 };
 
@@ -14510,7 +14596,8 @@ export type PalletBountiesBountyStatus =
   | { type: 'Funded' }
   | { type: 'CuratorProposed'; value: { curator: AccountId32 } }
   | { type: 'Active'; value: { curator: AccountId32; updateDue: number } }
-  | { type: 'PendingPayout'; value: { curator: AccountId32; beneficiary: AccountId32; unlockAt: number } };
+  | { type: 'PendingPayout'; value: { curator: AccountId32; beneficiary: AccountId32; unlockAt: number } }
+  | { type: 'ApprovedWithCurator'; value: { curator: AccountId32 } };
 
 /**
  * The `Error` enum of this pallet.
@@ -14971,10 +15058,6 @@ export type PalletNominationPoolsError =
    **/
   | { name: 'NothingToSlash' }
   /**
-   * The slash amount is too low to be applied.
-   **/
-  | { name: 'SlashTooLow' }
-  /**
    * The pool or member delegation has already migrated to delegate stake.
    **/
   | { name: 'AlreadyMigrated' }
@@ -14985,12 +15068,7 @@ export type PalletNominationPoolsError =
   /**
    * This call is not allowed in the current state of the pallet.
    **/
-  | { name: 'NotSupported' }
-  /**
-   * Account is restricted from participation in pools. This may happen if the account is
-   * staking in another way already.
-   **/
-  | { name: 'Restricted' };
+  | { name: 'NotSupported' };
 
 export type PalletNominationPoolsDefensiveError =
   | 'NotEnoughSpaceInUnbondPool'
@@ -15148,14 +15226,20 @@ export type PolkadotRuntimeParachainsConfigurationPalletError =
   'InvalidNewValue';
 
 export type PolkadotRuntimeParachainsSharedAllowedRelayParentsTracker = {
-  buffer: Array<[H256, H256]>;
+  buffer: Array<PolkadotRuntimeParachainsSharedRelayParentInfo>;
   latestNumber: number;
+};
+
+export type PolkadotRuntimeParachainsSharedRelayParentInfo = {
+  relayParent: H256;
+  stateRoot: H256;
+  claimQueue: Array<[PolkadotParachainPrimitivesPrimitivesId, Array<[number, Array<PolkadotPrimitivesV8CoreIndex>]>]>;
 };
 
 export type PolkadotRuntimeParachainsInclusionCandidatePendingAvailability = {
   core: PolkadotPrimitivesV8CoreIndex;
   hash: PolkadotCorePrimitivesCandidateHash;
-  descriptor: PolkadotPrimitivesV8CandidateDescriptor;
+  descriptor: PolkadotPrimitivesVstagingCandidateDescriptorV2;
   commitments: PolkadotPrimitivesV8CandidateCommitments;
   availabilityVotes: BitSequence;
   backers: BitSequence;
@@ -15240,11 +15324,11 @@ export type PolkadotRuntimeParachainsInclusionPalletError =
    **/
   | 'ParaHeadMismatch';
 
-export type PolkadotPrimitivesV8ScrapedOnChainVotes = {
+export type PolkadotPrimitivesVstagingScrapedOnChainVotes = {
   session: number;
   backingValidatorsPerCandidate: Array<
     [
-      PolkadotPrimitivesV8CandidateReceipt,
+      PolkadotPrimitivesVstagingCandidateReceiptV2,
       Array<[PolkadotPrimitivesV8ValidatorIndex, PolkadotPrimitivesV8ValidityAttestation]>,
     ]
   >;
@@ -15265,28 +15349,14 @@ export type PolkadotRuntimeParachainsParasInherentPalletError =
    **/
   | 'InvalidParentHeader'
   /**
-   * The data given to the inherent will result in an overweight block.
-   **/
-  | 'InherentOverweight'
-  /**
-   * A candidate was filtered during inherent execution. This should have only been done
+   * Inherent data was filtered during execution. This should have only been done
    * during creation.
    **/
-  | 'CandidatesFilteredDuringExecution'
+  | 'InherentDataFilteredDuringExecution'
   /**
    * Too many candidates supplied.
    **/
   | 'UnscheduledCandidate';
-
-export type PolkadotRuntimeParachainsSchedulerPalletCoreOccupied =
-  | { type: 'Free' }
-  | { type: 'Paras'; value: PolkadotRuntimeParachainsSchedulerPalletParasEntry };
-
-export type PolkadotRuntimeParachainsSchedulerPalletParasEntry = {
-  assignment: PolkadotRuntimeParachainsSchedulerCommonAssignment;
-  availabilityTimeouts: number;
-  ttl: number;
-};
 
 export type PolkadotRuntimeParachainsSchedulerCommonAssignment =
   | {
@@ -15691,26 +15761,10 @@ export type PolkadotRuntimeParachainsAssignerCoretimeAssignmentState = {
 export type PolkadotRuntimeParachainsAssignerCoretimePalletError =
   | 'AssignmentsEmpty'
   /**
-   * Assignments together exceeded 57600.
-   **/
-  | 'OverScheduled'
-  /**
-   * Assignments together less than 57600
-   **/
-  | 'UnderScheduled'
-  /**
    * assign_core is only allowed to append new assignments at the end of already existing
-   * ones.
+   * ones or update the last entry.
    **/
-  | 'DisallowedInsert'
-  /**
-   * Tried to insert a schedule for the same core and block number as an existing schedule
-   **/
-  | 'DuplicateInsert'
-  /**
-   * Tried to add an unsorted set of assignments
-   **/
-  | 'AssignmentsNotSorted';
+  | 'DisallowedInsert';
 
 export type PolkadotRuntimeCommonParasRegistrarParaInfo = {
   manager: AccountId32;
@@ -15975,9 +16029,9 @@ export type PalletXcmQueryStatus =
   | { type: 'Ready'; value: { response: XcmVersionedResponse; at: number } };
 
 export type XcmVersionedResponse =
-  | { type: 'V2'; value: XcmV2Response }
   | { type: 'V3'; value: XcmV3Response }
-  | { type: 'V4'; value: StagingXcmV4Response };
+  | { type: 'V4'; value: StagingXcmV4Response }
+  | { type: 'V5'; value: StagingXcmV5Response };
 
 export type PalletXcmVersionMigrationStage =
   | { type: 'MigrateSupportedVersion' }
@@ -16263,7 +16317,9 @@ export type SpRuntimeTransactionValidityInvalidTransaction =
   | { type: 'Custom'; value: number }
   | { type: 'BadMandatory' }
   | { type: 'MandatoryValidation' }
-  | { type: 'BadSigner' };
+  | { type: 'BadSigner' }
+  | { type: 'IndeterminateImplicit' }
+  | { type: 'UnknownOrigin' };
 
 export type SpRuntimeTransactionValidityUnknownTransaction =
   | { type: 'CannotLookup' }
@@ -16290,12 +16346,12 @@ export type PolkadotPrimitivesV8GroupRotationInfo = {
   now: number;
 };
 
-export type PolkadotPrimitivesV8CoreState =
-  | { type: 'Occupied'; value: PolkadotPrimitivesV8OccupiedCore }
+export type PolkadotPrimitivesVstagingCoreState =
+  | { type: 'Occupied'; value: PolkadotPrimitivesVstagingOccupiedCore }
   | { type: 'Scheduled'; value: PolkadotPrimitivesV8ScheduledCore }
   | { type: 'Free' };
 
-export type PolkadotPrimitivesV8OccupiedCore = {
+export type PolkadotPrimitivesVstagingOccupiedCore = {
   nextUpOnAvailable?: PolkadotPrimitivesV8ScheduledCore | undefined;
   occupiedSince: number;
   timeOutAt: number;
@@ -16303,13 +16359,15 @@ export type PolkadotPrimitivesV8OccupiedCore = {
   availability: BitSequence;
   groupResponsible: PolkadotPrimitivesV8GroupIndex;
   candidateHash: PolkadotCorePrimitivesCandidateHash;
-  candidateDescriptor: PolkadotPrimitivesV8CandidateDescriptor;
+  candidateDescriptor: PolkadotPrimitivesVstagingCandidateDescriptorV2;
 };
 
 export type PolkadotPrimitivesV8ScheduledCore = {
   paraId: PolkadotParachainPrimitivesPrimitivesId;
   collator?: PolkadotPrimitivesV8CollatorAppPublic | undefined;
 };
+
+export type PolkadotPrimitivesV8CollatorAppPublic = FixedBytes<32>;
 
 export type PolkadotPrimitivesV8OccupiedCoreAssumption = 'Included' | 'TimedOut' | 'Free';
 
@@ -16320,11 +16378,11 @@ export type PolkadotPrimitivesV8PersistedValidationData = {
   maxPovSize: number;
 };
 
-export type PolkadotPrimitivesV8CandidateEvent =
+export type PolkadotPrimitivesVstagingCandidateEvent =
   | {
       type: 'CandidateBacked';
       value: [
-        PolkadotPrimitivesV8CandidateReceipt,
+        PolkadotPrimitivesVstagingCandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
         PolkadotPrimitivesV8CoreIndex,
         PolkadotPrimitivesV8GroupIndex,
@@ -16333,7 +16391,7 @@ export type PolkadotPrimitivesV8CandidateEvent =
   | {
       type: 'CandidateIncluded';
       value: [
-        PolkadotPrimitivesV8CandidateReceipt,
+        PolkadotPrimitivesVstagingCandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
         PolkadotPrimitivesV8CoreIndex,
         PolkadotPrimitivesV8GroupIndex,
@@ -16342,7 +16400,7 @@ export type PolkadotPrimitivesV8CandidateEvent =
   | {
       type: 'CandidateTimedOut';
       value: [
-        PolkadotPrimitivesV8CandidateReceipt,
+        PolkadotPrimitivesVstagingCandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
         PolkadotPrimitivesV8CoreIndex,
       ];
@@ -16350,9 +16408,9 @@ export type PolkadotPrimitivesV8CandidateEvent =
 
 export type PolkadotPrimitivesV8SlashingOpaqueKeyOwnershipProof = Bytes;
 
-export type PolkadotPrimitivesV8AsyncBackingBackingState = {
+export type PolkadotPrimitivesVstagingAsyncBackingBackingState = {
   constraints: PolkadotPrimitivesV8AsyncBackingConstraints;
-  pendingAvailability: Array<PolkadotPrimitivesV8AsyncBackingCandidatePendingAvailability>;
+  pendingAvailability: Array<PolkadotPrimitivesVstagingAsyncBackingCandidatePendingAvailability>;
 };
 
 export type PolkadotPrimitivesV8AsyncBackingConstraints = {
@@ -16381,9 +16439,9 @@ export type PolkadotPrimitivesV8AsyncBackingOutboundHrmpChannelLimitations = {
   messagesRemaining: number;
 };
 
-export type PolkadotPrimitivesV8AsyncBackingCandidatePendingAvailability = {
+export type PolkadotPrimitivesVstagingAsyncBackingCandidatePendingAvailability = {
   candidateHash: PolkadotCorePrimitivesCandidateHash;
-  descriptor: PolkadotPrimitivesV8CandidateDescriptor;
+  descriptor: PolkadotPrimitivesVstagingCandidateDescriptorV2;
   commitments: PolkadotPrimitivesV8CandidateCommitments;
   relayParentNumber: number;
   maxPovSize: number;
@@ -16466,7 +16524,7 @@ export type XcmRuntimeApisDryRunCallDryRunEffects = {
 export type XcmRuntimeApisDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
 
 export type XcmRuntimeApisDryRunXcmDryRunEffects = {
-  executionResult: StagingXcmV4TraitsOutcome;
+  executionResult: StagingXcmV5TraitsOutcome;
   emittedEvents: Array<StagingKusamaRuntimeRuntimeEvent>;
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };

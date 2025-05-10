@@ -23,7 +23,7 @@ export interface VersionedKusamaApi<Rv extends RpcVersion> extends GenericSubstr
 
 /**
  * @name: KusamaApi
- * @specVersion: 1004001
+ * @specVersion: 1005000
  **/
 export interface KusamaApi {
   legacy: VersionedKusamaApi<RpcLegacy>;

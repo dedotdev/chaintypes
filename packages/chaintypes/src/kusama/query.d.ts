@@ -111,10 +111,9 @@ import type {
   PolkadotRuntimeParachainsSharedAllowedRelayParentsTracker,
   PolkadotRuntimeParachainsInclusionCandidatePendingAvailability,
   PolkadotParachainPrimitivesPrimitivesId,
-  PolkadotPrimitivesV8ScrapedOnChainVotes,
-  PolkadotRuntimeParachainsSchedulerPalletCoreOccupied,
+  PolkadotPrimitivesVstagingScrapedOnChainVotes,
   PolkadotPrimitivesV8CoreIndex,
-  PolkadotRuntimeParachainsSchedulerPalletParasEntry,
+  PolkadotRuntimeParachainsSchedulerCommonAssignment,
   PolkadotRuntimeParachainsParasPvfCheckActiveVoteState,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotRuntimeParachainsParasParaLifecycle,
@@ -149,7 +148,7 @@ import type {
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
-  StagingXcmV4Xcm,
+  StagingXcmV5Xcm,
   PalletMessageQueueBookState,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   PalletMessageQueuePage,
@@ -1364,6 +1363,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   treasury: {
     /**
+     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+     *
      * Number of proposals that have been made.
      *
      * @param {Callback<number> =} callback
@@ -1371,6 +1373,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     proposalCount: GenericStorageQuery<Rv, () => number>;
 
     /**
+     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+     *
      * Proposals that have been made.
      *
      * @param {number} arg
@@ -1386,6 +1391,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     deactivated: GenericStorageQuery<Rv, () => bigint>;
 
     /**
+     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+     *
      * Proposal indices that have been approved but not yet awarded.
      *
      * @param {Callback<Array<number>> =} callback
@@ -1406,6 +1414,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<PalletTreasurySpendStatus | undefined> =} callback
      **/
     spends: GenericStorageQuery<Rv, (arg: number) => PalletTreasurySpendStatus | undefined, number>;
+
+    /**
+     * The blocknumber for the last triggered spend period.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    lastSpendPeriod: GenericStorageQuery<Rv, () => number | undefined>;
 
     /**
      * Generic pallet storage query
@@ -2141,20 +2156,29 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   childBounties: {
     /**
-     * Number of total child bounties.
+     * DEPRECATED: Replaced with `ParentTotalChildBounties` storage item keeping dedicated counts
+     * for each parent bounty. Number of total child bounties. Will be removed in May 2025.
      *
      * @param {Callback<number> =} callback
      **/
     childBountyCount: GenericStorageQuery<Rv, () => number>;
 
     /**
-     * Number of child bounties per parent bounty.
+     * Number of active child bounties per parent bounty.
      * Map of parent bounty index to number of child bounties.
      *
      * @param {number} arg
      * @param {Callback<number> =} callback
      **/
     parentChildBounties: GenericStorageQuery<Rv, (arg: number) => number, number>;
+
+    /**
+     * Number of total child bounties per parent bounty, including completed bounties.
+     *
+     * @param {number} arg
+     * @param {Callback<number> =} callback
+     **/
+    parentTotalChildBounties: GenericStorageQuery<Rv, (arg: number) => number, number>;
 
     /**
      * Child bounties that have been added.
@@ -2169,12 +2193,26 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     >;
 
     /**
-     * The description of each child-bounty.
+     * The description of each child-bounty. Indexed by `(parent_id, child_id)`.
      *
-     * @param {number} arg
+     * This item replaces the `ChildBountyDescriptions` storage item from the V0 storage version.
+     *
+     * @param {[number, number]} arg
      * @param {Callback<Bytes | undefined> =} callback
      **/
-    childBountyDescriptions: GenericStorageQuery<Rv, (arg: number) => Bytes | undefined, number>;
+    childBountyDescriptionsV1: GenericStorageQuery<Rv, (arg: [number, number]) => Bytes | undefined, [number, number]>;
+
+    /**
+     * The mapping of the child bounty ids from storage version `V0` to the new `V1` version.
+     *
+     * The `V0` ids based on total child bounty count [`ChildBountyCount`]`. The `V1` version ids
+     * based on the child bounty count per parent bounty [`ParentTotalChildBounties`].
+     * The item intended solely for client convenience and not used in the pallet's core logic.
+     *
+     * @param {number} arg
+     * @param {Callback<[number, number] | undefined> =} callback
+     **/
+    v0ToV1ChildBountyIds: GenericStorageQuery<Rv, (arg: number) => [number, number] | undefined, number>;
 
     /**
      * The cumulative child-bounty curator fee for each parent bounty.
@@ -2898,9 +2936,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * Scraped on chain data for extracting resolved disputes as well as backing votes.
      *
-     * @param {Callback<PolkadotPrimitivesV8ScrapedOnChainVotes | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesVstagingScrapedOnChainVotes | undefined> =} callback
      **/
-    onChainVotes: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8ScrapedOnChainVotes | undefined>;
+    onChainVotes: GenericStorageQuery<Rv, () => PolkadotPrimitivesVstagingScrapedOnChainVotes | undefined>;
 
     /**
      * Generic pallet storage query
@@ -2925,18 +2963,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     validatorGroups: GenericStorageQuery<Rv, () => Array<Array<PolkadotPrimitivesV8ValidatorIndex>>>;
 
     /**
-     * One entry for each availability core. The i'th parachain belongs to the i'th core, with the
-     * remaining cores all being on demand parachain multiplexers.
-     *
-     * Bounded by the maximum of either of these two values:
-     * * The number of parachains and parathread multiplexers
-     * * The number of validators divided by `configuration.max_validators_per_core`.
-     *
-     * @param {Callback<Array<PolkadotRuntimeParachainsSchedulerPalletCoreOccupied>> =} callback
-     **/
-    availabilityCores: GenericStorageQuery<Rv, () => Array<PolkadotRuntimeParachainsSchedulerPalletCoreOccupied>>;
-
-    /**
      * The block number where the session start occurred. Used to track how many group rotations
      * have occurred.
      *
@@ -2951,14 +2977,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
 
     /**
      * One entry for each availability core. The `VecDeque` represents the assignments to be
-     * scheduled on that core. The value contained here will not be valid after the end of
-     * a block. Runtime APIs should be used to determine scheduled cores for the upcoming block.
+     * scheduled on that core.
      *
-     * @param {Callback<Array<[PolkadotPrimitivesV8CoreIndex, Array<PolkadotRuntimeParachainsSchedulerPalletParasEntry>]>> =} callback
+     * @param {Callback<Array<[PolkadotPrimitivesV8CoreIndex, Array<PolkadotRuntimeParachainsSchedulerCommonAssignment>]>> =} callback
      **/
     claimQueue: GenericStorageQuery<
       Rv,
-      () => Array<[PolkadotPrimitivesV8CoreIndex, Array<PolkadotRuntimeParachainsSchedulerPalletParasEntry>]>
+      () => Array<[PolkadotPrimitivesV8CoreIndex, Array<PolkadotRuntimeParachainsSchedulerCommonAssignment>]>
     >;
 
     /**
@@ -3282,7 +3307,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     hasInitialized: GenericStorageQuery<Rv, () => [] | undefined>;
 
     /**
-     * Buffered session changes along with the block number at which they should be applied.
+     * Buffered session changes.
      *
      * Typically this will be empty or one element long. Apart from that this item never hits
      * the storage.
@@ -4106,9 +4131,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
      * implementation in the XCM executor configuration.
      *
-     * @param {Callback<StagingXcmV4Xcm | undefined> =} callback
+     * @param {Callback<StagingXcmV5Xcm | undefined> =} callback
      **/
-    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV4Xcm | undefined>;
+    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV5Xcm | undefined>;
 
     /**
      * Generic pallet storage query

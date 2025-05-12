@@ -5051,8 +5051,7 @@ export type PalletSudoCallLike =
 export type PeoplePaseoRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
   | { type: 'PolkadotXcm'; value: PalletXcmOrigin }
-  | { type: 'CumulusXcm'; value: CumulusPalletXcmOrigin }
-  | { type: 'Void'; value: SpCoreVoid };
+  | { type: 'CumulusXcm'; value: CumulusPalletXcmOrigin };
 
 export type FrameSupportDispatchRawOrigin =
   | { type: 'Root' }
@@ -5066,8 +5065,6 @@ export type PalletXcmOrigin =
 export type CumulusPalletXcmOrigin =
   | { type: 'Relay' }
   | { type: 'SiblingParachain'; value: PolkadotParachainPrimitivesPrimitivesId };
-
-export type SpCoreVoid = null;
 
 /**
  * The `Error` enum of this pallet.

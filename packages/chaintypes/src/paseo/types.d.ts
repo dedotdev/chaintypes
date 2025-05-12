@@ -17,7 +17,6 @@ import type {
   MultiAddressLike,
   AccountId32Like,
   Percent,
-  Perquintill,
   EthereumAddress,
   EthereumAddressLike,
   PerU16,
@@ -25,6 +24,7 @@ import type {
   FixedU128,
   FixedI64,
   Era,
+  Perquintill,
   UncheckedExtrinsic,
 } from 'dedot/codecs';
 
@@ -70,7 +70,6 @@ export type PaseoRuntimeRuntimeEvent =
   | { pallet: 'ConvictionVoting'; palletEvent: PalletConvictionVotingEvent }
   | { pallet: 'Referenda'; palletEvent: PalletReferendaEvent }
   | { pallet: 'Whitelist'; palletEvent: PalletWhitelistEvent }
-  | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
   | { pallet: 'Claims'; palletEvent: PolkadotRuntimeCommonClaimsPalletEvent }
   | { pallet: 'Vesting'; palletEvent: PalletVestingEvent }
   | { pallet: 'Utility'; palletEvent: PalletUtilityEvent }
@@ -1055,7 +1054,6 @@ export type PaseoRuntimeRuntimeCall =
   | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCall }
   | { pallet: 'Referenda'; palletCall: PalletReferendaCall }
   | { pallet: 'Whitelist'; palletCall: PalletWhitelistCall }
-  | { pallet: 'Parameters'; palletCall: PalletParametersCall }
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCall }
   | { pallet: 'Vesting'; palletCall: PalletVestingCall }
   | { pallet: 'Utility'; palletCall: PalletUtilityCall }
@@ -1105,7 +1103,6 @@ export type PaseoRuntimeRuntimeCallLike =
   | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCallLike }
   | { pallet: 'Referenda'; palletCall: PalletReferendaCallLike }
   | { pallet: 'Whitelist'; palletCall: PalletWhitelistCallLike }
-  | { pallet: 'Parameters'; palletCall: PalletParametersCallLike }
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCallLike }
   | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
   | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
@@ -3918,8 +3915,7 @@ export type PaseoRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
   | { type: 'Origins'; value: PaseoRuntimeGovernanceOriginsPalletCustomOriginsOrigin }
   | { type: 'ParachainsOrigin'; value: PolkadotRuntimeParachainsOriginPalletOrigin }
-  | { type: 'XcmPallet'; value: PalletXcmOrigin }
-  | { type: 'Void'; value: SpCoreVoid };
+  | { type: 'XcmPallet'; value: PalletXcmOrigin };
 
 export type FrameSupportDispatchRawOrigin =
   | { type: 'Root' }
@@ -3954,8 +3950,6 @@ export type PalletXcmOrigin =
   | { type: 'Xcm'; value: StagingXcmV4Location }
   | { type: 'Response'; value: StagingXcmV4Location };
 
-export type SpCoreVoid = null;
-
 export type FrameSupportScheduleDispatchTime = { type: 'At'; value: number } | { type: 'After'; value: number };
 
 /**
@@ -3978,46 +3972,6 @@ export type PalletWhitelistCallLike =
       params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
   | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: PaseoRuntimeRuntimeCallLike } };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletParametersCall =
-  /**
-   * Set the value of a parameter.
-   *
-   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
-   * deleted by setting them to `None`.
-   **/
-  { name: 'SetParameter'; params: { keyValue: PaseoRuntimeRuntimeParameters } };
-
-export type PalletParametersCallLike =
-  /**
-   * Set the value of a parameter.
-   *
-   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
-   * deleted by setting them to `None`.
-   **/
-  { name: 'SetParameter'; params: { keyValue: PaseoRuntimeRuntimeParameters } };
-
-export type PaseoRuntimeRuntimeParameters = { type: 'Inflation'; value: PaseoRuntimeDynamicParamsInflationParameters };
-
-export type PaseoRuntimeDynamicParamsInflationParameters =
-  | { type: 'MinInflation'; value: [PaseoRuntimeDynamicParamsInflationMinInflation, Perquintill | undefined] }
-  | { type: 'MaxInflation'; value: [PaseoRuntimeDynamicParamsInflationMaxInflation, Perquintill | undefined] }
-  | { type: 'IdealStake'; value: [PaseoRuntimeDynamicParamsInflationIdealStake, Perquintill | undefined] }
-  | { type: 'Falloff'; value: [PaseoRuntimeDynamicParamsInflationFalloff, Perquintill | undefined] }
-  | { type: 'UseAuctionSlots'; value: [PaseoRuntimeDynamicParamsInflationUseAuctionSlots, boolean | undefined] };
-
-export type PaseoRuntimeDynamicParamsInflationMinInflation = {};
-
-export type PaseoRuntimeDynamicParamsInflationMaxInflation = {};
-
-export type PaseoRuntimeDynamicParamsInflationIdealStake = {};
-
-export type PaseoRuntimeDynamicParamsInflationFalloff = {};
-
-export type PaseoRuntimeDynamicParamsInflationUseAuctionSlots = {};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4655,7 +4609,11 @@ export type PalletProxyCall =
    **/
   | {
       name: 'Proxy';
-      params: { real: MultiAddress; forceProxyType?: PaseoRuntimeProxyType | undefined; call: PaseoRuntimeRuntimeCall };
+      params: {
+        real: MultiAddress;
+        forceProxyType?: PaseoRuntimeConstantsProxyProxyType | undefined;
+        call: PaseoRuntimeRuntimeCall;
+      };
     }
   /**
    * Register a proxy account for the sender that is able to make calls on its behalf.
@@ -4668,7 +4626,10 @@ export type PalletProxyCall =
    * - `delay`: The announcement period required of the initial proxy. Will generally be
    * zero.
    **/
-  | { name: 'AddProxy'; params: { delegate: MultiAddress; proxyType: PaseoRuntimeProxyType; delay: number } }
+  | {
+      name: 'AddProxy';
+      params: { delegate: MultiAddress; proxyType: PaseoRuntimeConstantsProxyProxyType; delay: number };
+    }
   /**
    * Unregister a proxy account for the sender.
    *
@@ -4678,7 +4639,10 @@ export type PalletProxyCall =
    * - `proxy`: The account that the `caller` would like to remove as a proxy.
    * - `proxy_type`: The permissions currently enabled for the removed proxy account.
    **/
-  | { name: 'RemoveProxy'; params: { delegate: MultiAddress; proxyType: PaseoRuntimeProxyType; delay: number } }
+  | {
+      name: 'RemoveProxy';
+      params: { delegate: MultiAddress; proxyType: PaseoRuntimeConstantsProxyProxyType; delay: number };
+    }
   /**
    * Unregister all proxy accounts for the sender.
    *
@@ -4708,7 +4672,7 @@ export type PalletProxyCall =
    *
    * Fails if there are insufficient funds to pay for deposit.
    **/
-  | { name: 'CreatePure'; params: { proxyType: PaseoRuntimeProxyType; delay: number; index: number } }
+  | { name: 'CreatePure'; params: { proxyType: PaseoRuntimeConstantsProxyProxyType; delay: number; index: number } }
   /**
    * Removes a previously spawned pure proxy.
    *
@@ -4731,7 +4695,7 @@ export type PalletProxyCall =
       name: 'KillPure';
       params: {
         spawner: MultiAddress;
-        proxyType: PaseoRuntimeProxyType;
+        proxyType: PaseoRuntimeConstantsProxyProxyType;
         index: number;
         height: number;
         extIndex: number;
@@ -4799,7 +4763,7 @@ export type PalletProxyCall =
       params: {
         delegate: MultiAddress;
         real: MultiAddress;
-        forceProxyType?: PaseoRuntimeProxyType | undefined;
+        forceProxyType?: PaseoRuntimeConstantsProxyProxyType | undefined;
         call: PaseoRuntimeRuntimeCall;
       };
     };
@@ -4820,7 +4784,7 @@ export type PalletProxyCallLike =
       name: 'Proxy';
       params: {
         real: MultiAddressLike;
-        forceProxyType?: PaseoRuntimeProxyType | undefined;
+        forceProxyType?: PaseoRuntimeConstantsProxyProxyType | undefined;
         call: PaseoRuntimeRuntimeCallLike;
       };
     }
@@ -4835,7 +4799,10 @@ export type PalletProxyCallLike =
    * - `delay`: The announcement period required of the initial proxy. Will generally be
    * zero.
    **/
-  | { name: 'AddProxy'; params: { delegate: MultiAddressLike; proxyType: PaseoRuntimeProxyType; delay: number } }
+  | {
+      name: 'AddProxy';
+      params: { delegate: MultiAddressLike; proxyType: PaseoRuntimeConstantsProxyProxyType; delay: number };
+    }
   /**
    * Unregister a proxy account for the sender.
    *
@@ -4845,7 +4812,10 @@ export type PalletProxyCallLike =
    * - `proxy`: The account that the `caller` would like to remove as a proxy.
    * - `proxy_type`: The permissions currently enabled for the removed proxy account.
    **/
-  | { name: 'RemoveProxy'; params: { delegate: MultiAddressLike; proxyType: PaseoRuntimeProxyType; delay: number } }
+  | {
+      name: 'RemoveProxy';
+      params: { delegate: MultiAddressLike; proxyType: PaseoRuntimeConstantsProxyProxyType; delay: number };
+    }
   /**
    * Unregister all proxy accounts for the sender.
    *
@@ -4875,7 +4845,7 @@ export type PalletProxyCallLike =
    *
    * Fails if there are insufficient funds to pay for deposit.
    **/
-  | { name: 'CreatePure'; params: { proxyType: PaseoRuntimeProxyType; delay: number; index: number } }
+  | { name: 'CreatePure'; params: { proxyType: PaseoRuntimeConstantsProxyProxyType; delay: number; index: number } }
   /**
    * Removes a previously spawned pure proxy.
    *
@@ -4898,7 +4868,7 @@ export type PalletProxyCallLike =
       name: 'KillPure';
       params: {
         spawner: MultiAddressLike;
-        proxyType: PaseoRuntimeProxyType;
+        proxyType: PaseoRuntimeConstantsProxyProxyType;
         index: number;
         height: number;
         extIndex: number;
@@ -4966,12 +4936,12 @@ export type PalletProxyCallLike =
       params: {
         delegate: MultiAddressLike;
         real: MultiAddressLike;
-        forceProxyType?: PaseoRuntimeProxyType | undefined;
+        forceProxyType?: PaseoRuntimeConstantsProxyProxyType | undefined;
         call: PaseoRuntimeRuntimeCallLike;
       };
     };
 
-export type PaseoRuntimeProxyType =
+export type PaseoRuntimeConstantsProxyProxyType =
   | 'Any'
   | 'NonTransfer'
   | 'Governance'
@@ -6088,9 +6058,8 @@ export type PalletBagsListCallLike =
  **/
 export type PalletNominationPoolsCall =
   /**
-   * Stake funds with a pool. The amount to bond is delegated (or transferred based on
-   * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
-   * increases the pool's bond.
+   * Stake funds with a pool. The amount to bond is transferred from the member to the pool
+   * account and immediately increases the pools bond.
    *
    * The method of transferring the amount to the pool account is determined by
    * [`adapter::StakeStrategyType`]. If the pool is configured to use
@@ -6445,9 +6414,8 @@ export type PalletNominationPoolsCall =
 
 export type PalletNominationPoolsCallLike =
   /**
-   * Stake funds with a pool. The amount to bond is delegated (or transferred based on
-   * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
-   * increases the pool's bond.
+   * Stake funds with a pool. The amount to bond is transferred from the member to the pool
+   * account and immediately increases the pools bond.
    *
    * The method of transferring the amount to the pool account is determined by
    * [`adapter::StakeStrategyType`]. If the pool is configured to use
@@ -10748,59 +10716,6 @@ export type SpRuntimeDispatchErrorWithPostInfo = {
 /**
  * The `Event` enum of this pallet
  **/
-export type PalletParametersEvent =
-  /**
-   * A Parameter was set.
-   *
-   * Is also emitted when the value was not changed.
-   **/
-  {
-    name: 'Updated';
-    data: {
-      /**
-       * The key that was updated.
-       **/
-      key: PaseoRuntimeRuntimeParametersKey;
-
-      /**
-       * The old value before this call.
-       **/
-      oldValue?: PaseoRuntimeRuntimeParametersValue | undefined;
-
-      /**
-       * The new value after this call.
-       **/
-      newValue?: PaseoRuntimeRuntimeParametersValue | undefined;
-    };
-  };
-
-export type PaseoRuntimeRuntimeParametersKey = {
-  type: 'Inflation';
-  value: PaseoRuntimeDynamicParamsInflationParametersKey;
-};
-
-export type PaseoRuntimeDynamicParamsInflationParametersKey =
-  | { type: 'MinInflation'; value: PaseoRuntimeDynamicParamsInflationMinInflation }
-  | { type: 'MaxInflation'; value: PaseoRuntimeDynamicParamsInflationMaxInflation }
-  | { type: 'IdealStake'; value: PaseoRuntimeDynamicParamsInflationIdealStake }
-  | { type: 'Falloff'; value: PaseoRuntimeDynamicParamsInflationFalloff }
-  | { type: 'UseAuctionSlots'; value: PaseoRuntimeDynamicParamsInflationUseAuctionSlots };
-
-export type PaseoRuntimeRuntimeParametersValue = {
-  type: 'Inflation';
-  value: PaseoRuntimeDynamicParamsInflationParametersValue;
-};
-
-export type PaseoRuntimeDynamicParamsInflationParametersValue =
-  | { type: 'MinInflation'; value: Perquintill }
-  | { type: 'MaxInflation'; value: Perquintill }
-  | { type: 'IdealStake'; value: Perquintill }
-  | { type: 'Falloff'; value: Perquintill }
-  | { type: 'UseAuctionSlots'; value: boolean };
-
-/**
- * The `Event` enum of this pallet
- **/
 export type PolkadotRuntimeCommonClaimsPalletEvent =
   /**
    * Someone claimed some DOTs.
@@ -10865,7 +10780,12 @@ export type PalletProxyEvent =
    **/
   | {
       name: 'PureCreated';
-      data: { pure: AccountId32; who: AccountId32; proxyType: PaseoRuntimeProxyType; disambiguationIndex: number };
+      data: {
+        pure: AccountId32;
+        who: AccountId32;
+        proxyType: PaseoRuntimeConstantsProxyProxyType;
+        disambiguationIndex: number;
+      };
     }
   /**
    * An announcement was placed to make a call in the future.
@@ -10876,14 +10796,24 @@ export type PalletProxyEvent =
    **/
   | {
       name: 'ProxyAdded';
-      data: { delegator: AccountId32; delegatee: AccountId32; proxyType: PaseoRuntimeProxyType; delay: number };
+      data: {
+        delegator: AccountId32;
+        delegatee: AccountId32;
+        proxyType: PaseoRuntimeConstantsProxyProxyType;
+        delay: number;
+      };
     }
   /**
    * A proxy was removed.
    **/
   | {
       name: 'ProxyRemoved';
-      data: { delegator: AccountId32; delegatee: AccountId32; proxyType: PaseoRuntimeProxyType; delay: number };
+      data: {
+        delegator: AccountId32;
+        delegatee: AccountId32;
+        proxyType: PaseoRuntimeConstantsProxyProxyType;
+        delay: number;
+      };
     };
 
 /**
@@ -12513,12 +12443,7 @@ export type PalletStakingPalletError =
   /**
    * Operation not allowed for virtual stakers.
    **/
-  | 'VirtualStakerNotAllowed'
-  /**
-   * Account is restricted from participation in staking. This may happen if the account is
-   * staking in another way already, such as via pool.
-   **/
-  | 'Restricted';
+  | 'VirtualStakerNotAllowed';
 
 export type SpStakingOffenceOffenceDetails = {
   offender: [AccountId32, SpStakingExposure];
@@ -12940,7 +12865,11 @@ export type PalletUtilityError =
    **/
   'TooManyCalls';
 
-export type PalletProxyProxyDefinition = { delegate: AccountId32; proxyType: PaseoRuntimeProxyType; delay: number };
+export type PalletProxyProxyDefinition = {
+  delegate: AccountId32;
+  proxyType: PaseoRuntimeConstantsProxyProxyType;
+  delay: number;
+};
 
 export type PalletProxyAnnouncement = { real: AccountId32; callHash: H256; height: number };
 
@@ -13455,12 +13384,7 @@ export type PalletNominationPoolsError =
   /**
    * This call is not allowed in the current state of the pallet.
    **/
-  | { name: 'NotSupported' }
-  /**
-   * Account is restricted from participation in pools. This may happen if the account is
-   * staking in another way already.
-   **/
-  | { name: 'Restricted' };
+  | { name: 'NotSupported' };
 
 export type PalletNominationPoolsDefensiveError =
   | 'NotEnoughSpaceInUnbondPool'

@@ -47,11 +47,10 @@ import type {
   FrameSupportPreimagesBounded,
   FrameSupportScheduleDispatchTime,
   SpWeightsWeightV2Weight,
-  PaseoRuntimeRuntimeParameters,
   PolkadotRuntimeCommonClaimsEcdsaSignature,
   PolkadotRuntimeCommonClaimsStatementKind,
   PalletVestingVestingInfo,
-  PaseoRuntimeProxyType,
+  PaseoRuntimeConstantsProxyProxyType,
   PalletMultisigTimepoint,
   PalletElectionProviderMultiPhaseRawSolution,
   PalletElectionProviderMultiPhaseSolutionOrSnapshotSize,
@@ -3298,37 +3297,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
-   * Pallet `Parameters`'s transaction calls
-   **/
-  parameters: {
-    /**
-     * Set the value of a parameter.
-     *
-     * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
-     * deleted by setting them to `None`.
-     *
-     * @param {PaseoRuntimeRuntimeParameters} keyValue
-     **/
-    setParameter: GenericTxCall<
-      Rv,
-      (keyValue: PaseoRuntimeRuntimeParameters) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Parameters';
-          palletCall: {
-            name: 'SetParameter';
-            params: { keyValue: PaseoRuntimeRuntimeParameters };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
    * Pallet `Claims`'s transaction calls
    **/
   claims: {
@@ -3966,14 +3934,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `call`: The call to be made by the `real` account.
      *
      * @param {MultiAddressLike} real
-     * @param {PaseoRuntimeProxyType | undefined} forceProxyType
+     * @param {PaseoRuntimeConstantsProxyProxyType | undefined} forceProxyType
      * @param {PaseoRuntimeRuntimeCallLike} call
      **/
     proxy: GenericTxCall<
       Rv,
       (
         real: MultiAddressLike,
-        forceProxyType: PaseoRuntimeProxyType | undefined,
+        forceProxyType: PaseoRuntimeConstantsProxyProxyType | undefined,
         call: PaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3983,7 +3951,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
             name: 'Proxy';
             params: {
               real: MultiAddressLike;
-              forceProxyType: PaseoRuntimeProxyType | undefined;
+              forceProxyType: PaseoRuntimeConstantsProxyProxyType | undefined;
               call: PaseoRuntimeRuntimeCallLike;
             };
           };
@@ -4003,14 +3971,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * zero.
      *
      * @param {MultiAddressLike} delegate
-     * @param {PaseoRuntimeProxyType} proxyType
+     * @param {PaseoRuntimeConstantsProxyProxyType} proxyType
      * @param {number} delay
      **/
     addProxy: GenericTxCall<
       Rv,
       (
         delegate: MultiAddressLike,
-        proxyType: PaseoRuntimeProxyType,
+        proxyType: PaseoRuntimeConstantsProxyProxyType,
         delay: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -4018,7 +3986,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Proxy';
           palletCall: {
             name: 'AddProxy';
-            params: { delegate: MultiAddressLike; proxyType: PaseoRuntimeProxyType; delay: number };
+            params: { delegate: MultiAddressLike; proxyType: PaseoRuntimeConstantsProxyProxyType; delay: number };
           };
         }
       >
@@ -4034,14 +4002,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `proxy_type`: The permissions currently enabled for the removed proxy account.
      *
      * @param {MultiAddressLike} delegate
-     * @param {PaseoRuntimeProxyType} proxyType
+     * @param {PaseoRuntimeConstantsProxyProxyType} proxyType
      * @param {number} delay
      **/
     removeProxy: GenericTxCall<
       Rv,
       (
         delegate: MultiAddressLike,
-        proxyType: PaseoRuntimeProxyType,
+        proxyType: PaseoRuntimeConstantsProxyProxyType,
         delay: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -4049,7 +4017,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Proxy';
           palletCall: {
             name: 'RemoveProxy';
-            params: { delegate: MultiAddressLike; proxyType: PaseoRuntimeProxyType; delay: number };
+            params: { delegate: MultiAddressLike; proxyType: PaseoRuntimeConstantsProxyProxyType; delay: number };
           };
         }
       >
@@ -4097,14 +4065,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Fails if there are insufficient funds to pay for deposit.
      *
-     * @param {PaseoRuntimeProxyType} proxyType
+     * @param {PaseoRuntimeConstantsProxyProxyType} proxyType
      * @param {number} delay
      * @param {number} index
      **/
     createPure: GenericTxCall<
       Rv,
       (
-        proxyType: PaseoRuntimeProxyType,
+        proxyType: PaseoRuntimeConstantsProxyProxyType,
         delay: number,
         index: number,
       ) => ChainSubmittableExtrinsic<
@@ -4113,7 +4081,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Proxy';
           palletCall: {
             name: 'CreatePure';
-            params: { proxyType: PaseoRuntimeProxyType; delay: number; index: number };
+            params: { proxyType: PaseoRuntimeConstantsProxyProxyType; delay: number; index: number };
           };
         }
       >
@@ -4138,7 +4106,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * account whose `pure` call has corresponding parameters.
      *
      * @param {MultiAddressLike} spawner
-     * @param {PaseoRuntimeProxyType} proxyType
+     * @param {PaseoRuntimeConstantsProxyProxyType} proxyType
      * @param {number} index
      * @param {number} height
      * @param {number} extIndex
@@ -4147,7 +4115,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       Rv,
       (
         spawner: MultiAddressLike,
-        proxyType: PaseoRuntimeProxyType,
+        proxyType: PaseoRuntimeConstantsProxyProxyType,
         index: number,
         height: number,
         extIndex: number,
@@ -4159,7 +4127,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
             name: 'KillPure';
             params: {
               spawner: MultiAddressLike;
-              proxyType: PaseoRuntimeProxyType;
+              proxyType: PaseoRuntimeConstantsProxyProxyType;
               index: number;
               height: number;
               extIndex: number;
@@ -4285,7 +4253,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * @param {MultiAddressLike} delegate
      * @param {MultiAddressLike} real
-     * @param {PaseoRuntimeProxyType | undefined} forceProxyType
+     * @param {PaseoRuntimeConstantsProxyProxyType | undefined} forceProxyType
      * @param {PaseoRuntimeRuntimeCallLike} call
      **/
     proxyAnnounced: GenericTxCall<
@@ -4293,7 +4261,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       (
         delegate: MultiAddressLike,
         real: MultiAddressLike,
-        forceProxyType: PaseoRuntimeProxyType | undefined,
+        forceProxyType: PaseoRuntimeConstantsProxyProxyType | undefined,
         call: PaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -4304,7 +4272,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
             params: {
               delegate: MultiAddressLike;
               real: MultiAddressLike;
-              forceProxyType: PaseoRuntimeProxyType | undefined;
+              forceProxyType: PaseoRuntimeConstantsProxyProxyType | undefined;
               call: PaseoRuntimeRuntimeCallLike;
             };
           };
@@ -5381,9 +5349,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   nominationPools: {
     /**
-     * Stake funds with a pool. The amount to bond is delegated (or transferred based on
-     * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
-     * increases the pool's bond.
+     * Stake funds with a pool. The amount to bond is transferred from the member to the pool
+     * account and immediately increases the pools bond.
      *
      * The method of transferring the amount to the pool account is determined by
      * [`adapter::StakeStrategyType`]. If the pool is configured to use

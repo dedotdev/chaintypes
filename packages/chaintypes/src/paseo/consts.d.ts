@@ -502,15 +502,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
-   * Pallet `Parameters`'s constants
-   **/
-  parameters: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
    * Pallet `Claims`'s constants
    **/
   claims: {

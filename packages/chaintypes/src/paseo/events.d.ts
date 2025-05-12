@@ -26,9 +26,7 @@ import type {
   PalletConvictionVotingTally,
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
-  PaseoRuntimeRuntimeParametersKey,
-  PaseoRuntimeRuntimeParametersValue,
-  PaseoRuntimeProxyType,
+  PaseoRuntimeConstantsProxyProxyType,
   PalletMultisigTimepoint,
   PalletElectionProviderMultiPhaseElectionCompute,
   SpNposElectionsElectionScore,
@@ -1081,42 +1079,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
-   * Pallet `Parameters`'s events
-   **/
-  parameters: {
-    /**
-     * A Parameter was set.
-     *
-     * Is also emitted when the value was not changed.
-     **/
-    Updated: GenericPalletEvent<
-      Rv,
-      'Parameters',
-      'Updated',
-      {
-        /**
-         * The key that was updated.
-         **/
-        key: PaseoRuntimeRuntimeParametersKey;
-
-        /**
-         * The old value before this call.
-         **/
-        oldValue?: PaseoRuntimeRuntimeParametersValue | undefined;
-
-        /**
-         * The new value after this call.
-         **/
-        newValue?: PaseoRuntimeRuntimeParametersValue | undefined;
-      }
-    >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
    * Pallet `Claims`'s events
    **/
   claims: {
@@ -1212,7 +1174,12 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'Proxy',
       'PureCreated',
-      { pure: AccountId32; who: AccountId32; proxyType: PaseoRuntimeProxyType; disambiguationIndex: number }
+      {
+        pure: AccountId32;
+        who: AccountId32;
+        proxyType: PaseoRuntimeConstantsProxyProxyType;
+        disambiguationIndex: number;
+      }
     >;
 
     /**
@@ -1227,7 +1194,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'Proxy',
       'ProxyAdded',
-      { delegator: AccountId32; delegatee: AccountId32; proxyType: PaseoRuntimeProxyType; delay: number }
+      { delegator: AccountId32; delegatee: AccountId32; proxyType: PaseoRuntimeConstantsProxyProxyType; delay: number }
     >;
 
     /**
@@ -1237,7 +1204,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'Proxy',
       'ProxyRemoved',
-      { delegator: AccountId32; delegatee: AccountId32; proxyType: PaseoRuntimeProxyType; delay: number }
+      { delegator: AccountId32; delegatee: AccountId32; proxyType: PaseoRuntimeConstantsProxyProxyType; delay: number }
     >;
 
     /**

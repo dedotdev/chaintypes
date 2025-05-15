@@ -12,6 +12,8 @@ import type {
   BytesLike,
   FixedBytes,
   H160,
+  Perbill,
+  Percent,
 } from 'dedot/codecs';
 import type {
   FrameSystemAccountInfo,
@@ -32,12 +34,18 @@ import type {
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
   PalletMigrationsMigrationCursor,
+  PalletPreimageOldRequestStatus,
+  PalletPreimageRequestStatus,
+  PalletSchedulerScheduled,
+  PalletSchedulerRetryConfig,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
-  FrameSupportTokensMiscIdAmount,
+  FrameSupportTokensMiscIdAmountRuntimeHoldReason,
   FrameSupportTokensMiscIdAmountRuntimeFreezeReason,
   PalletTransactionPaymentReleases,
+  PalletVestingVestingInfo,
+  PalletVestingReleases,
   PalletCollatorSelectionCandidateInfo,
   AssetHubWestendRuntimeSessionKeys,
   SpStakingOffenceOffenceSeverity,
@@ -59,7 +67,7 @@ import type {
   PalletMessageQueuePage,
   SnowbridgeCoreOperatingModeBasicOperatingMode,
   PalletMultisigMultisig,
-  PalletProxyProxyDefinition,
+  PalletProxyProxyDefinitionProxyType,
   PalletProxyAnnouncement,
   PalletAssetsAssetDetails,
   PalletAssetsAssetAccount,
@@ -90,6 +98,45 @@ import type {
   FrameSupportTokensFungibleHoldConsideration,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationMigrationLimits,
+  PalletStakingAsyncLedgerStakingLedger,
+  PalletStakingAsyncRewardDestination,
+  PalletStakingAsyncValidatorPrefs,
+  PalletStakingAsyncNominations,
+  PalletStakingAsyncActiveEraInfo,
+  SpStakingPagedExposureMetadata,
+  PalletStakingAsyncPalletBoundedExposurePage,
+  PalletStakingAsyncEraRewardPoints,
+  PalletStakingAsyncForcing,
+  PalletStakingAsyncSlashingOffenceRecord,
+  PalletStakingAsyncUnappliedSlash,
+  PalletStakingAsyncSnapshotStatus,
+  PalletNominationPoolsPoolMember,
+  PalletNominationPoolsBondedPoolInner,
+  PalletNominationPoolsRewardPool,
+  PalletNominationPoolsSubPools,
+  PalletNominationPoolsClaimPermission,
+  PalletFastUnstakeUnstakeRequest,
+  PalletBagsListListNode,
+  PalletBagsListListBag,
+  PalletDelegatedStakingDelegation,
+  PalletDelegatedStakingAgentLedger,
+  PalletStakingAsyncRcClientSessionReport,
+  PalletElectionProviderMultiBlockPhase,
+  FrameElectionProviderSupportBoundedSupports,
+  PalletElectionProviderMultiBlockVerifierImplsValidSolution,
+  PalletElectionProviderMultiBlockVerifierImplsPartialBackings,
+  SpNposElectionsElectionScore,
+  PalletElectionProviderMultiBlockVerifierImplsStatus,
+  AssetHubWestendRuntimeStakingNposCompactSolution16,
+  PalletElectionProviderMultiBlockSignedSubmissionMetadata,
+  PalletConvictionVotingVoteVoting,
+  PalletReferendaReferendumInfoOriginCaller,
+  PalletTreasuryProposal,
+  PalletTreasurySpendStatus,
+  PolkadotRuntimeCommonImplsVersionedLocatableAsset,
+  PalletRcMigratorAccountsAccount,
+  PalletAhMigratorMigrationStage,
+  PalletAhMigratorBalancesBefore,
 } from './types.js';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
@@ -583,6 +630,101 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
+   * Pallet `Preimage`'s storage queries
+   **/
+  preimage: {
+    /**
+     * The request status of a given hash.
+     *
+     * @param {H256} arg
+     * @param {Callback<PalletPreimageOldRequestStatus | undefined> =} callback
+     **/
+    statusFor: GenericStorageQuery<Rv, (arg: H256) => PalletPreimageOldRequestStatus | undefined, H256>;
+
+    /**
+     * The request status of a given hash.
+     *
+     * @param {H256} arg
+     * @param {Callback<PalletPreimageRequestStatus | undefined> =} callback
+     **/
+    requestStatusFor: GenericStorageQuery<Rv, (arg: H256) => PalletPreimageRequestStatus | undefined, H256>;
+
+    /**
+     *
+     * @param {[H256, number]} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    preimageFor: GenericStorageQuery<Rv, (arg: [H256, number]) => Bytes | undefined, [H256, number]>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Scheduler`'s storage queries
+   **/
+  scheduler: {
+    /**
+     * Block number at which the agenda began incomplete execution.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    incompleteSince: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Items to be executed, indexed by the block number that they should be executed on.
+     *
+     * @param {number} arg
+     * @param {Callback<Array<PalletSchedulerScheduled | undefined>> =} callback
+     **/
+    agenda: GenericStorageQuery<Rv, (arg: number) => Array<PalletSchedulerScheduled | undefined>, number>;
+
+    /**
+     * Retry configurations for items to be executed, indexed by task address.
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<PalletSchedulerRetryConfig | undefined> =} callback
+     **/
+    retries: GenericStorageQuery<
+      Rv,
+      (arg: [number, number]) => PalletSchedulerRetryConfig | undefined,
+      [number, number]
+    >;
+
+    /**
+     * Lookup from a name to the block number and index of the task.
+     *
+     * For v3 -> v4 the previously unbounded identities are Blake2-256 hashed to form the v4
+     * identities.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<[number, number] | undefined> =} callback
+     **/
+    lookup: GenericStorageQuery<Rv, (arg: FixedBytes<32>) => [number, number] | undefined, FixedBytes<32>>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Sudo`'s storage queries
+   **/
+  sudo: {
+    /**
+     * The `AccountId` of the sudo key.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    key: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
    * Pallet `Balances`'s storage queries
    **/
   balances: {
@@ -656,9 +798,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Holds on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmountRuntimeHoldReason>> =} callback
      **/
-    holds: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount>, AccountId32>;
+    holds: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmountRuntimeHoldReason>,
+      AccountId32
+    >;
 
     /**
      * Freeze locks on account balances.
@@ -692,6 +838,36 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<PalletTransactionPaymentReleases> =} callback
      **/
     storageVersion: GenericStorageQuery<Rv, () => PalletTransactionPaymentReleases>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Vesting`'s storage queries
+   **/
+  vesting: {
+    /**
+     * Information regarding the vesting of a given account.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<Array<PalletVestingVestingInfo> | undefined> =} callback
+     **/
+    vesting: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => Array<PalletVestingVestingInfo> | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Storage version of the pallet.
+     *
+     * New networks start with latest version, as determined by the genesis build.
+     *
+     * @param {Callback<PalletVestingReleases> =} callback
+     **/
+    storageVersion: GenericStorageQuery<Rv, () => PalletVestingReleases>;
 
     /**
      * Generic pallet storage query
@@ -1255,11 +1431,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * which are being delegated to, together with the amount held on deposit.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<[Array<PalletProxyProxyDefinition>, bigint]> =} callback
+     * @param {Callback<[Array<PalletProxyProxyDefinitionProxyType>, bigint]> =} callback
      **/
     proxies: GenericStorageQuery<
       Rv,
-      (arg: AccountId32Like) => [Array<PalletProxyProxyDefinition>, bigint],
+      (arg: AccountId32Like) => [Array<PalletProxyProxyDefinitionProxyType>, bigint],
       AccountId32
     >;
 
@@ -1274,6 +1450,23 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       (arg: AccountId32Like) => [Array<PalletProxyAnnouncement>, bigint],
       AccountId32
     >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Indices`'s storage queries
+   **/
+  indices: {
+    /**
+     * The lookup from index to account.
+     *
+     * @param {number} arg
+     * @param {Callback<[AccountId32, bigint, boolean] | undefined> =} callback
+     **/
+    accounts: GenericStorageQuery<Rv, (arg: number) => [AccountId32, bigint, boolean] | undefined, number>;
 
     /**
      * Generic pallet storage query
@@ -2062,6 +2255,1404 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
      **/
     signedMigrationMaxLimits: GenericStorageQuery<Rv, () => PalletStateTrieMigrationMigrationLimits | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Staking`'s storage queries
+   **/
+  staking: {
+    /**
+     * The ideal number of active validators.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    validatorCount: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Any validators that may never be slashed or forcibly kicked. It's a Vec since they're
+     * easy to initialize and the performance hit is minimal (we expect no more than four
+     * invulnerables) and restricted to testnets.
+     *
+     * @param {Callback<Array<AccountId32>> =} callback
+     **/
+    invulnerables: GenericStorageQuery<Rv, () => Array<AccountId32>>;
+
+    /**
+     * Map from all locked "stash" accounts to the controller account.
+     *
+     * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    bonded: GenericStorageQuery<Rv, (arg: AccountId32Like) => AccountId32 | undefined, AccountId32>;
+
+    /**
+     * The minimum active bond to become and maintain the role of a nominator.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    minNominatorBond: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     * The minimum active bond to become and maintain the role of a validator.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    minValidatorBond: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     * The minimum active nominator stake of the last successful election.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    minimumActiveStake: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     * The minimum amount of commission that validators can set.
+     *
+     * If set to `0`, no limit exists.
+     *
+     * @param {Callback<Perbill> =} callback
+     **/
+    minCommission: GenericStorageQuery<Rv, () => Perbill>;
+
+    /**
+     * Map from all (unlocked) "controller" accounts to the info regarding the staking.
+     *
+     * Note: All the reads and mutations to this storage *MUST* be done through the methods exposed
+     * by [`StakingLedger`] to ensure data and lock consistency.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletStakingAsyncLedgerStakingLedger | undefined> =} callback
+     **/
+    ledger: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => PalletStakingAsyncLedgerStakingLedger | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Where the reward payment should be made. Keyed by stash.
+     *
+     * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletStakingAsyncRewardDestination | undefined> =} callback
+     **/
+    payee: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => PalletStakingAsyncRewardDestination | undefined,
+      AccountId32
+    >;
+
+    /**
+     * The map from (wannabe) validator stash key to the preferences of that validator.
+     *
+     * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletStakingAsyncValidatorPrefs> =} callback
+     **/
+    validators: GenericStorageQuery<Rv, (arg: AccountId32Like) => PalletStakingAsyncValidatorPrefs, AccountId32>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForValidators: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * The maximum validator count before we stop allowing new validators to join.
+     *
+     * When this value is not set, no limits are enforced.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    maxValidatorsCount: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * The map from nominator stash key to their nomination preferences, namely the validators that
+     * they wish to support.
+     *
+     * Note that the keys of this storage map might become non-decodable in case the
+     * account's [`NominationsQuota::MaxNominations`] configuration is decreased.
+     * In this rare case, these nominators
+     * are still existent in storage, their key is correct and retrievable (i.e. `contains_key`
+     * indicates that they exist), but their value cannot be decoded. Therefore, the non-decodable
+     * nominators will effectively not-exist, until they re-submit their preferences such that it
+     * is within the bounds of the newly set `Config::MaxNominations`.
+     *
+     * This implies that `::iter_keys().count()` and `::iter().count()` might return different
+     * values for this map. Moreover, the main `::count()` is aligned with the former, namely the
+     * number of keys that exist.
+     *
+     * Lastly, if any of the nominators become non-decodable, they can be chilled immediately via
+     * [`Call::chill_other`] dispatchable by anyone.
+     *
+     * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletStakingAsyncNominations | undefined> =} callback
+     **/
+    nominators: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => PalletStakingAsyncNominations | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForNominators: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Stakers whose funds are managed by other pallets.
+     *
+     * This pallet does not apply any locks on them, therefore they are only virtually bonded. They
+     * are expected to be keyless accounts and hence should not be allowed to mutate their ledger
+     * directly via this pallet. Instead, these accounts are managed by other pallets and accessed
+     * via low level apis. We keep track of them to do minimal integrity checks.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    virtualStakers: GenericStorageQuery<Rv, (arg: AccountId32Like) => [] | undefined, AccountId32>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForVirtualStakers: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * The maximum nominator count before we stop allowing new validators to join.
+     *
+     * When this value is not set, no limits are enforced.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    maxNominatorsCount: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * The current planned era index.
+     *
+     * This is the latest planned era, depending on how the Session pallet queues the validator
+     * set, it might be active or not.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    currentEra: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * The active era information, it holds index and start.
+     *
+     * The active era is the era being currently rewarded. Validator set of this era must be
+     * equal to what is RC's session pallet.
+     *
+     * @param {Callback<PalletStakingAsyncActiveEraInfo | undefined> =} callback
+     **/
+    activeEra: GenericStorageQuery<Rv, () => PalletStakingAsyncActiveEraInfo | undefined>;
+
+    /**
+     * A mapping from still-bonded eras to the first session index of that era.
+     *
+     * Must contains information for eras for the range:
+     * `[active_era - bounding_duration; active_era]`
+     *
+     * @param {Callback<Array<[number, number]>> =} callback
+     **/
+    bondedEras: GenericStorageQuery<Rv, () => Array<[number, number]>>;
+
+    /**
+     * Summary of validator exposure at a given era.
+     *
+     * This contains the total stake in support of the validator and their own stake. In addition,
+     * it can also be used to get the number of nominators backing this validator and the number of
+     * exposure pages they are divided into. The page count is useful to determine the number of
+     * pages of rewards that needs to be claimed.
+     *
+     * This is keyed first by the era index to allow bulk deletion and then the stash account.
+     * Should only be accessed through `Eras`.
+     *
+     * Is it removed after [`Config::HistoryDepth`] eras.
+     * If stakers hasn't been set or has been removed then empty overview is returned.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<SpStakingPagedExposureMetadata | undefined> =} callback
+     **/
+    erasStakersOverview: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like]) => SpStakingPagedExposureMetadata | undefined,
+      [number, AccountId32]
+    >;
+
+    /**
+     * Paginated exposure of a validator at given era.
+     *
+     * This is keyed first by the era index to allow bulk deletion, then stash account and finally
+     * the page. Should only be accessed through `Eras`.
+     *
+     * This is cleared after [`Config::HistoryDepth`] eras.
+     *
+     * @param {[number, AccountId32Like, number]} arg
+     * @param {Callback<PalletStakingAsyncPalletBoundedExposurePage | undefined> =} callback
+     **/
+    erasStakersPaged: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like, number]) => PalletStakingAsyncPalletBoundedExposurePage | undefined,
+      [number, AccountId32, number]
+    >;
+
+    /**
+     * History of claimed paged rewards by era and validator.
+     *
+     * This is keyed by era and validator stash which maps to the set of page indexes which have
+     * been claimed.
+     *
+     * It is removed after [`Config::HistoryDepth`] eras.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<Array<number>> =} callback
+     **/
+    erasClaimedRewards: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like]) => Array<number>,
+      [number, AccountId32]
+    >;
+
+    /**
+     * Exposure of validator at era with the preferences of validators.
+     *
+     * This is keyed first by the era index to allow bulk deletion and then the stash account.
+     *
+     * Is it removed after [`Config::HistoryDepth`] eras.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<PalletStakingAsyncValidatorPrefs> =} callback
+     **/
+    erasValidatorPrefs: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like]) => PalletStakingAsyncValidatorPrefs,
+      [number, AccountId32]
+    >;
+
+    /**
+     * The total validator era payout for the last [`Config::HistoryDepth`] eras.
+     *
+     * Eras that haven't finished yet or has been removed doesn't have reward.
+     *
+     * @param {number} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    erasValidatorReward: GenericStorageQuery<Rv, (arg: number) => bigint | undefined, number>;
+
+    /**
+     * Rewards for the last [`Config::HistoryDepth`] eras.
+     * If reward hasn't been set or has been removed then 0 reward is returned.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletStakingAsyncEraRewardPoints> =} callback
+     **/
+    erasRewardPoints: GenericStorageQuery<Rv, (arg: number) => PalletStakingAsyncEraRewardPoints, number>;
+
+    /**
+     * The total amount staked for the last [`Config::HistoryDepth`] eras.
+     * If total hasn't been set or has been removed then 0 stake is returned.
+     *
+     * @param {number} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    erasTotalStake: GenericStorageQuery<Rv, (arg: number) => bigint, number>;
+
+    /**
+     * Mode of era forcing.
+     *
+     * @param {Callback<PalletStakingAsyncForcing> =} callback
+     **/
+    forceEra: GenericStorageQuery<Rv, () => PalletStakingAsyncForcing>;
+
+    /**
+     * Maximum staked rewards, i.e. the percentage of the era inflation that
+     * is used for stake rewards.
+     * See [Era payout](./index.html#era-payout).
+     *
+     * @param {Callback<Percent | undefined> =} callback
+     **/
+    maxStakedRewards: GenericStorageQuery<Rv, () => Percent | undefined>;
+
+    /**
+     * The percentage of the slash that is distributed to reporters.
+     *
+     * The rest of the slashed value is handled by the `Slash`.
+     *
+     * @param {Callback<Perbill> =} callback
+     **/
+    slashRewardFraction: GenericStorageQuery<Rv, () => Perbill>;
+
+    /**
+     * The amount of currency given to reporters of a slash event which was
+     * canceled by extraordinary circumstances (e.g. governance).
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    canceledSlashPayout: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     * Stores reported offences in a queue until they are processed in subsequent blocks.
+     *
+     * Each offence is recorded under the corresponding era index and the offending validator's
+     * account. If an offence spans multiple pages, only one page is processed at a time. Offences
+     * are handled sequentially, with their associated slashes computed and stored in
+     * `UnappliedSlashes`. These slashes are then applied in a future era as determined by
+     * `SlashDeferDuration`.
+     *
+     * Any offences tied to an era older than `BondingDuration` are automatically dropped.
+     * Processing always prioritizes the oldest era first.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<PalletStakingAsyncSlashingOffenceRecord | undefined> =} callback
+     **/
+    offenceQueue: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like]) => PalletStakingAsyncSlashingOffenceRecord | undefined,
+      [number, AccountId32]
+    >;
+
+    /**
+     * Tracks the eras that contain offences in `OffenceQueue`, sorted from **earliest to latest**.
+     *
+     * - This ensures efficient retrieval of the oldest offence without iterating through
+     * `OffenceQueue`.
+     * - When a new offence is added to `OffenceQueue`, its era is **inserted in sorted order**
+     * if not already present.
+     * - When all offences for an era are processed, it is **removed** from this list.
+     * - The maximum length of this vector is bounded by `BondingDuration`.
+     *
+     * This eliminates the need for expensive iteration and sorting when fetching the next offence
+     * to process.
+     *
+     * @param {Callback<Array<number> | undefined> =} callback
+     **/
+    offenceQueueEras: GenericStorageQuery<Rv, () => Array<number> | undefined>;
+
+    /**
+     * Tracks the currently processed offence record from the `OffenceQueue`.
+     *
+     * - When processing offences, an offence record is **popped** from the oldest era in
+     * `OffenceQueue` and stored here.
+     * - The function `process_offence` reads from this storage, processing one page of exposure at
+     * a time.
+     * - After processing a page, the `exposure_page` count is **decremented** until it reaches
+     * zero.
+     * - Once fully processed, the offence record is removed from this storage.
+     *
+     * This ensures that offences are processed incrementally, preventing excessive computation
+     * in a single block while maintaining correct slashing behavior.
+     *
+     * @param {Callback<[number, AccountId32, PalletStakingAsyncSlashingOffenceRecord] | undefined> =} callback
+     **/
+    processingOffence: GenericStorageQuery<
+      Rv,
+      () => [number, AccountId32, PalletStakingAsyncSlashingOffenceRecord] | undefined
+    >;
+
+    /**
+     * All unapplied slashes that are queued for later.
+     *
+     * @param {[number, [AccountId32Like, Perbill, number]]} arg
+     * @param {Callback<PalletStakingAsyncUnappliedSlash | undefined> =} callback
+     **/
+    unappliedSlashes: GenericStorageQuery<
+      Rv,
+      (arg: [number, [AccountId32Like, Perbill, number]]) => PalletStakingAsyncUnappliedSlash | undefined,
+      [number, [AccountId32, Perbill, number]]
+    >;
+
+    /**
+     * All slashing events on validators, mapped by era to the highest slash proportion
+     * and slash value of the era.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<[Perbill, bigint] | undefined> =} callback
+     **/
+    validatorSlashInEra: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like]) => [Perbill, bigint] | undefined,
+      [number, AccountId32]
+    >;
+
+    /**
+     * All slashing events on nominators, mapped by era to the highest slash value of the era.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    nominatorSlashInEra: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like]) => bigint | undefined,
+      [number, AccountId32]
+    >;
+
+    /**
+     * The threshold for when users can start calling `chill_other` for other validators /
+     * nominators. The threshold is compared to the actual number of validators / nominators
+     * (`CountFor*`) in the system compared to the configured max (`Max*Count`).
+     *
+     * @param {Callback<Percent | undefined> =} callback
+     **/
+    chillThreshold: GenericStorageQuery<Rv, () => Percent | undefined>;
+
+    /**
+     * Voter snapshot progress status.
+     *
+     * If the status is `Ongoing`, it keeps a cursor of the last voter retrieved to proceed when
+     * creating the next snapshot page.
+     *
+     * @param {Callback<PalletStakingAsyncSnapshotStatus> =} callback
+     **/
+    voterSnapshotStatus: GenericStorageQuery<Rv, () => PalletStakingAsyncSnapshotStatus>;
+
+    /**
+     * Keeps track of an ongoing multi-page election solution request.
+     *
+     * If `Some(_)``, it is the next page that we intend to elect. If `None`, we are not in the
+     * election process.
+     *
+     * This is only set in multi-block elections. Should always be `None` otherwise.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    nextElectionPage: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * A bounded list of the "electable" stashes that resulted from a successful election.
+     *
+     * @param {Callback<Array<AccountId32>> =} callback
+     **/
+    electableStashes: GenericStorageQuery<Rv, () => Array<AccountId32>>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `NominationPools`'s storage queries
+   **/
+  nominationPools: {
+    /**
+     * The sum of funds across all pools.
+     *
+     * This might be lower but never higher than the sum of `total_balance` of all [`PoolMembers`]
+     * because calling `pool_withdraw_unbonded` might decrease the total stake of the pool's
+     * `bonded_account` without adjusting the pallet-internal `UnbondingPool`'s.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    totalValueLocked: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     * Minimum amount to bond to join a pool.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    minJoinBond: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     * Minimum bond required to create a pool.
+     *
+     * This is the amount that the depositor must put as their initial stake in the pool, as an
+     * indication of "skin in the game".
+     *
+     * This is the value that will always exist in the staking ledger of the pool bonded account
+     * while all other accounts leave.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    minCreateBond: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     * Maximum number of nomination pools that can exist. If `None`, then an unbounded number of
+     * pools can exist.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    maxPools: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Maximum number of members that can exist in the system. If `None`, then the count
+     * members are not bound on a system wide basis.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    maxPoolMembers: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Maximum number of members that may belong to pool. If `None`, then the count of
+     * members is not bound on a per pool basis.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    maxPoolMembersPerPool: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * The maximum commission that can be charged by a pool. Used on commission payouts to bound
+     * pool commissions that are > `GlobalMaxCommission`, necessary if a future
+     * `GlobalMaxCommission` is lower than some current pool commissions.
+     *
+     * @param {Callback<Perbill | undefined> =} callback
+     **/
+    globalMaxCommission: GenericStorageQuery<Rv, () => Perbill | undefined>;
+
+    /**
+     * Active members.
+     *
+     * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletNominationPoolsPoolMember | undefined> =} callback
+     **/
+    poolMembers: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => PalletNominationPoolsPoolMember | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForPoolMembers: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Storage for bonded pools.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletNominationPoolsBondedPoolInner | undefined> =} callback
+     **/
+    bondedPools: GenericStorageQuery<Rv, (arg: number) => PalletNominationPoolsBondedPoolInner | undefined, number>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForBondedPools: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Reward pools. This is where there rewards for each pool accumulate. When a members payout is
+     * claimed, the balance comes out of the reward pool. Keyed by the bonded pools account.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletNominationPoolsRewardPool | undefined> =} callback
+     **/
+    rewardPools: GenericStorageQuery<Rv, (arg: number) => PalletNominationPoolsRewardPool | undefined, number>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForRewardPools: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Groups of unbonding pools. Each group of unbonding pools belongs to a
+     * bonded pool, hence the name sub-pools. Keyed by the bonded pools account.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletNominationPoolsSubPools | undefined> =} callback
+     **/
+    subPoolsStorage: GenericStorageQuery<Rv, (arg: number) => PalletNominationPoolsSubPools | undefined, number>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForSubPoolsStorage: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Metadata for the pool.
+     *
+     * @param {number} arg
+     * @param {Callback<Bytes> =} callback
+     **/
+    metadata: GenericStorageQuery<Rv, (arg: number) => Bytes, number>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForMetadata: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Ever increasing number of all pools created so far.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    lastPoolId: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * A reverse lookup from the pool's account id to its id.
+     *
+     * This is only used for slashing and on automatic withdraw update. In all other instances, the
+     * pool id is used, and the accounts are deterministically derived from it.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    reversePoolIdLookup: GenericStorageQuery<Rv, (arg: AccountId32Like) => number | undefined, AccountId32>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForReversePoolIdLookup: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Map from a pool member account to their opted claim permission.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletNominationPoolsClaimPermission> =} callback
+     **/
+    claimPermissions: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => PalletNominationPoolsClaimPermission,
+      AccountId32
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `FastUnstake`'s storage queries
+   **/
+  fastUnstake: {
+    /**
+     * The current "head of the queue" being unstaked.
+     *
+     * The head in itself can be a batch of up to [`Config::BatchSize`] stakers.
+     *
+     * @param {Callback<PalletFastUnstakeUnstakeRequest | undefined> =} callback
+     **/
+    head: GenericStorageQuery<Rv, () => PalletFastUnstakeUnstakeRequest | undefined>;
+
+    /**
+     * The map of all accounts wishing to be unstaked.
+     *
+     * Keeps track of `AccountId` wishing to unstake and it's corresponding deposit.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    queue: GenericStorageQuery<Rv, (arg: AccountId32Like) => bigint | undefined, AccountId32>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForQueue: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Number of eras to check per block.
+     *
+     * If set to 0, this pallet does absolutely nothing. Cannot be set to more than
+     * [`Config::MaxErasToCheckPerBlock`].
+     *
+     * Based on the amount of weight available at [`Pallet::on_idle`], up to this many eras are
+     * checked. The checking is represented by updating [`UnstakeRequest::checked`], which is
+     * stored in [`Head`].
+     *
+     * @param {Callback<number> =} callback
+     **/
+    erasToCheckPerBlock: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `VoterList`'s storage queries
+   **/
+  voterList: {
+    /**
+     * A single node, within some bag.
+     *
+     * Nodes store links forward and back within their respective bags.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletBagsListListNode | undefined> =} callback
+     **/
+    listNodes: GenericStorageQuery<Rv, (arg: AccountId32Like) => PalletBagsListListNode | undefined, AccountId32>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForListNodes: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * A bag stored in storage.
+     *
+     * Stores a `Bag` struct, which stores head and tail pointers to itself.
+     *
+     * @param {bigint} arg
+     * @param {Callback<PalletBagsListListBag | undefined> =} callback
+     **/
+    listBags: GenericStorageQuery<Rv, (arg: bigint) => PalletBagsListListBag | undefined, bigint>;
+
+    /**
+     * Lock all updates to this pallet.
+     *
+     * If any nodes needs updating, removal or addition due to a temporary lock, the
+     * [`Call::rebag`] can be used.
+     *
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    lock: GenericStorageQuery<Rv, () => [] | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `DelegatedStaking`'s storage queries
+   **/
+  delegatedStaking: {
+    /**
+     * Map of Delegators to their `Delegation`.
+     *
+     * Implementation note: We are not using a double map with `delegator` and `agent` account
+     * as keys since we want to restrict delegators to delegate only to one account at a time.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletDelegatedStakingDelegation | undefined> =} callback
+     **/
+    delegators: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => PalletDelegatedStakingDelegation | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForDelegators: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Map of `Agent` to their `Ledger`.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletDelegatedStakingAgentLedger | undefined> =} callback
+     **/
+    agents: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => PalletDelegatedStakingAgentLedger | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForAgents: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `StakingNextRcClient`'s storage queries
+   **/
+  stakingNextRcClient: {
+    /**
+     * An incomplete incoming session report that we have not acted upon yet.
+     *
+     * @param {Callback<PalletStakingAsyncRcClientSessionReport | undefined> =} callback
+     **/
+    incompleteSessionReport: GenericStorageQuery<Rv, () => PalletStakingAsyncRcClientSessionReport | undefined>;
+
+    /**
+     * The last session report's `end_index` that we have acted upon.
+     *
+     * This allows this pallet to ensure a sequentially increasing sequence of session reports
+     * passed to staking.
+     *
+     * Note that with the XCM being the backbone of communication, we have a guarantee on the
+     * ordering of messages. As long as the RC sends session reports in order, we _eventually_
+     * receive them in the same correct order as well.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    lastSessionReportEndingIndex: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `MultiBlock`'s storage queries
+   **/
+  multiBlock: {
+    /**
+     * Internal counter for the number of rounds.
+     *
+     * This is useful for de-duplication of transactions submitted to the pool, and general
+     * diagnostics of the pallet.
+     *
+     * This is merely incremented once per every time that an upstream `elect` is called.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    round: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Current phase.
+     *
+     * @param {Callback<PalletElectionProviderMultiBlockPhase> =} callback
+     **/
+    currentPhase: GenericStorageQuery<Rv, () => PalletElectionProviderMultiBlockPhase>;
+
+    /**
+     * Desired number of targets to elect for this round.
+     *
+     * @param {number} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    desiredTargets: GenericStorageQuery<Rv, (arg: number) => number | undefined, number>;
+
+    /**
+     * Paginated voter snapshot. At most [`T::Pages`] keys will exist.
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<Array<[AccountId32, bigint, Array<AccountId32>]> | undefined> =} callback
+     **/
+    pagedVoterSnapshot: GenericStorageQuery<
+      Rv,
+      (arg: [number, number]) => Array<[AccountId32, bigint, Array<AccountId32>]> | undefined,
+      [number, number]
+    >;
+
+    /**
+     * Same as [`PagedVoterSnapshot`], but it will store the hash of the snapshot.
+     *
+     * The hash is generated using [`frame_system::Config::Hashing`].
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    pagedVoterSnapshotHash: GenericStorageQuery<Rv, (arg: [number, number]) => H256 | undefined, [number, number]>;
+
+    /**
+     * Paginated target snapshot.
+     *
+     * For the time being, since we assume one pages of targets, at most ONE key will exist.
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<Array<AccountId32> | undefined> =} callback
+     **/
+    pagedTargetSnapshot: GenericStorageQuery<
+      Rv,
+      (arg: [number, number]) => Array<AccountId32> | undefined,
+      [number, number]
+    >;
+
+    /**
+     * Same as [`PagedTargetSnapshot`], but it will store the hash of the snapshot.
+     *
+     * The hash is generated using [`frame_system::Config::Hashing`].
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    pagedTargetSnapshotHash: GenericStorageQuery<Rv, (arg: [number, number]) => H256 | undefined, [number, number]>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `MultiBlockVerifier`'s storage queries
+   **/
+  multiBlockVerifier: {
+    /**
+     * The `X` variant of the current queued solution. Might be the valid one or not.
+     *
+     * The two variants of this storage item is to avoid the need of copying. Recall that once a
+     * `VerifyingSolution` is being processed, it needs to write its partial supports *somewhere*.
+     * Writing theses supports on top of a *good* queued supports is wrong, since we might bail.
+     * Writing them to a bugger and copying at the ned is slightly better, but expensive. This flag
+     * system is best of both worlds.
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<FrameElectionProviderSupportBoundedSupports | undefined> =} callback
+     **/
+    queuedSolutionX: GenericStorageQuery<
+      Rv,
+      (arg: [number, number]) => FrameElectionProviderSupportBoundedSupports | undefined,
+      [number, number]
+    >;
+
+    /**
+     * The `Y` variant of the current queued solution. Might be the valid one or not.
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<FrameElectionProviderSupportBoundedSupports | undefined> =} callback
+     **/
+    queuedSolutionY: GenericStorageQuery<
+      Rv,
+      (arg: [number, number]) => FrameElectionProviderSupportBoundedSupports | undefined,
+      [number, number]
+    >;
+
+    /**
+     * Pointer to the variant of [`QueuedSolutionX`] or [`QueuedSolutionY`] that is currently
+     * valid.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletElectionProviderMultiBlockVerifierImplsValidSolution> =} callback
+     **/
+    queuedValidVariant: GenericStorageQuery<
+      Rv,
+      (arg: number) => PalletElectionProviderMultiBlockVerifierImplsValidSolution,
+      number
+    >;
+
+    /**
+     * The `(amount, count)` of backings, divided per page.
+     *
+     * This is stored because in the last block of verification we need them to compute the score,
+     * and check `MaxBackersPerWinnerFinal`.
+     *
+     * This can only ever live for the invalid variant of the solution. Once it is valid, we don't
+     * need this information anymore; the score is already computed once in
+     * [`QueuedSolutionScore`], and the backing counts are checked.
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<Array<[AccountId32, PalletElectionProviderMultiBlockVerifierImplsPartialBackings]> | undefined> =} callback
+     **/
+    queuedSolutionBackings: GenericStorageQuery<
+      Rv,
+      (
+        arg: [number, number],
+      ) => Array<[AccountId32, PalletElectionProviderMultiBlockVerifierImplsPartialBackings]> | undefined,
+      [number, number]
+    >;
+
+    /**
+     * The score of the valid variant of [`QueuedSolution`].
+     *
+     * This only ever lives for the `valid` variant.
+     *
+     * @param {number} arg
+     * @param {Callback<SpNposElectionsElectionScore | undefined> =} callback
+     **/
+    queuedSolutionScore: GenericStorageQuery<Rv, (arg: number) => SpNposElectionsElectionScore | undefined, number>;
+
+    /**
+     * The minimum score that each solution must attain in order to be considered feasible.
+     *
+     * @param {Callback<SpNposElectionsElectionScore | undefined> =} callback
+     **/
+    minimumScore: GenericStorageQuery<Rv, () => SpNposElectionsElectionScore | undefined>;
+
+    /**
+     * Storage item for [`Status`].
+     *
+     * @param {Callback<PalletElectionProviderMultiBlockVerifierImplsStatus> =} callback
+     **/
+    statusStorage: GenericStorageQuery<Rv, () => PalletElectionProviderMultiBlockVerifierImplsStatus>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `MultiBlockSigned`'s storage queries
+   **/
+  multiBlockSigned: {
+    /**
+     *
+     * @param {number} arg
+     * @param {Callback<Array<[AccountId32, SpNposElectionsElectionScore]>> =} callback
+     **/
+    sortedScores: GenericStorageQuery<Rv, (arg: number) => Array<[AccountId32, SpNposElectionsElectionScore]>, number>;
+
+    /**
+     * Triple map from (round, account, page) to a solution page.
+     *
+     * @param {[number, AccountId32Like, number]} arg
+     * @param {Callback<AssetHubWestendRuntimeStakingNposCompactSolution16 | undefined> =} callback
+     **/
+    submissionStorage: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like, number]) => AssetHubWestendRuntimeStakingNposCompactSolution16 | undefined,
+      [number, AccountId32, number]
+    >;
+
+    /**
+     * Map from account to the metadata of their submission.
+     *
+     * invariant: for any Key1 of type `AccountId` in [`Submissions`], this storage map also has a
+     * value.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<PalletElectionProviderMultiBlockSignedSubmissionMetadata | undefined> =} callback
+     **/
+    submissionMetadataStorage: GenericStorageQuery<
+      Rv,
+      (arg: [number, AccountId32Like]) => PalletElectionProviderMultiBlockSignedSubmissionMetadata | undefined,
+      [number, AccountId32]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `ConvictionVoting`'s storage queries
+   **/
+  convictionVoting: {
+    /**
+     * All voting for a particular voter in a particular voting class. We store the balance for the
+     * number of votes that we have recorded.
+     *
+     * @param {[AccountId32Like, number]} arg
+     * @param {Callback<PalletConvictionVotingVoteVoting> =} callback
+     **/
+    votingFor: GenericStorageQuery<
+      Rv,
+      (arg: [AccountId32Like, number]) => PalletConvictionVotingVoteVoting,
+      [AccountId32, number]
+    >;
+
+    /**
+     * The voting classes which have a non-zero lock requirement and the lock amounts which they
+     * require. The actual amount locked on behalf of this pallet should always be the maximum of
+     * this list.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<Array<[number, bigint]>> =} callback
+     **/
+    classLocksFor: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<[number, bigint]>, AccountId32>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Referenda`'s storage queries
+   **/
+  referenda: {
+    /**
+     * The next free referendum index, aka the number of referenda started so far.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    referendumCount: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Information concerning any given referendum.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletReferendaReferendumInfoOriginCaller | undefined> =} callback
+     **/
+    referendumInfoFor: GenericStorageQuery<
+      Rv,
+      (arg: number) => PalletReferendaReferendumInfoOriginCaller | undefined,
+      number
+    >;
+
+    /**
+     * The sorted list of referenda ready to be decided but not yet being decided, ordered by
+     * conviction-weighted approvals.
+     *
+     * This should be empty if `DecidingCount` is less than `TrackInfo::max_deciding`.
+     *
+     * @param {number} arg
+     * @param {Callback<Array<[number, bigint]>> =} callback
+     **/
+    trackQueue: GenericStorageQuery<Rv, (arg: number) => Array<[number, bigint]>, number>;
+
+    /**
+     * The number of referenda being decided currently.
+     *
+     * @param {number} arg
+     * @param {Callback<number> =} callback
+     **/
+    decidingCount: GenericStorageQuery<Rv, (arg: number) => number, number>;
+
+    /**
+     * The metadata is a general information concerning the referendum.
+     * The `Hash` refers to the preimage of the `Preimages` provider which can be a JSON
+     * dump or IPFS hash of a JSON file.
+     *
+     * Consider a garbage collection for a metadata of finished referendums to `unrequest` (remove)
+     * large preimages.
+     *
+     * @param {number} arg
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    metadataOf: GenericStorageQuery<Rv, (arg: number) => H256 | undefined, number>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Whitelist`'s storage queries
+   **/
+  whitelist: {
+    /**
+     *
+     * @param {H256} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    whitelistedCall: GenericStorageQuery<Rv, (arg: H256) => [] | undefined, H256>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Treasury`'s storage queries
+   **/
+  treasury: {
+    /**
+     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+     *
+     * Number of proposals that have been made.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    proposalCount: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+     *
+     * Proposals that have been made.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletTreasuryProposal | undefined> =} callback
+     **/
+    proposals: GenericStorageQuery<Rv, (arg: number) => PalletTreasuryProposal | undefined, number>;
+
+    /**
+     * The amount which has been reported as inactive to Currency.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    deactivated: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+     *
+     * Proposal indices that have been approved but not yet awarded.
+     *
+     * @param {Callback<Array<number>> =} callback
+     **/
+    approvals: GenericStorageQuery<Rv, () => Array<number>>;
+
+    /**
+     * The count of spends that have been made.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    spendCount: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Spends that have been approved and being processed.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletTreasurySpendStatus | undefined> =} callback
+     **/
+    spends: GenericStorageQuery<Rv, (arg: number) => PalletTreasurySpendStatus | undefined, number>;
+
+    /**
+     * The blocknumber for the last triggered spend period.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    lastSpendPeriod: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `AssetRate`'s storage queries
+   **/
+  assetRate: {
+    /**
+     * Maps an asset to its fixed point representation in the native balance.
+     *
+     * E.g. `native_amount = asset_amount * ConversionRateToNative::<T>::get(asset_kind)`
+     *
+     * @param {PolkadotRuntimeCommonImplsVersionedLocatableAsset} arg
+     * @param {Callback<FixedU128 | undefined> =} callback
+     **/
+    conversionRateToNative: GenericStorageQuery<
+      Rv,
+      (arg: PolkadotRuntimeCommonImplsVersionedLocatableAsset) => FixedU128 | undefined,
+      PolkadotRuntimeCommonImplsVersionedLocatableAsset
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `AhOps`'s storage queries
+   **/
+  ahOps: {
+    /**
+     * Amount of balance that was reserved for winning a lease auction.
+     *
+     * `unreserve_lease_deposit` can be permissionlessly called once the block number passed to
+     * unreserve the deposit. It is implicitly called by `withdraw_crowdloan_contribution`.
+     *
+     * The account here can either be a crowdloan account or a solo bidder. If it is a crowdloan
+     * account, then the summed up contributions for it in the contributions map will equate the
+     * reserved balance here.
+     *
+     * The keys are as follows:
+     * - Block number after which the deposit can be unreserved.
+     * - The para_id of the lease slot.
+     * - The account that will have the balance unreserved.
+     * - The balance to be unreserved.
+     *
+     * @param {[number, PolkadotParachainPrimitivesPrimitivesId, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    rcLeaseReserve: GenericStorageQuery<
+      Rv,
+      (arg: [number, PolkadotParachainPrimitivesPrimitivesId, AccountId32Like]) => bigint | undefined,
+      [number, PolkadotParachainPrimitivesPrimitivesId, AccountId32]
+    >;
+
+    /**
+     * Amount of balance that a contributor made towards a crowdloan.
+     *
+     * `withdraw_crowdloan_contribution` can be permissionlessly called once the block number
+     * passed to unlock the balance for a specific account.
+     *
+     * The keys are as follows:
+     * - Block number after which the balance can be unlocked.
+     * - The para_id of the crowdloan.
+     * - The account that made the contribution.
+     *
+     * The value is (fund_pot, balance). The contribution pot is the second key in the
+     * `RcCrowdloanContribution` storage.
+     *
+     * @param {[number, PolkadotParachainPrimitivesPrimitivesId, AccountId32Like]} arg
+     * @param {Callback<[AccountId32, bigint] | undefined> =} callback
+     **/
+    rcCrowdloanContribution: GenericStorageQuery<
+      Rv,
+      (arg: [number, PolkadotParachainPrimitivesPrimitivesId, AccountId32Like]) => [AccountId32, bigint] | undefined,
+      [number, PolkadotParachainPrimitivesPrimitivesId, AccountId32]
+    >;
+
+    /**
+     * The reserve that was taken to create a crowdloan.
+     *
+     * This is normally 500 DOT and can be refunded as last step after all
+     * `RcCrowdloanContribution`s of this loan have been withdrawn.
+     *
+     * Keys:
+     * - Block number after which this can be unreserved
+     * - The para_id of the crowdloan
+     * - The account that will have the balance unreserved
+     *
+     * @param {[number, PolkadotParachainPrimitivesPrimitivesId, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    rcCrowdloanReserve: GenericStorageQuery<
+      Rv,
+      (arg: [number, PolkadotParachainPrimitivesPrimitivesId, AccountId32Like]) => bigint | undefined,
+      [number, PolkadotParachainPrimitivesPrimitivesId, AccountId32]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `AhMigrator`'s storage queries
+   **/
+  ahMigrator: {
+    /**
+     * RC accounts that failed to migrate when were received on the Asset Hub.
+     *
+     * This is unlikely to happen, since we dry run the migration, but we keep it for completeness.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletRcMigratorAccountsAccount | undefined> =} callback
+     **/
+    rcAccounts: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => PalletRcMigratorAccountsAccount | undefined,
+      AccountId32
+    >;
+
+    /**
+     * The Asset Hub migration state.
+     *
+     * @param {Callback<PalletAhMigratorMigrationStage> =} callback
+     **/
+    ahMigrationStage: GenericStorageQuery<Rv, () => PalletAhMigratorMigrationStage>;
+
+    /**
+     * The total number of XCM data messages processed from the Relay Chain and the number of XCM
+     * messages that encountered an error during processing.
+     *
+     * @param {Callback<[number, number]> =} callback
+     **/
+    dmpDataMessageCounts: GenericStorageQuery<Rv, () => [number, number]>;
+
+    /**
+     * Helper storage item to store the total balance / total issuance of native token at the start
+     * of the migration. Since teleports are disabled during migration, the total issuance will not
+     * change for other reason than the migration itself.
+     *
+     * @param {Callback<PalletAhMigratorBalancesBefore> =} callback
+     **/
+    ahBalancesBefore: GenericStorageQuery<Rv, () => PalletAhMigratorBalancesBefore>;
 
     /**
      * Generic pallet storage query

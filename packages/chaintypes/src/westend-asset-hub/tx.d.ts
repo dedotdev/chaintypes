@@ -10,7 +10,18 @@ import type {
   RpcV2,
   ISubmittableExtrinsicLegacy,
 } from 'dedot/types';
-import type { MultiAddressLike, Extrinsic, BytesLike, H256, AccountId32Like, FixedBytes, H160 } from 'dedot/codecs';
+import type {
+  MultiAddressLike,
+  Extrinsic,
+  BytesLike,
+  H256,
+  FixedBytes,
+  AccountId32Like,
+  H160,
+  Percent,
+  Perbill,
+  FixedU128,
+} from 'dedot/codecs';
 import type {
   AssetHubWestendRuntimeRuntimeCallLike,
   SpRuntimeMultiSignature,
@@ -18,12 +29,13 @@ import type {
   CumulusPrimitivesParachainInherentParachainInherentData,
   PalletMigrationsMigrationCursor,
   PalletMigrationsHistoricCleanupSelector,
+  SpWeightsWeightV2Weight,
   PalletBalancesAdjustmentDirection,
+  PalletVestingVestingInfo,
   AssetHubWestendRuntimeSessionKeys,
   XcmVersionedLocation,
   XcmVersionedXcm,
   XcmVersionedAssets,
-  SpWeightsWeightV2Weight,
   StagingXcmV5Location,
   XcmV3WeightLimit,
   StagingXcmExecutorAssetTransferTransferType,
@@ -51,6 +63,52 @@ import type {
   PalletStateTrieMigrationMigrationLimits,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationProgress,
+  PalletStakingAsyncRewardDestination,
+  PalletStakingAsyncValidatorPrefs,
+  PalletStakingAsyncPalletConfigOp,
+  PalletStakingAsyncPalletConfigOpU32,
+  PalletStakingAsyncPalletConfigOpPercent,
+  PalletStakingAsyncPalletConfigOpPerbill,
+  PalletStakingAsyncLedgerUnlockChunk,
+  PalletNominationPoolsBondExtra,
+  PalletNominationPoolsPoolState,
+  PalletNominationPoolsConfigOp,
+  PalletNominationPoolsConfigOpU32,
+  PalletNominationPoolsConfigOpPerbill,
+  PalletNominationPoolsConfigOp004,
+  PalletNominationPoolsClaimPermission,
+  PalletNominationPoolsCommissionChangeRate,
+  PalletNominationPoolsCommissionClaimPermission,
+  PalletStakingAsyncRcClientSessionReport,
+  PalletStakingAsyncRcClientOffence,
+  PalletElectionProviderMultiBlockAdminOperation,
+  PalletElectionProviderMultiBlockPagedRawSolution,
+  SpNposElectionsElectionScore,
+  AssetHubWestendRuntimeStakingNposCompactSolution16,
+  PalletConvictionVotingVoteAccountVote,
+  PalletConvictionVotingConviction,
+  FrameSupportPreimagesBounded,
+  PolkadotRuntimeCommonImplsVersionedLocatableAsset,
+  PolkadotParachainPrimitivesPrimitivesId,
+  PalletRcMigratorAccountsAccount,
+  PalletRcMigratorMultisigRcMultisig,
+  PalletRcMigratorProxyRcProxy,
+  PalletRcMigratorProxyRcProxyAnnouncement,
+  PalletRcMigratorPreimageChunksRcPreimageChunk,
+  PalletRcMigratorPreimageRequestStatusRcPreimageRequestStatus,
+  PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus,
+  PalletRcMigratorStakingNomPoolsRcNomPoolsMessage,
+  PalletRcMigratorVestingRcVestingSchedule,
+  PalletRcMigratorStakingFastUnstakeRcFastUnstakeMessage,
+  PalletReferendaReferendumInfo,
+  PalletRcMigratorStakingBagsListRcBagsListMessage,
+  PalletRcMigratorSchedulerRcSchedulerMessage,
+  PalletRcMigratorIndicesRcIndicesIndex,
+  PalletRcMigratorConvictionVotingRcConvictionVotingMessage,
+  PalletRcMigratorSchedulerAliasScheduled,
+  PalletRcMigratorStakingMessageRcStakingMessage,
+  PalletAhMigratorMigrationStage,
+  PalletRcMigratorMigrationFinishedData,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -527,6 +585,540 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
+   * Pallet `Preimage`'s transaction calls
+   **/
+  preimage: {
+    /**
+     * Register a preimage on-chain.
+     *
+     * If the preimage was previously requested, no fees or deposits are taken for providing
+     * the preimage. Otherwise, a deposit is taken proportional to the size of the preimage.
+     *
+     * @param {BytesLike} bytes
+     **/
+    notePreimage: GenericTxCall<
+      Rv,
+      (bytes: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Preimage';
+          palletCall: {
+            name: 'NotePreimage';
+            params: { bytes: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Clear an unrequested preimage from the runtime storage.
+     *
+     * If `len` is provided, then it will be a much cheaper operation.
+     *
+     * - `hash`: The hash of the preimage to be removed from the store.
+     * - `len`: The length of the preimage of `hash`.
+     *
+     * @param {H256} hash
+     **/
+    unnotePreimage: GenericTxCall<
+      Rv,
+      (hash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Preimage';
+          palletCall: {
+            name: 'UnnotePreimage';
+            params: { hash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Request a preimage be uploaded to the chain without paying any fees or deposits.
+     *
+     * If the preimage requests has already been provided on-chain, we unreserve any deposit
+     * a user may have paid, and take the control of the preimage out of their hands.
+     *
+     * @param {H256} hash
+     **/
+    requestPreimage: GenericTxCall<
+      Rv,
+      (hash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Preimage';
+          palletCall: {
+            name: 'RequestPreimage';
+            params: { hash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Clear a previously made request for a preimage.
+     *
+     * NOTE: THIS MUST NOT BE CALLED ON `hash` MORE TIMES THAN `request_preimage`.
+     *
+     * @param {H256} hash
+     **/
+    unrequestPreimage: GenericTxCall<
+      Rv,
+      (hash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Preimage';
+          palletCall: {
+            name: 'UnrequestPreimage';
+            params: { hash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Ensure that the bulk of pre-images is upgraded.
+     *
+     * The caller pays no fee if at least 90% of pre-images were successfully updated.
+     *
+     * @param {Array<H256>} hashes
+     **/
+    ensureUpdated: GenericTxCall<
+      Rv,
+      (hashes: Array<H256>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Preimage';
+          palletCall: {
+            name: 'EnsureUpdated';
+            params: { hashes: Array<H256> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Scheduler`'s transaction calls
+   **/
+  scheduler: {
+    /**
+     * Anonymously schedule a task.
+     *
+     * @param {number} when
+     * @param {[number, number] | undefined} maybePeriodic
+     * @param {number} priority
+     * @param {AssetHubWestendRuntimeRuntimeCallLike} call
+     **/
+    schedule: GenericTxCall<
+      Rv,
+      (
+        when: number,
+        maybePeriodic: [number, number] | undefined,
+        priority: number,
+        call: AssetHubWestendRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'Schedule';
+            params: {
+              when: number;
+              maybePeriodic: [number, number] | undefined;
+              priority: number;
+              call: AssetHubWestendRuntimeRuntimeCallLike;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Cancel an anonymously scheduled task.
+     *
+     * @param {number} when
+     * @param {number} index
+     **/
+    cancel: GenericTxCall<
+      Rv,
+      (
+        when: number,
+        index: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'Cancel';
+            params: { when: number; index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Schedule a named task.
+     *
+     * @param {FixedBytes<32>} id
+     * @param {number} when
+     * @param {[number, number] | undefined} maybePeriodic
+     * @param {number} priority
+     * @param {AssetHubWestendRuntimeRuntimeCallLike} call
+     **/
+    scheduleNamed: GenericTxCall<
+      Rv,
+      (
+        id: FixedBytes<32>,
+        when: number,
+        maybePeriodic: [number, number] | undefined,
+        priority: number,
+        call: AssetHubWestendRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'ScheduleNamed';
+            params: {
+              id: FixedBytes<32>;
+              when: number;
+              maybePeriodic: [number, number] | undefined;
+              priority: number;
+              call: AssetHubWestendRuntimeRuntimeCallLike;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Cancel a named scheduled task.
+     *
+     * @param {FixedBytes<32>} id
+     **/
+    cancelNamed: GenericTxCall<
+      Rv,
+      (id: FixedBytes<32>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'CancelNamed';
+            params: { id: FixedBytes<32> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Anonymously schedule a task after a delay.
+     *
+     * @param {number} after
+     * @param {[number, number] | undefined} maybePeriodic
+     * @param {number} priority
+     * @param {AssetHubWestendRuntimeRuntimeCallLike} call
+     **/
+    scheduleAfter: GenericTxCall<
+      Rv,
+      (
+        after: number,
+        maybePeriodic: [number, number] | undefined,
+        priority: number,
+        call: AssetHubWestendRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'ScheduleAfter';
+            params: {
+              after: number;
+              maybePeriodic: [number, number] | undefined;
+              priority: number;
+              call: AssetHubWestendRuntimeRuntimeCallLike;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Schedule a named task after a delay.
+     *
+     * @param {FixedBytes<32>} id
+     * @param {number} after
+     * @param {[number, number] | undefined} maybePeriodic
+     * @param {number} priority
+     * @param {AssetHubWestendRuntimeRuntimeCallLike} call
+     **/
+    scheduleNamedAfter: GenericTxCall<
+      Rv,
+      (
+        id: FixedBytes<32>,
+        after: number,
+        maybePeriodic: [number, number] | undefined,
+        priority: number,
+        call: AssetHubWestendRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'ScheduleNamedAfter';
+            params: {
+              id: FixedBytes<32>;
+              after: number;
+              maybePeriodic: [number, number] | undefined;
+              priority: number;
+              call: AssetHubWestendRuntimeRuntimeCallLike;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set a retry configuration for a task so that, in case its scheduled run fails, it will
+     * be retried after `period` blocks, for a total amount of `retries` retries or until it
+     * succeeds.
+     *
+     * Tasks which need to be scheduled for a retry are still subject to weight metering and
+     * agenda space, same as a regular task. If a periodic task fails, it will be scheduled
+     * normally while the task is retrying.
+     *
+     * Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic
+     * clones of the original task. Their retry configuration will be derived from the
+     * original task's configuration, but will have a lower value for `remaining` than the
+     * original `total_retries`.
+     *
+     * @param {[number, number]} task
+     * @param {number} retries
+     * @param {number} period
+     **/
+    setRetry: GenericTxCall<
+      Rv,
+      (
+        task: [number, number],
+        retries: number,
+        period: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'SetRetry';
+            params: { task: [number, number]; retries: number; period: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set a retry configuration for a named task so that, in case its scheduled run fails, it
+     * will be retried after `period` blocks, for a total amount of `retries` retries or until
+     * it succeeds.
+     *
+     * Tasks which need to be scheduled for a retry are still subject to weight metering and
+     * agenda space, same as a regular task. If a periodic task fails, it will be scheduled
+     * normally while the task is retrying.
+     *
+     * Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic
+     * clones of the original task. Their retry configuration will be derived from the
+     * original task's configuration, but will have a lower value for `remaining` than the
+     * original `total_retries`.
+     *
+     * @param {FixedBytes<32>} id
+     * @param {number} retries
+     * @param {number} period
+     **/
+    setRetryNamed: GenericTxCall<
+      Rv,
+      (
+        id: FixedBytes<32>,
+        retries: number,
+        period: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'SetRetryNamed';
+            params: { id: FixedBytes<32>; retries: number; period: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Removes the retry configuration of a task.
+     *
+     * @param {[number, number]} task
+     **/
+    cancelRetry: GenericTxCall<
+      Rv,
+      (task: [number, number]) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'CancelRetry';
+            params: { task: [number, number] };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Cancel the retry configuration of a named task.
+     *
+     * @param {FixedBytes<32>} id
+     **/
+    cancelRetryNamed: GenericTxCall<
+      Rv,
+      (id: FixedBytes<32>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Scheduler';
+          palletCall: {
+            name: 'CancelRetryNamed';
+            params: { id: FixedBytes<32> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Sudo`'s transaction calls
+   **/
+  sudo: {
+    /**
+     * Authenticates the sudo key and dispatches a function call with `Root` origin.
+     *
+     * @param {AssetHubWestendRuntimeRuntimeCallLike} call
+     **/
+    sudo: GenericTxCall<
+      Rv,
+      (call: AssetHubWestendRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Sudo';
+          palletCall: {
+            name: 'Sudo';
+            params: { call: AssetHubWestendRuntimeRuntimeCallLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Authenticates the sudo key and dispatches a function call with `Root` origin.
+     * This function does not check the weight of the call, and instead allows the
+     * Sudo user to specify the weight of the call.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * @param {AssetHubWestendRuntimeRuntimeCallLike} call
+     * @param {SpWeightsWeightV2Weight} weight
+     **/
+    sudoUncheckedWeight: GenericTxCall<
+      Rv,
+      (
+        call: AssetHubWestendRuntimeRuntimeCallLike,
+        weight: SpWeightsWeightV2Weight,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Sudo';
+          palletCall: {
+            name: 'SudoUncheckedWeight';
+            params: { call: AssetHubWestendRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
+     * key.
+     *
+     * @param {MultiAddressLike} new_
+     **/
+    setKey: GenericTxCall<
+      Rv,
+      (new_: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Sudo';
+          palletCall: {
+            name: 'SetKey';
+            params: { new: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Authenticates the sudo key and dispatches a function call with `Signed` origin from
+     * a given account.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * @param {MultiAddressLike} who
+     * @param {AssetHubWestendRuntimeRuntimeCallLike} call
+     **/
+    sudoAs: GenericTxCall<
+      Rv,
+      (
+        who: MultiAddressLike,
+        call: AssetHubWestendRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Sudo';
+          palletCall: {
+            name: 'SudoAs';
+            params: { who: MultiAddressLike; call: AssetHubWestendRuntimeRuntimeCallLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Permanently removes the sudo key.
+     *
+     * **This cannot be un-done.**
+     *
+     **/
+    removeKey: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Sudo';
+          palletCall: {
+            name: 'RemoveKey';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
    * Pallet `Balances`'s transaction calls
    **/
   balances: {
@@ -777,6 +1369,213 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'Burn';
             params: { value: bigint; keepAlive: boolean };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Vesting`'s transaction calls
+   **/
+  vesting: {
+    /**
+     * Unlock any vested funds of the sender account.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must have funds still
+     * locked under this pallet.
+     *
+     * Emits either `VestingCompleted` or `VestingUpdated`.
+     *
+     * ## Complexity
+     * - `O(1)`.
+     *
+     **/
+    vest: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Vesting';
+          palletCall: {
+            name: 'Vest';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Unlock any vested funds of a `target` account.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `target`: The account whose vested funds should be unlocked. Must have funds still
+     * locked under this pallet.
+     *
+     * Emits either `VestingCompleted` or `VestingUpdated`.
+     *
+     * ## Complexity
+     * - `O(1)`.
+     *
+     * @param {MultiAddressLike} target
+     **/
+    vestOther: GenericTxCall<
+      Rv,
+      (target: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Vesting';
+          palletCall: {
+            name: 'VestOther';
+            params: { target: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Create a vested transfer.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `target`: The account receiving the vested funds.
+     * - `schedule`: The vesting schedule attached to the transfer.
+     *
+     * Emits `VestingCreated`.
+     *
+     * NOTE: This will unlock all schedules through the current block.
+     *
+     * ## Complexity
+     * - `O(1)`.
+     *
+     * @param {MultiAddressLike} target
+     * @param {PalletVestingVestingInfo} schedule
+     **/
+    vestedTransfer: GenericTxCall<
+      Rv,
+      (
+        target: MultiAddressLike,
+        schedule: PalletVestingVestingInfo,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Vesting';
+          palletCall: {
+            name: 'VestedTransfer';
+            params: { target: MultiAddressLike; schedule: PalletVestingVestingInfo };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force a vested transfer.
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * - `source`: The account whose funds should be transferred.
+     * - `target`: The account that should be transferred the vested funds.
+     * - `schedule`: The vesting schedule attached to the transfer.
+     *
+     * Emits `VestingCreated`.
+     *
+     * NOTE: This will unlock all schedules through the current block.
+     *
+     * ## Complexity
+     * - `O(1)`.
+     *
+     * @param {MultiAddressLike} source
+     * @param {MultiAddressLike} target
+     * @param {PalletVestingVestingInfo} schedule
+     **/
+    forceVestedTransfer: GenericTxCall<
+      Rv,
+      (
+        source: MultiAddressLike,
+        target: MultiAddressLike,
+        schedule: PalletVestingVestingInfo,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Vesting';
+          palletCall: {
+            name: 'ForceVestedTransfer';
+            params: { source: MultiAddressLike; target: MultiAddressLike; schedule: PalletVestingVestingInfo };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Merge two vesting schedules together, creating a new vesting schedule that unlocks over
+     * the highest possible start and end blocks. If both schedules have already started the
+     * current block will be used as the schedule start; with the caveat that if one schedule
+     * is finished by the current block, the other will be treated as the new merged schedule,
+     * unmodified.
+     *
+     * NOTE: If `schedule1_index == schedule2_index` this is a no-op.
+     * NOTE: This will unlock all schedules through the current block prior to merging.
+     * NOTE: If both schedules have ended by the current block, no new schedule will be created
+     * and both will be removed.
+     *
+     * Merged schedule attributes:
+     * - `starting_block`: `MAX(schedule1.starting_block, scheduled2.starting_block,
+     * current_block)`.
+     * - `ending_block`: `MAX(schedule1.ending_block, schedule2.ending_block)`.
+     * - `locked`: `schedule1.locked_at(current_block) + schedule2.locked_at(current_block)`.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `schedule1_index`: index of the first schedule to merge.
+     * - `schedule2_index`: index of the second schedule to merge.
+     *
+     * @param {number} schedule1Index
+     * @param {number} schedule2Index
+     **/
+    mergeSchedules: GenericTxCall<
+      Rv,
+      (
+        schedule1Index: number,
+        schedule2Index: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Vesting';
+          palletCall: {
+            name: 'MergeSchedules';
+            params: { schedule1Index: number; schedule2Index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force remove a vesting schedule
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * - `target`: An account that has a vesting schedule
+     * - `schedule_index`: The vesting schedule index that should be removed
+     *
+     * @param {MultiAddressLike} target
+     * @param {number} scheduleIndex
+     **/
+    forceRemoveVestingSchedule: GenericTxCall<
+      Rv,
+      (
+        target: MultiAddressLike,
+        scheduleIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Vesting';
+          palletCall: {
+            name: 'ForceRemoveVestingSchedule';
+            params: { target: MultiAddressLike; scheduleIndex: number };
           };
         }
       >
@@ -2954,6 +3753,204 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Proxy';
           palletCall: {
             name: 'PokeDeposit';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Indices`'s transaction calls
+   **/
+  indices: {
+    /**
+     * Assign an previously unassigned index.
+     *
+     * Payment: `Deposit` is reserved from the sender account.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `index`: the index to be claimed. This must not be in use.
+     *
+     * Emits `IndexAssigned` if successful.
+     *
+     * ## Complexity
+     * - `O(1)`.
+     *
+     * @param {number} index
+     **/
+    claim: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Indices';
+          palletCall: {
+            name: 'Claim';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Assign an index already owned by the sender to another account. The balance reservation
+     * is effectively transferred to the new account.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * - `index`: the index to be re-assigned. This must be owned by the sender.
+     * - `new`: the new owner of the index. This function is a no-op if it is equal to sender.
+     *
+     * Emits `IndexAssigned` if successful.
+     *
+     * ## Complexity
+     * - `O(1)`.
+     *
+     * @param {MultiAddressLike} new_
+     * @param {number} index
+     **/
+    transfer: GenericTxCall<
+      Rv,
+      (
+        new_: MultiAddressLike,
+        index: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Indices';
+          palletCall: {
+            name: 'Transfer';
+            params: { new: MultiAddressLike; index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Free up an index owned by the sender.
+     *
+     * Payment: Any previous deposit placed for the index is unreserved in the sender account.
+     *
+     * The dispatch origin for this call must be _Signed_ and the sender must own the index.
+     *
+     * - `index`: the index to be freed. This must be owned by the sender.
+     *
+     * Emits `IndexFreed` if successful.
+     *
+     * ## Complexity
+     * - `O(1)`.
+     *
+     * @param {number} index
+     **/
+    free: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Indices';
+          palletCall: {
+            name: 'Free';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force an index to an account. This doesn't require a deposit. If the index is already
+     * held, then any deposit is reimbursed to its current owner.
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * - `index`: the index to be (re-)assigned.
+     * - `new`: the new owner of the index. This function is a no-op if it is equal to sender.
+     * - `freeze`: if set to `true`, will freeze the index so it cannot be transferred.
+     *
+     * Emits `IndexAssigned` if successful.
+     *
+     * ## Complexity
+     * - `O(1)`.
+     *
+     * @param {MultiAddressLike} new_
+     * @param {number} index
+     * @param {boolean} freeze
+     **/
+    forceTransfer: GenericTxCall<
+      Rv,
+      (
+        new_: MultiAddressLike,
+        index: number,
+        freeze: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Indices';
+          palletCall: {
+            name: 'ForceTransfer';
+            params: { new: MultiAddressLike; index: number; freeze: boolean };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Freeze an index so it will always point to the sender account. This consumes the
+     * deposit.
+     *
+     * The dispatch origin for this call must be _Signed_ and the signing account must have a
+     * non-frozen account `index`.
+     *
+     * - `index`: the index to be frozen in place.
+     *
+     * Emits `IndexFrozen` if successful.
+     *
+     * ## Complexity
+     * - `O(1)`.
+     *
+     * @param {number} index
+     **/
+    freeze: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Indices';
+          palletCall: {
+            name: 'Freeze';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Poke the deposit reserved for an index.
+     *
+     * The dispatch origin for this call must be _Signed_ and the signing account must have a
+     * non-frozen account `index`.
+     *
+     * The transaction fees is waived if the deposit is changed after poking/reconsideration.
+     *
+     * - `index`: the index whose deposit is to be poked/reconsidered.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     * @param {number} index
+     **/
+    pokeDeposit: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Indices';
+          palletCall: {
+            name: 'PokeDeposit';
+            params: { index: number };
           };
         }
       >
@@ -10221,6 +11218,3190 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
+   * Pallet `Staking`'s transaction calls
+   **/
+  staking: {
+    /**
+     * Take the origin account as a stash and lock up `value` of its balance. `controller` will
+     * be the account that controls it.
+     *
+     * `value` must be more than the `minimum_balance` specified by `T::Currency`.
+     *
+     * The dispatch origin for this call must be _Signed_ by the stash account.
+     *
+     * Emits `Bonded`.
+     *
+     * NOTE: Two of the storage writes (`Self::bonded`, `Self::payee`) are _never_ cleaned
+     * unless the `origin` falls below _existential deposit_ (or equal to 0) and gets removed
+     * as dust.
+     *
+     * @param {bigint} value
+     * @param {PalletStakingAsyncRewardDestination} payee
+     **/
+    bond: GenericTxCall<
+      Rv,
+      (
+        value: bigint,
+        payee: PalletStakingAsyncRewardDestination,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'Bond';
+            params: { value: bigint; payee: PalletStakingAsyncRewardDestination };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Add some extra amount that have appeared in the stash `free_balance` into the balance up
+     * for staking.
+     *
+     * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
+     *
+     * Use this if there are additional funds in your stash account that you wish to bond.
+     * Unlike [`bond`](Self::bond) or [`unbond`](Self::unbond) this function does not impose
+     * any limitation on the amount that can be added.
+     *
+     * Emits `Bonded`.
+     *
+     * @param {bigint} maxAdditional
+     **/
+    bondExtra: GenericTxCall<
+      Rv,
+      (maxAdditional: bigint) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'BondExtra';
+            params: { maxAdditional: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
+     * period ends. If this leaves an amount actively bonded less than
+     * [`asset::existential_deposit`], then it is increased to the full amount.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
+     * the funds out of management ready for transfer.
+     *
+     * No more than a limited number of unlocking chunks (see `MaxUnlockingChunks`)
+     * can co-exists at the same time. If there are no unlocking chunks slots available
+     * [`Call::withdraw_unbonded`] is called to remove some of the chunks (if possible).
+     *
+     * If a user encounters the `InsufficientBond` error when calling this extrinsic,
+     * they should call `chill` first in order to free up their bonded funds.
+     *
+     * Emits `Unbonded`.
+     *
+     * See also [`Call::withdraw_unbonded`].
+     *
+     * @param {bigint} value
+     **/
+    unbond: GenericTxCall<
+      Rv,
+      (value: bigint) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'Unbond';
+            params: { value: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove any unlocked chunks from the `unlocking` queue from our management.
+     *
+     * This essentially frees up that balance to be used by the stash account to do whatever
+     * it wants.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller.
+     *
+     * Emits `Withdrawn`.
+     *
+     * See also [`Call::unbond`].
+     *
+     * ## Parameters
+     *
+     * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
+     * compatibility. It no longer has any effect.
+     *
+     * @param {number} numSlashingSpans
+     **/
+    withdrawUnbonded: GenericTxCall<
+      Rv,
+      (numSlashingSpans: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'WithdrawUnbonded';
+            params: { numSlashingSpans: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Declare the desire to validate for the origin controller.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * @param {PalletStakingAsyncValidatorPrefs} prefs
+     **/
+    validate: GenericTxCall<
+      Rv,
+      (prefs: PalletStakingAsyncValidatorPrefs) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'Validate';
+            params: { prefs: PalletStakingAsyncValidatorPrefs };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Declare the desire to nominate `targets` for the origin controller.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * @param {Array<MultiAddressLike>} targets
+     **/
+    nominate: GenericTxCall<
+      Rv,
+      (targets: Array<MultiAddressLike>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'Nominate';
+            params: { targets: Array<MultiAddressLike> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Declare no desire to either validate or nominate.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * ## Complexity
+     * - Independent of the arguments. Insignificant complexity.
+     * - Contains one read.
+     * - Writes are limited to the `origin` account key.
+     *
+     **/
+    chill: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'Chill';
+          };
+        }
+      >
+    >;
+
+    /**
+     * (Re-)set the payment target for a controller.
+     *
+     * Effects will be felt instantly (as soon as this function is completed successfully).
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * @param {PalletStakingAsyncRewardDestination} payee
+     **/
+    setPayee: GenericTxCall<
+      Rv,
+      (payee: PalletStakingAsyncRewardDestination) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetPayee';
+            params: { payee: PalletStakingAsyncRewardDestination };
+          };
+        }
+      >
+    >;
+
+    /**
+     * (Re-)sets the controller of a stash to the stash itself. This function previously
+     * accepted a `controller` argument to set the controller to an account other than the
+     * stash itself. This functionality has now been removed, now only setting the controller
+     * to the stash, if it is not already.
+     *
+     * Effects will be felt instantly (as soon as this function is completed successfully).
+     *
+     * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
+     *
+     **/
+    setController: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetController';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Sets the ideal number of validators.
+     *
+     * The dispatch origin must be Root.
+     *
+     * @param {number} new_
+     **/
+    setValidatorCount: GenericTxCall<
+      Rv,
+      (new_: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetValidatorCount';
+            params: { new: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Increments the ideal number of validators up to maximum of
+     * `T::MaxValidatorSet`.
+     *
+     * The dispatch origin must be Root.
+     *
+     * @param {number} additional
+     **/
+    increaseValidatorCount: GenericTxCall<
+      Rv,
+      (additional: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'IncreaseValidatorCount';
+            params: { additional: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Scale up the ideal number of validators by a factor up to maximum of
+     * `T::MaxValidatorSet`.
+     *
+     * The dispatch origin must be Root.
+     *
+     * @param {Percent} factor
+     **/
+    scaleValidatorCount: GenericTxCall<
+      Rv,
+      (factor: Percent) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ScaleValidatorCount';
+            params: { factor: Percent };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force there to be no new eras indefinitely.
+     *
+     * The dispatch origin must be Root.
+     *
+     * # Warning
+     *
+     * The election process starts multiple blocks before the end of the era.
+     * Thus the election process may be ongoing when this is called. In this case the
+     * election will continue until the next era is triggered.
+     *
+     **/
+    forceNoEras: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ForceNoEras';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force there to be a new era at the end of the next session. After this, it will be
+     * reset to normal (non-forced) behaviour.
+     *
+     * The dispatch origin must be Root.
+     *
+     * # Warning
+     *
+     * The election process starts multiple blocks before the end of the era.
+     * If this is called just before a new era is triggered, the election process may not
+     * have enough blocks to get a result.
+     *
+     **/
+    forceNewEra: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ForceNewEra';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the validators who cannot be slashed (if any).
+     *
+     * The dispatch origin must be Root.
+     *
+     * @param {Array<AccountId32Like>} invulnerables
+     **/
+    setInvulnerables: GenericTxCall<
+      Rv,
+      (invulnerables: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetInvulnerables';
+            params: { invulnerables: Array<AccountId32Like> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force a current staker to become completely unstaked, immediately.
+     *
+     * The dispatch origin must be Root.
+     * ## Parameters
+     *
+     * - `stash`: The stash account to be unstaked.
+     * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
+     * compatibility. It no longer has any effect.
+     *
+     * @param {AccountId32Like} stash
+     * @param {number} numSlashingSpans
+     **/
+    forceUnstake: GenericTxCall<
+      Rv,
+      (
+        stash: AccountId32Like,
+        numSlashingSpans: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ForceUnstake';
+            params: { stash: AccountId32Like; numSlashingSpans: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force there to be a new era at the end of sessions indefinitely.
+     *
+     * The dispatch origin must be Root.
+     *
+     * # Warning
+     *
+     * The election process starts multiple blocks before the end of the era.
+     * If this is called just before a new era is triggered, the election process may not
+     * have enough blocks to get a result.
+     *
+     **/
+    forceNewEraAlways: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ForceNewEraAlways';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Cancels scheduled slashes for a given era before they are applied.
+     *
+     * This function allows `T::AdminOrigin` to selectively remove pending slashes from
+     * the `UnappliedSlashes` storage, preventing their enactment.
+     *
+     * ## Parameters
+     * - `era`: The staking era for which slashes were deferred.
+     * - `slash_keys`: A list of slash keys identifying the slashes to remove. This is a tuple
+     * of `(stash, slash_fraction, page_index)`.
+     *
+     * @param {number} era
+     * @param {Array<[AccountId32Like, Perbill, number]>} slashKeys
+     **/
+    cancelDeferredSlash: GenericTxCall<
+      Rv,
+      (
+        era: number,
+        slashKeys: Array<[AccountId32Like, Perbill, number]>,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'CancelDeferredSlash';
+            params: { era: number; slashKeys: Array<[AccountId32Like, Perbill, number]> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Pay out next page of the stakers behind a validator for the given era.
+     *
+     * - `validator_stash` is the stash account of the validator.
+     * - `era` may be any era between `[current_era - history_depth; current_era]`.
+     *
+     * The origin of this call must be _Signed_. Any account can call this function, even if
+     * it is not one of the stakers.
+     *
+     * The reward payout could be paged in case there are too many nominators backing the
+     * `validator_stash`. This call will payout unpaid pages in an ascending order. To claim a
+     * specific page, use `payout_stakers_by_page`.`
+     *
+     * If all pages are claimed, it returns an error `InvalidPage`.
+     *
+     * @param {AccountId32Like} validatorStash
+     * @param {number} era
+     **/
+    payoutStakers: GenericTxCall<
+      Rv,
+      (
+        validatorStash: AccountId32Like,
+        era: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'PayoutStakers';
+            params: { validatorStash: AccountId32Like; era: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Rebond a portion of the stash scheduled to be unlocked.
+     *
+     * The dispatch origin must be signed by the controller.
+     *
+     * @param {bigint} value
+     **/
+    rebond: GenericTxCall<
+      Rv,
+      (value: bigint) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'Rebond';
+            params: { value: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove all data structures concerning a staker/stash once it is at a state where it can
+     * be considered `dust` in the staking system. The requirements are:
+     *
+     * 1. the `total_balance` of the stash is below existential deposit.
+     * 2. or, the `ledger.total` of the stash is below existential deposit.
+     * 3. or, existential deposit is zero and either `total_balance` or `ledger.total` is zero.
+     *
+     * The former can happen in cases like a slash; the latter when a fully unbonded account
+     * is still receiving staking rewards in `RewardDestination::Staked`.
+     *
+     * It can be called by anyone, as long as `stash` meets the above requirements.
+     *
+     * Refunds the transaction fees upon successful execution.
+     *
+     * ## Parameters
+     *
+     * - `stash`: The stash account to be reaped.
+     * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
+     * compatibility. It no longer has any effect.
+     *
+     * @param {AccountId32Like} stash
+     * @param {number} numSlashingSpans
+     **/
+    reapStash: GenericTxCall<
+      Rv,
+      (
+        stash: AccountId32Like,
+        numSlashingSpans: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ReapStash';
+            params: { stash: AccountId32Like; numSlashingSpans: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove the given nominations from the calling validator.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * - `who`: A list of nominator stash accounts who are nominating this validator which
+     * should no longer be nominating this validator.
+     *
+     * Note: Making this call only makes sense if you first set the validator preferences to
+     * block any further nominations.
+     *
+     * @param {Array<MultiAddressLike>} who
+     **/
+    kick: GenericTxCall<
+      Rv,
+      (who: Array<MultiAddressLike>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'Kick';
+            params: { who: Array<MultiAddressLike> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Update the various staking configurations .
+     *
+     * * `min_nominator_bond`: The minimum active bond needed to be a nominator.
+     * * `min_validator_bond`: The minimum active bond needed to be a validator.
+     * * `max_nominator_count`: The max number of users who can be a nominator at once. When
+     * set to `None`, no limit is enforced.
+     * * `max_validator_count`: The max number of users who can be a validator at once. When
+     * set to `None`, no limit is enforced.
+     * * `chill_threshold`: The ratio of `max_nominator_count` or `max_validator_count` which
+     * should be filled in order for the `chill_other` transaction to work.
+     * * `min_commission`: The minimum amount of commission that each validators must maintain.
+     * This is checked only upon calling `validate`. Existing validators are not affected.
+     *
+     * RuntimeOrigin must be Root to call this function.
+     *
+     * NOTE: Existing nominators and validators will not be affected by this update.
+     * to kick people under the new limits, `chill_other` should be called.
+     *
+     * @param {PalletStakingAsyncPalletConfigOp} minNominatorBond
+     * @param {PalletStakingAsyncPalletConfigOp} minValidatorBond
+     * @param {PalletStakingAsyncPalletConfigOpU32} maxNominatorCount
+     * @param {PalletStakingAsyncPalletConfigOpU32} maxValidatorCount
+     * @param {PalletStakingAsyncPalletConfigOpPercent} chillThreshold
+     * @param {PalletStakingAsyncPalletConfigOpPerbill} minCommission
+     * @param {PalletStakingAsyncPalletConfigOpPercent} maxStakedRewards
+     **/
+    setStakingConfigs: GenericTxCall<
+      Rv,
+      (
+        minNominatorBond: PalletStakingAsyncPalletConfigOp,
+        minValidatorBond: PalletStakingAsyncPalletConfigOp,
+        maxNominatorCount: PalletStakingAsyncPalletConfigOpU32,
+        maxValidatorCount: PalletStakingAsyncPalletConfigOpU32,
+        chillThreshold: PalletStakingAsyncPalletConfigOpPercent,
+        minCommission: PalletStakingAsyncPalletConfigOpPerbill,
+        maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetStakingConfigs';
+            params: {
+              minNominatorBond: PalletStakingAsyncPalletConfigOp;
+              minValidatorBond: PalletStakingAsyncPalletConfigOp;
+              maxNominatorCount: PalletStakingAsyncPalletConfigOpU32;
+              maxValidatorCount: PalletStakingAsyncPalletConfigOpU32;
+              chillThreshold: PalletStakingAsyncPalletConfigOpPercent;
+              minCommission: PalletStakingAsyncPalletConfigOpPerbill;
+              maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Declare a `controller` to stop participating as either a validator or nominator.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_, but can be called by anyone.
+     *
+     * If the caller is the same as the controller being targeted, then no further checks are
+     * enforced, and this function behaves just like `chill`.
+     *
+     * If the caller is different than the controller being targeted, the following conditions
+     * must be met:
+     *
+     * * `controller` must belong to a nominator who has become non-decodable,
+     *
+     * Or:
+     *
+     * * A `ChillThreshold` must be set and checked which defines how close to the max
+     * nominators or validators we must reach before users can start chilling one-another.
+     * * A `MaxNominatorCount` and `MaxValidatorCount` must be set which is used to determine
+     * how close we are to the threshold.
+     * * A `MinNominatorBond` and `MinValidatorBond` must be set and checked, which determines
+     * if this is a person that should be chilled because they have not met the threshold
+     * bond required.
+     *
+     * This can be helpful if bond requirements are updated, and we need to remove old users
+     * who do not satisfy these requirements.
+     *
+     * @param {AccountId32Like} stash
+     **/
+    chillOther: GenericTxCall<
+      Rv,
+      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ChillOther';
+            params: { stash: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force a validator to have at least the minimum commission. This will not affect a
+     * validator who already has a commission greater than or equal to the minimum. Any account
+     * can call this.
+     *
+     * @param {AccountId32Like} validatorStash
+     **/
+    forceApplyMinCommission: GenericTxCall<
+      Rv,
+      (validatorStash: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ForceApplyMinCommission';
+            params: { validatorStash: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Sets the minimum amount of commission that each validators must maintain.
+     *
+     * This call has lower privilege requirements than `set_staking_config` and can be called
+     * by the `T::AdminOrigin`. Root can always call this.
+     *
+     * @param {Perbill} new_
+     **/
+    setMinCommission: GenericTxCall<
+      Rv,
+      (new_: Perbill) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetMinCommission';
+            params: { new: Perbill };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Pay out a page of the stakers behind a validator for the given era and page.
+     *
+     * - `validator_stash` is the stash account of the validator.
+     * - `era` may be any era between `[current_era - history_depth; current_era]`.
+     * - `page` is the page index of nominators to pay out with value between 0 and
+     * `num_nominators / T::MaxExposurePageSize`.
+     *
+     * The origin of this call must be _Signed_. Any account can call this function, even if
+     * it is not one of the stakers.
+     *
+     * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
+     * them, then the list of nominators is paged, with each page being capped at
+     * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+     * the call needs to be made for each page separately in order for all the nominators
+     * backing a validator to receive the reward. The nominators are not sorted across pages
+     * and so it should not be assumed the highest staker would be on the topmost page and vice
+     * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
+     *
+     * @param {AccountId32Like} validatorStash
+     * @param {number} era
+     * @param {number} page
+     **/
+    payoutStakersByPage: GenericTxCall<
+      Rv,
+      (
+        validatorStash: AccountId32Like,
+        era: number,
+        page: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'PayoutStakersByPage';
+            params: { validatorStash: AccountId32Like; era: number; page: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Migrates an account's `RewardDestination::Controller` to
+     * `RewardDestination::Account(controller)`.
+     *
+     * Effects will be felt instantly (as soon as this function is completed successfully).
+     *
+     * This will waive the transaction fee if the `payee` is successfully migrated.
+     *
+     * @param {AccountId32Like} controller
+     **/
+    updatePayee: GenericTxCall<
+      Rv,
+      (controller: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'UpdatePayee';
+            params: { controller: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Updates a batch of controller accounts to their corresponding stash account if they are
+     * not the same. Ignores any controller accounts that do not exist, and does not operate if
+     * the stash and controller are already the same.
+     *
+     * Effects will be felt instantly (as soon as this function is completed successfully).
+     *
+     * The dispatch origin must be `T::AdminOrigin`.
+     *
+     * @param {Array<AccountId32Like>} controllers
+     **/
+    deprecateControllerBatch: GenericTxCall<
+      Rv,
+      (controllers: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'DeprecateControllerBatch';
+            params: { controllers: Array<AccountId32Like> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Restores the state of a ledger which is in an inconsistent state.
+     *
+     * The requirements to restore a ledger are the following:
+     * * The stash is bonded; or
+     * * The stash is not bonded but it has a staking lock left behind; or
+     * * If the stash has an associated ledger and its state is inconsistent; or
+     * * If the ledger is not corrupted *but* its staking lock is out of sync.
+     *
+     * The `maybe_*` input parameters will overwrite the corresponding data and metadata of the
+     * ledger associated with the stash. If the input parameters are not set, the ledger will
+     * be reset values from on-chain state.
+     *
+     * @param {AccountId32Like} stash
+     * @param {AccountId32Like | undefined} maybeController
+     * @param {bigint | undefined} maybeTotal
+     * @param {Array<PalletStakingAsyncLedgerUnlockChunk> | undefined} maybeUnlocking
+     **/
+    restoreLedger: GenericTxCall<
+      Rv,
+      (
+        stash: AccountId32Like,
+        maybeController: AccountId32Like | undefined,
+        maybeTotal: bigint | undefined,
+        maybeUnlocking: Array<PalletStakingAsyncLedgerUnlockChunk> | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'RestoreLedger';
+            params: {
+              stash: AccountId32Like;
+              maybeController: AccountId32Like | undefined;
+              maybeTotal: bigint | undefined;
+              maybeUnlocking: Array<PalletStakingAsyncLedgerUnlockChunk> | undefined;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Migrates permissionlessly a stash from locks to holds.
+     *
+     * This removes the old lock on the stake and creates a hold on it atomically. If all
+     * stake cannot be held, the best effort is made to hold as much as possible. The remaining
+     * stake is removed from the ledger.
+     *
+     * The fee is waived if the migration is successful.
+     *
+     * @param {AccountId32Like} stash
+     **/
+    migrateCurrency: GenericTxCall<
+      Rv,
+      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'MigrateCurrency';
+            params: { stash: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Manually applies a deferred slash for a given era.
+     *
+     * Normally, slashes are automatically applied shortly after the start of the `slash_era`.
+     * This function exists as a **fallback mechanism** in case slashes were not applied due to
+     * unexpected reasons. It allows anyone to manually apply an unapplied slash.
+     *
+     * ## Parameters
+     * - `slash_era`: The staking era in which the slash was originally scheduled.
+     * - `slash_key`: A unique identifier for the slash, represented as a tuple:
+     * - `stash`: The stash account of the validator being slashed.
+     * - `slash_fraction`: The fraction of the stake that was slashed.
+     * - `page_index`: The index of the exposure page being processed.
+     *
+     * ## Behavior
+     * - The function is **permissionless**—anyone can call it.
+     * - The `slash_era` **must be the current era or a past era**. If it is in the future, the
+     * call fails with `EraNotStarted`.
+     * - The fee is waived if the slash is successfully applied.
+     *
+     * ## Future Improvement
+     * - Implement an **off-chain worker (OCW) task** to automatically apply slashes when there
+     * is unused block space, improving efficiency.
+     *
+     * @param {number} slashEra
+     * @param {[AccountId32Like, Perbill, number]} slashKey
+     **/
+    applySlash: GenericTxCall<
+      Rv,
+      (
+        slashEra: number,
+        slashKey: [AccountId32Like, Perbill, number],
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ApplySlash';
+            params: { slashEra: number; slashKey: [AccountId32Like, Perbill, number] };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Adjusts the staking ledger by withdrawing any excess staked amount.
+     *
+     * This function corrects cases where a user's recorded stake in the ledger
+     * exceeds their actual staked funds. This situation can arise due to cases such as
+     * external slashing by another pallet, leading to an inconsistency between the ledger
+     * and the actual stake.
+     *
+     * @param {AccountId32Like} stash
+     **/
+    withdrawOverstake: GenericTxCall<
+      Rv,
+      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'WithdrawOverstake';
+            params: { stash: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `NominationPools`'s transaction calls
+   **/
+  nominationPools: {
+    /**
+     * Stake funds with a pool. The amount to bond is delegated (or transferred based on
+     * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
+     * increases the pool's bond.
+     *
+     * The method of transferring the amount to the pool account is determined by
+     * [`adapter::StakeStrategyType`]. If the pool is configured to use
+     * [`adapter::StakeStrategyType::Delegate`], the funds remain in the account of
+     * the `origin`, while the pool gains the right to use these funds for staking.
+     *
+     * # Note
+     *
+     * * An account can only be a member of a single pool.
+     * * An account cannot join the same pool multiple times.
+     * * This call will *not* dust the member account, so the member must have at least
+     * `existential deposit + amount` in their account.
+     * * Only a pool with [`PoolState::Open`] can be joined
+     *
+     * @param {bigint} amount
+     * @param {number} poolId
+     **/
+    join: GenericTxCall<
+      Rv,
+      (
+        amount: bigint,
+        poolId: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'Join';
+            params: { amount: bigint; poolId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Bond `extra` more funds from `origin` into the pool to which they already belong.
+     *
+     * Additional funds can come from either the free balance of the account, of from the
+     * accumulated rewards, see [`BondExtra`].
+     *
+     * Bonding extra funds implies an automatic payout of all pending rewards as well.
+     * See `bond_extra_other` to bond pending rewards of `other` members.
+     *
+     * @param {PalletNominationPoolsBondExtra} extra
+     **/
+    bondExtra: GenericTxCall<
+      Rv,
+      (extra: PalletNominationPoolsBondExtra) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'BondExtra';
+            params: { extra: PalletNominationPoolsBondExtra };
+          };
+        }
+      >
+    >;
+
+    /**
+     * A bonded member can use this to claim their payout based on the rewards that the pool
+     * has accumulated since their last claimed payout (OR since joining if this is their first
+     * time claiming rewards). The payout will be transferred to the member's account.
+     *
+     * The member will earn rewards pro rata based on the members stake vs the sum of the
+     * members in the pools stake. Rewards do not "expire".
+     *
+     * See `claim_payout_other` to claim rewards on behalf of some `other` pool member.
+     *
+     **/
+    claimPayout: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'ClaimPayout';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Unbond up to `unbonding_points` of the `member_account`'s funds from the pool. It
+     * implicitly collects the rewards one last time, since not doing so would mean some
+     * rewards would be forfeited.
+     *
+     * Under certain conditions, this call can be dispatched permissionlessly (i.e. by any
+     * account).
+     *
+     * # Conditions for a permissionless dispatch.
+     *
+     * * The pool is blocked and the caller is either the root or bouncer. This is refereed to
+     * as a kick.
+     * * The pool is destroying and the member is not the depositor.
+     * * The pool is destroying, the member is the depositor and no other members are in the
+     * pool.
+     *
+     * ## Conditions for permissioned dispatch (i.e. the caller is also the
+     * `member_account`):
+     *
+     * * The caller is not the depositor.
+     * * The caller is the depositor, the pool is destroying and no other members are in the
+     * pool.
+     *
+     * # Note
+     *
+     * If there are too many unlocking chunks to unbond with the pool account,
+     * [`Call::pool_withdraw_unbonded`] can be called to try and minimize unlocking chunks.
+     * The [`StakingInterface::unbond`] will implicitly call [`Call::pool_withdraw_unbonded`]
+     * to try to free chunks if necessary (ie. if unbound was called and no unlocking chunks
+     * are available). However, it may not be possible to release the current unlocking chunks,
+     * in which case, the result of this call will likely be the `NoMoreChunks` error from the
+     * staking system.
+     *
+     * @param {MultiAddressLike} memberAccount
+     * @param {bigint} unbondingPoints
+     **/
+    unbond: GenericTxCall<
+      Rv,
+      (
+        memberAccount: MultiAddressLike,
+        unbondingPoints: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'Unbond';
+            params: { memberAccount: MultiAddressLike; unbondingPoints: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Call `withdraw_unbonded` for the pools account. This call can be made by any account.
+     *
+     * This is useful if there are too many unlocking chunks to call `unbond`, and some
+     * can be cleared by withdrawing. In the case there are too many unlocking chunks, the user
+     * would probably see an error like `NoMoreChunks` emitted from the staking system when
+     * they attempt to unbond.
+     *
+     * @param {number} poolId
+     * @param {number} numSlashingSpans
+     **/
+    poolWithdrawUnbonded: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        numSlashingSpans: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'PoolWithdrawUnbonded';
+            params: { poolId: number; numSlashingSpans: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Withdraw unbonded funds from `member_account`. If no bonded funds can be unbonded, an
+     * error is returned.
+     *
+     * Under certain conditions, this call can be dispatched permissionlessly (i.e. by any
+     * account).
+     *
+     * # Conditions for a permissionless dispatch
+     *
+     * * The pool is in destroy mode and the target is not the depositor.
+     * * The target is the depositor and they are the only member in the sub pools.
+     * * The pool is blocked and the caller is either the root or bouncer.
+     *
+     * # Conditions for permissioned dispatch
+     *
+     * * The caller is the target and they are not the depositor.
+     *
+     * # Note
+     *
+     * - If the target is the depositor, the pool will be destroyed.
+     * - If the pool has any pending slash, we also try to slash the member before letting them
+     * withdraw. This calculation adds some weight overhead and is only defensive. In reality,
+     * pool slashes must have been already applied via permissionless [`Call::apply_slash`].
+     *
+     * @param {MultiAddressLike} memberAccount
+     * @param {number} numSlashingSpans
+     **/
+    withdrawUnbonded: GenericTxCall<
+      Rv,
+      (
+        memberAccount: MultiAddressLike,
+        numSlashingSpans: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'WithdrawUnbonded';
+            params: { memberAccount: MultiAddressLike; numSlashingSpans: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Create a new delegation pool.
+     *
+     * # Arguments
+     *
+     * * `amount` - The amount of funds to delegate to the pool. This also acts of a sort of
+     * deposit since the pools creator cannot fully unbond funds until the pool is being
+     * destroyed.
+     * * `index` - A disambiguation index for creating the account. Likely only useful when
+     * creating multiple pools in the same extrinsic.
+     * * `root` - The account to set as [`PoolRoles::root`].
+     * * `nominator` - The account to set as the [`PoolRoles::nominator`].
+     * * `bouncer` - The account to set as the [`PoolRoles::bouncer`].
+     *
+     * # Note
+     *
+     * In addition to `amount`, the caller will transfer the existential deposit; so the caller
+     * needs at have at least `amount + existential_deposit` transferable.
+     *
+     * @param {bigint} amount
+     * @param {MultiAddressLike} root
+     * @param {MultiAddressLike} nominator
+     * @param {MultiAddressLike} bouncer
+     **/
+    create: GenericTxCall<
+      Rv,
+      (
+        amount: bigint,
+        root: MultiAddressLike,
+        nominator: MultiAddressLike,
+        bouncer: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'Create';
+            params: { amount: bigint; root: MultiAddressLike; nominator: MultiAddressLike; bouncer: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Create a new delegation pool with a previously used pool id
+     *
+     * # Arguments
+     *
+     * same as `create` with the inclusion of
+     * * `pool_id` - `A valid PoolId.
+     *
+     * @param {bigint} amount
+     * @param {MultiAddressLike} root
+     * @param {MultiAddressLike} nominator
+     * @param {MultiAddressLike} bouncer
+     * @param {number} poolId
+     **/
+    createWithPoolId: GenericTxCall<
+      Rv,
+      (
+        amount: bigint,
+        root: MultiAddressLike,
+        nominator: MultiAddressLike,
+        bouncer: MultiAddressLike,
+        poolId: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'CreateWithPoolId';
+            params: {
+              amount: bigint;
+              root: MultiAddressLike;
+              nominator: MultiAddressLike;
+              bouncer: MultiAddressLike;
+              poolId: number;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Nominate on behalf of the pool.
+     *
+     * The dispatch origin of this call must be signed by the pool nominator or the pool
+     * root role.
+     *
+     * This directly forwards the call to an implementation of `StakingInterface` (e.g.,
+     * `pallet-staking`) through [`Config::StakeAdapter`], on behalf of the bonded pool.
+     *
+     * # Note
+     *
+     * In addition to a `root` or `nominator` role of `origin`, the pool's depositor needs to
+     * have at least `depositor_min_bond` in the pool to start nominating.
+     *
+     * @param {number} poolId
+     * @param {Array<AccountId32Like>} validators
+     **/
+    nominate: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        validators: Array<AccountId32Like>,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'Nominate';
+            params: { poolId: number; validators: Array<AccountId32Like> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set a new state for the pool.
+     *
+     * If a pool is already in the `Destroying` state, then under no condition can its state
+     * change again.
+     *
+     * The dispatch origin of this call must be either:
+     *
+     * 1. signed by the bouncer, or the root role of the pool,
+     * 2. if the pool conditions to be open are NOT met (as described by `ok_to_be_open`), and
+     * then the state of the pool can be permissionlessly changed to `Destroying`.
+     *
+     * @param {number} poolId
+     * @param {PalletNominationPoolsPoolState} state
+     **/
+    setState: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        state: PalletNominationPoolsPoolState,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'SetState';
+            params: { poolId: number; state: PalletNominationPoolsPoolState };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set a new metadata for the pool.
+     *
+     * The dispatch origin of this call must be signed by the bouncer, or the root role of the
+     * pool.
+     *
+     * @param {number} poolId
+     * @param {BytesLike} metadata
+     **/
+    setMetadata: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        metadata: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'SetMetadata';
+            params: { poolId: number; metadata: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Update configurations for the nomination pools. The origin for this call must be
+     * [`Config::AdminOrigin`].
+     *
+     * # Arguments
+     *
+     * * `min_join_bond` - Set [`MinJoinBond`].
+     * * `min_create_bond` - Set [`MinCreateBond`].
+     * * `max_pools` - Set [`MaxPools`].
+     * * `max_members` - Set [`MaxPoolMembers`].
+     * * `max_members_per_pool` - Set [`MaxPoolMembersPerPool`].
+     * * `global_max_commission` - Set [`GlobalMaxCommission`].
+     *
+     * @param {PalletNominationPoolsConfigOp} minJoinBond
+     * @param {PalletNominationPoolsConfigOp} minCreateBond
+     * @param {PalletNominationPoolsConfigOpU32} maxPools
+     * @param {PalletNominationPoolsConfigOpU32} maxMembers
+     * @param {PalletNominationPoolsConfigOpU32} maxMembersPerPool
+     * @param {PalletNominationPoolsConfigOpPerbill} globalMaxCommission
+     **/
+    setConfigs: GenericTxCall<
+      Rv,
+      (
+        minJoinBond: PalletNominationPoolsConfigOp,
+        minCreateBond: PalletNominationPoolsConfigOp,
+        maxPools: PalletNominationPoolsConfigOpU32,
+        maxMembers: PalletNominationPoolsConfigOpU32,
+        maxMembersPerPool: PalletNominationPoolsConfigOpU32,
+        globalMaxCommission: PalletNominationPoolsConfigOpPerbill,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'SetConfigs';
+            params: {
+              minJoinBond: PalletNominationPoolsConfigOp;
+              minCreateBond: PalletNominationPoolsConfigOp;
+              maxPools: PalletNominationPoolsConfigOpU32;
+              maxMembers: PalletNominationPoolsConfigOpU32;
+              maxMembersPerPool: PalletNominationPoolsConfigOpU32;
+              globalMaxCommission: PalletNominationPoolsConfigOpPerbill;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Update the roles of the pool.
+     *
+     * The root is the only entity that can change any of the roles, including itself,
+     * excluding the depositor, who can never change.
+     *
+     * It emits an event, notifying UIs of the role change. This event is quite relevant to
+     * most pool members and they should be informed of changes to pool roles.
+     *
+     * @param {number} poolId
+     * @param {PalletNominationPoolsConfigOp004} newRoot
+     * @param {PalletNominationPoolsConfigOp004} newNominator
+     * @param {PalletNominationPoolsConfigOp004} newBouncer
+     **/
+    updateRoles: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        newRoot: PalletNominationPoolsConfigOp004,
+        newNominator: PalletNominationPoolsConfigOp004,
+        newBouncer: PalletNominationPoolsConfigOp004,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'UpdateRoles';
+            params: {
+              poolId: number;
+              newRoot: PalletNominationPoolsConfigOp004;
+              newNominator: PalletNominationPoolsConfigOp004;
+              newBouncer: PalletNominationPoolsConfigOp004;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Chill on behalf of the pool.
+     *
+     * The dispatch origin of this call can be signed by the pool nominator or the pool
+     * root role, same as [`Pallet::nominate`].
+     *
+     * This directly forwards the call to an implementation of `StakingInterface` (e.g.,
+     * `pallet-staking`) through [`Config::StakeAdapter`], on behalf of the bonded pool.
+     *
+     * Under certain conditions, this call can be dispatched permissionlessly (i.e. by any
+     * account).
+     *
+     * # Conditions for a permissionless dispatch:
+     * * When pool depositor has less than `MinNominatorBond` staked, otherwise pool members
+     * are unable to unbond.
+     *
+     * # Conditions for permissioned dispatch:
+     * * The caller is the pool's nominator or root.
+     *
+     * @param {number} poolId
+     **/
+    chill: GenericTxCall<
+      Rv,
+      (poolId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'Chill';
+            params: { poolId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * `origin` bonds funds from `extra` for some pool member `member` into their respective
+     * pools.
+     *
+     * `origin` can bond extra funds from free balance or pending rewards when `origin ==
+     * other`.
+     *
+     * In the case of `origin != other`, `origin` can only bond extra pending rewards of
+     * `other` members assuming set_claim_permission for the given member is
+     * `PermissionlessCompound` or `PermissionlessAll`.
+     *
+     * @param {MultiAddressLike} member
+     * @param {PalletNominationPoolsBondExtra} extra
+     **/
+    bondExtraOther: GenericTxCall<
+      Rv,
+      (
+        member: MultiAddressLike,
+        extra: PalletNominationPoolsBondExtra,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'BondExtraOther';
+            params: { member: MultiAddressLike; extra: PalletNominationPoolsBondExtra };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Allows a pool member to set a claim permission to allow or disallow permissionless
+     * bonding and withdrawing.
+     *
+     * # Arguments
+     *
+     * * `origin` - Member of a pool.
+     * * `permission` - The permission to be applied.
+     *
+     * @param {PalletNominationPoolsClaimPermission} permission
+     **/
+    setClaimPermission: GenericTxCall<
+      Rv,
+      (permission: PalletNominationPoolsClaimPermission) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'SetClaimPermission';
+            params: { permission: PalletNominationPoolsClaimPermission };
+          };
+        }
+      >
+    >;
+
+    /**
+     * `origin` can claim payouts on some pool member `other`'s behalf.
+     *
+     * Pool member `other` must have a `PermissionlessWithdraw` or `PermissionlessAll` claim
+     * permission for this call to be successful.
+     *
+     * @param {AccountId32Like} other
+     **/
+    claimPayoutOther: GenericTxCall<
+      Rv,
+      (other: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'ClaimPayoutOther';
+            params: { other: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the commission of a pool.
+     * Both a commission percentage and a commission payee must be provided in the `current`
+     * tuple. Where a `current` of `None` is provided, any current commission will be removed.
+     *
+     * - If a `None` is supplied to `new_commission`, existing commission will be removed.
+     *
+     * @param {number} poolId
+     * @param {[Perbill, AccountId32Like] | undefined} newCommission
+     **/
+    setCommission: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        newCommission: [Perbill, AccountId32Like] | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'SetCommission';
+            params: { poolId: number; newCommission: [Perbill, AccountId32Like] | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the maximum commission of a pool.
+     *
+     * - Initial max can be set to any `Perbill`, and only smaller values thereafter.
+     * - Current commission will be lowered in the event it is higher than a new max
+     * commission.
+     *
+     * @param {number} poolId
+     * @param {Perbill} maxCommission
+     **/
+    setCommissionMax: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        maxCommission: Perbill,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'SetCommissionMax';
+            params: { poolId: number; maxCommission: Perbill };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the commission change rate for a pool.
+     *
+     * Initial change rate is not bounded, whereas subsequent updates can only be more
+     * restrictive than the current.
+     *
+     * @param {number} poolId
+     * @param {PalletNominationPoolsCommissionChangeRate} changeRate
+     **/
+    setCommissionChangeRate: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        changeRate: PalletNominationPoolsCommissionChangeRate,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'SetCommissionChangeRate';
+            params: { poolId: number; changeRate: PalletNominationPoolsCommissionChangeRate };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Claim pending commission.
+     *
+     * The `root` role of the pool is _always_ allowed to claim the pool's commission.
+     *
+     * If the pool has set `CommissionClaimPermission::Permissionless`, then any account can
+     * trigger the process of claiming the pool's commission.
+     *
+     * If the pool has set its `CommissionClaimPermission` to `Account(acc)`, then only
+     * accounts
+     * * `acc`, and
+     * * the pool's root account
+     *
+     * may call this extrinsic on behalf of the pool.
+     *
+     * Pending commissions are paid out and added to the total claimed commission.
+     * The total pending commission is reset to zero.
+     *
+     * @param {number} poolId
+     **/
+    claimCommission: GenericTxCall<
+      Rv,
+      (poolId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'ClaimCommission';
+            params: { poolId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Top up the deficit or withdraw the excess ED from the pool.
+     *
+     * When a pool is created, the pool depositor transfers ED to the reward account of the
+     * pool. ED is subject to change and over time, the deposit in the reward account may be
+     * insufficient to cover the ED deficit of the pool or vice-versa where there is excess
+     * deposit to the pool. This call allows anyone to adjust the ED deposit of the
+     * pool by either topping up the deficit or claiming the excess.
+     *
+     * @param {number} poolId
+     **/
+    adjustPoolDeposit: GenericTxCall<
+      Rv,
+      (poolId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'AdjustPoolDeposit';
+            params: { poolId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set or remove a pool's commission claim permission.
+     *
+     * Determines who can claim the pool's pending commission. Only the `Root` role of the pool
+     * is able to configure commission claim permissions.
+     *
+     * @param {number} poolId
+     * @param {PalletNominationPoolsCommissionClaimPermission | undefined} permission
+     **/
+    setCommissionClaimPermission: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        permission: PalletNominationPoolsCommissionClaimPermission | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'SetCommissionClaimPermission';
+            params: { poolId: number; permission: PalletNominationPoolsCommissionClaimPermission | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Apply a pending slash on a member.
+     *
+     * Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:
+     * [`adapter::StakeStrategyType::Delegate`].
+     *
+     * The pending slash amount of the member must be equal or more than `ExistentialDeposit`.
+     * This call can be dispatched permissionlessly (i.e. by any account). If the execution
+     * is successful, fee is refunded and caller may be rewarded with a part of the slash
+     * based on the [`crate::pallet::Config::StakeAdapter`] configuration.
+     *
+     * @param {MultiAddressLike} memberAccount
+     **/
+    applySlash: GenericTxCall<
+      Rv,
+      (memberAccount: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'ApplySlash';
+            params: { memberAccount: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Migrates delegated funds from the pool account to the `member_account`.
+     *
+     * Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:
+     * [`adapter::StakeStrategyType::Delegate`].
+     *
+     * This is a permission-less call and refunds any fee if claim is successful.
+     *
+     * If the pool has migrated to delegation based staking, the staked tokens of pool members
+     * can be moved and held in their own account. See [`adapter::DelegateStake`]
+     *
+     * @param {MultiAddressLike} memberAccount
+     **/
+    migrateDelegation: GenericTxCall<
+      Rv,
+      (memberAccount: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'MigrateDelegation';
+            params: { memberAccount: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Migrate pool from [`adapter::StakeStrategyType::Transfer`] to
+     * [`adapter::StakeStrategyType::Delegate`].
+     *
+     * Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:
+     * [`adapter::StakeStrategyType::Delegate`].
+     *
+     * This call can be dispatched permissionlessly, and refunds any fee if successful.
+     *
+     * If the pool has already migrated to delegation based staking, this call will fail.
+     *
+     * @param {number} poolId
+     **/
+    migratePoolToDelegateStake: GenericTxCall<
+      Rv,
+      (poolId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'NominationPools';
+          palletCall: {
+            name: 'MigratePoolToDelegateStake';
+            params: { poolId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `FastUnstake`'s transaction calls
+   **/
+  fastUnstake: {
+    /**
+     * Register oneself for fast-unstake.
+     *
+     * ## Dispatch Origin
+     *
+     * The dispatch origin of this call must be *signed* by whoever is permitted to call
+     * unbond funds by the staking system. See [`Config::Staking`].
+     *
+     * ## Details
+     *
+     * The stash associated with the origin must have no ongoing unlocking chunks. If
+     * successful, this will fully unbond and chill the stash. Then, it will enqueue the stash
+     * to be checked in further blocks.
+     *
+     * If by the time this is called, the stash is actually eligible for fast-unstake, then
+     * they are guaranteed to remain eligible, because the call will chill them as well.
+     *
+     * If the check works, the entire staking data is removed, i.e. the stash is fully
+     * unstaked.
+     *
+     * If the check fails, the stash remains chilled and waiting for being unbonded as in with
+     * the normal staking system, but they lose part of their unbonding chunks due to consuming
+     * the chain's resources.
+     *
+     * ## Events
+     *
+     * Some events from the staking and currency system might be emitted.
+     *
+     **/
+    registerFastUnstake: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'FastUnstake';
+          palletCall: {
+            name: 'RegisterFastUnstake';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Deregister oneself from the fast-unstake.
+     *
+     * ## Dispatch Origin
+     *
+     * The dispatch origin of this call must be *signed* by whoever is permitted to call
+     * unbond funds by the staking system. See [`Config::Staking`].
+     *
+     * ## Details
+     *
+     * This is useful if one is registered, they are still waiting, and they change their mind.
+     *
+     * Note that the associated stash is still fully unbonded and chilled as a consequence of
+     * calling [`Pallet::register_fast_unstake`]. Therefore, this should probably be followed
+     * by a call to `rebond` in the staking system.
+     *
+     * ## Events
+     *
+     * Some events from the staking and currency system might be emitted.
+     *
+     **/
+    deregister: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'FastUnstake';
+          palletCall: {
+            name: 'Deregister';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Control the operation of this pallet.
+     *
+     * ## Dispatch Origin
+     *
+     * The dispatch origin of this call must be [`Config::ControlOrigin`].
+     *
+     * ## Details
+     *
+     * Can set the number of eras to check per block, and potentially other admin work.
+     *
+     * ## Events
+     *
+     * No events are emitted from this dispatch.
+     *
+     * @param {number} erasToCheck
+     **/
+    control: GenericTxCall<
+      Rv,
+      (erasToCheck: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'FastUnstake';
+          palletCall: {
+            name: 'Control';
+            params: { erasToCheck: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `VoterList`'s transaction calls
+   **/
+  voterList: {
+    /**
+     * Declare that some `dislocated` account has, through rewards or penalties, sufficiently
+     * changed its score that it should properly fall into a different bag than its current
+     * one.
+     *
+     * Anyone can call this function about any potentially dislocated account.
+     *
+     * Will always update the stored score of `dislocated` to the correct score, based on
+     * `ScoreProvider`.
+     *
+     * If `dislocated` does not exists, it returns an error.
+     *
+     * @param {MultiAddressLike} dislocated
+     **/
+    rebag: GenericTxCall<
+      Rv,
+      (dislocated: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'VoterList';
+          palletCall: {
+            name: 'Rebag';
+            params: { dislocated: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Move the caller's Id directly in front of `lighter`.
+     *
+     * The dispatch origin for this call must be _Signed_ and can only be called by the Id of
+     * the account going in front of `lighter`. Fee is payed by the origin under all
+     * circumstances.
+     *
+     * Only works if:
+     *
+     * - both nodes are within the same bag,
+     * - and `origin` has a greater `Score` than `lighter`.
+     *
+     * @param {MultiAddressLike} lighter
+     **/
+    putInFrontOf: GenericTxCall<
+      Rv,
+      (lighter: MultiAddressLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'VoterList';
+          palletCall: {
+            name: 'PutInFrontOf';
+            params: { lighter: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Same as [`Pallet::put_in_front_of`], but it can be called by anyone.
+     *
+     * Fee is paid by the origin under all circumstances.
+     *
+     * @param {MultiAddressLike} heavier
+     * @param {MultiAddressLike} lighter
+     **/
+    putInFrontOfOther: GenericTxCall<
+      Rv,
+      (
+        heavier: MultiAddressLike,
+        lighter: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'VoterList';
+          palletCall: {
+            name: 'PutInFrontOfOther';
+            params: { heavier: MultiAddressLike; lighter: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `StakingNextRcClient`'s transaction calls
+   **/
+  stakingNextRcClient: {
+    /**
+     * Called to indicate the start of a new session on the relay chain.
+     *
+     * @param {PalletStakingAsyncRcClientSessionReport} report
+     **/
+    relaySessionReport: GenericTxCall<
+      Rv,
+      (report: PalletStakingAsyncRcClientSessionReport) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'StakingNextRcClient';
+          palletCall: {
+            name: 'RelaySessionReport';
+            params: { report: PalletStakingAsyncRcClientSessionReport };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Called to report one or more new offenses on the relay chain.
+     *
+     * @param {number} slashSession
+     * @param {Array<PalletStakingAsyncRcClientOffence>} offences
+     **/
+    relayNewOffence: GenericTxCall<
+      Rv,
+      (
+        slashSession: number,
+        offences: Array<PalletStakingAsyncRcClientOffence>,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'StakingNextRcClient';
+          palletCall: {
+            name: 'RelayNewOffence';
+            params: { slashSession: number; offences: Array<PalletStakingAsyncRcClientOffence> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `MultiBlock`'s transaction calls
+   **/
+  multiBlock: {
+    /**
+     * Manage this pallet.
+     *
+     * The origin of this call must be [`Config::AdminOrigin`].
+     *
+     * See [`AdminOperation`] for various operations that are possible.
+     *
+     * @param {PalletElectionProviderMultiBlockAdminOperation} op
+     **/
+    manage: GenericTxCall<
+      Rv,
+      (op: PalletElectionProviderMultiBlockAdminOperation) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlock';
+          palletCall: {
+            name: 'Manage';
+            params: { op: PalletElectionProviderMultiBlockAdminOperation };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `MultiBlockVerifier`'s transaction calls
+   **/
+  multiBlockVerifier: {
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `MultiBlockUnsigned`'s transaction calls
+   **/
+  multiBlockUnsigned: {
+    /**
+     * Submit an unsigned solution.
+     *
+     * This works very much like an inherent, as only the validators are permitted to submit
+     * anything. By default validators will compute this call in their `offchain_worker` hook
+     * and try and submit it back.
+     *
+     * This is different from signed page submission mainly in that the solution page is
+     * verified on the fly.
+     *
+     * The `paged_solution` may contain at most [`Config::MinerPages`] pages. They are
+     * interpreted as msp -> lsp, as per [`crate::Pallet::msp_range_for`].
+     *
+     * For example, if `Pages = 4`, and `MinerPages = 2`, our full snapshot range would be [0,
+     * 1, 2, 3], with 3 being msp. But, in this case, then the `paged_raw_solution.pages` is
+     * expected to correspond to `[snapshot(2), snapshot(3)]`.
+     *
+     * @param {PalletElectionProviderMultiBlockPagedRawSolution} pagedSolution
+     **/
+    submitUnsigned: GenericTxCall<
+      Rv,
+      (pagedSolution: PalletElectionProviderMultiBlockPagedRawSolution) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockUnsigned';
+          palletCall: {
+            name: 'SubmitUnsigned';
+            params: { pagedSolution: PalletElectionProviderMultiBlockPagedRawSolution };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `MultiBlockSigned`'s transaction calls
+   **/
+  multiBlockSigned: {
+    /**
+     * Register oneself for an upcoming signed election.
+     *
+     * @param {SpNposElectionsElectionScore} claimedScore
+     **/
+    register: GenericTxCall<
+      Rv,
+      (claimedScore: SpNposElectionsElectionScore) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockSigned';
+          palletCall: {
+            name: 'Register';
+            params: { claimedScore: SpNposElectionsElectionScore };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Submit a single page of a solution.
+     *
+     * Must always come after [`Pallet::register`].
+     *
+     * `maybe_solution` can be set to `None` to erase the page.
+     *
+     * Collects deposits from the signed origin based on [`Config::DepositBase`] and
+     * [`Config::DepositPerPage`].
+     *
+     * @param {number} page
+     * @param {AssetHubWestendRuntimeStakingNposCompactSolution16 | undefined} maybeSolution
+     **/
+    submitPage: GenericTxCall<
+      Rv,
+      (
+        page: number,
+        maybeSolution: AssetHubWestendRuntimeStakingNposCompactSolution16 | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockSigned';
+          palletCall: {
+            name: 'SubmitPage';
+            params: { page: number; maybeSolution: AssetHubWestendRuntimeStakingNposCompactSolution16 | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Retract a submission.
+     *
+     * A portion of the deposit may be returned, based on the [`Config::BailoutGraceRatio`].
+     *
+     * This will fully remove the solution from storage.
+     *
+     **/
+    bail: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockSigned';
+          palletCall: {
+            name: 'Bail';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Clear the data of a submitter form an old round.
+     *
+     * The dispatch origin of this call must be signed, and the original submitter.
+     *
+     * This can only be called for submissions that end up being discarded, as in they are not
+     * processed and they end up lingering in the queue.
+     *
+     * @param {number} round
+     * @param {number} witnessPages
+     **/
+    clearOldRoundData: GenericTxCall<
+      Rv,
+      (
+        round: number,
+        witnessPages: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockSigned';
+          palletCall: {
+            name: 'ClearOldRoundData';
+            params: { round: number; witnessPages: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `ConvictionVoting`'s transaction calls
+   **/
+  convictionVoting: {
+    /**
+     * Vote in a poll. If `vote.is_aye()`, the vote is to enact the proposal;
+     * otherwise it is a vote to keep the status quo.
+     *
+     * The dispatch origin of this call must be _Signed_.
+     *
+     * - `poll_index`: The index of the poll to vote for.
+     * - `vote`: The vote configuration.
+     *
+     * Weight: `O(R)` where R is the number of polls the voter has voted on.
+     *
+     * @param {number} pollIndex
+     * @param {PalletConvictionVotingVoteAccountVote} vote
+     **/
+    vote: GenericTxCall<
+      Rv,
+      (
+        pollIndex: number,
+        vote: PalletConvictionVotingVoteAccountVote,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'ConvictionVoting';
+          palletCall: {
+            name: 'Vote';
+            params: { pollIndex: number; vote: PalletConvictionVotingVoteAccountVote };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Delegate the voting power (with some given conviction) of the sending account for a
+     * particular class of polls.
+     *
+     * The balance delegated is locked for as long as it's delegated, and thereafter for the
+     * time appropriate for the conviction's lock period.
+     *
+     * The dispatch origin of this call must be _Signed_, and the signing account must either:
+     * - be delegating already; or
+     * - have no voting activity (if there is, then it will need to be removed through
+     * `remove_vote`).
+     *
+     * - `to`: The account whose voting the `target` account's voting power will follow.
+     * - `class`: The class of polls to delegate. To delegate multiple classes, multiple calls
+     * to this function are required.
+     * - `conviction`: The conviction that will be attached to the delegated votes. When the
+     * account is undelegated, the funds will be locked for the corresponding period.
+     * - `balance`: The amount of the account's balance to be used in delegating. This must not
+     * be more than the account's current balance.
+     *
+     * Emits `Delegated`.
+     *
+     * Weight: `O(R)` where R is the number of polls the voter delegating to has
+     * voted on. Weight is initially charged as if maximum votes, but is refunded later.
+     *
+     * @param {number} class_
+     * @param {MultiAddressLike} to
+     * @param {PalletConvictionVotingConviction} conviction
+     * @param {bigint} balance
+     **/
+    delegate: GenericTxCall<
+      Rv,
+      (
+        class_: number,
+        to: MultiAddressLike,
+        conviction: PalletConvictionVotingConviction,
+        balance: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'ConvictionVoting';
+          palletCall: {
+            name: 'Delegate';
+            params: {
+              class: number;
+              to: MultiAddressLike;
+              conviction: PalletConvictionVotingConviction;
+              balance: bigint;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Undelegate the voting power of the sending account for a particular class of polls.
+     *
+     * Tokens may be unlocked following once an amount of time consistent with the lock period
+     * of the conviction with which the delegation was issued has passed.
+     *
+     * The dispatch origin of this call must be _Signed_ and the signing account must be
+     * currently delegating.
+     *
+     * - `class`: The class of polls to remove the delegation from.
+     *
+     * Emits `Undelegated`.
+     *
+     * Weight: `O(R)` where R is the number of polls the voter delegating to has
+     * voted on. Weight is initially charged as if maximum votes, but is refunded later.
+     *
+     * @param {number} class_
+     **/
+    undelegate: GenericTxCall<
+      Rv,
+      (class_: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'ConvictionVoting';
+          palletCall: {
+            name: 'Undelegate';
+            params: { class: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove the lock caused by prior voting/delegating which has expired within a particular
+     * class.
+     *
+     * The dispatch origin of this call must be _Signed_.
+     *
+     * - `class`: The class of polls to unlock.
+     * - `target`: The account to remove the lock on.
+     *
+     * Weight: `O(R)` with R number of vote of target.
+     *
+     * @param {number} class_
+     * @param {MultiAddressLike} target
+     **/
+    unlock: GenericTxCall<
+      Rv,
+      (
+        class_: number,
+        target: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'ConvictionVoting';
+          palletCall: {
+            name: 'Unlock';
+            params: { class: number; target: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a vote for a poll.
+     *
+     * If:
+     * - the poll was cancelled, or
+     * - the poll is ongoing, or
+     * - the poll has ended such that
+     * - the vote of the account was in opposition to the result; or
+     * - there was no conviction to the account's vote; or
+     * - the account made a split vote
+     * ...then the vote is removed cleanly and a following call to `unlock` may result in more
+     * funds being available.
+     *
+     * If, however, the poll has ended and:
+     * - it finished corresponding to the vote of the account, and
+     * - the account made a standard vote with conviction, and
+     * - the lock period of the conviction is not over
+     * ...then the lock will be aggregated into the overall account's lock, which may involve
+     * *overlocking* (where the two locks are combined into a single lock that is the maximum
+     * of both the amount locked and the time is it locked for).
+     *
+     * The dispatch origin of this call must be _Signed_, and the signer must have a vote
+     * registered for poll `index`.
+     *
+     * - `index`: The index of poll of the vote to be removed.
+     * - `class`: Optional parameter, if given it indicates the class of the poll. For polls
+     * which have finished or are cancelled, this must be `Some`.
+     *
+     * Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
+     * Weight is calculated for the maximum number of vote.
+     *
+     * @param {number | undefined} class_
+     * @param {number} index
+     **/
+    removeVote: GenericTxCall<
+      Rv,
+      (
+        class_: number | undefined,
+        index: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'ConvictionVoting';
+          palletCall: {
+            name: 'RemoveVote';
+            params: { class: number | undefined; index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a vote for a poll.
+     *
+     * If the `target` is equal to the signer, then this function is exactly equivalent to
+     * `remove_vote`. If not equal to the signer, then the vote must have expired,
+     * either because the poll was cancelled, because the voter lost the poll or
+     * because the conviction period is over.
+     *
+     * The dispatch origin of this call must be _Signed_.
+     *
+     * - `target`: The account of the vote to be removed; this account must have voted for poll
+     * `index`.
+     * - `index`: The index of poll of the vote to be removed.
+     * - `class`: The class of the poll.
+     *
+     * Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
+     * Weight is calculated for the maximum number of vote.
+     *
+     * @param {MultiAddressLike} target
+     * @param {number} class_
+     * @param {number} index
+     **/
+    removeOtherVote: GenericTxCall<
+      Rv,
+      (
+        target: MultiAddressLike,
+        class_: number,
+        index: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'ConvictionVoting';
+          palletCall: {
+            name: 'RemoveOtherVote';
+            params: { target: MultiAddressLike; class: number; index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Referenda`'s transaction calls
+   **/
+  referenda: {
+    /**
+     * Propose a referendum on a privileged action.
+     *
+     * - `origin`: must be `SubmitOrigin` and the account must have `SubmissionDeposit` funds
+     * available.
+     * - `proposal_origin`: The origin from which the proposal should be executed.
+     * - `proposal`: The proposal.
+     * - `enactment_moment`: The moment that the proposal should be enacted.
+     *
+     * Emits `Submitted`.
+     *
+     * @param {AssetHubWestendRuntimeOriginCaller} proposalOrigin
+     * @param {FrameSupportPreimagesBounded} proposal
+     * @param {FrameSupportScheduleDispatchTime} enactmentMoment
+     **/
+    submit: GenericTxCall<
+      Rv,
+      (
+        proposalOrigin: AssetHubWestendRuntimeOriginCaller,
+        proposal: FrameSupportPreimagesBounded,
+        enactmentMoment: FrameSupportScheduleDispatchTime,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Referenda';
+          palletCall: {
+            name: 'Submit';
+            params: {
+              proposalOrigin: AssetHubWestendRuntimeOriginCaller;
+              proposal: FrameSupportPreimagesBounded;
+              enactmentMoment: FrameSupportScheduleDispatchTime;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Post the Decision Deposit for a referendum.
+     *
+     * - `origin`: must be `Signed` and the account must have funds available for the
+     * referendum's track's Decision Deposit.
+     * - `index`: The index of the submitted referendum whose Decision Deposit is yet to be
+     * posted.
+     *
+     * Emits `DecisionDepositPlaced`.
+     *
+     * @param {number} index
+     **/
+    placeDecisionDeposit: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Referenda';
+          palletCall: {
+            name: 'PlaceDecisionDeposit';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Refund the Decision Deposit for a closed referendum back to the depositor.
+     *
+     * - `origin`: must be `Signed` or `Root`.
+     * - `index`: The index of a closed referendum whose Decision Deposit has not yet been
+     * refunded.
+     *
+     * Emits `DecisionDepositRefunded`.
+     *
+     * @param {number} index
+     **/
+    refundDecisionDeposit: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Referenda';
+          palletCall: {
+            name: 'RefundDecisionDeposit';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Cancel an ongoing referendum.
+     *
+     * - `origin`: must be the `CancelOrigin`.
+     * - `index`: The index of the referendum to be cancelled.
+     *
+     * Emits `Cancelled`.
+     *
+     * @param {number} index
+     **/
+    cancel: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Referenda';
+          palletCall: {
+            name: 'Cancel';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Cancel an ongoing referendum and slash the deposits.
+     *
+     * - `origin`: must be the `KillOrigin`.
+     * - `index`: The index of the referendum to be cancelled.
+     *
+     * Emits `Killed` and `DepositSlashed`.
+     *
+     * @param {number} index
+     **/
+    kill: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Referenda';
+          palletCall: {
+            name: 'Kill';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Advance a referendum onto its next logical state. Only used internally.
+     *
+     * - `origin`: must be `Root`.
+     * - `index`: the referendum to be advanced.
+     *
+     * @param {number} index
+     **/
+    nudgeReferendum: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Referenda';
+          palletCall: {
+            name: 'NudgeReferendum';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Advance a track onto its next logical state. Only used internally.
+     *
+     * - `origin`: must be `Root`.
+     * - `track`: the track to be advanced.
+     *
+     * Action item for when there is now one fewer referendum in the deciding phase and the
+     * `DecidingCount` is not yet updated. This means that we should either:
+     * - begin deciding another referendum (and leave `DecidingCount` alone); or
+     * - decrement `DecidingCount`.
+     *
+     * @param {number} track
+     **/
+    oneFewerDeciding: GenericTxCall<
+      Rv,
+      (track: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Referenda';
+          palletCall: {
+            name: 'OneFewerDeciding';
+            params: { track: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Refund the Submission Deposit for a closed referendum back to the depositor.
+     *
+     * - `origin`: must be `Signed` or `Root`.
+     * - `index`: The index of a closed referendum whose Submission Deposit has not yet been
+     * refunded.
+     *
+     * Emits `SubmissionDepositRefunded`.
+     *
+     * @param {number} index
+     **/
+    refundSubmissionDeposit: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Referenda';
+          palletCall: {
+            name: 'RefundSubmissionDeposit';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set or clear metadata of a referendum.
+     *
+     * Parameters:
+     * - `origin`: Must be `Signed` by a creator of a referendum or by anyone to clear a
+     * metadata of a finished referendum.
+     * - `index`: The index of a referendum to set or clear metadata for.
+     * - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
+     *
+     * @param {number} index
+     * @param {H256 | undefined} maybeHash
+     **/
+    setMetadata: GenericTxCall<
+      Rv,
+      (
+        index: number,
+        maybeHash: H256 | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Referenda';
+          palletCall: {
+            name: 'SetMetadata';
+            params: { index: number; maybeHash: H256 | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Whitelist`'s transaction calls
+   **/
+  whitelist: {
+    /**
+     *
+     * @param {H256} callHash
+     **/
+    whitelistCall: GenericTxCall<
+      Rv,
+      (callHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Whitelist';
+          palletCall: {
+            name: 'WhitelistCall';
+            params: { callHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {H256} callHash
+     **/
+    removeWhitelistedCall: GenericTxCall<
+      Rv,
+      (callHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Whitelist';
+          palletCall: {
+            name: 'RemoveWhitelistedCall';
+            params: { callHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {H256} callHash
+     * @param {number} callEncodedLen
+     * @param {SpWeightsWeightV2Weight} callWeightWitness
+     **/
+    dispatchWhitelistedCall: GenericTxCall<
+      Rv,
+      (
+        callHash: H256,
+        callEncodedLen: number,
+        callWeightWitness: SpWeightsWeightV2Weight,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Whitelist';
+          palletCall: {
+            name: 'DispatchWhitelistedCall';
+            params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {AssetHubWestendRuntimeRuntimeCallLike} call
+     **/
+    dispatchWhitelistedCallWithPreimage: GenericTxCall<
+      Rv,
+      (call: AssetHubWestendRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Whitelist';
+          palletCall: {
+            name: 'DispatchWhitelistedCallWithPreimage';
+            params: { call: AssetHubWestendRuntimeRuntimeCallLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Treasury`'s transaction calls
+   **/
+  treasury: {
+    /**
+     * Propose and approve a spend of treasury funds.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`.
+     *
+     * ### Details
+     * NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the
+     * beneficiary.
+     *
+     * ### Parameters
+     * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
+     * - `beneficiary`: The destination account for the transfer.
+     *
+     * ## Events
+     *
+     * Emits [`Event::SpendApproved`] if successful.
+     *
+     * @param {bigint} amount
+     * @param {MultiAddressLike} beneficiary
+     **/
+    spendLocal: GenericTxCall<
+      Rv,
+      (
+        amount: bigint,
+        beneficiary: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'SpendLocal';
+            params: { amount: bigint; beneficiary: MultiAddressLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force a previously approved proposal to be removed from the approval queue.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::RejectOrigin`].
+     *
+     * ## Details
+     *
+     * The original deposit will no longer be returned.
+     *
+     * ### Parameters
+     * - `proposal_id`: The index of a proposal
+     *
+     * ### Complexity
+     * - O(A) where `A` is the number of approvals
+     *
+     * ### Errors
+     * - [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the
+     * approval queue, i.e., the proposal has not been approved. This could also mean the
+     * proposal does not exist altogether, thus there is no way it would have been approved
+     * in the first place.
+     *
+     * @param {number} proposalId
+     **/
+    removeApproval: GenericTxCall<
+      Rv,
+      (proposalId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'RemoveApproval';
+            params: { proposalId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Propose and approve a spend of treasury funds.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::SpendOrigin`] with the `Success` value being at least
+     * `amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted
+     * for assertion using the [`Config::BalanceConverter`].
+     *
+     * ## Details
+     *
+     * Create an approved spend for transferring a specific `amount` of `asset_kind` to a
+     * designated beneficiary. The spend must be claimed using the `payout` dispatchable within
+     * the [`Config::PayoutPeriod`].
+     *
+     * ### Parameters
+     * - `asset_kind`: An indicator of the specific asset class to be spent.
+     * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
+     * - `beneficiary`: The beneficiary of the spend.
+     * - `valid_from`: The block number from which the spend can be claimed. It can refer to
+     * the past if the resulting spend has not yet expired according to the
+     * [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after
+     * approval.
+     *
+     * ## Events
+     *
+     * Emits [`Event::AssetSpendApproved`] if successful.
+     *
+     * @param {PolkadotRuntimeCommonImplsVersionedLocatableAsset} assetKind
+     * @param {bigint} amount
+     * @param {XcmVersionedLocation} beneficiary
+     * @param {number | undefined} validFrom
+     **/
+    spend: GenericTxCall<
+      Rv,
+      (
+        assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset,
+        amount: bigint,
+        beneficiary: XcmVersionedLocation,
+        validFrom: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'Spend';
+            params: {
+              assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
+              amount: bigint;
+              beneficiary: XcmVersionedLocation;
+              validFrom: number | undefined;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Claim a spend.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed
+     *
+     * ## Details
+     *
+     * Spends must be claimed within some temporal bounds. A spend may be claimed within one
+     * [`Config::PayoutPeriod`] from the `valid_from` block.
+     * In case of a payout failure, the spend status must be updated with the `check_status`
+     * dispatchable before retrying with the current function.
+     *
+     * ### Parameters
+     * - `index`: The spend index.
+     *
+     * ## Events
+     *
+     * Emits [`Event::Paid`] if successful.
+     *
+     * @param {number} index
+     **/
+    payout: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'Payout';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Check the status of the spend and remove it from the storage if processed.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed.
+     *
+     * ## Details
+     *
+     * The status check is a prerequisite for retrying a failed payout.
+     * If a spend has either succeeded or expired, it is removed from the storage by this
+     * function. In such instances, transaction fees are refunded.
+     *
+     * ### Parameters
+     * - `index`: The spend index.
+     *
+     * ## Events
+     *
+     * Emits [`Event::PaymentFailed`] if the spend payout has failed.
+     * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
+     *
+     * @param {number} index
+     **/
+    checkStatus: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'CheckStatus';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Void previously approved spend.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::RejectOrigin`].
+     *
+     * ## Details
+     *
+     * A spend void is only possible if the payout has not been attempted yet.
+     *
+     * ### Parameters
+     * - `index`: The spend index.
+     *
+     * ## Events
+     *
+     * Emits [`Event::AssetSpendVoided`] if successful.
+     *
+     * @param {number} index
+     **/
+    voidSpend: GenericTxCall<
+      Rv,
+      (index: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Treasury';
+          palletCall: {
+            name: 'VoidSpend';
+            params: { index: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `AssetRate`'s transaction calls
+   **/
+  assetRate: {
+    /**
+     * Initialize a conversion rate to native balance for the given asset.
+     *
+     * ## Complexity
+     * - O(1)
+     *
+     * @param {PolkadotRuntimeCommonImplsVersionedLocatableAsset} assetKind
+     * @param {FixedU128} rate
+     **/
+    create: GenericTxCall<
+      Rv,
+      (
+        assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset,
+        rate: FixedU128,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetRate';
+          palletCall: {
+            name: 'Create';
+            params: { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; rate: FixedU128 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Update the conversion rate to native balance for the given asset.
+     *
+     * ## Complexity
+     * - O(1)
+     *
+     * @param {PolkadotRuntimeCommonImplsVersionedLocatableAsset} assetKind
+     * @param {FixedU128} rate
+     **/
+    update: GenericTxCall<
+      Rv,
+      (
+        assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset,
+        rate: FixedU128,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetRate';
+          palletCall: {
+            name: 'Update';
+            params: { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; rate: FixedU128 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove an existing conversion rate to native balance for the given asset.
+     *
+     * ## Complexity
+     * - O(1)
+     *
+     * @param {PolkadotRuntimeCommonImplsVersionedLocatableAsset} assetKind
+     **/
+    remove: GenericTxCall<
+      Rv,
+      (assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetRate';
+          palletCall: {
+            name: 'Remove';
+            params: { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
    * Pallet `AssetConversionMigration`'s transaction calls
    **/
   assetConversionMigration: {
@@ -10245,6 +14426,580 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'MigrateToNewAccount';
             params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `AhOps`'s transaction calls
+   **/
+  ahOps: {
+    /**
+     * Unreserve the deposit that was taken for creating a crowdloan.
+     *
+     * This can be called by any signed origin. It unreserves the lease deposit on the account
+     * that won the lease auction. It can be unreserved once all leases expired. Note that it
+     * will be called automatically from `withdraw_crowdloan_contribution` for the matching
+     * crowdloan account.
+     *
+     * Solo bidder accounts that won lease auctions can use this to unreserve their amount.
+     *
+     * @param {number} block
+     * @param {AccountId32Like | undefined} depositor
+     * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
+     **/
+    unreserveLeaseDeposit: GenericTxCall<
+      Rv,
+      (
+        block: number,
+        depositor: AccountId32Like | undefined,
+        paraId: PolkadotParachainPrimitivesPrimitivesId,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhOps';
+          palletCall: {
+            name: 'UnreserveLeaseDeposit';
+            params: {
+              block: number;
+              depositor: AccountId32Like | undefined;
+              paraId: PolkadotParachainPrimitivesPrimitivesId;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Withdraw the contribution of a finished crowdloan.
+     *
+     * A crowdloan contribution can be withdrawn if either:
+     * - The crowdloan failed to in an auction and timed out
+     * - Won an auction and all leases expired
+     *
+     * Can be called by any signed origin.
+     *
+     * @param {number} block
+     * @param {AccountId32Like | undefined} depositor
+     * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
+     **/
+    withdrawCrowdloanContribution: GenericTxCall<
+      Rv,
+      (
+        block: number,
+        depositor: AccountId32Like | undefined,
+        paraId: PolkadotParachainPrimitivesPrimitivesId,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhOps';
+          palletCall: {
+            name: 'WithdrawCrowdloanContribution';
+            params: {
+              block: number;
+              depositor: AccountId32Like | undefined;
+              paraId: PolkadotParachainPrimitivesPrimitivesId;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Unreserve the deposit that was taken for creating a crowdloan.
+     *
+     * This can be called once either:
+     * - The crowdloan failed to win an auction and timed out
+     * - Won an auction, all leases expired and all contributions are withdrawn
+     *
+     * Can be called by any signed origin. The condition that all contributions are withdrawn
+     * is in place since the reserve acts as a storage deposit.
+     *
+     * @param {number} block
+     * @param {AccountId32Like | undefined} depositor
+     * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
+     **/
+    unreserveCrowdloanReserve: GenericTxCall<
+      Rv,
+      (
+        block: number,
+        depositor: AccountId32Like | undefined,
+        paraId: PolkadotParachainPrimitivesPrimitivesId,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhOps';
+          palletCall: {
+            name: 'UnreserveCrowdloanReserve';
+            params: {
+              block: number;
+              depositor: AccountId32Like | undefined;
+              paraId: PolkadotParachainPrimitivesPrimitivesId;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `AhMigrator`'s transaction calls
+   **/
+  ahMigrator: {
+    /**
+     * Receive accounts from the Relay Chain.
+     *
+     * The accounts sent with `pallet_rc_migrator::Pallet::migrate_accounts` function.
+     *
+     * @param {Array<PalletRcMigratorAccountsAccount>} accounts
+     **/
+    receiveAccounts: GenericTxCall<
+      Rv,
+      (accounts: Array<PalletRcMigratorAccountsAccount>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveAccounts';
+            params: { accounts: Array<PalletRcMigratorAccountsAccount> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Receive multisigs from the Relay Chain.
+     *
+     * This will be called from an XCM `Transact` inside a DMP from the relay chain. The
+     * multisigs were prepared by
+     * `pallet_rc_migrator::multisig::MultisigMigrator::migrate_many`.
+     *
+     * @param {Array<PalletRcMigratorMultisigRcMultisig>} accounts
+     **/
+    receiveMultisigs: GenericTxCall<
+      Rv,
+      (accounts: Array<PalletRcMigratorMultisigRcMultisig>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveMultisigs';
+            params: { accounts: Array<PalletRcMigratorMultisigRcMultisig> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Receive proxies from the Relay Chain.
+     *
+     * @param {Array<PalletRcMigratorProxyRcProxy>} proxies
+     **/
+    receiveProxyProxies: GenericTxCall<
+      Rv,
+      (proxies: Array<PalletRcMigratorProxyRcProxy>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveProxyProxies';
+            params: { proxies: Array<PalletRcMigratorProxyRcProxy> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Receive proxy announcements from the Relay Chain.
+     *
+     * @param {Array<PalletRcMigratorProxyRcProxyAnnouncement>} announcements
+     **/
+    receiveProxyAnnouncements: GenericTxCall<
+      Rv,
+      (announcements: Array<PalletRcMigratorProxyRcProxyAnnouncement>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveProxyAnnouncements';
+            params: { announcements: Array<PalletRcMigratorProxyRcProxyAnnouncement> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<PalletRcMigratorPreimageChunksRcPreimageChunk>} chunks
+     **/
+    receivePreimageChunks: GenericTxCall<
+      Rv,
+      (chunks: Array<PalletRcMigratorPreimageChunksRcPreimageChunk>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceivePreimageChunks';
+            params: { chunks: Array<PalletRcMigratorPreimageChunksRcPreimageChunk> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<PalletRcMigratorPreimageRequestStatusRcPreimageRequestStatus>} requestStatus
+     **/
+    receivePreimageRequestStatus: GenericTxCall<
+      Rv,
+      (requestStatus: Array<PalletRcMigratorPreimageRequestStatusRcPreimageRequestStatus>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceivePreimageRequestStatus';
+            params: { requestStatus: Array<PalletRcMigratorPreimageRequestStatusRcPreimageRequestStatus> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus>} legacyStatus
+     **/
+    receivePreimageLegacyStatus: GenericTxCall<
+      Rv,
+      (
+        legacyStatus: Array<PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus>,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceivePreimageLegacyStatus';
+            params: { legacyStatus: Array<PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<PalletRcMigratorStakingNomPoolsRcNomPoolsMessage>} messages
+     **/
+    receiveNomPoolsMessages: GenericTxCall<
+      Rv,
+      (messages: Array<PalletRcMigratorStakingNomPoolsRcNomPoolsMessage>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveNomPoolsMessages';
+            params: { messages: Array<PalletRcMigratorStakingNomPoolsRcNomPoolsMessage> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<PalletRcMigratorVestingRcVestingSchedule>} schedules
+     **/
+    receiveVestingSchedules: GenericTxCall<
+      Rv,
+      (schedules: Array<PalletRcMigratorVestingRcVestingSchedule>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveVestingSchedules';
+            params: { schedules: Array<PalletRcMigratorVestingRcVestingSchedule> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<PalletRcMigratorStakingFastUnstakeRcFastUnstakeMessage>} messages
+     **/
+    receiveFastUnstakeMessages: GenericTxCall<
+      Rv,
+      (messages: Array<PalletRcMigratorStakingFastUnstakeRcFastUnstakeMessage>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveFastUnstakeMessages';
+            params: { messages: Array<PalletRcMigratorStakingFastUnstakeRcFastUnstakeMessage> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Receive referendum counts, deciding counts, votes for the track queue.
+     *
+     * @param {number} referendumCount
+     * @param {Array<[number, number]>} decidingCount
+     * @param {Array<[number, Array<[number, bigint]>]>} trackQueue
+     **/
+    receiveReferendaValues: GenericTxCall<
+      Rv,
+      (
+        referendumCount: number,
+        decidingCount: Array<[number, number]>,
+        trackQueue: Array<[number, Array<[number, bigint]>]>,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveReferendaValues';
+            params: {
+              referendumCount: number;
+              decidingCount: Array<[number, number]>;
+              trackQueue: Array<[number, Array<[number, bigint]>]>;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Receive referendums from the Relay Chain.
+     *
+     * @param {Array<[number, PalletReferendaReferendumInfo]>} referendums
+     **/
+    receiveReferendums: GenericTxCall<
+      Rv,
+      (referendums: Array<[number, PalletReferendaReferendumInfo]>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveReferendums';
+            params: { referendums: Array<[number, PalletReferendaReferendumInfo]> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<PalletRcMigratorStakingBagsListRcBagsListMessage>} messages
+     **/
+    receiveBagsListMessages: GenericTxCall<
+      Rv,
+      (messages: Array<PalletRcMigratorStakingBagsListRcBagsListMessage>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveBagsListMessages';
+            params: { messages: Array<PalletRcMigratorStakingBagsListRcBagsListMessage> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<PalletRcMigratorSchedulerRcSchedulerMessage>} messages
+     **/
+    receiveSchedulerMessages: GenericTxCall<
+      Rv,
+      (messages: Array<PalletRcMigratorSchedulerRcSchedulerMessage>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveSchedulerMessages';
+            params: { messages: Array<PalletRcMigratorSchedulerRcSchedulerMessage> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<PalletRcMigratorIndicesRcIndicesIndex>} indices
+     **/
+    receiveIndices: GenericTxCall<
+      Rv,
+      (indices: Array<PalletRcMigratorIndicesRcIndicesIndex>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveIndices';
+            params: { indices: Array<PalletRcMigratorIndicesRcIndicesIndex> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<PalletRcMigratorConvictionVotingRcConvictionVotingMessage>} messages
+     **/
+    receiveConvictionVotingMessages: GenericTxCall<
+      Rv,
+      (messages: Array<PalletRcMigratorConvictionVotingRcConvictionVotingMessage>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveConvictionVotingMessages';
+            params: { messages: Array<PalletRcMigratorConvictionVotingRcConvictionVotingMessage> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<[PolkadotRuntimeCommonImplsVersionedLocatableAsset, FixedU128]>} rates
+     **/
+    receiveAssetRates: GenericTxCall<
+      Rv,
+      (rates: Array<[PolkadotRuntimeCommonImplsVersionedLocatableAsset, FixedU128]>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveAssetRates';
+            params: { rates: Array<[PolkadotRuntimeCommonImplsVersionedLocatableAsset, FixedU128]> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<[number, H256]>} metadata
+     **/
+    receiveReferendaMetadata: GenericTxCall<
+      Rv,
+      (metadata: Array<[number, H256]>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveReferendaMetadata';
+            params: { metadata: Array<[number, H256]> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<[number, Array<PalletRcMigratorSchedulerAliasScheduled | undefined>]>} messages
+     **/
+    receiveSchedulerAgendaMessages: GenericTxCall<
+      Rv,
+      (
+        messages: Array<[number, Array<PalletRcMigratorSchedulerAliasScheduled | undefined>]>,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveSchedulerAgendaMessages';
+            params: { messages: Array<[number, Array<PalletRcMigratorSchedulerAliasScheduled | undefined>]> };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<PalletRcMigratorStakingMessageRcStakingMessage>} messages
+     **/
+    receiveStakingMessages: GenericTxCall<
+      Rv,
+      (messages: Array<PalletRcMigratorStakingMessageRcStakingMessage>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ReceiveStakingMessages';
+            params: { messages: Array<PalletRcMigratorStakingMessageRcStakingMessage> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the migration stage.
+     *
+     * This call is intended for emergency use only and is guarded by the
+     * [`Config::ManagerOrigin`].
+     *
+     * @param {PalletAhMigratorMigrationStage} stage
+     **/
+    forceSetStage: GenericTxCall<
+      Rv,
+      (stage: PalletAhMigratorMigrationStage) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'ForceSetStage';
+            params: { stage: PalletAhMigratorMigrationStage };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Start the data migration.
+     *
+     * This is typically called by the Relay Chain to start the migration on the Asset Hub and
+     * receive a handshake message indicating the Asset Hub's readiness.
+     *
+     **/
+    startMigration: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'StartMigration';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Finish the migration.
+     *
+     * This is typically called by the Relay Chain to signal the migration has finished.
+     *
+     * @param {PalletRcMigratorMigrationFinishedData} data
+     **/
+    finishMigration: GenericTxCall<
+      Rv,
+      (data: PalletRcMigratorMigrationFinishedData) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'FinishMigration';
+            params: { data: PalletRcMigratorMigrationFinishedData };
           };
         }
       >

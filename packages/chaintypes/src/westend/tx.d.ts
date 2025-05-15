@@ -85,6 +85,8 @@ import type {
   PolkadotRuntimeCommonAssignedSlotsSlotLeasePeriodStart,
   PalletBrokerCoretimeInterfaceCoreAssignment,
   PolkadotRuntimeParachainsAssignerCoretimePartsOf57600,
+  PalletStakingAsyncRcClientValidatorSetReport,
+  PalletStakingAsyncAhClientOperatingMode,
   PalletMigrationsMigrationCursor,
   PalletMigrationsHistoricCleanupSelector,
   XcmVersionedAssets,
@@ -97,6 +99,7 @@ import type {
   SpConsensusBeefyDoubleVotingProof,
   SpConsensusBeefyForkVotingProof,
   SpConsensusBeefyFutureBlockVotingProof,
+  PalletRcMigratorMigrationStage,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -1029,6 +1032,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * period ends. If this leaves an amount actively bonded less than
      * [`asset::existential_deposit`], then it is increased to the full amount.
      *
+     * The stash may be chilled if the ledger total amount falls to 0 after unbonding.
+     *
      * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
      *
      * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
@@ -1454,6 +1459,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Can be called by the `T::AdminOrigin`.
      *
      * Parameters: era and indices of the slashes for that era to kill.
+     * They **must** be sorted in ascending order, *and* unique.
      *
      * @param {number} era
      * @param {Array<number>} slashIndices
@@ -3360,6 +3366,47 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Poke deposits for recovery configurations and / or active recoveries.
+     *
+     * This can be used by accounts to possibly lower their locked amount.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `maybe_account`: Optional recoverable account for which you have an active recovery
+     * and want to adjust the deposit for the active recovery.
+     *
+     * This function checks both recovery configuration deposit and active recovery deposits
+     * of the caller:
+     * - If the caller has created a recovery configuration, checks and adjusts its deposit
+     * - If the caller has initiated any active recoveries, and provides the account in
+     * `maybe_account`, checks and adjusts those deposits
+     *
+     * If any deposit is updated, the difference will be reserved/unreserved from the caller's
+     * account.
+     *
+     * The transaction is made free if any deposit is updated and paid otherwise.
+     *
+     * Emits `DepositPoked` if any deposit is updated.
+     * Multiple events may be emitted in case both types of deposits are updated.
+     *
+     * @param {MultiAddressLike | undefined} maybeAccount
+     **/
+    pokeDeposit: GenericTxCall<
+      Rv,
+      (maybeAccount: MultiAddressLike | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Recovery';
+          palletCall: {
+            name: 'PokeDeposit';
+            params: { maybeAccount: MultiAddressLike | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -4284,7 +4331,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * `pure` with corresponding parameters.
      *
      * - `spawner`: The account that originally called `pure` to create this account.
-     * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+     * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
      * - `proxy_type`: The proxy type originally passed to `pure`.
      * - `height`: The height of the chain when the call to `pure` was processed.
      * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
@@ -4890,21 +4937,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
      * calling [`Call::set_emergency_election_result`].
      *
-     * @param {number | undefined} maybeMaxVoters
-     * @param {number | undefined} maybeMaxTargets
      **/
     governanceFallback: GenericTxCall<
       Rv,
-      (
-        maybeMaxVoters: number | undefined,
-        maybeMaxTargets: number | undefined,
-      ) => ChainSubmittableExtrinsic<
+      () => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ElectionProviderMultiPhase';
           palletCall: {
             name: 'GovernanceFallback';
-            params: { maybeMaxVoters: number | undefined; maybeMaxTargets: number | undefined };
           };
         }
       >
@@ -7978,6 +8019,28 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Remove an upgrade cooldown for a parachain.
+     *
+     * The cost for removing the cooldown earlier depends on the time left for the cooldown
+     * multiplied by [`Config::CooldownRemovalMultiplier`]. The paid tokens are burned.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} para
+     **/
+    removeUpgradeCooldown: GenericTxCall<
+      Rv,
+      (para: PolkadotParachainPrimitivesPrimitivesId) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Paras';
+          palletCall: {
+            name: 'RemoveUpgradeCooldown';
+            params: { para: PolkadotParachainPrimitivesPrimitivesId };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -9685,6 +9748,52 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
+   * Pallet `AssetHubStakingClient`'s transaction calls
+   **/
+  assetHubStakingClient: {
+    /**
+     *
+     * @param {PalletStakingAsyncRcClientValidatorSetReport} report
+     **/
+    validatorSet: GenericTxCall<
+      Rv,
+      (report: PalletStakingAsyncRcClientValidatorSetReport) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetHubStakingClient';
+          palletCall: {
+            name: 'ValidatorSet';
+            params: { report: PalletStakingAsyncRcClientValidatorSetReport };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Allows governance to force set the operating mode of the pallet.
+     *
+     * @param {PalletStakingAsyncAhClientOperatingMode} mode
+     **/
+    setMode: GenericTxCall<
+      Rv,
+      (mode: PalletStakingAsyncAhClientOperatingMode) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetHubStakingClient';
+          palletCall: {
+            name: 'SetMode';
+            params: { mode: PalletStakingAsyncAhClientOperatingMode };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
    * Pallet `MultiBlockMigrations`'s transaction calls
    **/
   multiBlockMigrations: {
@@ -10926,6 +11035,95 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'PokeDeposit';
             params: { who: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `RcMigrator`'s transaction calls
+   **/
+  rcMigrator: {
+    /**
+     * Set the migration stage.
+     *
+     * This call is intended for emergency use only and is guarded by the
+     * [`Config::ManagerOrigin`].
+     *
+     * @param {PalletRcMigratorMigrationStage} stage
+     **/
+    forceSetStage: GenericTxCall<
+      Rv,
+      (stage: PalletRcMigratorMigrationStage) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'ForceSetStage';
+            params: { stage: PalletRcMigratorMigrationStage };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Schedule the migration to start at a given moment.
+     *
+     * @param {FrameSupportScheduleDispatchTime} startMoment
+     **/
+    scheduleMigration: GenericTxCall<
+      Rv,
+      (startMoment: FrameSupportScheduleDispatchTime) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'ScheduleMigration';
+            params: { startMoment: FrameSupportScheduleDispatchTime };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Start the data migration.
+     *
+     * This is typically called by the Asset Hub to indicate it's readiness to receive the
+     * migration data.
+     *
+     **/
+    startDataMigration: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'StartDataMigration';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Update the total number of XCM messages processed by the Asset Hub.
+     *
+     * @param {number} count
+     **/
+    updateAhMsgProcessedCount: GenericTxCall<
+      Rv,
+      (count: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'UpdateAhMsgProcessedCount';
+            params: { count: number };
           };
         }
       >

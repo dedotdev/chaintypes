@@ -1075,6 +1075,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     List: GenericPalletError<Rv>;
 
     /**
+     * Could not update a node, because the pallet is locked.
+     **/
+    Locked: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -2513,6 +2518,20 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `AssetHubStakingClient`'s errors
+   **/
+  assetHubStakingClient: {
+    /**
+     * Could not process incoming message because incoming messages are blocked.
+     **/
+    Blocked: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `MultiBlockMigrations`'s errors
    **/
   multiBlockMigrations: {
@@ -2834,6 +2853,43 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Submitted configuration is invalid.
      **/
     InvalidConfiguration: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `RcMigrator`'s errors
+   **/
+  rcMigrator: {
+    Unreachable: GenericPalletError<Rv>;
+    OutOfWeight: GenericPalletError<Rv>;
+
+    /**
+     * Failed to send XCM message to AH.
+     **/
+    XcmError: GenericPalletError<Rv>;
+
+    /**
+     * Failed to withdraw account from RC for migration to AH.
+     **/
+    FailedToWithdrawAccount: GenericPalletError<Rv>;
+
+    /**
+     * Indicates that the specified block number is in the past.
+     **/
+    PastBlockNumber: GenericPalletError<Rv>;
+
+    /**
+     * Balance accounting overflow.
+     **/
+    BalanceOverflow: GenericPalletError<Rv>;
+
+    /**
+     * Balance accounting underflow.
+     **/
+    BalanceUnderflow: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

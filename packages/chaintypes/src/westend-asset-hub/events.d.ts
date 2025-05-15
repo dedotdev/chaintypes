@@ -7,10 +7,11 @@ import type {
   H256,
   FixedBytes,
   Bytes,
-  FixedU128,
   Result,
+  FixedU128,
   Permill,
   H160,
+  Perbill,
 } from 'dedot/codecs';
 import type {
   FrameSystemDispatchEventInfo,
@@ -36,6 +37,26 @@ import type {
   PalletNftsPalletAttributes,
   PalletStateTrieMigrationMigrationCompute,
   PalletStateTrieMigrationError,
+  PalletStakingAsyncRewardDestination,
+  PalletStakingAsyncValidatorPrefs,
+  PalletStakingAsyncForcing,
+  PalletNominationPoolsPoolState,
+  PalletNominationPoolsCommissionChangeRate,
+  PalletNominationPoolsCommissionClaimPermission,
+  PalletNominationPoolsClaimPermission,
+  PalletStakingAsyncRcClientUnexpectedKind,
+  PalletElectionProviderMultiBlockPhase,
+  PalletElectionProviderMultiBlockVerifierFeasibilityError,
+  SpNposElectionsElectionScore,
+  PalletConvictionVotingVoteAccountVote,
+  FrameSupportPreimagesBounded,
+  PalletConvictionVotingTally,
+  FrameSupportDispatchPostDispatchInfo,
+  SpRuntimeDispatchErrorWithPostInfo,
+  PolkadotRuntimeCommonImplsVersionedLocatableAsset,
+  PolkadotParachainPrimitivesPrimitivesId,
+  PalletAhMigratorMigrationStage,
+  PalletAhMigratorPalletEventName,
 } from './types.js';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -293,6 +314,189 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
+   * Pallet `Preimage`'s events
+   **/
+  preimage: {
+    /**
+     * A preimage has been noted.
+     **/
+    Noted: GenericPalletEvent<Rv, 'Preimage', 'Noted', { hash: H256 }>;
+
+    /**
+     * A preimage has been requested.
+     **/
+    Requested: GenericPalletEvent<Rv, 'Preimage', 'Requested', { hash: H256 }>;
+
+    /**
+     * A preimage has ben cleared.
+     **/
+    Cleared: GenericPalletEvent<Rv, 'Preimage', 'Cleared', { hash: H256 }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Scheduler`'s events
+   **/
+  scheduler: {
+    /**
+     * Scheduled some task.
+     **/
+    Scheduled: GenericPalletEvent<Rv, 'Scheduler', 'Scheduled', { when: number; index: number }>;
+
+    /**
+     * Canceled some task.
+     **/
+    Canceled: GenericPalletEvent<Rv, 'Scheduler', 'Canceled', { when: number; index: number }>;
+
+    /**
+     * Dispatched some task.
+     **/
+    Dispatched: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'Dispatched',
+      { task: [number, number]; id?: FixedBytes<32> | undefined; result: Result<[], DispatchError> }
+    >;
+
+    /**
+     * Set a retry configuration for some task.
+     **/
+    RetrySet: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetrySet',
+      { task: [number, number]; id?: FixedBytes<32> | undefined; period: number; retries: number }
+    >;
+
+    /**
+     * Cancel a retry configuration for some task.
+     **/
+    RetryCancelled: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetryCancelled',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
+     * The call for the provided hash was not found so the task has been aborted.
+     **/
+    CallUnavailable: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'CallUnavailable',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
+     * The given task was unable to be renewed since the agenda is full at that block.
+     **/
+    PeriodicFailed: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'PeriodicFailed',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
+     * The given task was unable to be retried since the agenda is full at that block or there
+     * was not enough weight to reschedule it.
+     **/
+    RetryFailed: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'RetryFailed',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
+     * The given task can never be executed since it is overweight.
+     **/
+    PermanentlyOverweight: GenericPalletEvent<
+      Rv,
+      'Scheduler',
+      'PermanentlyOverweight',
+      { task: [number, number]; id?: FixedBytes<32> | undefined }
+    >;
+
+    /**
+     * Agenda is incomplete from `when`.
+     **/
+    AgendaIncomplete: GenericPalletEvent<Rv, 'Scheduler', 'AgendaIncomplete', { when: number }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Sudo`'s events
+   **/
+  sudo: {
+    /**
+     * A sudo call just took place.
+     **/
+    Sudid: GenericPalletEvent<
+      Rv,
+      'Sudo',
+      'Sudid',
+      {
+        /**
+         * The result of the call made by the sudo user.
+         **/
+        sudoResult: Result<[], DispatchError>;
+      }
+    >;
+
+    /**
+     * The sudo key has been updated.
+     **/
+    KeyChanged: GenericPalletEvent<
+      Rv,
+      'Sudo',
+      'KeyChanged',
+      {
+        /**
+         * The old sudo key (if one was previously set).
+         **/
+        old?: AccountId32 | undefined;
+
+        /**
+         * The new sudo key (if one was set).
+         **/
+        new: AccountId32;
+      }
+    >;
+
+    /**
+     * The key was permanently removed.
+     **/
+    KeyRemoved: GenericPalletEvent<Rv, 'Sudo', 'KeyRemoved', null>;
+
+    /**
+     * A [sudo_as](Pallet::sudo_as) call just took place.
+     **/
+    SudoAsDone: GenericPalletEvent<
+      Rv,
+      'Sudo',
+      'SudoAsDone',
+      {
+        /**
+         * The result of the call made by the sudo user.
+         **/
+        sudoResult: Result<[], DispatchError>;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
    * Pallet `Balances`'s events
    **/
   balances: {
@@ -457,6 +661,36 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * A swap of the refund in native currency back to asset failed.
      **/
     AssetRefundFailed: GenericPalletEvent<Rv, 'AssetTxPayment', 'AssetRefundFailed', { nativeAmountKept: bigint }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Vesting`'s events
+   **/
+  vesting: {
+    /**
+     * A vesting schedule has been created.
+     **/
+    VestingCreated: GenericPalletEvent<
+      Rv,
+      'Vesting',
+      'VestingCreated',
+      { account: AccountId32; scheduleIndex: number }
+    >;
+
+    /**
+     * The amount vested has been updated. This could indicate a change in funds available.
+     * The balance given is the amount which is left unvested (and thus locked).
+     **/
+    VestingUpdated: GenericPalletEvent<Rv, 'Vesting', 'VestingUpdated', { account: AccountId32; unvested: bigint }>;
+
+    /**
+     * An \[account\] has become fully vested.
+     **/
+    VestingCompleted: GenericPalletEvent<Rv, 'Vesting', 'VestingCompleted', { account: AccountId32 }>;
 
     /**
      * Generic pallet event
@@ -1346,6 +1580,40 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Proxy',
       'DepositPoked',
       { who: AccountId32; kind: PalletProxyDepositKind; oldDeposit: bigint; newDeposit: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Indices`'s events
+   **/
+  indices: {
+    /**
+     * A account index was assigned.
+     **/
+    IndexAssigned: GenericPalletEvent<Rv, 'Indices', 'IndexAssigned', { who: AccountId32; index: number }>;
+
+    /**
+     * A account index has been freed up (unassigned).
+     **/
+    IndexFreed: GenericPalletEvent<Rv, 'Indices', 'IndexFreed', { index: number }>;
+
+    /**
+     * A account index has been frozen to its current account ID.
+     **/
+    IndexFrozen: GenericPalletEvent<Rv, 'Indices', 'IndexFrozen', { index: number; who: AccountId32 }>;
+
+    /**
+     * A deposit to reserve an index has been poked/reconsidered.
+     **/
+    DepositPoked: GenericPalletEvent<
+      Rv,
+      'Indices',
+      'DepositPoked',
+      { who: AccountId32; index: number; oldDeposit: bigint; newDeposit: bigint }
     >;
 
     /**
@@ -3136,6 +3404,1243 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
+   * Pallet `Staking`'s events
+   **/
+  staking: {
+    /**
+     * The era payout has been set; the first balance is the validator-payout; the second is
+     * the remainder from the maximum amount of reward.
+     **/
+    EraPaid: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'EraPaid',
+      { eraIndex: number; validatorPayout: bigint; remainder: bigint }
+    >;
+
+    /**
+     * The nominator has been rewarded by this amount to this destination.
+     **/
+    Rewarded: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'Rewarded',
+      { stash: AccountId32; dest: PalletStakingAsyncRewardDestination; amount: bigint }
+    >;
+
+    /**
+     * A staker (validator or nominator) has been slashed by the given amount.
+     **/
+    Slashed: GenericPalletEvent<Rv, 'Staking', 'Slashed', { staker: AccountId32; amount: bigint }>;
+
+    /**
+     * An old slashing report from a prior era was discarded because it could
+     * not be processed.
+     **/
+    OldSlashingReportDiscarded: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'OldSlashingReportDiscarded',
+      { sessionIndex: number }
+    >;
+
+    /**
+     * An account has bonded this amount. \[stash, amount\]
+     *
+     * NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,
+     * it will not be emitted for staking rewards when they are added to stake.
+     **/
+    Bonded: GenericPalletEvent<Rv, 'Staking', 'Bonded', { stash: AccountId32; amount: bigint }>;
+
+    /**
+     * An account has unbonded this amount.
+     **/
+    Unbonded: GenericPalletEvent<Rv, 'Staking', 'Unbonded', { stash: AccountId32; amount: bigint }>;
+
+    /**
+     * An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
+     * from the unlocking queue.
+     **/
+    Withdrawn: GenericPalletEvent<Rv, 'Staking', 'Withdrawn', { stash: AccountId32; amount: bigint }>;
+
+    /**
+     * A subsequent event of `Withdrawn`, indicating that `stash` was fully removed from the
+     * system.
+     **/
+    StakerRemoved: GenericPalletEvent<Rv, 'Staking', 'StakerRemoved', { stash: AccountId32 }>;
+
+    /**
+     * A nominator has been kicked from a validator.
+     **/
+    Kicked: GenericPalletEvent<Rv, 'Staking', 'Kicked', { nominator: AccountId32; stash: AccountId32 }>;
+
+    /**
+     * An account has stopped participating as either a validator or nominator.
+     **/
+    Chilled: GenericPalletEvent<Rv, 'Staking', 'Chilled', { stash: AccountId32 }>;
+
+    /**
+     * A Page of stakers rewards are getting paid. `next` is `None` if all pages are claimed.
+     **/
+    PayoutStarted: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'PayoutStarted',
+      { eraIndex: number; validatorStash: AccountId32; page: number; next?: number | undefined }
+    >;
+
+    /**
+     * A validator has set their preferences.
+     **/
+    ValidatorPrefsSet: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'ValidatorPrefsSet',
+      { stash: AccountId32; prefs: PalletStakingAsyncValidatorPrefs }
+    >;
+
+    /**
+     * Voters size limit reached.
+     **/
+    SnapshotVotersSizeExceeded: GenericPalletEvent<Rv, 'Staking', 'SnapshotVotersSizeExceeded', { size: number }>;
+
+    /**
+     * Targets size limit reached.
+     **/
+    SnapshotTargetsSizeExceeded: GenericPalletEvent<Rv, 'Staking', 'SnapshotTargetsSizeExceeded', { size: number }>;
+    ForceEra: GenericPalletEvent<Rv, 'Staking', 'ForceEra', { mode: PalletStakingAsyncForcing }>;
+
+    /**
+     * Report of a controller batch deprecation.
+     **/
+    ControllerBatchDeprecated: GenericPalletEvent<Rv, 'Staking', 'ControllerBatchDeprecated', { failures: number }>;
+
+    /**
+     * Staking balance migrated from locks to holds, with any balance that could not be held
+     * is force withdrawn.
+     **/
+    CurrencyMigrated: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'CurrencyMigrated',
+      { stash: AccountId32; forceWithdraw: bigint }
+    >;
+
+    /**
+     * A page from a multi-page election was fetched. A number of these are followed by
+     * `StakersElected`.
+     *
+     * `Ok(count)` indicates the give number of stashes were added.
+     * `Err(index)` indicates that the stashes after index were dropped.
+     * `Err(0)` indicates that an error happened but no stashes were dropped nor added.
+     *
+     * The error indicates that a number of validators were dropped due to excess size, but
+     * the overall election will continue.
+     **/
+    PagedElectionProceeded: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'PagedElectionProceeded',
+      { page: number; result: Result<number, number> }
+    >;
+
+    /**
+     * An offence for the given validator, for the given percentage of their stake, at the
+     * given era as been reported.
+     **/
+    OffenceReported: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'OffenceReported',
+      { offenceEra: number; validator: AccountId32; fraction: Perbill }
+    >;
+
+    /**
+     * An offence has been processed and the corresponding slash has been computed.
+     **/
+    SlashComputed: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'SlashComputed',
+      { offenceEra: number; slashEra: number; offender: AccountId32; page: number }
+    >;
+
+    /**
+     * An unapplied slash has been cancelled.
+     **/
+    SlashCancelled: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'SlashCancelled',
+      { slashEra: number; slashKey: [AccountId32, Perbill, number]; payout: bigint }
+    >;
+
+    /**
+     * Session change has been triggered.
+     *
+     * If planned_era is one era ahead of active_era, it implies new era is being planned and
+     * election is ongoing.
+     **/
+    SessionRotated: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'SessionRotated',
+      { startingSession: number; activeEra: number; plannedEra: number }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `NominationPools`'s events
+   **/
+  nominationPools: {
+    /**
+     * A pool has been created.
+     **/
+    Created: GenericPalletEvent<Rv, 'NominationPools', 'Created', { depositor: AccountId32; poolId: number }>;
+
+    /**
+     * A member has became bonded in a pool.
+     **/
+    Bonded: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'Bonded',
+      { member: AccountId32; poolId: number; bonded: bigint; joined: boolean }
+    >;
+
+    /**
+     * A payout has been made to a member.
+     **/
+    PaidOut: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'PaidOut',
+      { member: AccountId32; poolId: number; payout: bigint }
+    >;
+
+    /**
+     * A member has unbonded from their pool.
+     *
+     * - `balance` is the corresponding balance of the number of points that has been
+     * requested to be unbonded (the argument of the `unbond` transaction) from the bonded
+     * pool.
+     * - `points` is the number of points that are issued as a result of `balance` being
+     * dissolved into the corresponding unbonding pool.
+     * - `era` is the era in which the balance will be unbonded.
+     * In the absence of slashing, these values will match. In the presence of slashing, the
+     * number of points that are issued in the unbonding pool will be less than the amount
+     * requested to be unbonded.
+     **/
+    Unbonded: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'Unbonded',
+      { member: AccountId32; poolId: number; balance: bigint; points: bigint; era: number }
+    >;
+
+    /**
+     * A member has withdrawn from their pool.
+     *
+     * The given number of `points` have been dissolved in return of `balance`.
+     *
+     * Similar to `Unbonded` event, in the absence of slashing, the ratio of point to balance
+     * will be 1.
+     **/
+    Withdrawn: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'Withdrawn',
+      { member: AccountId32; poolId: number; balance: bigint; points: bigint }
+    >;
+
+    /**
+     * A pool has been destroyed.
+     **/
+    Destroyed: GenericPalletEvent<Rv, 'NominationPools', 'Destroyed', { poolId: number }>;
+
+    /**
+     * The state of a pool has changed
+     **/
+    StateChanged: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'StateChanged',
+      { poolId: number; newState: PalletNominationPoolsPoolState }
+    >;
+
+    /**
+     * A member has been removed from a pool.
+     *
+     * The removal can be voluntary (withdrawn all unbonded funds) or involuntary (kicked).
+     * Any funds that are still delegated (i.e. dangling delegation) are released and are
+     * represented by `released_balance`.
+     **/
+    MemberRemoved: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'MemberRemoved',
+      { poolId: number; member: AccountId32; releasedBalance: bigint }
+    >;
+
+    /**
+     * The roles of a pool have been updated to the given new roles. Note that the depositor
+     * can never change.
+     **/
+    RolesUpdated: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'RolesUpdated',
+      { root?: AccountId32 | undefined; bouncer?: AccountId32 | undefined; nominator?: AccountId32 | undefined }
+    >;
+
+    /**
+     * The active balance of pool `pool_id` has been slashed to `balance`.
+     **/
+    PoolSlashed: GenericPalletEvent<Rv, 'NominationPools', 'PoolSlashed', { poolId: number; balance: bigint }>;
+
+    /**
+     * The unbond pool at `era` of pool `pool_id` has been slashed to `balance`.
+     **/
+    UnbondingPoolSlashed: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'UnbondingPoolSlashed',
+      { poolId: number; era: number; balance: bigint }
+    >;
+
+    /**
+     * A pool's commission setting has been changed.
+     **/
+    PoolCommissionUpdated: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'PoolCommissionUpdated',
+      { poolId: number; current?: [Perbill, AccountId32] | undefined }
+    >;
+
+    /**
+     * A pool's maximum commission setting has been changed.
+     **/
+    PoolMaxCommissionUpdated: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'PoolMaxCommissionUpdated',
+      { poolId: number; maxCommission: Perbill }
+    >;
+
+    /**
+     * A pool's commission `change_rate` has been changed.
+     **/
+    PoolCommissionChangeRateUpdated: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'PoolCommissionChangeRateUpdated',
+      { poolId: number; changeRate: PalletNominationPoolsCommissionChangeRate }
+    >;
+
+    /**
+     * Pool commission claim permission has been updated.
+     **/
+    PoolCommissionClaimPermissionUpdated: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'PoolCommissionClaimPermissionUpdated',
+      { poolId: number; permission?: PalletNominationPoolsCommissionClaimPermission | undefined }
+    >;
+
+    /**
+     * Pool commission has been claimed.
+     **/
+    PoolCommissionClaimed: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'PoolCommissionClaimed',
+      { poolId: number; commission: bigint }
+    >;
+
+    /**
+     * Topped up deficit in frozen ED of the reward pool.
+     **/
+    MinBalanceDeficitAdjusted: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'MinBalanceDeficitAdjusted',
+      { poolId: number; amount: bigint }
+    >;
+
+    /**
+     * Claimed excess frozen ED of af the reward pool.
+     **/
+    MinBalanceExcessAdjusted: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'MinBalanceExcessAdjusted',
+      { poolId: number; amount: bigint }
+    >;
+
+    /**
+     * A pool member's claim permission has been updated.
+     **/
+    MemberClaimPermissionUpdated: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'MemberClaimPermissionUpdated',
+      { member: AccountId32; permission: PalletNominationPoolsClaimPermission }
+    >;
+
+    /**
+     * A pool's metadata was updated.
+     **/
+    MetadataUpdated: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'MetadataUpdated',
+      { poolId: number; caller: AccountId32 }
+    >;
+
+    /**
+     * A pool's nominating account (or the pool's root account) has nominated a validator set
+     * on behalf of the pool.
+     **/
+    PoolNominationMade: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'PoolNominationMade',
+      { poolId: number; caller: AccountId32 }
+    >;
+
+    /**
+     * The pool is chilled i.e. no longer nominating.
+     **/
+    PoolNominatorChilled: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'PoolNominatorChilled',
+      { poolId: number; caller: AccountId32 }
+    >;
+
+    /**
+     * Global parameters regulating nomination pools have been updated.
+     **/
+    GlobalParamsUpdated: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'GlobalParamsUpdated',
+      {
+        minJoinBond: bigint;
+        minCreateBond: bigint;
+        maxPools?: number | undefined;
+        maxMembers?: number | undefined;
+        maxMembersPerPool?: number | undefined;
+        globalMaxCommission?: Perbill | undefined;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `FastUnstake`'s events
+   **/
+  fastUnstake: {
+    /**
+     * A staker was unstaked.
+     **/
+    Unstaked: GenericPalletEvent<
+      Rv,
+      'FastUnstake',
+      'Unstaked',
+      { stash: AccountId32; result: Result<[], DispatchError> }
+    >;
+
+    /**
+     * A staker was slashed for requesting fast-unstake whilst being exposed.
+     **/
+    Slashed: GenericPalletEvent<Rv, 'FastUnstake', 'Slashed', { stash: AccountId32; amount: bigint }>;
+
+    /**
+     * A batch was partially checked for the given eras, but the process did not finish.
+     **/
+    BatchChecked: GenericPalletEvent<Rv, 'FastUnstake', 'BatchChecked', { eras: Array<number> }>;
+
+    /**
+     * A batch of a given size was terminated.
+     *
+     * This is always follows by a number of `Unstaked` or `Slashed` events, marking the end
+     * of the batch. A new batch will be created upon next block.
+     **/
+    BatchFinished: GenericPalletEvent<Rv, 'FastUnstake', 'BatchFinished', { size: number }>;
+
+    /**
+     * An internal error happened. Operations will be paused now.
+     **/
+    InternalError: GenericPalletEvent<Rv, 'FastUnstake', 'InternalError', null>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `VoterList`'s events
+   **/
+  voterList: {
+    /**
+     * Moved an account from one bag to another.
+     **/
+    Rebagged: GenericPalletEvent<Rv, 'VoterList', 'Rebagged', { who: AccountId32; from: bigint; to: bigint }>;
+
+    /**
+     * Updated the score of some account to the given amount.
+     **/
+    ScoreUpdated: GenericPalletEvent<Rv, 'VoterList', 'ScoreUpdated', { who: AccountId32; newScore: bigint }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `DelegatedStaking`'s events
+   **/
+  delegatedStaking: {
+    /**
+     * Funds delegated by a delegator.
+     **/
+    Delegated: GenericPalletEvent<
+      Rv,
+      'DelegatedStaking',
+      'Delegated',
+      { agent: AccountId32; delegator: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Funds released to a delegator.
+     **/
+    Released: GenericPalletEvent<
+      Rv,
+      'DelegatedStaking',
+      'Released',
+      { agent: AccountId32; delegator: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Funds slashed from a delegator.
+     **/
+    Slashed: GenericPalletEvent<
+      Rv,
+      'DelegatedStaking',
+      'Slashed',
+      { agent: AccountId32; delegator: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Unclaimed delegation funds migrated to delegator.
+     **/
+    MigratedDelegation: GenericPalletEvent<
+      Rv,
+      'DelegatedStaking',
+      'MigratedDelegation',
+      { agent: AccountId32; delegator: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `StakingNextRcClient`'s events
+   **/
+  stakingNextRcClient: {
+    /**
+     * A said session report was received.
+     **/
+    SessionReportReceived: GenericPalletEvent<
+      Rv,
+      'StakingNextRcClient',
+      'SessionReportReceived',
+      {
+        endIndex: number;
+        activationTimestamp?: [bigint, number] | undefined;
+        validatorPointsCounts: number;
+        leftover: boolean;
+      }
+    >;
+
+    /**
+     * A new offence was reported.
+     **/
+    OffenceReceived: GenericPalletEvent<
+      Rv,
+      'StakingNextRcClient',
+      'OffenceReceived',
+      { slashSession: number; offencesCount: number }
+    >;
+
+    /**
+     * Something occurred that should never happen under normal operation.
+     * Logged as an event for fail-safe observability.
+     **/
+    Unexpected: GenericPalletEvent<Rv, 'StakingNextRcClient', 'Unexpected', PalletStakingAsyncRcClientUnexpectedKind>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `MultiBlock`'s events
+   **/
+  multiBlock: {
+    /**
+     * A phase transition happened. Only checks major changes in the variants, not minor inner
+     * values.
+     **/
+    PhaseTransitioned: GenericPalletEvent<
+      Rv,
+      'MultiBlock',
+      'PhaseTransitioned',
+      {
+        /**
+         * the source phase
+         **/
+        from: PalletElectionProviderMultiBlockPhase;
+
+        /**
+         * The target phase
+         **/
+        to: PalletElectionProviderMultiBlockPhase;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `MultiBlockVerifier`'s events
+   **/
+  multiBlockVerifier: {
+    /**
+     * The verification data was unavailable and it could not continue.
+     **/
+    VerificationDataUnavailable: GenericPalletEvent<Rv, 'MultiBlockVerifier', 'VerificationDataUnavailable', null>;
+
+    /**
+     * A verification failed at the given page.
+     *
+     * NOTE: if the index is 0, then this could mean either the feasibility of the last page
+     * was wrong, or the final checks of `finalize_verification` failed.
+     **/
+    VerificationFailed: GenericPalletEvent<
+      Rv,
+      'MultiBlockVerifier',
+      'VerificationFailed',
+      [number, PalletElectionProviderMultiBlockVerifierFeasibilityError]
+    >;
+
+    /**
+     * The given page of a solution has been verified, with the given number of winners being
+     * found in it.
+     **/
+    Verified: GenericPalletEvent<Rv, 'MultiBlockVerifier', 'Verified', [number, number]>;
+
+    /**
+     * A solution with the given score has replaced our current best solution.
+     **/
+    Queued: GenericPalletEvent<
+      Rv,
+      'MultiBlockVerifier',
+      'Queued',
+      [SpNposElectionsElectionScore, SpNposElectionsElectionScore | undefined]
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `MultiBlockSigned`'s events
+   **/
+  multiBlockSigned: {
+    /**
+     * Upcoming submission has been registered for the given account, with the given score.
+     **/
+    Registered: GenericPalletEvent<
+      Rv,
+      'MultiBlockSigned',
+      'Registered',
+      [number, AccountId32, SpNposElectionsElectionScore]
+    >;
+
+    /**
+     * A page of solution solution with the given index has been stored for the given account.
+     **/
+    Stored: GenericPalletEvent<Rv, 'MultiBlockSigned', 'Stored', [number, AccountId32, number]>;
+
+    /**
+     * The given account has been rewarded with the given amount.
+     **/
+    Rewarded: GenericPalletEvent<Rv, 'MultiBlockSigned', 'Rewarded', [number, AccountId32, bigint]>;
+
+    /**
+     * The given account has been slashed with the given amount.
+     **/
+    Slashed: GenericPalletEvent<Rv, 'MultiBlockSigned', 'Slashed', [number, AccountId32, bigint]>;
+
+    /**
+     * The given solution, for the given round, was ejected.
+     **/
+    Ejected: GenericPalletEvent<Rv, 'MultiBlockSigned', 'Ejected', [number, AccountId32]>;
+
+    /**
+     * The given account has been discarded.
+     **/
+    Discarded: GenericPalletEvent<Rv, 'MultiBlockSigned', 'Discarded', [number, AccountId32]>;
+
+    /**
+     * The given account has bailed.
+     **/
+    Bailed: GenericPalletEvent<Rv, 'MultiBlockSigned', 'Bailed', [number, AccountId32]>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `ConvictionVoting`'s events
+   **/
+  convictionVoting: {
+    /**
+     * An account has delegated their vote to another account. \[who, target\]
+     **/
+    Delegated: GenericPalletEvent<Rv, 'ConvictionVoting', 'Delegated', [AccountId32, AccountId32]>;
+
+    /**
+     * An \[account\] has cancelled a previous delegation operation.
+     **/
+    Undelegated: GenericPalletEvent<Rv, 'ConvictionVoting', 'Undelegated', AccountId32>;
+
+    /**
+     * An account has voted
+     **/
+    Voted: GenericPalletEvent<
+      Rv,
+      'ConvictionVoting',
+      'Voted',
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+    >;
+
+    /**
+     * A vote has been removed
+     **/
+    VoteRemoved: GenericPalletEvent<
+      Rv,
+      'ConvictionVoting',
+      'VoteRemoved',
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+    >;
+
+    /**
+     * The lockup period of a conviction vote expired, and the funds have been unlocked.
+     **/
+    VoteUnlocked: GenericPalletEvent<Rv, 'ConvictionVoting', 'VoteUnlocked', { who: AccountId32; class: number }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Referenda`'s events
+   **/
+  referenda: {
+    /**
+     * A referendum has been submitted.
+     **/
+    Submitted: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'Submitted',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+
+        /**
+         * The track (and by extension proposal dispatch origin) of this referendum.
+         **/
+        track: number;
+
+        /**
+         * The proposal for the referendum.
+         **/
+        proposal: FrameSupportPreimagesBounded;
+      }
+    >;
+
+    /**
+     * The decision deposit has been placed.
+     **/
+    DecisionDepositPlaced: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'DecisionDepositPlaced',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+
+        /**
+         * The account who placed the deposit.
+         **/
+        who: AccountId32;
+
+        /**
+         * The amount placed by the account.
+         **/
+        amount: bigint;
+      }
+    >;
+
+    /**
+     * The decision deposit has been refunded.
+     **/
+    DecisionDepositRefunded: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'DecisionDepositRefunded',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+
+        /**
+         * The account who placed the deposit.
+         **/
+        who: AccountId32;
+
+        /**
+         * The amount placed by the account.
+         **/
+        amount: bigint;
+      }
+    >;
+
+    /**
+     * A deposit has been slashed.
+     **/
+    DepositSlashed: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'DepositSlashed',
+      {
+        /**
+         * The account who placed the deposit.
+         **/
+        who: AccountId32;
+
+        /**
+         * The amount placed by the account.
+         **/
+        amount: bigint;
+      }
+    >;
+
+    /**
+     * A referendum has moved into the deciding phase.
+     **/
+    DecisionStarted: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'DecisionStarted',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+
+        /**
+         * The track (and by extension proposal dispatch origin) of this referendum.
+         **/
+        track: number;
+
+        /**
+         * The proposal for the referendum.
+         **/
+        proposal: FrameSupportPreimagesBounded;
+
+        /**
+         * The current tally of votes in this referendum.
+         **/
+        tally: PalletConvictionVotingTally;
+      }
+    >;
+    ConfirmStarted: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'ConfirmStarted',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+      }
+    >;
+    ConfirmAborted: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'ConfirmAborted',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+      }
+    >;
+
+    /**
+     * A referendum has ended its confirmation phase and is ready for approval.
+     **/
+    Confirmed: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'Confirmed',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+
+        /**
+         * The final tally of votes in this referendum.
+         **/
+        tally: PalletConvictionVotingTally;
+      }
+    >;
+
+    /**
+     * A referendum has been approved and its proposal has been scheduled.
+     **/
+    Approved: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'Approved',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+      }
+    >;
+
+    /**
+     * A proposal has been rejected by referendum.
+     **/
+    Rejected: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'Rejected',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+
+        /**
+         * The final tally of votes in this referendum.
+         **/
+        tally: PalletConvictionVotingTally;
+      }
+    >;
+
+    /**
+     * A referendum has been timed out without being decided.
+     **/
+    TimedOut: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'TimedOut',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+
+        /**
+         * The final tally of votes in this referendum.
+         **/
+        tally: PalletConvictionVotingTally;
+      }
+    >;
+
+    /**
+     * A referendum has been cancelled.
+     **/
+    Cancelled: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'Cancelled',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+
+        /**
+         * The final tally of votes in this referendum.
+         **/
+        tally: PalletConvictionVotingTally;
+      }
+    >;
+
+    /**
+     * A referendum has been killed.
+     **/
+    Killed: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'Killed',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+
+        /**
+         * The final tally of votes in this referendum.
+         **/
+        tally: PalletConvictionVotingTally;
+      }
+    >;
+
+    /**
+     * The submission deposit has been refunded.
+     **/
+    SubmissionDepositRefunded: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'SubmissionDepositRefunded',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+
+        /**
+         * The account who placed the deposit.
+         **/
+        who: AccountId32;
+
+        /**
+         * The amount placed by the account.
+         **/
+        amount: bigint;
+      }
+    >;
+
+    /**
+     * Metadata for a referendum has been set.
+     **/
+    MetadataSet: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'MetadataSet',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+
+        /**
+         * Preimage hash.
+         **/
+        hash: H256;
+      }
+    >;
+
+    /**
+     * Metadata for a referendum has been cleared.
+     **/
+    MetadataCleared: GenericPalletEvent<
+      Rv,
+      'Referenda',
+      'MetadataCleared',
+      {
+        /**
+         * Index of the referendum.
+         **/
+        index: number;
+
+        /**
+         * Preimage hash.
+         **/
+        hash: H256;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Whitelist`'s events
+   **/
+  whitelist: {
+    CallWhitelisted: GenericPalletEvent<Rv, 'Whitelist', 'CallWhitelisted', { callHash: H256 }>;
+    WhitelistedCallRemoved: GenericPalletEvent<Rv, 'Whitelist', 'WhitelistedCallRemoved', { callHash: H256 }>;
+    WhitelistedCallDispatched: GenericPalletEvent<
+      Rv,
+      'Whitelist',
+      'WhitelistedCallDispatched',
+      { callHash: H256; result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo> }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Treasury`'s events
+   **/
+  treasury: {
+    /**
+     * We have ended a spend period and will now allocate funds.
+     **/
+    Spending: GenericPalletEvent<Rv, 'Treasury', 'Spending', { budgetRemaining: bigint }>;
+
+    /**
+     * Some funds have been allocated.
+     **/
+    Awarded: GenericPalletEvent<
+      Rv,
+      'Treasury',
+      'Awarded',
+      { proposalIndex: number; award: bigint; account: AccountId32 }
+    >;
+
+    /**
+     * Some of our funds have been burnt.
+     **/
+    Burnt: GenericPalletEvent<Rv, 'Treasury', 'Burnt', { burntFunds: bigint }>;
+
+    /**
+     * Spending has finished; this is the amount that rolls over until next spend.
+     **/
+    Rollover: GenericPalletEvent<Rv, 'Treasury', 'Rollover', { rolloverBalance: bigint }>;
+
+    /**
+     * Some funds have been deposited.
+     **/
+    Deposit: GenericPalletEvent<Rv, 'Treasury', 'Deposit', { value: bigint }>;
+
+    /**
+     * A new spend proposal has been approved.
+     **/
+    SpendApproved: GenericPalletEvent<
+      Rv,
+      'Treasury',
+      'SpendApproved',
+      { proposalIndex: number; amount: bigint; beneficiary: AccountId32 }
+    >;
+
+    /**
+     * The inactive funds of the pallet have been updated.
+     **/
+    UpdatedInactive: GenericPalletEvent<
+      Rv,
+      'Treasury',
+      'UpdatedInactive',
+      { reactivated: bigint; deactivated: bigint }
+    >;
+
+    /**
+     * A new asset spend proposal has been approved.
+     **/
+    AssetSpendApproved: GenericPalletEvent<
+      Rv,
+      'Treasury',
+      'AssetSpendApproved',
+      {
+        index: number;
+        assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
+        amount: bigint;
+        beneficiary: XcmVersionedLocation;
+        validFrom: number;
+        expireAt: number;
+      }
+    >;
+
+    /**
+     * An approved spend was voided.
+     **/
+    AssetSpendVoided: GenericPalletEvent<Rv, 'Treasury', 'AssetSpendVoided', { index: number }>;
+
+    /**
+     * A payment happened.
+     **/
+    Paid: GenericPalletEvent<Rv, 'Treasury', 'Paid', { index: number; paymentId: bigint }>;
+
+    /**
+     * A payment failed and can be retried.
+     **/
+    PaymentFailed: GenericPalletEvent<Rv, 'Treasury', 'PaymentFailed', { index: number; paymentId: bigint }>;
+
+    /**
+     * A spend was processed and removed from the storage. It might have been successfully
+     * paid or it may have expired.
+     **/
+    SpendProcessed: GenericPalletEvent<Rv, 'Treasury', 'SpendProcessed', { index: number }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `AssetRate`'s events
+   **/
+  assetRate: {
+    AssetRateCreated: GenericPalletEvent<
+      Rv,
+      'AssetRate',
+      'AssetRateCreated',
+      { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; rate: FixedU128 }
+    >;
+    AssetRateRemoved: GenericPalletEvent<
+      Rv,
+      'AssetRate',
+      'AssetRateRemoved',
+      { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset }
+    >;
+    AssetRateUpdated: GenericPalletEvent<
+      Rv,
+      'AssetRate',
+      'AssetRateUpdated',
+      { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; old: FixedU128; new: FixedU128 }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
    * Pallet `AssetConversionMigration`'s events
    **/
   assetConversionMigration: {
@@ -3163,6 +4668,103 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
         newAccount: AccountId32;
       }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `AhOps`'s events
+   **/
+  ahOps: {
+    /**
+     * Some lease reserve could not be unreserved and needs manual cleanup.
+     **/
+    LeaseUnreserveRemaining: GenericPalletEvent<
+      Rv,
+      'AhOps',
+      'LeaseUnreserveRemaining',
+      { depositor: AccountId32; paraId: PolkadotParachainPrimitivesPrimitivesId; remaining: bigint }
+    >;
+
+    /**
+     * Some amount for a crowdloan reserve could not be unreserved and needs manual cleanup.
+     **/
+    CrowdloanUnreserveRemaining: GenericPalletEvent<
+      Rv,
+      'AhOps',
+      'CrowdloanUnreserveRemaining',
+      { depositor: AccountId32; paraId: PolkadotParachainPrimitivesPrimitivesId; remaining: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `AhMigrator`'s events
+   **/
+  ahMigrator: {
+    /**
+     * A stage transition has occurred.
+     **/
+    StageTransition: GenericPalletEvent<
+      Rv,
+      'AhMigrator',
+      'StageTransition',
+      {
+        /**
+         * The old stage before the transition.
+         **/
+        old: PalletAhMigratorMigrationStage;
+
+        /**
+         * The new stage after the transition.
+         **/
+        new: PalletAhMigratorMigrationStage;
+      }
+    >;
+
+    /**
+     * We received a batch of messages that will be integrated into a pallet.
+     **/
+    BatchReceived: GenericPalletEvent<
+      Rv,
+      'AhMigrator',
+      'BatchReceived',
+      { pallet: PalletAhMigratorPalletEventName; count: number }
+    >;
+
+    /**
+     * We processed a batch of messages for this pallet.
+     **/
+    BatchProcessed: GenericPalletEvent<
+      Rv,
+      'AhMigrator',
+      'BatchProcessed',
+      { pallet: PalletAhMigratorPalletEventName; countGood: number; countBad: number }
+    >;
+
+    /**
+     * The Asset Hub Migration started and is active until `AssetHubMigrationFinished` is
+     * emitted.
+     *
+     * This event is equivalent to `StageTransition { new: DataMigrationOngoing, .. }` but is
+     * easier to understand. The activation is immediate and affects all events happening
+     * afterwards.
+     **/
+    AssetHubMigrationStarted: GenericPalletEvent<Rv, 'AhMigrator', 'AssetHubMigrationStarted', null>;
+
+    /**
+     * The Asset Hub Migration finished.
+     *
+     * This event is equivalent to `StageTransition { new: MigrationDone, .. }` but is easier
+     * to understand. The finishing is immediate and affects all events happening
+     * afterwards.
+     **/
+    AssetHubMigrationFinished: GenericPalletEvent<Rv, 'AhMigrator', 'AssetHubMigrationFinished', null>;
 
     /**
      * Generic pallet event

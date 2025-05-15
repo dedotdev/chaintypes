@@ -270,6 +270,11 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     maxExposurePageSize: number;
 
     /**
+     * The absolute maximum of winner validators this pallet should return.
+     **/
+    maxValidatorSet: number;
+
+    /**
      * The maximum number of `unlocking` chunks a [`StakingLedger`] can
      * have. Effectively determines how many unique eras a staker may be
      * unbonding in.
@@ -690,12 +695,18 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     signedDepositWeight: bigint;
 
     /**
-     * The maximum number of winners that can be elected by this `ElectionProvider`
-     * implementation.
+     * Maximum number of winners that an election supports.
      *
      * Note: This must always be greater or equal to `T::DataProvider::desired_targets()`.
      **/
     maxWinners: number;
+
+    /**
+     * Maximum number of voters that can support a winner in an election solution.
+     *
+     * This is needed to ensure election computation is bounded.
+     **/
+    maxBackersPerWinner: number;
     minerMaxLength: number;
     minerMaxWeight: SpWeightsWeightV2Weight;
     minerMaxVotesPerVoter: number;
@@ -1251,6 +1262,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
+   * Pallet `AssetHubStakingClient`'s constants
+   **/
+  assetHubStakingClient: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `MultiBlockMigrations`'s constants
    **/
   multiBlockMigrations: {
@@ -1279,6 +1299,12 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    * Pallet `XcmPallet`'s constants
    **/
   xcmPallet: {
+    /**
+     * The latest supported version that we advertise. Generally just set it to
+     * `pallet_xcm::CurrentXcmVersion`.
+     **/
+    advertisedXcmVersion: number;
+
     /**
      * Generic pallet constant
      **/
@@ -1415,6 +1441,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    * Pallet `IdentityMigrator`'s constants
    **/
   identityMigrator: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `RcMigrator`'s constants
+   **/
+  rcMigrator: {
     /**
      * Generic pallet constant
      **/

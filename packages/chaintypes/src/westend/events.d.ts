@@ -11,6 +11,7 @@ import type {
   WestendRuntimeRuntimeParametersKey,
   WestendRuntimeRuntimeParametersValue,
   SpConsensusGrandpaAppPublic,
+  PalletRecoveryDepositKind,
   WestendRuntimeProxyType,
   PalletProxyDepositKind,
   PalletMultisigTimepoint,
@@ -38,6 +39,7 @@ import type {
   PolkadotCorePrimitivesCandidateHash,
   PolkadotRuntimeParachainsDisputesDisputeLocation,
   PolkadotRuntimeParachainsDisputesDisputeResult,
+  PalletStakingAsyncAhClientUnexpectedKind,
   StagingXcmV5TraitsOutcome,
   StagingXcmV5Location,
   StagingXcmV5Xcm,
@@ -49,6 +51,7 @@ import type {
   StagingXcmV5AssetAssets,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
+  PalletRcMigratorMigrationStage,
 } from './types.js';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -460,6 +463,25 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
+   * Pallet `Historical`'s events
+   **/
+  historical: {
+    /**
+     * The merkle root of the validators of the said session were stored
+     **/
+    RootStored: GenericPalletEvent<Rv, 'Historical', 'RootStored', { index: number }>;
+
+    /**
+     * The merkle roots of up to this session index were pruned
+     **/
+    RootsPruned: GenericPalletEvent<Rv, 'Historical', 'RootsPruned', { upTo: number }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
    * Pallet `Parameters`'s events
    **/
   parameters: {
@@ -504,6 +526,12 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * block number as the type might suggest.
      **/
     NewSession: GenericPalletEvent<Rv, 'Session', 'NewSession', { sessionIndex: number }>;
+
+    /**
+     * The `NewSession` event in the current block also implies a new validator set to be
+     * queued.
+     **/
+    NewQueued: GenericPalletEvent<Rv, 'Session', 'NewQueued', null>;
 
     /**
      * Validator has been disabled.
@@ -825,6 +853,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     RecoveryRemoved: GenericPalletEvent<Rv, 'Recovery', 'RecoveryRemoved', { lostAccount: AccountId32 }>;
 
     /**
+     * A deposit has been updated.
+     **/
+    DepositPoked: GenericPalletEvent<
+      Rv,
+      'Recovery',
+      'DepositPoked',
+      { who: AccountId32; kind: PalletRecoveryDepositKind; oldDeposit: bigint; newDeposit: bigint }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -833,6 +871,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
    * Pallet `Vesting`'s events
    **/
   vesting: {
+    /**
+     * A vesting schedule has been created.
+     **/
+    VestingCreated: GenericPalletEvent<
+      Rv,
+      'Vesting',
+      'VestingCreated',
+      { account: AccountId32; scheduleIndex: number }
+    >;
+
     /**
      * The amount vested has been updated. This could indicate a change in funds available.
      * The balance given is the amount which is left unvested (and thus locked).
@@ -1050,6 +1098,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Proxy',
       'PureCreated',
       { pure: AccountId32; who: AccountId32; proxyType: WestendRuntimeProxyType; disambiguationIndex: number }
+    >;
+
+    /**
+     * A pure proxy was killed by its spawner.
+     **/
+    PureKilled: GenericPalletEvent<
+      Rv,
+      'Proxy',
+      'PureKilled',
+      { pure: AccountId32; spawner: AccountId32; proxyType: WestendRuntimeProxyType; disambiguationIndex: number }
     >;
 
     /**
@@ -2211,6 +2269,21 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * The upgrade cooldown was removed.
+     **/
+    UpgradeCooldownRemoved: GenericPalletEvent<
+      Rv,
+      'Paras',
+      'UpgradeCooldownRemoved',
+      {
+        /**
+         * The parachain for which the cooldown got removed.
+         **/
+        paraId: PolkadotParachainPrimitivesPrimitivesId;
+      }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -2675,6 +2748,45 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * A core has received a new assignment from the broker chain.
      **/
     CoreAssigned: GenericPalletEvent<Rv, 'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV8CoreIndex }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `AssetHubStakingClient`'s events
+   **/
+  assetHubStakingClient: {
+    /**
+     * A new validator set has been received.
+     **/
+    ValidatorSetReceived: GenericPalletEvent<
+      Rv,
+      'AssetHubStakingClient',
+      'ValidatorSetReceived',
+      { id: number; newValidatorSetCount: number; pruneUpTo?: number | undefined; leftover: boolean }
+    >;
+
+    /**
+     * We could not merge, and therefore dropped a buffered message.
+     *
+     * Note that this event is more resembling an error, but we use an event because in this
+     * pallet we need to mutate storage upon some failures.
+     **/
+    CouldNotMergeAndDropped: GenericPalletEvent<Rv, 'AssetHubStakingClient', 'CouldNotMergeAndDropped', null>;
+
+    /**
+     * The validator set received is way too small, as per
+     * [`Config::MinimumValidatorSetSize`].
+     **/
+    SetTooSmallAndDropped: GenericPalletEvent<Rv, 'AssetHubStakingClient', 'SetTooSmallAndDropped', null>;
+
+    /**
+     * Something occurred that should never happen under normal operation. Logged as an event
+     * for fail-safe observability.
+     **/
+    Unexpected: GenericPalletEvent<Rv, 'AssetHubStakingClient', 'Unexpected', PalletStakingAsyncAhClientUnexpectedKind>;
 
     /**
      * Generic pallet event
@@ -3359,6 +3471,54 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'DepositUpdated',
       { who: AccountId32; identity: bigint; subs: bigint }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `RcMigrator`'s events
+   **/
+  rcMigrator: {
+    /**
+     * A stage transition has occurred.
+     **/
+    StageTransition: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'StageTransition',
+      {
+        /**
+         * The old stage before the transition.
+         **/
+        old: PalletRcMigratorMigrationStage;
+
+        /**
+         * The new stage after the transition.
+         **/
+        new: PalletRcMigratorMigrationStage;
+      }
+    >;
+
+    /**
+     * The Asset Hub Migration started and is active until `AssetHubMigrationFinished` is
+     * emitted.
+     *
+     * This event is equivalent to `StageTransition { new: Initializing, .. }` but is easier
+     * to understand. The activation is immediate and affects all events happening
+     * afterwards.
+     **/
+    AssetHubMigrationStarted: GenericPalletEvent<Rv, 'RcMigrator', 'AssetHubMigrationStarted', null>;
+
+    /**
+     * The Asset Hub Migration finished.
+     *
+     * This event is equivalent to `StageTransition { new: MigrationDone, .. }` but is easier
+     * to understand. The finishing is immediate and affects all events happening
+     * afterwards.
+     **/
+    AssetHubMigrationFinished: GenericPalletEvent<Rv, 'RcMigrator', 'AssetHubMigrationFinished', null>;
 
     /**
      * Generic pallet event

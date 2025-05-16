@@ -10678,14 +10678,22 @@ export type PalletStakingAsyncAhClientCall =
   /**
    * Allows governance to force set the operating mode of the pallet.
    **/
-  | { name: 'SetMode'; params: { mode: PalletStakingAsyncAhClientOperatingMode } };
+  | { name: 'SetMode'; params: { mode: PalletStakingAsyncAhClientOperatingMode } }
+  /**
+   * manually do what this pallet was meant to do at the end of the migration.
+   **/
+  | { name: 'ForceOnMigrationEnd' };
 
 export type PalletStakingAsyncAhClientCallLike =
   | { name: 'ValidatorSet'; params: { report: PalletStakingAsyncRcClientValidatorSetReport } }
   /**
    * Allows governance to force set the operating mode of the pallet.
    **/
-  | { name: 'SetMode'; params: { mode: PalletStakingAsyncAhClientOperatingMode } };
+  | { name: 'SetMode'; params: { mode: PalletStakingAsyncAhClientOperatingMode } }
+  /**
+   * manually do what this pallet was meant to do at the end of the migration.
+   **/
+  | { name: 'ForceOnMigrationEnd' };
 
 export type PalletStakingAsyncRcClientValidatorSetReport = {
   newValidatorSet: Array<AccountId32>;
@@ -11927,7 +11935,11 @@ export type PalletRcMigratorCall =
   /**
    * Update the total number of XCM messages processed by the Asset Hub.
    **/
-  | { name: 'UpdateAhMsgProcessedCount'; params: { count: number } };
+  | { name: 'UpdateAhMsgProcessedCount'; params: { count: number } }
+  /**
+   * Update the total number of XCM messages sent and processed by the Asset Hub.
+   **/
+  | { name: 'UpdateAhMsgCounts'; params: { sent: number; processed: number } };
 
 export type PalletRcMigratorCallLike =
   /**
@@ -11951,7 +11963,11 @@ export type PalletRcMigratorCallLike =
   /**
    * Update the total number of XCM messages processed by the Asset Hub.
    **/
-  | { name: 'UpdateAhMsgProcessedCount'; params: { count: number } };
+  | { name: 'UpdateAhMsgProcessedCount'; params: { count: number } }
+  /**
+   * Update the total number of XCM messages sent and processed by the Asset Hub.
+   **/
+  | { name: 'UpdateAhMsgCounts'; params: { sent: number; processed: number } };
 
 export type PalletRcMigratorMigrationStage =
   | { type: 'Pending' }

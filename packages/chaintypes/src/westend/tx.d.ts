@@ -9789,6 +9789,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * manually do what this pallet was meant to do at the end of the migration.
+     *
+     **/
+    forceOnMigrationEnd: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AssetHubStakingClient';
+          palletCall: {
+            name: 'ForceOnMigrationEnd';
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -11124,6 +11141,29 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'UpdateAhMsgProcessedCount';
             params: { count: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Update the total number of XCM messages sent and processed by the Asset Hub.
+     *
+     * @param {number} sent
+     * @param {number} processed
+     **/
+    updateAhMsgCounts: GenericTxCall<
+      Rv,
+      (
+        sent: number,
+        processed: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'UpdateAhMsgCounts';
+            params: { sent: number; processed: number };
           };
         }
       >

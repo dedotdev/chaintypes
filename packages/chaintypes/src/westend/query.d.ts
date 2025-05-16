@@ -4097,6 +4097,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     dmpDataMessageCounts: GenericStorageQuery<Rv, () => [number, number]>;
 
     /**
+     *
+     * @param {H256} arg
+     * @param {Callback<StagingXcmV5Xcm | undefined> =} callback
+     **/
+    dmpMessagesFailed: GenericStorageQuery<Rv, (arg: H256) => StagingXcmV5Xcm | undefined, H256>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;

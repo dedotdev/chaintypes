@@ -2,7 +2,13 @@
   "name": "@dedot/chaintypes",
   "version": "0.99.0",
   "description": "Types for substrate-based chains",
-  "author": "Thang X. Vu <thang@coongcrafts.io>",
+  "author": "Thang X. Vu <thang@dedot.dev>",
+  "homepage": "https://dedot.dev",
+  "repository": {
+    "directory": "packages/chaintypes",
+    "type": "git",
+    "url": "https://github.com/dedotdev/chaintypes.git"
+  },
   "main": "src/index.ts",
   "sideEffects": false,
   "type": "module",

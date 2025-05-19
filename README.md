@@ -95,7 +95,7 @@ For more detailed information on connecting to networks, see the [official docum
 - Moonbeam
 - Aleph
 - Hydration
-- BasiliskApi
+- Basilisk
 
 > Don't see your network? We welcome Pull Requests to add support for additional PolkadotSDK-based networks!
 

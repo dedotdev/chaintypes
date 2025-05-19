@@ -90,9 +90,12 @@ For more detailed information on connecting to networks, see the [official docum
 - Paseo
 - Paseo Asset Hub
 - Paseo People
+- Paseo Hydration
 - Astar
 - Moonbeam
 - Aleph
+- Hydration
+- BasiliskApi
 
 > Don't see your network? We welcome Pull Requests to add support for additional PolkadotSDK-based networks!
 

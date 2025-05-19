@@ -84,7 +84,7 @@ export const networks: NetworkInfo[] = [
     endpoint: ['wss://hydration-rpc.n.dwellir.com'],
   },
   {
-    chain: 'hydrationPaseo',
+    chain: 'paseoHydration',
     endpoint: ['wss://paseo-rpc.play.hydration.cloud'],
   },
   {

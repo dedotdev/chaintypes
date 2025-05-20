@@ -726,6 +726,36 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     Unreachable: GenericPalletError<Rv>;
 
     /**
+     * The asset provided for the tip is unsupported.
+     **/
+    UnsupportedAsset: GenericPalletError<Rv>;
+
+    /**
+     * Unable to withdraw asset.
+     **/
+    WithdrawError: GenericPalletError<Rv>;
+
+    /**
+     * Account could not be converted to a location.
+     **/
+    InvalidAccount: GenericPalletError<Rv>;
+
+    /**
+     * Provided tip asset could not be swapped for ether.
+     **/
+    SwapError: GenericPalletError<Rv>;
+
+    /**
+     * Ether could not be burned.
+     **/
+    BurnError: GenericPalletError<Rv>;
+
+    /**
+     * The tip provided is zero.
+     **/
+    TipAmountZero: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;

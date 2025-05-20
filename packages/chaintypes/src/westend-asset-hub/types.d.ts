@@ -6216,7 +6216,12 @@ export type SnowbridgePalletSystemFrontendCall =
    * All origins are allowed, however `asset_id` must be a location nested within the origin
    * consensus system.
    **/
-  | { name: 'RegisterToken'; params: { assetId: XcmVersionedLocation; metadata: SnowbridgeCoreAssetMetadata } };
+  | { name: 'RegisterToken'; params: { assetId: XcmVersionedLocation; metadata: SnowbridgeCoreAssetMetadata } }
+  /**
+   * Add an additional relayer tip for a committed message identified by `message_id`.
+   * The tip asset will be swapped for ether.
+   **/
+  | { name: 'AddTip'; params: { messageId: SnowbridgeCoreRewardMessageId; asset: StagingXcmV5Asset } };
 
 export type SnowbridgePalletSystemFrontendCallLike =
   /**
@@ -6232,9 +6237,16 @@ export type SnowbridgePalletSystemFrontendCallLike =
    * All origins are allowed, however `asset_id` must be a location nested within the origin
    * consensus system.
    **/
-  | { name: 'RegisterToken'; params: { assetId: XcmVersionedLocation; metadata: SnowbridgeCoreAssetMetadata } };
+  | { name: 'RegisterToken'; params: { assetId: XcmVersionedLocation; metadata: SnowbridgeCoreAssetMetadata } }
+  /**
+   * Add an additional relayer tip for a committed message identified by `message_id`.
+   * The tip asset will be swapped for ether.
+   **/
+  | { name: 'AddTip'; params: { messageId: SnowbridgeCoreRewardMessageId; asset: StagingXcmV5Asset } };
 
 export type SnowbridgeCoreAssetMetadata = { name: Bytes; symbol: Bytes; decimals: number };
+
+export type SnowbridgeCoreRewardMessageId = { type: 'Inbound'; value: bigint } | { type: 'Outbound'; value: bigint };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -18917,7 +18929,31 @@ export type SnowbridgePalletSystemFrontendError =
    * The desired destination was unreachable, generally because there is a no way of routing
    * to it.
    **/
-  | 'Unreachable';
+  | 'Unreachable'
+  /**
+   * The asset provided for the tip is unsupported.
+   **/
+  | 'UnsupportedAsset'
+  /**
+   * Unable to withdraw asset.
+   **/
+  | 'WithdrawError'
+  /**
+   * Account could not be converted to a location.
+   **/
+  | 'InvalidAccount'
+  /**
+   * Provided tip asset could not be swapped for ether.
+   **/
+  | 'SwapError'
+  /**
+   * Ether could not be burned.
+   **/
+  | 'BurnError'
+  /**
+   * The tip provided is zero.
+   **/
+  | 'TipAmountZero';
 
 /**
  * The `Error` enum of this pallet.
@@ -21122,11 +21158,6 @@ export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; depo
 
 export type PalletRevivePrimitivesContractAccessError = 'DoesntExist' | 'KeyDecodingFailed';
 
-export type PalletReviveEvmApiDebugRpcTypesTracerConfig = {
-  config: PalletReviveEvmApiDebugRpcTypesTracerType;
-  timeout?: Duration | undefined;
-};
-
 export type PalletReviveEvmApiDebugRpcTypesTracerType = {
   type: 'CallTracer';
   value?: PalletReviveEvmApiDebugRpcTypesCallTracerConfig | undefined;
@@ -21134,7 +21165,7 @@ export type PalletReviveEvmApiDebugRpcTypesTracerType = {
 
 export type PalletReviveEvmApiDebugRpcTypesCallTracerConfig = { withLogs: boolean; onlyTopCall: boolean };
 
-export type Duration = [bigint, number];
+export type PalletReviveEvmApiDebugRpcTypesTrace = { type: 'Call'; value: PalletReviveEvmApiDebugRpcTypesCallTrace };
 
 export type PalletReviveEvmApiDebugRpcTypesCallTrace = {
   from: H160;

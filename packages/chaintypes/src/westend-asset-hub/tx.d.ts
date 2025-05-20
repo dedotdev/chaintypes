@@ -43,6 +43,8 @@ import type {
   CumulusPrimitivesCoreAggregateMessageOrigin,
   SnowbridgeCoreOperatingModeBasicOperatingMode,
   SnowbridgeCoreAssetMetadata,
+  SnowbridgeCoreRewardMessageId,
+  StagingXcmV5Asset,
   AssetHubWestendRuntimeOriginCaller,
   PalletMultisigTimepoint,
   AssetHubWestendRuntimeProxyType,
@@ -2823,6 +2825,30 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'RegisterToken';
             params: { assetId: XcmVersionedLocation; metadata: SnowbridgeCoreAssetMetadata };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Add an additional relayer tip for a committed message identified by `message_id`.
+     * The tip asset will be swapped for ether.
+     *
+     * @param {SnowbridgeCoreRewardMessageId} messageId
+     * @param {StagingXcmV5Asset} asset
+     **/
+    addTip: GenericTxCall<
+      Rv,
+      (
+        messageId: SnowbridgeCoreRewardMessageId,
+        asset: StagingXcmV5Asset,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SnowbridgeSystemFrontend';
+          palletCall: {
+            name: 'AddTip';
+            params: { messageId: SnowbridgeCoreRewardMessageId; asset: StagingXcmV5Asset };
           };
         }
       >

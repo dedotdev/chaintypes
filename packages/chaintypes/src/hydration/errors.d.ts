@@ -2588,6 +2588,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     CannotCreatePool: GenericPalletError<Rv>;
 
     /**
+     * Slippage protection.
+     **/
+    SlippageLimit: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;

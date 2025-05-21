@@ -46,6 +46,7 @@ import type {
   XcmVersionedXcm,
   XcmVersionedAssets,
   XcmVersionedLocation,
+  SpConsensusSlotsSlot,
   XcmRuntimeApisDryRunCallDryRunEffects,
   XcmRuntimeApisDryRunError,
   HydradxRuntimeOriginCaller,
@@ -739,6 +740,33 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
         message: XcmVersionedXcm,
       ) => Promise<Result<XcmVersionedAssets, XcmRuntimeApisFeesError>>
     >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: AuraUnincludedSegmentApi - 0xd7bdd8a272ca0d65
+   **/
+  auraUnincludedSegmentApi: {
+    /**
+     * Whether it is legal to extend the chain, assuming the given block is the most
+     * recently included one as-of the relay parent that will be built against, and
+     * the given slot.
+     *
+     * This should be consistent with the logic the runtime uses when validating blocks to
+     * avoid issues.
+     *
+     * When the unincluded segment is empty, i.e. `included_hash == at`, where at is the block
+     * whose state we are querying against, this must always return `true` as long as the slot
+     * is more recent than the included block itself.
+     *
+     * @callname: AuraUnincludedSegmentApi_can_build_upon
+     * @param {H256} included_hash
+     * @param {SpConsensusSlotsSlot} slot
+     **/
+    canBuildUpon: GenericRuntimeApiMethod<Rv, (includedHash: H256, slot: SpConsensusSlotsSlot) => Promise<boolean>>;
 
     /**
      * Generic runtime api call

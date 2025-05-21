@@ -2910,14 +2910,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'Liquidation',
       'Liquidated',
-      {
-        liquidator: AccountId32;
-        evmAddress: H160;
-        collateralAsset: number;
-        debtAsset: number;
-        debtToCover: bigint;
-        profit: bigint;
-      }
+      { user: H160; collateralAsset: number; debtAsset: number; debtToCover: bigint; profit: bigint }
     >;
 
     /**
@@ -3500,7 +3493,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
-     * Deprecated. Use pallet_amm::Event::Swapped instead.
      * The DCA trade is successfully executed
      **/
     TradeExecuted: GenericPalletEvent<
@@ -4337,13 +4329,17 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * Trade executed.
      *
-     * Swapped2 is a fixed and renamed version of original Swapped,
+     * Swapped3 is a fixed and renamed version of original Swapped,
      * as Swapped contained wrong input/output amounts for XYK buy trade
+     *
+     * Swapped3 is a fixed and renamed version of original Swapped3,
+     * as Swapped contained wrong filler account on AAVE trades
+     *
      **/
-    Swapped2: GenericPalletEvent<
+    Swapped3: GenericPalletEvent<
       Rv,
       'Broadcast',
-      'Swapped2',
+      'Swapped3',
       {
         swapper: AccountId32;
         filler: AccountId32;

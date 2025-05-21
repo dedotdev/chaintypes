@@ -5964,6 +5964,32 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Dispatch a call with extra gas.
+     *
+     * This allows executing calls with additional weight (gas) limit.
+     * The extra gas is not refunded, even if not used.
+     *
+     * @param {HydradxRuntimeRuntimeCallLike} call
+     * @param {bigint} extraGas
+     **/
+    dispatchWithExtraGas: GenericTxCall<
+      Rv,
+      (
+        call: HydradxRuntimeRuntimeCallLike,
+        extraGas: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Dispatcher';
+          palletCall: {
+            name: 'DispatchWithExtraGas';
+            params: { call: HydradxRuntimeRuntimeCallLike; extraGas: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -9225,6 +9251,34 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     *
+     * @param {number} assetA
+     * @param {number} assetB
+     * @param {bigint} amountA
+     * @param {bigint} amountBMaxLimit
+     * @param {bigint} minShares
+     **/
+    addLiquidityWithLimits: GenericTxCall<
+      Rv,
+      (
+        assetA: number,
+        assetB: number,
+        amountA: bigint,
+        amountBMaxLimit: bigint,
+        minShares: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Xyk';
+          palletCall: {
+            name: 'AddLiquidityWithLimits';
+            params: { assetA: number; assetB: number; amountA: bigint; amountBMaxLimit: bigint; minShares: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
      * Remove liquidity from specific liquidity pool in the form of burning shares.
      *
      * If liquidity in the pool reaches 0, it is destroyed.
@@ -9234,21 +9288,49 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * @param {number} assetA
      * @param {number} assetB
-     * @param {bigint} liquidityAmount
+     * @param {bigint} shareAmount
      **/
     removeLiquidity: GenericTxCall<
       Rv,
       (
         assetA: number,
         assetB: number,
-        liquidityAmount: bigint,
+        shareAmount: bigint,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Xyk';
           palletCall: {
             name: 'RemoveLiquidity';
-            params: { assetA: number; assetB: number; liquidityAmount: bigint };
+            params: { assetA: number; assetB: number; shareAmount: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {number} assetA
+     * @param {number} assetB
+     * @param {bigint} shareAmount
+     * @param {bigint} minAmountA
+     * @param {bigint} minAmountB
+     **/
+    removeLiquidityWithLimits: GenericTxCall<
+      Rv,
+      (
+        assetA: number,
+        assetB: number,
+        shareAmount: bigint,
+        minAmountA: bigint,
+        minAmountB: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Xyk';
+          palletCall: {
+            name: 'RemoveLiquidityWithLimits';
+            params: { assetA: number; assetB: number; shareAmount: bigint; minAmountA: bigint; minAmountB: bigint };
           };
         }
       >

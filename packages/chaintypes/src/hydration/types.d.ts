@@ -6598,7 +6598,14 @@ export type PalletDispatcherCall =
    * This is intented to be mainly used in testnet environments, where the manager account
    * can be different.
    **/
-  | { name: 'NoteAaveManager'; params: { account: AccountId32 } };
+  | { name: 'NoteAaveManager'; params: { account: AccountId32 } }
+  /**
+   * Dispatch a call with extra gas.
+   *
+   * This allows executing calls with additional weight (gas) limit.
+   * The extra gas is not refunded, even if not used.
+   **/
+  | { name: 'DispatchWithExtraGas'; params: { call: HydradxRuntimeRuntimeCall; extraGas: bigint } };
 
 export type PalletDispatcherCallLike =
   | { name: 'DispatchAsTreasury'; params: { call: HydradxRuntimeRuntimeCallLike } }
@@ -6611,7 +6618,14 @@ export type PalletDispatcherCallLike =
    * This is intented to be mainly used in testnet environments, where the manager account
    * can be different.
    **/
-  | { name: 'NoteAaveManager'; params: { account: AccountId32Like } };
+  | { name: 'NoteAaveManager'; params: { account: AccountId32Like } }
+  /**
+   * Dispatch a call with extra gas.
+   *
+   * This allows executing calls with additional weight (gas) limit.
+   * The extra gas is not refunded, even if not used.
+   **/
+  | { name: 'DispatchWithExtraGas'; params: { call: HydradxRuntimeRuntimeCallLike; extraGas: bigint } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -9732,6 +9746,10 @@ export type PalletXykCall =
    * Emits `LiquidityAdded` event when successful.
    **/
   | { name: 'AddLiquidity'; params: { assetA: number; assetB: number; amountA: bigint; amountBMaxLimit: bigint } }
+  | {
+      name: 'AddLiquidityWithLimits';
+      params: { assetA: number; assetB: number; amountA: bigint; amountBMaxLimit: bigint; minShares: bigint };
+    }
   /**
    * Remove liquidity from specific liquidity pool in the form of burning shares.
    *
@@ -9740,7 +9758,11 @@ export type PalletXykCall =
    * Emits 'LiquidityRemoved' when successful.
    * Emits 'PoolDestroyed' when pool is destroyed.
    **/
-  | { name: 'RemoveLiquidity'; params: { assetA: number; assetB: number; liquidityAmount: bigint } }
+  | { name: 'RemoveLiquidity'; params: { assetA: number; assetB: number; shareAmount: bigint } }
+  | {
+      name: 'RemoveLiquidityWithLimits';
+      params: { assetA: number; assetB: number; shareAmount: bigint; minAmountA: bigint; minAmountB: bigint };
+    }
   /**
    * Trade asset in for asset out.
    *
@@ -9784,6 +9806,10 @@ export type PalletXykCallLike =
    * Emits `LiquidityAdded` event when successful.
    **/
   | { name: 'AddLiquidity'; params: { assetA: number; assetB: number; amountA: bigint; amountBMaxLimit: bigint } }
+  | {
+      name: 'AddLiquidityWithLimits';
+      params: { assetA: number; assetB: number; amountA: bigint; amountBMaxLimit: bigint; minShares: bigint };
+    }
   /**
    * Remove liquidity from specific liquidity pool in the form of burning shares.
    *
@@ -9792,7 +9818,11 @@ export type PalletXykCallLike =
    * Emits 'LiquidityRemoved' when successful.
    * Emits 'PoolDestroyed' when pool is destroyed.
    **/
-  | { name: 'RemoveLiquidity'; params: { assetA: number; assetB: number; liquidityAmount: bigint } }
+  | { name: 'RemoveLiquidity'; params: { assetA: number; assetB: number; shareAmount: bigint } }
+  | {
+      name: 'RemoveLiquidityWithLimits';
+      params: { assetA: number; assetB: number; shareAmount: bigint; minAmountA: bigint; minAmountB: bigint };
+    }
   /**
    * Trade asset in for asset out.
    *
@@ -14340,14 +14370,7 @@ export type PalletLiquidationEvent =
    **/
   {
     name: 'Liquidated';
-    data: {
-      liquidator: AccountId32;
-      evmAddress: H160;
-      collateralAsset: number;
-      debtAsset: number;
-      debtToCover: bigint;
-      profit: bigint;
-    };
+    data: { user: H160; collateralAsset: number; debtAsset: number; debtToCover: bigint; profit: bigint };
   };
 
 /**
@@ -14747,7 +14770,6 @@ export type PalletDcaEvent =
    **/
   | { name: 'ExecutionPlanned'; data: { id: number; who: AccountId32; block: number } }
   /**
-   * Deprecated. Use pallet_amm::Event::Swapped instead.
    * The DCA trade is successfully executed
    **/
   | { name: 'TradeExecuted'; data: { id: number; who: AccountId32; amountIn: bigint; amountOut: bigint } }
@@ -15281,11 +15303,15 @@ export type PalletBroadcastEvent =
   /**
    * Trade executed.
    *
-   * Swapped2 is a fixed and renamed version of original Swapped,
+   * Swapped3 is a fixed and renamed version of original Swapped,
    * as Swapped contained wrong input/output amounts for XYK buy trade
+   *
+   * Swapped3 is a fixed and renamed version of original Swapped3,
+   * as Swapped contained wrong filler account on AAVE trades
+   *
    **/
   {
-    name: 'Swapped2';
+    name: 'Swapped3';
     data: {
       swapper: AccountId32;
       filler: AccountId32;
@@ -17656,7 +17682,11 @@ export type PalletXykError =
   /**
    * Pool cannot be created due to outside factors.
    **/
-  | 'CannotCreatePool';
+  | 'CannotCreatePool'
+  /**
+   * Slippage protection.
+   **/
+  | 'SlippageLimit';
 
 /**
  * The `Error` enum of this pallet.

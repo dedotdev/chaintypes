@@ -1268,6 +1268,12 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     aaveManagerAccount: GenericStorageQuery<Rv, () => AccountId32>;
 
     /**
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    extraGas: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -1751,6 +1757,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       (arg: [AccountId32Like, number]) => PalletStakingVote | undefined,
       [AccountId32, number]
     >;
+
+    /**
+     * Block number when we switched to 6 sec. blocks.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    sixSecBlocksSince: GenericStorageQuery<Rv, () => number>;
 
     /**
      * Generic pallet storage query

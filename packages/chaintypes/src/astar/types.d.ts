@@ -3,7 +3,6 @@
 import type {
   Phase,
   H256,
-  DispatchInfo,
   DispatchError,
   AccountId32,
   Result,
@@ -103,11 +102,11 @@ export type FrameSystemEvent =
   /**
    * An extrinsic completed successfully.
    **/
-  | { name: 'ExtrinsicSuccess'; data: { dispatchInfo: DispatchInfo } }
+  | { name: 'ExtrinsicSuccess'; data: { dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
    * An extrinsic failed.
    **/
-  | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: DispatchInfo } }
+  | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
    * `:code` was updated.
    **/
@@ -129,9 +128,31 @@ export type FrameSystemEvent =
    **/
   | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } };
 
+export type FrameSystemDispatchEventInfo = {
+  weight: SpWeightsWeightV2Weight;
+  class: FrameSupportDispatchDispatchClass;
+  paysFee: FrameSupportDispatchPays;
+};
+
 export type FrameSupportDispatchDispatchClass = 'Normal' | 'Operational' | 'Mandatory';
 
 export type FrameSupportDispatchPays = 'Yes' | 'No';
+
+export type SpRuntimeProvingTrieTrieError =
+  | 'InvalidStateRoot'
+  | 'IncompleteDatabase'
+  | 'ValueAtIncompleteKey'
+  | 'DecoderError'
+  | 'InvalidHash'
+  | 'DuplicateKey'
+  | 'ExtraneousNode'
+  | 'ExtraneousValue'
+  | 'ExtraneousHashReference'
+  | 'InvalidChildReference'
+  | 'ValueMismatch'
+  | 'IncompleteProof'
+  | 'RootMismatch'
+  | 'DecodeError';
 
 /**
  * The `Event` enum of this pallet
@@ -200,6 +221,14 @@ export type PalletIdentityEvent =
    **/
   | { name: 'SubIdentityAdded'; data: { sub: AccountId32; main: AccountId32; deposit: bigint } }
   /**
+   * An account's sub-identities were set (in bulk).
+   **/
+  | { name: 'SubIdentitiesSet'; data: { main: AccountId32; numberOfSubs: number; newDeposit: bigint } }
+  /**
+   * A given sub-account's associated name was changed by its super-identity.
+   **/
+  | { name: 'SubIdentityRenamed'; data: { sub: AccountId32; main: AccountId32 } }
+  /**
    * A sub-identity was removed from an identity and the deposit freed.
    **/
   | { name: 'SubIdentityRemoved'; data: { sub: AccountId32; main: AccountId32; deposit: bigint } }
@@ -236,7 +265,19 @@ export type PalletIdentityEvent =
    * A dangling username (as in, a username corresponding to an account that has removed its
    * identity) has been removed.
    **/
-  | { name: 'DanglingUsernameRemoved'; data: { who: AccountId32; username: Bytes } };
+  | { name: 'DanglingUsernameRemoved'; data: { who: AccountId32; username: Bytes } }
+  /**
+   * A username has been unbound.
+   **/
+  | { name: 'UsernameUnbound'; data: { username: Bytes } }
+  /**
+   * A username has been removed.
+   **/
+  | { name: 'UsernameRemoved'; data: { username: Bytes } }
+  /**
+   * A username has been killed.
+   **/
+  | { name: 'UsernameKilled'; data: { username: Bytes } };
 
 /**
  * The `Event` enum of this pallet
@@ -717,7 +758,10 @@ export type PalletDappStakingTierParameters = {
 
 export type PalletDappStakingTierThreshold =
   | { type: 'FixedPercentage'; value: { requiredPercentage: Perbill } }
-  | { type: 'DynamicPercentage'; value: { percentage: Perbill; minimumRequiredPercentage: Perbill } };
+  | {
+      type: 'DynamicPercentage';
+      value: { percentage: Perbill; minimumRequiredPercentage: Perbill; maximumPossiblePercentage: Perbill };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -936,16 +980,16 @@ export type PalletXcmEvent =
   /**
    * Execution of an XCM message was attempted.
    **/
-  | { name: 'Attempted'; data: { outcome: StagingXcmV4TraitsOutcome } }
+  | { name: 'Attempted'; data: { outcome: StagingXcmV5TraitsOutcome } }
   /**
    * A XCM message was sent.
    **/
   | {
       name: 'Sent';
       data: {
-        origin: StagingXcmV4Location;
-        destination: StagingXcmV4Location;
-        message: StagingXcmV4Xcm;
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       };
     }
@@ -954,12 +998,12 @@ export type PalletXcmEvent =
    * matching query was never registered, it may be because it is a duplicate response, or
    * because the query timed out.
    **/
-  | { name: 'UnexpectedResponse'; data: { origin: StagingXcmV4Location; queryId: bigint } }
+  | { name: 'UnexpectedResponse'; data: { origin: StagingXcmV5Location; queryId: bigint } }
   /**
    * Query response has been received and is ready for taking with `take_response`. There is
    * no registered notification call.
    **/
-  | { name: 'ResponseReady'; data: { queryId: bigint; response: StagingXcmV4Response } }
+  | { name: 'ResponseReady'; data: { queryId: bigint; response: StagingXcmV5Response } }
   /**
    * Query response has been received and query is removed. The registered notification has
    * been dispatched and executed successfully.
@@ -998,7 +1042,7 @@ export type PalletXcmEvent =
    **/
   | {
       name: 'InvalidResponder';
-      data: { origin: StagingXcmV4Location; queryId: bigint; expectedLocation?: StagingXcmV4Location | undefined };
+      data: { origin: StagingXcmV5Location; queryId: bigint; expectedLocation?: StagingXcmV5Location | undefined };
     }
   /**
    * Expected query response has been received but the expected origin location placed in
@@ -1009,7 +1053,7 @@ export type PalletXcmEvent =
    * valid response will be dropped. Manual governance intervention is probably going to be
    * needed.
    **/
-  | { name: 'InvalidResponderVersion'; data: { origin: StagingXcmV4Location; queryId: bigint } }
+  | { name: 'InvalidResponderVersion'; data: { origin: StagingXcmV5Location; queryId: bigint } }
   /**
    * Received query response has been read and removed.
    **/
@@ -1017,7 +1061,7 @@ export type PalletXcmEvent =
   /**
    * Some assets have been placed in an asset trap.
    **/
-  | { name: 'AssetsTrapped'; data: { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets } }
+  | { name: 'AssetsTrapped'; data: { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets } }
   /**
    * An XCM version change notification message has been attempted to be sent.
    *
@@ -1026,9 +1070,9 @@ export type PalletXcmEvent =
   | {
       name: 'VersionChangeNotified';
       data: {
-        destination: StagingXcmV4Location;
+        destination: StagingXcmV5Location;
         result: number;
-        cost: StagingXcmV4AssetAssets;
+        cost: StagingXcmV5AssetAssets;
         messageId: FixedBytes<32>;
       };
     }
@@ -1036,12 +1080,12 @@ export type PalletXcmEvent =
    * The supported version of a location has been changed. This might be through an
    * automatic notification or a manual intervention.
    **/
-  | { name: 'SupportedVersionChanged'; data: { location: StagingXcmV4Location; version: number } }
+  | { name: 'SupportedVersionChanged'; data: { location: StagingXcmV5Location; version: number } }
   /**
    * A given location which had a version change subscription was dropped owing to an error
    * sending the notification to it.
    **/
-  | { name: 'NotifyTargetSendFail'; data: { location: StagingXcmV4Location; queryId: bigint; error: XcmV3TraitsError } }
+  | { name: 'NotifyTargetSendFail'; data: { location: StagingXcmV5Location; queryId: bigint; error: XcmV5TraitsError } }
   /**
    * A given location which had a version change subscription was dropped owing to an error
    * migrating the location to our new XCM format.
@@ -1056,7 +1100,7 @@ export type PalletXcmEvent =
    * valid response will be dropped. Manual governance intervention is probably going to be
    * needed.
    **/
-  | { name: 'InvalidQuerierVersion'; data: { origin: StagingXcmV4Location; queryId: bigint } }
+  | { name: 'InvalidQuerierVersion'; data: { origin: StagingXcmV5Location; queryId: bigint } }
   /**
    * Expected query response has been received but the querier location of the response does
    * not match the expected. The query remains registered for a later, valid, response to
@@ -1065,10 +1109,10 @@ export type PalletXcmEvent =
   | {
       name: 'InvalidQuerier';
       data: {
-        origin: StagingXcmV4Location;
+        origin: StagingXcmV5Location;
         queryId: bigint;
-        expectedQuerier: StagingXcmV4Location;
-        maybeActualQuerier?: StagingXcmV4Location | undefined;
+        expectedQuerier: StagingXcmV5Location;
+        maybeActualQuerier?: StagingXcmV5Location | undefined;
       };
     }
   /**
@@ -1077,14 +1121,14 @@ export type PalletXcmEvent =
    **/
   | {
       name: 'VersionNotifyStarted';
-      data: { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> };
+      data: { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> };
     }
   /**
    * We have requested that a remote chain send us XCM version change notifications.
    **/
   | {
       name: 'VersionNotifyRequested';
-      data: { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> };
+      data: { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> };
     }
   /**
    * We have requested that a remote chain stops sending us XCM version change
@@ -1092,27 +1136,27 @@ export type PalletXcmEvent =
    **/
   | {
       name: 'VersionNotifyUnrequested';
-      data: { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> };
+      data: { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> };
     }
   /**
    * Fees were paid from a location for an operation (often for using `SendXcm`).
    **/
-  | { name: 'FeesPaid'; data: { paying: StagingXcmV4Location; fees: StagingXcmV4AssetAssets } }
+  | { name: 'FeesPaid'; data: { paying: StagingXcmV5Location; fees: StagingXcmV5AssetAssets } }
   /**
    * Some assets have been claimed from an asset trap
    **/
-  | { name: 'AssetsClaimed'; data: { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets } }
+  | { name: 'AssetsClaimed'; data: { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets } }
   /**
    * A XCM version migration finished.
    **/
   | { name: 'VersionMigrationFinished'; data: { version: number } };
 
-export type StagingXcmV4TraitsOutcome =
+export type StagingXcmV5TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
-  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV3TraitsError } }
-  | { type: 'Error'; value: { error: XcmV3TraitsError } };
+  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV5TraitsError } }
+  | { type: 'Error'; value: { error: XcmV5TraitsError } };
 
-export type XcmV3TraitsError =
+export type XcmV5TraitsError =
   | { type: 'Overflow' }
   | { type: 'Unimplemented' }
   | { type: 'UntrustedReserveLocation' }
@@ -1148,45 +1192,43 @@ export type XcmV3TraitsError =
   | { type: 'NoPermission' }
   | { type: 'Unanchored' }
   | { type: 'NotDepositable' }
+  | { type: 'TooManyAssets' }
   | { type: 'UnhandledXcmVersion' }
   | { type: 'WeightLimitReached'; value: SpWeightsWeightV2Weight }
   | { type: 'Barrier' }
   | { type: 'WeightNotComputable' }
   | { type: 'ExceedsStackLimit' };
 
-export type StagingXcmV4Location = { parents: number; interior: StagingXcmV4Junctions };
+export type StagingXcmV5Location = { parents: number; interior: StagingXcmV5Junctions };
 
-export type StagingXcmV4Junctions =
+export type StagingXcmV5Junctions =
   | { type: 'Here' }
-  | { type: 'X1'; value: FixedArray<StagingXcmV4Junction, 1> }
-  | { type: 'X2'; value: FixedArray<StagingXcmV4Junction, 2> }
-  | { type: 'X3'; value: FixedArray<StagingXcmV4Junction, 3> }
-  | { type: 'X4'; value: FixedArray<StagingXcmV4Junction, 4> }
-  | { type: 'X5'; value: FixedArray<StagingXcmV4Junction, 5> }
-  | { type: 'X6'; value: FixedArray<StagingXcmV4Junction, 6> }
-  | { type: 'X7'; value: FixedArray<StagingXcmV4Junction, 7> }
-  | { type: 'X8'; value: FixedArray<StagingXcmV4Junction, 8> };
+  | { type: 'X1'; value: FixedArray<StagingXcmV5Junction, 1> }
+  | { type: 'X2'; value: FixedArray<StagingXcmV5Junction, 2> }
+  | { type: 'X3'; value: FixedArray<StagingXcmV5Junction, 3> }
+  | { type: 'X4'; value: FixedArray<StagingXcmV5Junction, 4> }
+  | { type: 'X5'; value: FixedArray<StagingXcmV5Junction, 5> }
+  | { type: 'X6'; value: FixedArray<StagingXcmV5Junction, 6> }
+  | { type: 'X7'; value: FixedArray<StagingXcmV5Junction, 7> }
+  | { type: 'X8'; value: FixedArray<StagingXcmV5Junction, 8> };
 
-export type StagingXcmV4Junction =
+export type StagingXcmV5Junction =
   | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; index: bigint } }
-  | { type: 'AccountKey20'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; key: FixedBytes<20> } }
+  | { type: 'AccountId32'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; key: FixedBytes<20> } }
   | { type: 'PalletInstance'; value: number }
   | { type: 'GeneralIndex'; value: bigint }
   | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
   | { type: 'OnlyChild' }
   | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
-  | { type: 'GlobalConsensus'; value: StagingXcmV4JunctionNetworkId };
+  | { type: 'GlobalConsensus'; value: StagingXcmV5JunctionNetworkId };
 
-export type StagingXcmV4JunctionNetworkId =
+export type StagingXcmV5JunctionNetworkId =
   | { type: 'ByGenesis'; value: FixedBytes<32> }
   | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
   | { type: 'Polkadot' }
   | { type: 'Kusama' }
-  | { type: 'Westend' }
-  | { type: 'Rococo' }
-  | { type: 'Wococo' }
   | { type: 'Ethereum'; value: { chainId: bigint } }
   | { type: 'BitcoinCore' }
   | { type: 'BitcoinCash' }
@@ -1211,107 +1253,124 @@ export type XcmV3JunctionBodyPart =
   | { type: 'AtLeastProportion'; value: { nom: number; denom: number } }
   | { type: 'MoreThanProportion'; value: { nom: number; denom: number } };
 
-export type StagingXcmV4Xcm = Array<StagingXcmV4Instruction>;
+export type StagingXcmV5Xcm = Array<StagingXcmV5Instruction>;
 
-export type StagingXcmV4Instruction =
-  | { type: 'WithdrawAsset'; value: StagingXcmV4AssetAssets }
-  | { type: 'ReserveAssetDeposited'; value: StagingXcmV4AssetAssets }
-  | { type: 'ReceiveTeleportedAsset'; value: StagingXcmV4AssetAssets }
+export type StagingXcmV5Instruction =
+  | { type: 'WithdrawAsset'; value: StagingXcmV5AssetAssets }
+  | { type: 'ReserveAssetDeposited'; value: StagingXcmV5AssetAssets }
+  | { type: 'ReceiveTeleportedAsset'; value: StagingXcmV5AssetAssets }
   | {
       type: 'QueryResponse';
       value: {
         queryId: bigint;
-        response: StagingXcmV4Response;
+        response: StagingXcmV5Response;
         maxWeight: SpWeightsWeightV2Weight;
-        querier?: StagingXcmV4Location | undefined;
+        querier?: StagingXcmV5Location | undefined;
       };
     }
-  | { type: 'TransferAsset'; value: { assets: StagingXcmV4AssetAssets; beneficiary: StagingXcmV4Location } }
+  | { type: 'TransferAsset'; value: { assets: StagingXcmV5AssetAssets; beneficiary: StagingXcmV5Location } }
   | {
       type: 'TransferReserveAsset';
-      value: { assets: StagingXcmV4AssetAssets; dest: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+      value: { assets: StagingXcmV5AssetAssets; dest: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
     }
   | {
       type: 'Transact';
-      value: { originKind: XcmV3OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
+      value: {
+        originKind: XcmV3OriginKind;
+        fallbackMaxWeight?: SpWeightsWeightV2Weight | undefined;
+        call: XcmDoubleEncoded;
+      };
     }
   | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
   | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
   | { type: 'HrmpChannelClosing'; value: { initiator: number; sender: number; recipient: number } }
   | { type: 'ClearOrigin' }
-  | { type: 'DescendOrigin'; value: StagingXcmV4Junctions }
-  | { type: 'ReportError'; value: StagingXcmV4QueryResponseInfo }
-  | { type: 'DepositAsset'; value: { assets: StagingXcmV4AssetAssetFilter; beneficiary: StagingXcmV4Location } }
+  | { type: 'DescendOrigin'; value: StagingXcmV5Junctions }
+  | { type: 'ReportError'; value: StagingXcmV5QueryResponseInfo }
+  | { type: 'DepositAsset'; value: { assets: StagingXcmV5AssetAssetFilter; beneficiary: StagingXcmV5Location } }
   | {
       type: 'DepositReserveAsset';
-      value: { assets: StagingXcmV4AssetAssetFilter; dest: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+      value: { assets: StagingXcmV5AssetAssetFilter; dest: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
     }
   | {
       type: 'ExchangeAsset';
-      value: { give: StagingXcmV4AssetAssetFilter; want: StagingXcmV4AssetAssets; maximal: boolean };
+      value: { give: StagingXcmV5AssetAssetFilter; want: StagingXcmV5AssetAssets; maximal: boolean };
     }
   | {
       type: 'InitiateReserveWithdraw';
-      value: { assets: StagingXcmV4AssetAssetFilter; reserve: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+      value: { assets: StagingXcmV5AssetAssetFilter; reserve: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
     }
   | {
       type: 'InitiateTeleport';
-      value: { assets: StagingXcmV4AssetAssetFilter; dest: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+      value: { assets: StagingXcmV5AssetAssetFilter; dest: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
     }
   | {
       type: 'ReportHolding';
-      value: { responseInfo: StagingXcmV4QueryResponseInfo; assets: StagingXcmV4AssetAssetFilter };
+      value: { responseInfo: StagingXcmV5QueryResponseInfo; assets: StagingXcmV5AssetAssetFilter };
     }
-  | { type: 'BuyExecution'; value: { fees: StagingXcmV4Asset; weightLimit: XcmV3WeightLimit } }
+  | { type: 'BuyExecution'; value: { fees: StagingXcmV5Asset; weightLimit: XcmV3WeightLimit } }
   | { type: 'RefundSurplus' }
-  | { type: 'SetErrorHandler'; value: StagingXcmV4Xcm }
-  | { type: 'SetAppendix'; value: StagingXcmV4Xcm }
+  | { type: 'SetErrorHandler'; value: StagingXcmV5Xcm }
+  | { type: 'SetAppendix'; value: StagingXcmV5Xcm }
   | { type: 'ClearError' }
-  | { type: 'ClaimAsset'; value: { assets: StagingXcmV4AssetAssets; ticket: StagingXcmV4Location } }
+  | { type: 'ClaimAsset'; value: { assets: StagingXcmV5AssetAssets; ticket: StagingXcmV5Location } }
   | { type: 'Trap'; value: bigint }
   | { type: 'SubscribeVersion'; value: { queryId: bigint; maxResponseWeight: SpWeightsWeightV2Weight } }
   | { type: 'UnsubscribeVersion' }
-  | { type: 'BurnAsset'; value: StagingXcmV4AssetAssets }
-  | { type: 'ExpectAsset'; value: StagingXcmV4AssetAssets }
-  | { type: 'ExpectOrigin'; value?: StagingXcmV4Location | undefined }
-  | { type: 'ExpectError'; value?: [number, XcmV3TraitsError] | undefined }
+  | { type: 'BurnAsset'; value: StagingXcmV5AssetAssets }
+  | { type: 'ExpectAsset'; value: StagingXcmV5AssetAssets }
+  | { type: 'ExpectOrigin'; value?: StagingXcmV5Location | undefined }
+  | { type: 'ExpectError'; value?: [number, XcmV5TraitsError] | undefined }
   | { type: 'ExpectTransactStatus'; value: XcmV3MaybeErrorCode }
-  | { type: 'QueryPallet'; value: { moduleName: Bytes; responseInfo: StagingXcmV4QueryResponseInfo } }
+  | { type: 'QueryPallet'; value: { moduleName: Bytes; responseInfo: StagingXcmV5QueryResponseInfo } }
   | {
       type: 'ExpectPallet';
       value: { index: number; name: Bytes; moduleName: Bytes; crateMajor: number; minCrateMinor: number };
     }
-  | { type: 'ReportTransactStatus'; value: StagingXcmV4QueryResponseInfo }
+  | { type: 'ReportTransactStatus'; value: StagingXcmV5QueryResponseInfo }
   | { type: 'ClearTransactStatus' }
-  | { type: 'UniversalOrigin'; value: StagingXcmV4Junction }
+  | { type: 'UniversalOrigin'; value: StagingXcmV5Junction }
   | {
       type: 'ExportMessage';
-      value: { network: StagingXcmV4JunctionNetworkId; destination: StagingXcmV4Junctions; xcm: StagingXcmV4Xcm };
+      value: { network: StagingXcmV5JunctionNetworkId; destination: StagingXcmV5Junctions; xcm: StagingXcmV5Xcm };
     }
-  | { type: 'LockAsset'; value: { asset: StagingXcmV4Asset; unlocker: StagingXcmV4Location } }
-  | { type: 'UnlockAsset'; value: { asset: StagingXcmV4Asset; target: StagingXcmV4Location } }
-  | { type: 'NoteUnlockable'; value: { asset: StagingXcmV4Asset; owner: StagingXcmV4Location } }
-  | { type: 'RequestUnlock'; value: { asset: StagingXcmV4Asset; locker: StagingXcmV4Location } }
+  | { type: 'LockAsset'; value: { asset: StagingXcmV5Asset; unlocker: StagingXcmV5Location } }
+  | { type: 'UnlockAsset'; value: { asset: StagingXcmV5Asset; target: StagingXcmV5Location } }
+  | { type: 'NoteUnlockable'; value: { asset: StagingXcmV5Asset; owner: StagingXcmV5Location } }
+  | { type: 'RequestUnlock'; value: { asset: StagingXcmV5Asset; locker: StagingXcmV5Location } }
   | { type: 'SetFeesMode'; value: { jitWithdraw: boolean } }
   | { type: 'SetTopic'; value: FixedBytes<32> }
   | { type: 'ClearTopic' }
-  | { type: 'AliasOrigin'; value: StagingXcmV4Location }
+  | { type: 'AliasOrigin'; value: StagingXcmV5Location }
   | {
       type: 'UnpaidExecution';
-      value: { weightLimit: XcmV3WeightLimit; checkOrigin?: StagingXcmV4Location | undefined };
-    };
+      value: { weightLimit: XcmV3WeightLimit; checkOrigin?: StagingXcmV5Location | undefined };
+    }
+  | { type: 'PayFees'; value: { asset: StagingXcmV5Asset } }
+  | {
+      type: 'InitiateTransfer';
+      value: {
+        destination: StagingXcmV5Location;
+        remoteFees?: StagingXcmV5AssetAssetTransferFilter | undefined;
+        preserveOrigin: boolean;
+        assets: Array<StagingXcmV5AssetAssetTransferFilter>;
+        remoteXcm: StagingXcmV5Xcm;
+      };
+    }
+  | { type: 'ExecuteWithOrigin'; value: { descendantOrigin?: StagingXcmV5Junctions | undefined; xcm: StagingXcmV5Xcm } }
+  | { type: 'SetHints'; value: { hints: Array<StagingXcmV5Hint> } };
 
-export type StagingXcmV4AssetAssets = Array<StagingXcmV4Asset>;
+export type StagingXcmV5AssetAssets = Array<StagingXcmV5Asset>;
 
-export type StagingXcmV4Asset = { id: StagingXcmV4AssetAssetId; fun: StagingXcmV4AssetFungibility };
+export type StagingXcmV5Asset = { id: StagingXcmV5AssetAssetId; fun: StagingXcmV5AssetFungibility };
 
-export type StagingXcmV4AssetAssetId = StagingXcmV4Location;
+export type StagingXcmV5AssetAssetId = StagingXcmV5Location;
 
-export type StagingXcmV4AssetFungibility =
+export type StagingXcmV5AssetFungibility =
   | { type: 'Fungible'; value: bigint }
-  | { type: 'NonFungible'; value: StagingXcmV4AssetAssetInstance };
+  | { type: 'NonFungible'; value: StagingXcmV5AssetAssetInstance };
 
-export type StagingXcmV4AssetAssetInstance =
+export type StagingXcmV5AssetAssetInstance =
   | { type: 'Undefined' }
   | { type: 'Index'; value: bigint }
   | { type: 'Array4'; value: FixedBytes<4> }
@@ -1319,15 +1378,15 @@ export type StagingXcmV4AssetAssetInstance =
   | { type: 'Array16'; value: FixedBytes<16> }
   | { type: 'Array32'; value: FixedBytes<32> };
 
-export type StagingXcmV4Response =
+export type StagingXcmV5Response =
   | { type: 'Null' }
-  | { type: 'Assets'; value: StagingXcmV4AssetAssets }
-  | { type: 'ExecutionResult'; value?: [number, XcmV3TraitsError] | undefined }
+  | { type: 'Assets'; value: StagingXcmV5AssetAssets }
+  | { type: 'ExecutionResult'; value?: [number, XcmV5TraitsError] | undefined }
   | { type: 'Version'; value: number }
-  | { type: 'PalletsInfo'; value: Array<StagingXcmV4PalletInfo> }
+  | { type: 'PalletsInfo'; value: Array<StagingXcmV5PalletInfo> }
   | { type: 'DispatchResult'; value: XcmV3MaybeErrorCode };
 
-export type StagingXcmV4PalletInfo = {
+export type StagingXcmV5PalletInfo = {
   index: number;
   name: Bytes;
   moduleName: Bytes;
@@ -1345,118 +1404,40 @@ export type XcmV3OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm
 
 export type XcmDoubleEncoded = { encoded: Bytes };
 
-export type StagingXcmV4QueryResponseInfo = {
-  destination: StagingXcmV4Location;
+export type StagingXcmV5QueryResponseInfo = {
+  destination: StagingXcmV5Location;
   queryId: bigint;
   maxWeight: SpWeightsWeightV2Weight;
 };
 
-export type StagingXcmV4AssetAssetFilter =
-  | { type: 'Definite'; value: StagingXcmV4AssetAssets }
-  | { type: 'Wild'; value: StagingXcmV4AssetWildAsset };
+export type StagingXcmV5AssetAssetFilter =
+  | { type: 'Definite'; value: StagingXcmV5AssetAssets }
+  | { type: 'Wild'; value: StagingXcmV5AssetWildAsset };
 
-export type StagingXcmV4AssetWildAsset =
+export type StagingXcmV5AssetWildAsset =
   | { type: 'All' }
-  | { type: 'AllOf'; value: { id: StagingXcmV4AssetAssetId; fun: StagingXcmV4AssetWildFungibility } }
+  | { type: 'AllOf'; value: { id: StagingXcmV5AssetAssetId; fun: StagingXcmV5AssetWildFungibility } }
   | { type: 'AllCounted'; value: number }
   | {
       type: 'AllOfCounted';
-      value: { id: StagingXcmV4AssetAssetId; fun: StagingXcmV4AssetWildFungibility; count: number };
+      value: { id: StagingXcmV5AssetAssetId; fun: StagingXcmV5AssetWildFungibility; count: number };
     };
 
-export type StagingXcmV4AssetWildFungibility = 'Fungible' | 'NonFungible';
+export type StagingXcmV5AssetWildFungibility = 'Fungible' | 'NonFungible';
 
 export type XcmV3WeightLimit = { type: 'Unlimited' } | { type: 'Limited'; value: SpWeightsWeightV2Weight };
 
+export type StagingXcmV5AssetAssetTransferFilter =
+  | { type: 'Teleport'; value: StagingXcmV5AssetAssetFilter }
+  | { type: 'ReserveDeposit'; value: StagingXcmV5AssetAssetFilter }
+  | { type: 'ReserveWithdraw'; value: StagingXcmV5AssetAssetFilter };
+
+export type StagingXcmV5Hint = { type: 'AssetClaimer'; value: { location: StagingXcmV5Location } };
+
 export type XcmVersionedAssets =
-  | { type: 'V2'; value: XcmV2MultiassetMultiAssets }
   | { type: 'V3'; value: XcmV3MultiassetMultiAssets }
-  | { type: 'V4'; value: StagingXcmV4AssetAssets };
-
-export type XcmV2MultiassetMultiAssets = Array<XcmV2MultiassetMultiAsset>;
-
-export type XcmV2MultiassetMultiAsset = { id: XcmV2MultiassetAssetId; fun: XcmV2MultiassetFungibility };
-
-export type XcmV2MultiassetAssetId =
-  | { type: 'Concrete'; value: XcmV2MultilocationMultiLocation }
-  | { type: 'Abstract'; value: Bytes };
-
-export type XcmV2MultilocationMultiLocation = { parents: number; interior: XcmV2MultilocationJunctions };
-
-export type XcmV2MultilocationJunctions =
-  | { type: 'Here' }
-  | { type: 'X1'; value: XcmV2Junction }
-  | { type: 'X2'; value: [XcmV2Junction, XcmV2Junction] }
-  | { type: 'X3'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | { type: 'X4'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | { type: 'X5'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | { type: 'X6'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | {
-      type: 'X7';
-      value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction];
-    }
-  | {
-      type: 'X8';
-      value: [
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-      ];
-    };
-
-export type XcmV2Junction =
-  | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network: XcmV2NetworkId; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network: XcmV2NetworkId; index: bigint } }
-  | { type: 'AccountKey20'; value: { network: XcmV2NetworkId; key: FixedBytes<20> } }
-  | { type: 'PalletInstance'; value: number }
-  | { type: 'GeneralIndex'; value: bigint }
-  | { type: 'GeneralKey'; value: Bytes }
-  | { type: 'OnlyChild' }
-  | { type: 'Plurality'; value: { id: XcmV2BodyId; part: XcmV2BodyPart } };
-
-export type XcmV2NetworkId =
-  | { type: 'Any' }
-  | { type: 'Named'; value: Bytes }
-  | { type: 'Polkadot' }
-  | { type: 'Kusama' };
-
-export type XcmV2BodyId =
-  | { type: 'Unit' }
-  | { type: 'Named'; value: Bytes }
-  | { type: 'Index'; value: number }
-  | { type: 'Executive' }
-  | { type: 'Technical' }
-  | { type: 'Legislative' }
-  | { type: 'Judicial' }
-  | { type: 'Defense' }
-  | { type: 'Administration' }
-  | { type: 'Treasury' };
-
-export type XcmV2BodyPart =
-  | { type: 'Voice' }
-  | { type: 'Members'; value: { count: number } }
-  | { type: 'Fraction'; value: { nom: number; denom: number } }
-  | { type: 'AtLeastProportion'; value: { nom: number; denom: number } }
-  | { type: 'MoreThanProportion'; value: { nom: number; denom: number } };
-
-export type XcmV2MultiassetFungibility =
-  | { type: 'Fungible'; value: bigint }
-  | { type: 'NonFungible'; value: XcmV2MultiassetAssetInstance };
-
-export type XcmV2MultiassetAssetInstance =
-  | { type: 'Undefined' }
-  | { type: 'Index'; value: bigint }
-  | { type: 'Array4'; value: FixedBytes<4> }
-  | { type: 'Array8'; value: FixedBytes<8> }
-  | { type: 'Array16'; value: FixedBytes<16> }
-  | { type: 'Array32'; value: FixedBytes<32> }
-  | { type: 'Blob'; value: Bytes };
+  | { type: 'V4'; value: StagingXcmV4AssetAssets }
+  | { type: 'V5'; value: StagingXcmV5AssetAssets };
 
 export type XcmV3MultiassetMultiAssets = Array<XcmV3MultiassetMultiAsset>;
 
@@ -1531,10 +1512,66 @@ export type XcmV3MultiassetAssetInstance =
   | { type: 'Array16'; value: FixedBytes<16> }
   | { type: 'Array32'; value: FixedBytes<32> };
 
+export type StagingXcmV4AssetAssets = Array<StagingXcmV4Asset>;
+
+export type StagingXcmV4Asset = { id: StagingXcmV4AssetAssetId; fun: StagingXcmV4AssetFungibility };
+
+export type StagingXcmV4AssetAssetId = StagingXcmV4Location;
+
+export type StagingXcmV4Location = { parents: number; interior: StagingXcmV4Junctions };
+
+export type StagingXcmV4Junctions =
+  | { type: 'Here' }
+  | { type: 'X1'; value: FixedArray<StagingXcmV4Junction, 1> }
+  | { type: 'X2'; value: FixedArray<StagingXcmV4Junction, 2> }
+  | { type: 'X3'; value: FixedArray<StagingXcmV4Junction, 3> }
+  | { type: 'X4'; value: FixedArray<StagingXcmV4Junction, 4> }
+  | { type: 'X5'; value: FixedArray<StagingXcmV4Junction, 5> }
+  | { type: 'X6'; value: FixedArray<StagingXcmV4Junction, 6> }
+  | { type: 'X7'; value: FixedArray<StagingXcmV4Junction, 7> }
+  | { type: 'X8'; value: FixedArray<StagingXcmV4Junction, 8> };
+
+export type StagingXcmV4Junction =
+  | { type: 'Parachain'; value: number }
+  | { type: 'AccountId32'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; key: FixedBytes<20> } }
+  | { type: 'PalletInstance'; value: number }
+  | { type: 'GeneralIndex'; value: bigint }
+  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
+  | { type: 'OnlyChild' }
+  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
+  | { type: 'GlobalConsensus'; value: StagingXcmV4JunctionNetworkId };
+
+export type StagingXcmV4JunctionNetworkId =
+  | { type: 'ByGenesis'; value: FixedBytes<32> }
+  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
+  | { type: 'Polkadot' }
+  | { type: 'Kusama' }
+  | { type: 'Westend' }
+  | { type: 'Rococo' }
+  | { type: 'Wococo' }
+  | { type: 'Ethereum'; value: { chainId: bigint } }
+  | { type: 'BitcoinCore' }
+  | { type: 'BitcoinCash' }
+  | { type: 'PolkadotBulletin' };
+
+export type StagingXcmV4AssetFungibility =
+  | { type: 'Fungible'; value: bigint }
+  | { type: 'NonFungible'; value: StagingXcmV4AssetAssetInstance };
+
+export type StagingXcmV4AssetAssetInstance =
+  | { type: 'Undefined' }
+  | { type: 'Index'; value: bigint }
+  | { type: 'Array4'; value: FixedBytes<4> }
+  | { type: 'Array8'; value: FixedBytes<8> }
+  | { type: 'Array16'; value: FixedBytes<16> }
+  | { type: 'Array32'; value: FixedBytes<32> };
+
 export type XcmVersionedLocation =
-  | { type: 'V2'; value: XcmV2MultilocationMultiLocation }
   | { type: 'V3'; value: StagingXcmV3MultilocationMultiLocation }
-  | { type: 'V4'; value: StagingXcmV4Location };
+  | { type: 'V4'; value: StagingXcmV4Location }
+  | { type: 'V5'; value: StagingXcmV5Location };
 
 /**
  * The `Event` enum of this pallet
@@ -1554,7 +1591,7 @@ export type CumulusPalletXcmEvent =
    * Downward message executed with the given outcome.
    * \[ id, outcome \]
    **/
-  | { name: 'ExecutedDownward'; data: [FixedBytes<32>, StagingXcmV4TraitsOutcome] };
+  | { name: 'ExecutedDownward'; data: [FixedBytes<32>, StagingXcmV5TraitsOutcome] };
 
 /**
  * The `Event` enum of this pallet
@@ -1593,7 +1630,7 @@ export type OrmlXtokensModuleEvent =
    **/
   {
     name: 'TransferredAssets';
-    data: { sender: AccountId32; assets: StagingXcmV4AssetAssets; fee: StagingXcmV4Asset; dest: StagingXcmV4Location };
+    data: { sender: AccountId32; assets: StagingXcmV5AssetAssets; fee: StagingXcmV5Asset; dest: StagingXcmV5Location };
   };
 
 /**
@@ -2039,7 +2076,19 @@ export type PalletCollectiveEvent =
   /**
    * A proposal was closed because its threshold was reached or after its duration was up.
    **/
-  | { name: 'Closed'; data: { proposalHash: H256; yes: number; no: number } };
+  | { name: 'Closed'; data: { proposalHash: H256; yes: number; no: number } }
+  /**
+   * A proposal was killed.
+   **/
+  | { name: 'Killed'; data: { proposalHash: H256 } }
+  /**
+   * Some cost for storing a proposal was burned.
+   **/
+  | { name: 'ProposalCostBurned'; data: { proposalHash: H256; who: AccountId32 } }
+  /**
+   * Some cost for storing a proposal was released.
+   **/
+  | { name: 'ProposalCostReleased'; data: { proposalHash: H256; who: AccountId32 } };
 
 /**
  * The `Event` enum of this pallet
@@ -2880,7 +2929,7 @@ export type PalletIdentityCall =
    * - `max_fee`: The maximum fee that may be paid. This should just be auto-populated as:
    *
    * ```nocompile
-   * Self::registrars().get(reg_index).unwrap().fee
+   * Registrars::<T>::get().get(reg_index).unwrap().fee
    * ```
    *
    * Emits `JudgementRequested` if successful.
@@ -3008,18 +3057,23 @@ export type PalletIdentityCall =
   /**
    * Add an `AccountId` with permission to grant usernames with a given `suffix` appended.
    *
-   * The authority can grant up to `allocation` usernames. To top up their allocation, they
-   * should just issue (or request via governance) a new `add_username_authority` call.
+   * The authority can grant up to `allocation` usernames. To top up the allocation or
+   * change the account used to grant usernames, this call can be used with the updated
+   * parameters to overwrite the existing configuration.
    **/
   | { name: 'AddUsernameAuthority'; params: { authority: MultiAddress; suffix: Bytes; allocation: number } }
   /**
    * Remove `authority` from the username authorities.
    **/
-  | { name: 'RemoveUsernameAuthority'; params: { authority: MultiAddress } }
+  | { name: 'RemoveUsernameAuthority'; params: { suffix: Bytes; authority: MultiAddress } }
   /**
    * Set the username for `who`. Must be called by a username authority.
    *
-   * The authority must have an `allocation`. Users can either pre-sign their usernames or
+   * If `use_allocation` is set, the authority must have a username allocation available to
+   * spend. Otherwise, the authority will need to put up a deposit for registering the
+   * username.
+   *
+   * Users can either pre-sign their usernames or
    * accept them later.
    *
    * Usernames must:
@@ -3029,7 +3083,12 @@ export type PalletIdentityCall =
    **/
   | {
       name: 'SetUsernameFor';
-      params: { who: MultiAddress; username: Bytes; signature?: SpRuntimeMultiSignature | undefined };
+      params: {
+        who: MultiAddress;
+        username: Bytes;
+        signature?: SpRuntimeMultiSignature | undefined;
+        useAllocation: boolean;
+      };
     }
   /**
    * Accept a given username that an `authority` granted. The call must include the full
@@ -3047,10 +3106,21 @@ export type PalletIdentityCall =
    **/
   | { name: 'SetPrimaryUsername'; params: { username: Bytes } }
   /**
-   * Remove a username that corresponds to an account with no identity. Exists when a user
-   * gets a username but then calls `clear_identity`.
+   * Start the process of removing a username by placing it in the unbinding usernames map.
+   * Once the grace period has passed, the username can be deleted by calling
+   * [remove_username](crate::Call::remove_username).
    **/
-  | { name: 'RemoveDanglingUsername'; params: { username: Bytes } };
+  | { name: 'UnbindUsername'; params: { username: Bytes } }
+  /**
+   * Permanently delete a username which has been unbinding for longer than the grace period.
+   * Caller is refunded the fee if the username expired and the removal was successful.
+   **/
+  | { name: 'RemoveUsername'; params: { username: Bytes } }
+  /**
+   * Call with [ForceOrigin](crate::Config::ForceOrigin) privileges which deletes a username
+   * and slashes any deposit associated with it.
+   **/
+  | { name: 'KillUsername'; params: { username: Bytes } };
 
 export type PalletIdentityCallLike =
   /**
@@ -3112,7 +3182,7 @@ export type PalletIdentityCallLike =
    * - `max_fee`: The maximum fee that may be paid. This should just be auto-populated as:
    *
    * ```nocompile
-   * Self::registrars().get(reg_index).unwrap().fee
+   * Registrars::<T>::get().get(reg_index).unwrap().fee
    * ```
    *
    * Emits `JudgementRequested` if successful.
@@ -3240,18 +3310,23 @@ export type PalletIdentityCallLike =
   /**
    * Add an `AccountId` with permission to grant usernames with a given `suffix` appended.
    *
-   * The authority can grant up to `allocation` usernames. To top up their allocation, they
-   * should just issue (or request via governance) a new `add_username_authority` call.
+   * The authority can grant up to `allocation` usernames. To top up the allocation or
+   * change the account used to grant usernames, this call can be used with the updated
+   * parameters to overwrite the existing configuration.
    **/
   | { name: 'AddUsernameAuthority'; params: { authority: MultiAddressLike; suffix: BytesLike; allocation: number } }
   /**
    * Remove `authority` from the username authorities.
    **/
-  | { name: 'RemoveUsernameAuthority'; params: { authority: MultiAddressLike } }
+  | { name: 'RemoveUsernameAuthority'; params: { suffix: BytesLike; authority: MultiAddressLike } }
   /**
    * Set the username for `who`. Must be called by a username authority.
    *
-   * The authority must have an `allocation`. Users can either pre-sign their usernames or
+   * If `use_allocation` is set, the authority must have a username allocation available to
+   * spend. Otherwise, the authority will need to put up a deposit for registering the
+   * username.
+   *
+   * Users can either pre-sign their usernames or
    * accept them later.
    *
    * Usernames must:
@@ -3261,7 +3336,12 @@ export type PalletIdentityCallLike =
    **/
   | {
       name: 'SetUsernameFor';
-      params: { who: MultiAddressLike; username: BytesLike; signature?: SpRuntimeMultiSignature | undefined };
+      params: {
+        who: MultiAddressLike;
+        username: BytesLike;
+        signature?: SpRuntimeMultiSignature | undefined;
+        useAllocation: boolean;
+      };
     }
   /**
    * Accept a given username that an `authority` granted. The call must include the full
@@ -3279,10 +3359,21 @@ export type PalletIdentityCallLike =
    **/
   | { name: 'SetPrimaryUsername'; params: { username: BytesLike } }
   /**
-   * Remove a username that corresponds to an account with no identity. Exists when a user
-   * gets a username but then calls `clear_identity`.
+   * Start the process of removing a username by placing it in the unbinding usernames map.
+   * Once the grace period has passed, the username can be deleted by calling
+   * [remove_username](crate::Call::remove_username).
    **/
-  | { name: 'RemoveDanglingUsername'; params: { username: BytesLike } };
+  | { name: 'UnbindUsername'; params: { username: BytesLike } }
+  /**
+   * Permanently delete a username which has been unbinding for longer than the grace period.
+   * Caller is refunded the fee if the username expired and the removal was successful.
+   **/
+  | { name: 'RemoveUsername'; params: { username: BytesLike } }
+  /**
+   * Call with [ForceOrigin](crate::Config::ForceOrigin) privileges which deletes a username
+   * and slashes any deposit associated with it.
+   **/
+  | { name: 'KillUsername'; params: { username: BytesLike } };
 
 export type PalletIdentityLegacyIdentityInfo = {
   additional: Array<[Data, Data]>;
@@ -4199,30 +4290,7 @@ export type CumulusPalletParachainSystemCall =
    * if the appropriate time has come.
    **/
   | { name: 'SetValidationData'; params: { data: CumulusPrimitivesParachainInherentParachainInherentData } }
-  | { name: 'SudoSendUpwardMessage'; params: { message: Bytes } }
-  /**
-   * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
-   * later.
-   *
-   * The `check_version` parameter sets a boolean flag for whether or not the runtime's spec
-   * version and name should be verified on upgrade. Since the authorization only has a hash,
-   * it cannot actually perform the verification.
-   *
-   * This call requires Root origin.
-   **/
-  | { name: 'AuthorizeUpgrade'; params: { codeHash: H256; checkVersion: boolean } }
-  /**
-   * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
-   *
-   * If the authorization required a version check, this call will ensure the spec name
-   * remains unchanged and that the spec version has increased.
-   *
-   * Note that this function will not apply the new `code`, but only attempt to schedule the
-   * upgrade with the Relay Chain.
-   *
-   * All origins are allowed.
-   **/
-  | { name: 'EnactAuthorizedUpgrade'; params: { code: Bytes } };
+  | { name: 'SudoSendUpwardMessage'; params: { message: Bytes } };
 
 export type CumulusPalletParachainSystemCallLike =
   /**
@@ -4237,39 +4305,16 @@ export type CumulusPalletParachainSystemCallLike =
    * if the appropriate time has come.
    **/
   | { name: 'SetValidationData'; params: { data: CumulusPrimitivesParachainInherentParachainInherentData } }
-  | { name: 'SudoSendUpwardMessage'; params: { message: BytesLike } }
-  /**
-   * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
-   * later.
-   *
-   * The `check_version` parameter sets a boolean flag for whether or not the runtime's spec
-   * version and name should be verified on upgrade. Since the authorization only has a hash,
-   * it cannot actually perform the verification.
-   *
-   * This call requires Root origin.
-   **/
-  | { name: 'AuthorizeUpgrade'; params: { codeHash: H256; checkVersion: boolean } }
-  /**
-   * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
-   *
-   * If the authorization required a version check, this call will ensure the spec name
-   * remains unchanged and that the spec version has increased.
-   *
-   * Note that this function will not apply the new `code`, but only attempt to schedule the
-   * upgrade with the Relay Chain.
-   *
-   * All origins are allowed.
-   **/
-  | { name: 'EnactAuthorizedUpgrade'; params: { code: BytesLike } };
+  | { name: 'SudoSendUpwardMessage'; params: { message: BytesLike } };
 
 export type CumulusPrimitivesParachainInherentParachainInherentData = {
-  validationData: PolkadotPrimitivesV7PersistedValidationData;
+  validationData: PolkadotPrimitivesV8PersistedValidationData;
   relayChainState: SpTrieStorageProof;
   downwardMessages: Array<PolkadotCorePrimitivesInboundDownwardMessage>;
   horizontalMessages: Array<[PolkadotParachainPrimitivesPrimitivesId, Array<PolkadotCorePrimitivesInboundHrmpMessage>]>;
 };
 
-export type PolkadotPrimitivesV7PersistedValidationData = {
+export type PolkadotPrimitivesV8PersistedValidationData = {
   parentHead: PolkadotParachainPrimitivesPrimitivesHeadData;
   relayParentNumber: number;
   relayParentStorageRoot: H256;
@@ -5149,8 +5194,6 @@ export type PalletAssetsCall =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
-   *
-   * The asset class must be frozen before calling `start_destroy`.
    **/
   | { name: 'StartDestroy'; params: { id: bigint } }
   /**
@@ -5631,7 +5674,26 @@ export type PalletAssetsCall =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Block'; params: { id: bigint; who: MultiAddress } };
+  | { name: 'Block'; params: { id: bigint; who: MultiAddress } }
+  /**
+   * Transfer the entire transferable balance from the caller asset account.
+   *
+   * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+   * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+   * transferred by this function. To ensure that this function results in a killed account,
+   * you might need to prepare the account by removing any reference counters, storage
+   * deposits, etc...
+   *
+   * The dispatch origin of this call must be Signed.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `dest`: The recipient of the transfer.
+   * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+   * of the funds the asset account has, causing the sender asset account to be killed
+   * (false), or transfer everything except at least the minimum balance, which will
+   * guarantee to keep the sender asset account alive (true).
+   **/
+  | { name: 'TransferAll'; params: { id: bigint; dest: MultiAddress; keepAlive: boolean } };
 
 export type PalletAssetsCallLike =
   /**
@@ -5688,8 +5750,6 @@ export type PalletAssetsCallLike =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
-   *
-   * The asset class must be frozen before calling `start_destroy`.
    **/
   | { name: 'StartDestroy'; params: { id: bigint } }
   /**
@@ -6176,7 +6236,26 @@ export type PalletAssetsCallLike =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Block'; params: { id: bigint; who: MultiAddressLike } };
+  | { name: 'Block'; params: { id: bigint; who: MultiAddressLike } }
+  /**
+   * Transfer the entire transferable balance from the caller asset account.
+   *
+   * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+   * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+   * transferred by this function. To ensure that this function results in a killed account,
+   * you might need to prepare the account by removing any reference counters, storage
+   * deposits, etc...
+   *
+   * The dispatch origin of this call must be Signed.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `dest`: The recipient of the transfer.
+   * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+   * of the funds the asset account has, causing the sender asset account to be killed
+   * (false), or transfer everything except at least the minimum balance, which will
+   * guarantee to keep the sender asset account alive (true).
+   **/
+  | { name: 'TransferAll'; params: { id: bigint; dest: MultiAddressLike; keepAlive: boolean } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -6627,7 +6706,7 @@ export type PalletXcmCall =
    * - `location`: The destination that is being described.
    * - `xcm_version`: The latest version of XCM that `location` supports.
    **/
-  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV4Location; version: number } }
+  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV5Location; version: number } }
   /**
    * Set a safe XCM version (the version that XCM should be encoded with if the most recent
    * version a destination can accept is unknown).
@@ -6939,7 +7018,7 @@ export type PalletXcmCallLike =
    * - `location`: The destination that is being described.
    * - `xcm_version`: The latest version of XCM that `location` supports.
    **/
-  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV4Location; version: number } }
+  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV5Location; version: number } }
   /**
    * Set a safe XCM version (the version that XCM should be encoded with if the most recent
    * version a destination can accept is unknown).
@@ -7161,127 +7240,9 @@ export type PalletXcmCallLike =
     };
 
 export type XcmVersionedXcm =
-  | { type: 'V2'; value: XcmV2Xcm }
   | { type: 'V3'; value: XcmV3Xcm }
-  | { type: 'V4'; value: StagingXcmV4Xcm };
-
-export type XcmV2Xcm = Array<XcmV2Instruction>;
-
-export type XcmV2Instruction =
-  | { type: 'WithdrawAsset'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'ReserveAssetDeposited'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'ReceiveTeleportedAsset'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'QueryResponse'; value: { queryId: bigint; response: XcmV2Response; maxWeight: bigint } }
-  | {
-      type: 'TransferAsset';
-      value: { assets: XcmV2MultiassetMultiAssets; beneficiary: XcmV2MultilocationMultiLocation };
-    }
-  | {
-      type: 'TransferReserveAsset';
-      value: { assets: XcmV2MultiassetMultiAssets; dest: XcmV2MultilocationMultiLocation; xcm: XcmV2Xcm };
-    }
-  | { type: 'Transact'; value: { originType: XcmV2OriginKind; requireWeightAtMost: bigint; call: XcmDoubleEncoded } }
-  | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
-  | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
-  | { type: 'HrmpChannelClosing'; value: { initiator: number; sender: number; recipient: number } }
-  | { type: 'ClearOrigin' }
-  | { type: 'DescendOrigin'; value: XcmV2MultilocationJunctions }
-  | {
-      type: 'ReportError';
-      value: { queryId: bigint; dest: XcmV2MultilocationMultiLocation; maxResponseWeight: bigint };
-    }
-  | {
-      type: 'DepositAsset';
-      value: {
-        assets: XcmV2MultiassetMultiAssetFilter;
-        maxAssets: number;
-        beneficiary: XcmV2MultilocationMultiLocation;
-      };
-    }
-  | {
-      type: 'DepositReserveAsset';
-      value: {
-        assets: XcmV2MultiassetMultiAssetFilter;
-        maxAssets: number;
-        dest: XcmV2MultilocationMultiLocation;
-        xcm: XcmV2Xcm;
-      };
-    }
-  | { type: 'ExchangeAsset'; value: { give: XcmV2MultiassetMultiAssetFilter; receive: XcmV2MultiassetMultiAssets } }
-  | {
-      type: 'InitiateReserveWithdraw';
-      value: { assets: XcmV2MultiassetMultiAssetFilter; reserve: XcmV2MultilocationMultiLocation; xcm: XcmV2Xcm };
-    }
-  | {
-      type: 'InitiateTeleport';
-      value: { assets: XcmV2MultiassetMultiAssetFilter; dest: XcmV2MultilocationMultiLocation; xcm: XcmV2Xcm };
-    }
-  | {
-      type: 'QueryHolding';
-      value: {
-        queryId: bigint;
-        dest: XcmV2MultilocationMultiLocation;
-        assets: XcmV2MultiassetMultiAssetFilter;
-        maxResponseWeight: bigint;
-      };
-    }
-  | { type: 'BuyExecution'; value: { fees: XcmV2MultiassetMultiAsset; weightLimit: XcmV2WeightLimit } }
-  | { type: 'RefundSurplus' }
-  | { type: 'SetErrorHandler'; value: XcmV2Xcm }
-  | { type: 'SetAppendix'; value: XcmV2Xcm }
-  | { type: 'ClearError' }
-  | { type: 'ClaimAsset'; value: { assets: XcmV2MultiassetMultiAssets; ticket: XcmV2MultilocationMultiLocation } }
-  | { type: 'Trap'; value: bigint }
-  | { type: 'SubscribeVersion'; value: { queryId: bigint; maxResponseWeight: bigint } }
-  | { type: 'UnsubscribeVersion' };
-
-export type XcmV2Response =
-  | { type: 'Null' }
-  | { type: 'Assets'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'ExecutionResult'; value?: [number, XcmV2TraitsError] | undefined }
-  | { type: 'Version'; value: number };
-
-export type XcmV2TraitsError =
-  | { type: 'Overflow' }
-  | { type: 'Unimplemented' }
-  | { type: 'UntrustedReserveLocation' }
-  | { type: 'UntrustedTeleportLocation' }
-  | { type: 'MultiLocationFull' }
-  | { type: 'MultiLocationNotInvertible' }
-  | { type: 'BadOrigin' }
-  | { type: 'InvalidLocation' }
-  | { type: 'AssetNotFound' }
-  | { type: 'FailedToTransactAsset' }
-  | { type: 'NotWithdrawable' }
-  | { type: 'LocationCannotHold' }
-  | { type: 'ExceedsMaxMessageSize' }
-  | { type: 'DestinationUnsupported' }
-  | { type: 'Transport' }
-  | { type: 'Unroutable' }
-  | { type: 'UnknownClaim' }
-  | { type: 'FailedToDecode' }
-  | { type: 'MaxWeightInvalid' }
-  | { type: 'NotHoldingFees' }
-  | { type: 'TooExpensive' }
-  | { type: 'Trap'; value: bigint }
-  | { type: 'UnhandledXcmVersion' }
-  | { type: 'WeightLimitReached'; value: bigint }
-  | { type: 'Barrier' }
-  | { type: 'WeightNotComputable' };
-
-export type XcmV2OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
-
-export type XcmV2MultiassetMultiAssetFilter =
-  | { type: 'Definite'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'Wild'; value: XcmV2MultiassetWildMultiAsset };
-
-export type XcmV2MultiassetWildMultiAsset =
-  | { type: 'All' }
-  | { type: 'AllOf'; value: { id: XcmV2MultiassetAssetId; fun: XcmV2MultiassetWildFungibility } };
-
-export type XcmV2MultiassetWildFungibility = 'Fungible' | 'NonFungible';
-
-export type XcmV2WeightLimit = { type: 'Unlimited' } | { type: 'Limited'; value: bigint };
+  | { type: 'V4'; value: StagingXcmV4Xcm }
+  | { type: 'V5'; value: StagingXcmV5Xcm };
 
 export type XcmV3Xcm = Array<XcmV3Instruction>;
 
@@ -7394,6 +7355,48 @@ export type XcmV3Response =
   | { type: 'PalletsInfo'; value: Array<XcmV3PalletInfo> }
   | { type: 'DispatchResult'; value: XcmV3MaybeErrorCode };
 
+export type XcmV3TraitsError =
+  | { type: 'Overflow' }
+  | { type: 'Unimplemented' }
+  | { type: 'UntrustedReserveLocation' }
+  | { type: 'UntrustedTeleportLocation' }
+  | { type: 'LocationFull' }
+  | { type: 'LocationNotInvertible' }
+  | { type: 'BadOrigin' }
+  | { type: 'InvalidLocation' }
+  | { type: 'AssetNotFound' }
+  | { type: 'FailedToTransactAsset' }
+  | { type: 'NotWithdrawable' }
+  | { type: 'LocationCannotHold' }
+  | { type: 'ExceedsMaxMessageSize' }
+  | { type: 'DestinationUnsupported' }
+  | { type: 'Transport' }
+  | { type: 'Unroutable' }
+  | { type: 'UnknownClaim' }
+  | { type: 'FailedToDecode' }
+  | { type: 'MaxWeightInvalid' }
+  | { type: 'NotHoldingFees' }
+  | { type: 'TooExpensive' }
+  | { type: 'Trap'; value: bigint }
+  | { type: 'ExpectationFalse' }
+  | { type: 'PalletNotFound' }
+  | { type: 'NameMismatch' }
+  | { type: 'VersionIncompatible' }
+  | { type: 'HoldingWouldOverflow' }
+  | { type: 'ExportError' }
+  | { type: 'ReanchorFailed' }
+  | { type: 'NoDeal' }
+  | { type: 'FeesNotMet' }
+  | { type: 'LockError' }
+  | { type: 'NoPermission' }
+  | { type: 'Unanchored' }
+  | { type: 'NotDepositable' }
+  | { type: 'UnhandledXcmVersion' }
+  | { type: 'WeightLimitReached'; value: SpWeightsWeightV2Weight }
+  | { type: 'Barrier' }
+  | { type: 'WeightNotComputable' }
+  | { type: 'ExceedsStackLimit' };
+
 export type XcmV3PalletInfo = {
   index: number;
   name: Bytes;
@@ -7421,6 +7424,134 @@ export type XcmV3MultiassetWildMultiAsset =
 
 export type XcmV3MultiassetWildFungibility = 'Fungible' | 'NonFungible';
 
+export type StagingXcmV4Xcm = Array<StagingXcmV4Instruction>;
+
+export type StagingXcmV4Instruction =
+  | { type: 'WithdrawAsset'; value: StagingXcmV4AssetAssets }
+  | { type: 'ReserveAssetDeposited'; value: StagingXcmV4AssetAssets }
+  | { type: 'ReceiveTeleportedAsset'; value: StagingXcmV4AssetAssets }
+  | {
+      type: 'QueryResponse';
+      value: {
+        queryId: bigint;
+        response: StagingXcmV4Response;
+        maxWeight: SpWeightsWeightV2Weight;
+        querier?: StagingXcmV4Location | undefined;
+      };
+    }
+  | { type: 'TransferAsset'; value: { assets: StagingXcmV4AssetAssets; beneficiary: StagingXcmV4Location } }
+  | {
+      type: 'TransferReserveAsset';
+      value: { assets: StagingXcmV4AssetAssets; dest: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+    }
+  | {
+      type: 'Transact';
+      value: { originKind: XcmV3OriginKind; requireWeightAtMost: SpWeightsWeightV2Weight; call: XcmDoubleEncoded };
+    }
+  | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
+  | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
+  | { type: 'HrmpChannelClosing'; value: { initiator: number; sender: number; recipient: number } }
+  | { type: 'ClearOrigin' }
+  | { type: 'DescendOrigin'; value: StagingXcmV4Junctions }
+  | { type: 'ReportError'; value: StagingXcmV4QueryResponseInfo }
+  | { type: 'DepositAsset'; value: { assets: StagingXcmV4AssetAssetFilter; beneficiary: StagingXcmV4Location } }
+  | {
+      type: 'DepositReserveAsset';
+      value: { assets: StagingXcmV4AssetAssetFilter; dest: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+    }
+  | {
+      type: 'ExchangeAsset';
+      value: { give: StagingXcmV4AssetAssetFilter; want: StagingXcmV4AssetAssets; maximal: boolean };
+    }
+  | {
+      type: 'InitiateReserveWithdraw';
+      value: { assets: StagingXcmV4AssetAssetFilter; reserve: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+    }
+  | {
+      type: 'InitiateTeleport';
+      value: { assets: StagingXcmV4AssetAssetFilter; dest: StagingXcmV4Location; xcm: StagingXcmV4Xcm };
+    }
+  | {
+      type: 'ReportHolding';
+      value: { responseInfo: StagingXcmV4QueryResponseInfo; assets: StagingXcmV4AssetAssetFilter };
+    }
+  | { type: 'BuyExecution'; value: { fees: StagingXcmV4Asset; weightLimit: XcmV3WeightLimit } }
+  | { type: 'RefundSurplus' }
+  | { type: 'SetErrorHandler'; value: StagingXcmV4Xcm }
+  | { type: 'SetAppendix'; value: StagingXcmV4Xcm }
+  | { type: 'ClearError' }
+  | { type: 'ClaimAsset'; value: { assets: StagingXcmV4AssetAssets; ticket: StagingXcmV4Location } }
+  | { type: 'Trap'; value: bigint }
+  | { type: 'SubscribeVersion'; value: { queryId: bigint; maxResponseWeight: SpWeightsWeightV2Weight } }
+  | { type: 'UnsubscribeVersion' }
+  | { type: 'BurnAsset'; value: StagingXcmV4AssetAssets }
+  | { type: 'ExpectAsset'; value: StagingXcmV4AssetAssets }
+  | { type: 'ExpectOrigin'; value?: StagingXcmV4Location | undefined }
+  | { type: 'ExpectError'; value?: [number, XcmV3TraitsError] | undefined }
+  | { type: 'ExpectTransactStatus'; value: XcmV3MaybeErrorCode }
+  | { type: 'QueryPallet'; value: { moduleName: Bytes; responseInfo: StagingXcmV4QueryResponseInfo } }
+  | {
+      type: 'ExpectPallet';
+      value: { index: number; name: Bytes; moduleName: Bytes; crateMajor: number; minCrateMinor: number };
+    }
+  | { type: 'ReportTransactStatus'; value: StagingXcmV4QueryResponseInfo }
+  | { type: 'ClearTransactStatus' }
+  | { type: 'UniversalOrigin'; value: StagingXcmV4Junction }
+  | {
+      type: 'ExportMessage';
+      value: { network: StagingXcmV4JunctionNetworkId; destination: StagingXcmV4Junctions; xcm: StagingXcmV4Xcm };
+    }
+  | { type: 'LockAsset'; value: { asset: StagingXcmV4Asset; unlocker: StagingXcmV4Location } }
+  | { type: 'UnlockAsset'; value: { asset: StagingXcmV4Asset; target: StagingXcmV4Location } }
+  | { type: 'NoteUnlockable'; value: { asset: StagingXcmV4Asset; owner: StagingXcmV4Location } }
+  | { type: 'RequestUnlock'; value: { asset: StagingXcmV4Asset; locker: StagingXcmV4Location } }
+  | { type: 'SetFeesMode'; value: { jitWithdraw: boolean } }
+  | { type: 'SetTopic'; value: FixedBytes<32> }
+  | { type: 'ClearTopic' }
+  | { type: 'AliasOrigin'; value: StagingXcmV4Location }
+  | {
+      type: 'UnpaidExecution';
+      value: { weightLimit: XcmV3WeightLimit; checkOrigin?: StagingXcmV4Location | undefined };
+    };
+
+export type StagingXcmV4Response =
+  | { type: 'Null' }
+  | { type: 'Assets'; value: StagingXcmV4AssetAssets }
+  | { type: 'ExecutionResult'; value?: [number, XcmV3TraitsError] | undefined }
+  | { type: 'Version'; value: number }
+  | { type: 'PalletsInfo'; value: Array<StagingXcmV4PalletInfo> }
+  | { type: 'DispatchResult'; value: XcmV3MaybeErrorCode };
+
+export type StagingXcmV4PalletInfo = {
+  index: number;
+  name: Bytes;
+  moduleName: Bytes;
+  major: number;
+  minor: number;
+  patch: number;
+};
+
+export type StagingXcmV4QueryResponseInfo = {
+  destination: StagingXcmV4Location;
+  queryId: bigint;
+  maxWeight: SpWeightsWeightV2Weight;
+};
+
+export type StagingXcmV4AssetAssetFilter =
+  | { type: 'Definite'; value: StagingXcmV4AssetAssets }
+  | { type: 'Wild'; value: StagingXcmV4AssetWildAsset };
+
+export type StagingXcmV4AssetWildAsset =
+  | { type: 'All' }
+  | { type: 'AllOf'; value: { id: StagingXcmV4AssetAssetId; fun: StagingXcmV4AssetWildFungibility } }
+  | { type: 'AllCounted'; value: number }
+  | {
+      type: 'AllOfCounted';
+      value: { id: StagingXcmV4AssetAssetId; fun: StagingXcmV4AssetWildFungibility; count: number };
+    };
+
+export type StagingXcmV4AssetWildFungibility = 'Fungible' | 'NonFungible';
+
 export type StagingXcmExecutorAssetTransferTransferType =
   | { type: 'Teleport' }
   | { type: 'LocalReserve' }
@@ -7429,7 +7560,8 @@ export type StagingXcmExecutorAssetTransferTransferType =
 
 export type XcmVersionedAssetId =
   | { type: 'V3'; value: XcmV3MultiassetAssetId }
-  | { type: 'V4'; value: StagingXcmV4AssetAssetId };
+  | { type: 'V4'; value: StagingXcmV4AssetAssetId }
+  | { type: 'V5'; value: StagingXcmV5AssetAssetId };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -7811,9 +7943,9 @@ export type OrmlXtokensModuleCallLike =
     };
 
 export type XcmVersionedAsset =
-  | { type: 'V2'; value: XcmV2MultiassetMultiAsset }
   | { type: 'V3'; value: XcmV3MultiassetMultiAsset }
-  | { type: 'V4'; value: StagingXcmV4Asset };
+  | { type: 'V4'; value: StagingXcmV4Asset }
+  | { type: 'V5'; value: StagingXcmV5Asset };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8011,52 +8143,56 @@ export type PalletEthereumCallLike =
   { name: 'Transact'; params: { transaction: EthereumTransactionTransactionV2 } };
 
 export type EthereumTransactionTransactionV2 =
-  | { type: 'Legacy'; value: EthereumTransactionLegacyTransaction }
-  | { type: 'Eip2930'; value: EthereumTransactionEip2930Transaction }
-  | { type: 'Eip1559'; value: EthereumTransactionEip1559Transaction };
+  | { type: 'Legacy'; value: EthereumTransactionLegacyLegacyTransaction }
+  | { type: 'Eip2930'; value: EthereumTransactionEip2930Eip2930Transaction }
+  | { type: 'Eip1559'; value: EthereumTransactionEip1559Eip1559Transaction };
 
-export type EthereumTransactionLegacyTransaction = {
+export type EthereumTransactionLegacyLegacyTransaction = {
   nonce: U256;
   gasPrice: U256;
   gasLimit: U256;
-  action: EthereumTransactionTransactionAction;
+  action: EthereumTransactionLegacyTransactionAction;
   value: U256;
   input: Bytes;
-  signature: EthereumTransactionTransactionSignature;
+  signature: EthereumTransactionLegacyTransactionSignature;
 };
 
-export type EthereumTransactionTransactionAction = { type: 'Call'; value: H160 } | { type: 'Create' };
+export type EthereumTransactionLegacyTransactionAction = { type: 'Call'; value: H160 } | { type: 'Create' };
 
-export type EthereumTransactionTransactionSignature = { v: EthereumTransactionTransactionRecoveryId; r: H256; s: H256 };
+export type EthereumTransactionLegacyTransactionSignature = {
+  v: EthereumTransactionLegacyTransactionRecoveryId;
+  r: H256;
+  s: H256;
+};
 
-export type EthereumTransactionTransactionRecoveryId = bigint;
+export type EthereumTransactionLegacyTransactionRecoveryId = bigint;
 
-export type EthereumTransactionEip2930Transaction = {
+export type EthereumTransactionEip2930Eip2930Transaction = {
   chainId: bigint;
   nonce: U256;
   gasPrice: U256;
   gasLimit: U256;
-  action: EthereumTransactionTransactionAction;
+  action: EthereumTransactionLegacyTransactionAction;
   value: U256;
   input: Bytes;
-  accessList: Array<EthereumTransactionAccessListItem>;
+  accessList: Array<EthereumTransactionEip2930AccessListItem>;
   oddYParity: boolean;
   r: H256;
   s: H256;
 };
 
-export type EthereumTransactionAccessListItem = { address: H160; storageKeys: Array<H256> };
+export type EthereumTransactionEip2930AccessListItem = { address: H160; storageKeys: Array<H256> };
 
-export type EthereumTransactionEip1559Transaction = {
+export type EthereumTransactionEip1559Eip1559Transaction = {
   chainId: bigint;
   nonce: U256;
   maxPriorityFeePerGas: U256;
   maxFeePerGas: U256;
   gasLimit: U256;
-  action: EthereumTransactionTransactionAction;
+  action: EthereumTransactionLegacyTransactionAction;
   value: U256;
   input: Bytes;
-  accessList: Array<EthereumTransactionAccessListItem>;
+  accessList: Array<EthereumTransactionEip2930AccessListItem>;
   oddYParity: boolean;
   r: H256;
   s: H256;
@@ -8717,7 +8853,29 @@ export type PalletCollectiveCall =
   | {
       name: 'Close';
       params: { proposalHash: H256; index: number; proposalWeightBound: SpWeightsWeightV2Weight; lengthBound: number };
-    };
+    }
+  /**
+   * Disapprove the proposal and burn the cost held for storing this proposal.
+   *
+   * Parameters:
+   * - `origin`: must be the `KillOrigin`.
+   * - `proposal_hash`: The hash of the proposal that should be killed.
+   *
+   * Emits `Killed` and `ProposalCostBurned` if any cost was held for a given proposal.
+   **/
+  | { name: 'Kill'; params: { proposalHash: H256 } }
+  /**
+   * Release the cost held for storing a proposal once the given proposal is completed.
+   *
+   * If there is no associated cost for the given proposal, this call will have no effect.
+   *
+   * Parameters:
+   * - `origin`: must be `Signed` or `Root`.
+   * - `proposal_hash`: The hash of the proposal.
+   *
+   * Emits `ProposalCostReleased` if any cost held for a given proposal.
+   **/
+  | { name: 'ReleaseProposalCost'; params: { proposalHash: H256 } };
 
 export type PalletCollectiveCallLike =
   /**
@@ -8833,7 +8991,29 @@ export type PalletCollectiveCallLike =
   | {
       name: 'Close';
       params: { proposalHash: H256; index: number; proposalWeightBound: SpWeightsWeightV2Weight; lengthBound: number };
-    };
+    }
+  /**
+   * Disapprove the proposal and burn the cost held for storing this proposal.
+   *
+   * Parameters:
+   * - `origin`: must be the `KillOrigin`.
+   * - `proposal_hash`: The hash of the proposal that should be killed.
+   *
+   * Emits `Killed` and `ProposalCostBurned` if any cost was held for a given proposal.
+   **/
+  | { name: 'Kill'; params: { proposalHash: H256 } }
+  /**
+   * Release the cost held for storing a proposal once the given proposal is completed.
+   *
+   * If there is no associated cost for the given proposal, this call will have no effect.
+   *
+   * Parameters:
+   * - `origin`: must be `Signed` or `Root`.
+   * - `proposal_hash`: The hash of the proposal.
+   *
+   * Emits `ProposalCostReleased` if any cost held for a given proposal.
+   **/
+  | { name: 'ReleaseProposalCost'; params: { proposalHash: H256 } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -9634,8 +9814,7 @@ export type AstarRuntimeOriginCaller =
   | { type: 'Ethereum'; value: PalletEthereumRawOrigin }
   | { type: 'Council'; value: PalletCollectiveRawOrigin }
   | { type: 'TechnicalCommittee'; value: PalletCollectiveRawOrigin }
-  | { type: 'CommunityCouncil'; value: PalletCollectiveRawOrigin }
-  | { type: 'Void'; value: SpCoreVoid };
+  | { type: 'CommunityCouncil'; value: PalletCollectiveRawOrigin };
 
 export type FrameSupportDispatchRawOrigin =
   | { type: 'Root' }
@@ -9643,8 +9822,8 @@ export type FrameSupportDispatchRawOrigin =
   | { type: 'None' };
 
 export type PalletXcmOrigin =
-  | { type: 'Xcm'; value: StagingXcmV4Location }
-  | { type: 'Response'; value: StagingXcmV4Location };
+  | { type: 'Xcm'; value: StagingXcmV5Location }
+  | { type: 'Response'; value: StagingXcmV5Location };
 
 export type CumulusPalletXcmOrigin =
   | { type: 'Relay' }
@@ -9656,8 +9835,6 @@ export type PalletCollectiveRawOrigin =
   | { type: 'Members'; value: [number, number] }
   | { type: 'Member'; value: AccountId32 }
   | { type: 'Phantom' };
-
-export type SpCoreVoid = null;
 
 /**
  * The `Error` enum of this pallet.
@@ -9676,7 +9853,14 @@ export type PalletIdentityRegistration = {
 
 export type PalletIdentityRegistrarInfo = { account: AccountId32; fee: bigint; fields: bigint };
 
-export type PalletIdentityAuthorityProperties = { suffix: Bytes; allocation: number };
+export type PalletIdentityAuthorityProperties = { accountId: AccountId32; allocation: number };
+
+export type PalletIdentityUsernameInformation = { owner: AccountId32; provider: PalletIdentityProvider };
+
+export type PalletIdentityProvider =
+  | { type: 'Allocation' }
+  | { type: 'AuthorityDeposit'; value: bigint }
+  | { type: 'System' };
 
 /**
  * The `Error` enum of this pallet.
@@ -9785,7 +9969,24 @@ export type PalletIdentityError =
   /**
    * The username cannot be forcefully removed because it can still be accepted.
    **/
-  | 'NotExpired';
+  | 'NotExpired'
+  /**
+   * The username cannot be removed because it's still in the grace period.
+   **/
+  | 'TooEarly'
+  /**
+   * The username cannot be removed because it is not unbinding.
+   **/
+  | 'NotUnbinding'
+  /**
+   * The username cannot be unbound because it is already unbinding.
+   **/
+  | 'AlreadyUnbinding'
+  /**
+   * The action cannot be performed because of insufficient privileges (e.g. authority
+   * trying to unbind a username provided by the system).
+   **/
+  | 'InsufficientPrivileges';
 
 export type PalletMultisigMultisig = {
   when: PalletMultisigTimepoint;
@@ -9934,7 +10135,7 @@ export type PalletSchedulerError =
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV7UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
 };
 
 export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
@@ -9947,21 +10148,21 @@ export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
 
 export type CumulusPalletParachainSystemUnincludedSegmentHrmpChannelUpdate = { msgCount: number; totalBytes: number };
 
-export type PolkadotPrimitivesV7UpgradeGoAhead = 'Abort' | 'GoAhead';
+export type PolkadotPrimitivesV8UpgradeGoAhead = 'Abort' | 'GoAhead';
 
 export type CumulusPalletParachainSystemUnincludedSegmentSegmentTracker = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   hrmpWatermark?: number | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV7UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
 };
 
-export type PolkadotPrimitivesV7UpgradeRestriction = 'Present';
+export type PolkadotPrimitivesV8UpgradeRestriction = 'Present';
 
 export type CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot = {
   dmqMqcHead: H256;
   relayDispatchQueueRemainingCapacity: CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity;
-  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV7AbridgedHrmpChannel]>;
-  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV7AbridgedHrmpChannel]>;
+  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
+  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
 };
 
 export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity = {
@@ -9969,7 +10170,7 @@ export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRema
   remainingSize: number;
 };
 
-export type PolkadotPrimitivesV7AbridgedHrmpChannel = {
+export type PolkadotPrimitivesV8AbridgedHrmpChannel = {
   maxCapacity: number;
   maxTotalSize: number;
   maxMessageSize: number;
@@ -9978,7 +10179,7 @@ export type PolkadotPrimitivesV7AbridgedHrmpChannel = {
   mqcHead?: H256 | undefined;
 };
 
-export type PolkadotPrimitivesV7AbridgedHostConfiguration = {
+export type PolkadotPrimitivesV8AbridgedHostConfiguration = {
   maxCodeSize: number;
   maxHeadDataSize: number;
   maxUpwardQueueCount: number;
@@ -9988,10 +10189,10 @@ export type PolkadotPrimitivesV7AbridgedHostConfiguration = {
   hrmpMaxMessageNumPerCandidate: number;
   validationUpgradeCooldown: number;
   validationUpgradeDelay: number;
-  asyncBackingParams: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams;
+  asyncBackingParams: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams;
 };
 
-export type PolkadotPrimitivesV7AsyncBackingAsyncBackingParams = {
+export type PolkadotPrimitivesV8AsyncBackingAsyncBackingParams = {
   maxCandidateDepth: number;
   allowedAncestryLen: number;
 };
@@ -10053,11 +10254,16 @@ export type FrameSupportTokensMiscIdAmount = { id: AstarRuntimeRuntimeHoldReason
 
 export type AstarRuntimeRuntimeHoldReason =
   | { type: 'Contracts'; value: PalletContractsHoldReason }
-  | { type: 'Preimage'; value: PalletPreimageHoldReason };
+  | { type: 'Preimage'; value: PalletPreimageHoldReason }
+  | { type: 'Council'; value: PalletCollectiveHoldReason }
+  | { type: 'TechnicalCommittee'; value: PalletCollectiveHoldReason }
+  | { type: 'CommunityCouncil'; value: PalletCollectiveHoldReason };
 
 export type PalletContractsHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve';
 
 export type PalletPreimageHoldReason = 'Preimage';
+
+export type PalletCollectiveHoldReason = 'ProposalSubmission';
 
 export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = { id: AstarRuntimeRuntimeFreezeReason; amount: bigint };
 
@@ -10694,9 +10900,9 @@ export type PalletXcmQueryStatus =
   | { type: 'Ready'; value: { response: XcmVersionedResponse; at: number } };
 
 export type XcmVersionedResponse =
-  | { type: 'V2'; value: XcmV2Response }
   | { type: 'V3'; value: XcmV3Response }
-  | { type: 'V4'; value: StagingXcmV4Response };
+  | { type: 'V4'; value: StagingXcmV4Response }
+  | { type: 'V5'; value: StagingXcmV5Response };
 
 export type PalletXcmVersionMigrationStage =
   | { type: 'MigrateSupportedVersion' }
@@ -11153,6 +11359,8 @@ export type PalletContractsScheduleLimits = {
   subjectLen: number;
   payloadLen: number;
   runtimeMemory: number;
+  validatorRuntimeMemory: number;
+  eventRefTime: bigint;
 };
 
 export type PalletContractsScheduleInstructionWeights = { base: number };
@@ -11409,11 +11617,7 @@ export type PalletPreimageError =
   /**
    * Too few hashes were requested to be upgraded (i.e. zero).
    **/
-  | 'TooFew'
-  /**
-   * No ticket with a cost was returned by [`Config::Consideration`] to store the preimage.
-   **/
-  | 'NoCost';
+  | 'TooFew';
 
 /**
  * Error for the Sudo pallet.
@@ -11479,7 +11683,11 @@ export type PalletCollectiveError =
   /**
    * Prime account is not a member
    **/
-  | 'PrimeAccountNotMember';
+  | 'PrimeAccountNotMember'
+  /**
+   * Proposal is still active.
+   **/
+  | 'ProposalActive';
 
 export type PalletDemocracyReferendumInfo =
   | { type: 'Ongoing'; value: PalletDemocracyReferendumStatus }
@@ -11703,7 +11911,9 @@ export type SpRuntimeTransactionValidityInvalidTransaction =
   | { type: 'Custom'; value: number }
   | { type: 'BadMandatory' }
   | { type: 'MandatoryValidation' }
-  | { type: 'BadSigner' };
+  | { type: 'BadSigner' }
+  | { type: 'IndeterminateImplicit' }
+  | { type: 'UnknownOrigin' };
 
 export type SpRuntimeTransactionValidityUnknownTransaction =
   | { type: 'CannotLookup' }
@@ -11840,10 +12050,12 @@ export type SpRuntimeDispatchErrorWithPostInfo = {
 export type XcmRuntimeApisDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
 
 export type XcmRuntimeApisDryRunXcmDryRunEffects = {
-  executionResult: StagingXcmV4TraitsOutcome;
+  executionResult: StagingXcmV5TraitsOutcome;
   emittedEvents: Array<AstarRuntimeRuntimeEvent>;
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };
+
+export type XcmRuntimeApisTrustedQueryError = 'VersionedAssetConversionFailed' | 'VersionedLocationConversionFailed';
 
 export type AstarRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }

@@ -17278,6 +17278,22 @@ export type PalletAhOpsCall =
   | {
       name: 'UnreserveCrowdloanReserve';
       params: { block: number; depositor?: AccountId32 | undefined; paraId: PolkadotParachainPrimitivesPrimitivesId };
+    }
+  /**
+   * Try to migrate a parachain sovereign child account to its respective sibling.
+   *
+   * Takes the old and new account and migrates it only if they are as expected. An event of
+   * `SovereignMigrated` will be emitted if the account was migrated successfully.
+   *
+   * Callable by any signed origin.
+   **/
+  | { name: 'MigrateParachainSovereignAcc'; params: { from: AccountId32; to: AccountId32 } }
+  /**
+   * Force unreserve a named or unnamed reserve.
+   **/
+  | {
+      name: 'ForceUnreserve';
+      params: { account: AccountId32; amount: bigint; reason?: AssetHubWestendRuntimeRuntimeHoldReason | undefined };
     };
 
 export type PalletAhOpsCallLike =
@@ -17333,7 +17349,56 @@ export type PalletAhOpsCallLike =
         depositor?: AccountId32Like | undefined;
         paraId: PolkadotParachainPrimitivesPrimitivesId;
       };
+    }
+  /**
+   * Try to migrate a parachain sovereign child account to its respective sibling.
+   *
+   * Takes the old and new account and migrates it only if they are as expected. An event of
+   * `SovereignMigrated` will be emitted if the account was migrated successfully.
+   *
+   * Callable by any signed origin.
+   **/
+  | { name: 'MigrateParachainSovereignAcc'; params: { from: AccountId32Like; to: AccountId32Like } }
+  /**
+   * Force unreserve a named or unnamed reserve.
+   **/
+  | {
+      name: 'ForceUnreserve';
+      params: {
+        account: AccountId32Like;
+        amount: bigint;
+        reason?: AssetHubWestendRuntimeRuntimeHoldReason | undefined;
+      };
     };
+
+export type AssetHubWestendRuntimeRuntimeHoldReason =
+  | { type: 'Preimage'; value: PalletPreimageHoldReason }
+  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
+  | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
+  | { type: 'Revive'; value: PalletReviveHoldReason }
+  | { type: 'AssetRewards'; value: PalletAssetRewardsHoldReason }
+  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
+  | { type: 'Staking'; value: PalletStakingAsyncPalletHoldReason }
+  | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
+  | { type: 'MultiBlockSigned'; value: PalletElectionProviderMultiBlockSignedPalletHoldReason };
+
+export type PalletPreimageHoldReason = 'Preimage';
+
+export type PalletXcmHoldReason = 'AuthorizeAlias';
+
+export type PalletNftFractionalizationHoldReason = 'Fractionalized';
+
+export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
+
+export type PalletAssetRewardsHoldReason = 'PoolCreation';
+
+export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
+
+export type PalletStakingAsyncPalletHoldReason = 'Staking';
+
+export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
+
+export type PalletElectionProviderMultiBlockSignedPalletHoldReason = 'SignedSubmission';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -17427,7 +17492,14 @@ export type PalletAhMigratorCall =
    *
    * This is typically called by the Relay Chain to signal the migration has finished.
    **/
-  | { name: 'FinishMigration'; params: { data: PalletRcMigratorMigrationFinishedData } };
+  | { name: 'FinishMigration'; params: { data: PalletRcMigratorMigrationFinishedData } }
+  /**
+   * Fix hold reasons that were incorrectly assigned during migration.
+   * This should only be used post-migration to repair bad hold reasons.
+   *
+   * Only the `ManagerOrigin` can call this function.
+   **/
+  | { name: 'FixMisplacedHold'; params: { account: AccountId32; delegationHold: bigint; stakingHold: bigint } };
 
 export type PalletAhMigratorCallLike =
   /**
@@ -17518,7 +17590,14 @@ export type PalletAhMigratorCallLike =
    *
    * This is typically called by the Relay Chain to signal the migration has finished.
    **/
-  | { name: 'FinishMigration'; params: { data: PalletRcMigratorMigrationFinishedData } };
+  | { name: 'FinishMigration'; params: { data: PalletRcMigratorMigrationFinishedData } }
+  /**
+   * Fix hold reasons that were incorrectly assigned during migration.
+   * This should only be used post-migration to repair bad hold reasons.
+   *
+   * Only the `ManagerOrigin` can call this function.
+   **/
+  | { name: 'FixMisplacedHold'; params: { account: AccountId32Like; delegationHold: bigint; stakingHold: bigint } };
 
 export type PalletRcMigratorAccountsAccount = {
   who: AccountId32;
@@ -17537,10 +17616,6 @@ export type AssetHubWestendRuntimeAhMigrationRcHoldReason =
   | { type: 'Preimage'; value: PalletPreimageHoldReason }
   | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
   | { type: 'Staking'; value: PalletStakingPalletHoldReason };
-
-export type PalletPreimageHoldReason = 'Preimage';
-
-export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
 
 export type PalletStakingPalletHoldReason = 'Staking';
 
@@ -18034,6 +18109,43 @@ export type PalletAhOpsEvent =
   | {
       name: 'CrowdloanUnreserveRemaining';
       data: { depositor: AccountId32; paraId: PolkadotParachainPrimitivesPrimitivesId; remaining: bigint };
+    }
+  /**
+   * A sovereign parachain account has been migrated from its child to sibling
+   * representation.
+   **/
+  | {
+      name: 'SovereignMigrated';
+      data: {
+        /**
+         * The parachain ID that had its account migrated.
+         **/
+        paraId: PolkadotParachainPrimitivesPrimitivesId;
+
+        /**
+         * The old account that was migrated out of.
+         **/
+        from: AccountId32;
+
+        /**
+         * The new account that was migrated into.
+         **/
+        to: AccountId32;
+      };
+    }
+  /**
+   * An amount of fungible balance was put on hold.
+   **/
+  | {
+      name: 'HoldPlaced';
+      data: { account: AccountId32; amount: bigint; reason: AssetHubWestendRuntimeRuntimeHoldReason };
+    }
+  /**
+   * An amount of fungible balance was released from its hold.
+   **/
+  | {
+      name: 'HoldReleased';
+      data: { account: AccountId32; amount: bigint; reason: AssetHubWestendRuntimeRuntimeHoldReason };
     };
 
 /**
@@ -18397,31 +18509,6 @@ export type FrameSupportTokensMiscIdAmountRuntimeHoldReason = {
   id: AssetHubWestendRuntimeRuntimeHoldReason;
   amount: bigint;
 };
-
-export type AssetHubWestendRuntimeRuntimeHoldReason =
-  | { type: 'Preimage'; value: PalletPreimageHoldReason }
-  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
-  | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
-  | { type: 'Revive'; value: PalletReviveHoldReason }
-  | { type: 'AssetRewards'; value: PalletAssetRewardsHoldReason }
-  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
-  | { type: 'Staking'; value: PalletStakingAsyncPalletHoldReason }
-  | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
-  | { type: 'MultiBlockSigned'; value: PalletElectionProviderMultiBlockSignedPalletHoldReason };
-
-export type PalletXcmHoldReason = 'AuthorizeAlias';
-
-export type PalletNftFractionalizationHoldReason = 'Fractionalized';
-
-export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
-
-export type PalletAssetRewardsHoldReason = 'PoolCreation';
-
-export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
-
-export type PalletStakingAsyncPalletHoldReason = 'Staking';
-
-export type PalletElectionProviderMultiBlockSignedPalletHoldReason = 'SignedSubmission';
 
 export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
   id: AssetHubWestendRuntimeRuntimeFreezeReason;
@@ -20880,7 +20967,43 @@ export type PalletAhOpsError =
   /**
    * Not all contributions are withdrawn.
    **/
-  | 'ContributionsRemaining';
+  | 'ContributionsRemaining'
+  /**
+   * Passed account IDs are not matching unmigrated child and sibling accounts.
+   **/
+  | 'WrongSovereignTranslation'
+  /**
+   * Account cannot be migrated since it is not a sovereign parachain account.
+   **/
+  | 'NotSovereign'
+  /**
+   * Internal error, please bug report.
+   **/
+  | 'InternalError'
+  /**
+   * The migrated account would get reaped in the process.
+   **/
+  | 'WouldReap'
+  /**
+   * Failed to put a hold on an account.
+   **/
+  | 'FailedToPutHold'
+  /**
+   * Failed to release a hold from an account.
+   **/
+  | 'FailedToReleaseHold'
+  /**
+   * Failed to thaw a frozen balance.
+   **/
+  | 'FailedToThaw'
+  /**
+   * Failed to set a freeze on an account.
+   **/
+  | 'FailedToSetFreeze'
+  /**
+   * Failed to unreserve the full balance.
+   **/
+  | 'CannotUnreserve';
 
 export type PalletAhMigratorBalancesBefore = { checkingAccount: bigint; totalIssuance: bigint };
 
@@ -20933,7 +21056,15 @@ export type PalletAhMigratorError =
    * Vector did not fit into its compile-time bound.
    **/
   | 'FailedToBoundVector'
-  | 'Unreachable';
+  | 'Unreachable'
+  /**
+   * No misplaced hold found.
+   **/
+  | 'NoMisplacedHoldFound'
+  /**
+   * No free balance to hold.
+   **/
+  | 'NoFreeBalanceToHold';
 
 export type CumulusPalletWeightReclaimStorageWeightReclaim = [
   FrameSystemExtensionsAuthorizeCall,

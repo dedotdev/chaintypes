@@ -3170,6 +3170,51 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ContributionsRemaining: GenericPalletError<Rv>;
 
     /**
+     * Passed account IDs are not matching unmigrated child and sibling accounts.
+     **/
+    WrongSovereignTranslation: GenericPalletError<Rv>;
+
+    /**
+     * Account cannot be migrated since it is not a sovereign parachain account.
+     **/
+    NotSovereign: GenericPalletError<Rv>;
+
+    /**
+     * Internal error, please bug report.
+     **/
+    InternalError: GenericPalletError<Rv>;
+
+    /**
+     * The migrated account would get reaped in the process.
+     **/
+    WouldReap: GenericPalletError<Rv>;
+
+    /**
+     * Failed to put a hold on an account.
+     **/
+    FailedToPutHold: GenericPalletError<Rv>;
+
+    /**
+     * Failed to release a hold from an account.
+     **/
+    FailedToReleaseHold: GenericPalletError<Rv>;
+
+    /**
+     * Failed to thaw a frozen balance.
+     **/
+    FailedToThaw: GenericPalletError<Rv>;
+
+    /**
+     * Failed to set a freeze on an account.
+     **/
+    FailedToSetFreeze: GenericPalletError<Rv>;
+
+    /**
+     * Failed to unreserve the full balance.
+     **/
+    CannotUnreserve: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -3234,6 +3279,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      **/
     FailedToBoundVector: GenericPalletError<Rv>;
     Unreachable: GenericPalletError<Rv>;
+
+    /**
+     * No misplaced hold found.
+     **/
+    NoMisplacedHoldFound: GenericPalletError<Rv>;
+
+    /**
+     * No free balance to hold.
+     **/
+    NoFreeBalanceToHold: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

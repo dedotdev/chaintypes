@@ -55,6 +55,7 @@ import type {
   SpRuntimeDispatchErrorWithPostInfo,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   PolkadotParachainPrimitivesPrimitivesId,
+  AssetHubWestendRuntimeRuntimeHoldReason,
   PalletAhMigratorMigrationStage,
   PalletAhMigratorPalletEventName,
 } from './types.js';
@@ -4696,6 +4697,52 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'AhOps',
       'CrowdloanUnreserveRemaining',
       { depositor: AccountId32; paraId: PolkadotParachainPrimitivesPrimitivesId; remaining: bigint }
+    >;
+
+    /**
+     * A sovereign parachain account has been migrated from its child to sibling
+     * representation.
+     **/
+    SovereignMigrated: GenericPalletEvent<
+      Rv,
+      'AhOps',
+      'SovereignMigrated',
+      {
+        /**
+         * The parachain ID that had its account migrated.
+         **/
+        paraId: PolkadotParachainPrimitivesPrimitivesId;
+
+        /**
+         * The old account that was migrated out of.
+         **/
+        from: AccountId32;
+
+        /**
+         * The new account that was migrated into.
+         **/
+        to: AccountId32;
+      }
+    >;
+
+    /**
+     * An amount of fungible balance was put on hold.
+     **/
+    HoldPlaced: GenericPalletEvent<
+      Rv,
+      'AhOps',
+      'HoldPlaced',
+      { account: AccountId32; amount: bigint; reason: AssetHubWestendRuntimeRuntimeHoldReason }
+    >;
+
+    /**
+     * An amount of fungible balance was released from its hold.
+     **/
+    HoldReleased: GenericPalletEvent<
+      Rv,
+      'AhOps',
+      'HoldReleased',
+      { account: AccountId32; amount: bigint; reason: AssetHubWestendRuntimeRuntimeHoldReason }
     >;
 
     /**

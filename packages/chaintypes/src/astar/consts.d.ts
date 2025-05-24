@@ -8,7 +8,7 @@ import type {
   SpWeightsRuntimeDbWeight,
   SpWeightsWeightV2Weight,
   PolkadotParachainPrimitivesPrimitivesId,
-  StagingXcmV4Location,
+  StagingXcmV5Location,
   PalletContractsSchedule,
   PalletContractsEnvironment,
   PalletContractsApiVersion,
@@ -88,6 +88,12 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     byteDeposit: bigint;
 
     /**
+     * The amount held on deposit per registered username. This value should change only in
+     * runtime upgrades with proper migration of existing deposits.
+     **/
+    usernameDeposit: bigint;
+
+    /**
      * The amount held on deposit for a registered subaccount. This should account for the fact
      * that one storage item's value will increase by the size of an account ID, and there will
      * be another trie item whose value is the size of an account ID plus 32 bytes.
@@ -109,6 +115,12 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * The number of blocks within which a username grant must be accepted.
      **/
     pendingUsernameExpiration: number;
+
+    /**
+     * The number of blocks that must pass to enable the permanent deletion of a username by
+     * its respective authority.
+     **/
+    usernameGracePeriod: number;
 
     /**
      * The maximum length of a suffix.
@@ -684,7 +696,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     /**
      * Self chain location.
      **/
-    selfLocation: StagingXcmV4Location;
+    selfLocation: StagingXcmV5Location;
 
     /**
      * Base XCM weight.

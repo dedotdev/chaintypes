@@ -24,6 +24,8 @@ import type {
   PalletIdentityRegistration,
   PalletIdentityRegistrarInfo,
   PalletIdentityAuthorityProperties,
+  PalletIdentityUsernameInformation,
+  PalletIdentityProvider,
   PalletMultisigMultisig,
   PalletProxyProxyDefinition,
   PalletProxyAnnouncement,
@@ -31,12 +33,12 @@ import type {
   PalletSchedulerRetryConfig,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
-  PolkadotPrimitivesV7PersistedValidationData,
-  PolkadotPrimitivesV7UpgradeRestriction,
-  PolkadotPrimitivesV7UpgradeGoAhead,
+  PolkadotPrimitivesV8PersistedValidationData,
+  PolkadotPrimitivesV8UpgradeRestriction,
+  PolkadotPrimitivesV8UpgradeGoAhead,
   SpTrieStorageProof,
   CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot,
-  PolkadotPrimitivesV7AbridgedHostConfiguration,
+  PolkadotPrimitivesV8AbridgedHostConfiguration,
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
@@ -85,7 +87,7 @@ import type {
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
-  StagingXcmV4Xcm,
+  StagingXcmV5Xcm,
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMessageQueuePage,
@@ -277,13 +279,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * TWOX-NOTE: OK ― `AccountId` is a secure hash.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<[PalletIdentityRegistration, Bytes | undefined] | undefined> =} callback
+     * @param {Callback<PalletIdentityRegistration | undefined> =} callback
      **/
-    identityOf: GenericStorageQuery<
-      Rv,
-      (arg: AccountId32Like) => [PalletIdentityRegistration, Bytes | undefined] | undefined,
-      AccountId32
-    >;
+    identityOf: GenericStorageQuery<Rv, (arg: AccountId32Like) => PalletIdentityRegistration | undefined, AccountId32>;
+
+    /**
+     * Identifies the primary username of an account.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    usernameOf: GenericStorageQuery<Rv, (arg: AccountId32Like) => Bytes | undefined, AccountId32>;
 
     /**
      * The super-identity of an alternative "sub" identity together with its name, within that
@@ -319,39 +325,51 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * A map of the accounts who are authorized to grant usernames.
      *
-     * @param {AccountId32Like} arg
+     * @param {BytesLike} arg
      * @param {Callback<PalletIdentityAuthorityProperties | undefined> =} callback
      **/
-    usernameAuthorities: GenericStorageQuery<
-      Rv,
-      (arg: AccountId32Like) => PalletIdentityAuthorityProperties | undefined,
-      AccountId32
-    >;
+    authorityOf: GenericStorageQuery<Rv, (arg: BytesLike) => PalletIdentityAuthorityProperties | undefined, Bytes>;
 
     /**
-     * Reverse lookup from `username` to the `AccountId` that has registered it. The value should
-     * be a key in the `IdentityOf` map, but it may not if the user has cleared their identity.
+     * Reverse lookup from `username` to the `AccountId` that has registered it and the provider of
+     * the username. The `owner` value should be a key in the `UsernameOf` map, but it may not if
+     * the user has cleared their username or it has been removed.
      *
-     * Multiple usernames may map to the same `AccountId`, but `IdentityOf` will only map to one
+     * Multiple usernames may map to the same `AccountId`, but `UsernameOf` will only map to one
      * primary username.
      *
      * @param {BytesLike} arg
-     * @param {Callback<AccountId32 | undefined> =} callback
+     * @param {Callback<PalletIdentityUsernameInformation | undefined> =} callback
      **/
-    accountOfUsername: GenericStorageQuery<Rv, (arg: BytesLike) => AccountId32 | undefined, Bytes>;
+    usernameInfoOf: GenericStorageQuery<Rv, (arg: BytesLike) => PalletIdentityUsernameInformation | undefined, Bytes>;
 
     /**
      * Usernames that an authority has granted, but that the account controller has not confirmed
      * that they want it. Used primarily in cases where the `AccountId` cannot provide a signature
      * because they are a pure proxy, multisig, etc. In order to confirm it, they should call
-     * [`Call::accept_username`].
+     * [accept_username](`Call::accept_username`).
      *
      * First tuple item is the account and second is the acceptance deadline.
      *
      * @param {BytesLike} arg
-     * @param {Callback<[AccountId32, number] | undefined> =} callback
+     * @param {Callback<[AccountId32, number, PalletIdentityProvider] | undefined> =} callback
      **/
-    pendingUsernames: GenericStorageQuery<Rv, (arg: BytesLike) => [AccountId32, number] | undefined, Bytes>;
+    pendingUsernames: GenericStorageQuery<
+      Rv,
+      (arg: BytesLike) => [AccountId32, number, PalletIdentityProvider] | undefined,
+      Bytes
+    >;
+
+    /**
+     * Usernames for which the authority that granted them has started the removal process by
+     * unbinding them. Each unbinding username maps to its grace period expiry, which is the first
+     * block in which the username could be deleted through a
+     * [remove_username](`Call::remove_username`) call.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    unbindingUsernames: GenericStorageQuery<Rv, (arg: BytesLike) => number | undefined, Bytes>;
 
     /**
      * Generic pallet storage query
@@ -541,9 +559,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * This value is expected to be set only once per block and it's never stored
      * in the trie.
      *
-     * @param {Callback<PolkadotPrimitivesV7PersistedValidationData | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8PersistedValidationData | undefined> =} callback
      **/
-    validationData: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7PersistedValidationData | undefined>;
+    validationData: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8PersistedValidationData | undefined>;
 
     /**
      * Were the validation data set to notify the relay chain?
@@ -570,9 +588,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV7UpgradeRestriction | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8UpgradeRestriction | undefined> =} callback
      **/
-    upgradeRestrictionSignal: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7UpgradeRestriction | undefined>;
+    upgradeRestrictionSignal: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8UpgradeRestriction | undefined>;
 
     /**
      * Optional upgrade go-ahead signal from the relay-chain.
@@ -581,9 +599,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV7UpgradeGoAhead | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8UpgradeGoAhead | undefined> =} callback
      **/
-    upgradeGoAhead: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7UpgradeGoAhead | undefined>;
+    upgradeGoAhead: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8UpgradeGoAhead | undefined>;
 
     /**
      * The state proof for the last relay parent block.
@@ -621,9 +639,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      *
      * This data is also absent from the genesis.
      *
-     * @param {Callback<PolkadotPrimitivesV7AbridgedHostConfiguration | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8AbridgedHostConfiguration | undefined> =} callback
      **/
-    hostConfiguration: GenericStorageQuery<Rv, () => PolkadotPrimitivesV7AbridgedHostConfiguration | undefined>;
+    hostConfiguration: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8AbridgedHostConfiguration | undefined>;
 
     /**
      * The last downward message queue chain head we have observed.
@@ -1663,9 +1681,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
      * implementation in the XCM executor configuration.
      *
-     * @param {Callback<StagingXcmV4Xcm | undefined> =} callback
+     * @param {Callback<StagingXcmV5Xcm | undefined> =} callback
      **/
-    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV4Xcm | undefined>;
+    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV5Xcm | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1782,13 +1800,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     accountStorages: GenericStorageQuery<Rv, (arg: [H160, H256]) => H256, [H160, H256]>;
 
     /**
-     *
-     * @param {H160} arg
-     * @param {Callback<[] | undefined> =} callback
-     **/
-    suicided: GenericStorageQuery<Rv, (arg: H160) => [] | undefined, H160>;
-
-    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -1798,14 +1809,23 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   ethereum: {
     /**
-     * Current building block's transactions and receipts.
+     * Mapping from transaction index to transaction in the current building block.
      *
-     * @param {Callback<Array<[EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3]>> =} callback
+     * @param {number} arg
+     * @param {Callback<[EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3] | undefined> =} callback
      **/
     pending: GenericStorageQuery<
       Rv,
-      () => Array<[EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3]>
+      (arg: number) => [EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3] | undefined,
+      number
     >;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForPending: GenericStorageQuery<Rv, () => number>;
 
     /**
      * The current Ethereum block.
@@ -2086,6 +2106,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     proposalOf: GenericStorageQuery<Rv, (arg: H256) => AstarRuntimeRuntimeCall | undefined, H256>;
 
     /**
+     * Consideration cost created for publishing and storing a proposal.
+     *
+     * Determined by [Config::Consideration] and may be not present for certain proposals (e.g. if
+     * the proposal count at the time of creation was below threshold N).
+     *
+     * @param {H256} arg
+     * @param {Callback<[AccountId32, []] | undefined> =} callback
+     **/
+    costOf: GenericStorageQuery<Rv, (arg: H256) => [AccountId32, []] | undefined, H256>;
+
+    /**
      * Votes on a given proposal, if it is ongoing.
      *
      * @param {H256} arg
@@ -2139,6 +2170,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     proposalOf: GenericStorageQuery<Rv, (arg: H256) => AstarRuntimeRuntimeCall | undefined, H256>;
 
     /**
+     * Consideration cost created for publishing and storing a proposal.
+     *
+     * Determined by [Config::Consideration] and may be not present for certain proposals (e.g. if
+     * the proposal count at the time of creation was below threshold N).
+     *
+     * @param {H256} arg
+     * @param {Callback<[AccountId32, []] | undefined> =} callback
+     **/
+    costOf: GenericStorageQuery<Rv, (arg: H256) => [AccountId32, []] | undefined, H256>;
+
+    /**
      * Votes on a given proposal, if it is ongoing.
      *
      * @param {H256} arg
@@ -2190,6 +2232,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<AstarRuntimeRuntimeCall | undefined> =} callback
      **/
     proposalOf: GenericStorageQuery<Rv, (arg: H256) => AstarRuntimeRuntimeCall | undefined, H256>;
+
+    /**
+     * Consideration cost created for publishing and storing a proposal.
+     *
+     * Determined by [Config::Consideration] and may be not present for certain proposals (e.g. if
+     * the proposal count at the time of creation was below threshold N).
+     *
+     * @param {H256} arg
+     * @param {Callback<[AccountId32, []] | undefined> =} callback
+     **/
+    costOf: GenericStorageQuery<Rv, (arg: H256) => [AccountId32, []] | undefined, H256>;
 
     /**
      * Votes on a given proposal, if it is ongoing.

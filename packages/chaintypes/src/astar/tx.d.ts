@@ -44,7 +44,7 @@ import type {
   XcmVersionedLocation,
   XcmVersionedXcm,
   XcmVersionedAssets,
-  StagingXcmV4Location,
+  StagingXcmV5Location,
   XcmV3WeightLimit,
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
@@ -638,7 +638,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `max_fee`: The maximum fee that may be paid. This should just be auto-populated as:
      *
      * ```nocompile
-     * Self::registrars().get(reg_index).unwrap().fee
+     * Registrars::<T>::get().get(reg_index).unwrap().fee
      * ```
      *
      * Emits `JudgementRequested` if successful.
@@ -958,8 +958,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Add an `AccountId` with permission to grant usernames with a given `suffix` appended.
      *
-     * The authority can grant up to `allocation` usernames. To top up their allocation, they
-     * should just issue (or request via governance) a new `add_username_authority` call.
+     * The authority can grant up to `allocation` usernames. To top up the allocation or
+     * change the account used to grant usernames, this call can be used with the updated
+     * parameters to overwrite the existing configuration.
      *
      * @param {MultiAddressLike} authority
      * @param {BytesLike} suffix
@@ -986,17 +987,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Remove `authority` from the username authorities.
      *
+     * @param {BytesLike} suffix
      * @param {MultiAddressLike} authority
      **/
     removeUsernameAuthority: GenericTxCall<
       Rv,
-      (authority: MultiAddressLike) => ChainSubmittableExtrinsic<
+      (
+        suffix: BytesLike,
+        authority: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Identity';
           palletCall: {
             name: 'RemoveUsernameAuthority';
-            params: { authority: MultiAddressLike };
+            params: { suffix: BytesLike; authority: MultiAddressLike };
           };
         }
       >
@@ -1005,7 +1010,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Set the username for `who`. Must be called by a username authority.
      *
-     * The authority must have an `allocation`. Users can either pre-sign their usernames or
+     * If `use_allocation` is set, the authority must have a username allocation available to
+     * spend. Otherwise, the authority will need to put up a deposit for registering the
+     * username.
+     *
+     * Users can either pre-sign their usernames or
      * accept them later.
      *
      * Usernames must:
@@ -1016,6 +1025,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      * @param {BytesLike} username
      * @param {SpRuntimeMultiSignature | undefined} signature
+     * @param {boolean} useAllocation
      **/
     setUsernameFor: GenericTxCall<
       Rv,
@@ -1023,13 +1033,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         who: MultiAddressLike,
         username: BytesLike,
         signature: SpRuntimeMultiSignature | undefined,
+        useAllocation: boolean,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Identity';
           palletCall: {
             name: 'SetUsernameFor';
-            params: { who: MultiAddressLike; username: BytesLike; signature: SpRuntimeMultiSignature | undefined };
+            params: {
+              who: MultiAddressLike;
+              username: BytesLike;
+              signature: SpRuntimeMultiSignature | undefined;
+              useAllocation: boolean;
+            };
           };
         }
       >
@@ -1096,19 +1112,60 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Remove a username that corresponds to an account with no identity. Exists when a user
-     * gets a username but then calls `clear_identity`.
+     * Start the process of removing a username by placing it in the unbinding usernames map.
+     * Once the grace period has passed, the username can be deleted by calling
+     * [remove_username](crate::Call::remove_username).
      *
      * @param {BytesLike} username
      **/
-    removeDanglingUsername: GenericTxCall<
+    unbindUsername: GenericTxCall<
       Rv,
       (username: BytesLike) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Identity';
           palletCall: {
-            name: 'RemoveDanglingUsername';
+            name: 'UnbindUsername';
+            params: { username: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Permanently delete a username which has been unbinding for longer than the grace period.
+     * Caller is refunded the fee if the username expired and the removal was successful.
+     *
+     * @param {BytesLike} username
+     **/
+    removeUsername: GenericTxCall<
+      Rv,
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'RemoveUsername';
+            params: { username: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Call with [ForceOrigin](crate::Config::ForceOrigin) privileges which deletes a username
+     * and slashes any deposit associated with it.
+     *
+     * @param {BytesLike} username
+     **/
+    killUsername: GenericTxCall<
+      Rv,
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'KillUsername';
             params: { username: BytesLike };
           };
         }
@@ -2104,63 +2161,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SudoSendUpwardMessage';
             params: { message: BytesLike };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
-     * later.
-     *
-     * The `check_version` parameter sets a boolean flag for whether or not the runtime's spec
-     * version and name should be verified on upgrade. Since the authorization only has a hash,
-     * it cannot actually perform the verification.
-     *
-     * This call requires Root origin.
-     *
-     * @param {H256} codeHash
-     * @param {boolean} checkVersion
-     **/
-    authorizeUpgrade: GenericTxCall<
-      Rv,
-      (
-        codeHash: H256,
-        checkVersion: boolean,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainSystem';
-          palletCall: {
-            name: 'AuthorizeUpgrade';
-            params: { codeHash: H256; checkVersion: boolean };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
-     *
-     * If the authorization required a version check, this call will ensure the spec name
-     * remains unchanged and that the spec version has increased.
-     *
-     * Note that this function will not apply the new `code`, but only attempt to schedule the
-     * upgrade with the Relay Chain.
-     *
-     * All origins are allowed.
-     *
-     * @param {BytesLike} code
-     **/
-    enactAuthorizedUpgrade: GenericTxCall<
-      Rv,
-      (code: BytesLike) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainSystem';
-          palletCall: {
-            name: 'EnactAuthorizedUpgrade';
-            params: { code: BytesLike };
           };
         }
       >
@@ -3380,8 +3380,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `id`: The identifier of the asset to be destroyed. This must identify an existing
      * asset.
      *
-     * The asset class must be frozen before calling `start_destroy`.
-     *
      * @param {bigint} id
      **/
     startDestroy: GenericTxCall<
@@ -4437,6 +4435,46 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Transfer the entire transferable balance from the caller asset account.
+     *
+     * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+     * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+     * transferred by this function. To ensure that this function results in a killed account,
+     * you might need to prepare the account by removing any reference counters, storage
+     * deposits, etc...
+     *
+     * The dispatch origin of this call must be Signed.
+     *
+     * - `id`: The identifier of the asset for the account holding a deposit.
+     * - `dest`: The recipient of the transfer.
+     * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+     * of the funds the asset account has, causing the sender asset account to be killed
+     * (false), or transfer everything except at least the minimum balance, which will
+     * guarantee to keep the sender asset account alive (true).
+     *
+     * @param {bigint} id
+     * @param {MultiAddressLike} dest
+     * @param {boolean} keepAlive
+     **/
+    transferAll: GenericTxCall<
+      Rv,
+      (
+        id: bigint,
+        dest: MultiAddressLike,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'TransferAll';
+            params: { id: bigint; dest: MultiAddressLike; keepAlive: boolean };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -5142,13 +5180,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `location`: The destination that is being described.
      * - `xcm_version`: The latest version of XCM that `location` supports.
      *
-     * @param {StagingXcmV4Location} location
+     * @param {StagingXcmV5Location} location
      * @param {number} version
      **/
     forceXcmVersion: GenericTxCall<
       Rv,
       (
-        location: StagingXcmV4Location,
+        location: StagingXcmV5Location,
         version: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -5156,7 +5194,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'ForceXcmVersion';
-            params: { location: StagingXcmV4Location; version: number };
+            params: { location: StagingXcmV5Location; version: number };
           };
         }
       >
@@ -7647,6 +7685,58 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Disapprove the proposal and burn the cost held for storing this proposal.
+     *
+     * Parameters:
+     * - `origin`: must be the `KillOrigin`.
+     * - `proposal_hash`: The hash of the proposal that should be killed.
+     *
+     * Emits `Killed` and `ProposalCostBurned` if any cost was held for a given proposal.
+     *
+     * @param {H256} proposalHash
+     **/
+    kill: GenericTxCall<
+      Rv,
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Council';
+          palletCall: {
+            name: 'Kill';
+            params: { proposalHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Release the cost held for storing a proposal once the given proposal is completed.
+     *
+     * If there is no associated cost for the given proposal, this call will have no effect.
+     *
+     * Parameters:
+     * - `origin`: must be `Signed` or `Root`.
+     * - `proposal_hash`: The hash of the proposal.
+     *
+     * Emits `ProposalCostReleased` if any cost held for a given proposal.
+     *
+     * @param {H256} proposalHash
+     **/
+    releaseProposalCost: GenericTxCall<
+      Rv,
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Council';
+          palletCall: {
+            name: 'ReleaseProposalCost';
+            params: { proposalHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -7889,6 +7979,58 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Disapprove the proposal and burn the cost held for storing this proposal.
+     *
+     * Parameters:
+     * - `origin`: must be the `KillOrigin`.
+     * - `proposal_hash`: The hash of the proposal that should be killed.
+     *
+     * Emits `Killed` and `ProposalCostBurned` if any cost was held for a given proposal.
+     *
+     * @param {H256} proposalHash
+     **/
+    kill: GenericTxCall<
+      Rv,
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommittee';
+          palletCall: {
+            name: 'Kill';
+            params: { proposalHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Release the cost held for storing a proposal once the given proposal is completed.
+     *
+     * If there is no associated cost for the given proposal, this call will have no effect.
+     *
+     * Parameters:
+     * - `origin`: must be `Signed` or `Root`.
+     * - `proposal_hash`: The hash of the proposal.
+     *
+     * Emits `ProposalCostReleased` if any cost held for a given proposal.
+     *
+     * @param {H256} proposalHash
+     **/
+    releaseProposalCost: GenericTxCall<
+      Rv,
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TechnicalCommittee';
+          palletCall: {
+            name: 'ReleaseProposalCost';
+            params: { proposalHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -8125,6 +8267,58 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               proposalWeightBound: SpWeightsWeightV2Weight;
               lengthBound: number;
             };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Disapprove the proposal and burn the cost held for storing this proposal.
+     *
+     * Parameters:
+     * - `origin`: must be the `KillOrigin`.
+     * - `proposal_hash`: The hash of the proposal that should be killed.
+     *
+     * Emits `Killed` and `ProposalCostBurned` if any cost was held for a given proposal.
+     *
+     * @param {H256} proposalHash
+     **/
+    kill: GenericTxCall<
+      Rv,
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncil';
+          palletCall: {
+            name: 'Kill';
+            params: { proposalHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Release the cost held for storing a proposal once the given proposal is completed.
+     *
+     * If there is no associated cost for the given proposal, this call will have no effect.
+     *
+     * Parameters:
+     * - `origin`: must be `Signed` or `Root`.
+     * - `proposal_hash`: The hash of the proposal.
+     *
+     * Emits `ProposalCostReleased` if any cost held for a given proposal.
+     *
+     * @param {H256} proposalHash
+     **/
+    releaseProposalCost: GenericTxCall<
+      Rv,
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CommunityCouncil';
+          palletCall: {
+            name: 'ReleaseProposalCost';
+            params: { proposalHash: H256 };
           };
         }
       >

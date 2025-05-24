@@ -92,6 +92,7 @@ import type {
   FrameSupportPreimagesBounded,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   PolkadotParachainPrimitivesPrimitivesId,
+  AssetHubWestendRuntimeRuntimeHoldReason,
   PalletRcMigratorAccountsAccount,
   PalletRcMigratorMultisigRcMultisig,
   PalletRcMigratorProxyRcProxy,
@@ -14574,6 +14575,63 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Try to migrate a parachain sovereign child account to its respective sibling.
+     *
+     * Takes the old and new account and migrates it only if they are as expected. An event of
+     * `SovereignMigrated` will be emitted if the account was migrated successfully.
+     *
+     * Callable by any signed origin.
+     *
+     * @param {AccountId32Like} from
+     * @param {AccountId32Like} to
+     **/
+    migrateParachainSovereignAcc: GenericTxCall<
+      Rv,
+      (
+        from: AccountId32Like,
+        to: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhOps';
+          palletCall: {
+            name: 'MigrateParachainSovereignAcc';
+            params: { from: AccountId32Like; to: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force unreserve a named or unnamed reserve.
+     *
+     * @param {AccountId32Like} account
+     * @param {bigint} amount
+     * @param {AssetHubWestendRuntimeRuntimeHoldReason | undefined} reason
+     **/
+    forceUnreserve: GenericTxCall<
+      Rv,
+      (
+        account: AccountId32Like,
+        amount: bigint,
+        reason: AssetHubWestendRuntimeRuntimeHoldReason | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhOps';
+          palletCall: {
+            name: 'ForceUnreserve';
+            params: {
+              account: AccountId32Like;
+              amount: bigint;
+              reason: AssetHubWestendRuntimeRuntimeHoldReason | undefined;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -15026,6 +15084,34 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'FinishMigration';
             params: { data: PalletRcMigratorMigrationFinishedData };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Fix hold reasons that were incorrectly assigned during migration.
+     * This should only be used post-migration to repair bad hold reasons.
+     *
+     * Only the `ManagerOrigin` can call this function.
+     *
+     * @param {AccountId32Like} account
+     * @param {bigint} delegationHold
+     * @param {bigint} stakingHold
+     **/
+    fixMisplacedHold: GenericTxCall<
+      Rv,
+      (
+        account: AccountId32Like,
+        delegationHold: bigint,
+        stakingHold: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhMigrator';
+          palletCall: {
+            name: 'FixMisplacedHold';
+            params: { account: AccountId32Like; delegationHold: bigint; stakingHold: bigint };
           };
         }
       >

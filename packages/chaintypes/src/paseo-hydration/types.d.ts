@@ -14370,14 +14370,7 @@ export type PalletLiquidationEvent =
    **/
   {
     name: 'Liquidated';
-    data: {
-      liquidator: AccountId32;
-      evmAddress: H160;
-      collateralAsset: number;
-      debtAsset: number;
-      debtToCover: bigint;
-      profit: bigint;
-    };
+    data: { user: H160; collateralAsset: number; debtAsset: number; debtToCover: bigint; profit: bigint };
   };
 
 /**

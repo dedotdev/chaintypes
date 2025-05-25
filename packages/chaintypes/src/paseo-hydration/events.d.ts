@@ -2910,14 +2910,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'Liquidation',
       'Liquidated',
-      {
-        liquidator: AccountId32;
-        evmAddress: H160;
-        collateralAsset: number;
-        debtAsset: number;
-        debtToCover: bigint;
-        profit: bigint;
-      }
+      { user: H160; collateralAsset: number; debtAsset: number; debtToCover: bigint; profit: bigint }
     >;
 
     /**

@@ -1919,7 +1919,8 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NotMigrated: GenericPalletError<Rv>;
 
     /**
-     * This call is not allowed in the current state of the pallet.
+     * This call is not allowed in the current state of the pallet or an unspecific error
+     * occurred.
      **/
     NotSupported: GenericPalletError<Rv>;
 

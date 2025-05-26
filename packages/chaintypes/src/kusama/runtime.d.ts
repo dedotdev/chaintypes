@@ -1394,6 +1394,9 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     /**
      * Returns the pending slash for a given pool member.
      *
+     * If pending slash of the member exceeds `ExistentialDeposit`, it can be reported on
+     * chain.
+     *
      * @callname: NominationPoolsApi_member_pending_slash
      * @param {AccountId32Like} member
      **/

@@ -7875,8 +7875,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:
      * [`adapter::StakeStrategyType::Delegate`].
      *
-     * This call can be dispatched permissionlessly (i.e. by any account). If the member has
-     * slash to be applied, caller may be rewarded with the part of the slash.
+     * The pending slash amount of the member must be equal or more than `ExistentialDeposit`.
+     * This call can be dispatched permissionlessly (i.e. by any account). If the execution
+     * is successful, fee is refunded and caller may be rewarded with a part of the slash
+     * based on the [`crate::pallet::Config::StakeAdapter`] configuration.
      *
      * @param {MultiAddressLike} memberAccount
      **/

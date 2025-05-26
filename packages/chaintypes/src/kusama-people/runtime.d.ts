@@ -503,17 +503,19 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
    **/
   dryRunApi: {
     /**
-     * Dry run call.
+     * Dry run call V2.
      *
      * @callname: DryRunApi_dry_run_call
      * @param {PeopleKusamaRuntimeOriginCaller} origin
      * @param {PeopleKusamaRuntimeRuntimeCallLike} call
+     * @param {number} result_xcms_version
      **/
     dryRunCall: GenericRuntimeApiMethod<
       Rv,
       (
         origin: PeopleKusamaRuntimeOriginCaller,
         call: PeopleKusamaRuntimeRuntimeCallLike,
+        resultXcmsVersion: number,
       ) => Promise<Result<XcmRuntimeApisDryRunCallDryRunEffects, XcmRuntimeApisDryRunError>>
     >;
 
@@ -585,9 +587,10 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * Build `RuntimeGenesisConfig` from a JSON blob not using any defaults and store it in the
      * storage.
      *
-     * In the case of a FRAME-based runtime, this function deserializes the full `RuntimeGenesisConfig` from the given JSON blob and
-     * puts it into the storage. If the provided JSON blob is incorrect or incomplete or the
-     * deserialization fails, an error is returned.
+     * In the case of a FRAME-based runtime, this function deserializes the full
+     * `RuntimeGenesisConfig` from the given JSON blob and puts it into the storage. If the
+     * provided JSON blob is incorrect or incomplete or the deserialization fails, an error
+     * is returned.
      *
      * Please note that provided JSON blob must contain all `RuntimeGenesisConfig` fields, no
      * defaults will be used.
@@ -601,7 +604,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * Returns a JSON blob representation of the built-in `RuntimeGenesisConfig` identified by
      * `id`.
      *
-     * If `id` is `None` the function returns JSON blob representation of the default
+     * If `id` is `None` the function should return JSON blob representation of the default
      * `RuntimeGenesisConfig` struct of the runtime. Implementation must provide default
      * `RuntimeGenesisConfig`.
      *

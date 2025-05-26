@@ -23,7 +23,7 @@ import type {
   XcmVersionedXcm,
   XcmVersionedAssets,
   SpWeightsWeightV2Weight,
-  StagingXcmV4Location,
+  StagingXcmV5Location,
   XcmV3WeightLimit,
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
@@ -44,6 +44,7 @@ import type {
   PalletNftsPriceWithDirection,
   PalletNftsPreSignedMint,
   PalletNftsPreSignedAttributes,
+  StagingXcmV4Location,
   PalletStateTrieMigrationMigrationLimits,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationProgress,
@@ -1472,13 +1473,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `location`: The destination that is being described.
      * - `xcm_version`: The latest version of XCM that `location` supports.
      *
-     * @param {StagingXcmV4Location} location
+     * @param {StagingXcmV5Location} location
      * @param {number} version
      **/
     forceXcmVersion: GenericTxCall<
       Rv,
       (
-        location: StagingXcmV4Location,
+        location: StagingXcmV5Location,
         version: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -1486,7 +1487,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'ForceXcmVersion';
-            params: { location: StagingXcmV4Location; version: number };
+            params: { location: StagingXcmV5Location; version: number };
           };
         }
       >

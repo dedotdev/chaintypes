@@ -50,7 +50,7 @@ import type {
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
-  StagingXcmV4Xcm,
+  StagingXcmV5Xcm,
   BpXcmBridgeHubRouterBridgeState,
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
@@ -1097,9 +1097,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
      * implementation in the XCM executor configuration.
      *
-     * @param {Callback<StagingXcmV4Xcm | undefined> =} callback
+     * @param {Callback<StagingXcmV5Xcm | undefined> =} callback
      **/
-    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV4Xcm | undefined>;
+    recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV5Xcm | undefined>;
 
     /**
      * Generic pallet storage query

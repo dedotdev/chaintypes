@@ -50,7 +50,7 @@ import type {
   PolkadotRuntimeCommonClaimsEcdsaSignature,
   PolkadotRuntimeCommonClaimsStatementKind,
   PalletVestingVestingInfo,
-  PolkadotRuntimeProxyType,
+  PolkadotRuntimeConstantsProxyProxyType,
   PalletMultisigTimepoint,
   PalletElectionProviderMultiPhaseRawSolution,
   PalletElectionProviderMultiPhaseSolutionOrSnapshotSize,
@@ -69,7 +69,7 @@ import type {
   PolkadotPrimitivesV8ExecutorParams,
   PolkadotPrimitivesV8ApprovalVotingParams,
   PolkadotPrimitivesV8SchedulerParams,
-  PolkadotPrimitivesV8InherentData,
+  PolkadotPrimitivesVstagingInherentData,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
   PolkadotParachainPrimitivesPrimitivesHeadData,
@@ -86,7 +86,7 @@ import type {
   PalletStateTrieMigrationProgress,
   XcmVersionedXcm,
   XcmVersionedAssets,
-  StagingXcmV4Location,
+  StagingXcmV5Location,
   XcmV3WeightLimit,
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
@@ -1410,7 +1410,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
      * period ends. If this leaves an amount actively bonded less than
-     * T::Currency::minimum_balance(), then it is increased to the full amount.
+     * [`asset::existential_deposit`], then it is increased to the full amount.
      *
      * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
      *
@@ -3450,7 +3450,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Attest to a statement, needed to finalize the claims process.
      *
      * WARNING: Insecure unless your chain includes `PrevalidateAttests` as a
-     * `SignedExtension`.
+     * `TransactionExtension`.
      *
      * Unsigned Validation:
      * A call to attest is deemed valid if the sender has a `Preclaim` registered
@@ -3933,14 +3933,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `call`: The call to be made by the `real` account.
      *
      * @param {MultiAddressLike} real
-     * @param {PolkadotRuntimeProxyType | undefined} forceProxyType
+     * @param {PolkadotRuntimeConstantsProxyProxyType | undefined} forceProxyType
      * @param {PolkadotRuntimeRuntimeCallLike} call
      **/
     proxy: GenericTxCall<
       Rv,
       (
         real: MultiAddressLike,
-        forceProxyType: PolkadotRuntimeProxyType | undefined,
+        forceProxyType: PolkadotRuntimeConstantsProxyProxyType | undefined,
         call: PolkadotRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3950,7 +3950,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
             name: 'Proxy';
             params: {
               real: MultiAddressLike;
-              forceProxyType: PolkadotRuntimeProxyType | undefined;
+              forceProxyType: PolkadotRuntimeConstantsProxyProxyType | undefined;
               call: PolkadotRuntimeRuntimeCallLike;
             };
           };
@@ -3970,14 +3970,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * zero.
      *
      * @param {MultiAddressLike} delegate
-     * @param {PolkadotRuntimeProxyType} proxyType
+     * @param {PolkadotRuntimeConstantsProxyProxyType} proxyType
      * @param {number} delay
      **/
     addProxy: GenericTxCall<
       Rv,
       (
         delegate: MultiAddressLike,
-        proxyType: PolkadotRuntimeProxyType,
+        proxyType: PolkadotRuntimeConstantsProxyProxyType,
         delay: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -3985,7 +3985,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Proxy';
           palletCall: {
             name: 'AddProxy';
-            params: { delegate: MultiAddressLike; proxyType: PolkadotRuntimeProxyType; delay: number };
+            params: { delegate: MultiAddressLike; proxyType: PolkadotRuntimeConstantsProxyProxyType; delay: number };
           };
         }
       >
@@ -4001,14 +4001,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `proxy_type`: The permissions currently enabled for the removed proxy account.
      *
      * @param {MultiAddressLike} delegate
-     * @param {PolkadotRuntimeProxyType} proxyType
+     * @param {PolkadotRuntimeConstantsProxyProxyType} proxyType
      * @param {number} delay
      **/
     removeProxy: GenericTxCall<
       Rv,
       (
         delegate: MultiAddressLike,
-        proxyType: PolkadotRuntimeProxyType,
+        proxyType: PolkadotRuntimeConstantsProxyProxyType,
         delay: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -4016,7 +4016,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Proxy';
           palletCall: {
             name: 'RemoveProxy';
-            params: { delegate: MultiAddressLike; proxyType: PolkadotRuntimeProxyType; delay: number };
+            params: { delegate: MultiAddressLike; proxyType: PolkadotRuntimeConstantsProxyProxyType; delay: number };
           };
         }
       >
@@ -4064,14 +4064,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Fails if there are insufficient funds to pay for deposit.
      *
-     * @param {PolkadotRuntimeProxyType} proxyType
+     * @param {PolkadotRuntimeConstantsProxyProxyType} proxyType
      * @param {number} delay
      * @param {number} index
      **/
     createPure: GenericTxCall<
       Rv,
       (
-        proxyType: PolkadotRuntimeProxyType,
+        proxyType: PolkadotRuntimeConstantsProxyProxyType,
         delay: number,
         index: number,
       ) => ChainSubmittableExtrinsic<
@@ -4080,7 +4080,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Proxy';
           palletCall: {
             name: 'CreatePure';
-            params: { proxyType: PolkadotRuntimeProxyType; delay: number; index: number };
+            params: { proxyType: PolkadotRuntimeConstantsProxyProxyType; delay: number; index: number };
           };
         }
       >
@@ -4105,7 +4105,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * account whose `pure` call has corresponding parameters.
      *
      * @param {MultiAddressLike} spawner
-     * @param {PolkadotRuntimeProxyType} proxyType
+     * @param {PolkadotRuntimeConstantsProxyProxyType} proxyType
      * @param {number} index
      * @param {number} height
      * @param {number} extIndex
@@ -4114,7 +4114,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       Rv,
       (
         spawner: MultiAddressLike,
-        proxyType: PolkadotRuntimeProxyType,
+        proxyType: PolkadotRuntimeConstantsProxyProxyType,
         index: number,
         height: number,
         extIndex: number,
@@ -4126,7 +4126,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
             name: 'KillPure';
             params: {
               spawner: MultiAddressLike;
-              proxyType: PolkadotRuntimeProxyType;
+              proxyType: PolkadotRuntimeConstantsProxyProxyType;
               index: number;
               height: number;
               extIndex: number;
@@ -4252,7 +4252,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * @param {MultiAddressLike} delegate
      * @param {MultiAddressLike} real
-     * @param {PolkadotRuntimeProxyType | undefined} forceProxyType
+     * @param {PolkadotRuntimeConstantsProxyProxyType | undefined} forceProxyType
      * @param {PolkadotRuntimeRuntimeCallLike} call
      **/
     proxyAnnounced: GenericTxCall<
@@ -4260,7 +4260,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       (
         delegate: MultiAddressLike,
         real: MultiAddressLike,
-        forceProxyType: PolkadotRuntimeProxyType | undefined,
+        forceProxyType: PolkadotRuntimeConstantsProxyProxyType | undefined,
         call: PolkadotRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -4271,7 +4271,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
             params: {
               delegate: MultiAddressLike;
               real: MultiAddressLike;
-              forceProxyType: PolkadotRuntimeProxyType | undefined;
+              forceProxyType: PolkadotRuntimeConstantsProxyProxyType | undefined;
               call: PolkadotRuntimeRuntimeCallLike;
             };
           };
@@ -4780,6 +4780,41 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ExtendBountyExpiry';
             params: { bountyId: number; remark: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Approve bountry and propose a curator simultaneously.
+     * This call is a shortcut to calling `approve_bounty` and `propose_curator` separately.
+     *
+     * May only be called from `T::SpendOrigin`.
+     *
+     * - `bounty_id`: Bounty ID to approve.
+     * - `curator`: The curator account whom will manage this bounty.
+     * - `fee`: The curator fee.
+     *
+     * ## Complexity
+     * - O(1).
+     *
+     * @param {number} bountyId
+     * @param {MultiAddressLike} curator
+     * @param {bigint} fee
+     **/
+    approveBountyWithCurator: GenericTxCall<
+      Rv,
+      (
+        bountyId: number,
+        curator: MultiAddressLike,
+        fee: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Bounties';
+          palletCall: {
+            name: 'ApproveBountyWithCurator';
+            params: { bountyId: number; curator: MultiAddressLike; fee: bigint };
           };
         }
       >
@@ -5348,9 +5383,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    **/
   nominationPools: {
     /**
-     * Stake funds with a pool. The amount to bond is delegated (or transferred based on
-     * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
-     * increases the pool's bond.
+     * Stake funds with a pool. The amount to bond is transferred from the member to the pool
+     * account and immediately increases the pools bond.
      *
      * The method of transferring the amount to the pool account is determined by
      * [`adapter::StakeStrategyType`]. If the pool is configured to use
@@ -6429,25 +6463,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Set the max number of times a claim may timeout on a core before it is abandoned
-     *
-     * @param {number} new_
-     **/
-    setMaxAvailabilityTimeouts: GenericTxCall<
-      Rv,
-      (new_: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Configuration';
-          palletCall: {
-            name: 'SetMaxAvailabilityTimeouts';
-            params: { new: number };
-          };
-        }
-      >
-    >;
-
-    /**
      * Set the parachain validator-group rotation frequency
      *
      * @param {number} new_
@@ -7120,25 +7135,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Set the on demand (parathreads) ttl in the claimqueue.
-     *
-     * @param {number} new_
-     **/
-    setOnDemandTtl: GenericTxCall<
-      Rv,
-      (new_: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Configuration';
-          palletCall: {
-            name: 'SetOnDemandTtl';
-            params: { new: number };
-          };
-        }
-      >
-    >;
-
-    /**
      * Set the minimum backing votes threshold.
      *
      * @param {number} new_
@@ -7248,17 +7244,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Enter the paras inherent. This will process bitfields and backed candidates.
      *
-     * @param {PolkadotPrimitivesV8InherentData} data
+     * @param {PolkadotPrimitivesVstagingInherentData} data
      **/
     enter: GenericTxCall<
       Rv,
-      (data: PolkadotPrimitivesV8InherentData) => ChainSubmittableExtrinsic<
+      (data: PolkadotPrimitivesVstagingInherentData) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ParaInherent';
           palletCall: {
             name: 'Enter';
-            params: { data: PolkadotPrimitivesV8InherentData };
+            params: { data: PolkadotPrimitivesVstagingInherentData };
           };
         }
       >
@@ -9241,13 +9237,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `location`: The destination that is being described.
      * - `xcm_version`: The latest version of XCM that `location` supports.
      *
-     * @param {StagingXcmV4Location} location
+     * @param {StagingXcmV5Location} location
      * @param {number} version
      **/
     forceXcmVersion: GenericTxCall<
       Rv,
       (
-        location: StagingXcmV4Location,
+        location: StagingXcmV5Location,
         version: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -9255,7 +9251,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'XcmPallet';
           palletCall: {
             name: 'ForceXcmVersion';
-            params: { location: StagingXcmV4Location; version: number };
+            params: { location: StagingXcmV5Location; version: number };
           };
         }
       >

@@ -440,12 +440,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     VirtualStakerNotAllowed: GenericPalletError<Rv>;
 
     /**
-     * Account is restricted from participation in staking. This may happen if the account is
-     * staking in another way already, such as via pool.
-     **/
-    Restricted: GenericPalletError<Rv>;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1360,11 +1354,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NothingToSlash: GenericPalletError<Rv>;
 
     /**
-     * The slash amount is too low to be applied.
-     **/
-    SlashTooLow: GenericPalletError<Rv>;
-
-    /**
      * The pool or member delegation has already migrated to delegate stake.
      **/
     AlreadyMigrated: GenericPalletError<Rv>;
@@ -1375,15 +1364,10 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NotMigrated: GenericPalletError<Rv>;
 
     /**
-     * This call is not allowed in the current state of the pallet.
+     * This call is not allowed in the current state of the pallet or an unspecific error
+     * occurred.
      **/
     NotSupported: GenericPalletError<Rv>;
-
-    /**
-     * Account is restricted from participation in pools. This may happen if the account is
-     * staking in another way already.
-     **/
-    Restricted: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1631,15 +1615,10 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     InvalidParentHeader: GenericPalletError<Rv>;
 
     /**
-     * The data given to the inherent will result in an overweight block.
-     **/
-    InherentOverweight: GenericPalletError<Rv>;
-
-    /**
-     * A candidate was filtered during inherent execution. This should have only been done
+     * Inherent data was filtered during execution. This should have only been done
      * during creation.
      **/
-    CandidatesFilteredDuringExecution: GenericPalletError<Rv>;
+    InherentDataFilteredDuringExecution: GenericPalletError<Rv>;
 
     /**
      * Too many candidates supplied.
@@ -1955,30 +1934,10 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     AssignmentsEmpty: GenericPalletError<Rv>;
 
     /**
-     * Assignments together exceeded 57600.
-     **/
-    OverScheduled: GenericPalletError<Rv>;
-
-    /**
-     * Assignments together less than 57600
-     **/
-    UnderScheduled: GenericPalletError<Rv>;
-
-    /**
      * assign_core is only allowed to append new assignments at the end of already existing
-     * ones.
+     * ones or update the last entry.
      **/
     DisallowedInsert: GenericPalletError<Rv>;
-
-    /**
-     * Tried to insert a schedule for the same core and block number as an existing schedule
-     **/
-    DuplicateInsert: GenericPalletError<Rv>;
-
-    /**
-     * Tried to add an unsorted set of assignments
-     **/
-    AssignmentsNotSorted: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

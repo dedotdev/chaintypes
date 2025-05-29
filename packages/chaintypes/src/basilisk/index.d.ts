@@ -23,7 +23,7 @@ export interface VersionedBasiliskApi<Rv extends RpcVersion> extends GenericSubs
 
 /**
  * @name: BasiliskApi
- * @specVersion: 125
+ * @specVersion: 126
  **/
 export interface BasiliskApi {
   legacy: VersionedBasiliskApi<RpcLegacy>;

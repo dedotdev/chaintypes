@@ -22,3 +22,4 @@ export type { BasiliskApi } from './basilisk/index.js';
 export type { MoonbeamApi } from './moonbeam/index.js';
 export type { AstarApi } from './astar/index.js';
 export type { AlephApi } from './aleph/index.js';
+export type { VaraApi } from './vara/index.js';

@@ -91,4 +91,8 @@ export const networks: NetworkInfo[] = [
     chain: 'basilisk',
     endpoint: ['wss://basilisk-rpc.n.dwellir.com'],
   },
+  {
+    chain: 'vara',
+    endpoint: ['wss://rpc.vara-network.io"'],
+  },
 ];

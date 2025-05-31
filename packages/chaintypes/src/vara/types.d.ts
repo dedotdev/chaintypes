@@ -24,7 +24,7 @@ import type {
   Era,
   Perquintill,
   UncheckedExtrinsic,
-} from "dedot/codecs";
+} from 'dedot/codecs';
 
 export type FrameSystemAccountInfo = {
   nonce: number;
@@ -51,45 +51,38 @@ export type FrameSupportDispatchPerDispatchClass = {
 
 export type SpWeightsWeightV2Weight = { refTime: bigint; proofSize: bigint };
 
-export type FrameSystemEventRecord = {
-  phase: Phase;
-  event: VaraRuntimeRuntimeEvent;
-  topics: Array<H256>;
-};
+export type FrameSystemEventRecord = { phase: Phase; event: VaraRuntimeRuntimeEvent; topics: Array<H256> };
 
 export type VaraRuntimeRuntimeEvent =
-  | { pallet: "System"; palletEvent: FrameSystemEvent }
-  | { pallet: "Grandpa"; palletEvent: PalletGrandpaEvent }
-  | { pallet: "Balances"; palletEvent: PalletBalancesEvent }
-  | { pallet: "TransactionPayment"; palletEvent: PalletTransactionPaymentEvent }
-  | { pallet: "Session"; palletEvent: PalletSessionEvent }
-  | { pallet: "Utility"; palletEvent: PalletUtilityEvent }
-  | { pallet: "Vesting"; palletEvent: PalletVestingEvent }
-  | { pallet: "BagsList"; palletEvent: PalletBagsListEvent }
-  | { pallet: "ImOnline"; palletEvent: PalletImOnlineEvent }
-  | { pallet: "Staking"; palletEvent: PalletStakingPalletEvent }
-  | { pallet: "Treasury"; palletEvent: PalletTreasuryEvent }
-  | { pallet: "ConvictionVoting"; palletEvent: PalletConvictionVotingEvent }
-  | { pallet: "Referenda"; palletEvent: PalletReferendaEvent }
-  | { pallet: "FellowshipCollective"; palletEvent: PalletRankedCollectiveEvent }
-  | { pallet: "FellowshipReferenda"; palletEvent: PalletReferendaEvent002 }
-  | { pallet: "Whitelist"; palletEvent: PalletWhitelistEvent }
-  | { pallet: "Scheduler"; palletEvent: PalletSchedulerEvent }
-  | { pallet: "Preimage"; palletEvent: PalletPreimageEvent }
-  | { pallet: "Identity"; palletEvent: PalletIdentityEvent }
-  | { pallet: "Proxy"; palletEvent: PalletProxyEvent }
-  | { pallet: "Multisig"; palletEvent: PalletMultisigEvent }
-  | {
-      pallet: "ElectionProviderMultiPhase";
-      palletEvent: PalletElectionProviderMultiPhaseEvent;
-    }
-  | { pallet: "Offences"; palletEvent: PalletOffencesEvent }
-  | { pallet: "Bounties"; palletEvent: PalletBountiesEvent }
-  | { pallet: "ChildBounties"; palletEvent: PalletChildBountiesEvent }
-  | { pallet: "NominationPools"; palletEvent: PalletNominationPoolsEvent }
-  | { pallet: "Gear"; palletEvent: PalletGearEvent }
-  | { pallet: "StakingRewards"; palletEvent: PalletGearStakingRewardsEvent }
-  | { pallet: "GearVoucher"; palletEvent: PalletGearVoucherEvent };
+  | { pallet: 'System'; palletEvent: FrameSystemEvent }
+  | { pallet: 'Grandpa'; palletEvent: PalletGrandpaEvent }
+  | { pallet: 'Balances'; palletEvent: PalletBalancesEvent }
+  | { pallet: 'TransactionPayment'; palletEvent: PalletTransactionPaymentEvent }
+  | { pallet: 'Session'; palletEvent: PalletSessionEvent }
+  | { pallet: 'Utility'; palletEvent: PalletUtilityEvent }
+  | { pallet: 'Vesting'; palletEvent: PalletVestingEvent }
+  | { pallet: 'BagsList'; palletEvent: PalletBagsListEvent }
+  | { pallet: 'ImOnline'; palletEvent: PalletImOnlineEvent }
+  | { pallet: 'Staking'; palletEvent: PalletStakingPalletEvent }
+  | { pallet: 'Treasury'; palletEvent: PalletTreasuryEvent }
+  | { pallet: 'ConvictionVoting'; palletEvent: PalletConvictionVotingEvent }
+  | { pallet: 'Referenda'; palletEvent: PalletReferendaEvent }
+  | { pallet: 'FellowshipCollective'; palletEvent: PalletRankedCollectiveEvent }
+  | { pallet: 'FellowshipReferenda'; palletEvent: PalletReferendaEvent002 }
+  | { pallet: 'Whitelist'; palletEvent: PalletWhitelistEvent }
+  | { pallet: 'Scheduler'; palletEvent: PalletSchedulerEvent }
+  | { pallet: 'Preimage'; palletEvent: PalletPreimageEvent }
+  | { pallet: 'Identity'; palletEvent: PalletIdentityEvent }
+  | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
+  | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
+  | { pallet: 'ElectionProviderMultiPhase'; palletEvent: PalletElectionProviderMultiPhaseEvent }
+  | { pallet: 'Offences'; palletEvent: PalletOffencesEvent }
+  | { pallet: 'Bounties'; palletEvent: PalletBountiesEvent }
+  | { pallet: 'ChildBounties'; palletEvent: PalletChildBountiesEvent }
+  | { pallet: 'NominationPools'; palletEvent: PalletNominationPoolsEvent }
+  | { pallet: 'Gear'; palletEvent: PalletGearEvent }
+  | { pallet: 'StakingRewards'; palletEvent: PalletGearStakingRewardsEvent }
+  | { pallet: 'GearVoucher'; palletEvent: PalletGearVoucherEvent };
 
 /**
  * Event for the System pallet.
@@ -98,44 +91,35 @@ export type FrameSystemEvent =
   /**
    * An extrinsic completed successfully.
    **/
-  | { name: "ExtrinsicSuccess"; data: { dispatchInfo: DispatchInfo } }
+  | { name: 'ExtrinsicSuccess'; data: { dispatchInfo: DispatchInfo } }
   /**
    * An extrinsic failed.
    **/
-  | {
-      name: "ExtrinsicFailed";
-      data: { dispatchError: DispatchError; dispatchInfo: DispatchInfo };
-    }
+  | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: DispatchInfo } }
   /**
    * `:code` was updated.
    **/
-  | { name: "CodeUpdated" }
+  | { name: 'CodeUpdated' }
   /**
    * A new account was created.
    **/
-  | { name: "NewAccount"; data: { account: AccountId32 } }
+  | { name: 'NewAccount'; data: { account: AccountId32 } }
   /**
    * An account was reaped.
    **/
-  | { name: "KilledAccount"; data: { account: AccountId32 } }
+  | { name: 'KilledAccount'; data: { account: AccountId32 } }
   /**
    * On on-chain remark happened.
    **/
-  | { name: "Remarked"; data: { sender: AccountId32; hash: H256 } }
+  | { name: 'Remarked'; data: { sender: AccountId32; hash: H256 } }
   /**
    * An upgrade was authorized.
    **/
-  | {
-      name: "UpgradeAuthorized";
-      data: { codeHash: H256; checkVersion: boolean };
-    };
+  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } };
 
-export type FrameSupportDispatchDispatchClass =
-  | "Normal"
-  | "Operational"
-  | "Mandatory";
+export type FrameSupportDispatchDispatchClass = 'Normal' | 'Operational' | 'Mandatory';
 
-export type FrameSupportDispatchPays = "Yes" | "No";
+export type FrameSupportDispatchPays = 'Yes' | 'No';
 
 /**
  * The `Event` enum of this pallet
@@ -144,18 +128,15 @@ export type PalletGrandpaEvent =
   /**
    * New authority set has been applied.
    **/
-  | {
-      name: "NewAuthorities";
-      data: { authoritySet: Array<[SpConsensusGrandpaAppPublic, bigint]> };
-    }
+  | { name: 'NewAuthorities'; data: { authoritySet: Array<[SpConsensusGrandpaAppPublic, bigint]> } }
   /**
    * Current authority set has been paused.
    **/
-  | { name: "Paused" }
+  | { name: 'Paused' }
   /**
    * Current authority set has been resumed.
    **/
-  | { name: "Resumed" };
+  | { name: 'Resumed' };
 
 export type SpConsensusGrandpaAppPublic = FixedBytes<32>;
 
@@ -166,37 +147,34 @@ export type PalletBalancesEvent =
   /**
    * An account was created with some free balance.
    **/
-  | { name: "Endowed"; data: { account: AccountId32; freeBalance: bigint } }
+  | { name: 'Endowed'; data: { account: AccountId32; freeBalance: bigint } }
   /**
    * An account was removed whose balance was non-zero but below ExistentialDeposit,
    * resulting in an outright loss.
    **/
-  | { name: "DustLost"; data: { account: AccountId32; amount: bigint } }
+  | { name: 'DustLost'; data: { account: AccountId32; amount: bigint } }
   /**
    * Transfer succeeded.
    **/
-  | {
-      name: "Transfer";
-      data: { from: AccountId32; to: AccountId32; amount: bigint };
-    }
+  | { name: 'Transfer'; data: { from: AccountId32; to: AccountId32; amount: bigint } }
   /**
    * A balance was set by root.
    **/
-  | { name: "BalanceSet"; data: { who: AccountId32; free: bigint } }
+  | { name: 'BalanceSet'; data: { who: AccountId32; free: bigint } }
   /**
    * Some balance was reserved (moved from free to reserved).
    **/
-  | { name: "Reserved"; data: { who: AccountId32; amount: bigint } }
+  | { name: 'Reserved'; data: { who: AccountId32; amount: bigint } }
   /**
    * Some balance was unreserved (moved from reserved to free).
    **/
-  | { name: "Unreserved"; data: { who: AccountId32; amount: bigint } }
+  | { name: 'Unreserved'; data: { who: AccountId32; amount: bigint } }
   /**
    * Some balance was moved from the reserve of the first account to the second account.
    * Final argument indicates the destination balance type.
    **/
   | {
-      name: "ReserveRepatriated";
+      name: 'ReserveRepatriated';
       data: {
         from: AccountId32;
         to: AccountId32;
@@ -207,65 +185,65 @@ export type PalletBalancesEvent =
   /**
    * Some amount was deposited (e.g. for transaction fees).
    **/
-  | { name: "Deposit"; data: { who: AccountId32; amount: bigint } }
+  | { name: 'Deposit'; data: { who: AccountId32; amount: bigint } }
   /**
    * Some amount was withdrawn from the account (e.g. for transaction fees).
    **/
-  | { name: "Withdraw"; data: { who: AccountId32; amount: bigint } }
+  | { name: 'Withdraw'; data: { who: AccountId32; amount: bigint } }
   /**
    * Some amount was removed from the account (e.g. for misbehavior).
    **/
-  | { name: "Slashed"; data: { who: AccountId32; amount: bigint } }
+  | { name: 'Slashed'; data: { who: AccountId32; amount: bigint } }
   /**
    * Some amount was minted into an account.
    **/
-  | { name: "Minted"; data: { who: AccountId32; amount: bigint } }
+  | { name: 'Minted'; data: { who: AccountId32; amount: bigint } }
   /**
    * Some amount was burned from an account.
    **/
-  | { name: "Burned"; data: { who: AccountId32; amount: bigint } }
+  | { name: 'Burned'; data: { who: AccountId32; amount: bigint } }
   /**
    * Some amount was suspended from an account (it can be restored later).
    **/
-  | { name: "Suspended"; data: { who: AccountId32; amount: bigint } }
+  | { name: 'Suspended'; data: { who: AccountId32; amount: bigint } }
   /**
    * Some amount was restored into an account.
    **/
-  | { name: "Restored"; data: { who: AccountId32; amount: bigint } }
+  | { name: 'Restored'; data: { who: AccountId32; amount: bigint } }
   /**
    * An account was upgraded.
    **/
-  | { name: "Upgraded"; data: { who: AccountId32 } }
+  | { name: 'Upgraded'; data: { who: AccountId32 } }
   /**
    * Total issuance was increased by `amount`, creating a credit to be balanced.
    **/
-  | { name: "Issued"; data: { amount: bigint } }
+  | { name: 'Issued'; data: { amount: bigint } }
   /**
    * Total issuance was decreased by `amount`, creating a debt to be balanced.
    **/
-  | { name: "Rescinded"; data: { amount: bigint } }
+  | { name: 'Rescinded'; data: { amount: bigint } }
   /**
    * Some balance was locked.
    **/
-  | { name: "Locked"; data: { who: AccountId32; amount: bigint } }
+  | { name: 'Locked'; data: { who: AccountId32; amount: bigint } }
   /**
    * Some balance was unlocked.
    **/
-  | { name: "Unlocked"; data: { who: AccountId32; amount: bigint } }
+  | { name: 'Unlocked'; data: { who: AccountId32; amount: bigint } }
   /**
    * Some balance was frozen.
    **/
-  | { name: "Frozen"; data: { who: AccountId32; amount: bigint } }
+  | { name: 'Frozen'; data: { who: AccountId32; amount: bigint } }
   /**
    * Some balance was thawed.
    **/
-  | { name: "Thawed"; data: { who: AccountId32; amount: bigint } }
+  | { name: 'Thawed'; data: { who: AccountId32; amount: bigint } }
   /**
    * The `TotalIssuance` was forcefully changed.
    **/
-  | { name: "TotalIssuanceForced"; data: { old: bigint; new: bigint } };
+  | { name: 'TotalIssuanceForced'; data: { old: bigint; new: bigint } };
 
-export type FrameSupportTokensMiscBalanceStatus = "Free" | "Reserved";
+export type FrameSupportTokensMiscBalanceStatus = 'Free' | 'Reserved';
 
 /**
  * The `Event` enum of this pallet
@@ -275,10 +253,7 @@ export type PalletTransactionPaymentEvent =
    * A transaction fee `actual_fee`, of which `tip` was added to the minimum inclusion fee,
    * has been paid by `who`.
    **/
-  {
-    name: "TransactionFeePaid";
-    data: { who: AccountId32; actualFee: bigint; tip: bigint };
-  };
+  { name: 'TransactionFeePaid'; data: { who: AccountId32; actualFee: bigint; tip: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -288,7 +263,7 @@ export type PalletSessionEvent =
    * New session has happened. Note that the argument is the session index, not the
    * block number as the type might suggest.
    **/
-  { name: "NewSession"; data: { sessionIndex: number } };
+  { name: 'NewSession'; data: { sessionIndex: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -298,27 +273,27 @@ export type PalletUtilityEvent =
    * Batch of dispatches did not complete fully. Index of first failing dispatch given, as
    * well as the error.
    **/
-  | { name: "BatchInterrupted"; data: { index: number; error: DispatchError } }
+  | { name: 'BatchInterrupted'; data: { index: number; error: DispatchError } }
   /**
    * Batch of dispatches completed fully with no error.
    **/
-  | { name: "BatchCompleted" }
+  | { name: 'BatchCompleted' }
   /**
    * Batch of dispatches completed but has errors.
    **/
-  | { name: "BatchCompletedWithErrors" }
+  | { name: 'BatchCompletedWithErrors' }
   /**
    * A single item within a Batch of dispatches has completed with no error.
    **/
-  | { name: "ItemCompleted" }
+  | { name: 'ItemCompleted' }
   /**
    * A single item within a Batch of dispatches has completed with error.
    **/
-  | { name: "ItemFailed"; data: { error: DispatchError } }
+  | { name: 'ItemFailed'; data: { error: DispatchError } }
   /**
    * A call was dispatched.
    **/
-  | { name: "DispatchedAs"; data: { result: Result<[], DispatchError> } };
+  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } };
 
 /**
  * The `Event` enum of this pallet
@@ -328,11 +303,11 @@ export type PalletVestingEvent =
    * The amount vested has been updated. This could indicate a change in funds available.
    * The balance given is the amount which is left unvested (and thus locked).
    **/
-  | { name: "VestingUpdated"; data: { account: AccountId32; unvested: bigint } }
+  | { name: 'VestingUpdated'; data: { account: AccountId32; unvested: bigint } }
   /**
    * An \[account\] has become fully vested.
    **/
-  | { name: "VestingCompleted"; data: { account: AccountId32 } };
+  | { name: 'VestingCompleted'; data: { account: AccountId32 } };
 
 /**
  * The `Event` enum of this pallet
@@ -341,11 +316,11 @@ export type PalletBagsListEvent =
   /**
    * Moved an account from one bag to another.
    **/
-  | { name: "Rebagged"; data: { who: AccountId32; from: bigint; to: bigint } }
+  | { name: 'Rebagged'; data: { who: AccountId32; from: bigint; to: bigint } }
   /**
    * Updated the score of some account to the given amount.
    **/
-  | { name: "ScoreUpdated"; data: { who: AccountId32; newScore: bigint } };
+  | { name: 'ScoreUpdated'; data: { who: AccountId32; newScore: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -354,29 +329,19 @@ export type PalletImOnlineEvent =
   /**
    * A new heartbeat was received from `AuthorityId`.
    **/
-  | {
-      name: "HeartbeatReceived";
-      data: { authorityId: PalletImOnlineSr25519AppSr25519Public };
-    }
+  | { name: 'HeartbeatReceived'; data: { authorityId: PalletImOnlineSr25519AppSr25519Public } }
   /**
    * At the end of the session, no offence was committed.
    **/
-  | { name: "AllGood" }
+  | { name: 'AllGood' }
   /**
    * At the end of the session, at least one validator was found to be offline.
    **/
-  | {
-      name: "SomeOffline";
-      data: { offline: Array<[AccountId32, SpStakingExposure]> };
-    };
+  | { name: 'SomeOffline'; data: { offline: Array<[AccountId32, SpStakingExposure]> } };
 
 export type PalletImOnlineSr25519AppSr25519Public = FixedBytes<32>;
 
-export type SpStakingExposure = {
-  total: bigint;
-  own: bigint;
-  others: Array<SpStakingIndividualExposure>;
-};
+export type SpStakingExposure = { total: bigint; own: bigint; others: Array<SpStakingIndividualExposure> };
 
 export type SpStakingIndividualExposure = { who: AccountId32; value: bigint };
 
@@ -388,118 +353,92 @@ export type PalletStakingPalletEvent =
    * The era payout has been set; the first balance is the validator-payout; the second is
    * the remainder from the maximum amount of reward.
    **/
-  | {
-      name: "EraPaid";
-      data: { eraIndex: number; validatorPayout: bigint; remainder: bigint };
-    }
+  | { name: 'EraPaid'; data: { eraIndex: number; validatorPayout: bigint; remainder: bigint } }
   /**
    * The nominator has been rewarded by this amount to this destination.
    **/
-  | {
-      name: "Rewarded";
-      data: {
-        stash: AccountId32;
-        dest: PalletStakingRewardDestination;
-        amount: bigint;
-      };
-    }
+  | { name: 'Rewarded'; data: { stash: AccountId32; dest: PalletStakingRewardDestination; amount: bigint } }
   /**
    * A staker (validator or nominator) has been slashed by the given amount.
    **/
-  | { name: "Slashed"; data: { staker: AccountId32; amount: bigint } }
+  | { name: 'Slashed'; data: { staker: AccountId32; amount: bigint } }
   /**
    * A slash for the given validator, for the given percentage of their stake, at the given
    * era as been reported.
    **/
-  | {
-      name: "SlashReported";
-      data: { validator: AccountId32; fraction: Perbill; slashEra: number };
-    }
+  | { name: 'SlashReported'; data: { validator: AccountId32; fraction: Perbill; slashEra: number } }
   /**
    * An old slashing report from a prior era was discarded because it could
    * not be processed.
    **/
-  | { name: "OldSlashingReportDiscarded"; data: { sessionIndex: number } }
+  | { name: 'OldSlashingReportDiscarded'; data: { sessionIndex: number } }
   /**
    * A new set of stakers was elected.
    **/
-  | { name: "StakersElected" }
+  | { name: 'StakersElected' }
   /**
    * An account has bonded this amount. \[stash, amount\]
    *
    * NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,
    * it will not be emitted for staking rewards when they are added to stake.
    **/
-  | { name: "Bonded"; data: { stash: AccountId32; amount: bigint } }
+  | { name: 'Bonded'; data: { stash: AccountId32; amount: bigint } }
   /**
    * An account has unbonded this amount.
    **/
-  | { name: "Unbonded"; data: { stash: AccountId32; amount: bigint } }
+  | { name: 'Unbonded'; data: { stash: AccountId32; amount: bigint } }
   /**
    * An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
    * from the unlocking queue.
    **/
-  | { name: "Withdrawn"; data: { stash: AccountId32; amount: bigint } }
+  | { name: 'Withdrawn'; data: { stash: AccountId32; amount: bigint } }
   /**
    * A nominator has been kicked from a validator.
    **/
-  | { name: "Kicked"; data: { nominator: AccountId32; stash: AccountId32 } }
+  | { name: 'Kicked'; data: { nominator: AccountId32; stash: AccountId32 } }
   /**
    * The election failed. No new era is planned.
    **/
-  | { name: "StakingElectionFailed" }
+  | { name: 'StakingElectionFailed' }
   /**
    * An account has stopped participating as either a validator or nominator.
    **/
-  | { name: "Chilled"; data: { stash: AccountId32 } }
+  | { name: 'Chilled'; data: { stash: AccountId32 } }
   /**
    * The stakers' rewards are getting paid.
    **/
-  | {
-      name: "PayoutStarted";
-      data: { eraIndex: number; validatorStash: AccountId32 };
-    }
+  | { name: 'PayoutStarted'; data: { eraIndex: number; validatorStash: AccountId32 } }
   /**
    * A validator has set their preferences.
    **/
-  | {
-      name: "ValidatorPrefsSet";
-      data: { stash: AccountId32; prefs: PalletStakingValidatorPrefs };
-    }
+  | { name: 'ValidatorPrefsSet'; data: { stash: AccountId32; prefs: PalletStakingValidatorPrefs } }
   /**
    * Voters size limit reached.
    **/
-  | { name: "SnapshotVotersSizeExceeded"; data: { size: number } }
+  | { name: 'SnapshotVotersSizeExceeded'; data: { size: number } }
   /**
    * Targets size limit reached.
    **/
-  | { name: "SnapshotTargetsSizeExceeded"; data: { size: number } }
+  | { name: 'SnapshotTargetsSizeExceeded'; data: { size: number } }
   /**
    * A new force era mode was set.
    **/
-  | { name: "ForceEra"; data: { mode: PalletStakingForcing } }
+  | { name: 'ForceEra'; data: { mode: PalletStakingForcing } }
   /**
    * Report of a controller batch deprecation.
    **/
-  | { name: "ControllerBatchDeprecated"; data: { failures: number } };
+  | { name: 'ControllerBatchDeprecated'; data: { failures: number } };
 
 export type PalletStakingRewardDestination =
-  | { type: "Staked" }
-  | { type: "Stash" }
-  | { type: "Controller" }
-  | { type: "Account"; value: AccountId32 }
-  | { type: "None" };
+  | { type: 'Staked' }
+  | { type: 'Stash' }
+  | { type: 'Controller' }
+  | { type: 'Account'; value: AccountId32 }
+  | { type: 'None' };
 
-export type PalletStakingValidatorPrefs = {
-  commission: Perbill;
-  blocked: boolean;
-};
+export type PalletStakingValidatorPrefs = { commission: Perbill; blocked: boolean };
 
-export type PalletStakingForcing =
-  | "NotForcing"
-  | "ForceNew"
-  | "ForceNone"
-  | "ForceAlways";
+export type PalletStakingForcing = 'NotForcing' | 'ForceNew' | 'ForceNone' | 'ForceAlways';
 
 /**
  * The `Event` enum of this pallet
@@ -508,45 +447,36 @@ export type PalletTreasuryEvent =
   /**
    * We have ended a spend period and will now allocate funds.
    **/
-  | { name: "Spending"; data: { budgetRemaining: bigint } }
+  | { name: 'Spending'; data: { budgetRemaining: bigint } }
   /**
    * Some funds have been allocated.
    **/
-  | {
-      name: "Awarded";
-      data: { proposalIndex: number; award: bigint; account: AccountId32 };
-    }
+  | { name: 'Awarded'; data: { proposalIndex: number; award: bigint; account: AccountId32 } }
   /**
    * Some of our funds have been burnt.
    **/
-  | { name: "Burnt"; data: { burntFunds: bigint } }
+  | { name: 'Burnt'; data: { burntFunds: bigint } }
   /**
    * Spending has finished; this is the amount that rolls over until next spend.
    **/
-  | { name: "Rollover"; data: { rolloverBalance: bigint } }
+  | { name: 'Rollover'; data: { rolloverBalance: bigint } }
   /**
    * Some funds have been deposited.
    **/
-  | { name: "Deposit"; data: { value: bigint } }
+  | { name: 'Deposit'; data: { value: bigint } }
   /**
    * A new spend proposal has been approved.
    **/
-  | {
-      name: "SpendApproved";
-      data: { proposalIndex: number; amount: bigint; beneficiary: AccountId32 };
-    }
+  | { name: 'SpendApproved'; data: { proposalIndex: number; amount: bigint; beneficiary: AccountId32 } }
   /**
    * The inactive funds of the pallet have been updated.
    **/
-  | {
-      name: "UpdatedInactive";
-      data: { reactivated: bigint; deactivated: bigint };
-    }
+  | { name: 'UpdatedInactive'; data: { reactivated: bigint; deactivated: bigint } }
   /**
    * A new asset spend proposal has been approved.
    **/
   | {
-      name: "AssetSpendApproved";
+      name: 'AssetSpendApproved';
       data: {
         index: number;
         assetKind: [];
@@ -559,20 +489,20 @@ export type PalletTreasuryEvent =
   /**
    * An approved spend was voided.
    **/
-  | { name: "AssetSpendVoided"; data: { index: number } }
+  | { name: 'AssetSpendVoided'; data: { index: number } }
   /**
    * A payment happened.
    **/
-  | { name: "Paid"; data: { index: number; paymentId: [] } }
+  | { name: 'Paid'; data: { index: number; paymentId: [] } }
   /**
    * A payment failed and can be retried.
    **/
-  | { name: "PaymentFailed"; data: { index: number; paymentId: [] } }
+  | { name: 'PaymentFailed'; data: { index: number; paymentId: [] } }
   /**
    * A spend was processed and removed from the storage. It might have been successfully
    * paid or it may have expired.
    **/
-  | { name: "SpendProcessed"; data: { index: number } };
+  | { name: 'SpendProcessed'; data: { index: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -581,36 +511,24 @@ export type PalletConvictionVotingEvent =
   /**
    * An account has delegated their vote to another account. \[who, target\]
    **/
-  | { name: "Delegated"; data: [AccountId32, AccountId32] }
+  | { name: 'Delegated'; data: [AccountId32, AccountId32] }
   /**
    * An \[account\] has cancelled a previous delegation operation.
    **/
-  | { name: "Undelegated"; data: AccountId32 }
+  | { name: 'Undelegated'; data: AccountId32 }
   /**
    * An account that has voted
    **/
-  | {
-      name: "Voted";
-      data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote };
-    }
+  | { name: 'Voted'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } }
   /**
    * A vote that been removed
    **/
-  | {
-      name: "VoteRemoved";
-      data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote };
-    };
+  | { name: 'VoteRemoved'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } };
 
 export type PalletConvictionVotingVoteAccountVote =
-  | {
-      type: "Standard";
-      value: { vote: PalletConvictionVotingVote; balance: bigint };
-    }
-  | { type: "Split"; value: { aye: bigint; nay: bigint } }
-  | {
-      type: "SplitAbstain";
-      value: { aye: bigint; nay: bigint; abstain: bigint };
-    };
+  | { type: 'Standard'; value: { vote: PalletConvictionVotingVote; balance: bigint } }
+  | { type: 'Split'; value: { aye: bigint; nay: bigint } }
+  | { type: 'SplitAbstain'; value: { aye: bigint; nay: bigint; abstain: bigint } };
 
 export type PalletConvictionVotingVote = number;
 
@@ -622,7 +540,7 @@ export type PalletReferendaEvent =
    * A referendum has been submitted.
    **/
   | {
-      name: "Submitted";
+      name: 'Submitted';
       data: {
         /**
          * Index of the referendum.
@@ -644,7 +562,7 @@ export type PalletReferendaEvent =
    * The decision deposit has been placed.
    **/
   | {
-      name: "DecisionDepositPlaced";
+      name: 'DecisionDepositPlaced';
       data: {
         /**
          * Index of the referendum.
@@ -666,7 +584,7 @@ export type PalletReferendaEvent =
    * The decision deposit has been refunded.
    **/
   | {
-      name: "DecisionDepositRefunded";
+      name: 'DecisionDepositRefunded';
       data: {
         /**
          * Index of the referendum.
@@ -688,7 +606,7 @@ export type PalletReferendaEvent =
    * A deposit has been slashed.
    **/
   | {
-      name: "DepositSlashed";
+      name: 'DepositSlashed';
       data: {
         /**
          * The account who placed the deposit.
@@ -705,7 +623,7 @@ export type PalletReferendaEvent =
    * A referendum has moved into the deciding phase.
    **/
   | {
-      name: "DecisionStarted";
+      name: 'DecisionStarted';
       data: {
         /**
          * Index of the referendum.
@@ -729,7 +647,7 @@ export type PalletReferendaEvent =
       };
     }
   | {
-      name: "ConfirmStarted";
+      name: 'ConfirmStarted';
       data: {
         /**
          * Index of the referendum.
@@ -738,7 +656,7 @@ export type PalletReferendaEvent =
       };
     }
   | {
-      name: "ConfirmAborted";
+      name: 'ConfirmAborted';
       data: {
         /**
          * Index of the referendum.
@@ -750,7 +668,7 @@ export type PalletReferendaEvent =
    * A referendum has ended its confirmation phase and is ready for approval.
    **/
   | {
-      name: "Confirmed";
+      name: 'Confirmed';
       data: {
         /**
          * Index of the referendum.
@@ -767,7 +685,7 @@ export type PalletReferendaEvent =
    * A referendum has been approved and its proposal has been scheduled.
    **/
   | {
-      name: "Approved";
+      name: 'Approved';
       data: {
         /**
          * Index of the referendum.
@@ -779,7 +697,7 @@ export type PalletReferendaEvent =
    * A proposal has been rejected by referendum.
    **/
   | {
-      name: "Rejected";
+      name: 'Rejected';
       data: {
         /**
          * Index of the referendum.
@@ -796,7 +714,7 @@ export type PalletReferendaEvent =
    * A referendum has been timed out without being decided.
    **/
   | {
-      name: "TimedOut";
+      name: 'TimedOut';
       data: {
         /**
          * Index of the referendum.
@@ -813,7 +731,7 @@ export type PalletReferendaEvent =
    * A referendum has been cancelled.
    **/
   | {
-      name: "Cancelled";
+      name: 'Cancelled';
       data: {
         /**
          * Index of the referendum.
@@ -830,7 +748,7 @@ export type PalletReferendaEvent =
    * A referendum has been killed.
    **/
   | {
-      name: "Killed";
+      name: 'Killed';
       data: {
         /**
          * Index of the referendum.
@@ -847,7 +765,7 @@ export type PalletReferendaEvent =
    * The submission deposit has been refunded.
    **/
   | {
-      name: "SubmissionDepositRefunded";
+      name: 'SubmissionDepositRefunded';
       data: {
         /**
          * Index of the referendum.
@@ -869,7 +787,7 @@ export type PalletReferendaEvent =
    * Metadata for a referendum has been set.
    **/
   | {
-      name: "MetadataSet";
+      name: 'MetadataSet';
       data: {
         /**
          * Index of the referendum.
@@ -886,7 +804,7 @@ export type PalletReferendaEvent =
    * Metadata for a referendum has been cleared.
    **/
   | {
-      name: "MetadataCleared";
+      name: 'MetadataCleared';
       data: {
         /**
          * Index of the referendum.
@@ -901,80 +819,71 @@ export type PalletReferendaEvent =
     };
 
 export type FrameSupportPreimagesBounded =
-  | { type: "Legacy"; value: { hash: H256 } }
-  | { type: "Inline"; value: Bytes }
-  | { type: "Lookup"; value: { hash: H256; len: number } };
+  | { type: 'Legacy'; value: { hash: H256 } }
+  | { type: 'Inline'; value: Bytes }
+  | { type: 'Lookup'; value: { hash: H256; len: number } };
 
 export type VaraRuntimeRuntimeCall =
-  | { pallet: "System"; palletCall: FrameSystemCall }
-  | { pallet: "Timestamp"; palletCall: PalletTimestampCall }
-  | { pallet: "Babe"; palletCall: PalletBabeCall }
-  | { pallet: "Grandpa"; palletCall: PalletGrandpaCall }
-  | { pallet: "Balances"; palletCall: PalletBalancesCall }
-  | { pallet: "Session"; palletCall: PalletSessionCall }
-  | { pallet: "Utility"; palletCall: PalletUtilityCall }
-  | { pallet: "Vesting"; palletCall: PalletVestingCall }
-  | { pallet: "BagsList"; palletCall: PalletBagsListCall }
-  | { pallet: "ImOnline"; palletCall: PalletImOnlineCall }
-  | { pallet: "Staking"; palletCall: PalletStakingPalletCall }
-  | { pallet: "Treasury"; palletCall: PalletTreasuryCall }
-  | { pallet: "ConvictionVoting"; palletCall: PalletConvictionVotingCall }
-  | { pallet: "Referenda"; palletCall: PalletReferendaCall }
-  | { pallet: "FellowshipCollective"; palletCall: PalletRankedCollectiveCall }
-  | { pallet: "FellowshipReferenda"; palletCall: PalletReferendaCall }
-  | { pallet: "Whitelist"; palletCall: PalletWhitelistCall }
-  | { pallet: "Scheduler"; palletCall: PalletSchedulerCall }
-  | { pallet: "Preimage"; palletCall: PalletPreimageCall }
-  | { pallet: "Identity"; palletCall: PalletIdentityCall }
-  | { pallet: "Proxy"; palletCall: PalletProxyCall }
-  | { pallet: "Multisig"; palletCall: PalletMultisigCall }
-  | {
-      pallet: "ElectionProviderMultiPhase";
-      palletCall: PalletElectionProviderMultiPhaseCall;
-    }
-  | { pallet: "Bounties"; palletCall: PalletBountiesCall }
-  | { pallet: "ChildBounties"; palletCall: PalletChildBountiesCall }
-  | { pallet: "NominationPools"; palletCall: PalletNominationPoolsCall }
-  | { pallet: "Gear"; palletCall: PalletGearCall }
-  | { pallet: "StakingRewards"; palletCall: PalletGearStakingRewardsCall }
-  | { pallet: "GearVoucher"; palletCall: PalletGearVoucherCall };
+  | { pallet: 'System'; palletCall: FrameSystemCall }
+  | { pallet: 'Timestamp'; palletCall: PalletTimestampCall }
+  | { pallet: 'Babe'; palletCall: PalletBabeCall }
+  | { pallet: 'Grandpa'; palletCall: PalletGrandpaCall }
+  | { pallet: 'Balances'; palletCall: PalletBalancesCall }
+  | { pallet: 'Session'; palletCall: PalletSessionCall }
+  | { pallet: 'Utility'; palletCall: PalletUtilityCall }
+  | { pallet: 'Vesting'; palletCall: PalletVestingCall }
+  | { pallet: 'BagsList'; palletCall: PalletBagsListCall }
+  | { pallet: 'ImOnline'; palletCall: PalletImOnlineCall }
+  | { pallet: 'Staking'; palletCall: PalletStakingPalletCall }
+  | { pallet: 'Treasury'; palletCall: PalletTreasuryCall }
+  | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCall }
+  | { pallet: 'Referenda'; palletCall: PalletReferendaCall }
+  | { pallet: 'FellowshipCollective'; palletCall: PalletRankedCollectiveCall }
+  | { pallet: 'FellowshipReferenda'; palletCall: PalletReferendaCall }
+  | { pallet: 'Whitelist'; palletCall: PalletWhitelistCall }
+  | { pallet: 'Scheduler'; palletCall: PalletSchedulerCall }
+  | { pallet: 'Preimage'; palletCall: PalletPreimageCall }
+  | { pallet: 'Identity'; palletCall: PalletIdentityCall }
+  | { pallet: 'Proxy'; palletCall: PalletProxyCall }
+  | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
+  | { pallet: 'ElectionProviderMultiPhase'; palletCall: PalletElectionProviderMultiPhaseCall }
+  | { pallet: 'Bounties'; palletCall: PalletBountiesCall }
+  | { pallet: 'ChildBounties'; palletCall: PalletChildBountiesCall }
+  | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
+  | { pallet: 'Gear'; palletCall: PalletGearCall }
+  | { pallet: 'StakingRewards'; palletCall: PalletGearStakingRewardsCall }
+  | { pallet: 'GearVoucher'; palletCall: PalletGearVoucherCall };
 
 export type VaraRuntimeRuntimeCallLike =
-  | { pallet: "System"; palletCall: FrameSystemCallLike }
-  | { pallet: "Timestamp"; palletCall: PalletTimestampCallLike }
-  | { pallet: "Babe"; palletCall: PalletBabeCallLike }
-  | { pallet: "Grandpa"; palletCall: PalletGrandpaCallLike }
-  | { pallet: "Balances"; palletCall: PalletBalancesCallLike }
-  | { pallet: "Session"; palletCall: PalletSessionCallLike }
-  | { pallet: "Utility"; palletCall: PalletUtilityCallLike }
-  | { pallet: "Vesting"; palletCall: PalletVestingCallLike }
-  | { pallet: "BagsList"; palletCall: PalletBagsListCallLike }
-  | { pallet: "ImOnline"; palletCall: PalletImOnlineCallLike }
-  | { pallet: "Staking"; palletCall: PalletStakingPalletCallLike }
-  | { pallet: "Treasury"; palletCall: PalletTreasuryCallLike }
-  | { pallet: "ConvictionVoting"; palletCall: PalletConvictionVotingCallLike }
-  | { pallet: "Referenda"; palletCall: PalletReferendaCallLike }
-  | {
-      pallet: "FellowshipCollective";
-      palletCall: PalletRankedCollectiveCallLike;
-    }
-  | { pallet: "FellowshipReferenda"; palletCall: PalletReferendaCallLike }
-  | { pallet: "Whitelist"; palletCall: PalletWhitelistCallLike }
-  | { pallet: "Scheduler"; palletCall: PalletSchedulerCallLike }
-  | { pallet: "Preimage"; palletCall: PalletPreimageCallLike }
-  | { pallet: "Identity"; palletCall: PalletIdentityCallLike }
-  | { pallet: "Proxy"; palletCall: PalletProxyCallLike }
-  | { pallet: "Multisig"; palletCall: PalletMultisigCallLike }
-  | {
-      pallet: "ElectionProviderMultiPhase";
-      palletCall: PalletElectionProviderMultiPhaseCallLike;
-    }
-  | { pallet: "Bounties"; palletCall: PalletBountiesCallLike }
-  | { pallet: "ChildBounties"; palletCall: PalletChildBountiesCallLike }
-  | { pallet: "NominationPools"; palletCall: PalletNominationPoolsCallLike }
-  | { pallet: "Gear"; palletCall: PalletGearCallLike }
-  | { pallet: "StakingRewards"; palletCall: PalletGearStakingRewardsCallLike }
-  | { pallet: "GearVoucher"; palletCall: PalletGearVoucherCallLike };
+  | { pallet: 'System'; palletCall: FrameSystemCallLike }
+  | { pallet: 'Timestamp'; palletCall: PalletTimestampCallLike }
+  | { pallet: 'Babe'; palletCall: PalletBabeCallLike }
+  | { pallet: 'Grandpa'; palletCall: PalletGrandpaCallLike }
+  | { pallet: 'Balances'; palletCall: PalletBalancesCallLike }
+  | { pallet: 'Session'; palletCall: PalletSessionCallLike }
+  | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
+  | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
+  | { pallet: 'BagsList'; palletCall: PalletBagsListCallLike }
+  | { pallet: 'ImOnline'; palletCall: PalletImOnlineCallLike }
+  | { pallet: 'Staking'; palletCall: PalletStakingPalletCallLike }
+  | { pallet: 'Treasury'; palletCall: PalletTreasuryCallLike }
+  | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCallLike }
+  | { pallet: 'Referenda'; palletCall: PalletReferendaCallLike }
+  | { pallet: 'FellowshipCollective'; palletCall: PalletRankedCollectiveCallLike }
+  | { pallet: 'FellowshipReferenda'; palletCall: PalletReferendaCallLike }
+  | { pallet: 'Whitelist'; palletCall: PalletWhitelistCallLike }
+  | { pallet: 'Scheduler'; palletCall: PalletSchedulerCallLike }
+  | { pallet: 'Preimage'; palletCall: PalletPreimageCallLike }
+  | { pallet: 'Identity'; palletCall: PalletIdentityCallLike }
+  | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
+  | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
+  | { pallet: 'ElectionProviderMultiPhase'; palletCall: PalletElectionProviderMultiPhaseCallLike }
+  | { pallet: 'Bounties'; palletCall: PalletBountiesCallLike }
+  | { pallet: 'ChildBounties'; palletCall: PalletChildBountiesCallLike }
+  | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
+  | { pallet: 'Gear'; palletCall: PalletGearCallLike }
+  | { pallet: 'StakingRewards'; palletCall: PalletGearStakingRewardsCallLike }
+  | { pallet: 'GearVoucher'; palletCall: PalletGearVoucherCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -985,48 +894,48 @@ export type FrameSystemCall =
    *
    * Can be executed by every `origin`.
    **/
-  | { name: "Remark"; params: { remark: Bytes } }
+  | { name: 'Remark'; params: { remark: Bytes } }
   /**
    * Set the number of pages in the WebAssembly environment's heap.
    **/
-  | { name: "SetHeapPages"; params: { pages: bigint } }
+  | { name: 'SetHeapPages'; params: { pages: bigint } }
   /**
    * Set the new runtime code.
    **/
-  | { name: "SetCode"; params: { code: Bytes } }
+  | { name: 'SetCode'; params: { code: Bytes } }
   /**
    * Set the new runtime code without doing any checks of the given `code`.
    *
    * Note that runtime upgrades will not run if this is called with a not-increasing spec
    * version!
    **/
-  | { name: "SetCodeWithoutChecks"; params: { code: Bytes } }
+  | { name: 'SetCodeWithoutChecks'; params: { code: Bytes } }
   /**
    * Set some items of storage.
    **/
-  | { name: "SetStorage"; params: { items: Array<[Bytes, Bytes]> } }
+  | { name: 'SetStorage'; params: { items: Array<[Bytes, Bytes]> } }
   /**
    * Kill some items from storage.
    **/
-  | { name: "KillStorage"; params: { keys: Array<Bytes> } }
+  | { name: 'KillStorage'; params: { keys: Array<Bytes> } }
   /**
    * Kill all storage items with a key that starts with the given prefix.
    *
    * **NOTE:** We rely on the Root origin to provide us the number of subkeys under
    * the prefix we are removing to accurately calculate the weight of this function.
    **/
-  | { name: "KillPrefix"; params: { prefix: Bytes; subkeys: number } }
+  | { name: 'KillPrefix'; params: { prefix: Bytes; subkeys: number } }
   /**
    * Make some on-chain remark and emit event.
    **/
-  | { name: "RemarkWithEvent"; params: { remark: Bytes } }
+  | { name: 'RemarkWithEvent'; params: { remark: Bytes } }
   /**
    * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
    * later.
    *
    * This call requires Root origin.
    **/
-  | { name: "AuthorizeUpgrade"; params: { codeHash: H256 } }
+  | { name: 'AuthorizeUpgrade'; params: { codeHash: H256 } }
   /**
    * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
    * later.
@@ -1037,7 +946,7 @@ export type FrameSystemCall =
    *
    * This call requires Root origin.
    **/
-  | { name: "AuthorizeUpgradeWithoutChecks"; params: { codeHash: H256 } }
+  | { name: 'AuthorizeUpgradeWithoutChecks'; params: { codeHash: H256 } }
   /**
    * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
    *
@@ -1049,7 +958,7 @@ export type FrameSystemCall =
    *
    * All origins are allowed.
    **/
-  | { name: "ApplyAuthorizedUpgrade"; params: { code: Bytes } };
+  | { name: 'ApplyAuthorizedUpgrade'; params: { code: Bytes } };
 
 export type FrameSystemCallLike =
   /**
@@ -1057,48 +966,48 @@ export type FrameSystemCallLike =
    *
    * Can be executed by every `origin`.
    **/
-  | { name: "Remark"; params: { remark: BytesLike } }
+  | { name: 'Remark'; params: { remark: BytesLike } }
   /**
    * Set the number of pages in the WebAssembly environment's heap.
    **/
-  | { name: "SetHeapPages"; params: { pages: bigint } }
+  | { name: 'SetHeapPages'; params: { pages: bigint } }
   /**
    * Set the new runtime code.
    **/
-  | { name: "SetCode"; params: { code: BytesLike } }
+  | { name: 'SetCode'; params: { code: BytesLike } }
   /**
    * Set the new runtime code without doing any checks of the given `code`.
    *
    * Note that runtime upgrades will not run if this is called with a not-increasing spec
    * version!
    **/
-  | { name: "SetCodeWithoutChecks"; params: { code: BytesLike } }
+  | { name: 'SetCodeWithoutChecks'; params: { code: BytesLike } }
   /**
    * Set some items of storage.
    **/
-  | { name: "SetStorage"; params: { items: Array<[BytesLike, BytesLike]> } }
+  | { name: 'SetStorage'; params: { items: Array<[BytesLike, BytesLike]> } }
   /**
    * Kill some items from storage.
    **/
-  | { name: "KillStorage"; params: { keys: Array<BytesLike> } }
+  | { name: 'KillStorage'; params: { keys: Array<BytesLike> } }
   /**
    * Kill all storage items with a key that starts with the given prefix.
    *
    * **NOTE:** We rely on the Root origin to provide us the number of subkeys under
    * the prefix we are removing to accurately calculate the weight of this function.
    **/
-  | { name: "KillPrefix"; params: { prefix: BytesLike; subkeys: number } }
+  | { name: 'KillPrefix'; params: { prefix: BytesLike; subkeys: number } }
   /**
    * Make some on-chain remark and emit event.
    **/
-  | { name: "RemarkWithEvent"; params: { remark: BytesLike } }
+  | { name: 'RemarkWithEvent'; params: { remark: BytesLike } }
   /**
    * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
    * later.
    *
    * This call requires Root origin.
    **/
-  | { name: "AuthorizeUpgrade"; params: { codeHash: H256 } }
+  | { name: 'AuthorizeUpgrade'; params: { codeHash: H256 } }
   /**
    * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
    * later.
@@ -1109,7 +1018,7 @@ export type FrameSystemCallLike =
    *
    * This call requires Root origin.
    **/
-  | { name: "AuthorizeUpgradeWithoutChecks"; params: { codeHash: H256 } }
+  | { name: 'AuthorizeUpgradeWithoutChecks'; params: { codeHash: H256 } }
   /**
    * Provide the preimage (runtime binary) `code` for an upgrade that has been authorized.
    *
@@ -1121,7 +1030,7 @@ export type FrameSystemCallLike =
    *
    * All origins are allowed.
    **/
-  | { name: "ApplyAuthorizedUpgrade"; params: { code: BytesLike } };
+  | { name: 'ApplyAuthorizedUpgrade'; params: { code: BytesLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -1148,7 +1057,7 @@ export type PalletTimestampCall =
    * `on_finalize`)
    * - 1 event handler `on_timestamp_set`. Must be `O(1)`.
    **/
-  { name: "Set"; params: { now: bigint } };
+  { name: 'Set'; params: { now: bigint } };
 
 export type PalletTimestampCallLike =
   /**
@@ -1172,7 +1081,7 @@ export type PalletTimestampCallLike =
    * `on_finalize`)
    * - 1 event handler `on_timestamp_set`. Must be `O(1)`.
    **/
-  { name: "Set"; params: { now: bigint } };
+  { name: 'Set'; params: { now: bigint } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -1185,11 +1094,8 @@ export type PalletBabeCall =
    * be reported.
    **/
   | {
-      name: "ReportEquivocation";
-      params: {
-        equivocationProof: SpConsensusSlotsEquivocationProof;
-        keyOwnerProof: SpSessionMembershipProof;
-      };
+      name: 'ReportEquivocation';
+      params: { equivocationProof: SpConsensusSlotsEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
    * Report authority equivocation/misbehavior. This method will verify
@@ -1202,11 +1108,8 @@ export type PalletBabeCall =
    * reporter.
    **/
   | {
-      name: "ReportEquivocationUnsigned";
-      params: {
-        equivocationProof: SpConsensusSlotsEquivocationProof;
-        keyOwnerProof: SpSessionMembershipProof;
-      };
+      name: 'ReportEquivocationUnsigned';
+      params: { equivocationProof: SpConsensusSlotsEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
    * Plan an epoch config change. The epoch config change is recorded and will be enacted on
@@ -1214,10 +1117,7 @@ export type PalletBabeCall =
    * Multiple calls to this method will replace any existing planned config change that had
    * not been enacted yet.
    **/
-  | {
-      name: "PlanConfigChange";
-      params: { config: SpConsensusBabeDigestsNextConfigDescriptor };
-    };
+  | { name: 'PlanConfigChange'; params: { config: SpConsensusBabeDigestsNextConfigDescriptor } };
 
 export type PalletBabeCallLike =
   /**
@@ -1227,11 +1127,8 @@ export type PalletBabeCallLike =
    * be reported.
    **/
   | {
-      name: "ReportEquivocation";
-      params: {
-        equivocationProof: SpConsensusSlotsEquivocationProof;
-        keyOwnerProof: SpSessionMembershipProof;
-      };
+      name: 'ReportEquivocation';
+      params: { equivocationProof: SpConsensusSlotsEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
    * Report authority equivocation/misbehavior. This method will verify
@@ -1244,11 +1141,8 @@ export type PalletBabeCallLike =
    * reporter.
    **/
   | {
-      name: "ReportEquivocationUnsigned";
-      params: {
-        equivocationProof: SpConsensusSlotsEquivocationProof;
-        keyOwnerProof: SpSessionMembershipProof;
-      };
+      name: 'ReportEquivocationUnsigned';
+      params: { equivocationProof: SpConsensusSlotsEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
    * Plan an epoch config change. The epoch config change is recorded and will be enacted on
@@ -1256,10 +1150,7 @@ export type PalletBabeCallLike =
    * Multiple calls to this method will replace any existing planned config change that had
    * not been enacted yet.
    **/
-  | {
-      name: "PlanConfigChange";
-      params: { config: SpConsensusBabeDigestsNextConfigDescriptor };
-    };
+  | { name: 'PlanConfigChange'; params: { config: SpConsensusBabeDigestsNextConfigDescriptor } };
 
 export type SpConsensusSlotsEquivocationProof = {
   offender: SpConsensusBabeAppPublic;
@@ -1272,21 +1163,17 @@ export type SpConsensusBabeAppPublic = FixedBytes<32>;
 
 export type SpConsensusSlotsSlot = bigint;
 
-export type SpSessionMembershipProof = {
-  session: number;
-  trieNodes: Array<Bytes>;
-  validatorCount: number;
-};
+export type SpSessionMembershipProof = { session: number; trieNodes: Array<Bytes>; validatorCount: number };
 
 export type SpConsensusBabeDigestsNextConfigDescriptor = {
-  type: "V1";
+  type: 'V1';
   value: { c: [bigint, bigint]; allowedSlots: SpConsensusBabeAllowedSlots };
 };
 
 export type SpConsensusBabeAllowedSlots =
-  | "PrimarySlots"
-  | "PrimaryAndSecondaryPlainSlots"
-  | "PrimaryAndSecondaryVRFSlots";
+  | 'PrimarySlots'
+  | 'PrimaryAndSecondaryPlainSlots'
+  | 'PrimaryAndSecondaryVRFSlots';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -1299,11 +1186,8 @@ export type PalletGrandpaCall =
    * will be reported.
    **/
   | {
-      name: "ReportEquivocation";
-      params: {
-        equivocationProof: SpConsensusGrandpaEquivocationProof;
-        keyOwnerProof: SpSessionMembershipProof;
-      };
+      name: 'ReportEquivocation';
+      params: { equivocationProof: SpConsensusGrandpaEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
    * Report voter equivocation/misbehavior. This method will verify the
@@ -1317,11 +1201,8 @@ export type PalletGrandpaCall =
    * reporter.
    **/
   | {
-      name: "ReportEquivocationUnsigned";
-      params: {
-        equivocationProof: SpConsensusGrandpaEquivocationProof;
-        keyOwnerProof: SpSessionMembershipProof;
-      };
+      name: 'ReportEquivocationUnsigned';
+      params: { equivocationProof: SpConsensusGrandpaEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
    * Note that the current authority set of the GRANDPA finality gadget has stalled.
@@ -1337,10 +1218,7 @@ export type PalletGrandpaCall =
    *
    * Only callable by root.
    **/
-  | {
-      name: "NoteStalled";
-      params: { delay: number; bestFinalizedBlockNumber: number };
-    };
+  | { name: 'NoteStalled'; params: { delay: number; bestFinalizedBlockNumber: number } };
 
 export type PalletGrandpaCallLike =
   /**
@@ -1350,11 +1228,8 @@ export type PalletGrandpaCallLike =
    * will be reported.
    **/
   | {
-      name: "ReportEquivocation";
-      params: {
-        equivocationProof: SpConsensusGrandpaEquivocationProof;
-        keyOwnerProof: SpSessionMembershipProof;
-      };
+      name: 'ReportEquivocation';
+      params: { equivocationProof: SpConsensusGrandpaEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
    * Report voter equivocation/misbehavior. This method will verify the
@@ -1368,11 +1243,8 @@ export type PalletGrandpaCallLike =
    * reporter.
    **/
   | {
-      name: "ReportEquivocationUnsigned";
-      params: {
-        equivocationProof: SpConsensusGrandpaEquivocationProof;
-        keyOwnerProof: SpSessionMembershipProof;
-      };
+      name: 'ReportEquivocationUnsigned';
+      params: { equivocationProof: SpConsensusGrandpaEquivocationProof; keyOwnerProof: SpSessionMembershipProof };
     }
   /**
    * Note that the current authority set of the GRANDPA finality gadget has stalled.
@@ -1388,19 +1260,13 @@ export type PalletGrandpaCallLike =
    *
    * Only callable by root.
    **/
-  | {
-      name: "NoteStalled";
-      params: { delay: number; bestFinalizedBlockNumber: number };
-    };
+  | { name: 'NoteStalled'; params: { delay: number; bestFinalizedBlockNumber: number } };
 
-export type SpConsensusGrandpaEquivocationProof = {
-  setId: bigint;
-  equivocation: SpConsensusGrandpaEquivocation;
-};
+export type SpConsensusGrandpaEquivocationProof = { setId: bigint; equivocation: SpConsensusGrandpaEquivocation };
 
 export type SpConsensusGrandpaEquivocation =
-  | { type: "Prevote"; value: FinalityGrandpaEquivocation }
-  | { type: "Precommit"; value: FinalityGrandpaEquivocationPrecommit };
+  | { type: 'Prevote'; value: FinalityGrandpaEquivocation }
+  | { type: 'Precommit'; value: FinalityGrandpaEquivocationPrecommit };
 
 export type FinalityGrandpaEquivocation = {
   roundNumber: bigint;
@@ -1420,10 +1286,7 @@ export type FinalityGrandpaEquivocationPrecommit = {
   second: [FinalityGrandpaPrecommit, SpConsensusGrandpaAppSignature];
 };
 
-export type FinalityGrandpaPrecommit = {
-  targetHash: H256;
-  targetNumber: number;
-};
+export type FinalityGrandpaPrecommit = { targetHash: H256; targetNumber: number };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -1438,18 +1301,12 @@ export type PalletBalancesCall =
    *
    * The dispatch origin for this call must be `Signed` by the transactor.
    **/
-  | {
-      name: "TransferAllowDeath";
-      params: { dest: MultiAddress; value: bigint };
-    }
+  | { name: 'TransferAllowDeath'; params: { dest: MultiAddress; value: bigint } }
   /**
    * Exactly as `transfer_allow_death`, except the origin must be root and the source account
    * may be specified.
    **/
-  | {
-      name: "ForceTransfer";
-      params: { source: MultiAddress; dest: MultiAddress; value: bigint };
-    }
+  | { name: 'ForceTransfer'; params: { source: MultiAddress; dest: MultiAddress; value: bigint } }
   /**
    * Same as the [`transfer_allow_death`] call, but with a check that the transfer will not
    * kill the origin account.
@@ -1458,7 +1315,7 @@ export type PalletBalancesCall =
    *
    * [`transfer_allow_death`]: struct.Pallet.html#method.transfer
    **/
-  | { name: "TransferKeepAlive"; params: { dest: MultiAddress; value: bigint } }
+  | { name: 'TransferKeepAlive'; params: { dest: MultiAddress; value: bigint } }
   /**
    * Transfer the entire transferable balance from the caller account.
    *
@@ -1476,13 +1333,13 @@ export type PalletBalancesCall =
    * transfer everything except at least the existential deposit, which will guarantee to
    * keep the sender account alive (true).
    **/
-  | { name: "TransferAll"; params: { dest: MultiAddress; keepAlive: boolean } }
+  | { name: 'TransferAll'; params: { dest: MultiAddress; keepAlive: boolean } }
   /**
    * Unreserve some balance from a user by force.
    *
    * Can only be called by ROOT.
    **/
-  | { name: "ForceUnreserve"; params: { who: MultiAddress; amount: bigint } }
+  | { name: 'ForceUnreserve'; params: { who: MultiAddress; amount: bigint } }
   /**
    * Upgrade a specified account.
    *
@@ -1493,13 +1350,13 @@ export type PalletBalancesCall =
    * be upgraded. (We let some not have to be upgraded just in order to allow for the
    * possibility of churn).
    **/
-  | { name: "UpgradeAccounts"; params: { who: Array<AccountId32> } }
+  | { name: 'UpgradeAccounts'; params: { who: Array<AccountId32> } }
   /**
    * Set the regular balance of a given account.
    *
    * The dispatch origin for this call is `root`.
    **/
-  | { name: "ForceSetBalance"; params: { who: MultiAddress; newFree: bigint } }
+  | { name: 'ForceSetBalance'; params: { who: MultiAddress; newFree: bigint } }
   /**
    * Adjust the total issuance in a saturating way.
    *
@@ -1507,10 +1364,7 @@ export type PalletBalancesCall =
    *
    * # Example
    **/
-  | {
-      name: "ForceAdjustTotalIssuance";
-      params: { direction: PalletBalancesAdjustmentDirection; delta: bigint };
-    }
+  | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } }
   /**
    * Burn the specified liquid free balance from the origin account.
    *
@@ -1520,7 +1374,7 @@ export type PalletBalancesCall =
    * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
    * this `burn` operation will reduce total issuance by the amount _burned_.
    **/
-  | { name: "Burn"; params: { value: bigint; keepAlive: boolean } };
+  | { name: 'Burn'; params: { value: bigint; keepAlive: boolean } };
 
 export type PalletBalancesCallLike =
   /**
@@ -1532,22 +1386,12 @@ export type PalletBalancesCallLike =
    *
    * The dispatch origin for this call must be `Signed` by the transactor.
    **/
-  | {
-      name: "TransferAllowDeath";
-      params: { dest: MultiAddressLike; value: bigint };
-    }
+  | { name: 'TransferAllowDeath'; params: { dest: MultiAddressLike; value: bigint } }
   /**
    * Exactly as `transfer_allow_death`, except the origin must be root and the source account
    * may be specified.
    **/
-  | {
-      name: "ForceTransfer";
-      params: {
-        source: MultiAddressLike;
-        dest: MultiAddressLike;
-        value: bigint;
-      };
-    }
+  | { name: 'ForceTransfer'; params: { source: MultiAddressLike; dest: MultiAddressLike; value: bigint } }
   /**
    * Same as the [`transfer_allow_death`] call, but with a check that the transfer will not
    * kill the origin account.
@@ -1556,10 +1400,7 @@ export type PalletBalancesCallLike =
    *
    * [`transfer_allow_death`]: struct.Pallet.html#method.transfer
    **/
-  | {
-      name: "TransferKeepAlive";
-      params: { dest: MultiAddressLike; value: bigint };
-    }
+  | { name: 'TransferKeepAlive'; params: { dest: MultiAddressLike; value: bigint } }
   /**
    * Transfer the entire transferable balance from the caller account.
    *
@@ -1577,19 +1418,13 @@ export type PalletBalancesCallLike =
    * transfer everything except at least the existential deposit, which will guarantee to
    * keep the sender account alive (true).
    **/
-  | {
-      name: "TransferAll";
-      params: { dest: MultiAddressLike; keepAlive: boolean };
-    }
+  | { name: 'TransferAll'; params: { dest: MultiAddressLike; keepAlive: boolean } }
   /**
    * Unreserve some balance from a user by force.
    *
    * Can only be called by ROOT.
    **/
-  | {
-      name: "ForceUnreserve";
-      params: { who: MultiAddressLike; amount: bigint };
-    }
+  | { name: 'ForceUnreserve'; params: { who: MultiAddressLike; amount: bigint } }
   /**
    * Upgrade a specified account.
    *
@@ -1600,16 +1435,13 @@ export type PalletBalancesCallLike =
    * be upgraded. (We let some not have to be upgraded just in order to allow for the
    * possibility of churn).
    **/
-  | { name: "UpgradeAccounts"; params: { who: Array<AccountId32Like> } }
+  | { name: 'UpgradeAccounts'; params: { who: Array<AccountId32Like> } }
   /**
    * Set the regular balance of a given account.
    *
    * The dispatch origin for this call is `root`.
    **/
-  | {
-      name: "ForceSetBalance";
-      params: { who: MultiAddressLike; newFree: bigint };
-    }
+  | { name: 'ForceSetBalance'; params: { who: MultiAddressLike; newFree: bigint } }
   /**
    * Adjust the total issuance in a saturating way.
    *
@@ -1617,10 +1449,7 @@ export type PalletBalancesCallLike =
    *
    * # Example
    **/
-  | {
-      name: "ForceAdjustTotalIssuance";
-      params: { direction: PalletBalancesAdjustmentDirection; delta: bigint };
-    }
+  | { name: 'ForceAdjustTotalIssuance'; params: { direction: PalletBalancesAdjustmentDirection; delta: bigint } }
   /**
    * Burn the specified liquid free balance from the origin account.
    *
@@ -1630,9 +1459,9 @@ export type PalletBalancesCallLike =
    * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
    * this `burn` operation will reduce total issuance by the amount _burned_.
    **/
-  | { name: "Burn"; params: { value: bigint; keepAlive: boolean } };
+  | { name: 'Burn'; params: { value: bigint; keepAlive: boolean } };
 
-export type PalletBalancesAdjustmentDirection = "Increase" | "Decrease";
+export type PalletBalancesAdjustmentDirection = 'Increase' | 'Decrease';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -1649,7 +1478,7 @@ export type PalletSessionCall =
    * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
    * fixed.
    **/
-  | { name: "SetKeys"; params: { keys: VaraRuntimeSessionKeys; proof: Bytes } }
+  | { name: 'SetKeys'; params: { keys: VaraRuntimeSessionKeys; proof: Bytes } }
   /**
    * Removes any session key(s) of the function caller.
    *
@@ -1664,7 +1493,7 @@ export type PalletSessionCall =
    * - `O(1)` in number of key types. Actual cost depends on the number of length of
    * `T::Keys::key_ids()` which is fixed.
    **/
-  | { name: "PurgeKeys" };
+  | { name: 'PurgeKeys' };
 
 export type PalletSessionCallLike =
   /**
@@ -1678,10 +1507,7 @@ export type PalletSessionCallLike =
    * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
    * fixed.
    **/
-  | {
-      name: "SetKeys";
-      params: { keys: VaraRuntimeSessionKeys; proof: BytesLike };
-    }
+  | { name: 'SetKeys'; params: { keys: VaraRuntimeSessionKeys; proof: BytesLike } }
   /**
    * Removes any session key(s) of the function caller.
    *
@@ -1696,7 +1522,7 @@ export type PalletSessionCallLike =
    * - `O(1)` in number of key types. Actual cost depends on the number of length of
    * `T::Keys::key_ids()` which is fixed.
    **/
-  | { name: "PurgeKeys" };
+  | { name: 'PurgeKeys' };
 
 export type VaraRuntimeSessionKeys = {
   babe: SpConsensusBabeAppPublic;
@@ -1731,7 +1557,7 @@ export type PalletUtilityCall =
    * and the error of the failed call. If all were successful, then the `BatchCompleted`
    * event is deposited.
    **/
-  | { name: "Batch"; params: { calls: Array<VaraRuntimeRuntimeCall> } }
+  | { name: 'Batch'; params: { calls: Array<VaraRuntimeRuntimeCall> } }
   /**
    * Send a call through an indexed pseudonym of the sender.
    *
@@ -1747,10 +1573,7 @@ export type PalletUtilityCall =
    *
    * The dispatch origin for this call must be _Signed_.
    **/
-  | {
-      name: "AsDerivative";
-      params: { index: number; call: VaraRuntimeRuntimeCall };
-    }
+  | { name: 'AsDerivative'; params: { index: number; call: VaraRuntimeRuntimeCall } }
   /**
    * Send a batch of dispatch calls and atomically execute them.
    * The whole transaction will rollback and fail if any of the calls failed.
@@ -1766,7 +1589,7 @@ export type PalletUtilityCall =
    * ## Complexity
    * - O(C) where C is the number of calls to be batched.
    **/
-  | { name: "BatchAll"; params: { calls: Array<VaraRuntimeRuntimeCall> } }
+  | { name: 'BatchAll'; params: { calls: Array<VaraRuntimeRuntimeCall> } }
   /**
    * Dispatches a function call with a provided origin.
    *
@@ -1775,13 +1598,7 @@ export type PalletUtilityCall =
    * ## Complexity
    * - O(1).
    **/
-  | {
-      name: "DispatchAs";
-      params: {
-        asOrigin: VaraRuntimeOriginCaller;
-        call: VaraRuntimeRuntimeCall;
-      };
-    }
+  | { name: 'DispatchAs'; params: { asOrigin: VaraRuntimeOriginCaller; call: VaraRuntimeRuntimeCall } }
   /**
    * Send a batch of dispatch calls.
    * Unlike `batch`, it allows errors and won't interrupt.
@@ -1797,7 +1614,7 @@ export type PalletUtilityCall =
    * ## Complexity
    * - O(C) where C is the number of calls to be batched.
    **/
-  | { name: "ForceBatch"; params: { calls: Array<VaraRuntimeRuntimeCall> } }
+  | { name: 'ForceBatch'; params: { calls: Array<VaraRuntimeRuntimeCall> } }
   /**
    * Dispatch a function call with a specified weight.
    *
@@ -1806,10 +1623,7 @@ export type PalletUtilityCall =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | {
-      name: "WithWeight";
-      params: { call: VaraRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight };
-    };
+  | { name: 'WithWeight'; params: { call: VaraRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } };
 
 export type PalletUtilityCallLike =
   /**
@@ -1832,7 +1646,7 @@ export type PalletUtilityCallLike =
    * and the error of the failed call. If all were successful, then the `BatchCompleted`
    * event is deposited.
    **/
-  | { name: "Batch"; params: { calls: Array<VaraRuntimeRuntimeCallLike> } }
+  | { name: 'Batch'; params: { calls: Array<VaraRuntimeRuntimeCallLike> } }
   /**
    * Send a call through an indexed pseudonym of the sender.
    *
@@ -1848,10 +1662,7 @@ export type PalletUtilityCallLike =
    *
    * The dispatch origin for this call must be _Signed_.
    **/
-  | {
-      name: "AsDerivative";
-      params: { index: number; call: VaraRuntimeRuntimeCallLike };
-    }
+  | { name: 'AsDerivative'; params: { index: number; call: VaraRuntimeRuntimeCallLike } }
   /**
    * Send a batch of dispatch calls and atomically execute them.
    * The whole transaction will rollback and fail if any of the calls failed.
@@ -1867,7 +1678,7 @@ export type PalletUtilityCallLike =
    * ## Complexity
    * - O(C) where C is the number of calls to be batched.
    **/
-  | { name: "BatchAll"; params: { calls: Array<VaraRuntimeRuntimeCallLike> } }
+  | { name: 'BatchAll'; params: { calls: Array<VaraRuntimeRuntimeCallLike> } }
   /**
    * Dispatches a function call with a provided origin.
    *
@@ -1876,13 +1687,7 @@ export type PalletUtilityCallLike =
    * ## Complexity
    * - O(1).
    **/
-  | {
-      name: "DispatchAs";
-      params: {
-        asOrigin: VaraRuntimeOriginCaller;
-        call: VaraRuntimeRuntimeCallLike;
-      };
-    }
+  | { name: 'DispatchAs'; params: { asOrigin: VaraRuntimeOriginCaller; call: VaraRuntimeRuntimeCallLike } }
   /**
    * Send a batch of dispatch calls.
    * Unlike `batch`, it allows errors and won't interrupt.
@@ -1898,7 +1703,7 @@ export type PalletUtilityCallLike =
    * ## Complexity
    * - O(C) where C is the number of calls to be batched.
    **/
-  | { name: "ForceBatch"; params: { calls: Array<VaraRuntimeRuntimeCallLike> } }
+  | { name: 'ForceBatch'; params: { calls: Array<VaraRuntimeRuntimeCallLike> } }
   /**
    * Dispatch a function call with a specified weight.
    *
@@ -1907,53 +1712,44 @@ export type PalletUtilityCallLike =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | {
-      name: "WithWeight";
-      params: {
-        call: VaraRuntimeRuntimeCallLike;
-        weight: SpWeightsWeightV2Weight;
-      };
-    };
+  | { name: 'WithWeight'; params: { call: VaraRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } };
 
 export type VaraRuntimeOriginCaller =
-  | { type: "System"; value: FrameSupportDispatchRawOrigin }
-  | {
-      type: "Origins";
-      value: VaraRuntimeGovernanceOriginsPalletCustomOriginsOrigin;
-    }
-  | { type: "Void"; value: SpCoreVoid };
+  | { type: 'System'; value: FrameSupportDispatchRawOrigin }
+  | { type: 'Origins'; value: VaraRuntimeGovernanceOriginsPalletCustomOriginsOrigin }
+  | { type: 'Void'; value: SpCoreVoid };
 
 export type FrameSupportDispatchRawOrigin =
-  | { type: "Root" }
-  | { type: "Signed"; value: AccountId32 }
-  | { type: "None" };
+  | { type: 'Root' }
+  | { type: 'Signed'; value: AccountId32 }
+  | { type: 'None' };
 
 export type VaraRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
-  | "StakingAdmin"
-  | "Treasurer"
-  | "FellowshipAdmin"
-  | "GeneralAdmin"
-  | "ReferendumCanceller"
-  | "ReferendumKiller"
-  | "SmallTipper"
-  | "BigTipper"
-  | "SmallSpender"
-  | "MediumSpender"
-  | "BigSpender"
-  | "WhitelistedCaller"
-  | "FellowshipInitiates"
-  | "Fellows"
-  | "FellowshipExperts"
-  | "FellowshipMasters"
-  | "Fellowship1Dan"
-  | "Fellowship2Dan"
-  | "Fellowship3Dan"
-  | "Fellowship4Dan"
-  | "Fellowship5Dan"
-  | "Fellowship6Dan"
-  | "Fellowship7Dan"
-  | "Fellowship8Dan"
-  | "Fellowship9Dan";
+  | 'StakingAdmin'
+  | 'Treasurer'
+  | 'FellowshipAdmin'
+  | 'GeneralAdmin'
+  | 'ReferendumCanceller'
+  | 'ReferendumKiller'
+  | 'SmallTipper'
+  | 'BigTipper'
+  | 'SmallSpender'
+  | 'MediumSpender'
+  | 'BigSpender'
+  | 'WhitelistedCaller'
+  | 'FellowshipInitiates'
+  | 'Fellows'
+  | 'FellowshipExperts'
+  | 'FellowshipMasters'
+  | 'Fellowship1Dan'
+  | 'Fellowship2Dan'
+  | 'Fellowship3Dan'
+  | 'Fellowship4Dan'
+  | 'Fellowship5Dan'
+  | 'Fellowship6Dan'
+  | 'Fellowship7Dan'
+  | 'Fellowship8Dan'
+  | 'Fellowship9Dan';
 
 export type SpCoreVoid = null;
 
@@ -1972,7 +1768,7 @@ export type PalletVestingCall =
    * ## Complexity
    * - `O(1)`.
    **/
-  | { name: "Vest" }
+  | { name: 'Vest' }
   /**
    * Unlock any vested funds of a `target` account.
    *
@@ -1986,7 +1782,7 @@ export type PalletVestingCall =
    * ## Complexity
    * - `O(1)`.
    **/
-  | { name: "VestOther"; params: { target: MultiAddress } }
+  | { name: 'VestOther'; params: { target: MultiAddress } }
   /**
    * Create a vested transfer.
    *
@@ -2002,10 +1798,7 @@ export type PalletVestingCall =
    * ## Complexity
    * - `O(1)`.
    **/
-  | {
-      name: "VestedTransfer";
-      params: { target: MultiAddress; schedule: PalletVestingVestingInfo };
-    }
+  | { name: 'VestedTransfer'; params: { target: MultiAddress; schedule: PalletVestingVestingInfo } }
   /**
    * Force a vested transfer.
    *
@@ -2023,12 +1816,8 @@ export type PalletVestingCall =
    * - `O(1)`.
    **/
   | {
-      name: "ForceVestedTransfer";
-      params: {
-        source: MultiAddress;
-        target: MultiAddress;
-        schedule: PalletVestingVestingInfo;
-      };
+      name: 'ForceVestedTransfer';
+      params: { source: MultiAddress; target: MultiAddress; schedule: PalletVestingVestingInfo };
     }
   /**
    * Merge two vesting schedules together, creating a new vesting schedule that unlocks over
@@ -2053,10 +1842,7 @@ export type PalletVestingCall =
    * - `schedule1_index`: index of the first schedule to merge.
    * - `schedule2_index`: index of the second schedule to merge.
    **/
-  | {
-      name: "MergeSchedules";
-      params: { schedule1Index: number; schedule2Index: number };
-    }
+  | { name: 'MergeSchedules'; params: { schedule1Index: number; schedule2Index: number } }
   /**
    * Force remove a vesting schedule
    *
@@ -2065,10 +1851,7 @@ export type PalletVestingCall =
    * - `target`: An account that has a vesting schedule
    * - `schedule_index`: The vesting schedule index that should be removed
    **/
-  | {
-      name: "ForceRemoveVestingSchedule";
-      params: { target: MultiAddress; scheduleIndex: number };
-    };
+  | { name: 'ForceRemoveVestingSchedule'; params: { target: MultiAddress; scheduleIndex: number } };
 
 export type PalletVestingCallLike =
   /**
@@ -2082,7 +1865,7 @@ export type PalletVestingCallLike =
    * ## Complexity
    * - `O(1)`.
    **/
-  | { name: "Vest" }
+  | { name: 'Vest' }
   /**
    * Unlock any vested funds of a `target` account.
    *
@@ -2096,7 +1879,7 @@ export type PalletVestingCallLike =
    * ## Complexity
    * - `O(1)`.
    **/
-  | { name: "VestOther"; params: { target: MultiAddressLike } }
+  | { name: 'VestOther'; params: { target: MultiAddressLike } }
   /**
    * Create a vested transfer.
    *
@@ -2112,10 +1895,7 @@ export type PalletVestingCallLike =
    * ## Complexity
    * - `O(1)`.
    **/
-  | {
-      name: "VestedTransfer";
-      params: { target: MultiAddressLike; schedule: PalletVestingVestingInfo };
-    }
+  | { name: 'VestedTransfer'; params: { target: MultiAddressLike; schedule: PalletVestingVestingInfo } }
   /**
    * Force a vested transfer.
    *
@@ -2133,12 +1913,8 @@ export type PalletVestingCallLike =
    * - `O(1)`.
    **/
   | {
-      name: "ForceVestedTransfer";
-      params: {
-        source: MultiAddressLike;
-        target: MultiAddressLike;
-        schedule: PalletVestingVestingInfo;
-      };
+      name: 'ForceVestedTransfer';
+      params: { source: MultiAddressLike; target: MultiAddressLike; schedule: PalletVestingVestingInfo };
     }
   /**
    * Merge two vesting schedules together, creating a new vesting schedule that unlocks over
@@ -2163,10 +1939,7 @@ export type PalletVestingCallLike =
    * - `schedule1_index`: index of the first schedule to merge.
    * - `schedule2_index`: index of the second schedule to merge.
    **/
-  | {
-      name: "MergeSchedules";
-      params: { schedule1Index: number; schedule2Index: number };
-    }
+  | { name: 'MergeSchedules'; params: { schedule1Index: number; schedule2Index: number } }
   /**
    * Force remove a vesting schedule
    *
@@ -2175,16 +1948,9 @@ export type PalletVestingCallLike =
    * - `target`: An account that has a vesting schedule
    * - `schedule_index`: The vesting schedule index that should be removed
    **/
-  | {
-      name: "ForceRemoveVestingSchedule";
-      params: { target: MultiAddressLike; scheduleIndex: number };
-    };
+  | { name: 'ForceRemoveVestingSchedule'; params: { target: MultiAddressLike; scheduleIndex: number } };
 
-export type PalletVestingVestingInfo = {
-  locked: bigint;
-  perBlock: bigint;
-  startingBlock: number;
-};
+export type PalletVestingVestingInfo = { locked: bigint; perBlock: bigint; startingBlock: number };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2202,7 +1968,7 @@ export type PalletBagsListCall =
    *
    * If `dislocated` does not exists, it returns an error.
    **/
-  | { name: "Rebag"; params: { dislocated: MultiAddress } }
+  | { name: 'Rebag'; params: { dislocated: MultiAddress } }
   /**
    * Move the caller's Id directly in front of `lighter`.
    *
@@ -2215,16 +1981,13 @@ export type PalletBagsListCall =
    * - both nodes are within the same bag,
    * - and `origin` has a greater `Score` than `lighter`.
    **/
-  | { name: "PutInFrontOf"; params: { lighter: MultiAddress } }
+  | { name: 'PutInFrontOf'; params: { lighter: MultiAddress } }
   /**
    * Same as [`Pallet::put_in_front_of`], but it can be called by anyone.
    *
    * Fee is paid by the origin under all circumstances.
    **/
-  | {
-      name: "PutInFrontOfOther";
-      params: { heavier: MultiAddress; lighter: MultiAddress };
-    };
+  | { name: 'PutInFrontOfOther'; params: { heavier: MultiAddress; lighter: MultiAddress } };
 
 export type PalletBagsListCallLike =
   /**
@@ -2239,7 +2002,7 @@ export type PalletBagsListCallLike =
    *
    * If `dislocated` does not exists, it returns an error.
    **/
-  | { name: "Rebag"; params: { dislocated: MultiAddressLike } }
+  | { name: 'Rebag'; params: { dislocated: MultiAddressLike } }
   /**
    * Move the caller's Id directly in front of `lighter`.
    *
@@ -2252,16 +2015,13 @@ export type PalletBagsListCallLike =
    * - both nodes are within the same bag,
    * - and `origin` has a greater `Score` than `lighter`.
    **/
-  | { name: "PutInFrontOf"; params: { lighter: MultiAddressLike } }
+  | { name: 'PutInFrontOf'; params: { lighter: MultiAddressLike } }
   /**
    * Same as [`Pallet::put_in_front_of`], but it can be called by anyone.
    *
    * Fee is paid by the origin under all circumstances.
    **/
-  | {
-      name: "PutInFrontOfOther";
-      params: { heavier: MultiAddressLike; lighter: MultiAddressLike };
-    };
+  | { name: 'PutInFrontOfOther'; params: { heavier: MultiAddressLike; lighter: MultiAddressLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2273,11 +2033,8 @@ export type PalletImOnlineCall =
    * - `O(K)`: decoding of length `K`
    **/
   {
-    name: "Heartbeat";
-    params: {
-      heartbeat: PalletImOnlineHeartbeat;
-      signature: PalletImOnlineSr25519AppSr25519Signature;
-    };
+    name: 'Heartbeat';
+    params: { heartbeat: PalletImOnlineHeartbeat; signature: PalletImOnlineSr25519AppSr25519Signature };
   };
 
 export type PalletImOnlineCallLike =
@@ -2287,11 +2044,8 @@ export type PalletImOnlineCallLike =
    * - `O(K)`: decoding of length `K`
    **/
   {
-    name: "Heartbeat";
-    params: {
-      heartbeat: PalletImOnlineHeartbeat;
-      signature: PalletImOnlineSr25519AppSr25519Signature;
-    };
+    name: 'Heartbeat';
+    params: { heartbeat: PalletImOnlineHeartbeat; signature: PalletImOnlineSr25519AppSr25519Signature };
   };
 
 export type PalletImOnlineHeartbeat = {
@@ -2325,10 +2079,7 @@ export type PalletStakingPalletCall =
    * unless the `origin` falls below _existential deposit_ (or equal to 0) and gets removed
    * as dust.
    **/
-  | {
-      name: "Bond";
-      params: { value: bigint; payee: PalletStakingRewardDestination };
-    }
+  | { name: 'Bond'; params: { value: bigint; payee: PalletStakingRewardDestination } }
   /**
    * Add some extra amount that have appeared in the stash `free_balance` into the balance up
    * for staking.
@@ -2345,7 +2096,7 @@ export type PalletStakingPalletCall =
    * - Independent of the arguments. Insignificant complexity.
    * - O(1).
    **/
-  | { name: "BondExtra"; params: { maxAdditional: bigint } }
+  | { name: 'BondExtra'; params: { maxAdditional: bigint } }
   /**
    * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
    * period ends. If this leaves an amount actively bonded less than
@@ -2367,7 +2118,7 @@ export type PalletStakingPalletCall =
    *
    * See also [`Call::withdraw_unbonded`].
    **/
-  | { name: "Unbond"; params: { value: bigint } }
+  | { name: 'Unbond'; params: { value: bigint } }
   /**
    * Remove any unlocked chunks from the `unlocking` queue from our management.
    *
@@ -2393,7 +2144,7 @@ export type PalletStakingPalletCall =
    * O(S) where S is the number of slashing spans to remove
    * NOTE: Weight annotation is the kill scenario, we refund otherwise.
    **/
-  | { name: "WithdrawUnbonded"; params: { numSlashingSpans: number } }
+  | { name: 'WithdrawUnbonded'; params: { numSlashingSpans: number } }
   /**
    * Declare the desire to validate for the origin controller.
    *
@@ -2401,7 +2152,7 @@ export type PalletStakingPalletCall =
    *
    * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
    **/
-  | { name: "Validate"; params: { prefs: PalletStakingValidatorPrefs } }
+  | { name: 'Validate'; params: { prefs: PalletStakingValidatorPrefs } }
   /**
    * Declare the desire to nominate `targets` for the origin controller.
    *
@@ -2414,7 +2165,7 @@ export type PalletStakingPalletCall =
    * which is capped at CompactAssignments::LIMIT (T::MaxNominations).
    * - Both the reads and writes follow a similar pattern.
    **/
-  | { name: "Nominate"; params: { targets: Array<MultiAddress> } }
+  | { name: 'Nominate'; params: { targets: Array<MultiAddress> } }
   /**
    * Declare no desire to either validate or nominate.
    *
@@ -2427,7 +2178,7 @@ export type PalletStakingPalletCall =
    * - Contains one read.
    * - Writes are limited to the `origin` account key.
    **/
-  | { name: "Chill" }
+  | { name: 'Chill' }
   /**
    * (Re-)set the payment target for a controller.
    *
@@ -2442,7 +2193,7 @@ export type PalletStakingPalletCall =
    * - Writes are limited to the `origin` account key.
    * ---------
    **/
-  | { name: "SetPayee"; params: { payee: PalletStakingRewardDestination } }
+  | { name: 'SetPayee'; params: { payee: PalletStakingRewardDestination } }
   /**
    * (Re-)sets the controller of a stash to the stash itself. This function previously
    * accepted a `controller` argument to set the controller to an account other than the
@@ -2459,7 +2210,7 @@ export type PalletStakingPalletCall =
    * - Contains a limited number of reads.
    * - Writes are limited to the `origin` account key.
    **/
-  | { name: "SetController" }
+  | { name: 'SetController' }
   /**
    * Sets the ideal number of validators.
    *
@@ -2468,7 +2219,7 @@ export type PalletStakingPalletCall =
    * ## Complexity
    * O(1)
    **/
-  | { name: "SetValidatorCount"; params: { new: number } }
+  | { name: 'SetValidatorCount'; params: { new: number } }
   /**
    * Increments the ideal number of validators up to maximum of
    * `ElectionProviderBase::MaxWinners`.
@@ -2478,7 +2229,7 @@ export type PalletStakingPalletCall =
    * ## Complexity
    * Same as [`Self::set_validator_count`].
    **/
-  | { name: "IncreaseValidatorCount"; params: { additional: number } }
+  | { name: 'IncreaseValidatorCount'; params: { additional: number } }
   /**
    * Scale up the ideal number of validators by a factor up to maximum of
    * `ElectionProviderBase::MaxWinners`.
@@ -2488,7 +2239,7 @@ export type PalletStakingPalletCall =
    * ## Complexity
    * Same as [`Self::set_validator_count`].
    **/
-  | { name: "ScaleValidatorCount"; params: { factor: Percent } }
+  | { name: 'ScaleValidatorCount'; params: { factor: Percent } }
   /**
    * Force there to be no new eras indefinitely.
    *
@@ -2504,7 +2255,7 @@ export type PalletStakingPalletCall =
    * - No arguments.
    * - Weight: O(1)
    **/
-  | { name: "ForceNoEras" }
+  | { name: 'ForceNoEras' }
   /**
    * Force there to be a new era at the end of the next session. After this, it will be
    * reset to normal (non-forced) behaviour.
@@ -2521,13 +2272,13 @@ export type PalletStakingPalletCall =
    * - No arguments.
    * - Weight: O(1)
    **/
-  | { name: "ForceNewEra" }
+  | { name: 'ForceNewEra' }
   /**
    * Set the validators who cannot be slashed (if any).
    *
    * The dispatch origin must be Root.
    **/
-  | { name: "SetInvulnerables"; params: { invulnerables: Array<AccountId32> } }
+  | { name: 'SetInvulnerables'; params: { invulnerables: Array<AccountId32> } }
   /**
    * Force a current staker to become completely unstaked, immediately.
    *
@@ -2538,10 +2289,7 @@ export type PalletStakingPalletCall =
    * - `num_slashing_spans`: Refer to comments on [`Call::withdraw_unbonded`] for more
    * details.
    **/
-  | {
-      name: "ForceUnstake";
-      params: { stash: AccountId32; numSlashingSpans: number };
-    }
+  | { name: 'ForceUnstake'; params: { stash: AccountId32; numSlashingSpans: number } }
   /**
    * Force there to be a new era at the end of sessions indefinitely.
    *
@@ -2553,7 +2301,7 @@ export type PalletStakingPalletCall =
    * If this is called just before a new era is triggered, the election process may not
    * have enough blocks to get a result.
    **/
-  | { name: "ForceNewEraAlways" }
+  | { name: 'ForceNewEraAlways' }
   /**
    * Cancel enactment of a deferred slash.
    *
@@ -2561,10 +2309,7 @@ export type PalletStakingPalletCall =
    *
    * Parameters: era and indices of the slashes for that era to kill.
    **/
-  | {
-      name: "CancelDeferredSlash";
-      params: { era: number; slashIndices: Array<number> };
-    }
+  | { name: 'CancelDeferredSlash'; params: { era: number; slashIndices: Array<number> } }
   /**
    * Pay out next page of the stakers behind a validator for the given era.
    *
@@ -2580,10 +2325,7 @@ export type PalletStakingPalletCall =
    *
    * If all pages are claimed, it returns an error `InvalidPage`.
    **/
-  | {
-      name: "PayoutStakers";
-      params: { validatorStash: AccountId32; era: number };
-    }
+  | { name: 'PayoutStakers'; params: { validatorStash: AccountId32; era: number } }
   /**
    * Rebond a portion of the stash scheduled to be unlocked.
    *
@@ -2593,7 +2335,7 @@ export type PalletStakingPalletCall =
    * - Time complexity: O(L), where L is unlocking chunks
    * - Bounded by `MaxUnlockingChunks`.
    **/
-  | { name: "Rebond"; params: { value: bigint } }
+  | { name: 'Rebond'; params: { value: bigint } }
   /**
    * Remove all data structures concerning a staker/stash once it is at a state where it can
    * be considered `dust` in the staking system. The requirements are:
@@ -2614,10 +2356,7 @@ export type PalletStakingPalletCall =
    * - `num_slashing_spans`: Refer to comments on [`Call::withdraw_unbonded`] for more
    * details.
    **/
-  | {
-      name: "ReapStash";
-      params: { stash: AccountId32; numSlashingSpans: number };
-    }
+  | { name: 'ReapStash'; params: { stash: AccountId32; numSlashingSpans: number } }
   /**
    * Remove the given nominations from the calling validator.
    *
@@ -2631,7 +2370,7 @@ export type PalletStakingPalletCall =
    * Note: Making this call only makes sense if you first set the validator preferences to
    * block any further nominations.
    **/
-  | { name: "Kick"; params: { who: Array<MultiAddress> } }
+  | { name: 'Kick'; params: { who: Array<MultiAddress> } }
   /**
    * Update the various staking configurations .
    *
@@ -2652,7 +2391,7 @@ export type PalletStakingPalletCall =
    * to kick people under the new limits, `chill_other` should be called.
    **/
   | {
-      name: "SetStakingConfigs";
+      name: 'SetStakingConfigs';
       params: {
         minNominatorBond: PalletStakingPalletConfigOp;
         minValidatorBond: PalletStakingPalletConfigOp;
@@ -2691,20 +2430,20 @@ export type PalletStakingPalletCall =
    * This can be helpful if bond requirements are updated, and we need to remove old users
    * who do not satisfy these requirements.
    **/
-  | { name: "ChillOther"; params: { stash: AccountId32 } }
+  | { name: 'ChillOther'; params: { stash: AccountId32 } }
   /**
    * Force a validator to have at least the minimum commission. This will not affect a
    * validator who already has a commission greater than or equal to the minimum. Any account
    * can call this.
    **/
-  | { name: "ForceApplyMinCommission"; params: { validatorStash: AccountId32 } }
+  | { name: 'ForceApplyMinCommission'; params: { validatorStash: AccountId32 } }
   /**
    * Sets the minimum amount of commission that each validators must maintain.
    *
    * This call has lower privilege requirements than `set_staking_config` and can be called
    * by the `T::AdminOrigin`. Root can always call this.
    **/
-  | { name: "SetMinCommission"; params: { new: Perbill } }
+  | { name: 'SetMinCommission'; params: { new: Perbill } }
   /**
    * Pay out a page of the stakers behind a validator for the given era and page.
    *
@@ -2724,10 +2463,7 @@ export type PalletStakingPalletCall =
    * and so it should not be assumed the highest staker would be on the topmost page and vice
    * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
    **/
-  | {
-      name: "PayoutStakersByPage";
-      params: { validatorStash: AccountId32; era: number; page: number };
-    }
+  | { name: 'PayoutStakersByPage'; params: { validatorStash: AccountId32; era: number; page: number } }
   /**
    * Migrates an account's `RewardDestination::Controller` to
    * `RewardDestination::Account(controller)`.
@@ -2736,7 +2472,7 @@ export type PalletStakingPalletCall =
    *
    * This will waive the transaction fee if the `payee` is successfully migrated.
    **/
-  | { name: "UpdatePayee"; params: { controller: AccountId32 } }
+  | { name: 'UpdatePayee'; params: { controller: AccountId32 } }
   /**
    * Updates a batch of controller accounts to their corresponding stash account if they are
    * not the same. Ignores any controller accounts that do not exist, and does not operate if
@@ -2746,10 +2482,7 @@ export type PalletStakingPalletCall =
    *
    * The dispatch origin must be `T::AdminOrigin`.
    **/
-  | {
-      name: "DeprecateControllerBatch";
-      params: { controllers: Array<AccountId32> };
-    }
+  | { name: 'DeprecateControllerBatch'; params: { controllers: Array<AccountId32> } }
   /**
    * Restores the state of a ledger which is in an inconsistent state.
    *
@@ -2764,7 +2497,7 @@ export type PalletStakingPalletCall =
    * be reset values from on-chain state.
    **/
   | {
-      name: "RestoreLedger";
+      name: 'RestoreLedger';
       params: {
         stash: AccountId32;
         maybeController?: AccountId32 | undefined;
@@ -2792,10 +2525,7 @@ export type PalletStakingPalletCallLike =
    * unless the `origin` falls below _existential deposit_ (or equal to 0) and gets removed
    * as dust.
    **/
-  | {
-      name: "Bond";
-      params: { value: bigint; payee: PalletStakingRewardDestination };
-    }
+  | { name: 'Bond'; params: { value: bigint; payee: PalletStakingRewardDestination } }
   /**
    * Add some extra amount that have appeared in the stash `free_balance` into the balance up
    * for staking.
@@ -2812,7 +2542,7 @@ export type PalletStakingPalletCallLike =
    * - Independent of the arguments. Insignificant complexity.
    * - O(1).
    **/
-  | { name: "BondExtra"; params: { maxAdditional: bigint } }
+  | { name: 'BondExtra'; params: { maxAdditional: bigint } }
   /**
    * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
    * period ends. If this leaves an amount actively bonded less than
@@ -2834,7 +2564,7 @@ export type PalletStakingPalletCallLike =
    *
    * See also [`Call::withdraw_unbonded`].
    **/
-  | { name: "Unbond"; params: { value: bigint } }
+  | { name: 'Unbond'; params: { value: bigint } }
   /**
    * Remove any unlocked chunks from the `unlocking` queue from our management.
    *
@@ -2860,7 +2590,7 @@ export type PalletStakingPalletCallLike =
    * O(S) where S is the number of slashing spans to remove
    * NOTE: Weight annotation is the kill scenario, we refund otherwise.
    **/
-  | { name: "WithdrawUnbonded"; params: { numSlashingSpans: number } }
+  | { name: 'WithdrawUnbonded'; params: { numSlashingSpans: number } }
   /**
    * Declare the desire to validate for the origin controller.
    *
@@ -2868,7 +2598,7 @@ export type PalletStakingPalletCallLike =
    *
    * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
    **/
-  | { name: "Validate"; params: { prefs: PalletStakingValidatorPrefs } }
+  | { name: 'Validate'; params: { prefs: PalletStakingValidatorPrefs } }
   /**
    * Declare the desire to nominate `targets` for the origin controller.
    *
@@ -2881,7 +2611,7 @@ export type PalletStakingPalletCallLike =
    * which is capped at CompactAssignments::LIMIT (T::MaxNominations).
    * - Both the reads and writes follow a similar pattern.
    **/
-  | { name: "Nominate"; params: { targets: Array<MultiAddressLike> } }
+  | { name: 'Nominate'; params: { targets: Array<MultiAddressLike> } }
   /**
    * Declare no desire to either validate or nominate.
    *
@@ -2894,7 +2624,7 @@ export type PalletStakingPalletCallLike =
    * - Contains one read.
    * - Writes are limited to the `origin` account key.
    **/
-  | { name: "Chill" }
+  | { name: 'Chill' }
   /**
    * (Re-)set the payment target for a controller.
    *
@@ -2909,7 +2639,7 @@ export type PalletStakingPalletCallLike =
    * - Writes are limited to the `origin` account key.
    * ---------
    **/
-  | { name: "SetPayee"; params: { payee: PalletStakingRewardDestination } }
+  | { name: 'SetPayee'; params: { payee: PalletStakingRewardDestination } }
   /**
    * (Re-)sets the controller of a stash to the stash itself. This function previously
    * accepted a `controller` argument to set the controller to an account other than the
@@ -2926,7 +2656,7 @@ export type PalletStakingPalletCallLike =
    * - Contains a limited number of reads.
    * - Writes are limited to the `origin` account key.
    **/
-  | { name: "SetController" }
+  | { name: 'SetController' }
   /**
    * Sets the ideal number of validators.
    *
@@ -2935,7 +2665,7 @@ export type PalletStakingPalletCallLike =
    * ## Complexity
    * O(1)
    **/
-  | { name: "SetValidatorCount"; params: { new: number } }
+  | { name: 'SetValidatorCount'; params: { new: number } }
   /**
    * Increments the ideal number of validators up to maximum of
    * `ElectionProviderBase::MaxWinners`.
@@ -2945,7 +2675,7 @@ export type PalletStakingPalletCallLike =
    * ## Complexity
    * Same as [`Self::set_validator_count`].
    **/
-  | { name: "IncreaseValidatorCount"; params: { additional: number } }
+  | { name: 'IncreaseValidatorCount'; params: { additional: number } }
   /**
    * Scale up the ideal number of validators by a factor up to maximum of
    * `ElectionProviderBase::MaxWinners`.
@@ -2955,7 +2685,7 @@ export type PalletStakingPalletCallLike =
    * ## Complexity
    * Same as [`Self::set_validator_count`].
    **/
-  | { name: "ScaleValidatorCount"; params: { factor: Percent } }
+  | { name: 'ScaleValidatorCount'; params: { factor: Percent } }
   /**
    * Force there to be no new eras indefinitely.
    *
@@ -2971,7 +2701,7 @@ export type PalletStakingPalletCallLike =
    * - No arguments.
    * - Weight: O(1)
    **/
-  | { name: "ForceNoEras" }
+  | { name: 'ForceNoEras' }
   /**
    * Force there to be a new era at the end of the next session. After this, it will be
    * reset to normal (non-forced) behaviour.
@@ -2988,16 +2718,13 @@ export type PalletStakingPalletCallLike =
    * - No arguments.
    * - Weight: O(1)
    **/
-  | { name: "ForceNewEra" }
+  | { name: 'ForceNewEra' }
   /**
    * Set the validators who cannot be slashed (if any).
    *
    * The dispatch origin must be Root.
    **/
-  | {
-      name: "SetInvulnerables";
-      params: { invulnerables: Array<AccountId32Like> };
-    }
+  | { name: 'SetInvulnerables'; params: { invulnerables: Array<AccountId32Like> } }
   /**
    * Force a current staker to become completely unstaked, immediately.
    *
@@ -3008,10 +2735,7 @@ export type PalletStakingPalletCallLike =
    * - `num_slashing_spans`: Refer to comments on [`Call::withdraw_unbonded`] for more
    * details.
    **/
-  | {
-      name: "ForceUnstake";
-      params: { stash: AccountId32Like; numSlashingSpans: number };
-    }
+  | { name: 'ForceUnstake'; params: { stash: AccountId32Like; numSlashingSpans: number } }
   /**
    * Force there to be a new era at the end of sessions indefinitely.
    *
@@ -3023,7 +2747,7 @@ export type PalletStakingPalletCallLike =
    * If this is called just before a new era is triggered, the election process may not
    * have enough blocks to get a result.
    **/
-  | { name: "ForceNewEraAlways" }
+  | { name: 'ForceNewEraAlways' }
   /**
    * Cancel enactment of a deferred slash.
    *
@@ -3031,10 +2755,7 @@ export type PalletStakingPalletCallLike =
    *
    * Parameters: era and indices of the slashes for that era to kill.
    **/
-  | {
-      name: "CancelDeferredSlash";
-      params: { era: number; slashIndices: Array<number> };
-    }
+  | { name: 'CancelDeferredSlash'; params: { era: number; slashIndices: Array<number> } }
   /**
    * Pay out next page of the stakers behind a validator for the given era.
    *
@@ -3050,10 +2771,7 @@ export type PalletStakingPalletCallLike =
    *
    * If all pages are claimed, it returns an error `InvalidPage`.
    **/
-  | {
-      name: "PayoutStakers";
-      params: { validatorStash: AccountId32Like; era: number };
-    }
+  | { name: 'PayoutStakers'; params: { validatorStash: AccountId32Like; era: number } }
   /**
    * Rebond a portion of the stash scheduled to be unlocked.
    *
@@ -3063,7 +2781,7 @@ export type PalletStakingPalletCallLike =
    * - Time complexity: O(L), where L is unlocking chunks
    * - Bounded by `MaxUnlockingChunks`.
    **/
-  | { name: "Rebond"; params: { value: bigint } }
+  | { name: 'Rebond'; params: { value: bigint } }
   /**
    * Remove all data structures concerning a staker/stash once it is at a state where it can
    * be considered `dust` in the staking system. The requirements are:
@@ -3084,10 +2802,7 @@ export type PalletStakingPalletCallLike =
    * - `num_slashing_spans`: Refer to comments on [`Call::withdraw_unbonded`] for more
    * details.
    **/
-  | {
-      name: "ReapStash";
-      params: { stash: AccountId32Like; numSlashingSpans: number };
-    }
+  | { name: 'ReapStash'; params: { stash: AccountId32Like; numSlashingSpans: number } }
   /**
    * Remove the given nominations from the calling validator.
    *
@@ -3101,7 +2816,7 @@ export type PalletStakingPalletCallLike =
    * Note: Making this call only makes sense if you first set the validator preferences to
    * block any further nominations.
    **/
-  | { name: "Kick"; params: { who: Array<MultiAddressLike> } }
+  | { name: 'Kick'; params: { who: Array<MultiAddressLike> } }
   /**
    * Update the various staking configurations .
    *
@@ -3122,7 +2837,7 @@ export type PalletStakingPalletCallLike =
    * to kick people under the new limits, `chill_other` should be called.
    **/
   | {
-      name: "SetStakingConfigs";
+      name: 'SetStakingConfigs';
       params: {
         minNominatorBond: PalletStakingPalletConfigOp;
         minValidatorBond: PalletStakingPalletConfigOp;
@@ -3161,23 +2876,20 @@ export type PalletStakingPalletCallLike =
    * This can be helpful if bond requirements are updated, and we need to remove old users
    * who do not satisfy these requirements.
    **/
-  | { name: "ChillOther"; params: { stash: AccountId32Like } }
+  | { name: 'ChillOther'; params: { stash: AccountId32Like } }
   /**
    * Force a validator to have at least the minimum commission. This will not affect a
    * validator who already has a commission greater than or equal to the minimum. Any account
    * can call this.
    **/
-  | {
-      name: "ForceApplyMinCommission";
-      params: { validatorStash: AccountId32Like };
-    }
+  | { name: 'ForceApplyMinCommission'; params: { validatorStash: AccountId32Like } }
   /**
    * Sets the minimum amount of commission that each validators must maintain.
    *
    * This call has lower privilege requirements than `set_staking_config` and can be called
    * by the `T::AdminOrigin`. Root can always call this.
    **/
-  | { name: "SetMinCommission"; params: { new: Perbill } }
+  | { name: 'SetMinCommission'; params: { new: Perbill } }
   /**
    * Pay out a page of the stakers behind a validator for the given era and page.
    *
@@ -3197,10 +2909,7 @@ export type PalletStakingPalletCallLike =
    * and so it should not be assumed the highest staker would be on the topmost page and vice
    * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
    **/
-  | {
-      name: "PayoutStakersByPage";
-      params: { validatorStash: AccountId32Like; era: number; page: number };
-    }
+  | { name: 'PayoutStakersByPage'; params: { validatorStash: AccountId32Like; era: number; page: number } }
   /**
    * Migrates an account's `RewardDestination::Controller` to
    * `RewardDestination::Account(controller)`.
@@ -3209,7 +2918,7 @@ export type PalletStakingPalletCallLike =
    *
    * This will waive the transaction fee if the `payee` is successfully migrated.
    **/
-  | { name: "UpdatePayee"; params: { controller: AccountId32Like } }
+  | { name: 'UpdatePayee'; params: { controller: AccountId32Like } }
   /**
    * Updates a batch of controller accounts to their corresponding stash account if they are
    * not the same. Ignores any controller accounts that do not exist, and does not operate if
@@ -3219,10 +2928,7 @@ export type PalletStakingPalletCallLike =
    *
    * The dispatch origin must be `T::AdminOrigin`.
    **/
-  | {
-      name: "DeprecateControllerBatch";
-      params: { controllers: Array<AccountId32Like> };
-    }
+  | { name: 'DeprecateControllerBatch'; params: { controllers: Array<AccountId32Like> } }
   /**
    * Restores the state of a ledger which is in an inconsistent state.
    *
@@ -3237,7 +2943,7 @@ export type PalletStakingPalletCallLike =
    * be reset values from on-chain state.
    **/
   | {
-      name: "RestoreLedger";
+      name: 'RestoreLedger';
       params: {
         stash: AccountId32Like;
         maybeController?: AccountId32Like | undefined;
@@ -3246,25 +2952,19 @@ export type PalletStakingPalletCallLike =
       };
     };
 
-export type PalletStakingPalletConfigOp =
-  | { type: "Noop" }
-  | { type: "Set"; value: bigint }
-  | { type: "Remove" };
+export type PalletStakingPalletConfigOp = { type: 'Noop' } | { type: 'Set'; value: bigint } | { type: 'Remove' };
 
-export type PalletStakingPalletConfigOpU32 =
-  | { type: "Noop" }
-  | { type: "Set"; value: number }
-  | { type: "Remove" };
+export type PalletStakingPalletConfigOpU32 = { type: 'Noop' } | { type: 'Set'; value: number } | { type: 'Remove' };
 
 export type PalletStakingPalletConfigOpPercent =
-  | { type: "Noop" }
-  | { type: "Set"; value: Percent }
-  | { type: "Remove" };
+  | { type: 'Noop' }
+  | { type: 'Set'; value: Percent }
+  | { type: 'Remove' };
 
 export type PalletStakingPalletConfigOpPerbill =
-  | { type: "Noop" }
-  | { type: "Set"; value: Perbill }
-  | { type: "Remove" };
+  | { type: 'Noop' }
+  | { type: 'Set'; value: Perbill }
+  | { type: 'Remove' };
 
 export type PalletStakingUnlockChunk = { value: bigint; era: number };
 
@@ -3291,10 +2991,7 @@ export type PalletTreasuryCall =
    *
    * Emits [`Event::SpendApproved`] if successful.
    **/
-  | {
-      name: "SpendLocal";
-      params: { amount: bigint; beneficiary: MultiAddress };
-    }
+  | { name: 'SpendLocal'; params: { amount: bigint; beneficiary: MultiAddress } }
   /**
    * Force a previously approved proposal to be removed from the approval queue.
    *
@@ -3318,7 +3015,7 @@ export type PalletTreasuryCall =
    * proposal does not exist altogether, thus there is no way it would have been approved
    * in the first place.
    **/
-  | { name: "RemoveApproval"; params: { proposalId: number } }
+  | { name: 'RemoveApproval'; params: { proposalId: number } }
   /**
    * Propose and approve a spend of treasury funds.
    *
@@ -3348,13 +3045,8 @@ export type PalletTreasuryCall =
    * Emits [`Event::AssetSpendApproved`] if successful.
    **/
   | {
-      name: "Spend";
-      params: {
-        assetKind: [];
-        amount: bigint;
-        beneficiary: AccountId32;
-        validFrom?: number | undefined;
-      };
+      name: 'Spend';
+      params: { assetKind: []; amount: bigint; beneficiary: AccountId32; validFrom?: number | undefined };
     }
   /**
    * Claim a spend.
@@ -3377,7 +3069,7 @@ export type PalletTreasuryCall =
    *
    * Emits [`Event::Paid`] if successful.
    **/
-  | { name: "Payout"; params: { index: number } }
+  | { name: 'Payout'; params: { index: number } }
   /**
    * Check the status of the spend and remove it from the storage if processed.
    *
@@ -3399,7 +3091,7 @@ export type PalletTreasuryCall =
    * Emits [`Event::PaymentFailed`] if the spend payout has failed.
    * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
    **/
-  | { name: "CheckStatus"; params: { index: number } }
+  | { name: 'CheckStatus'; params: { index: number } }
   /**
    * Void previously approved spend.
    *
@@ -3418,7 +3110,7 @@ export type PalletTreasuryCall =
    *
    * Emits [`Event::AssetSpendVoided`] if successful.
    **/
-  | { name: "VoidSpend"; params: { index: number } };
+  | { name: 'VoidSpend'; params: { index: number } };
 
 export type PalletTreasuryCallLike =
   /**
@@ -3440,10 +3132,7 @@ export type PalletTreasuryCallLike =
    *
    * Emits [`Event::SpendApproved`] if successful.
    **/
-  | {
-      name: "SpendLocal";
-      params: { amount: bigint; beneficiary: MultiAddressLike };
-    }
+  | { name: 'SpendLocal'; params: { amount: bigint; beneficiary: MultiAddressLike } }
   /**
    * Force a previously approved proposal to be removed from the approval queue.
    *
@@ -3467,7 +3156,7 @@ export type PalletTreasuryCallLike =
    * proposal does not exist altogether, thus there is no way it would have been approved
    * in the first place.
    **/
-  | { name: "RemoveApproval"; params: { proposalId: number } }
+  | { name: 'RemoveApproval'; params: { proposalId: number } }
   /**
    * Propose and approve a spend of treasury funds.
    *
@@ -3497,13 +3186,8 @@ export type PalletTreasuryCallLike =
    * Emits [`Event::AssetSpendApproved`] if successful.
    **/
   | {
-      name: "Spend";
-      params: {
-        assetKind: [];
-        amount: bigint;
-        beneficiary: AccountId32Like;
-        validFrom?: number | undefined;
-      };
+      name: 'Spend';
+      params: { assetKind: []; amount: bigint; beneficiary: AccountId32Like; validFrom?: number | undefined };
     }
   /**
    * Claim a spend.
@@ -3526,7 +3210,7 @@ export type PalletTreasuryCallLike =
    *
    * Emits [`Event::Paid`] if successful.
    **/
-  | { name: "Payout"; params: { index: number } }
+  | { name: 'Payout'; params: { index: number } }
   /**
    * Check the status of the spend and remove it from the storage if processed.
    *
@@ -3548,7 +3232,7 @@ export type PalletTreasuryCallLike =
    * Emits [`Event::PaymentFailed`] if the spend payout has failed.
    * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
    **/
-  | { name: "CheckStatus"; params: { index: number } }
+  | { name: 'CheckStatus'; params: { index: number } }
   /**
    * Void previously approved spend.
    *
@@ -3567,7 +3251,7 @@ export type PalletTreasuryCallLike =
    *
    * Emits [`Event::AssetSpendVoided`] if successful.
    **/
-  | { name: "VoidSpend"; params: { index: number } };
+  | { name: 'VoidSpend'; params: { index: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3584,13 +3268,7 @@ export type PalletConvictionVotingCall =
    *
    * Weight: `O(R)` where R is the number of polls the voter has voted on.
    **/
-  | {
-      name: "Vote";
-      params: {
-        pollIndex: number;
-        vote: PalletConvictionVotingVoteAccountVote;
-      };
-    }
+  | { name: 'Vote'; params: { pollIndex: number; vote: PalletConvictionVotingVoteAccountVote } }
   /**
    * Delegate the voting power (with some given conviction) of the sending account for a
    * particular class of polls.
@@ -3617,13 +3295,8 @@ export type PalletConvictionVotingCall =
    * voted on. Weight is initially charged as if maximum votes, but is refunded later.
    **/
   | {
-      name: "Delegate";
-      params: {
-        class: number;
-        to: MultiAddress;
-        conviction: PalletConvictionVotingConviction;
-        balance: bigint;
-      };
+      name: 'Delegate';
+      params: { class: number; to: MultiAddress; conviction: PalletConvictionVotingConviction; balance: bigint };
     }
   /**
    * Undelegate the voting power of the sending account for a particular class of polls.
@@ -3641,7 +3314,7 @@ export type PalletConvictionVotingCall =
    * Weight: `O(R)` where R is the number of polls the voter delegating to has
    * voted on. Weight is initially charged as if maximum votes, but is refunded later.
    **/
-  | { name: "Undelegate"; params: { class: number } }
+  | { name: 'Undelegate'; params: { class: number } }
   /**
    * Remove the lock caused by prior voting/delegating which has expired within a particular
    * class.
@@ -3653,7 +3326,7 @@ export type PalletConvictionVotingCall =
    *
    * Weight: `O(R)` with R number of vote of target.
    **/
-  | { name: "Unlock"; params: { class: number; target: MultiAddress } }
+  | { name: 'Unlock'; params: { class: number; target: MultiAddress } }
   /**
    * Remove a vote for a poll.
    *
@@ -3685,10 +3358,7 @@ export type PalletConvictionVotingCall =
    * Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
    * Weight is calculated for the maximum number of vote.
    **/
-  | {
-      name: "RemoveVote";
-      params: { class?: number | undefined; index: number };
-    }
+  | { name: 'RemoveVote'; params: { class?: number | undefined; index: number } }
   /**
    * Remove a vote for a poll.
    *
@@ -3707,10 +3377,7 @@ export type PalletConvictionVotingCall =
    * Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
    * Weight is calculated for the maximum number of vote.
    **/
-  | {
-      name: "RemoveOtherVote";
-      params: { target: MultiAddress; class: number; index: number };
-    };
+  | { name: 'RemoveOtherVote'; params: { target: MultiAddress; class: number; index: number } };
 
 export type PalletConvictionVotingCallLike =
   /**
@@ -3724,13 +3391,7 @@ export type PalletConvictionVotingCallLike =
    *
    * Weight: `O(R)` where R is the number of polls the voter has voted on.
    **/
-  | {
-      name: "Vote";
-      params: {
-        pollIndex: number;
-        vote: PalletConvictionVotingVoteAccountVote;
-      };
-    }
+  | { name: 'Vote'; params: { pollIndex: number; vote: PalletConvictionVotingVoteAccountVote } }
   /**
    * Delegate the voting power (with some given conviction) of the sending account for a
    * particular class of polls.
@@ -3757,13 +3418,8 @@ export type PalletConvictionVotingCallLike =
    * voted on. Weight is initially charged as if maximum votes, but is refunded later.
    **/
   | {
-      name: "Delegate";
-      params: {
-        class: number;
-        to: MultiAddressLike;
-        conviction: PalletConvictionVotingConviction;
-        balance: bigint;
-      };
+      name: 'Delegate';
+      params: { class: number; to: MultiAddressLike; conviction: PalletConvictionVotingConviction; balance: bigint };
     }
   /**
    * Undelegate the voting power of the sending account for a particular class of polls.
@@ -3781,7 +3437,7 @@ export type PalletConvictionVotingCallLike =
    * Weight: `O(R)` where R is the number of polls the voter delegating to has
    * voted on. Weight is initially charged as if maximum votes, but is refunded later.
    **/
-  | { name: "Undelegate"; params: { class: number } }
+  | { name: 'Undelegate'; params: { class: number } }
   /**
    * Remove the lock caused by prior voting/delegating which has expired within a particular
    * class.
@@ -3793,7 +3449,7 @@ export type PalletConvictionVotingCallLike =
    *
    * Weight: `O(R)` with R number of vote of target.
    **/
-  | { name: "Unlock"; params: { class: number; target: MultiAddressLike } }
+  | { name: 'Unlock'; params: { class: number; target: MultiAddressLike } }
   /**
    * Remove a vote for a poll.
    *
@@ -3825,10 +3481,7 @@ export type PalletConvictionVotingCallLike =
    * Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
    * Weight is calculated for the maximum number of vote.
    **/
-  | {
-      name: "RemoveVote";
-      params: { class?: number | undefined; index: number };
-    }
+  | { name: 'RemoveVote'; params: { class?: number | undefined; index: number } }
   /**
    * Remove a vote for a poll.
    *
@@ -3847,19 +3500,16 @@ export type PalletConvictionVotingCallLike =
    * Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
    * Weight is calculated for the maximum number of vote.
    **/
-  | {
-      name: "RemoveOtherVote";
-      params: { target: MultiAddressLike; class: number; index: number };
-    };
+  | { name: 'RemoveOtherVote'; params: { target: MultiAddressLike; class: number; index: number } };
 
 export type PalletConvictionVotingConviction =
-  | "None"
-  | "Locked1x"
-  | "Locked2x"
-  | "Locked3x"
-  | "Locked4x"
-  | "Locked5x"
-  | "Locked6x";
+  | 'None'
+  | 'Locked1x'
+  | 'Locked2x'
+  | 'Locked3x'
+  | 'Locked4x'
+  | 'Locked5x'
+  | 'Locked6x';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3877,7 +3527,7 @@ export type PalletReferendaCall =
    * Emits `Submitted`.
    **/
   | {
-      name: "Submit";
+      name: 'Submit';
       params: {
         proposalOrigin: VaraRuntimeOriginCaller;
         proposal: FrameSupportPreimagesBounded;
@@ -3894,7 +3544,7 @@ export type PalletReferendaCall =
    *
    * Emits `DecisionDepositPlaced`.
    **/
-  | { name: "PlaceDecisionDeposit"; params: { index: number } }
+  | { name: 'PlaceDecisionDeposit'; params: { index: number } }
   /**
    * Refund the Decision Deposit for a closed referendum back to the depositor.
    *
@@ -3904,7 +3554,7 @@ export type PalletReferendaCall =
    *
    * Emits `DecisionDepositRefunded`.
    **/
-  | { name: "RefundDecisionDeposit"; params: { index: number } }
+  | { name: 'RefundDecisionDeposit'; params: { index: number } }
   /**
    * Cancel an ongoing referendum.
    *
@@ -3913,7 +3563,7 @@ export type PalletReferendaCall =
    *
    * Emits `Cancelled`.
    **/
-  | { name: "Cancel"; params: { index: number } }
+  | { name: 'Cancel'; params: { index: number } }
   /**
    * Cancel an ongoing referendum and slash the deposits.
    *
@@ -3922,14 +3572,14 @@ export type PalletReferendaCall =
    *
    * Emits `Killed` and `DepositSlashed`.
    **/
-  | { name: "Kill"; params: { index: number } }
+  | { name: 'Kill'; params: { index: number } }
   /**
    * Advance a referendum onto its next logical state. Only used internally.
    *
    * - `origin`: must be `Root`.
    * - `index`: the referendum to be advanced.
    **/
-  | { name: "NudgeReferendum"; params: { index: number } }
+  | { name: 'NudgeReferendum'; params: { index: number } }
   /**
    * Advance a track onto its next logical state. Only used internally.
    *
@@ -3941,7 +3591,7 @@ export type PalletReferendaCall =
    * - begin deciding another referendum (and leave `DecidingCount` alone); or
    * - decrement `DecidingCount`.
    **/
-  | { name: "OneFewerDeciding"; params: { track: number } }
+  | { name: 'OneFewerDeciding'; params: { track: number } }
   /**
    * Refund the Submission Deposit for a closed referendum back to the depositor.
    *
@@ -3951,7 +3601,7 @@ export type PalletReferendaCall =
    *
    * Emits `SubmissionDepositRefunded`.
    **/
-  | { name: "RefundSubmissionDeposit"; params: { index: number } }
+  | { name: 'RefundSubmissionDeposit'; params: { index: number } }
   /**
    * Set or clear metadata of a referendum.
    *
@@ -3961,10 +3611,7 @@ export type PalletReferendaCall =
    * - `index`: The index of a referendum to set or clear metadata for.
    * - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
    **/
-  | {
-      name: "SetMetadata";
-      params: { index: number; maybeHash?: H256 | undefined };
-    };
+  | { name: 'SetMetadata'; params: { index: number; maybeHash?: H256 | undefined } };
 
 export type PalletReferendaCallLike =
   /**
@@ -3979,7 +3626,7 @@ export type PalletReferendaCallLike =
    * Emits `Submitted`.
    **/
   | {
-      name: "Submit";
+      name: 'Submit';
       params: {
         proposalOrigin: VaraRuntimeOriginCaller;
         proposal: FrameSupportPreimagesBounded;
@@ -3996,7 +3643,7 @@ export type PalletReferendaCallLike =
    *
    * Emits `DecisionDepositPlaced`.
    **/
-  | { name: "PlaceDecisionDeposit"; params: { index: number } }
+  | { name: 'PlaceDecisionDeposit'; params: { index: number } }
   /**
    * Refund the Decision Deposit for a closed referendum back to the depositor.
    *
@@ -4006,7 +3653,7 @@ export type PalletReferendaCallLike =
    *
    * Emits `DecisionDepositRefunded`.
    **/
-  | { name: "RefundDecisionDeposit"; params: { index: number } }
+  | { name: 'RefundDecisionDeposit'; params: { index: number } }
   /**
    * Cancel an ongoing referendum.
    *
@@ -4015,7 +3662,7 @@ export type PalletReferendaCallLike =
    *
    * Emits `Cancelled`.
    **/
-  | { name: "Cancel"; params: { index: number } }
+  | { name: 'Cancel'; params: { index: number } }
   /**
    * Cancel an ongoing referendum and slash the deposits.
    *
@@ -4024,14 +3671,14 @@ export type PalletReferendaCallLike =
    *
    * Emits `Killed` and `DepositSlashed`.
    **/
-  | { name: "Kill"; params: { index: number } }
+  | { name: 'Kill'; params: { index: number } }
   /**
    * Advance a referendum onto its next logical state. Only used internally.
    *
    * - `origin`: must be `Root`.
    * - `index`: the referendum to be advanced.
    **/
-  | { name: "NudgeReferendum"; params: { index: number } }
+  | { name: 'NudgeReferendum'; params: { index: number } }
   /**
    * Advance a track onto its next logical state. Only used internally.
    *
@@ -4043,7 +3690,7 @@ export type PalletReferendaCallLike =
    * - begin deciding another referendum (and leave `DecidingCount` alone); or
    * - decrement `DecidingCount`.
    **/
-  | { name: "OneFewerDeciding"; params: { track: number } }
+  | { name: 'OneFewerDeciding'; params: { track: number } }
   /**
    * Refund the Submission Deposit for a closed referendum back to the depositor.
    *
@@ -4053,7 +3700,7 @@ export type PalletReferendaCallLike =
    *
    * Emits `SubmissionDepositRefunded`.
    **/
-  | { name: "RefundSubmissionDeposit"; params: { index: number } }
+  | { name: 'RefundSubmissionDeposit'; params: { index: number } }
   /**
    * Set or clear metadata of a referendum.
    *
@@ -4063,14 +3710,9 @@ export type PalletReferendaCallLike =
    * - `index`: The index of a referendum to set or clear metadata for.
    * - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
    **/
-  | {
-      name: "SetMetadata";
-      params: { index: number; maybeHash?: H256 | undefined };
-    };
+  | { name: 'SetMetadata'; params: { index: number; maybeHash?: H256 | undefined } };
 
-export type FrameSupportScheduleDispatchTime =
-  | { type: "At"; value: number }
-  | { type: "After"; value: number };
+export type FrameSupportScheduleDispatchTime = { type: 'At'; value: number } | { type: 'After'; value: number };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4084,7 +3726,7 @@ export type PalletRankedCollectiveCall =
    *
    * Weight: `O(1)`
    **/
-  | { name: "AddMember"; params: { who: MultiAddress } }
+  | { name: 'AddMember'; params: { who: MultiAddress } }
   /**
    * Increment the rank of an existing member by one.
    *
@@ -4093,7 +3735,7 @@ export type PalletRankedCollectiveCall =
    *
    * Weight: `O(1)`
    **/
-  | { name: "PromoteMember"; params: { who: MultiAddress } }
+  | { name: 'PromoteMember'; params: { who: MultiAddress } }
   /**
    * Decrement the rank of an existing member by one. If the member is already at rank zero,
    * then they are removed entirely.
@@ -4103,7 +3745,7 @@ export type PalletRankedCollectiveCall =
    *
    * Weight: `O(1)`, less if the member's index is highest in its rank.
    **/
-  | { name: "DemoteMember"; params: { who: MultiAddress } }
+  | { name: 'DemoteMember'; params: { who: MultiAddress } }
   /**
    * Remove the member entirely.
    *
@@ -4113,7 +3755,7 @@ export type PalletRankedCollectiveCall =
    *
    * Weight: `O(min_rank)`.
    **/
-  | { name: "RemoveMember"; params: { who: MultiAddress; minRank: number } }
+  | { name: 'RemoveMember'; params: { who: MultiAddress; minRank: number } }
   /**
    * Add an aye or nay vote for the sender to the given proposal.
    *
@@ -4127,7 +3769,7 @@ export type PalletRankedCollectiveCall =
    *
    * Weight: `O(1)`, less if there was no previous vote on the poll by the member.
    **/
-  | { name: "Vote"; params: { poll: number; aye: boolean } }
+  | { name: 'Vote'; params: { poll: number; aye: boolean } }
   /**
    * Remove votes from the given poll. It must have ended.
    *
@@ -4140,7 +3782,7 @@ export type PalletRankedCollectiveCall =
    *
    * Weight `O(max)` (less if there are fewer items to remove than `max`).
    **/
-  | { name: "CleanupPoll"; params: { pollIndex: number; max: number } }
+  | { name: 'CleanupPoll'; params: { pollIndex: number; max: number } }
   /**
    * Exchanges a member with a new account and the same existing rank.
    *
@@ -4148,10 +3790,7 @@ export type PalletRankedCollectiveCall =
    * - `who`: Account of existing member of rank greater than zero to be exchanged.
    * - `new_who`: New Account of existing member of rank greater than zero to exchanged to.
    **/
-  | {
-      name: "ExchangeMember";
-      params: { who: MultiAddress; newWho: MultiAddress };
-    };
+  | { name: 'ExchangeMember'; params: { who: MultiAddress; newWho: MultiAddress } };
 
 export type PalletRankedCollectiveCallLike =
   /**
@@ -4162,7 +3801,7 @@ export type PalletRankedCollectiveCallLike =
    *
    * Weight: `O(1)`
    **/
-  | { name: "AddMember"; params: { who: MultiAddressLike } }
+  | { name: 'AddMember'; params: { who: MultiAddressLike } }
   /**
    * Increment the rank of an existing member by one.
    *
@@ -4171,7 +3810,7 @@ export type PalletRankedCollectiveCallLike =
    *
    * Weight: `O(1)`
    **/
-  | { name: "PromoteMember"; params: { who: MultiAddressLike } }
+  | { name: 'PromoteMember'; params: { who: MultiAddressLike } }
   /**
    * Decrement the rank of an existing member by one. If the member is already at rank zero,
    * then they are removed entirely.
@@ -4181,7 +3820,7 @@ export type PalletRankedCollectiveCallLike =
    *
    * Weight: `O(1)`, less if the member's index is highest in its rank.
    **/
-  | { name: "DemoteMember"; params: { who: MultiAddressLike } }
+  | { name: 'DemoteMember'; params: { who: MultiAddressLike } }
   /**
    * Remove the member entirely.
    *
@@ -4191,7 +3830,7 @@ export type PalletRankedCollectiveCallLike =
    *
    * Weight: `O(min_rank)`.
    **/
-  | { name: "RemoveMember"; params: { who: MultiAddressLike; minRank: number } }
+  | { name: 'RemoveMember'; params: { who: MultiAddressLike; minRank: number } }
   /**
    * Add an aye or nay vote for the sender to the given proposal.
    *
@@ -4205,7 +3844,7 @@ export type PalletRankedCollectiveCallLike =
    *
    * Weight: `O(1)`, less if there was no previous vote on the poll by the member.
    **/
-  | { name: "Vote"; params: { poll: number; aye: boolean } }
+  | { name: 'Vote'; params: { poll: number; aye: boolean } }
   /**
    * Remove votes from the given poll. It must have ended.
    *
@@ -4218,7 +3857,7 @@ export type PalletRankedCollectiveCallLike =
    *
    * Weight `O(max)` (less if there are fewer items to remove than `max`).
    **/
-  | { name: "CleanupPoll"; params: { pollIndex: number; max: number } }
+  | { name: 'CleanupPoll'; params: { pollIndex: number; max: number } }
   /**
    * Exchanges a member with a new account and the same existing rank.
    *
@@ -4226,45 +3865,28 @@ export type PalletRankedCollectiveCallLike =
    * - `who`: Account of existing member of rank greater than zero to be exchanged.
    * - `new_who`: New Account of existing member of rank greater than zero to exchanged to.
    **/
-  | {
-      name: "ExchangeMember";
-      params: { who: MultiAddressLike; newWho: MultiAddressLike };
-    };
+  | { name: 'ExchangeMember'; params: { who: MultiAddressLike; newWho: MultiAddressLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
 export type PalletWhitelistCall =
-  | { name: "WhitelistCall"; params: { callHash: H256 } }
-  | { name: "RemoveWhitelistedCall"; params: { callHash: H256 } }
+  | { name: 'WhitelistCall'; params: { callHash: H256 } }
+  | { name: 'RemoveWhitelistedCall'; params: { callHash: H256 } }
   | {
-      name: "DispatchWhitelistedCall";
-      params: {
-        callHash: H256;
-        callEncodedLen: number;
-        callWeightWitness: SpWeightsWeightV2Weight;
-      };
+      name: 'DispatchWhitelistedCall';
+      params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
-  | {
-      name: "DispatchWhitelistedCallWithPreimage";
-      params: { call: VaraRuntimeRuntimeCall };
-    };
+  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: VaraRuntimeRuntimeCall } };
 
 export type PalletWhitelistCallLike =
-  | { name: "WhitelistCall"; params: { callHash: H256 } }
-  | { name: "RemoveWhitelistedCall"; params: { callHash: H256 } }
+  | { name: 'WhitelistCall'; params: { callHash: H256 } }
+  | { name: 'RemoveWhitelistedCall'; params: { callHash: H256 } }
   | {
-      name: "DispatchWhitelistedCall";
-      params: {
-        callHash: H256;
-        callEncodedLen: number;
-        callWeightWitness: SpWeightsWeightV2Weight;
-      };
+      name: 'DispatchWhitelistedCall';
+      params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
-  | {
-      name: "DispatchWhitelistedCallWithPreimage";
-      params: { call: VaraRuntimeRuntimeCallLike };
-    };
+  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: VaraRuntimeRuntimeCallLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4274,7 +3896,7 @@ export type PalletSchedulerCall =
    * Anonymously schedule a task.
    **/
   | {
-      name: "Schedule";
+      name: 'Schedule';
       params: {
         when: number;
         maybePeriodic?: [number, number] | undefined;
@@ -4285,12 +3907,12 @@ export type PalletSchedulerCall =
   /**
    * Cancel an anonymously scheduled task.
    **/
-  | { name: "Cancel"; params: { when: number; index: number } }
+  | { name: 'Cancel'; params: { when: number; index: number } }
   /**
    * Schedule a named task.
    **/
   | {
-      name: "ScheduleNamed";
+      name: 'ScheduleNamed';
       params: {
         id: FixedBytes<32>;
         when: number;
@@ -4302,12 +3924,12 @@ export type PalletSchedulerCall =
   /**
    * Cancel a named scheduled task.
    **/
-  | { name: "CancelNamed"; params: { id: FixedBytes<32> } }
+  | { name: 'CancelNamed'; params: { id: FixedBytes<32> } }
   /**
    * Anonymously schedule a task after a delay.
    **/
   | {
-      name: "ScheduleAfter";
+      name: 'ScheduleAfter';
       params: {
         after: number;
         maybePeriodic?: [number, number] | undefined;
@@ -4319,7 +3941,7 @@ export type PalletSchedulerCall =
    * Schedule a named task after a delay.
    **/
   | {
-      name: "ScheduleNamedAfter";
+      name: 'ScheduleNamedAfter';
       params: {
         id: FixedBytes<32>;
         after: number;
@@ -4342,10 +3964,7 @@ export type PalletSchedulerCall =
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
    **/
-  | {
-      name: "SetRetry";
-      params: { task: [number, number]; retries: number; period: number };
-    }
+  | { name: 'SetRetry'; params: { task: [number, number]; retries: number; period: number } }
   /**
    * Set a retry configuration for a named task so that, in case its scheduled run fails, it
    * will be retried after `period` blocks, for a total amount of `retries` retries or until
@@ -4360,25 +3979,22 @@ export type PalletSchedulerCall =
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
    **/
-  | {
-      name: "SetRetryNamed";
-      params: { id: FixedBytes<32>; retries: number; period: number };
-    }
+  | { name: 'SetRetryNamed'; params: { id: FixedBytes<32>; retries: number; period: number } }
   /**
    * Removes the retry configuration of a task.
    **/
-  | { name: "CancelRetry"; params: { task: [number, number] } }
+  | { name: 'CancelRetry'; params: { task: [number, number] } }
   /**
    * Cancel the retry configuration of a named task.
    **/
-  | { name: "CancelRetryNamed"; params: { id: FixedBytes<32> } };
+  | { name: 'CancelRetryNamed'; params: { id: FixedBytes<32> } };
 
 export type PalletSchedulerCallLike =
   /**
    * Anonymously schedule a task.
    **/
   | {
-      name: "Schedule";
+      name: 'Schedule';
       params: {
         when: number;
         maybePeriodic?: [number, number] | undefined;
@@ -4389,12 +4005,12 @@ export type PalletSchedulerCallLike =
   /**
    * Cancel an anonymously scheduled task.
    **/
-  | { name: "Cancel"; params: { when: number; index: number } }
+  | { name: 'Cancel'; params: { when: number; index: number } }
   /**
    * Schedule a named task.
    **/
   | {
-      name: "ScheduleNamed";
+      name: 'ScheduleNamed';
       params: {
         id: FixedBytes<32>;
         when: number;
@@ -4406,12 +4022,12 @@ export type PalletSchedulerCallLike =
   /**
    * Cancel a named scheduled task.
    **/
-  | { name: "CancelNamed"; params: { id: FixedBytes<32> } }
+  | { name: 'CancelNamed'; params: { id: FixedBytes<32> } }
   /**
    * Anonymously schedule a task after a delay.
    **/
   | {
-      name: "ScheduleAfter";
+      name: 'ScheduleAfter';
       params: {
         after: number;
         maybePeriodic?: [number, number] | undefined;
@@ -4423,7 +4039,7 @@ export type PalletSchedulerCallLike =
    * Schedule a named task after a delay.
    **/
   | {
-      name: "ScheduleNamedAfter";
+      name: 'ScheduleNamedAfter';
       params: {
         id: FixedBytes<32>;
         after: number;
@@ -4446,10 +4062,7 @@ export type PalletSchedulerCallLike =
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
    **/
-  | {
-      name: "SetRetry";
-      params: { task: [number, number]; retries: number; period: number };
-    }
+  | { name: 'SetRetry'; params: { task: [number, number]; retries: number; period: number } }
   /**
    * Set a retry configuration for a named task so that, in case its scheduled run fails, it
    * will be retried after `period` blocks, for a total amount of `retries` retries or until
@@ -4464,18 +4077,15 @@ export type PalletSchedulerCallLike =
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
    **/
-  | {
-      name: "SetRetryNamed";
-      params: { id: FixedBytes<32>; retries: number; period: number };
-    }
+  | { name: 'SetRetryNamed'; params: { id: FixedBytes<32>; retries: number; period: number } }
   /**
    * Removes the retry configuration of a task.
    **/
-  | { name: "CancelRetry"; params: { task: [number, number] } }
+  | { name: 'CancelRetry'; params: { task: [number, number] } }
   /**
    * Cancel the retry configuration of a named task.
    **/
-  | { name: "CancelRetryNamed"; params: { id: FixedBytes<32> } };
+  | { name: 'CancelRetryNamed'; params: { id: FixedBytes<32> } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4487,7 +4097,7 @@ export type PalletPreimageCall =
    * If the preimage was previously requested, no fees or deposits are taken for providing
    * the preimage. Otherwise, a deposit is taken proportional to the size of the preimage.
    **/
-  | { name: "NotePreimage"; params: { bytes: Bytes } }
+  | { name: 'NotePreimage'; params: { bytes: Bytes } }
   /**
    * Clear an unrequested preimage from the runtime storage.
    *
@@ -4496,26 +4106,26 @@ export type PalletPreimageCall =
    * - `hash`: The hash of the preimage to be removed from the store.
    * - `len`: The length of the preimage of `hash`.
    **/
-  | { name: "UnnotePreimage"; params: { hash: H256 } }
+  | { name: 'UnnotePreimage'; params: { hash: H256 } }
   /**
    * Request a preimage be uploaded to the chain without paying any fees or deposits.
    *
    * If the preimage requests has already been provided on-chain, we unreserve any deposit
    * a user may have paid, and take the control of the preimage out of their hands.
    **/
-  | { name: "RequestPreimage"; params: { hash: H256 } }
+  | { name: 'RequestPreimage'; params: { hash: H256 } }
   /**
    * Clear a previously made request for a preimage.
    *
    * NOTE: THIS MUST NOT BE CALLED ON `hash` MORE TIMES THAN `request_preimage`.
    **/
-  | { name: "UnrequestPreimage"; params: { hash: H256 } }
+  | { name: 'UnrequestPreimage'; params: { hash: H256 } }
   /**
    * Ensure that the a bulk of pre-images is upgraded.
    *
    * The caller pays no fee if at least 90% of pre-images were successfully updated.
    **/
-  | { name: "EnsureUpdated"; params: { hashes: Array<H256> } };
+  | { name: 'EnsureUpdated'; params: { hashes: Array<H256> } };
 
 export type PalletPreimageCallLike =
   /**
@@ -4524,7 +4134,7 @@ export type PalletPreimageCallLike =
    * If the preimage was previously requested, no fees or deposits are taken for providing
    * the preimage. Otherwise, a deposit is taken proportional to the size of the preimage.
    **/
-  | { name: "NotePreimage"; params: { bytes: BytesLike } }
+  | { name: 'NotePreimage'; params: { bytes: BytesLike } }
   /**
    * Clear an unrequested preimage from the runtime storage.
    *
@@ -4533,26 +4143,26 @@ export type PalletPreimageCallLike =
    * - `hash`: The hash of the preimage to be removed from the store.
    * - `len`: The length of the preimage of `hash`.
    **/
-  | { name: "UnnotePreimage"; params: { hash: H256 } }
+  | { name: 'UnnotePreimage'; params: { hash: H256 } }
   /**
    * Request a preimage be uploaded to the chain without paying any fees or deposits.
    *
    * If the preimage requests has already been provided on-chain, we unreserve any deposit
    * a user may have paid, and take the control of the preimage out of their hands.
    **/
-  | { name: "RequestPreimage"; params: { hash: H256 } }
+  | { name: 'RequestPreimage'; params: { hash: H256 } }
   /**
    * Clear a previously made request for a preimage.
    *
    * NOTE: THIS MUST NOT BE CALLED ON `hash` MORE TIMES THAN `request_preimage`.
    **/
-  | { name: "UnrequestPreimage"; params: { hash: H256 } }
+  | { name: 'UnrequestPreimage'; params: { hash: H256 } }
   /**
    * Ensure that the a bulk of pre-images is upgraded.
    *
    * The caller pays no fee if at least 90% of pre-images were successfully updated.
    **/
-  | { name: "EnsureUpdated"; params: { hashes: Array<H256> } };
+  | { name: 'EnsureUpdated'; params: { hashes: Array<H256> } };
 
 /**
  * Identity pallet declaration.
@@ -4567,7 +4177,7 @@ export type PalletIdentityCall =
    *
    * Emits `RegistrarAdded` if successful.
    **/
-  | { name: "AddRegistrar"; params: { account: MultiAddress } }
+  | { name: 'AddRegistrar'; params: { account: MultiAddress } }
   /**
    * Set an account's identity information and reserve the appropriate deposit.
    *
@@ -4580,7 +4190,7 @@ export type PalletIdentityCall =
    *
    * Emits `IdentitySet` if successful.
    **/
-  | { name: "SetIdentity"; params: { info: PalletIdentityLegacyIdentityInfo } }
+  | { name: 'SetIdentity'; params: { info: PalletIdentityLegacyIdentityInfo } }
   /**
    * Set the sub-accounts of the sender.
    *
@@ -4592,7 +4202,7 @@ export type PalletIdentityCall =
    *
    * - `subs`: The identity's (new) sub-accounts.
    **/
-  | { name: "SetSubs"; params: { subs: Array<[AccountId32, Data]> } }
+  | { name: 'SetSubs'; params: { subs: Array<[AccountId32, Data]> } }
   /**
    * Clear an account's identity info and all sub-accounts and return all deposits.
    *
@@ -4603,7 +4213,7 @@ export type PalletIdentityCall =
    *
    * Emits `IdentityCleared` if successful.
    **/
-  | { name: "ClearIdentity" }
+  | { name: 'ClearIdentity' }
   /**
    * Request a judgement from a registrar.
    *
@@ -4622,7 +4232,7 @@ export type PalletIdentityCall =
    *
    * Emits `JudgementRequested` if successful.
    **/
-  | { name: "RequestJudgement"; params: { regIndex: number; maxFee: bigint } }
+  | { name: 'RequestJudgement'; params: { regIndex: number; maxFee: bigint } }
   /**
    * Cancel a previous request.
    *
@@ -4635,7 +4245,7 @@ export type PalletIdentityCall =
    *
    * Emits `JudgementUnrequested` if successful.
    **/
-  | { name: "CancelRequest"; params: { regIndex: number } }
+  | { name: 'CancelRequest'; params: { regIndex: number } }
   /**
    * Set the fee required for a judgement to be requested from a registrar.
    *
@@ -4645,7 +4255,7 @@ export type PalletIdentityCall =
    * - `index`: the index of the registrar whose fee is to be set.
    * - `fee`: the new fee.
    **/
-  | { name: "SetFee"; params: { index: number; fee: bigint } }
+  | { name: 'SetFee'; params: { index: number; fee: bigint } }
   /**
    * Change the account associated with a registrar.
    *
@@ -4655,7 +4265,7 @@ export type PalletIdentityCall =
    * - `index`: the index of the registrar whose fee is to be set.
    * - `new`: the new account ID.
    **/
-  | { name: "SetAccountId"; params: { index: number; new: MultiAddress } }
+  | { name: 'SetAccountId'; params: { index: number; new: MultiAddress } }
   /**
    * Set the field information for a registrar.
    *
@@ -4665,7 +4275,7 @@ export type PalletIdentityCall =
    * - `index`: the index of the registrar whose fee is to be set.
    * - `fields`: the fields that the registrar concerns themselves with.
    **/
-  | { name: "SetFields"; params: { index: number; fields: bigint } }
+  | { name: 'SetFields'; params: { index: number; fields: bigint } }
   /**
    * Provide a judgement for an account's identity.
    *
@@ -4684,13 +4294,8 @@ export type PalletIdentityCall =
    * Emits `JudgementGiven` if successful.
    **/
   | {
-      name: "ProvideJudgement";
-      params: {
-        regIndex: number;
-        target: MultiAddress;
-        judgement: PalletIdentityJudgement;
-        identity: H256;
-      };
+      name: 'ProvideJudgement';
+      params: { regIndex: number; target: MultiAddress; judgement: PalletIdentityJudgement; identity: H256 };
     }
   /**
    * Remove an account's identity and sub-account information and slash the deposits.
@@ -4706,7 +4311,7 @@ export type PalletIdentityCall =
    *
    * Emits `IdentityKilled` if successful.
    **/
-  | { name: "KillIdentity"; params: { target: MultiAddress } }
+  | { name: 'KillIdentity'; params: { target: MultiAddress } }
   /**
    * Add the given account to the sender's subs.
    *
@@ -4716,14 +4321,14 @@ export type PalletIdentityCall =
    * The dispatch origin for this call must be _Signed_ and the sender must have a registered
    * sub identity of `sub`.
    **/
-  | { name: "AddSub"; params: { sub: MultiAddress; data: Data } }
+  | { name: 'AddSub'; params: { sub: MultiAddress; data: Data } }
   /**
    * Alter the associated name of the given sub-account.
    *
    * The dispatch origin for this call must be _Signed_ and the sender must have a registered
    * sub identity of `sub`.
    **/
-  | { name: "RenameSub"; params: { sub: MultiAddress; data: Data } }
+  | { name: 'RenameSub'; params: { sub: MultiAddress; data: Data } }
   /**
    * Remove the given account from the sender's subs.
    *
@@ -4733,7 +4338,7 @@ export type PalletIdentityCall =
    * The dispatch origin for this call must be _Signed_ and the sender must have a registered
    * sub identity of `sub`.
    **/
-  | { name: "RemoveSub"; params: { sub: MultiAddress } }
+  | { name: 'RemoveSub'; params: { sub: MultiAddress } }
   /**
    * Remove the sender as a sub-account.
    *
@@ -4746,21 +4351,18 @@ export type PalletIdentityCall =
    * NOTE: This should not normally be used, but is provided in the case that the non-
    * controller of an account is maliciously registered as a sub-account.
    **/
-  | { name: "QuitSub" }
+  | { name: 'QuitSub' }
   /**
    * Add an `AccountId` with permission to grant usernames with a given `suffix` appended.
    *
    * The authority can grant up to `allocation` usernames. To top up their allocation, they
    * should just issue (or request via governance) a new `add_username_authority` call.
    **/
-  | {
-      name: "AddUsernameAuthority";
-      params: { authority: MultiAddress; suffix: Bytes; allocation: number };
-    }
+  | { name: 'AddUsernameAuthority'; params: { authority: MultiAddress; suffix: Bytes; allocation: number } }
   /**
    * Remove `authority` from the username authorities.
    **/
-  | { name: "RemoveUsernameAuthority"; params: { authority: MultiAddress } }
+  | { name: 'RemoveUsernameAuthority'; params: { authority: MultiAddress } }
   /**
    * Set the username for `who`. Must be called by a username authority.
    *
@@ -4773,33 +4375,29 @@ export type PalletIdentityCall =
    * `MaxUsernameLength`.
    **/
   | {
-      name: "SetUsernameFor";
-      params: {
-        who: MultiAddress;
-        username: Bytes;
-        signature?: SpRuntimeMultiSignature | undefined;
-      };
+      name: 'SetUsernameFor';
+      params: { who: MultiAddress; username: Bytes; signature?: SpRuntimeMultiSignature | undefined };
     }
   /**
    * Accept a given username that an `authority` granted. The call must include the full
    * username, as in `username.suffix`.
    **/
-  | { name: "AcceptUsername"; params: { username: Bytes } }
+  | { name: 'AcceptUsername'; params: { username: Bytes } }
   /**
    * Remove an expired username approval. The username was approved by an authority but never
    * accepted by the user and must now be beyond its expiration. The call must include the
    * full username, as in `username.suffix`.
    **/
-  | { name: "RemoveExpiredApproval"; params: { username: Bytes } }
+  | { name: 'RemoveExpiredApproval'; params: { username: Bytes } }
   /**
    * Set a given username as the primary. The username should include the suffix.
    **/
-  | { name: "SetPrimaryUsername"; params: { username: Bytes } }
+  | { name: 'SetPrimaryUsername'; params: { username: Bytes } }
   /**
    * Remove a username that corresponds to an account with no identity. Exists when a user
    * gets a username but then calls `clear_identity`.
    **/
-  | { name: "RemoveDanglingUsername"; params: { username: Bytes } };
+  | { name: 'RemoveDanglingUsername'; params: { username: Bytes } };
 
 export type PalletIdentityCallLike =
   /**
@@ -4811,7 +4409,7 @@ export type PalletIdentityCallLike =
    *
    * Emits `RegistrarAdded` if successful.
    **/
-  | { name: "AddRegistrar"; params: { account: MultiAddressLike } }
+  | { name: 'AddRegistrar'; params: { account: MultiAddressLike } }
   /**
    * Set an account's identity information and reserve the appropriate deposit.
    *
@@ -4824,7 +4422,7 @@ export type PalletIdentityCallLike =
    *
    * Emits `IdentitySet` if successful.
    **/
-  | { name: "SetIdentity"; params: { info: PalletIdentityLegacyIdentityInfo } }
+  | { name: 'SetIdentity'; params: { info: PalletIdentityLegacyIdentityInfo } }
   /**
    * Set the sub-accounts of the sender.
    *
@@ -4836,7 +4434,7 @@ export type PalletIdentityCallLike =
    *
    * - `subs`: The identity's (new) sub-accounts.
    **/
-  | { name: "SetSubs"; params: { subs: Array<[AccountId32Like, Data]> } }
+  | { name: 'SetSubs'; params: { subs: Array<[AccountId32Like, Data]> } }
   /**
    * Clear an account's identity info and all sub-accounts and return all deposits.
    *
@@ -4847,7 +4445,7 @@ export type PalletIdentityCallLike =
    *
    * Emits `IdentityCleared` if successful.
    **/
-  | { name: "ClearIdentity" }
+  | { name: 'ClearIdentity' }
   /**
    * Request a judgement from a registrar.
    *
@@ -4866,7 +4464,7 @@ export type PalletIdentityCallLike =
    *
    * Emits `JudgementRequested` if successful.
    **/
-  | { name: "RequestJudgement"; params: { regIndex: number; maxFee: bigint } }
+  | { name: 'RequestJudgement'; params: { regIndex: number; maxFee: bigint } }
   /**
    * Cancel a previous request.
    *
@@ -4879,7 +4477,7 @@ export type PalletIdentityCallLike =
    *
    * Emits `JudgementUnrequested` if successful.
    **/
-  | { name: "CancelRequest"; params: { regIndex: number } }
+  | { name: 'CancelRequest'; params: { regIndex: number } }
   /**
    * Set the fee required for a judgement to be requested from a registrar.
    *
@@ -4889,7 +4487,7 @@ export type PalletIdentityCallLike =
    * - `index`: the index of the registrar whose fee is to be set.
    * - `fee`: the new fee.
    **/
-  | { name: "SetFee"; params: { index: number; fee: bigint } }
+  | { name: 'SetFee'; params: { index: number; fee: bigint } }
   /**
    * Change the account associated with a registrar.
    *
@@ -4899,7 +4497,7 @@ export type PalletIdentityCallLike =
    * - `index`: the index of the registrar whose fee is to be set.
    * - `new`: the new account ID.
    **/
-  | { name: "SetAccountId"; params: { index: number; new: MultiAddressLike } }
+  | { name: 'SetAccountId'; params: { index: number; new: MultiAddressLike } }
   /**
    * Set the field information for a registrar.
    *
@@ -4909,7 +4507,7 @@ export type PalletIdentityCallLike =
    * - `index`: the index of the registrar whose fee is to be set.
    * - `fields`: the fields that the registrar concerns themselves with.
    **/
-  | { name: "SetFields"; params: { index: number; fields: bigint } }
+  | { name: 'SetFields'; params: { index: number; fields: bigint } }
   /**
    * Provide a judgement for an account's identity.
    *
@@ -4928,13 +4526,8 @@ export type PalletIdentityCallLike =
    * Emits `JudgementGiven` if successful.
    **/
   | {
-      name: "ProvideJudgement";
-      params: {
-        regIndex: number;
-        target: MultiAddressLike;
-        judgement: PalletIdentityJudgement;
-        identity: H256;
-      };
+      name: 'ProvideJudgement';
+      params: { regIndex: number; target: MultiAddressLike; judgement: PalletIdentityJudgement; identity: H256 };
     }
   /**
    * Remove an account's identity and sub-account information and slash the deposits.
@@ -4950,7 +4543,7 @@ export type PalletIdentityCallLike =
    *
    * Emits `IdentityKilled` if successful.
    **/
-  | { name: "KillIdentity"; params: { target: MultiAddressLike } }
+  | { name: 'KillIdentity'; params: { target: MultiAddressLike } }
   /**
    * Add the given account to the sender's subs.
    *
@@ -4960,14 +4553,14 @@ export type PalletIdentityCallLike =
    * The dispatch origin for this call must be _Signed_ and the sender must have a registered
    * sub identity of `sub`.
    **/
-  | { name: "AddSub"; params: { sub: MultiAddressLike; data: Data } }
+  | { name: 'AddSub'; params: { sub: MultiAddressLike; data: Data } }
   /**
    * Alter the associated name of the given sub-account.
    *
    * The dispatch origin for this call must be _Signed_ and the sender must have a registered
    * sub identity of `sub`.
    **/
-  | { name: "RenameSub"; params: { sub: MultiAddressLike; data: Data } }
+  | { name: 'RenameSub'; params: { sub: MultiAddressLike; data: Data } }
   /**
    * Remove the given account from the sender's subs.
    *
@@ -4977,7 +4570,7 @@ export type PalletIdentityCallLike =
    * The dispatch origin for this call must be _Signed_ and the sender must have a registered
    * sub identity of `sub`.
    **/
-  | { name: "RemoveSub"; params: { sub: MultiAddressLike } }
+  | { name: 'RemoveSub'; params: { sub: MultiAddressLike } }
   /**
    * Remove the sender as a sub-account.
    *
@@ -4990,25 +4583,18 @@ export type PalletIdentityCallLike =
    * NOTE: This should not normally be used, but is provided in the case that the non-
    * controller of an account is maliciously registered as a sub-account.
    **/
-  | { name: "QuitSub" }
+  | { name: 'QuitSub' }
   /**
    * Add an `AccountId` with permission to grant usernames with a given `suffix` appended.
    *
    * The authority can grant up to `allocation` usernames. To top up their allocation, they
    * should just issue (or request via governance) a new `add_username_authority` call.
    **/
-  | {
-      name: "AddUsernameAuthority";
-      params: {
-        authority: MultiAddressLike;
-        suffix: BytesLike;
-        allocation: number;
-      };
-    }
+  | { name: 'AddUsernameAuthority'; params: { authority: MultiAddressLike; suffix: BytesLike; allocation: number } }
   /**
    * Remove `authority` from the username authorities.
    **/
-  | { name: "RemoveUsernameAuthority"; params: { authority: MultiAddressLike } }
+  | { name: 'RemoveUsernameAuthority'; params: { authority: MultiAddressLike } }
   /**
    * Set the username for `who`. Must be called by a username authority.
    *
@@ -5021,33 +4607,29 @@ export type PalletIdentityCallLike =
    * `MaxUsernameLength`.
    **/
   | {
-      name: "SetUsernameFor";
-      params: {
-        who: MultiAddressLike;
-        username: BytesLike;
-        signature?: SpRuntimeMultiSignature | undefined;
-      };
+      name: 'SetUsernameFor';
+      params: { who: MultiAddressLike; username: BytesLike; signature?: SpRuntimeMultiSignature | undefined };
     }
   /**
    * Accept a given username that an `authority` granted. The call must include the full
    * username, as in `username.suffix`.
    **/
-  | { name: "AcceptUsername"; params: { username: BytesLike } }
+  | { name: 'AcceptUsername'; params: { username: BytesLike } }
   /**
    * Remove an expired username approval. The username was approved by an authority but never
    * accepted by the user and must now be beyond its expiration. The call must include the
    * full username, as in `username.suffix`.
    **/
-  | { name: "RemoveExpiredApproval"; params: { username: BytesLike } }
+  | { name: 'RemoveExpiredApproval'; params: { username: BytesLike } }
   /**
    * Set a given username as the primary. The username should include the suffix.
    **/
-  | { name: "SetPrimaryUsername"; params: { username: BytesLike } }
+  | { name: 'SetPrimaryUsername'; params: { username: BytesLike } }
   /**
    * Remove a username that corresponds to an account with no identity. Exists when a user
    * gets a username but then calls `clear_identity`.
    **/
-  | { name: "RemoveDanglingUsername"; params: { username: BytesLike } };
+  | { name: 'RemoveDanglingUsername'; params: { username: BytesLike } };
 
 export type PalletIdentityLegacyIdentityInfo = {
   additional: Array<[Data, Data]>;
@@ -5062,18 +4644,18 @@ export type PalletIdentityLegacyIdentityInfo = {
 };
 
 export type PalletIdentityJudgement =
-  | { type: "Unknown" }
-  | { type: "FeePaid"; value: bigint }
-  | { type: "Reasonable" }
-  | { type: "KnownGood" }
-  | { type: "OutOfDate" }
-  | { type: "LowQuality" }
-  | { type: "Erroneous" };
+  | { type: 'Unknown' }
+  | { type: 'FeePaid'; value: bigint }
+  | { type: 'Reasonable' }
+  | { type: 'KnownGood' }
+  | { type: 'OutOfDate' }
+  | { type: 'LowQuality' }
+  | { type: 'Erroneous' };
 
 export type SpRuntimeMultiSignature =
-  | { type: "Ed25519"; value: FixedBytes<64> }
-  | { type: "Sr25519"; value: FixedBytes<64> }
-  | { type: "Ecdsa"; value: FixedBytes<65> };
+  | { type: 'Ed25519'; value: FixedBytes<64> }
+  | { type: 'Sr25519'; value: FixedBytes<64> }
+  | { type: 'Ecdsa'; value: FixedBytes<65> };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5091,12 +4673,8 @@ export type PalletProxyCall =
    * - `call`: The call to be made by the `real` account.
    **/
   | {
-      name: "Proxy";
-      params: {
-        real: MultiAddress;
-        forceProxyType?: VaraRuntimeProxyType | undefined;
-        call: VaraRuntimeRuntimeCall;
-      };
+      name: 'Proxy';
+      params: { real: MultiAddress; forceProxyType?: VaraRuntimeProxyType | undefined; call: VaraRuntimeRuntimeCall };
     }
   /**
    * Register a proxy account for the sender that is able to make calls on its behalf.
@@ -5109,14 +4687,7 @@ export type PalletProxyCall =
    * - `delay`: The announcement period required of the initial proxy. Will generally be
    * zero.
    **/
-  | {
-      name: "AddProxy";
-      params: {
-        delegate: MultiAddress;
-        proxyType: VaraRuntimeProxyType;
-        delay: number;
-      };
-    }
+  | { name: 'AddProxy'; params: { delegate: MultiAddress; proxyType: VaraRuntimeProxyType; delay: number } }
   /**
    * Unregister a proxy account for the sender.
    *
@@ -5126,14 +4697,7 @@ export type PalletProxyCall =
    * - `proxy`: The account that the `caller` would like to remove as a proxy.
    * - `proxy_type`: The permissions currently enabled for the removed proxy account.
    **/
-  | {
-      name: "RemoveProxy";
-      params: {
-        delegate: MultiAddress;
-        proxyType: VaraRuntimeProxyType;
-        delay: number;
-      };
-    }
+  | { name: 'RemoveProxy'; params: { delegate: MultiAddress; proxyType: VaraRuntimeProxyType; delay: number } }
   /**
    * Unregister all proxy accounts for the sender.
    *
@@ -5142,7 +4706,7 @@ export type PalletProxyCall =
    * WARNING: This may be called on accounts created by `pure`, however if done, then
    * the unreserved fees will be inaccessible. **All access to this account will be lost.**
    **/
-  | { name: "RemoveProxies" }
+  | { name: 'RemoveProxies' }
   /**
    * Spawn a fresh new account that is guaranteed to be otherwise inaccessible, and
    * initialize it with a proxy of `proxy_type` for `origin` sender.
@@ -5163,10 +4727,7 @@ export type PalletProxyCall =
    *
    * Fails if there are insufficient funds to pay for deposit.
    **/
-  | {
-      name: "CreatePure";
-      params: { proxyType: VaraRuntimeProxyType; delay: number; index: number };
-    }
+  | { name: 'CreatePure'; params: { proxyType: VaraRuntimeProxyType; delay: number; index: number } }
   /**
    * Removes a previously spawned pure proxy.
    *
@@ -5186,7 +4747,7 @@ export type PalletProxyCall =
    * account whose `pure` call has corresponding parameters.
    **/
   | {
-      name: "KillPure";
+      name: 'KillPure';
       params: {
         spawner: MultiAddress;
         proxyType: VaraRuntimeProxyType;
@@ -5212,7 +4773,7 @@ export type PalletProxyCall =
    * - `real`: The account that the proxy will make a call on behalf of.
    * - `call_hash`: The hash of the call to be made by the `real` account.
    **/
-  | { name: "Announce"; params: { real: MultiAddress; callHash: H256 } }
+  | { name: 'Announce'; params: { real: MultiAddress; callHash: H256 } }
   /**
    * Remove a given announcement.
    *
@@ -5225,10 +4786,7 @@ export type PalletProxyCall =
    * - `real`: The account that the proxy will make a call on behalf of.
    * - `call_hash`: The hash of the call to be made by the `real` account.
    **/
-  | {
-      name: "RemoveAnnouncement";
-      params: { real: MultiAddress; callHash: H256 };
-    }
+  | { name: 'RemoveAnnouncement'; params: { real: MultiAddress; callHash: H256 } }
   /**
    * Remove the given announcement of a delegate.
    *
@@ -5241,10 +4799,7 @@ export type PalletProxyCall =
    * - `delegate`: The account that previously announced the call.
    * - `call_hash`: The hash of the call to be made.
    **/
-  | {
-      name: "RejectAnnouncement";
-      params: { delegate: MultiAddress; callHash: H256 };
-    }
+  | { name: 'RejectAnnouncement'; params: { delegate: MultiAddress; callHash: H256 } }
   /**
    * Dispatch the given `call` from an account that the sender is authorized for through
    * `add_proxy`.
@@ -5259,7 +4814,7 @@ export type PalletProxyCall =
    * - `call`: The call to be made by the `real` account.
    **/
   | {
-      name: "ProxyAnnounced";
+      name: 'ProxyAnnounced';
       params: {
         delegate: MultiAddress;
         real: MultiAddress;
@@ -5281,7 +4836,7 @@ export type PalletProxyCallLike =
    * - `call`: The call to be made by the `real` account.
    **/
   | {
-      name: "Proxy";
+      name: 'Proxy';
       params: {
         real: MultiAddressLike;
         forceProxyType?: VaraRuntimeProxyType | undefined;
@@ -5299,14 +4854,7 @@ export type PalletProxyCallLike =
    * - `delay`: The announcement period required of the initial proxy. Will generally be
    * zero.
    **/
-  | {
-      name: "AddProxy";
-      params: {
-        delegate: MultiAddressLike;
-        proxyType: VaraRuntimeProxyType;
-        delay: number;
-      };
-    }
+  | { name: 'AddProxy'; params: { delegate: MultiAddressLike; proxyType: VaraRuntimeProxyType; delay: number } }
   /**
    * Unregister a proxy account for the sender.
    *
@@ -5316,14 +4864,7 @@ export type PalletProxyCallLike =
    * - `proxy`: The account that the `caller` would like to remove as a proxy.
    * - `proxy_type`: The permissions currently enabled for the removed proxy account.
    **/
-  | {
-      name: "RemoveProxy";
-      params: {
-        delegate: MultiAddressLike;
-        proxyType: VaraRuntimeProxyType;
-        delay: number;
-      };
-    }
+  | { name: 'RemoveProxy'; params: { delegate: MultiAddressLike; proxyType: VaraRuntimeProxyType; delay: number } }
   /**
    * Unregister all proxy accounts for the sender.
    *
@@ -5332,7 +4873,7 @@ export type PalletProxyCallLike =
    * WARNING: This may be called on accounts created by `pure`, however if done, then
    * the unreserved fees will be inaccessible. **All access to this account will be lost.**
    **/
-  | { name: "RemoveProxies" }
+  | { name: 'RemoveProxies' }
   /**
    * Spawn a fresh new account that is guaranteed to be otherwise inaccessible, and
    * initialize it with a proxy of `proxy_type` for `origin` sender.
@@ -5353,10 +4894,7 @@ export type PalletProxyCallLike =
    *
    * Fails if there are insufficient funds to pay for deposit.
    **/
-  | {
-      name: "CreatePure";
-      params: { proxyType: VaraRuntimeProxyType; delay: number; index: number };
-    }
+  | { name: 'CreatePure'; params: { proxyType: VaraRuntimeProxyType; delay: number; index: number } }
   /**
    * Removes a previously spawned pure proxy.
    *
@@ -5376,7 +4914,7 @@ export type PalletProxyCallLike =
    * account whose `pure` call has corresponding parameters.
    **/
   | {
-      name: "KillPure";
+      name: 'KillPure';
       params: {
         spawner: MultiAddressLike;
         proxyType: VaraRuntimeProxyType;
@@ -5402,7 +4940,7 @@ export type PalletProxyCallLike =
    * - `real`: The account that the proxy will make a call on behalf of.
    * - `call_hash`: The hash of the call to be made by the `real` account.
    **/
-  | { name: "Announce"; params: { real: MultiAddressLike; callHash: H256 } }
+  | { name: 'Announce'; params: { real: MultiAddressLike; callHash: H256 } }
   /**
    * Remove a given announcement.
    *
@@ -5415,10 +4953,7 @@ export type PalletProxyCallLike =
    * - `real`: The account that the proxy will make a call on behalf of.
    * - `call_hash`: The hash of the call to be made by the `real` account.
    **/
-  | {
-      name: "RemoveAnnouncement";
-      params: { real: MultiAddressLike; callHash: H256 };
-    }
+  | { name: 'RemoveAnnouncement'; params: { real: MultiAddressLike; callHash: H256 } }
   /**
    * Remove the given announcement of a delegate.
    *
@@ -5431,10 +4966,7 @@ export type PalletProxyCallLike =
    * - `delegate`: The account that previously announced the call.
    * - `call_hash`: The hash of the call to be made.
    **/
-  | {
-      name: "RejectAnnouncement";
-      params: { delegate: MultiAddressLike; callHash: H256 };
-    }
+  | { name: 'RejectAnnouncement'; params: { delegate: MultiAddressLike; callHash: H256 } }
   /**
    * Dispatch the given `call` from an account that the sender is authorized for through
    * `add_proxy`.
@@ -5449,7 +4981,7 @@ export type PalletProxyCallLike =
    * - `call`: The call to be made by the `real` account.
    **/
   | {
-      name: "ProxyAnnounced";
+      name: 'ProxyAnnounced';
       params: {
         delegate: MultiAddressLike;
         real: MultiAddressLike;
@@ -5459,12 +4991,12 @@ export type PalletProxyCallLike =
     };
 
 export type VaraRuntimeProxyType =
-  | "Any"
-  | "NonTransfer"
-  | "Governance"
-  | "Staking"
-  | "IdentityJudgement"
-  | "CancelProxy";
+  | 'Any'
+  | 'NonTransfer'
+  | 'Governance'
+  | 'Staking'
+  | 'IdentityJudgement'
+  | 'CancelProxy';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5484,13 +5016,7 @@ export type PalletMultisigCall =
    * ## Complexity
    * O(Z + C) where Z is the length of the call and C its execution weight.
    **/
-  | {
-      name: "AsMultiThreshold1";
-      params: {
-        otherSignatories: Array<AccountId32>;
-        call: VaraRuntimeRuntimeCall;
-      };
-    }
+  | { name: 'AsMultiThreshold1'; params: { otherSignatories: Array<AccountId32>; call: VaraRuntimeRuntimeCall } }
   /**
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
@@ -5533,7 +5059,7 @@ export type PalletMultisigCall =
    * taken for its lifetime of `DepositBase + threshold * DepositFactor`.
    **/
   | {
-      name: "AsMulti";
+      name: 'AsMulti';
       params: {
         threshold: number;
         otherSignatories: Array<AccountId32>;
@@ -5575,7 +5101,7 @@ export type PalletMultisigCall =
    * taken for its lifetime of `DepositBase + threshold * DepositFactor`.
    **/
   | {
-      name: "ApproveAsMulti";
+      name: 'ApproveAsMulti';
       params: {
         threshold: number;
         otherSignatories: Array<AccountId32>;
@@ -5608,7 +5134,7 @@ export type PalletMultisigCall =
    * - Storage: removes one item.
    **/
   | {
-      name: "CancelAsMulti";
+      name: 'CancelAsMulti';
       params: {
         threshold: number;
         otherSignatories: Array<AccountId32>;
@@ -5633,11 +5159,8 @@ export type PalletMultisigCallLike =
    * O(Z + C) where Z is the length of the call and C its execution weight.
    **/
   | {
-      name: "AsMultiThreshold1";
-      params: {
-        otherSignatories: Array<AccountId32Like>;
-        call: VaraRuntimeRuntimeCallLike;
-      };
+      name: 'AsMultiThreshold1';
+      params: { otherSignatories: Array<AccountId32Like>; call: VaraRuntimeRuntimeCallLike };
     }
   /**
    * Register approval for a dispatch to be made from a deterministic composite account if
@@ -5681,7 +5204,7 @@ export type PalletMultisigCallLike =
    * taken for its lifetime of `DepositBase + threshold * DepositFactor`.
    **/
   | {
-      name: "AsMulti";
+      name: 'AsMulti';
       params: {
         threshold: number;
         otherSignatories: Array<AccountId32Like>;
@@ -5723,7 +5246,7 @@ export type PalletMultisigCallLike =
    * taken for its lifetime of `DepositBase + threshold * DepositFactor`.
    **/
   | {
-      name: "ApproveAsMulti";
+      name: 'ApproveAsMulti';
       params: {
         threshold: number;
         otherSignatories: Array<AccountId32Like>;
@@ -5756,7 +5279,7 @@ export type PalletMultisigCallLike =
    * - Storage: removes one item.
    **/
   | {
-      name: "CancelAsMulti";
+      name: 'CancelAsMulti';
       params: {
         threshold: number;
         otherSignatories: Array<AccountId32Like>;
@@ -5788,7 +5311,7 @@ export type PalletElectionProviderMultiPhaseCall =
    * No deposit or reward is associated with this submission.
    **/
   | {
-      name: "SubmitUnsigned";
+      name: 'SubmitUnsigned';
       params: {
         rawSolution: PalletElectionProviderMultiPhaseRawSolution;
         witness: PalletElectionProviderMultiPhaseSolutionOrSnapshotSize;
@@ -5801,10 +5324,7 @@ export type PalletElectionProviderMultiPhaseCall =
    *
    * This check can be turned off by setting the value to `None`.
    **/
-  | {
-      name: "SetMinimumUntrustedScore";
-      params: { maybeNextScore?: SpNposElectionsElectionScore | undefined };
-    }
+  | { name: 'SetMinimumUntrustedScore'; params: { maybeNextScore?: SpNposElectionsElectionScore | undefined } }
   /**
    * Set a solution in the queue, to be handed out to the client of this pallet in the next
    * call to `ElectionProvider::elect`.
@@ -5815,10 +5335,7 @@ export type PalletElectionProviderMultiPhaseCall =
    * feasibility check itself can in principle cause the election process to fail (due to
    * memory/weight constrains).
    **/
-  | {
-      name: "SetEmergencyElectionResult";
-      params: { supports: Array<[AccountId32, SpNposElectionsSupport]> };
-    }
+  | { name: 'SetEmergencyElectionResult'; params: { supports: Array<[AccountId32, SpNposElectionsSupport]> } }
   /**
    * Submit a solution for the signed phase.
    *
@@ -5830,10 +5347,7 @@ export type PalletElectionProviderMultiPhaseCall =
    * A deposit is reserved and recorded for the solution. Based on the outcome, the solution
    * might be rewarded, slashed, or get all or a part of the deposit back.
    **/
-  | {
-      name: "Submit";
-      params: { rawSolution: PalletElectionProviderMultiPhaseRawSolution };
-    }
+  | { name: 'Submit'; params: { rawSolution: PalletElectionProviderMultiPhaseRawSolution } }
   /**
    * Trigger the governance fallback.
    *
@@ -5841,11 +5355,8 @@ export type PalletElectionProviderMultiPhaseCall =
    * calling [`Call::set_emergency_election_result`].
    **/
   | {
-      name: "GovernanceFallback";
-      params: {
-        maybeMaxVoters?: number | undefined;
-        maybeMaxTargets?: number | undefined;
-      };
+      name: 'GovernanceFallback';
+      params: { maybeMaxVoters?: number | undefined; maybeMaxTargets?: number | undefined };
     };
 
 export type PalletElectionProviderMultiPhaseCallLike =
@@ -5866,7 +5377,7 @@ export type PalletElectionProviderMultiPhaseCallLike =
    * No deposit or reward is associated with this submission.
    **/
   | {
-      name: "SubmitUnsigned";
+      name: 'SubmitUnsigned';
       params: {
         rawSolution: PalletElectionProviderMultiPhaseRawSolution;
         witness: PalletElectionProviderMultiPhaseSolutionOrSnapshotSize;
@@ -5879,10 +5390,7 @@ export type PalletElectionProviderMultiPhaseCallLike =
    *
    * This check can be turned off by setting the value to `None`.
    **/
-  | {
-      name: "SetMinimumUntrustedScore";
-      params: { maybeNextScore?: SpNposElectionsElectionScore | undefined };
-    }
+  | { name: 'SetMinimumUntrustedScore'; params: { maybeNextScore?: SpNposElectionsElectionScore | undefined } }
   /**
    * Set a solution in the queue, to be handed out to the client of this pallet in the next
    * call to `ElectionProvider::elect`.
@@ -5893,10 +5401,7 @@ export type PalletElectionProviderMultiPhaseCallLike =
    * feasibility check itself can in principle cause the election process to fail (due to
    * memory/weight constrains).
    **/
-  | {
-      name: "SetEmergencyElectionResult";
-      params: { supports: Array<[AccountId32Like, SpNposElectionsSupport]> };
-    }
+  | { name: 'SetEmergencyElectionResult'; params: { supports: Array<[AccountId32Like, SpNposElectionsSupport]> } }
   /**
    * Submit a solution for the signed phase.
    *
@@ -5908,10 +5413,7 @@ export type PalletElectionProviderMultiPhaseCallLike =
    * A deposit is reserved and recorded for the solution. Based on the outcome, the solution
    * might be rewarded, slashed, or get all or a part of the deposit back.
    **/
-  | {
-      name: "Submit";
-      params: { rawSolution: PalletElectionProviderMultiPhaseRawSolution };
-    }
+  | { name: 'Submit'; params: { rawSolution: PalletElectionProviderMultiPhaseRawSolution } }
   /**
    * Trigger the governance fallback.
    *
@@ -5919,11 +5421,8 @@ export type PalletElectionProviderMultiPhaseCallLike =
    * calling [`Call::set_emergency_election_result`].
    **/
   | {
-      name: "GovernanceFallback";
-      params: {
-        maybeMaxVoters?: number | undefined;
-        maybeMaxTargets?: number | undefined;
-      };
+      name: 'GovernanceFallback';
+      params: { maybeMaxVoters?: number | undefined; maybeMaxTargets?: number | undefined };
     };
 
 export type PalletElectionProviderMultiPhaseRawSolution = {
@@ -5951,21 +5450,11 @@ export type VaraRuntimeNposSolution16 = {
   votes16: Array<[number, FixedArray<[number, PerU16], 15>, number]>;
 };
 
-export type SpNposElectionsElectionScore = {
-  minimalStake: bigint;
-  sumStake: bigint;
-  sumStakeSquared: bigint;
-};
+export type SpNposElectionsElectionScore = { minimalStake: bigint; sumStake: bigint; sumStakeSquared: bigint };
 
-export type PalletElectionProviderMultiPhaseSolutionOrSnapshotSize = {
-  voters: number;
-  targets: number;
-};
+export type PalletElectionProviderMultiPhaseSolutionOrSnapshotSize = { voters: number; targets: number };
 
-export type SpNposElectionsSupport = {
-  total: bigint;
-  voters: Array<[AccountId32, bigint]>;
-};
+export type SpNposElectionsSupport = { total: bigint; voters: Array<[AccountId32, bigint]> };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5985,7 +5474,7 @@ export type PalletBountiesCall =
    * - `value`: The total payment amount of this bounty, curator fee included.
    * - `description`: The description of this bounty.
    **/
-  | { name: "ProposeBounty"; params: { value: bigint; description: Bytes } }
+  | { name: 'ProposeBounty'; params: { value: bigint; description: Bytes } }
   /**
    * Approve a bounty proposal. At a later time, the bounty will be funded and become active
    * and the original deposit will be returned.
@@ -5995,7 +5484,7 @@ export type PalletBountiesCall =
    * ## Complexity
    * - O(1).
    **/
-  | { name: "ApproveBounty"; params: { bountyId: number } }
+  | { name: 'ApproveBounty'; params: { bountyId: number } }
   /**
    * Propose a curator to a funded bounty.
    *
@@ -6004,10 +5493,7 @@ export type PalletBountiesCall =
    * ## Complexity
    * - O(1).
    **/
-  | {
-      name: "ProposeCurator";
-      params: { bountyId: number; curator: MultiAddress; fee: bigint };
-    }
+  | { name: 'ProposeCurator'; params: { bountyId: number; curator: MultiAddress; fee: bigint } }
   /**
    * Unassign curator from a bounty.
    *
@@ -6027,7 +5513,7 @@ export type PalletBountiesCall =
    * ## Complexity
    * - O(1).
    **/
-  | { name: "UnassignCurator"; params: { bountyId: number } }
+  | { name: 'UnassignCurator'; params: { bountyId: number } }
   /**
    * Accept the curator role for a bounty.
    * A deposit will be reserved from curator and refund upon successful payout.
@@ -6037,7 +5523,7 @@ export type PalletBountiesCall =
    * ## Complexity
    * - O(1).
    **/
-  | { name: "AcceptCurator"; params: { bountyId: number } }
+  | { name: 'AcceptCurator'; params: { bountyId: number } }
   /**
    * Award bounty to a beneficiary account. The beneficiary will be able to claim the funds
    * after a delay.
@@ -6050,10 +5536,7 @@ export type PalletBountiesCall =
    * ## Complexity
    * - O(1).
    **/
-  | {
-      name: "AwardBounty";
-      params: { bountyId: number; beneficiary: MultiAddress };
-    }
+  | { name: 'AwardBounty'; params: { bountyId: number; beneficiary: MultiAddress } }
   /**
    * Claim the payout from an awarded bounty after payout delay.
    *
@@ -6064,7 +5547,7 @@ export type PalletBountiesCall =
    * ## Complexity
    * - O(1).
    **/
-  | { name: "ClaimBounty"; params: { bountyId: number } }
+  | { name: 'ClaimBounty'; params: { bountyId: number } }
   /**
    * Cancel a proposed or active bounty. All the funds will be sent to treasury and
    * the curator deposit will be unreserved if possible.
@@ -6076,7 +5559,7 @@ export type PalletBountiesCall =
    * ## Complexity
    * - O(1).
    **/
-  | { name: "CloseBounty"; params: { bountyId: number } }
+  | { name: 'CloseBounty'; params: { bountyId: number } }
   /**
    * Extend the expiry time of an active bounty.
    *
@@ -6088,7 +5571,7 @@ export type PalletBountiesCall =
    * ## Complexity
    * - O(1).
    **/
-  | { name: "ExtendBountyExpiry"; params: { bountyId: number; remark: Bytes } };
+  | { name: 'ExtendBountyExpiry'; params: { bountyId: number; remark: Bytes } };
 
 export type PalletBountiesCallLike =
   /**
@@ -6105,7 +5588,7 @@ export type PalletBountiesCallLike =
    * - `value`: The total payment amount of this bounty, curator fee included.
    * - `description`: The description of this bounty.
    **/
-  | { name: "ProposeBounty"; params: { value: bigint; description: BytesLike } }
+  | { name: 'ProposeBounty'; params: { value: bigint; description: BytesLike } }
   /**
    * Approve a bounty proposal. At a later time, the bounty will be funded and become active
    * and the original deposit will be returned.
@@ -6115,7 +5598,7 @@ export type PalletBountiesCallLike =
    * ## Complexity
    * - O(1).
    **/
-  | { name: "ApproveBounty"; params: { bountyId: number } }
+  | { name: 'ApproveBounty'; params: { bountyId: number } }
   /**
    * Propose a curator to a funded bounty.
    *
@@ -6124,10 +5607,7 @@ export type PalletBountiesCallLike =
    * ## Complexity
    * - O(1).
    **/
-  | {
-      name: "ProposeCurator";
-      params: { bountyId: number; curator: MultiAddressLike; fee: bigint };
-    }
+  | { name: 'ProposeCurator'; params: { bountyId: number; curator: MultiAddressLike; fee: bigint } }
   /**
    * Unassign curator from a bounty.
    *
@@ -6147,7 +5627,7 @@ export type PalletBountiesCallLike =
    * ## Complexity
    * - O(1).
    **/
-  | { name: "UnassignCurator"; params: { bountyId: number } }
+  | { name: 'UnassignCurator'; params: { bountyId: number } }
   /**
    * Accept the curator role for a bounty.
    * A deposit will be reserved from curator and refund upon successful payout.
@@ -6157,7 +5637,7 @@ export type PalletBountiesCallLike =
    * ## Complexity
    * - O(1).
    **/
-  | { name: "AcceptCurator"; params: { bountyId: number } }
+  | { name: 'AcceptCurator'; params: { bountyId: number } }
   /**
    * Award bounty to a beneficiary account. The beneficiary will be able to claim the funds
    * after a delay.
@@ -6170,10 +5650,7 @@ export type PalletBountiesCallLike =
    * ## Complexity
    * - O(1).
    **/
-  | {
-      name: "AwardBounty";
-      params: { bountyId: number; beneficiary: MultiAddressLike };
-    }
+  | { name: 'AwardBounty'; params: { bountyId: number; beneficiary: MultiAddressLike } }
   /**
    * Claim the payout from an awarded bounty after payout delay.
    *
@@ -6184,7 +5661,7 @@ export type PalletBountiesCallLike =
    * ## Complexity
    * - O(1).
    **/
-  | { name: "ClaimBounty"; params: { bountyId: number } }
+  | { name: 'ClaimBounty'; params: { bountyId: number } }
   /**
    * Cancel a proposed or active bounty. All the funds will be sent to treasury and
    * the curator deposit will be unreserved if possible.
@@ -6196,7 +5673,7 @@ export type PalletBountiesCallLike =
    * ## Complexity
    * - O(1).
    **/
-  | { name: "CloseBounty"; params: { bountyId: number } }
+  | { name: 'CloseBounty'; params: { bountyId: number } }
   /**
    * Extend the expiry time of an active bounty.
    *
@@ -6208,10 +5685,7 @@ export type PalletBountiesCallLike =
    * ## Complexity
    * - O(1).
    **/
-  | {
-      name: "ExtendBountyExpiry";
-      params: { bountyId: number; remark: BytesLike };
-    };
+  | { name: 'ExtendBountyExpiry'; params: { bountyId: number; remark: BytesLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -6238,10 +5712,7 @@ export type PalletChildBountiesCall =
    * - `value`: Value for executing the proposal.
    * - `description`: Text description for the child-bounty.
    **/
-  | {
-      name: "AddChildBounty";
-      params: { parentBountyId: number; value: bigint; description: Bytes };
-    }
+  | { name: 'AddChildBounty'; params: { parentBountyId: number; value: bigint; description: Bytes } }
   /**
    * Propose curator for funded child-bounty.
    *
@@ -6260,13 +5731,8 @@ export type PalletChildBountiesCall =
    * - `fee`: payment fee to child-bounty curator for execution.
    **/
   | {
-      name: "ProposeCurator";
-      params: {
-        parentBountyId: number;
-        childBountyId: number;
-        curator: MultiAddress;
-        fee: bigint;
-      };
+      name: 'ProposeCurator';
+      params: { parentBountyId: number; childBountyId: number; curator: MultiAddress; fee: bigint };
     }
   /**
    * Accept the curator role for the child-bounty.
@@ -6289,10 +5755,7 @@ export type PalletChildBountiesCall =
    * - `parent_bounty_id`: Index of parent bounty.
    * - `child_bounty_id`: Index of child bounty.
    **/
-  | {
-      name: "AcceptCurator";
-      params: { parentBountyId: number; childBountyId: number };
-    }
+  | { name: 'AcceptCurator'; params: { parentBountyId: number; childBountyId: number } }
   /**
    * Unassign curator from a child-bounty.
    *
@@ -6329,10 +5792,7 @@ export type PalletChildBountiesCall =
    * - `parent_bounty_id`: Index of parent bounty.
    * - `child_bounty_id`: Index of child bounty.
    **/
-  | {
-      name: "UnassignCurator";
-      params: { parentBountyId: number; childBountyId: number };
-    }
+  | { name: 'UnassignCurator'; params: { parentBountyId: number; childBountyId: number } }
   /**
    * Award child-bounty to a beneficiary.
    *
@@ -6352,14 +5812,7 @@ export type PalletChildBountiesCall =
    * - `child_bounty_id`: Index of child bounty.
    * - `beneficiary`: Beneficiary account.
    **/
-  | {
-      name: "AwardChildBounty";
-      params: {
-        parentBountyId: number;
-        childBountyId: number;
-        beneficiary: MultiAddress;
-      };
-    }
+  | { name: 'AwardChildBounty'; params: { parentBountyId: number; childBountyId: number; beneficiary: MultiAddress } }
   /**
    * Claim the payout from an awarded child-bounty after payout delay.
    *
@@ -6378,10 +5831,7 @@ export type PalletChildBountiesCall =
    * - `parent_bounty_id`: Index of parent bounty.
    * - `child_bounty_id`: Index of child bounty.
    **/
-  | {
-      name: "ClaimChildBounty";
-      params: { parentBountyId: number; childBountyId: number };
-    }
+  | { name: 'ClaimChildBounty'; params: { parentBountyId: number; childBountyId: number } }
   /**
    * Cancel a proposed or active child-bounty. Child-bounty account funds
    * are transferred to parent bounty account. The child-bounty curator
@@ -6406,10 +5856,7 @@ export type PalletChildBountiesCall =
    * - `parent_bounty_id`: Index of parent bounty.
    * - `child_bounty_id`: Index of child bounty.
    **/
-  | {
-      name: "CloseChildBounty";
-      params: { parentBountyId: number; childBountyId: number };
-    };
+  | { name: 'CloseChildBounty'; params: { parentBountyId: number; childBountyId: number } };
 
 export type PalletChildBountiesCallLike =
   /**
@@ -6433,10 +5880,7 @@ export type PalletChildBountiesCallLike =
    * - `value`: Value for executing the proposal.
    * - `description`: Text description for the child-bounty.
    **/
-  | {
-      name: "AddChildBounty";
-      params: { parentBountyId: number; value: bigint; description: BytesLike };
-    }
+  | { name: 'AddChildBounty'; params: { parentBountyId: number; value: bigint; description: BytesLike } }
   /**
    * Propose curator for funded child-bounty.
    *
@@ -6455,13 +5899,8 @@ export type PalletChildBountiesCallLike =
    * - `fee`: payment fee to child-bounty curator for execution.
    **/
   | {
-      name: "ProposeCurator";
-      params: {
-        parentBountyId: number;
-        childBountyId: number;
-        curator: MultiAddressLike;
-        fee: bigint;
-      };
+      name: 'ProposeCurator';
+      params: { parentBountyId: number; childBountyId: number; curator: MultiAddressLike; fee: bigint };
     }
   /**
    * Accept the curator role for the child-bounty.
@@ -6484,10 +5923,7 @@ export type PalletChildBountiesCallLike =
    * - `parent_bounty_id`: Index of parent bounty.
    * - `child_bounty_id`: Index of child bounty.
    **/
-  | {
-      name: "AcceptCurator";
-      params: { parentBountyId: number; childBountyId: number };
-    }
+  | { name: 'AcceptCurator'; params: { parentBountyId: number; childBountyId: number } }
   /**
    * Unassign curator from a child-bounty.
    *
@@ -6524,10 +5960,7 @@ export type PalletChildBountiesCallLike =
    * - `parent_bounty_id`: Index of parent bounty.
    * - `child_bounty_id`: Index of child bounty.
    **/
-  | {
-      name: "UnassignCurator";
-      params: { parentBountyId: number; childBountyId: number };
-    }
+  | { name: 'UnassignCurator'; params: { parentBountyId: number; childBountyId: number } }
   /**
    * Award child-bounty to a beneficiary.
    *
@@ -6548,12 +5981,8 @@ export type PalletChildBountiesCallLike =
    * - `beneficiary`: Beneficiary account.
    **/
   | {
-      name: "AwardChildBounty";
-      params: {
-        parentBountyId: number;
-        childBountyId: number;
-        beneficiary: MultiAddressLike;
-      };
+      name: 'AwardChildBounty';
+      params: { parentBountyId: number; childBountyId: number; beneficiary: MultiAddressLike };
     }
   /**
    * Claim the payout from an awarded child-bounty after payout delay.
@@ -6573,10 +6002,7 @@ export type PalletChildBountiesCallLike =
    * - `parent_bounty_id`: Index of parent bounty.
    * - `child_bounty_id`: Index of child bounty.
    **/
-  | {
-      name: "ClaimChildBounty";
-      params: { parentBountyId: number; childBountyId: number };
-    }
+  | { name: 'ClaimChildBounty'; params: { parentBountyId: number; childBountyId: number } }
   /**
    * Cancel a proposed or active child-bounty. Child-bounty account funds
    * are transferred to parent bounty account. The child-bounty curator
@@ -6601,10 +6027,7 @@ export type PalletChildBountiesCallLike =
    * - `parent_bounty_id`: Index of parent bounty.
    * - `child_bounty_id`: Index of child bounty.
    **/
-  | {
-      name: "CloseChildBounty";
-      params: { parentBountyId: number; childBountyId: number };
-    };
+  | { name: 'CloseChildBounty'; params: { parentBountyId: number; childBountyId: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -6627,7 +6050,7 @@ export type PalletNominationPoolsCall =
    * `existential deposit + amount` in their account.
    * * Only a pool with [`PoolState::Open`] can be joined
    **/
-  | { name: "Join"; params: { amount: bigint; poolId: number } }
+  | { name: 'Join'; params: { amount: bigint; poolId: number } }
   /**
    * Bond `extra` more funds from `origin` into the pool to which they already belong.
    *
@@ -6637,7 +6060,7 @@ export type PalletNominationPoolsCall =
    * Bonding extra funds implies an automatic payout of all pending rewards as well.
    * See `bond_extra_other` to bond pending rewards of `other` members.
    **/
-  | { name: "BondExtra"; params: { extra: PalletNominationPoolsBondExtra } }
+  | { name: 'BondExtra'; params: { extra: PalletNominationPoolsBondExtra } }
   /**
    * A bonded member can use this to claim their payout based on the rewards that the pool
    * has accumulated since their last claimed payout (OR since joining if this is their first
@@ -6648,7 +6071,7 @@ export type PalletNominationPoolsCall =
    *
    * See `claim_payout_other` to claim rewards on behalf of some `other` pool member.
    **/
-  | { name: "ClaimPayout" }
+  | { name: 'ClaimPayout' }
   /**
    * Unbond up to `unbonding_points` of the `member_account`'s funds from the pool. It
    * implicitly collects the rewards one last time, since not doing so would mean some
@@ -6682,10 +6105,7 @@ export type PalletNominationPoolsCall =
    * in which case, the result of this call will likely be the `NoMoreChunks` error from the
    * staking system.
    **/
-  | {
-      name: "Unbond";
-      params: { memberAccount: MultiAddress; unbondingPoints: bigint };
-    }
+  | { name: 'Unbond'; params: { memberAccount: MultiAddress; unbondingPoints: bigint } }
   /**
    * Call `withdraw_unbonded` for the pools account. This call can be made by any account.
    *
@@ -6694,10 +6114,7 @@ export type PalletNominationPoolsCall =
    * would probably see an error like `NoMoreChunks` emitted from the staking system when
    * they attempt to unbond.
    **/
-  | {
-      name: "PoolWithdrawUnbonded";
-      params: { poolId: number; numSlashingSpans: number };
-    }
+  | { name: 'PoolWithdrawUnbonded'; params: { poolId: number; numSlashingSpans: number } }
   /**
    * Withdraw unbonded funds from `member_account`. If no bonded funds can be unbonded, an
    * error is returned.
@@ -6722,10 +6139,7 @@ export type PalletNominationPoolsCall =
    * withdraw. This calculation adds some weight overhead and is only defensive. In reality,
    * pool slashes must have been already applied via permissionless [`Call::apply_slash`].
    **/
-  | {
-      name: "WithdrawUnbonded";
-      params: { memberAccount: MultiAddress; numSlashingSpans: number };
-    }
+  | { name: 'WithdrawUnbonded'; params: { memberAccount: MultiAddress; numSlashingSpans: number } }
   /**
    * Create a new delegation pool.
    *
@@ -6745,15 +6159,7 @@ export type PalletNominationPoolsCall =
    * In addition to `amount`, the caller will transfer the existential deposit; so the caller
    * needs at have at least `amount + existential_deposit` transferable.
    **/
-  | {
-      name: "Create";
-      params: {
-        amount: bigint;
-        root: MultiAddress;
-        nominator: MultiAddress;
-        bouncer: MultiAddress;
-      };
-    }
+  | { name: 'Create'; params: { amount: bigint; root: MultiAddress; nominator: MultiAddress; bouncer: MultiAddress } }
   /**
    * Create a new delegation pool with a previously used pool id
    *
@@ -6763,14 +6169,8 @@ export type PalletNominationPoolsCall =
    * * `pool_id` - `A valid PoolId.
    **/
   | {
-      name: "CreateWithPoolId";
-      params: {
-        amount: bigint;
-        root: MultiAddress;
-        nominator: MultiAddress;
-        bouncer: MultiAddress;
-        poolId: number;
-      };
+      name: 'CreateWithPoolId';
+      params: { amount: bigint; root: MultiAddress; nominator: MultiAddress; bouncer: MultiAddress; poolId: number };
     }
   /**
    * Nominate on behalf of the pool.
@@ -6786,10 +6186,7 @@ export type PalletNominationPoolsCall =
    * In addition to a `root` or `nominator` role of `origin`, pool's depositor needs to have
    * at least `depositor_min_bond` in the pool to start nominating.
    **/
-  | {
-      name: "Nominate";
-      params: { poolId: number; validators: Array<AccountId32> };
-    }
+  | { name: 'Nominate'; params: { poolId: number; validators: Array<AccountId32> } }
   /**
    * Set a new state for the pool.
    *
@@ -6802,17 +6199,14 @@ export type PalletNominationPoolsCall =
    * 2. if the pool conditions to be open are NOT met (as described by `ok_to_be_open`), and
    * then the state of the pool can be permissionlessly changed to `Destroying`.
    **/
-  | {
-      name: "SetState";
-      params: { poolId: number; state: PalletNominationPoolsPoolState };
-    }
+  | { name: 'SetState'; params: { poolId: number; state: PalletNominationPoolsPoolState } }
   /**
    * Set a new metadata for the pool.
    *
    * The dispatch origin of this call must be signed by the bouncer, or the root role of the
    * pool.
    **/
-  | { name: "SetMetadata"; params: { poolId: number; metadata: Bytes } }
+  | { name: 'SetMetadata'; params: { poolId: number; metadata: Bytes } }
   /**
    * Update configurations for the nomination pools. The origin for this call must be
    * [`Config::AdminOrigin`].
@@ -6827,7 +6221,7 @@ export type PalletNominationPoolsCall =
    * * `global_max_commission` - Set [`GlobalMaxCommission`].
    **/
   | {
-      name: "SetConfigs";
+      name: 'SetConfigs';
       params: {
         minJoinBond: PalletNominationPoolsConfigOp;
         minCreateBond: PalletNominationPoolsConfigOp;
@@ -6847,7 +6241,7 @@ export type PalletNominationPoolsCall =
    * most pool members and they should be informed of changes to pool roles.
    **/
   | {
-      name: "UpdateRoles";
+      name: 'UpdateRoles';
       params: {
         poolId: number;
         newRoot: PalletNominationPoolsConfigOp004;
@@ -6873,7 +6267,7 @@ export type PalletNominationPoolsCall =
    * This directly forward the call to the staking pallet, on behalf of the pool bonded
    * account.
    **/
-  | { name: "Chill"; params: { poolId: number } }
+  | { name: 'Chill'; params: { poolId: number } }
   /**
    * `origin` bonds funds from `extra` for some pool member `member` into their respective
    * pools.
@@ -6885,10 +6279,7 @@ export type PalletNominationPoolsCall =
    * `other` members assuming set_claim_permission for the given member is
    * `PermissionlessCompound` or `PermissionlessAll`.
    **/
-  | {
-      name: "BondExtraOther";
-      params: { member: MultiAddress; extra: PalletNominationPoolsBondExtra };
-    }
+  | { name: 'BondExtraOther'; params: { member: MultiAddress; extra: PalletNominationPoolsBondExtra } }
   /**
    * Allows a pool member to set a claim permission to allow or disallow permissionless
    * bonding and withdrawing.
@@ -6898,17 +6289,14 @@ export type PalletNominationPoolsCall =
    * * `origin` - Member of a pool.
    * * `permission` - The permission to be applied.
    **/
-  | {
-      name: "SetClaimPermission";
-      params: { permission: PalletNominationPoolsClaimPermission };
-    }
+  | { name: 'SetClaimPermission'; params: { permission: PalletNominationPoolsClaimPermission } }
   /**
    * `origin` can claim payouts on some pool member `other`'s behalf.
    *
    * Pool member `other` must have a `PermissionlessWithdraw` or `PermissionlessAll` claim
    * permission for this call to be successful.
    **/
-  | { name: "ClaimPayoutOther"; params: { other: AccountId32 } }
+  | { name: 'ClaimPayoutOther'; params: { other: AccountId32 } }
   /**
    * Set the commission of a pool.
    * Both a commission percentage and a commission payee must be provided in the `current`
@@ -6916,13 +6304,7 @@ export type PalletNominationPoolsCall =
    *
    * - If a `None` is supplied to `new_commission`, existing commission will be removed.
    **/
-  | {
-      name: "SetCommission";
-      params: {
-        poolId: number;
-        newCommission?: [Perbill, AccountId32] | undefined;
-      };
-    }
+  | { name: 'SetCommission'; params: { poolId: number; newCommission?: [Perbill, AccountId32] | undefined } }
   /**
    * Set the maximum commission of a pool.
    *
@@ -6930,10 +6312,7 @@ export type PalletNominationPoolsCall =
    * - Current commission will be lowered in the event it is higher than a new max
    * commission.
    **/
-  | {
-      name: "SetCommissionMax";
-      params: { poolId: number; maxCommission: Perbill };
-    }
+  | { name: 'SetCommissionMax'; params: { poolId: number; maxCommission: Perbill } }
   /**
    * Set the commission change rate for a pool.
    *
@@ -6941,11 +6320,8 @@ export type PalletNominationPoolsCall =
    * restrictive than the current.
    **/
   | {
-      name: "SetCommissionChangeRate";
-      params: {
-        poolId: number;
-        changeRate: PalletNominationPoolsCommissionChangeRate;
-      };
+      name: 'SetCommissionChangeRate';
+      params: { poolId: number; changeRate: PalletNominationPoolsCommissionChangeRate };
     }
   /**
    * Claim pending commission.
@@ -6954,7 +6330,7 @@ export type PalletNominationPoolsCall =
    * commission is paid out and added to total claimed commission`. Total pending commission
    * is reset to zero. the current.
    **/
-  | { name: "ClaimCommission"; params: { poolId: number } }
+  | { name: 'ClaimCommission'; params: { poolId: number } }
   /**
    * Top up the deficit or withdraw the excess ED from the pool.
    *
@@ -6964,7 +6340,7 @@ export type PalletNominationPoolsCall =
    * deposit to the pool. This call allows anyone to adjust the ED deposit of the
    * pool by either topping up the deficit or claiming the excess.
    **/
-  | { name: "AdjustPoolDeposit"; params: { poolId: number } }
+  | { name: 'AdjustPoolDeposit'; params: { poolId: number } }
   /**
    * Set or remove a pool's commission claim permission.
    *
@@ -6972,11 +6348,8 @@ export type PalletNominationPoolsCall =
    * is able to configure commission claim permissions.
    **/
   | {
-      name: "SetCommissionClaimPermission";
-      params: {
-        poolId: number;
-        permission?: PalletNominationPoolsCommissionClaimPermission | undefined;
-      };
+      name: 'SetCommissionClaimPermission';
+      params: { poolId: number; permission?: PalletNominationPoolsCommissionClaimPermission | undefined };
     }
   /**
    * Apply a pending slash on a member.
@@ -6987,7 +6360,7 @@ export type PalletNominationPoolsCall =
    * This call can be dispatched permissionlessly (i.e. by any account). If the member has
    * slash to be applied, caller may be rewarded with the part of the slash.
    **/
-  | { name: "ApplySlash"; params: { memberAccount: MultiAddress } }
+  | { name: 'ApplySlash'; params: { memberAccount: MultiAddress } }
   /**
    * Migrates delegated funds from the pool account to the `member_account`.
    *
@@ -6999,7 +6372,7 @@ export type PalletNominationPoolsCall =
    * If the pool has migrated to delegation based staking, the staked tokens of pool members
    * can be moved and held in their own account. See [`adapter::DelegateStake`]
    **/
-  | { name: "MigrateDelegation"; params: { memberAccount: MultiAddress } }
+  | { name: 'MigrateDelegation'; params: { memberAccount: MultiAddress } }
   /**
    * Migrate pool from [`adapter::StakeStrategyType::Transfer`] to
    * [`adapter::StakeStrategyType::Delegate`].
@@ -7011,7 +6384,7 @@ export type PalletNominationPoolsCall =
    *
    * If the pool has already migrated to delegation based staking, this call will fail.
    **/
-  | { name: "MigratePoolToDelegateStake"; params: { poolId: number } };
+  | { name: 'MigratePoolToDelegateStake'; params: { poolId: number } };
 
 export type PalletNominationPoolsCallLike =
   /**
@@ -7031,7 +6404,7 @@ export type PalletNominationPoolsCallLike =
    * `existential deposit + amount` in their account.
    * * Only a pool with [`PoolState::Open`] can be joined
    **/
-  | { name: "Join"; params: { amount: bigint; poolId: number } }
+  | { name: 'Join'; params: { amount: bigint; poolId: number } }
   /**
    * Bond `extra` more funds from `origin` into the pool to which they already belong.
    *
@@ -7041,7 +6414,7 @@ export type PalletNominationPoolsCallLike =
    * Bonding extra funds implies an automatic payout of all pending rewards as well.
    * See `bond_extra_other` to bond pending rewards of `other` members.
    **/
-  | { name: "BondExtra"; params: { extra: PalletNominationPoolsBondExtra } }
+  | { name: 'BondExtra'; params: { extra: PalletNominationPoolsBondExtra } }
   /**
    * A bonded member can use this to claim their payout based on the rewards that the pool
    * has accumulated since their last claimed payout (OR since joining if this is their first
@@ -7052,7 +6425,7 @@ export type PalletNominationPoolsCallLike =
    *
    * See `claim_payout_other` to claim rewards on behalf of some `other` pool member.
    **/
-  | { name: "ClaimPayout" }
+  | { name: 'ClaimPayout' }
   /**
    * Unbond up to `unbonding_points` of the `member_account`'s funds from the pool. It
    * implicitly collects the rewards one last time, since not doing so would mean some
@@ -7086,10 +6459,7 @@ export type PalletNominationPoolsCallLike =
    * in which case, the result of this call will likely be the `NoMoreChunks` error from the
    * staking system.
    **/
-  | {
-      name: "Unbond";
-      params: { memberAccount: MultiAddressLike; unbondingPoints: bigint };
-    }
+  | { name: 'Unbond'; params: { memberAccount: MultiAddressLike; unbondingPoints: bigint } }
   /**
    * Call `withdraw_unbonded` for the pools account. This call can be made by any account.
    *
@@ -7098,10 +6468,7 @@ export type PalletNominationPoolsCallLike =
    * would probably see an error like `NoMoreChunks` emitted from the staking system when
    * they attempt to unbond.
    **/
-  | {
-      name: "PoolWithdrawUnbonded";
-      params: { poolId: number; numSlashingSpans: number };
-    }
+  | { name: 'PoolWithdrawUnbonded'; params: { poolId: number; numSlashingSpans: number } }
   /**
    * Withdraw unbonded funds from `member_account`. If no bonded funds can be unbonded, an
    * error is returned.
@@ -7126,10 +6493,7 @@ export type PalletNominationPoolsCallLike =
    * withdraw. This calculation adds some weight overhead and is only defensive. In reality,
    * pool slashes must have been already applied via permissionless [`Call::apply_slash`].
    **/
-  | {
-      name: "WithdrawUnbonded";
-      params: { memberAccount: MultiAddressLike; numSlashingSpans: number };
-    }
+  | { name: 'WithdrawUnbonded'; params: { memberAccount: MultiAddressLike; numSlashingSpans: number } }
   /**
    * Create a new delegation pool.
    *
@@ -7150,13 +6514,8 @@ export type PalletNominationPoolsCallLike =
    * needs at have at least `amount + existential_deposit` transferable.
    **/
   | {
-      name: "Create";
-      params: {
-        amount: bigint;
-        root: MultiAddressLike;
-        nominator: MultiAddressLike;
-        bouncer: MultiAddressLike;
-      };
+      name: 'Create';
+      params: { amount: bigint; root: MultiAddressLike; nominator: MultiAddressLike; bouncer: MultiAddressLike };
     }
   /**
    * Create a new delegation pool with a previously used pool id
@@ -7167,7 +6526,7 @@ export type PalletNominationPoolsCallLike =
    * * `pool_id` - `A valid PoolId.
    **/
   | {
-      name: "CreateWithPoolId";
+      name: 'CreateWithPoolId';
       params: {
         amount: bigint;
         root: MultiAddressLike;
@@ -7190,10 +6549,7 @@ export type PalletNominationPoolsCallLike =
    * In addition to a `root` or `nominator` role of `origin`, pool's depositor needs to have
    * at least `depositor_min_bond` in the pool to start nominating.
    **/
-  | {
-      name: "Nominate";
-      params: { poolId: number; validators: Array<AccountId32Like> };
-    }
+  | { name: 'Nominate'; params: { poolId: number; validators: Array<AccountId32Like> } }
   /**
    * Set a new state for the pool.
    *
@@ -7206,17 +6562,14 @@ export type PalletNominationPoolsCallLike =
    * 2. if the pool conditions to be open are NOT met (as described by `ok_to_be_open`), and
    * then the state of the pool can be permissionlessly changed to `Destroying`.
    **/
-  | {
-      name: "SetState";
-      params: { poolId: number; state: PalletNominationPoolsPoolState };
-    }
+  | { name: 'SetState'; params: { poolId: number; state: PalletNominationPoolsPoolState } }
   /**
    * Set a new metadata for the pool.
    *
    * The dispatch origin of this call must be signed by the bouncer, or the root role of the
    * pool.
    **/
-  | { name: "SetMetadata"; params: { poolId: number; metadata: BytesLike } }
+  | { name: 'SetMetadata'; params: { poolId: number; metadata: BytesLike } }
   /**
    * Update configurations for the nomination pools. The origin for this call must be
    * [`Config::AdminOrigin`].
@@ -7231,7 +6584,7 @@ export type PalletNominationPoolsCallLike =
    * * `global_max_commission` - Set [`GlobalMaxCommission`].
    **/
   | {
-      name: "SetConfigs";
+      name: 'SetConfigs';
       params: {
         minJoinBond: PalletNominationPoolsConfigOp;
         minCreateBond: PalletNominationPoolsConfigOp;
@@ -7251,7 +6604,7 @@ export type PalletNominationPoolsCallLike =
    * most pool members and they should be informed of changes to pool roles.
    **/
   | {
-      name: "UpdateRoles";
+      name: 'UpdateRoles';
       params: {
         poolId: number;
         newRoot: PalletNominationPoolsConfigOp004;
@@ -7277,7 +6630,7 @@ export type PalletNominationPoolsCallLike =
    * This directly forward the call to the staking pallet, on behalf of the pool bonded
    * account.
    **/
-  | { name: "Chill"; params: { poolId: number } }
+  | { name: 'Chill'; params: { poolId: number } }
   /**
    * `origin` bonds funds from `extra` for some pool member `member` into their respective
    * pools.
@@ -7289,13 +6642,7 @@ export type PalletNominationPoolsCallLike =
    * `other` members assuming set_claim_permission for the given member is
    * `PermissionlessCompound` or `PermissionlessAll`.
    **/
-  | {
-      name: "BondExtraOther";
-      params: {
-        member: MultiAddressLike;
-        extra: PalletNominationPoolsBondExtra;
-      };
-    }
+  | { name: 'BondExtraOther'; params: { member: MultiAddressLike; extra: PalletNominationPoolsBondExtra } }
   /**
    * Allows a pool member to set a claim permission to allow or disallow permissionless
    * bonding and withdrawing.
@@ -7305,17 +6652,14 @@ export type PalletNominationPoolsCallLike =
    * * `origin` - Member of a pool.
    * * `permission` - The permission to be applied.
    **/
-  | {
-      name: "SetClaimPermission";
-      params: { permission: PalletNominationPoolsClaimPermission };
-    }
+  | { name: 'SetClaimPermission'; params: { permission: PalletNominationPoolsClaimPermission } }
   /**
    * `origin` can claim payouts on some pool member `other`'s behalf.
    *
    * Pool member `other` must have a `PermissionlessWithdraw` or `PermissionlessAll` claim
    * permission for this call to be successful.
    **/
-  | { name: "ClaimPayoutOther"; params: { other: AccountId32Like } }
+  | { name: 'ClaimPayoutOther'; params: { other: AccountId32Like } }
   /**
    * Set the commission of a pool.
    * Both a commission percentage and a commission payee must be provided in the `current`
@@ -7323,13 +6667,7 @@ export type PalletNominationPoolsCallLike =
    *
    * - If a `None` is supplied to `new_commission`, existing commission will be removed.
    **/
-  | {
-      name: "SetCommission";
-      params: {
-        poolId: number;
-        newCommission?: [Perbill, AccountId32Like] | undefined;
-      };
-    }
+  | { name: 'SetCommission'; params: { poolId: number; newCommission?: [Perbill, AccountId32Like] | undefined } }
   /**
    * Set the maximum commission of a pool.
    *
@@ -7337,10 +6675,7 @@ export type PalletNominationPoolsCallLike =
    * - Current commission will be lowered in the event it is higher than a new max
    * commission.
    **/
-  | {
-      name: "SetCommissionMax";
-      params: { poolId: number; maxCommission: Perbill };
-    }
+  | { name: 'SetCommissionMax'; params: { poolId: number; maxCommission: Perbill } }
   /**
    * Set the commission change rate for a pool.
    *
@@ -7348,11 +6683,8 @@ export type PalletNominationPoolsCallLike =
    * restrictive than the current.
    **/
   | {
-      name: "SetCommissionChangeRate";
-      params: {
-        poolId: number;
-        changeRate: PalletNominationPoolsCommissionChangeRate;
-      };
+      name: 'SetCommissionChangeRate';
+      params: { poolId: number; changeRate: PalletNominationPoolsCommissionChangeRate };
     }
   /**
    * Claim pending commission.
@@ -7361,7 +6693,7 @@ export type PalletNominationPoolsCallLike =
    * commission is paid out and added to total claimed commission`. Total pending commission
    * is reset to zero. the current.
    **/
-  | { name: "ClaimCommission"; params: { poolId: number } }
+  | { name: 'ClaimCommission'; params: { poolId: number } }
   /**
    * Top up the deficit or withdraw the excess ED from the pool.
    *
@@ -7371,7 +6703,7 @@ export type PalletNominationPoolsCallLike =
    * deposit to the pool. This call allows anyone to adjust the ED deposit of the
    * pool by either topping up the deficit or claiming the excess.
    **/
-  | { name: "AdjustPoolDeposit"; params: { poolId: number } }
+  | { name: 'AdjustPoolDeposit'; params: { poolId: number } }
   /**
    * Set or remove a pool's commission claim permission.
    *
@@ -7379,11 +6711,8 @@ export type PalletNominationPoolsCallLike =
    * is able to configure commission claim permissions.
    **/
   | {
-      name: "SetCommissionClaimPermission";
-      params: {
-        poolId: number;
-        permission?: PalletNominationPoolsCommissionClaimPermission | undefined;
-      };
+      name: 'SetCommissionClaimPermission';
+      params: { poolId: number; permission?: PalletNominationPoolsCommissionClaimPermission | undefined };
     }
   /**
    * Apply a pending slash on a member.
@@ -7394,7 +6723,7 @@ export type PalletNominationPoolsCallLike =
    * This call can be dispatched permissionlessly (i.e. by any account). If the member has
    * slash to be applied, caller may be rewarded with the part of the slash.
    **/
-  | { name: "ApplySlash"; params: { memberAccount: MultiAddressLike } }
+  | { name: 'ApplySlash'; params: { memberAccount: MultiAddressLike } }
   /**
    * Migrates delegated funds from the pool account to the `member_account`.
    *
@@ -7406,7 +6735,7 @@ export type PalletNominationPoolsCallLike =
    * If the pool has migrated to delegation based staking, the staked tokens of pool members
    * can be moved and held in their own account. See [`adapter::DelegateStake`]
    **/
-  | { name: "MigrateDelegation"; params: { memberAccount: MultiAddressLike } }
+  | { name: 'MigrateDelegation'; params: { memberAccount: MultiAddressLike } }
   /**
    * Migrate pool from [`adapter::StakeStrategyType::Transfer`] to
    * [`adapter::StakeStrategyType::Delegate`].
@@ -7418,48 +6747,37 @@ export type PalletNominationPoolsCallLike =
    *
    * If the pool has already migrated to delegation based staking, this call will fail.
    **/
-  | { name: "MigratePoolToDelegateStake"; params: { poolId: number } };
+  | { name: 'MigratePoolToDelegateStake'; params: { poolId: number } };
 
-export type PalletNominationPoolsBondExtra =
-  | { type: "FreeBalance"; value: bigint }
-  | { type: "Rewards" };
+export type PalletNominationPoolsBondExtra = { type: 'FreeBalance'; value: bigint } | { type: 'Rewards' };
 
-export type PalletNominationPoolsPoolState = "Open" | "Blocked" | "Destroying";
+export type PalletNominationPoolsPoolState = 'Open' | 'Blocked' | 'Destroying';
 
-export type PalletNominationPoolsConfigOp =
-  | { type: "Noop" }
-  | { type: "Set"; value: bigint }
-  | { type: "Remove" };
+export type PalletNominationPoolsConfigOp = { type: 'Noop' } | { type: 'Set'; value: bigint } | { type: 'Remove' };
 
-export type PalletNominationPoolsConfigOpU32 =
-  | { type: "Noop" }
-  | { type: "Set"; value: number }
-  | { type: "Remove" };
+export type PalletNominationPoolsConfigOpU32 = { type: 'Noop' } | { type: 'Set'; value: number } | { type: 'Remove' };
 
 export type PalletNominationPoolsConfigOpPerbill =
-  | { type: "Noop" }
-  | { type: "Set"; value: Perbill }
-  | { type: "Remove" };
+  | { type: 'Noop' }
+  | { type: 'Set'; value: Perbill }
+  | { type: 'Remove' };
 
 export type PalletNominationPoolsConfigOp004 =
-  | { type: "Noop" }
-  | { type: "Set"; value: AccountId32 }
-  | { type: "Remove" };
+  | { type: 'Noop' }
+  | { type: 'Set'; value: AccountId32 }
+  | { type: 'Remove' };
 
 export type PalletNominationPoolsClaimPermission =
-  | "Permissioned"
-  | "PermissionlessCompound"
-  | "PermissionlessWithdraw"
-  | "PermissionlessAll";
+  | 'Permissioned'
+  | 'PermissionlessCompound'
+  | 'PermissionlessWithdraw'
+  | 'PermissionlessAll';
 
-export type PalletNominationPoolsCommissionChangeRate = {
-  maxIncrease: Perbill;
-  minDelay: number;
-};
+export type PalletNominationPoolsCommissionChangeRate = { maxIncrease: Perbill; minDelay: number };
 
 export type PalletNominationPoolsCommissionClaimPermission =
-  | { type: "Permissionless" }
-  | { type: "Account"; value: AccountId32 };
+  | { type: 'Permissionless' }
+  | { type: 'Account'; value: AccountId32 };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -7483,7 +6801,7 @@ export type PalletGearCall =
    * Emits the following events:
    * - `SavedCode(H256)` - when the code is saved in storage.
    **/
-  | { name: "UploadCode"; params: { code: Bytes } }
+  | { name: 'UploadCode'; params: { code: Bytes } }
   /**
    * Creates program initialization request (message), that is scheduled to be run in the same block.
    *
@@ -7534,15 +6852,8 @@ export type PalletGearCall =
    * has been removed.
    **/
   | {
-      name: "UploadProgram";
-      params: {
-        code: Bytes;
-        salt: Bytes;
-        initPayload: Bytes;
-        gasLimit: bigint;
-        value: bigint;
-        keepAlive: boolean;
-      };
+      name: 'UploadProgram';
+      params: { code: Bytes; salt: Bytes; initPayload: Bytes; gasLimit: bigint; value: bigint; keepAlive: boolean };
     }
   /**
    * Creates program via `code_id` from storage.
@@ -7563,7 +6874,7 @@ export type PalletGearCall =
    * For the details of this extrinsic, see `upload_code`.
    **/
   | {
-      name: "CreateProgram";
+      name: 'CreateProgram';
       params: {
         codeId: GprimitivesCodeId;
         salt: Bytes;
@@ -7593,14 +6904,8 @@ export type PalletGearCall =
    * - `DispatchMessageEnqueued(MessageInfo)` when dispatch message is placed in the queue.
    **/
   | {
-      name: "SendMessage";
-      params: {
-        destination: GprimitivesActorId;
-        payload: Bytes;
-        gasLimit: bigint;
-        value: bigint;
-        keepAlive: boolean;
-      };
+      name: 'SendMessage';
+      params: { destination: GprimitivesActorId; payload: Bytes; gasLimit: bigint; value: bigint; keepAlive: boolean };
     }
   /**
    * Send reply on message in `Mailbox`.
@@ -7618,14 +6923,8 @@ export type PalletGearCall =
    * or reply on the message from mailbox.
    **/
   | {
-      name: "SendReply";
-      params: {
-        replyToId: GprimitivesMessageId;
-        payload: Bytes;
-        gasLimit: bigint;
-        value: bigint;
-        keepAlive: boolean;
-      };
+      name: 'SendReply';
+      params: { replyToId: GprimitivesMessageId; payload: Bytes; gasLimit: bigint; value: bigint; keepAlive: boolean };
     }
   /**
    * Claim value from message in `Mailbox`.
@@ -7637,17 +6936,17 @@ export type PalletGearCall =
    * NOTE: only user who is destination of the message, can claim value
    * or reply on the message from mailbox.
    **/
-  | { name: "ClaimValue"; params: { messageId: GprimitivesMessageId } }
+  | { name: 'ClaimValue'; params: { messageId: GprimitivesMessageId } }
   /**
    * Process message queue
    **/
-  | { name: "Run"; params: { maxGas?: bigint | undefined } }
+  | { name: 'Run'; params: { maxGas?: bigint | undefined } }
   /**
    * Sets `ExecuteInherent` flag.
    *
    * Requires root origin (eventually, will only be set via referendum)
    **/
-  | { name: "SetExecuteInherent"; params: { value: boolean } }
+  | { name: 'SetExecuteInherent'; params: { value: boolean } }
   /**
    * Transfers value from chain of terminated or exited programs to its final inheritor.
    *
@@ -7669,10 +6968,7 @@ export type PalletGearCall =
    * The balances should've been transferred to user (final inheritor) according to the chain.
    * But protocol doesn't traverse the chain automatically, so user have to call this extrinsic.
    **/
-  | {
-      name: "ClaimValueToInheritor";
-      params: { programId: GprimitivesActorId; depth: NonZeroU32 };
-    };
+  | { name: 'ClaimValueToInheritor'; params: { programId: GprimitivesActorId; depth: NonZeroU32 } };
 
 export type PalletGearCallLike =
   /**
@@ -7693,7 +6989,7 @@ export type PalletGearCallLike =
    * Emits the following events:
    * - `SavedCode(H256)` - when the code is saved in storage.
    **/
-  | { name: "UploadCode"; params: { code: BytesLike } }
+  | { name: 'UploadCode'; params: { code: BytesLike } }
   /**
    * Creates program initialization request (message), that is scheduled to be run in the same block.
    *
@@ -7744,7 +7040,7 @@ export type PalletGearCallLike =
    * has been removed.
    **/
   | {
-      name: "UploadProgram";
+      name: 'UploadProgram';
       params: {
         code: BytesLike;
         salt: BytesLike;
@@ -7773,7 +7069,7 @@ export type PalletGearCallLike =
    * For the details of this extrinsic, see `upload_code`.
    **/
   | {
-      name: "CreateProgram";
+      name: 'CreateProgram';
       params: {
         codeId: GprimitivesCodeId;
         salt: BytesLike;
@@ -7803,7 +7099,7 @@ export type PalletGearCallLike =
    * - `DispatchMessageEnqueued(MessageInfo)` when dispatch message is placed in the queue.
    **/
   | {
-      name: "SendMessage";
+      name: 'SendMessage';
       params: {
         destination: GprimitivesActorId;
         payload: BytesLike;
@@ -7828,7 +7124,7 @@ export type PalletGearCallLike =
    * or reply on the message from mailbox.
    **/
   | {
-      name: "SendReply";
+      name: 'SendReply';
       params: {
         replyToId: GprimitivesMessageId;
         payload: BytesLike;
@@ -7847,17 +7143,17 @@ export type PalletGearCallLike =
    * NOTE: only user who is destination of the message, can claim value
    * or reply on the message from mailbox.
    **/
-  | { name: "ClaimValue"; params: { messageId: GprimitivesMessageId } }
+  | { name: 'ClaimValue'; params: { messageId: GprimitivesMessageId } }
   /**
    * Process message queue
    **/
-  | { name: "Run"; params: { maxGas?: bigint | undefined } }
+  | { name: 'Run'; params: { maxGas?: bigint | undefined } }
   /**
    * Sets `ExecuteInherent` flag.
    *
    * Requires root origin (eventually, will only be set via referendum)
    **/
-  | { name: "SetExecuteInherent"; params: { value: boolean } }
+  | { name: 'SetExecuteInherent'; params: { value: boolean } }
   /**
    * Transfers value from chain of terminated or exited programs to its final inheritor.
    *
@@ -7879,10 +7175,7 @@ export type PalletGearCallLike =
    * The balances should've been transferred to user (final inheritor) according to the chain.
    * But protocol doesn't traverse the chain automatically, so user have to call this extrinsic.
    **/
-  | {
-      name: "ClaimValueToInheritor";
-      params: { programId: GprimitivesActorId; depth: NonZeroU32 };
-    };
+  | { name: 'ClaimValueToInheritor'; params: { programId: GprimitivesActorId; depth: NonZeroU32 } };
 
 export type GprimitivesCodeId = FixedBytes<32>;
 
@@ -7896,16 +7189,16 @@ export type NonZeroU32 = number;
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
 export type PalletGearStakingRewardsCall =
-  | { name: "Refill"; params: { value: bigint } }
-  | { name: "ForceRefill"; params: { from: MultiAddress; value: bigint } }
-  | { name: "Withdraw"; params: { to: MultiAddress; value: bigint } }
-  | { name: "AlignSupply"; params: { target: bigint } };
+  | { name: 'Refill'; params: { value: bigint } }
+  | { name: 'ForceRefill'; params: { from: MultiAddress; value: bigint } }
+  | { name: 'Withdraw'; params: { to: MultiAddress; value: bigint } }
+  | { name: 'AlignSupply'; params: { target: bigint } };
 
 export type PalletGearStakingRewardsCallLike =
-  | { name: "Refill"; params: { value: bigint } }
-  | { name: "ForceRefill"; params: { from: MultiAddressLike; value: bigint } }
-  | { name: "Withdraw"; params: { to: MultiAddressLike; value: bigint } }
-  | { name: "AlignSupply"; params: { target: bigint } };
+  | { name: 'Refill'; params: { value: bigint } }
+  | { name: 'ForceRefill'; params: { from: MultiAddressLike; value: bigint } }
+  | { name: 'Withdraw'; params: { to: MultiAddressLike; value: bigint } }
+  | { name: 'AlignSupply'; params: { target: bigint } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -7934,7 +7227,7 @@ export type PalletGearVoucherCall =
    * current bn (extrinsic exec bn) + duration + 1.
    **/
   | {
-      name: "Issue";
+      name: 'Issue';
       params: {
         spender: AccountId32;
         balance: bigint;
@@ -7953,11 +7246,8 @@ export type PalletGearVoucherCall =
    * * call: prepaid call that is requested to execute.
    **/
   | {
-      name: "Call";
-      params: {
-        voucherId: PalletGearVoucherInternalVoucherId;
-        call: PalletGearVoucherInternalPrepaidCall;
-      };
+      name: 'Call';
+      params: { voucherId: PalletGearVoucherInternalVoucherId; call: PalletGearVoucherInternalPrepaidCall };
     }
   /**
    * Revoke existing voucher.
@@ -7974,13 +7264,7 @@ export type PalletGearVoucherCall =
    * * spender: account id of the voucher spender;
    * * voucher_id: voucher id to be revoked.
    **/
-  | {
-      name: "Revoke";
-      params: {
-        spender: AccountId32;
-        voucherId: PalletGearVoucherInternalVoucherId;
-      };
-    }
+  | { name: 'Revoke'; params: { spender: AccountId32; voucherId: PalletGearVoucherInternalVoucherId } }
   /**
    * Update existing voucher.
    *
@@ -8010,7 +7294,7 @@ export type PalletGearVoucherCall =
    * current block number + MaxDuration.
    **/
   | {
-      name: "Update";
+      name: 'Update';
       params: {
         spender: AccountId32;
         voucherId: PalletGearVoucherInternalVoucherId;
@@ -8030,10 +7314,7 @@ export type PalletGearVoucherCall =
    * Arguments:
    * * voucher_id: voucher id to be declined.
    **/
-  | {
-      name: "Decline";
-      params: { voucherId: PalletGearVoucherInternalVoucherId };
-    };
+  | { name: 'Decline'; params: { voucherId: PalletGearVoucherInternalVoucherId } };
 
 export type PalletGearVoucherCallLike =
   /**
@@ -8059,7 +7340,7 @@ export type PalletGearVoucherCallLike =
    * current bn (extrinsic exec bn) + duration + 1.
    **/
   | {
-      name: "Issue";
+      name: 'Issue';
       params: {
         spender: AccountId32Like;
         balance: bigint;
@@ -8078,11 +7359,8 @@ export type PalletGearVoucherCallLike =
    * * call: prepaid call that is requested to execute.
    **/
   | {
-      name: "Call";
-      params: {
-        voucherId: PalletGearVoucherInternalVoucherId;
-        call: PalletGearVoucherInternalPrepaidCall;
-      };
+      name: 'Call';
+      params: { voucherId: PalletGearVoucherInternalVoucherId; call: PalletGearVoucherInternalPrepaidCall };
     }
   /**
    * Revoke existing voucher.
@@ -8099,13 +7377,7 @@ export type PalletGearVoucherCallLike =
    * * spender: account id of the voucher spender;
    * * voucher_id: voucher id to be revoked.
    **/
-  | {
-      name: "Revoke";
-      params: {
-        spender: AccountId32Like;
-        voucherId: PalletGearVoucherInternalVoucherId;
-      };
-    }
+  | { name: 'Revoke'; params: { spender: AccountId32Like; voucherId: PalletGearVoucherInternalVoucherId } }
   /**
    * Update existing voucher.
    *
@@ -8135,7 +7407,7 @@ export type PalletGearVoucherCallLike =
    * current block number + MaxDuration.
    **/
   | {
-      name: "Update";
+      name: 'Update';
       params: {
         spender: AccountId32Like;
         voucherId: PalletGearVoucherInternalVoucherId;
@@ -8155,44 +7427,25 @@ export type PalletGearVoucherCallLike =
    * Arguments:
    * * voucher_id: voucher id to be declined.
    **/
-  | {
-      name: "Decline";
-      params: { voucherId: PalletGearVoucherInternalVoucherId };
-    };
+  | { name: 'Decline'; params: { voucherId: PalletGearVoucherInternalVoucherId } };
 
 export type PalletGearVoucherInternalVoucherId = FixedBytes<32>;
 
 export type PalletGearVoucherInternalPrepaidCall =
   | {
-      type: "SendMessage";
-      value: {
-        destination: GprimitivesActorId;
-        payload: Bytes;
-        gasLimit: bigint;
-        value: bigint;
-        keepAlive: boolean;
-      };
+      type: 'SendMessage';
+      value: { destination: GprimitivesActorId; payload: Bytes; gasLimit: bigint; value: bigint; keepAlive: boolean };
     }
   | {
-      type: "SendReply";
-      value: {
-        replyToId: GprimitivesMessageId;
-        payload: Bytes;
-        gasLimit: bigint;
-        value: bigint;
-        keepAlive: boolean;
-      };
+      type: 'SendReply';
+      value: { replyToId: GprimitivesMessageId; payload: Bytes; gasLimit: bigint; value: bigint; keepAlive: boolean };
     }
-  | { type: "UploadCode"; value: { code: Bytes } }
-  | { type: "DeclineVoucher" };
+  | { type: 'UploadCode'; value: { code: Bytes } }
+  | { type: 'DeclineVoucher' };
 
 export type SpRuntimeBlakeTwo256 = {};
 
-export type PalletConvictionVotingTally = {
-  ayes: bigint;
-  nays: bigint;
-  support: bigint;
-};
+export type PalletConvictionVotingTally = { ayes: bigint; nays: bigint; support: bigint };
 
 /**
  * The `Event` enum of this pallet
@@ -8201,21 +7454,21 @@ export type PalletRankedCollectiveEvent =
   /**
    * A member `who` has been added.
    **/
-  | { name: "MemberAdded"; data: { who: AccountId32 } }
+  | { name: 'MemberAdded'; data: { who: AccountId32 } }
   /**
    * The member `who`se rank has been changed to the given `rank`.
    **/
-  | { name: "RankChanged"; data: { who: AccountId32; rank: number } }
+  | { name: 'RankChanged'; data: { who: AccountId32; rank: number } }
   /**
    * The member `who` of given `rank` has been removed from the collective.
    **/
-  | { name: "MemberRemoved"; data: { who: AccountId32; rank: number } }
+  | { name: 'MemberRemoved'; data: { who: AccountId32; rank: number } }
   /**
    * The member `who` has voted for the `poll` with the given `vote` leading to an updated
    * `tally`.
    **/
   | {
-      name: "Voted";
+      name: 'Voted';
       data: {
         who: AccountId32;
         poll: number;
@@ -8226,20 +7479,11 @@ export type PalletRankedCollectiveEvent =
   /**
    * The member `who` had their `AccountId` changed to `new_who`.
    **/
-  | {
-      name: "MemberExchanged";
-      data: { who: AccountId32; newWho: AccountId32 };
-    };
+  | { name: 'MemberExchanged'; data: { who: AccountId32; newWho: AccountId32 } };
 
-export type PalletRankedCollectiveVoteRecord =
-  | { type: "Aye"; value: number }
-  | { type: "Nay"; value: number };
+export type PalletRankedCollectiveVoteRecord = { type: 'Aye'; value: number } | { type: 'Nay'; value: number };
 
-export type PalletRankedCollectiveTally = {
-  bareAyes: number;
-  ayes: number;
-  nays: number;
-};
+export type PalletRankedCollectiveTally = { bareAyes: number; ayes: number; nays: number };
 
 /**
  * The `Event` enum of this pallet
@@ -8249,7 +7493,7 @@ export type PalletReferendaEvent002 =
    * A referendum has been submitted.
    **/
   | {
-      name: "Submitted";
+      name: 'Submitted';
       data: {
         /**
          * Index of the referendum.
@@ -8271,7 +7515,7 @@ export type PalletReferendaEvent002 =
    * The decision deposit has been placed.
    **/
   | {
-      name: "DecisionDepositPlaced";
+      name: 'DecisionDepositPlaced';
       data: {
         /**
          * Index of the referendum.
@@ -8293,7 +7537,7 @@ export type PalletReferendaEvent002 =
    * The decision deposit has been refunded.
    **/
   | {
-      name: "DecisionDepositRefunded";
+      name: 'DecisionDepositRefunded';
       data: {
         /**
          * Index of the referendum.
@@ -8315,7 +7559,7 @@ export type PalletReferendaEvent002 =
    * A deposit has been slashed.
    **/
   | {
-      name: "DepositSlashed";
+      name: 'DepositSlashed';
       data: {
         /**
          * The account who placed the deposit.
@@ -8332,7 +7576,7 @@ export type PalletReferendaEvent002 =
    * A referendum has moved into the deciding phase.
    **/
   | {
-      name: "DecisionStarted";
+      name: 'DecisionStarted';
       data: {
         /**
          * Index of the referendum.
@@ -8356,7 +7600,7 @@ export type PalletReferendaEvent002 =
       };
     }
   | {
-      name: "ConfirmStarted";
+      name: 'ConfirmStarted';
       data: {
         /**
          * Index of the referendum.
@@ -8365,7 +7609,7 @@ export type PalletReferendaEvent002 =
       };
     }
   | {
-      name: "ConfirmAborted";
+      name: 'ConfirmAborted';
       data: {
         /**
          * Index of the referendum.
@@ -8377,7 +7621,7 @@ export type PalletReferendaEvent002 =
    * A referendum has ended its confirmation phase and is ready for approval.
    **/
   | {
-      name: "Confirmed";
+      name: 'Confirmed';
       data: {
         /**
          * Index of the referendum.
@@ -8394,7 +7638,7 @@ export type PalletReferendaEvent002 =
    * A referendum has been approved and its proposal has been scheduled.
    **/
   | {
-      name: "Approved";
+      name: 'Approved';
       data: {
         /**
          * Index of the referendum.
@@ -8406,7 +7650,7 @@ export type PalletReferendaEvent002 =
    * A proposal has been rejected by referendum.
    **/
   | {
-      name: "Rejected";
+      name: 'Rejected';
       data: {
         /**
          * Index of the referendum.
@@ -8423,7 +7667,7 @@ export type PalletReferendaEvent002 =
    * A referendum has been timed out without being decided.
    **/
   | {
-      name: "TimedOut";
+      name: 'TimedOut';
       data: {
         /**
          * Index of the referendum.
@@ -8440,7 +7684,7 @@ export type PalletReferendaEvent002 =
    * A referendum has been cancelled.
    **/
   | {
-      name: "Cancelled";
+      name: 'Cancelled';
       data: {
         /**
          * Index of the referendum.
@@ -8457,7 +7701,7 @@ export type PalletReferendaEvent002 =
    * A referendum has been killed.
    **/
   | {
-      name: "Killed";
+      name: 'Killed';
       data: {
         /**
          * Index of the referendum.
@@ -8474,7 +7718,7 @@ export type PalletReferendaEvent002 =
    * The submission deposit has been refunded.
    **/
   | {
-      name: "SubmissionDepositRefunded";
+      name: 'SubmissionDepositRefunded';
       data: {
         /**
          * Index of the referendum.
@@ -8496,7 +7740,7 @@ export type PalletReferendaEvent002 =
    * Metadata for a referendum has been set.
    **/
   | {
-      name: "MetadataSet";
+      name: 'MetadataSet';
       data: {
         /**
          * Index of the referendum.
@@ -8513,7 +7757,7 @@ export type PalletReferendaEvent002 =
    * Metadata for a referendum has been cleared.
    **/
   | {
-      name: "MetadataCleared";
+      name: 'MetadataCleared';
       data: {
         /**
          * Index of the referendum.
@@ -8531,16 +7775,13 @@ export type PalletReferendaEvent002 =
  * The `Event` enum of this pallet
  **/
 export type PalletWhitelistEvent =
-  | { name: "CallWhitelisted"; data: { callHash: H256 } }
-  | { name: "WhitelistedCallRemoved"; data: { callHash: H256 } }
+  | { name: 'CallWhitelisted'; data: { callHash: H256 } }
+  | { name: 'WhitelistedCallRemoved'; data: { callHash: H256 } }
   | {
-      name: "WhitelistedCallDispatched";
+      name: 'WhitelistedCallDispatched';
       data: {
         callHash: H256;
-        result: Result<
-          FrameSupportDispatchPostDispatchInfo,
-          SpRuntimeDispatchErrorWithPostInfo
-        >;
+        result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
       };
     };
 
@@ -8561,70 +7802,46 @@ export type PalletSchedulerEvent =
   /**
    * Scheduled some task.
    **/
-  | { name: "Scheduled"; data: { when: number; index: number } }
+  | { name: 'Scheduled'; data: { when: number; index: number } }
   /**
    * Canceled some task.
    **/
-  | { name: "Canceled"; data: { when: number; index: number } }
+  | { name: 'Canceled'; data: { when: number; index: number } }
   /**
    * Dispatched some task.
    **/
   | {
-      name: "Dispatched";
-      data: {
-        task: [number, number];
-        id?: FixedBytes<32> | undefined;
-        result: Result<[], DispatchError>;
-      };
+      name: 'Dispatched';
+      data: { task: [number, number]; id?: FixedBytes<32> | undefined; result: Result<[], DispatchError> };
     }
   /**
    * Set a retry configuration for some task.
    **/
   | {
-      name: "RetrySet";
-      data: {
-        task: [number, number];
-        id?: FixedBytes<32> | undefined;
-        period: number;
-        retries: number;
-      };
+      name: 'RetrySet';
+      data: { task: [number, number]; id?: FixedBytes<32> | undefined; period: number; retries: number };
     }
   /**
    * Cancel a retry configuration for some task.
    **/
-  | {
-      name: "RetryCancelled";
-      data: { task: [number, number]; id?: FixedBytes<32> | undefined };
-    }
+  | { name: 'RetryCancelled'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } }
   /**
    * The call for the provided hash was not found so the task has been aborted.
    **/
-  | {
-      name: "CallUnavailable";
-      data: { task: [number, number]; id?: FixedBytes<32> | undefined };
-    }
+  | { name: 'CallUnavailable'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } }
   /**
    * The given task was unable to be renewed since the agenda is full at that block.
    **/
-  | {
-      name: "PeriodicFailed";
-      data: { task: [number, number]; id?: FixedBytes<32> | undefined };
-    }
+  | { name: 'PeriodicFailed'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } }
   /**
    * The given task was unable to be retried since the agenda is full at that block or there
    * was not enough weight to reschedule it.
    **/
-  | {
-      name: "RetryFailed";
-      data: { task: [number, number]; id?: FixedBytes<32> | undefined };
-    }
+  | { name: 'RetryFailed'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } }
   /**
    * The given task can never be executed since it is overweight.
    **/
-  | {
-      name: "PermanentlyOverweight";
-      data: { task: [number, number]; id?: FixedBytes<32> | undefined };
-    };
+  | { name: 'PermanentlyOverweight'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } };
 
 /**
  * The `Event` enum of this pallet
@@ -8633,15 +7850,15 @@ export type PalletPreimageEvent =
   /**
    * A preimage has been noted.
    **/
-  | { name: "Noted"; data: { hash: H256 } }
+  | { name: 'Noted'; data: { hash: H256 } }
   /**
    * A preimage has been requested.
    **/
-  | { name: "Requested"; data: { hash: H256 } }
+  | { name: 'Requested'; data: { hash: H256 } }
   /**
    * A preimage has ben cleared.
    **/
-  | { name: "Cleared"; data: { hash: H256 } };
+  | { name: 'Cleared'; data: { hash: H256 } };
 
 /**
  * The `Event` enum of this pallet
@@ -8650,97 +7867,73 @@ export type PalletIdentityEvent =
   /**
    * A name was set or reset (which will remove all judgements).
    **/
-  | { name: "IdentitySet"; data: { who: AccountId32 } }
+  | { name: 'IdentitySet'; data: { who: AccountId32 } }
   /**
    * A name was cleared, and the given balance returned.
    **/
-  | { name: "IdentityCleared"; data: { who: AccountId32; deposit: bigint } }
+  | { name: 'IdentityCleared'; data: { who: AccountId32; deposit: bigint } }
   /**
    * A name was removed and the given balance slashed.
    **/
-  | { name: "IdentityKilled"; data: { who: AccountId32; deposit: bigint } }
+  | { name: 'IdentityKilled'; data: { who: AccountId32; deposit: bigint } }
   /**
    * A judgement was asked from a registrar.
    **/
-  | {
-      name: "JudgementRequested";
-      data: { who: AccountId32; registrarIndex: number };
-    }
+  | { name: 'JudgementRequested'; data: { who: AccountId32; registrarIndex: number } }
   /**
    * A judgement request was retracted.
    **/
-  | {
-      name: "JudgementUnrequested";
-      data: { who: AccountId32; registrarIndex: number };
-    }
+  | { name: 'JudgementUnrequested'; data: { who: AccountId32; registrarIndex: number } }
   /**
    * A judgement was given by a registrar.
    **/
-  | {
-      name: "JudgementGiven";
-      data: { target: AccountId32; registrarIndex: number };
-    }
+  | { name: 'JudgementGiven'; data: { target: AccountId32; registrarIndex: number } }
   /**
    * A registrar was added.
    **/
-  | { name: "RegistrarAdded"; data: { registrarIndex: number } }
+  | { name: 'RegistrarAdded'; data: { registrarIndex: number } }
   /**
    * A sub-identity was added to an identity and the deposit paid.
    **/
-  | {
-      name: "SubIdentityAdded";
-      data: { sub: AccountId32; main: AccountId32; deposit: bigint };
-    }
+  | { name: 'SubIdentityAdded'; data: { sub: AccountId32; main: AccountId32; deposit: bigint } }
   /**
    * A sub-identity was removed from an identity and the deposit freed.
    **/
-  | {
-      name: "SubIdentityRemoved";
-      data: { sub: AccountId32; main: AccountId32; deposit: bigint };
-    }
+  | { name: 'SubIdentityRemoved'; data: { sub: AccountId32; main: AccountId32; deposit: bigint } }
   /**
    * A sub-identity was cleared, and the given deposit repatriated from the
    * main identity account to the sub-identity account.
    **/
-  | {
-      name: "SubIdentityRevoked";
-      data: { sub: AccountId32; main: AccountId32; deposit: bigint };
-    }
+  | { name: 'SubIdentityRevoked'; data: { sub: AccountId32; main: AccountId32; deposit: bigint } }
   /**
    * A username authority was added.
    **/
-  | { name: "AuthorityAdded"; data: { authority: AccountId32 } }
+  | { name: 'AuthorityAdded'; data: { authority: AccountId32 } }
   /**
    * A username authority was removed.
    **/
-  | { name: "AuthorityRemoved"; data: { authority: AccountId32 } }
+  | { name: 'AuthorityRemoved'; data: { authority: AccountId32 } }
   /**
    * A username was set for `who`.
    **/
-  | { name: "UsernameSet"; data: { who: AccountId32; username: Bytes } }
+  | { name: 'UsernameSet'; data: { who: AccountId32; username: Bytes } }
   /**
    * A username was queued, but `who` must accept it prior to `expiration`.
    **/
-  | {
-      name: "UsernameQueued";
-      data: { who: AccountId32; username: Bytes; expiration: number };
-    }
+  | { name: 'UsernameQueued'; data: { who: AccountId32; username: Bytes; expiration: number } }
   /**
    * A queued username passed its expiration without being claimed and was removed.
    **/
-  | { name: "PreapprovalExpired"; data: { whose: AccountId32 } }
+  | { name: 'PreapprovalExpired'; data: { whose: AccountId32 } }
   /**
    * A username was set as a primary and can be looked up from `who`.
    **/
-  | { name: "PrimaryUsernameSet"; data: { who: AccountId32; username: Bytes } }
+  | { name: 'PrimaryUsernameSet'; data: { who: AccountId32; username: Bytes } }
   /**
    * A dangling username (as in, a username corresponding to an account that has removed its
    * identity) has been removed.
    **/
-  | {
-      name: "DanglingUsernameRemoved";
-      data: { who: AccountId32; username: Bytes };
-    };
+  | { name: 'DanglingUsernameRemoved'; data: { who: AccountId32; username: Bytes } };
 
 /**
  * The `Event` enum of this pallet
@@ -8749,50 +7942,32 @@ export type PalletProxyEvent =
   /**
    * A proxy was executed correctly, with the given.
    **/
-  | { name: "ProxyExecuted"; data: { result: Result<[], DispatchError> } }
+  | { name: 'ProxyExecuted'; data: { result: Result<[], DispatchError> } }
   /**
    * A pure account has been created by new proxy with given
    * disambiguation index and proxy type.
    **/
   | {
-      name: "PureCreated";
-      data: {
-        pure: AccountId32;
-        who: AccountId32;
-        proxyType: VaraRuntimeProxyType;
-        disambiguationIndex: number;
-      };
+      name: 'PureCreated';
+      data: { pure: AccountId32; who: AccountId32; proxyType: VaraRuntimeProxyType; disambiguationIndex: number };
     }
   /**
    * An announcement was placed to make a call in the future.
    **/
-  | {
-      name: "Announced";
-      data: { real: AccountId32; proxy: AccountId32; callHash: H256 };
-    }
+  | { name: 'Announced'; data: { real: AccountId32; proxy: AccountId32; callHash: H256 } }
   /**
    * A proxy was added.
    **/
   | {
-      name: "ProxyAdded";
-      data: {
-        delegator: AccountId32;
-        delegatee: AccountId32;
-        proxyType: VaraRuntimeProxyType;
-        delay: number;
-      };
+      name: 'ProxyAdded';
+      data: { delegator: AccountId32; delegatee: AccountId32; proxyType: VaraRuntimeProxyType; delay: number };
     }
   /**
    * A proxy was removed.
    **/
   | {
-      name: "ProxyRemoved";
-      data: {
-        delegator: AccountId32;
-        delegatee: AccountId32;
-        proxyType: VaraRuntimeProxyType;
-        delay: number;
-      };
+      name: 'ProxyRemoved';
+      data: { delegator: AccountId32; delegatee: AccountId32; proxyType: VaraRuntimeProxyType; delay: number };
     };
 
 /**
@@ -8802,19 +7977,12 @@ export type PalletMultisigEvent =
   /**
    * A new multisig operation has begun.
    **/
-  | {
-      name: "NewMultisig";
-      data: {
-        approving: AccountId32;
-        multisig: AccountId32;
-        callHash: FixedBytes<32>;
-      };
-    }
+  | { name: 'NewMultisig'; data: { approving: AccountId32; multisig: AccountId32; callHash: FixedBytes<32> } }
   /**
    * A multisig operation has been approved by someone.
    **/
   | {
-      name: "MultisigApproval";
+      name: 'MultisigApproval';
       data: {
         approving: AccountId32;
         timepoint: PalletMultisigTimepoint;
@@ -8826,7 +7994,7 @@ export type PalletMultisigEvent =
    * A multisig operation has been executed.
    **/
   | {
-      name: "MultisigExecuted";
+      name: 'MultisigExecuted';
       data: {
         approving: AccountId32;
         timepoint: PalletMultisigTimepoint;
@@ -8839,7 +8007,7 @@ export type PalletMultisigEvent =
    * A multisig operation has been cancelled.
    **/
   | {
-      name: "MultisigCancelled";
+      name: 'MultisigCancelled';
       data: {
         cancelling: AccountId32;
         timepoint: PalletMultisigTimepoint;
@@ -8862,7 +8030,7 @@ export type PalletElectionProviderMultiPhaseEvent =
    * room for this one.
    **/
   | {
-      name: "SolutionStored";
+      name: 'SolutionStored';
       data: {
         compute: PalletElectionProviderMultiPhaseElectionCompute;
         origin?: AccountId32 | undefined;
@@ -8873,50 +8041,43 @@ export type PalletElectionProviderMultiPhaseEvent =
    * The election has been finalized, with the given computation and score.
    **/
   | {
-      name: "ElectionFinalized";
-      data: {
-        compute: PalletElectionProviderMultiPhaseElectionCompute;
-        score: SpNposElectionsElectionScore;
-      };
+      name: 'ElectionFinalized';
+      data: { compute: PalletElectionProviderMultiPhaseElectionCompute; score: SpNposElectionsElectionScore };
     }
   /**
    * An election failed.
    *
    * Not much can be said about which computes failed in the process.
    **/
-  | { name: "ElectionFailed" }
+  | { name: 'ElectionFailed' }
   /**
    * An account has been rewarded for their signed submission being finalized.
    **/
-  | { name: "Rewarded"; data: { account: AccountId32; value: bigint } }
+  | { name: 'Rewarded'; data: { account: AccountId32; value: bigint } }
   /**
    * An account has been slashed for submitting an invalid signed submission.
    **/
-  | { name: "Slashed"; data: { account: AccountId32; value: bigint } }
+  | { name: 'Slashed'; data: { account: AccountId32; value: bigint } }
   /**
    * There was a phase transition in a given round.
    **/
   | {
-      name: "PhaseTransitioned";
-      data: {
-        from: PalletElectionProviderMultiPhasePhase;
-        to: PalletElectionProviderMultiPhasePhase;
-        round: number;
-      };
+      name: 'PhaseTransitioned';
+      data: { from: PalletElectionProviderMultiPhasePhase; to: PalletElectionProviderMultiPhasePhase; round: number };
     };
 
 export type PalletElectionProviderMultiPhaseElectionCompute =
-  | "OnChain"
-  | "Signed"
-  | "Unsigned"
-  | "Fallback"
-  | "Emergency";
+  | 'OnChain'
+  | 'Signed'
+  | 'Unsigned'
+  | 'Fallback'
+  | 'Emergency';
 
 export type PalletElectionProviderMultiPhasePhase =
-  | { type: "Off" }
-  | { type: "Signed" }
-  | { type: "Unsigned"; value: [boolean, number] }
-  | { type: "Emergency" };
+  | { type: 'Off' }
+  | { type: 'Signed' }
+  | { type: 'Unsigned'; value: [boolean, number] }
+  | { type: 'Emergency' };
 
 /**
  * Events type.
@@ -8927,7 +8088,7 @@ export type PalletOffencesEvent =
    * (kind-specific) time slot. This event is not deposited for duplicate slashes.
    * \[kind, timeslot\].
    **/
-  { name: "Offence"; data: { kind: FixedBytes<16>; timeslot: Bytes } };
+  { name: 'Offence'; data: { kind: FixedBytes<16>; timeslot: Bytes } };
 
 /**
  * The `Event` enum of this pallet
@@ -8936,56 +8097,47 @@ export type PalletBountiesEvent =
   /**
    * New bounty proposal.
    **/
-  | { name: "BountyProposed"; data: { index: number } }
+  | { name: 'BountyProposed'; data: { index: number } }
   /**
    * A bounty proposal was rejected; funds were slashed.
    **/
-  | { name: "BountyRejected"; data: { index: number; bond: bigint } }
+  | { name: 'BountyRejected'; data: { index: number; bond: bigint } }
   /**
    * A bounty proposal is funded and became active.
    **/
-  | { name: "BountyBecameActive"; data: { index: number } }
+  | { name: 'BountyBecameActive'; data: { index: number } }
   /**
    * A bounty is awarded to a beneficiary.
    **/
-  | { name: "BountyAwarded"; data: { index: number; beneficiary: AccountId32 } }
+  | { name: 'BountyAwarded'; data: { index: number; beneficiary: AccountId32 } }
   /**
    * A bounty is claimed by beneficiary.
    **/
-  | {
-      name: "BountyClaimed";
-      data: { index: number; payout: bigint; beneficiary: AccountId32 };
-    }
+  | { name: 'BountyClaimed'; data: { index: number; payout: bigint; beneficiary: AccountId32 } }
   /**
    * A bounty is cancelled.
    **/
-  | { name: "BountyCanceled"; data: { index: number } }
+  | { name: 'BountyCanceled'; data: { index: number } }
   /**
    * A bounty expiry is extended.
    **/
-  | { name: "BountyExtended"; data: { index: number } }
+  | { name: 'BountyExtended'; data: { index: number } }
   /**
    * A bounty is approved.
    **/
-  | { name: "BountyApproved"; data: { index: number } }
+  | { name: 'BountyApproved'; data: { index: number } }
   /**
    * A bounty curator is proposed.
    **/
-  | {
-      name: "CuratorProposed";
-      data: { bountyId: number; curator: AccountId32 };
-    }
+  | { name: 'CuratorProposed'; data: { bountyId: number; curator: AccountId32 } }
   /**
    * A bounty curator is unassigned.
    **/
-  | { name: "CuratorUnassigned"; data: { bountyId: number } }
+  | { name: 'CuratorUnassigned'; data: { bountyId: number } }
   /**
    * A bounty curator is accepted.
    **/
-  | {
-      name: "CuratorAccepted";
-      data: { bountyId: number; curator: AccountId32 };
-    };
+  | { name: 'CuratorAccepted'; data: { bountyId: number; curator: AccountId32 } };
 
 /**
  * The `Event` enum of this pallet
@@ -8994,30 +8146,19 @@ export type PalletChildBountiesEvent =
   /**
    * A child-bounty is added.
    **/
-  | { name: "Added"; data: { index: number; childIndex: number } }
+  | { name: 'Added'; data: { index: number; childIndex: number } }
   /**
    * A child-bounty is awarded to a beneficiary.
    **/
-  | {
-      name: "Awarded";
-      data: { index: number; childIndex: number; beneficiary: AccountId32 };
-    }
+  | { name: 'Awarded'; data: { index: number; childIndex: number; beneficiary: AccountId32 } }
   /**
    * A child-bounty is claimed by beneficiary.
    **/
-  | {
-      name: "Claimed";
-      data: {
-        index: number;
-        childIndex: number;
-        payout: bigint;
-        beneficiary: AccountId32;
-      };
-    }
+  | { name: 'Claimed'; data: { index: number; childIndex: number; payout: bigint; beneficiary: AccountId32 } }
   /**
    * A child-bounty is cancelled.
    **/
-  | { name: "Canceled"; data: { index: number; childIndex: number } };
+  | { name: 'Canceled'; data: { index: number; childIndex: number } };
 
 /**
  * Events of this pallet.
@@ -9026,26 +8167,15 @@ export type PalletNominationPoolsEvent =
   /**
    * A pool has been created.
    **/
-  | { name: "Created"; data: { depositor: AccountId32; poolId: number } }
+  | { name: 'Created'; data: { depositor: AccountId32; poolId: number } }
   /**
    * A member has became bonded in a pool.
    **/
-  | {
-      name: "Bonded";
-      data: {
-        member: AccountId32;
-        poolId: number;
-        bonded: bigint;
-        joined: boolean;
-      };
-    }
+  | { name: 'Bonded'; data: { member: AccountId32; poolId: number; bonded: bigint; joined: boolean } }
   /**
    * A payout has been made to a member.
    **/
-  | {
-      name: "PaidOut";
-      data: { member: AccountId32; poolId: number; payout: bigint };
-    }
+  | { name: 'PaidOut'; data: { member: AccountId32; poolId: number; payout: bigint } }
   /**
    * A member has unbonded from their pool.
    *
@@ -9059,16 +8189,7 @@ export type PalletNominationPoolsEvent =
    * number of points that are issued in the unbonding pool will be less than the amount
    * requested to be unbonded.
    **/
-  | {
-      name: "Unbonded";
-      data: {
-        member: AccountId32;
-        poolId: number;
-        balance: bigint;
-        points: bigint;
-        era: number;
-      };
-    }
+  | { name: 'Unbonded'; data: { member: AccountId32; poolId: number; balance: bigint; points: bigint; era: number } }
   /**
    * A member has withdrawn from their pool.
    *
@@ -9077,26 +8198,15 @@ export type PalletNominationPoolsEvent =
    * Similar to `Unbonded` event, in the absence of slashing, the ratio of point to balance
    * will be 1.
    **/
-  | {
-      name: "Withdrawn";
-      data: {
-        member: AccountId32;
-        poolId: number;
-        balance: bigint;
-        points: bigint;
-      };
-    }
+  | { name: 'Withdrawn'; data: { member: AccountId32; poolId: number; balance: bigint; points: bigint } }
   /**
    * A pool has been destroyed.
    **/
-  | { name: "Destroyed"; data: { poolId: number } }
+  | { name: 'Destroyed'; data: { poolId: number } }
   /**
    * The state of a pool has changed
    **/
-  | {
-      name: "StateChanged";
-      data: { poolId: number; newState: PalletNominationPoolsPoolState };
-    }
+  | { name: 'StateChanged'; data: { poolId: number; newState: PalletNominationPoolsPoolState } }
   /**
    * A member has been removed from a pool.
    *
@@ -9104,88 +8214,57 @@ export type PalletNominationPoolsEvent =
    * Any funds that are still delegated (i.e. dangling delegation) are released and are
    * represented by `released_balance`.
    **/
-  | {
-      name: "MemberRemoved";
-      data: { poolId: number; member: AccountId32; releasedBalance: bigint };
-    }
+  | { name: 'MemberRemoved'; data: { poolId: number; member: AccountId32; releasedBalance: bigint } }
   /**
    * The roles of a pool have been updated to the given new roles. Note that the depositor
    * can never change.
    **/
   | {
-      name: "RolesUpdated";
-      data: {
-        root?: AccountId32 | undefined;
-        bouncer?: AccountId32 | undefined;
-        nominator?: AccountId32 | undefined;
-      };
+      name: 'RolesUpdated';
+      data: { root?: AccountId32 | undefined; bouncer?: AccountId32 | undefined; nominator?: AccountId32 | undefined };
     }
   /**
    * The active balance of pool `pool_id` has been slashed to `balance`.
    **/
-  | { name: "PoolSlashed"; data: { poolId: number; balance: bigint } }
+  | { name: 'PoolSlashed'; data: { poolId: number; balance: bigint } }
   /**
    * The unbond pool at `era` of pool `pool_id` has been slashed to `balance`.
    **/
-  | {
-      name: "UnbondingPoolSlashed";
-      data: { poolId: number; era: number; balance: bigint };
-    }
+  | { name: 'UnbondingPoolSlashed'; data: { poolId: number; era: number; balance: bigint } }
   /**
    * A pool's commission setting has been changed.
    **/
-  | {
-      name: "PoolCommissionUpdated";
-      data: { poolId: number; current?: [Perbill, AccountId32] | undefined };
-    }
+  | { name: 'PoolCommissionUpdated'; data: { poolId: number; current?: [Perbill, AccountId32] | undefined } }
   /**
    * A pool's maximum commission setting has been changed.
    **/
-  | {
-      name: "PoolMaxCommissionUpdated";
-      data: { poolId: number; maxCommission: Perbill };
-    }
+  | { name: 'PoolMaxCommissionUpdated'; data: { poolId: number; maxCommission: Perbill } }
   /**
    * A pool's commission `change_rate` has been changed.
    **/
   | {
-      name: "PoolCommissionChangeRateUpdated";
-      data: {
-        poolId: number;
-        changeRate: PalletNominationPoolsCommissionChangeRate;
-      };
+      name: 'PoolCommissionChangeRateUpdated';
+      data: { poolId: number; changeRate: PalletNominationPoolsCommissionChangeRate };
     }
   /**
    * Pool commission claim permission has been updated.
    **/
   | {
-      name: "PoolCommissionClaimPermissionUpdated";
-      data: {
-        poolId: number;
-        permission?: PalletNominationPoolsCommissionClaimPermission | undefined;
-      };
+      name: 'PoolCommissionClaimPermissionUpdated';
+      data: { poolId: number; permission?: PalletNominationPoolsCommissionClaimPermission | undefined };
     }
   /**
    * Pool commission has been claimed.
    **/
-  | {
-      name: "PoolCommissionClaimed";
-      data: { poolId: number; commission: bigint };
-    }
+  | { name: 'PoolCommissionClaimed'; data: { poolId: number; commission: bigint } }
   /**
    * Topped up deficit in frozen ED of the reward pool.
    **/
-  | {
-      name: "MinBalanceDeficitAdjusted";
-      data: { poolId: number; amount: bigint };
-    }
+  | { name: 'MinBalanceDeficitAdjusted'; data: { poolId: number; amount: bigint } }
   /**
    * Claimed excess frozen ED of af the reward pool.
    **/
-  | {
-      name: "MinBalanceExcessAdjusted";
-      data: { poolId: number; amount: bigint };
-    };
+  | { name: 'MinBalanceExcessAdjusted'; data: { poolId: number; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -9196,7 +8275,7 @@ export type PalletGearEvent =
    * added to the Gear message queue.
    **/
   | {
-      name: "MessageQueued";
+      name: 'MessageQueued';
       data: {
         /**
          * Generated id of the message.
@@ -9225,7 +8304,7 @@ export type PalletGearEvent =
    * Somebody sent a message to the user.
    **/
   | {
-      name: "UserMessageSent";
+      name: 'UserMessageSent';
       data: {
         /**
          * Message sent.
@@ -9251,7 +8330,7 @@ export type PalletGearEvent =
    * already inserted in `Mailbox`.
    **/
   | {
-      name: "UserMessageRead";
+      name: 'UserMessageRead';
       data: {
         /**
          * Id of the message read.
@@ -9270,7 +8349,7 @@ export type PalletGearEvent =
    * The result of processing the messages within the block.
    **/
   | {
-      name: "MessagesDispatched";
+      name: 'MessagesDispatched';
       data: {
         /**
          * Total amount of messages removed from message queue.
@@ -9294,7 +8373,7 @@ export type PalletGearEvent =
    * added to gear waitlist.
    **/
   | {
-      name: "MessageWaited";
+      name: 'MessageWaited';
       data: {
         /**
          * Id of the message waited.
@@ -9331,7 +8410,7 @@ export type PalletGearEvent =
    * and was removed from `Waitlist`.
    **/
   | {
-      name: "MessageWoken";
+      name: 'MessageWoken';
       data: {
         /**
          * Id of the message woken.
@@ -9350,7 +8429,7 @@ export type PalletGearEvent =
    * Any data related to program codes changed.
    **/
   | {
-      name: "CodeChanged";
+      name: 'CodeChanged';
       data: {
         /**
          * Id of the code affected.
@@ -9369,7 +8448,7 @@ export type PalletGearEvent =
    * Any data related to programs changed.
    **/
   | {
-      name: "ProgramChanged";
+      name: 'ProgramChanged';
       data: {
         /**
          * Id of the program affected.
@@ -9387,13 +8466,13 @@ export type PalletGearEvent =
   /**
    * The pseudo-inherent extrinsic that runs queue processing rolled back or not executed.
    **/
-  | { name: "QueueNotProcessed" };
+  | { name: 'QueueNotProcessed' };
 
 export type GearCommonEventMessageEntry =
-  | { type: "Init" }
-  | { type: "Handle" }
-  | { type: "Reply"; value: GprimitivesMessageId }
-  | { type: "Signal" };
+  | { type: 'Init' }
+  | { type: 'Handle' }
+  | { type: 'Reply'; value: GprimitivesMessageId }
+  | { type: 'Signal' };
 
 export type GearCoreMessageUserUserMessage = {
   id: GprimitivesMessageId;
@@ -9408,103 +8487,86 @@ export type GearCoreBufferLimitedVec = Bytes;
 
 export type GearCoreMessagePayloadSizeError = {};
 
-export type GearCoreMessageCommonReplyDetails = {
-  to: GprimitivesMessageId;
-  code: GearCoreErrorsSimpleReplyCode;
-};
+export type GearCoreMessageCommonReplyDetails = { to: GprimitivesMessageId; code: GearCoreErrorsSimpleReplyCode };
 
 export type GearCoreErrorsSimpleReplyCode =
-  | { type: "Success"; value: GearCoreErrorsSimpleSuccessReplyReason }
-  | { type: "Error"; value: GearCoreErrorsSimpleErrorReplyReason }
-  | { type: "Unsupported" };
+  | { type: 'Success'; value: GearCoreErrorsSimpleSuccessReplyReason }
+  | { type: 'Error'; value: GearCoreErrorsSimpleErrorReplyReason }
+  | { type: 'Unsupported' };
 
-export type GearCoreErrorsSimpleSuccessReplyReason =
-  | "Auto"
-  | "Manual"
-  | "Unsupported";
+export type GearCoreErrorsSimpleSuccessReplyReason = 'Auto' | 'Manual' | 'Unsupported';
 
 export type GearCoreErrorsSimpleErrorReplyReason =
-  | { type: "Execution"; value: GearCoreErrorsSimpleSimpleExecutionError }
-  | {
-      type: "UnavailableActor";
-      value: GearCoreErrorsSimpleSimpleUnavailableActorError;
-    }
-  | { type: "RemovedFromWaitlist" }
-  | { type: "Unsupported" };
+  | { type: 'Execution'; value: GearCoreErrorsSimpleSimpleExecutionError }
+  | { type: 'UnavailableActor'; value: GearCoreErrorsSimpleSimpleUnavailableActorError }
+  | { type: 'RemovedFromWaitlist' }
+  | { type: 'Unsupported' };
 
 export type GearCoreErrorsSimpleSimpleExecutionError =
-  | "RanOutOfGas"
-  | "MemoryOverflow"
-  | "BackendError"
-  | "UserspacePanic"
-  | "UnreachableInstruction"
-  | "StackLimitExceeded"
-  | "Unsupported";
+  | 'RanOutOfGas'
+  | 'MemoryOverflow'
+  | 'BackendError'
+  | 'UserspacePanic'
+  | 'UnreachableInstruction'
+  | 'StackLimitExceeded'
+  | 'Unsupported';
 
 export type GearCoreErrorsSimpleSimpleUnavailableActorError =
-  | "ProgramExited"
-  | "InitializationFailure"
-  | "Uninitialized"
-  | "ProgramNotCreated"
-  | "ReinstrumentationFailure"
-  | "Unsupported";
+  | 'ProgramExited'
+  | 'InitializationFailure'
+  | 'Uninitialized'
+  | 'ProgramNotCreated'
+  | 'ReinstrumentationFailure'
+  | 'Unsupported';
 
 export type GearCommonEventReason =
-  | { type: "Runtime"; value: GearCommonEventUserMessageReadRuntimeReason }
-  | { type: "System"; value: GearCommonEventUserMessageReadSystemReason };
+  | { type: 'Runtime'; value: GearCommonEventUserMessageReadRuntimeReason }
+  | { type: 'System'; value: GearCommonEventUserMessageReadSystemReason };
 
-export type GearCommonEventUserMessageReadRuntimeReason =
-  | "MessageReplied"
-  | "MessageClaimed";
+export type GearCommonEventUserMessageReadRuntimeReason = 'MessageReplied' | 'MessageClaimed';
 
-export type GearCommonEventUserMessageReadSystemReason = "OutOfRent";
+export type GearCommonEventUserMessageReadSystemReason = 'OutOfRent';
 
-export type GearCommonEventDispatchStatus =
-  | "Success"
-  | "Failed"
-  | "NotExecuted";
+export type GearCommonEventDispatchStatus = 'Success' | 'Failed' | 'NotExecuted';
 
 export type GearCommonGasProviderNodeGasNodeId =
-  | { type: "Node"; value: GprimitivesMessageId }
-  | { type: "Reservation"; value: GprimitivesReservationId };
+  | { type: 'Node'; value: GprimitivesMessageId }
+  | { type: 'Reservation'; value: GprimitivesReservationId };
 
 export type GprimitivesReservationId = FixedBytes<32>;
 
 export type GearCommonEventReasonMessageWaitedRuntimeReason =
-  | { type: "Runtime"; value: GearCommonEventMessageWaitedRuntimeReason }
-  | { type: "System"; value: GearCommonEventMessageWaitedSystemReason };
+  | { type: 'Runtime'; value: GearCommonEventMessageWaitedRuntimeReason }
+  | { type: 'System'; value: GearCommonEventMessageWaitedSystemReason };
 
 export type GearCommonEventMessageWaitedRuntimeReason =
-  | "WaitCalled"
-  | "WaitForCalled"
-  | "WaitUpToCalled"
-  | "WaitUpToCalledFull";
+  | 'WaitCalled'
+  | 'WaitForCalled'
+  | 'WaitUpToCalled'
+  | 'WaitUpToCalledFull';
 
 export type GearCommonEventMessageWaitedSystemReason = null;
 
 export type GearCommonEventReasonMessageWokenRuntimeReason =
-  | { type: "Runtime"; value: GearCommonEventMessageWokenRuntimeReason }
-  | { type: "System"; value: GearCommonEventMessageWokenSystemReason };
+  | { type: 'Runtime'; value: GearCommonEventMessageWokenRuntimeReason }
+  | { type: 'System'; value: GearCommonEventMessageWokenSystemReason };
 
-export type GearCommonEventMessageWokenRuntimeReason = "WakeCalled";
+export type GearCommonEventMessageWokenRuntimeReason = 'WakeCalled';
 
-export type GearCommonEventMessageWokenSystemReason =
-  | "ProgramGotInitialized"
-  | "TimeoutHasCome"
-  | "OutOfRent";
+export type GearCommonEventMessageWokenSystemReason = 'ProgramGotInitialized' | 'TimeoutHasCome' | 'OutOfRent';
 
 export type GearCommonEventCodeChangeKind =
-  | { type: "Active"; value: { expiration?: number | undefined } }
-  | { type: "Inactive" }
-  | { type: "Reinstrumented" };
+  | { type: 'Active'; value: { expiration?: number | undefined } }
+  | { type: 'Inactive' }
+  | { type: 'Reinstrumented' };
 
 export type GearCommonEventProgramChangeKind =
-  | { type: "Active"; value: { expiration: number } }
-  | { type: "Inactive" }
-  | { type: "Paused" }
-  | { type: "Terminated" }
-  | { type: "ExpirationChanged"; value: { expiration: number } }
-  | { type: "ProgramSet"; value: { expiration: number } };
+  | { type: 'Active'; value: { expiration: number } }
+  | { type: 'Inactive' }
+  | { type: 'Paused' }
+  | { type: 'Terminated' }
+  | { type: 'ExpirationChanged'; value: { expiration: number } }
+  | { type: 'ProgramSet'; value: { expiration: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -9513,19 +8575,19 @@ export type PalletGearStakingRewardsEvent =
   /**
    * Deposited to the pool.
    **/
-  | { name: "Deposited"; data: { amount: bigint } }
+  | { name: 'Deposited'; data: { amount: bigint } }
   /**
    * Transferred from the pool to an external account.
    **/
-  | { name: "Withdrawn"; data: { amount: bigint } }
+  | { name: 'Withdrawn'; data: { amount: bigint } }
   /**
    * Burned from the pool.
    **/
-  | { name: "Burned"; data: { amount: bigint } }
+  | { name: 'Burned'; data: { amount: bigint } }
   /**
    * Minted to the pool.
    **/
-  | { name: "Minted"; data: { amount: bigint } };
+  | { name: 'Minted'; data: { amount: bigint } };
 
 /**
  * Pallet Gear Voucher event.
@@ -9535,7 +8597,7 @@ export type PalletGearVoucherEvent =
    * Voucher has been issued.
    **/
   | {
-      name: "VoucherIssued";
+      name: 'VoucherIssued';
       data: {
         /**
          * Account id of owner and manager of the voucher.
@@ -9559,7 +8621,7 @@ export type PalletGearVoucherEvent =
    * NOTE: currently means only "refunded".
    **/
   | {
-      name: "VoucherRevoked";
+      name: 'VoucherRevoked';
       data: {
         /**
          * Account id of the user whose voucher was revoked.
@@ -9576,7 +8638,7 @@ export type PalletGearVoucherEvent =
    * Voucher has been updated.
    **/
   | {
-      name: "VoucherUpdated";
+      name: 'VoucherUpdated';
       data: {
         /**
          * Account id of user whose voucher was updated.
@@ -9598,7 +8660,7 @@ export type PalletGearVoucherEvent =
    * Voucher has been declined (set to expired state).
    **/
   | {
-      name: "VoucherDeclined";
+      name: 'VoucherDeclined';
       data: {
         /**
          * Account id of user who declined its own voucher.
@@ -9612,15 +8674,9 @@ export type PalletGearVoucherEvent =
       };
     };
 
-export type FrameSystemLastRuntimeUpgradeInfo = {
-  specVersion: number;
-  specName: string;
-};
+export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
-export type FrameSystemCodeUpgradeAuthorization = {
-  codeHash: H256;
-  checkVersion: boolean;
-};
+export type FrameSystemCodeUpgradeAuthorization = { codeHash: H256; checkVersion: boolean };
 
 export type FrameSystemLimitsBlockWeights = {
   baseBlock: SpWeightsWeightV2Weight;
@@ -9641,15 +8697,9 @@ export type FrameSystemLimitsWeightsPerClass = {
   reserved?: SpWeightsWeightV2Weight | undefined;
 };
 
-export type FrameSystemLimitsBlockLength = {
-  max: FrameSupportDispatchPerDispatchClassU32;
-};
+export type FrameSystemLimitsBlockLength = { max: FrameSupportDispatchPerDispatchClassU32 };
 
-export type FrameSupportDispatchPerDispatchClassU32 = {
-  normal: number;
-  operational: number;
-  mandatory: number;
-};
+export type FrameSupportDispatchPerDispatchClassU32 = { normal: number; operational: number; mandatory: number };
 
 export type SpWeightsRuntimeDbWeight = { read: bigint; write: bigint };
 
@@ -9661,53 +8711,47 @@ export type FrameSystemError =
    * The name of specification does not match between the current runtime
    * and the new runtime.
    **/
-  | "InvalidSpecName"
+  | 'InvalidSpecName'
   /**
    * The specification version is not allowed to decrease between the current runtime
    * and the new runtime.
    **/
-  | "SpecVersionNeedsToIncrease"
+  | 'SpecVersionNeedsToIncrease'
   /**
    * Failed to extract the runtime version from the new runtime.
    *
    * Either calling `Core_version` or decoding `RuntimeVersion` failed.
    **/
-  | "FailedToExtractRuntimeVersion"
+  | 'FailedToExtractRuntimeVersion'
   /**
    * Suicide called when the account has non-default composite data.
    **/
-  | "NonDefaultComposite"
+  | 'NonDefaultComposite'
   /**
    * There is a non-zero reference count preventing the account from being purged.
    **/
-  | "NonZeroRefCount"
+  | 'NonZeroRefCount'
   /**
    * The origin filter prevent the call to be dispatched.
    **/
-  | "CallFiltered"
+  | 'CallFiltered'
   /**
    * A multi-block migration is ongoing and prevents the current code from being replaced.
    **/
-  | "MultiBlockMigrationsOngoing"
+  | 'MultiBlockMigrationsOngoing'
   /**
    * No upgrade authorized.
    **/
-  | "NothingAuthorized"
+  | 'NothingAuthorized'
   /**
    * The submitted code is not authorized.
    **/
-  | "Unauthorized";
+  | 'Unauthorized';
 
 export type SpConsensusBabeDigestsPreDigest =
-  | { type: "Primary"; value: SpConsensusBabeDigestsPrimaryPreDigest }
-  | {
-      type: "SecondaryPlain";
-      value: SpConsensusBabeDigestsSecondaryPlainPreDigest;
-    }
-  | {
-      type: "SecondaryVRF";
-      value: SpConsensusBabeDigestsSecondaryVRFPreDigest;
-    };
+  | { type: 'Primary'; value: SpConsensusBabeDigestsPrimaryPreDigest }
+  | { type: 'SecondaryPlain'; value: SpConsensusBabeDigestsSecondaryPlainPreDigest }
+  | { type: 'SecondaryVRF'; value: SpConsensusBabeDigestsSecondaryVRFPreDigest };
 
 export type SpConsensusBabeDigestsPrimaryPreDigest = {
   authorityIndex: number;
@@ -9715,15 +8759,9 @@ export type SpConsensusBabeDigestsPrimaryPreDigest = {
   vrfSignature: SpCoreSr25519VrfVrfSignature;
 };
 
-export type SpCoreSr25519VrfVrfSignature = {
-  preOutput: FixedBytes<32>;
-  proof: FixedBytes<64>;
-};
+export type SpCoreSr25519VrfVrfSignature = { preOutput: FixedBytes<32>; proof: FixedBytes<64> };
 
-export type SpConsensusBabeDigestsSecondaryPlainPreDigest = {
-  authorityIndex: number;
-  slot: SpConsensusSlotsSlot;
-};
+export type SpConsensusBabeDigestsSecondaryPlainPreDigest = { authorityIndex: number; slot: SpConsensusSlotsSlot };
 
 export type SpConsensusBabeDigestsSecondaryVRFPreDigest = {
   authorityIndex: number;
@@ -9731,10 +8769,7 @@ export type SpConsensusBabeDigestsSecondaryVRFPreDigest = {
   vrfSignature: SpCoreSr25519VrfVrfSignature;
 };
 
-export type SpConsensusBabeBabeEpochConfiguration = {
-  c: [bigint, bigint];
-  allowedSlots: SpConsensusBabeAllowedSlots;
-};
+export type SpConsensusBabeBabeEpochConfiguration = { c: [bigint, bigint]; allowedSlots: SpConsensusBabeAllowedSlots };
 
 /**
  * The `Error` enum of this pallet.
@@ -9743,25 +8778,25 @@ export type PalletBabeError =
   /**
    * An equivocation proof provided as part of an equivocation report is invalid.
    **/
-  | "InvalidEquivocationProof"
+  | 'InvalidEquivocationProof'
   /**
    * A key ownership proof provided as part of an equivocation report is invalid.
    **/
-  | "InvalidKeyOwnershipProof"
+  | 'InvalidKeyOwnershipProof'
   /**
    * A given equivocation report is valid but already previously reported.
    **/
-  | "DuplicateOffenceReport"
+  | 'DuplicateOffenceReport'
   /**
    * Submitted configuration is invalid.
    **/
-  | "InvalidConfiguration";
+  | 'InvalidConfiguration';
 
 export type PalletGrandpaStoredState =
-  | { type: "Live" }
-  | { type: "PendingPause"; value: { scheduledAt: number; delay: number } }
-  | { type: "Paused" }
-  | { type: "PendingResume"; value: { scheduledAt: number; delay: number } };
+  | { type: 'Live' }
+  | { type: 'PendingPause'; value: { scheduledAt: number; delay: number } }
+  | { type: 'Paused' }
+  | { type: 'PendingResume'; value: { scheduledAt: number; delay: number } };
 
 export type PalletGrandpaStoredPendingChange = {
   scheduledAt: number;
@@ -9778,66 +8813,50 @@ export type PalletGrandpaError =
    * Attempt to signal GRANDPA pause when the authority set isn't live
    * (either paused or already pending pause).
    **/
-  | "PauseFailed"
+  | 'PauseFailed'
   /**
    * Attempt to signal GRANDPA resume when the authority set isn't paused
    * (either live or already pending resume).
    **/
-  | "ResumeFailed"
+  | 'ResumeFailed'
   /**
    * Attempt to signal GRANDPA change with one already pending.
    **/
-  | "ChangePending"
+  | 'ChangePending'
   /**
    * Cannot signal forced change so soon after last.
    **/
-  | "TooSoon"
+  | 'TooSoon'
   /**
    * A key ownership proof provided as part of an equivocation report is invalid.
    **/
-  | "InvalidKeyOwnershipProof"
+  | 'InvalidKeyOwnershipProof'
   /**
    * An equivocation proof provided as part of an equivocation report is invalid.
    **/
-  | "InvalidEquivocationProof"
+  | 'InvalidEquivocationProof'
   /**
    * A given equivocation report is valid but already previously reported.
    **/
-  | "DuplicateOffenceReport";
+  | 'DuplicateOffenceReport';
 
-export type PalletBalancesBalanceLock = {
-  id: FixedBytes<8>;
-  amount: bigint;
-  reasons: PalletBalancesReasons;
-};
+export type PalletBalancesBalanceLock = { id: FixedBytes<8>; amount: bigint; reasons: PalletBalancesReasons };
 
-export type PalletBalancesReasons = "Fee" | "Misc" | "All";
+export type PalletBalancesReasons = 'Fee' | 'Misc' | 'All';
 
 export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
-export type FrameSupportTokensMiscIdAmount = {
-  id: VaraRuntimeRuntimeHoldReason;
-  amount: bigint;
-};
+export type FrameSupportTokensMiscIdAmount = { id: VaraRuntimeRuntimeHoldReason; amount: bigint };
 
-export type VaraRuntimeRuntimeHoldReason = {
-  type: "Preimage";
-  value: PalletPreimageHoldReason;
-};
+export type VaraRuntimeRuntimeHoldReason = { type: 'Preimage'; value: PalletPreimageHoldReason };
 
-export type PalletPreimageHoldReason = "Preimage";
+export type PalletPreimageHoldReason = 'Preimage';
 
-export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
-  id: VaraRuntimeRuntimeFreezeReason;
-  amount: bigint;
-};
+export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = { id: VaraRuntimeRuntimeFreezeReason; amount: bigint };
 
-export type VaraRuntimeRuntimeFreezeReason = {
-  type: "NominationPools";
-  value: PalletNominationPoolsFreezeReason;
-};
+export type VaraRuntimeRuntimeFreezeReason = { type: 'NominationPools'; value: PalletNominationPoolsFreezeReason };
 
-export type PalletNominationPoolsFreezeReason = "PoolMinBalance";
+export type PalletNominationPoolsFreezeReason = 'PoolMinBalance';
 
 /**
  * The `Error` enum of this pallet.
@@ -9846,53 +8865,53 @@ export type PalletBalancesError =
   /**
    * Vesting balance too high to send value.
    **/
-  | "VestingBalance"
+  | 'VestingBalance'
   /**
    * Account liquidity restrictions prevent withdrawal.
    **/
-  | "LiquidityRestrictions"
+  | 'LiquidityRestrictions'
   /**
    * Balance too low to send value.
    **/
-  | "InsufficientBalance"
+  | 'InsufficientBalance'
   /**
    * Value too low to create account due to existential deposit.
    **/
-  | "ExistentialDeposit"
+  | 'ExistentialDeposit'
   /**
    * Transfer/payment would kill account.
    **/
-  | "Expendability"
+  | 'Expendability'
   /**
    * A vesting schedule already exists for this account.
    **/
-  | "ExistingVestingSchedule"
+  | 'ExistingVestingSchedule'
   /**
    * Beneficiary account must pre-exist.
    **/
-  | "DeadAccount"
+  | 'DeadAccount'
   /**
    * Number of named reserves exceed `MaxReserves`.
    **/
-  | "TooManyReserves"
+  | 'TooManyReserves'
   /**
    * Number of holds exceed `VariantCountOf<T::RuntimeHoldReason>`.
    **/
-  | "TooManyHolds"
+  | 'TooManyHolds'
   /**
    * Number of freezes exceed `MaxFreezes`.
    **/
-  | "TooManyFreezes"
+  | 'TooManyFreezes'
   /**
    * The issuance cannot be modified since it is already deactivated.
    **/
-  | "IssuanceDeactivated"
+  | 'IssuanceDeactivated'
   /**
    * The delta cannot be zero.
    **/
-  | "DeltaZero";
+  | 'DeltaZero';
 
-export type PalletTransactionPaymentReleases = "V1Ancient" | "V2";
+export type PalletTransactionPaymentReleases = 'V1Ancient' | 'V2';
 
 export type SpCoreCryptoKeyTypeId = FixedBytes<4>;
 
@@ -9903,23 +8922,23 @@ export type PalletSessionError =
   /**
    * Invalid ownership proof.
    **/
-  | "InvalidProof"
+  | 'InvalidProof'
   /**
    * No associated validator ID for account.
    **/
-  | "NoAssociatedValidatorId"
+  | 'NoAssociatedValidatorId'
   /**
    * Registered duplicate key.
    **/
-  | "DuplicatedKey"
+  | 'DuplicatedKey'
   /**
    * No keys are associated with this account.
    **/
-  | "NoKeys"
+  | 'NoKeys'
   /**
    * Key setting account is not live, so it's impossible to associate keys.
    **/
-  | "NoAccount";
+  | 'NoAccount';
 
 /**
  * The `Error` enum of this pallet.
@@ -9928,9 +8947,9 @@ export type PalletUtilityError =
   /**
    * Too many calls batched.
    **/
-  "TooManyCalls";
+  'TooManyCalls';
 
-export type PalletVestingReleases = "V0" | "V1";
+export type PalletVestingReleases = 'V0' | 'V1';
 
 /**
  * Error for the vesting pallet.
@@ -9939,24 +8958,24 @@ export type PalletVestingError =
   /**
    * The account given is not vesting.
    **/
-  | "NotVesting"
+  | 'NotVesting'
   /**
    * The account already has `MaxVestingSchedules` count of schedules and thus
    * cannot add another one. Consider merging existing schedules in order to add another.
    **/
-  | "AtMaxVestingSchedules"
+  | 'AtMaxVestingSchedules'
   /**
    * Amount being transferred is too low to create a vesting schedule.
    **/
-  | "AmountLow"
+  | 'AmountLow'
   /**
    * An index was out of bounds of the vesting schedules.
    **/
-  | "ScheduleIndexOutOfBounds"
+  | 'ScheduleIndexOutOfBounds'
   /**
    * Failed to create a new schedule because some parameter was invalid.
    **/
-  | "InvalidScheduleParams";
+  | 'InvalidScheduleParams';
 
 export type PalletBagsListListNode = {
   id: AccountId32;
@@ -9966,10 +8985,7 @@ export type PalletBagsListListNode = {
   score: bigint;
 };
 
-export type PalletBagsListListBag = {
-  head?: AccountId32 | undefined;
-  tail?: AccountId32 | undefined;
-};
+export type PalletBagsListListBag = { head?: AccountId32 | undefined; tail?: AccountId32 | undefined };
 
 /**
  * The `Error` enum of this pallet.
@@ -9978,13 +8994,9 @@ export type PalletBagsListError =
   /**
    * A error in the list interface implementation.
    **/
-  { name: "List"; data: PalletBagsListListListError };
+  { name: 'List'; data: PalletBagsListListListError };
 
-export type PalletBagsListListListError =
-  | "Duplicate"
-  | "NotHeavier"
-  | "NotInSameBag"
-  | "NodeNotFound";
+export type PalletBagsListListListError = 'Duplicate' | 'NotHeavier' | 'NotInSameBag' | 'NodeNotFound';
 
 /**
  * The `Error` enum of this pallet.
@@ -9993,11 +9005,11 @@ export type PalletImOnlineError =
   /**
    * Non existent public key.
    **/
-  | "InvalidKey"
+  | 'InvalidKey'
   /**
    * Duplicated heartbeat.
    **/
-  | "DuplicatedHeartbeat";
+  | 'DuplicatedHeartbeat';
 
 export type PalletStakingStakingLedger = {
   stash: AccountId32;
@@ -10007,33 +9019,15 @@ export type PalletStakingStakingLedger = {
   legacyClaimedRewards: Array<number>;
 };
 
-export type PalletStakingNominations = {
-  targets: Array<AccountId32>;
-  submittedIn: number;
-  suppressed: boolean;
-};
+export type PalletStakingNominations = { targets: Array<AccountId32>; submittedIn: number; suppressed: boolean };
 
-export type PalletStakingActiveEraInfo = {
-  index: number;
-  start?: bigint | undefined;
-};
+export type PalletStakingActiveEraInfo = { index: number; start?: bigint | undefined };
 
-export type SpStakingPagedExposureMetadata = {
-  total: bigint;
-  own: bigint;
-  nominatorCount: number;
-  pageCount: number;
-};
+export type SpStakingPagedExposureMetadata = { total: bigint; own: bigint; nominatorCount: number; pageCount: number };
 
-export type SpStakingExposurePage = {
-  pageTotal: bigint;
-  others: Array<SpStakingIndividualExposure>;
-};
+export type SpStakingExposurePage = { pageTotal: bigint; others: Array<SpStakingIndividualExposure> };
 
-export type PalletStakingEraRewardPoints = {
-  total: number;
-  individual: Array<[AccountId32, number]>;
-};
+export type PalletStakingEraRewardPoints = { total: number; individual: Array<[AccountId32, number]> };
 
 export type PalletStakingUnappliedSlash = {
   validator: AccountId32;
@@ -10050,10 +9044,7 @@ export type PalletStakingSlashingSlashingSpans = {
   prior: Array<number>;
 };
 
-export type PalletStakingSlashingSpanRecord = {
-  slashed: bigint;
-  paidOut: bigint;
-};
+export type PalletStakingSlashingSpanRecord = { slashed: bigint; paidOut: bigint };
 
 /**
  * The `Error` enum of this pallet.
@@ -10062,138 +9053,133 @@ export type PalletStakingPalletError =
   /**
    * Not a controller account.
    **/
-  | "NotController"
+  | 'NotController'
   /**
    * Not a stash account.
    **/
-  | "NotStash"
+  | 'NotStash'
   /**
    * Stash is already bonded.
    **/
-  | "AlreadyBonded"
+  | 'AlreadyBonded'
   /**
    * Controller is already paired.
    **/
-  | "AlreadyPaired"
+  | 'AlreadyPaired'
   /**
    * Targets cannot be empty.
    **/
-  | "EmptyTargets"
+  | 'EmptyTargets'
   /**
    * Duplicate index.
    **/
-  | "DuplicateIndex"
+  | 'DuplicateIndex'
   /**
    * Slash record index out of bounds.
    **/
-  | "InvalidSlashIndex"
+  | 'InvalidSlashIndex'
   /**
    * Cannot have a validator or nominator role, with value less than the minimum defined by
    * governance (see `MinValidatorBond` and `MinNominatorBond`). If unbonding is the
    * intention, `chill` first to remove one's role as validator/nominator.
    **/
-  | "InsufficientBond"
+  | 'InsufficientBond'
   /**
    * Can not schedule more unlock chunks.
    **/
-  | "NoMoreChunks"
+  | 'NoMoreChunks'
   /**
    * Can not rebond without unlocking chunks.
    **/
-  | "NoUnlockChunk"
+  | 'NoUnlockChunk'
   /**
    * Attempting to target a stash that still has funds.
    **/
-  | "FundedTarget"
+  | 'FundedTarget'
   /**
    * Invalid era to reward.
    **/
-  | "InvalidEraToReward"
+  | 'InvalidEraToReward'
   /**
    * Invalid number of nominations.
    **/
-  | "InvalidNumberOfNominations"
+  | 'InvalidNumberOfNominations'
   /**
    * Items are not sorted and unique.
    **/
-  | "NotSortedAndUnique"
+  | 'NotSortedAndUnique'
   /**
    * Rewards for this era have already been claimed for this validator.
    **/
-  | "AlreadyClaimed"
+  | 'AlreadyClaimed'
   /**
    * No nominators exist on this page.
    **/
-  | "InvalidPage"
+  | 'InvalidPage'
   /**
    * Incorrect previous history depth input provided.
    **/
-  | "IncorrectHistoryDepth"
+  | 'IncorrectHistoryDepth'
   /**
    * Incorrect number of slashing spans provided.
    **/
-  | "IncorrectSlashingSpans"
+  | 'IncorrectSlashingSpans'
   /**
    * Internal state has become somehow corrupted and the operation cannot continue.
    **/
-  | "BadState"
+  | 'BadState'
   /**
    * Too many nomination targets supplied.
    **/
-  | "TooManyTargets"
+  | 'TooManyTargets'
   /**
    * A nomination target was supplied that was blocked or otherwise not a validator.
    **/
-  | "BadTarget"
+  | 'BadTarget'
   /**
    * The user has enough bond and thus cannot be chilled forcefully by an external person.
    **/
-  | "CannotChillOther"
+  | 'CannotChillOther'
   /**
    * There are too many nominators in the system. Governance needs to adjust the staking
    * settings to keep things safe for the runtime.
    **/
-  | "TooManyNominators"
+  | 'TooManyNominators'
   /**
    * There are too many validator candidates in the system. Governance needs to adjust the
    * staking settings to keep things safe for the runtime.
    **/
-  | "TooManyValidators"
+  | 'TooManyValidators'
   /**
    * Commission is too low. Must be at least `MinCommission`.
    **/
-  | "CommissionTooLow"
+  | 'CommissionTooLow'
   /**
    * Some bound is not met.
    **/
-  | "BoundNotMet"
+  | 'BoundNotMet'
   /**
    * Used when attempting to use deprecated controller account logic.
    **/
-  | "ControllerDeprecated"
+  | 'ControllerDeprecated'
   /**
    * Cannot reset a ledger.
    **/
-  | "CannotRestoreLedger"
+  | 'CannotRestoreLedger'
   /**
    * Provided reward destination is not allowed.
    **/
-  | "RewardDestinationRestricted"
+  | 'RewardDestinationRestricted'
   /**
    * Not enough funds available to withdraw.
    **/
-  | "NotEnoughFunds"
+  | 'NotEnoughFunds'
   /**
    * Operation not allowed for virtual stakers.
    **/
-  | "VirtualStakerNotAllowed";
+  | 'VirtualStakerNotAllowed';
 
-export type PalletTreasuryProposal = {
-  proposer: AccountId32;
-  value: bigint;
-  beneficiary: AccountId32;
-  bond: bigint;
-};
+export type PalletTreasuryProposal = { proposer: AccountId32; value: bigint; beneficiary: AccountId32; bond: bigint };
 
 export type PalletTreasurySpendStatus = {
   assetKind: [];
@@ -10205,9 +9191,9 @@ export type PalletTreasurySpendStatus = {
 };
 
 export type PalletTreasuryPaymentState =
-  | { type: "Pending" }
-  | { type: "Attempted"; value: { id: [] } }
-  | { type: "Failed" };
+  | { type: 'Pending' }
+  | { type: 'Attempted'; value: { id: [] } }
+  | { type: 'Failed' };
 
 export type FrameSupportPalletId = FixedBytes<8>;
 
@@ -10218,52 +9204,52 @@ export type PalletTreasuryError =
   /**
    * No proposal, bounty or spend at that index.
    **/
-  | "InvalidIndex"
+  | 'InvalidIndex'
   /**
    * Too many approvals in the queue.
    **/
-  | "TooManyApprovals"
+  | 'TooManyApprovals'
   /**
    * The spend origin is valid but the amount it is allowed to spend is lower than the
    * amount to be spent.
    **/
-  | "InsufficientPermission"
+  | 'InsufficientPermission'
   /**
    * Proposal has not been approved.
    **/
-  | "ProposalNotApproved"
+  | 'ProposalNotApproved'
   /**
    * The balance of the asset kind is not convertible to the balance of the native asset.
    **/
-  | "FailedToConvertBalance"
+  | 'FailedToConvertBalance'
   /**
    * The spend has expired and cannot be claimed.
    **/
-  | "SpendExpired"
+  | 'SpendExpired'
   /**
    * The spend is not yet eligible for payout.
    **/
-  | "EarlyPayout"
+  | 'EarlyPayout'
   /**
    * The payment has already been attempted.
    **/
-  | "AlreadyAttempted"
+  | 'AlreadyAttempted'
   /**
    * There was some issue with the mechanism of payment.
    **/
-  | "PayoutError"
+  | 'PayoutError'
   /**
    * The payout was not yet attempted/claimed.
    **/
-  | "NotAttempted"
+  | 'NotAttempted'
   /**
    * The payment has neither failed nor succeeded yet.
    **/
-  | "Inconclusive";
+  | 'Inconclusive';
 
 export type PalletConvictionVotingVoteVoting =
-  | { type: "Casting"; value: PalletConvictionVotingVoteCasting }
-  | { type: "Delegating"; value: PalletConvictionVotingVoteDelegating };
+  | { type: 'Casting'; value: PalletConvictionVotingVoteCasting }
+  | { type: 'Delegating'; value: PalletConvictionVotingVoteDelegating };
 
 export type PalletConvictionVotingVoteCasting = {
   votes: Array<[number, PalletConvictionVotingVoteAccountVote]>;
@@ -10271,10 +9257,7 @@ export type PalletConvictionVotingVoteCasting = {
   prior: PalletConvictionVotingVotePriorLock;
 };
 
-export type PalletConvictionVotingDelegations = {
-  votes: bigint;
-  capital: bigint;
-};
+export type PalletConvictionVotingDelegations = { votes: bigint; capital: bigint };
 
 export type PalletConvictionVotingVotePriorLock = [number, bigint];
 
@@ -10293,88 +9276,60 @@ export type PalletConvictionVotingError =
   /**
    * Poll is not ongoing.
    **/
-  | "NotOngoing"
+  | 'NotOngoing'
   /**
    * The given account did not vote on the poll.
    **/
-  | "NotVoter"
+  | 'NotVoter'
   /**
    * The actor has no permission to conduct the action.
    **/
-  | "NoPermission"
+  | 'NoPermission'
   /**
    * The actor has no permission to conduct the action right now but will do in the future.
    **/
-  | "NoPermissionYet"
+  | 'NoPermissionYet'
   /**
    * The account is already delegating.
    **/
-  | "AlreadyDelegating"
+  | 'AlreadyDelegating'
   /**
    * The account currently has votes attached to it and the operation cannot succeed until
    * these are removed through `remove_vote`.
    **/
-  | "AlreadyVoting"
+  | 'AlreadyVoting'
   /**
    * Too high a balance was provided that the account cannot afford.
    **/
-  | "InsufficientFunds"
+  | 'InsufficientFunds'
   /**
    * The account is not currently delegating.
    **/
-  | "NotDelegating"
+  | 'NotDelegating'
   /**
    * Delegation to oneself makes no sense.
    **/
-  | "Nonsense"
+  | 'Nonsense'
   /**
    * Maximum number of votes reached.
    **/
-  | "MaxVotesReached"
+  | 'MaxVotesReached'
   /**
    * The class must be supplied since it is not easily determinable from the state.
    **/
-  | "ClassNeeded"
+  | 'ClassNeeded'
   /**
    * The class ID supplied is invalid.
    **/
-  | "BadClass";
+  | 'BadClass';
 
 export type PalletReferendaReferendumInfo =
-  | { type: "Ongoing"; value: PalletReferendaReferendumStatus }
-  | {
-      type: "Approved";
-      value: [
-        number,
-        PalletReferendaDeposit | undefined,
-        PalletReferendaDeposit | undefined,
-      ];
-    }
-  | {
-      type: "Rejected";
-      value: [
-        number,
-        PalletReferendaDeposit | undefined,
-        PalletReferendaDeposit | undefined,
-      ];
-    }
-  | {
-      type: "Cancelled";
-      value: [
-        number,
-        PalletReferendaDeposit | undefined,
-        PalletReferendaDeposit | undefined,
-      ];
-    }
-  | {
-      type: "TimedOut";
-      value: [
-        number,
-        PalletReferendaDeposit | undefined,
-        PalletReferendaDeposit | undefined,
-      ];
-    }
-  | { type: "Killed"; value: number };
+  | { type: 'Ongoing'; value: PalletReferendaReferendumStatus }
+  | { type: 'Approved'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
+  | { type: 'Rejected'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
+  | { type: 'Cancelled'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
+  | { type: 'TimedOut'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
+  | { type: 'Killed'; value: number };
 
 export type PalletReferendaReferendumStatus = {
   track: number;
@@ -10392,10 +9347,7 @@ export type PalletReferendaReferendumStatus = {
 
 export type PalletReferendaDeposit = { who: AccountId32; amount: bigint };
 
-export type PalletReferendaDecidingStatus = {
-  since: number;
-  confirming?: number | undefined;
-};
+export type PalletReferendaDecidingStatus = { since: number; confirming?: number | undefined };
 
 export type PalletReferendaTrackInfo = {
   name: string;
@@ -10410,18 +9362,9 @@ export type PalletReferendaTrackInfo = {
 };
 
 export type PalletReferendaCurve =
-  | {
-      type: "LinearDecreasing";
-      value: { length: Perbill; floor: Perbill; ceil: Perbill };
-    }
-  | {
-      type: "SteppedDecreasing";
-      value: { begin: Perbill; end: Perbill; step: Perbill; period: Perbill };
-    }
-  | {
-      type: "Reciprocal";
-      value: { factor: FixedI64; xOffset: FixedI64; yOffset: FixedI64 };
-    };
+  | { type: 'LinearDecreasing'; value: { length: Perbill; floor: Perbill; ceil: Perbill } }
+  | { type: 'SteppedDecreasing'; value: { begin: Perbill; end: Perbill; step: Perbill; period: Perbill } }
+  | { type: 'Reciprocal'; value: { factor: FixedI64; xOffset: FixedI64; yOffset: FixedI64 } };
 
 /**
  * The `Error` enum of this pallet.
@@ -10430,59 +9373,59 @@ export type PalletReferendaError =
   /**
    * Referendum is not ongoing.
    **/
-  | "NotOngoing"
+  | 'NotOngoing'
   /**
    * Referendum's decision deposit is already paid.
    **/
-  | "HasDeposit"
+  | 'HasDeposit'
   /**
    * The track identifier given was invalid.
    **/
-  | "BadTrack"
+  | 'BadTrack'
   /**
    * There are already a full complement of referenda in progress for this track.
    **/
-  | "Full"
+  | 'Full'
   /**
    * The queue of the track is empty.
    **/
-  | "QueueEmpty"
+  | 'QueueEmpty'
   /**
    * The referendum index provided is invalid in this context.
    **/
-  | "BadReferendum"
+  | 'BadReferendum'
   /**
    * There was nothing to do in the advancement.
    **/
-  | "NothingToDo"
+  | 'NothingToDo'
   /**
    * No track exists for the proposal origin.
    **/
-  | "NoTrack"
+  | 'NoTrack'
   /**
    * Any deposit cannot be refunded until after the decision is over.
    **/
-  | "Unfinished"
+  | 'Unfinished'
   /**
    * The deposit refunder is not the depositor.
    **/
-  | "NoPermission"
+  | 'NoPermission'
   /**
    * The deposit cannot be refunded since none was made.
    **/
-  | "NoDeposit"
+  | 'NoDeposit'
   /**
    * The referendum status is invalid for this operation.
    **/
-  | "BadStatus"
+  | 'BadStatus'
   /**
    * The preimage does not exist.
    **/
-  | "PreimageNotExist"
+  | 'PreimageNotExist'
   /**
    * The preimage is stored with a different length than the one provided.
    **/
-  | "PreimageStoredWithDifferentLength";
+  | 'PreimageStoredWithDifferentLength';
 
 export type PalletRankedCollectiveMemberRecord = { rank: number };
 
@@ -10493,83 +9436,55 @@ export type PalletRankedCollectiveError =
   /**
    * Account is already a member.
    **/
-  | "AlreadyMember"
+  | 'AlreadyMember'
   /**
    * Account is not a member.
    **/
-  | "NotMember"
+  | 'NotMember'
   /**
    * The given poll index is unknown or has closed.
    **/
-  | "NotPolling"
+  | 'NotPolling'
   /**
    * The given poll is still ongoing.
    **/
-  | "Ongoing"
+  | 'Ongoing'
   /**
    * There are no further records to be removed.
    **/
-  | "NoneRemaining"
+  | 'NoneRemaining'
   /**
    * Unexpected error in state.
    **/
-  | "Corruption"
+  | 'Corruption'
   /**
    * The member's rank is too low to vote.
    **/
-  | "RankTooLow"
+  | 'RankTooLow'
   /**
    * The information provided is incorrect.
    **/
-  | "InvalidWitness"
+  | 'InvalidWitness'
   /**
    * The origin is not sufficiently privileged to do the operation.
    **/
-  | "NoPermission"
+  | 'NoPermission'
   /**
    * The new member to exchange is the same as the old member
    **/
-  | "SameMember"
+  | 'SameMember'
   /**
    * The max member count for the rank has been reached.
    **/
-  | "TooManyMembers";
+  | 'TooManyMembers';
 
 export type PalletReferendaReferendumInfoTally =
-  | { type: "Ongoing"; value: PalletReferendaReferendumStatusTally }
-  | {
-      type: "Approved";
-      value: [
-        number,
-        PalletReferendaDeposit | undefined,
-        PalletReferendaDeposit | undefined,
-      ];
-    }
-  | {
-      type: "Rejected";
-      value: [
-        number,
-        PalletReferendaDeposit | undefined,
-        PalletReferendaDeposit | undefined,
-      ];
-    }
-  | {
-      type: "Cancelled";
-      value: [
-        number,
-        PalletReferendaDeposit | undefined,
-        PalletReferendaDeposit | undefined,
-      ];
-    }
-  | {
-      type: "TimedOut";
-      value: [
-        number,
-        PalletReferendaDeposit | undefined,
-        PalletReferendaDeposit | undefined,
-      ];
-    }
-  | { type: "Killed"; value: number };
+  | { type: 'Ongoing'; value: PalletReferendaReferendumStatusTally }
+  | { type: 'Approved'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
+  | { type: 'Rejected'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
+  | { type: 'Cancelled'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
+  | { type: 'TimedOut'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
+  | { type: 'Killed'; value: number };
 
 export type PalletReferendaReferendumStatusTally = {
   track: number;
@@ -10592,23 +9507,23 @@ export type PalletWhitelistError =
   /**
    * The preimage of the call hash could not be loaded.
    **/
-  | "UnavailablePreImage"
+  | 'UnavailablePreImage'
   /**
    * The call could not be decoded.
    **/
-  | "UndecodableCall"
+  | 'UndecodableCall'
   /**
    * The weight of the decoded call was higher than the witness.
    **/
-  | "InvalidCallWeightWitness"
+  | 'InvalidCallWeightWitness'
   /**
    * The call was not whitelisted.
    **/
-  | "CallIsNotWhitelisted"
+  | 'CallIsNotWhitelisted'
   /**
    * The call was already whitelisted; No-Op.
    **/
-  | "CallAlreadyWhitelisted";
+  | 'CallAlreadyWhitelisted';
 
 export type PalletSchedulerScheduled = {
   maybeId?: FixedBytes<32> | undefined;
@@ -10618,11 +9533,7 @@ export type PalletSchedulerScheduled = {
   origin: VaraRuntimeOriginCaller;
 };
 
-export type PalletSchedulerRetryConfig = {
-  totalRetries: number;
-  remaining: number;
-  period: number;
-};
+export type PalletSchedulerRetryConfig = { totalRetries: number; remaining: number; period: number };
 
 /**
  * The `Error` enum of this pallet.
@@ -10631,52 +9542,37 @@ export type PalletSchedulerError =
   /**
    * Failed to schedule a call
    **/
-  | "FailedToSchedule"
+  | 'FailedToSchedule'
   /**
    * Cannot find the scheduled call.
    **/
-  | "NotFound"
+  | 'NotFound'
   /**
    * Given target block number is in the past.
    **/
-  | "TargetBlockNumberInPast"
+  | 'TargetBlockNumberInPast'
   /**
    * Reschedule failed because it does not change scheduled time.
    **/
-  | "RescheduleNoChange"
+  | 'RescheduleNoChange'
   /**
    * Attempt to use a non-named function on a named task.
    **/
-  | "Named";
+  | 'Named';
 
 export type PalletPreimageOldRequestStatus =
+  | { type: 'Unrequested'; value: { deposit: [AccountId32, bigint]; len: number } }
   | {
-      type: "Unrequested";
-      value: { deposit: [AccountId32, bigint]; len: number };
-    }
-  | {
-      type: "Requested";
-      value: {
-        deposit?: [AccountId32, bigint] | undefined;
-        count: number;
-        len?: number | undefined;
-      };
+      type: 'Requested';
+      value: { deposit?: [AccountId32, bigint] | undefined; count: number; len?: number | undefined };
     };
 
 export type PalletPreimageRequestStatus =
+  | { type: 'Unrequested'; value: { ticket: [AccountId32, FrameSupportTokensFungibleHoldConsideration]; len: number } }
   | {
-      type: "Unrequested";
+      type: 'Requested';
       value: {
-        ticket: [AccountId32, FrameSupportTokensFungibleHoldConsideration];
-        len: number;
-      };
-    }
-  | {
-      type: "Requested";
-      value: {
-        maybeTicket?:
-          | [AccountId32, FrameSupportTokensFungibleHoldConsideration]
-          | undefined;
+        maybeTicket?: [AccountId32, FrameSupportTokensFungibleHoldConsideration] | undefined;
         count: number;
         maybeLen?: number | undefined;
       };
@@ -10691,35 +9587,35 @@ export type PalletPreimageError =
   /**
    * Preimage is too large to store on-chain.
    **/
-  | "TooBig"
+  | 'TooBig'
   /**
    * Preimage has already been noted on-chain.
    **/
-  | "AlreadyNoted"
+  | 'AlreadyNoted'
   /**
    * The user is not authorized to perform this action.
    **/
-  | "NotAuthorized"
+  | 'NotAuthorized'
   /**
    * The preimage cannot be removed since it has not yet been noted.
    **/
-  | "NotNoted"
+  | 'NotNoted'
   /**
    * A preimage may not be removed when there are outstanding requests.
    **/
-  | "Requested"
+  | 'Requested'
   /**
    * The preimage request cannot be removed since no outstanding requests exist.
    **/
-  | "NotRequested"
+  | 'NotRequested'
   /**
    * More than `MAX_HASH_UPGRADE_BULK_COUNT` hashes were requested to be upgraded at once.
    **/
-  | "TooMany"
+  | 'TooMany'
   /**
    * Too few hashes were requested to be upgraded (i.e. zero).
    **/
-  | "TooFew";
+  | 'TooFew';
 
 export type PalletIdentityRegistration = {
   judgements: Array<[number, PalletIdentityJudgement]>;
@@ -10727,16 +9623,9 @@ export type PalletIdentityRegistration = {
   info: PalletIdentityLegacyIdentityInfo;
 };
 
-export type PalletIdentityRegistrarInfo = {
-  account: AccountId32;
-  fee: bigint;
-  fields: bigint;
-};
+export type PalletIdentityRegistrarInfo = { account: AccountId32; fee: bigint; fields: bigint };
 
-export type PalletIdentityAuthorityProperties = {
-  suffix: Bytes;
-  allocation: number;
-};
+export type PalletIdentityAuthorityProperties = { suffix: Bytes; allocation: number };
 
 /**
  * The `Error` enum of this pallet.
@@ -10745,119 +9634,111 @@ export type PalletIdentityError =
   /**
    * Too many subs-accounts.
    **/
-  | "TooManySubAccounts"
+  | 'TooManySubAccounts'
   /**
    * Account isn't found.
    **/
-  | "NotFound"
+  | 'NotFound'
   /**
    * Account isn't named.
    **/
-  | "NotNamed"
+  | 'NotNamed'
   /**
    * Empty index.
    **/
-  | "EmptyIndex"
+  | 'EmptyIndex'
   /**
    * Fee is changed.
    **/
-  | "FeeChanged"
+  | 'FeeChanged'
   /**
    * No identity found.
    **/
-  | "NoIdentity"
+  | 'NoIdentity'
   /**
    * Sticky judgement.
    **/
-  | "StickyJudgement"
+  | 'StickyJudgement'
   /**
    * Judgement given.
    **/
-  | "JudgementGiven"
+  | 'JudgementGiven'
   /**
    * Invalid judgement.
    **/
-  | "InvalidJudgement"
+  | 'InvalidJudgement'
   /**
    * The index is invalid.
    **/
-  | "InvalidIndex"
+  | 'InvalidIndex'
   /**
    * The target is invalid.
    **/
-  | "InvalidTarget"
+  | 'InvalidTarget'
   /**
    * Maximum amount of registrars reached. Cannot add any more.
    **/
-  | "TooManyRegistrars"
+  | 'TooManyRegistrars'
   /**
    * Account ID is already named.
    **/
-  | "AlreadyClaimed"
+  | 'AlreadyClaimed'
   /**
    * Sender is not a sub-account.
    **/
-  | "NotSub"
+  | 'NotSub'
   /**
    * Sub-account isn't owned by sender.
    **/
-  | "NotOwned"
+  | 'NotOwned'
   /**
    * The provided judgement was for a different identity.
    **/
-  | "JudgementForDifferentIdentity"
+  | 'JudgementForDifferentIdentity'
   /**
    * Error that occurs when there is an issue paying for judgement.
    **/
-  | "JudgementPaymentFailed"
+  | 'JudgementPaymentFailed'
   /**
    * The provided suffix is too long.
    **/
-  | "InvalidSuffix"
+  | 'InvalidSuffix'
   /**
    * The sender does not have permission to issue a username.
    **/
-  | "NotUsernameAuthority"
+  | 'NotUsernameAuthority'
   /**
    * The authority cannot allocate any more usernames.
    **/
-  | "NoAllocation"
+  | 'NoAllocation'
   /**
    * The signature on a username was not valid.
    **/
-  | "InvalidSignature"
+  | 'InvalidSignature'
   /**
    * Setting this username requires a signature, but none was provided.
    **/
-  | "RequiresSignature"
+  | 'RequiresSignature'
   /**
    * The username does not meet the requirements.
    **/
-  | "InvalidUsername"
+  | 'InvalidUsername'
   /**
    * The username is already taken.
    **/
-  | "UsernameTaken"
+  | 'UsernameTaken'
   /**
    * The requested username does not exist.
    **/
-  | "NoUsername"
+  | 'NoUsername'
   /**
    * The username cannot be forcefully removed because it can still be accepted.
    **/
-  | "NotExpired";
+  | 'NotExpired';
 
-export type PalletProxyProxyDefinition = {
-  delegate: AccountId32;
-  proxyType: VaraRuntimeProxyType;
-  delay: number;
-};
+export type PalletProxyProxyDefinition = { delegate: AccountId32; proxyType: VaraRuntimeProxyType; delay: number };
 
-export type PalletProxyAnnouncement = {
-  real: AccountId32;
-  callHash: H256;
-  height: number;
-};
+export type PalletProxyAnnouncement = { real: AccountId32; callHash: H256; height: number };
 
 /**
  * The `Error` enum of this pallet.
@@ -10866,35 +9747,35 @@ export type PalletProxyError =
   /**
    * There are too many proxies registered or too many announcements pending.
    **/
-  | "TooMany"
+  | 'TooMany'
   /**
    * Proxy registration not found.
    **/
-  | "NotFound"
+  | 'NotFound'
   /**
    * Sender is not a proxy of the account to be proxied.
    **/
-  | "NotProxy"
+  | 'NotProxy'
   /**
    * A call which is incompatible with the proxy type's filter was attempted.
    **/
-  | "Unproxyable"
+  | 'Unproxyable'
   /**
    * Account is already a proxy.
    **/
-  | "Duplicate"
+  | 'Duplicate'
   /**
    * Call may not be made by proxy because it may escalate its privileges.
    **/
-  | "NoPermission"
+  | 'NoPermission'
   /**
    * Announcement, if made at all, was made too recently.
    **/
-  | "Unannounced"
+  | 'Unannounced'
   /**
    * Cannot add self as proxy.
    **/
-  | "NoSelfProxy";
+  | 'NoSelfProxy';
 
 export type PalletMultisigMultisig = {
   when: PalletMultisigTimepoint;
@@ -10910,59 +9791,59 @@ export type PalletMultisigError =
   /**
    * Threshold must be 2 or greater.
    **/
-  | "MinimumThreshold"
+  | 'MinimumThreshold'
   /**
    * Call is already approved by this signatory.
    **/
-  | "AlreadyApproved"
+  | 'AlreadyApproved'
   /**
    * Call doesn't need any (more) approvals.
    **/
-  | "NoApprovalsNeeded"
+  | 'NoApprovalsNeeded'
   /**
    * There are too few signatories in the list.
    **/
-  | "TooFewSignatories"
+  | 'TooFewSignatories'
   /**
    * There are too many signatories in the list.
    **/
-  | "TooManySignatories"
+  | 'TooManySignatories'
   /**
    * The signatories were provided out of order; they should be ordered.
    **/
-  | "SignatoriesOutOfOrder"
+  | 'SignatoriesOutOfOrder'
   /**
    * The sender was contained in the other signatories; it shouldn't be.
    **/
-  | "SenderInSignatories"
+  | 'SenderInSignatories'
   /**
    * Multisig operation not found when attempting to cancel.
    **/
-  | "NotFound"
+  | 'NotFound'
   /**
    * Only the account that originally created the multisig is able to cancel it.
    **/
-  | "NotOwner"
+  | 'NotOwner'
   /**
    * No timepoint was given, yet the multisig operation is already underway.
    **/
-  | "NoTimepoint"
+  | 'NoTimepoint'
   /**
    * A different timepoint was given to the multisig operation that is underway.
    **/
-  | "WrongTimepoint"
+  | 'WrongTimepoint'
   /**
    * A timepoint was given, yet no multisig operation is underway.
    **/
-  | "UnexpectedTimepoint"
+  | 'UnexpectedTimepoint'
   /**
    * The maximum weight information provided was too low.
    **/
-  | "MaxWeightTooLow"
+  | 'MaxWeightTooLow'
   /**
    * The data to be stored is already stored.
    **/
-  | "AlreadyStored";
+  | 'AlreadyStored';
 
 export type PalletElectionProviderMultiPhaseReadySolution = {
   supports: Array<[AccountId32, SpNposElectionsSupport]>;
@@ -10989,63 +9870,63 @@ export type PalletElectionProviderMultiPhaseError =
   /**
    * Submission was too early.
    **/
-  | "PreDispatchEarlySubmission"
+  | 'PreDispatchEarlySubmission'
   /**
    * Wrong number of winners presented.
    **/
-  | "PreDispatchWrongWinnerCount"
+  | 'PreDispatchWrongWinnerCount'
   /**
    * Submission was too weak, score-wise.
    **/
-  | "PreDispatchWeakSubmission"
+  | 'PreDispatchWeakSubmission'
   /**
    * The queue was full, and the solution was not better than any of the existing ones.
    **/
-  | "SignedQueueFull"
+  | 'SignedQueueFull'
   /**
    * The origin failed to pay the deposit.
    **/
-  | "SignedCannotPayDeposit"
+  | 'SignedCannotPayDeposit'
   /**
    * Witness data to dispatchable is invalid.
    **/
-  | "SignedInvalidWitness"
+  | 'SignedInvalidWitness'
   /**
    * The signed submission consumes too much weight
    **/
-  | "SignedTooMuchWeight"
+  | 'SignedTooMuchWeight'
   /**
    * OCW submitted solution for wrong round
    **/
-  | "OcwCallWrongEra"
+  | 'OcwCallWrongEra'
   /**
    * Snapshot metadata should exist but didn't.
    **/
-  | "MissingSnapshotMetadata"
+  | 'MissingSnapshotMetadata'
   /**
    * `Self::insert_submission` returned an invalid index.
    **/
-  | "InvalidSubmissionIndex"
+  | 'InvalidSubmissionIndex'
   /**
    * The call is not allowed at this point.
    **/
-  | "CallNotAllowed"
+  | 'CallNotAllowed'
   /**
    * The fallback failed
    **/
-  | "FallbackFailed"
+  | 'FallbackFailed'
   /**
    * Some bound not met
    **/
-  | "BoundNotMet"
+  | 'BoundNotMet'
   /**
    * Submitted solution has too many winners
    **/
-  | "TooManyWinners"
+  | 'TooManyWinners'
   /**
    * Submission was prepared for a different round.
    **/
-  | "PreDispatchDifferentRound";
+  | 'PreDispatchDifferentRound';
 
 export type SpStakingOffenceOffenceDetails = {
   offender: [AccountId32, SpStakingExposure];
@@ -11062,19 +9943,12 @@ export type PalletBountiesBounty = {
 };
 
 export type PalletBountiesBountyStatus =
-  | { type: "Proposed" }
-  | { type: "Approved" }
-  | { type: "Funded" }
-  | { type: "CuratorProposed"; value: { curator: AccountId32 } }
-  | { type: "Active"; value: { curator: AccountId32; updateDue: number } }
-  | {
-      type: "PendingPayout";
-      value: {
-        curator: AccountId32;
-        beneficiary: AccountId32;
-        unlockAt: number;
-      };
-    };
+  | { type: 'Proposed' }
+  | { type: 'Approved' }
+  | { type: 'Funded' }
+  | { type: 'CuratorProposed'; value: { curator: AccountId32 } }
+  | { type: 'Active'; value: { curator: AccountId32; updateDue: number } }
+  | { type: 'PendingPayout'; value: { curator: AccountId32; beneficiary: AccountId32; unlockAt: number } };
 
 /**
  * The `Error` enum of this pallet.
@@ -11083,48 +9957,48 @@ export type PalletBountiesError =
   /**
    * Proposer's balance is too low.
    **/
-  | "InsufficientProposersBalance"
+  | 'InsufficientProposersBalance'
   /**
    * No proposal or bounty at that index.
    **/
-  | "InvalidIndex"
+  | 'InvalidIndex'
   /**
    * The reason given is just too big.
    **/
-  | "ReasonTooBig"
+  | 'ReasonTooBig'
   /**
    * The bounty status is unexpected.
    **/
-  | "UnexpectedStatus"
+  | 'UnexpectedStatus'
   /**
    * Require bounty curator.
    **/
-  | "RequireCurator"
+  | 'RequireCurator'
   /**
    * Invalid bounty value.
    **/
-  | "InvalidValue"
+  | 'InvalidValue'
   /**
    * Invalid bounty fee.
    **/
-  | "InvalidFee"
+  | 'InvalidFee'
   /**
    * A bounty payout is pending.
    * To cancel the bounty, you must unassign and slash the curator.
    **/
-  | "PendingPayout"
+  | 'PendingPayout'
   /**
    * The bounties cannot be claimed/closed because it's still in the countdown period.
    **/
-  | "Premature"
+  | 'Premature'
   /**
    * The bounty cannot be closed because it has active child bounties.
    **/
-  | "HasActiveChildBounty"
+  | 'HasActiveChildBounty'
   /**
    * Too many approvals are already queued.
    **/
-  | "TooManyQueued";
+  | 'TooManyQueued';
 
 export type PalletChildBountiesChildBounty = {
   parentBounty: number;
@@ -11135,17 +10009,10 @@ export type PalletChildBountiesChildBounty = {
 };
 
 export type PalletChildBountiesChildBountyStatus =
-  | { type: "Added" }
-  | { type: "CuratorProposed"; value: { curator: AccountId32 } }
-  | { type: "Active"; value: { curator: AccountId32 } }
-  | {
-      type: "PendingPayout";
-      value: {
-        curator: AccountId32;
-        beneficiary: AccountId32;
-        unlockAt: number;
-      };
-    };
+  | { type: 'Added' }
+  | { type: 'CuratorProposed'; value: { curator: AccountId32 } }
+  | { type: 'Active'; value: { curator: AccountId32 } }
+  | { type: 'PendingPayout'; value: { curator: AccountId32; beneficiary: AccountId32; unlockAt: number } };
 
 /**
  * The `Error` enum of this pallet.
@@ -11154,15 +10021,15 @@ export type PalletChildBountiesError =
   /**
    * The parent bounty is not in active state.
    **/
-  | "ParentBountyNotActive"
+  | 'ParentBountyNotActive'
   /**
    * The bounty balance is not enough to add new child-bounty.
    **/
-  | "InsufficientBountyBalance"
+  | 'InsufficientBountyBalance'
   /**
    * Number of child bounties exceeds limit `MaxActiveChildBountyCount`.
    **/
-  | "TooManyChildBounties";
+  | 'TooManyChildBounties';
 
 export type PalletNominationPoolsPoolMember = {
   poolId: number;
@@ -11207,10 +10074,7 @@ export type PalletNominationPoolsSubPools = {
   withEra: Array<[number, PalletNominationPoolsUnbondPool]>;
 };
 
-export type PalletNominationPoolsUnbondPool = {
-  points: bigint;
-  balance: bigint;
-};
+export type PalletNominationPoolsUnbondPool = { points: bigint; balance: bigint };
 
 /**
  * The `Error` enum of this pallet.
@@ -11219,37 +10083,37 @@ export type PalletNominationPoolsError =
   /**
    * A (bonded) pool id does not exist.
    **/
-  | { name: "PoolNotFound" }
+  | { name: 'PoolNotFound' }
   /**
    * An account is not a member.
    **/
-  | { name: "PoolMemberNotFound" }
+  | { name: 'PoolMemberNotFound' }
   /**
    * A reward pool does not exist. In all cases this is a system logic error.
    **/
-  | { name: "RewardPoolNotFound" }
+  | { name: 'RewardPoolNotFound' }
   /**
    * A sub pool does not exist.
    **/
-  | { name: "SubPoolsNotFound" }
+  | { name: 'SubPoolsNotFound' }
   /**
    * An account is already delegating in another pool. An account may only belong to one
    * pool at a time.
    **/
-  | { name: "AccountBelongsToOtherPool" }
+  | { name: 'AccountBelongsToOtherPool' }
   /**
    * The member is fully unbonded (and thus cannot access the bonded and reward pool
    * anymore to, for example, collect rewards).
    **/
-  | { name: "FullyUnbonding" }
+  | { name: 'FullyUnbonding' }
   /**
    * The member cannot unbond further chunks due to reaching the limit.
    **/
-  | { name: "MaxUnbondingLimit" }
+  | { name: 'MaxUnbondingLimit' }
   /**
    * None of the funds can be withdrawn yet because the bonding duration has not passed.
    **/
-  | { name: "CannotWithdrawAny" }
+  | { name: 'CannotWithdrawAny' }
   /**
    * The amount does not meet the minimum bond to either join or create a pool.
    *
@@ -11257,126 +10121,126 @@ export type PalletNominationPoolsError =
    * caller does not have nominating permissions for the pool. Members can never unbond to a
    * value below `MinJoinBond`.
    **/
-  | { name: "MinimumBondNotMet" }
+  | { name: 'MinimumBondNotMet' }
   /**
    * The transaction could not be executed due to overflow risk for the pool.
    **/
-  | { name: "OverflowRisk" }
+  | { name: 'OverflowRisk' }
   /**
    * A pool must be in [`PoolState::Destroying`] in order for the depositor to unbond or for
    * other members to be permissionlessly unbonded.
    **/
-  | { name: "NotDestroying" }
+  | { name: 'NotDestroying' }
   /**
    * The caller does not have nominating permissions for the pool.
    **/
-  | { name: "NotNominator" }
+  | { name: 'NotNominator' }
   /**
    * Either a) the caller cannot make a valid kick or b) the pool is not destroying.
    **/
-  | { name: "NotKickerOrDestroying" }
+  | { name: 'NotKickerOrDestroying' }
   /**
    * The pool is not open to join
    **/
-  | { name: "NotOpen" }
+  | { name: 'NotOpen' }
   /**
    * The system is maxed out on pools.
    **/
-  | { name: "MaxPools" }
+  | { name: 'MaxPools' }
   /**
    * Too many members in the pool or system.
    **/
-  | { name: "MaxPoolMembers" }
+  | { name: 'MaxPoolMembers' }
   /**
    * The pools state cannot be changed.
    **/
-  | { name: "CanNotChangeState" }
+  | { name: 'CanNotChangeState' }
   /**
    * The caller does not have adequate permissions.
    **/
-  | { name: "DoesNotHavePermission" }
+  | { name: 'DoesNotHavePermission' }
   /**
    * Metadata exceeds [`Config::MaxMetadataLen`]
    **/
-  | { name: "MetadataExceedsMaxLen" }
+  | { name: 'MetadataExceedsMaxLen' }
   /**
    * Some error occurred that should never happen. This should be reported to the
    * maintainers.
    **/
-  | { name: "Defensive"; data: PalletNominationPoolsDefensiveError }
+  | { name: 'Defensive'; data: PalletNominationPoolsDefensiveError }
   /**
    * Partial unbonding now allowed permissionlessly.
    **/
-  | { name: "PartialUnbondNotAllowedPermissionlessly" }
+  | { name: 'PartialUnbondNotAllowedPermissionlessly' }
   /**
    * The pool's max commission cannot be set higher than the existing value.
    **/
-  | { name: "MaxCommissionRestricted" }
+  | { name: 'MaxCommissionRestricted' }
   /**
    * The supplied commission exceeds the max allowed commission.
    **/
-  | { name: "CommissionExceedsMaximum" }
+  | { name: 'CommissionExceedsMaximum' }
   /**
    * The supplied commission exceeds global maximum commission.
    **/
-  | { name: "CommissionExceedsGlobalMaximum" }
+  | { name: 'CommissionExceedsGlobalMaximum' }
   /**
    * Not enough blocks have surpassed since the last commission update.
    **/
-  | { name: "CommissionChangeThrottled" }
+  | { name: 'CommissionChangeThrottled' }
   /**
    * The submitted changes to commission change rate are not allowed.
    **/
-  | { name: "CommissionChangeRateNotAllowed" }
+  | { name: 'CommissionChangeRateNotAllowed' }
   /**
    * There is no pending commission to claim.
    **/
-  | { name: "NoPendingCommission" }
+  | { name: 'NoPendingCommission' }
   /**
    * No commission current has been set.
    **/
-  | { name: "NoCommissionCurrentSet" }
+  | { name: 'NoCommissionCurrentSet' }
   /**
    * Pool id currently in use.
    **/
-  | { name: "PoolIdInUse" }
+  | { name: 'PoolIdInUse' }
   /**
    * Pool id provided is not correct/usable.
    **/
-  | { name: "InvalidPoolId" }
+  | { name: 'InvalidPoolId' }
   /**
    * Bonding extra is restricted to the exact pending reward amount.
    **/
-  | { name: "BondExtraRestricted" }
+  | { name: 'BondExtraRestricted' }
   /**
    * No imbalance in the ED deposit for the pool.
    **/
-  | { name: "NothingToAdjust" }
+  | { name: 'NothingToAdjust' }
   /**
    * No slash pending that can be applied to the member.
    **/
-  | { name: "NothingToSlash" }
+  | { name: 'NothingToSlash' }
   /**
    * The pool or member delegation has already migrated to delegate stake.
    **/
-  | { name: "AlreadyMigrated" }
+  | { name: 'AlreadyMigrated' }
   /**
    * The pool or member delegation has not migrated yet to delegate stake.
    **/
-  | { name: "NotMigrated" }
+  | { name: 'NotMigrated' }
   /**
    * This call is not allowed in the current state of the pallet.
    **/
-  | { name: "NotSupported" };
+  | { name: 'NotSupported' };
 
 export type PalletNominationPoolsDefensiveError =
-  | "NotEnoughSpaceInUnbondPool"
-  | "PoolNotFound"
-  | "RewardPoolNotFound"
-  | "SubPoolsNotFound"
-  | "BondedStashKilledPrematurely"
-  | "DelegationUnsupported"
-  | "SlashNotApplied";
+  | 'NotEnoughSpaceInUnbondPool'
+  | 'PoolNotFound'
+  | 'RewardPoolNotFound'
+  | 'SubPoolsNotFound'
+  | 'BondedStashKilledPrematurely'
+  | 'DelegationUnsupported'
+  | 'SlashNotApplied';
 
 export type GearCoreCodeInstrumentedInstrumentedCode = {
   code: Bytes;
@@ -11388,11 +10252,7 @@ export type GearCoreCodeInstrumentedInstrumentedCode = {
   version: number;
 };
 
-export type GearCoreMessageDispatchKind =
-  | "Init"
-  | "Handle"
-  | "Reply"
-  | "Signal";
+export type GearCoreMessageDispatchKind = 'Init' | 'Handle' | 'Reply' | 'Signal';
 
 export type GearCorePagesPagesAmount = number;
 
@@ -11409,21 +10269,17 @@ export type GearCoreCodeInstrumentedInstantiatedSectionSizes = {
 
 export type GearCommonCodeMetadata = { author: H256; blockNumber: number };
 
-export type NumeratedTreeIntervalsTree = {
-  inner: Array<[GearCorePagesPage, GearCorePagesPage]>;
-};
+export type NumeratedTreeIntervalsTree = { inner: Array<[GearCorePagesPage, GearCorePagesPage]> };
 
 export type GearCoreProgram =
-  | { type: "Active"; value: GearCoreProgramActiveProgram }
-  | { type: "Exited"; value: GprimitivesActorId }
-  | { type: "Terminated"; value: GprimitivesActorId };
+  | { type: 'Active'; value: GearCoreProgramActiveProgram }
+  | { type: 'Exited'; value: GprimitivesActorId }
+  | { type: 'Terminated'; value: GprimitivesActorId };
 
 export type GearCoreProgramActiveProgram = {
   allocationsTreeLen: number;
   memoryInfix: GearCoreProgramMemoryInfix;
-  gasReservationMap: Array<
-    [GprimitivesReservationId, GearCoreReservationGasReservationSlot]
-  >;
+  gasReservationMap: Array<[GprimitivesReservationId, GearCoreReservationGasReservationSlot]>;
   codeHash: H256;
   codeExports: Array<GearCoreMessageDispatchKind>;
   staticPages: GearCorePagesPagesAmount;
@@ -11433,15 +10289,11 @@ export type GearCoreProgramActiveProgram = {
 
 export type GearCoreProgramMemoryInfix = number;
 
-export type GearCoreReservationGasReservationSlot = {
-  amount: bigint;
-  start: number;
-  finish: number;
-};
+export type GearCoreReservationGasReservationSlot = { amount: bigint; start: number; finish: number };
 
 export type GearCoreProgramProgramState =
-  | { type: "Uninitialized"; value: { messageId: GprimitivesMessageId } }
-  | { type: "Initialized" };
+  | { type: 'Uninitialized'; value: { messageId: GprimitivesMessageId } }
+  | { type: 'Initialized' };
 
 export type GearCoreMemoryPageBuf = GearCoreBufferLimitedVecIntoPageBufError;
 
@@ -11453,11 +10305,11 @@ export type GearCoreMemoryIntoPageBufError = {};
  * The `Error` enum of this pallet.
  **/
 export type PalletGearProgramError =
-  | "DuplicateItem"
-  | "ProgramNotFound"
-  | "NotActiveProgram"
-  | "CannotFindDataForPage"
-  | "ProgramCodeNotFound";
+  | 'DuplicateItem'
+  | 'ProgramNotFound'
+  | 'NotActiveProgram'
+  | 'CannotFindDataForPage'
+  | 'ProgramCodeNotFound';
 
 export type GearCommonStorageComplicatedDequeueLinkedNode = {
   next?: GprimitivesMessageId | undefined;
@@ -11480,17 +10332,14 @@ export type GearCoreMessageStoredStoredMessage = {
 };
 
 export type GearCoreMessageCommonMessageDetails =
-  | { type: "Reply"; value: GearCoreMessageCommonReplyDetails }
-  | { type: "Signal"; value: GearCoreMessageCommonSignalDetails };
+  | { type: 'Reply'; value: GearCoreMessageCommonReplyDetails }
+  | { type: 'Signal'; value: GearCoreMessageCommonSignalDetails };
 
-export type GearCoreMessageCommonSignalDetails = {
-  to: GprimitivesMessageId;
-  code: GearCoreErrorsSimpleSignalCode;
-};
+export type GearCoreMessageCommonSignalDetails = { to: GprimitivesMessageId; code: GearCoreErrorsSimpleSignalCode };
 
 export type GearCoreErrorsSimpleSignalCode =
-  | { type: "Execution"; value: GearCoreErrorsSimpleSimpleExecutionError }
-  | { type: "RemovedFromWaitlist" };
+  | { type: 'Execution'; value: GearCoreErrorsSimpleSimpleExecutionError }
+  | { type: 'RemovedFromWaitlist' };
 
 export type GearCoreMessageContextContextStore = {
   initialized: Array<GprimitivesActorId>;
@@ -11509,10 +10358,7 @@ export type GearCoreMessageUserUserStoredMessage = {
   value: bigint;
 };
 
-export type GearCommonStoragePrimitivesInterval = {
-  start: number;
-  finish: number;
-};
+export type GearCommonStoragePrimitivesInterval = { start: number; finish: number };
 
 export type GearCoreMessageStoredStoredDelayedDispatch = {
   kind: GearCoreMessageDispatchKind;
@@ -11526,78 +10372,69 @@ export type PalletGearMessengerError =
   /**
    * Occurs when given key already exists in queue.
    **/
-  | "QueueDuplicateKey"
+  | 'QueueDuplicateKey'
   /**
    * Occurs when queue's element wasn't found in storage.
    **/
-  | "QueueElementNotFound"
+  | 'QueueElementNotFound'
   /**
    * Occurs when queue's head should contain value,
    * but it's empty for some reason.
    **/
-  | "QueueHeadShouldBeSet"
+  | 'QueueHeadShouldBeSet'
   /**
    * Occurs when queue's head should be empty,
    * but it contains value for some reason.
    **/
-  | "QueueHeadShouldNotBeSet"
+  | 'QueueHeadShouldNotBeSet'
   /**
    * Occurs when queue's tail element contains link
    * to the next element.
    **/
-  | "QueueTailHasNextKey"
+  | 'QueueTailHasNextKey'
   /**
    * Occurs when while searching queue's pre-tail,
    * element wasn't found.
    **/
-  | "QueueTailParentNotFound"
+  | 'QueueTailParentNotFound'
   /**
    * Occurs when queue's tail should contain value,
    * but it's empty for some reason.
    **/
-  | "QueueTailShouldBeSet"
+  | 'QueueTailShouldBeSet'
   /**
    * Occurs when queue's tail should be empty,
    * but it contains value for some reason.
    **/
-  | "QueueTailShouldNotBeSet"
+  | 'QueueTailShouldNotBeSet'
   /**
    * Occurs when given value already exists in mailbox.
    **/
-  | "MailboxDuplicateKey"
+  | 'MailboxDuplicateKey'
   /**
    * Occurs when mailbox's element wasn't found in storage.
    **/
-  | "MailboxElementNotFound"
+  | 'MailboxElementNotFound'
   /**
    * Occurs when given value already exists in waitlist.
    **/
-  | "WaitlistDuplicateKey"
+  | 'WaitlistDuplicateKey'
   /**
    * Occurs when waitlist's element wasn't found in storage.
    **/
-  | "WaitlistElementNotFound";
+  | 'WaitlistElementNotFound';
 
 export type GearCoreTasksScheduledTask =
-  | { type: "PauseProgram"; value: GprimitivesActorId }
-  | { type: "RemoveCode"; value: GprimitivesCodeId }
-  | { type: "RemoveFromMailbox"; value: [AccountId32, GprimitivesMessageId] }
-  | {
-      type: "RemoveFromWaitlist";
-      value: [GprimitivesActorId, GprimitivesMessageId];
-    }
-  | { type: "RemovePausedProgram"; value: GprimitivesActorId }
-  | { type: "WakeMessage"; value: [GprimitivesActorId, GprimitivesMessageId] }
-  | { type: "SendDispatch"; value: GprimitivesMessageId }
-  | {
-      type: "SendUserMessage";
-      value: { messageId: GprimitivesMessageId; toMailbox: boolean };
-    }
-  | {
-      type: "RemoveGasReservation";
-      value: [GprimitivesActorId, GprimitivesReservationId];
-    }
-  | { type: "RemoveResumeSession"; value: number };
+  | { type: 'PauseProgram'; value: GprimitivesActorId }
+  | { type: 'RemoveCode'; value: GprimitivesCodeId }
+  | { type: 'RemoveFromMailbox'; value: [AccountId32, GprimitivesMessageId] }
+  | { type: 'RemoveFromWaitlist'; value: [GprimitivesActorId, GprimitivesMessageId] }
+  | { type: 'RemovePausedProgram'; value: GprimitivesActorId }
+  | { type: 'WakeMessage'; value: [GprimitivesActorId, GprimitivesMessageId] }
+  | { type: 'SendDispatch'; value: GprimitivesMessageId }
+  | { type: 'SendUserMessage'; value: { messageId: GprimitivesMessageId; toMailbox: boolean } }
+  | { type: 'RemoveGasReservation'; value: [GprimitivesActorId, GprimitivesReservationId] }
+  | { type: 'RemoveResumeSession'; value: number };
 
 /**
  * The `Error` enum of this pallet.
@@ -11606,15 +10443,15 @@ export type PalletGearSchedulerError =
   /**
    * Occurs when given task already exists in task pool.
    **/
-  | "DuplicateTask"
+  | 'DuplicateTask'
   /**
    * Occurs when task wasn't found in storage.
    **/
-  | "TaskNotFound";
+  | 'TaskNotFound';
 
 export type GearCommonGasProviderNodeGasNode =
   | {
-      type: "External";
+      type: 'External';
       value: {
         id: AccountId32;
         multiplier: GearCommonGasMultiplier;
@@ -11627,7 +10464,7 @@ export type GearCommonGasProviderNodeGasNode =
       };
     }
   | {
-      type: "Cut";
+      type: 'Cut';
       value: {
         id: AccountId32;
         multiplier: GearCommonGasMultiplier;
@@ -11636,7 +10473,7 @@ export type GearCommonGasProviderNodeGasNode =
       };
     }
   | {
-      type: "Reserved";
+      type: 'Reserved';
       value: {
         id: AccountId32;
         multiplier: GearCommonGasMultiplier;
@@ -11647,7 +10484,7 @@ export type GearCommonGasProviderNodeGasNode =
       };
     }
   | {
-      type: "SpecifiedLocal";
+      type: 'SpecifiedLocal';
       value: {
         parent: GearCommonGasProviderNodeGasNodeId;
         root: GearCommonGasProviderNodeGasNodeId;
@@ -11659,7 +10496,7 @@ export type GearCommonGasProviderNodeGasNode =
       };
     }
   | {
-      type: "UnspecifiedLocal";
+      type: 'UnspecifiedLocal';
       value: {
         parent: GearCommonGasProviderNodeGasNodeId;
         root: GearCommonGasProviderNodeGasNodeId;
@@ -11668,31 +10505,26 @@ export type GearCommonGasProviderNodeGasNode =
       };
     };
 
-export type GearCommonGasMultiplier =
-  | { type: "ValuePerGas"; value: bigint }
-  | { type: "GasPerValue"; value: bigint };
+export type GearCommonGasMultiplier = { type: 'ValuePerGas'; value: bigint } | { type: 'GasPerValue'; value: bigint };
 
 export type GearCommonGasProviderNodeNodeLock = FixedArray<bigint, 4>;
 
-export type GearCommonGasProviderNodeChildrenRefs = {
-  specRefs: number;
-  unspecRefs: number;
-};
+export type GearCommonGasProviderNodeChildrenRefs = { specRefs: number; unspecRefs: number };
 
 /**
  * The `Error` enum of this pallet.
  **/
 export type PalletGearGasError =
-  | "Forbidden"
-  | "NodeAlreadyExists"
-  | "InsufficientBalance"
-  | "NodeNotFound"
-  | "NodeWasConsumed"
+  | 'Forbidden'
+  | 'NodeAlreadyExists'
+  | 'InsufficientBalance'
+  | 'NodeNotFound'
+  | 'NodeWasConsumed'
   /**
    * Errors stating that gas tree has been invalidated
    **/
-  | "ParentIsLost"
-  | "ParentHasNoChildren"
+  | 'ParentIsLost'
+  | 'ParentHasNoChildren'
   /**
    * Output of `Tree::consume` procedure that wasn't expected.
    *
@@ -11700,41 +10532,41 @@ export type PalletGearGasError =
    * when unexpected one occurred. That signals, that algorithm works wrong
    * and expected invariants are not correct.
    **/
-  | "UnexpectedConsumeOutput"
+  | 'UnexpectedConsumeOutput'
   /**
    * Node type that can't occur if algorithm work well
    **/
-  | "UnexpectedNodeType"
+  | 'UnexpectedNodeType'
   /**
    * Value must have been caught, but was missed or blocked (for more info see `ValueNode::catch_value`).
    **/
-  | "ValueIsNotCaught"
+  | 'ValueIsNotCaught'
   /**
    * Value must have been caught or moved upstream, but was blocked (for more info see `ValueNode::catch_value`).
    **/
-  | "ValueIsBlocked"
+  | 'ValueIsBlocked'
   /**
    * Value must have been blocked, but was either moved or caught (for more info see `ValueNode::catch_value`).
    **/
-  | "ValueIsNotBlocked"
+  | 'ValueIsNotBlocked'
   /**
    * `GasTree::consume` called on node, which has some balance locked.
    **/
-  | "ConsumedWithLock"
+  | 'ConsumedWithLock'
   /**
    * `GasTree::consume` called on node, which has some system reservation.
    **/
-  | "ConsumedWithSystemReservation"
+  | 'ConsumedWithSystemReservation'
   /**
    * `GasTree::create` called with some value amount leading to
    * the total value overflow.
    **/
-  | "TotalValueIsOverflowed"
+  | 'TotalValueIsOverflowed'
   /**
    * Either `GasTree::consume` or `GasTree::spent` called on a node creating
    * negative imbalance which leads to the total value drop below 0.
    **/
-  | "TotalValueIsUnderflowed";
+  | 'TotalValueIsUnderflowed';
 
 export type PalletGearSchedule = {
   limits: PalletGearScheduleLimits;
@@ -11987,82 +10819,82 @@ export type PalletGearError =
   /**
    * Message wasn't found in the mailbox.
    **/
-  | "MessageNotFound"
+  | 'MessageNotFound'
   /**
    * Not enough balance to execute an action.
    *
    * Usually occurs when the gas_limit specified is such that the origin account can't afford the message.
    **/
-  | "InsufficientBalance"
+  | 'InsufficientBalance'
   /**
    * Gas limit too high.
    *
    * Occurs when an extrinsic's declared `gas_limit` is greater than a block's maximum gas limit.
    **/
-  | "GasLimitTooHigh"
+  | 'GasLimitTooHigh'
   /**
    * Program already exists.
    *
    * Occurs if a program with some specific program id already exists in program storage.
    **/
-  | "ProgramAlreadyExists"
+  | 'ProgramAlreadyExists'
   /**
    * Program is terminated.
    *
    * Program init failed, so such message destination is no longer unavailable.
    **/
-  | "InactiveProgram"
+  | 'InactiveProgram'
   /**
    * Message gas tree is not found.
    *
    * When a message claimed from the mailbox has a corrupted or non-extant gas tree associated.
    **/
-  | "NoMessageTree"
+  | 'NoMessageTree'
   /**
    * Code already exists.
    *
    * Occurs when trying to save to storage a program code that has been saved there.
    **/
-  | "CodeAlreadyExists"
+  | 'CodeAlreadyExists'
   /**
    * Code does not exist.
    *
    * Occurs when trying to get a program code from storage, that doesn't exist.
    **/
-  | "CodeDoesntExist"
+  | 'CodeDoesntExist'
   /**
    * The code supplied to `upload_code` or `upload_program` exceeds the limit specified in the
    * current schedule.
    **/
-  | "CodeTooLarge"
+  | 'CodeTooLarge'
   /**
    * Failed to create a program.
    **/
-  | "ProgramConstructionFailed"
+  | 'ProgramConstructionFailed'
   /**
    * Message queue processing is disabled.
    **/
-  | "MessageQueueProcessingDisabled"
+  | 'MessageQueueProcessingDisabled'
   /**
    * Block count doesn't cover MinimalResumePeriod.
    **/
-  | "ResumePeriodLessThanMinimal"
+  | 'ResumePeriodLessThanMinimal'
   /**
    * Program with the specified id is not found.
    **/
-  | "ProgramNotFound"
+  | 'ProgramNotFound'
   /**
    * Gear::run() already included in current block.
    **/
-  | "GearRunAlreadyInBlock"
+  | 'GearRunAlreadyInBlock'
   /**
    * The program rent logic is disabled.
    **/
-  | "ProgramRentDisabled"
+  | 'ProgramRentDisabled'
   /**
    * Program is active.
    **/
-  | "ActiveProgram";
+  | 'ActiveProgram';
 
 /**
  * Error for the staking rewards pallet.
@@ -12071,11 +10903,11 @@ export type PalletGearStakingRewardsError =
   /**
    * Pool not replenished due to error.
    **/
-  | "FailureToRefillPool"
+  | 'FailureToRefillPool'
   /**
    * Failure to withdraw funds from the rewards pool.
    **/
-  | "FailureToWithdrawFromPool";
+  | 'FailureToWithdrawFromPool';
 
 export type PalletGearVoucherInternalVoucherInfo = {
   owner: AccountId32;
@@ -12091,47 +10923,47 @@ export type PalletGearVoucherError =
   /**
    * The origin is not eligible to execute call.
    **/
-  | "BadOrigin"
+  | 'BadOrigin'
   /**
    * Error trying transfer balance to/from voucher account.
    **/
-  | "BalanceTransfer"
+  | 'BalanceTransfer'
   /**
    * Destination program is not in whitelisted set for voucher.
    **/
-  | "InappropriateDestination"
+  | 'InappropriateDestination'
   /**
    * Voucher with given identifier doesn't exist for given spender id.
    **/
-  | "InexistentVoucher"
+  | 'InexistentVoucher'
   /**
    * Voucher still valid and couldn't be revoked.
    **/
-  | "IrrevocableYet"
+  | 'IrrevocableYet'
   /**
    * Try to whitelist more programs than allowed.
    **/
-  | "MaxProgramsLimitExceeded"
+  | 'MaxProgramsLimitExceeded'
   /**
    * Failed to query destination of the prepaid call.
    **/
-  | "UnknownDestination"
+  | 'UnknownDestination'
   /**
    * Voucher has expired and couldn't be used.
    **/
-  | "VoucherExpired"
+  | 'VoucherExpired'
   /**
    * Voucher issue/prolongation duration out of [min; max] constants.
    **/
-  | "DurationOutOfBounds"
+  | 'DurationOutOfBounds'
   /**
    * Voucher update function tries to cut voucher ability of code upload.
    **/
-  | "CodeUploadingEnabled"
+  | 'CodeUploadingEnabled'
   /**
    * Voucher is disabled for code uploading, but requested.
    **/
-  | "CodeUploadingDisabled";
+  | 'CodeUploadingDisabled';
 
 export type PalletGearBankBankAccount = { gas: bigint; value: bigint };
 
@@ -12142,30 +10974,30 @@ export type PalletGearBankError =
   /**
    * Insufficient user balance.
    **/
-  | "InsufficientBalance"
+  | 'InsufficientBalance'
   /**
    * Insufficient user's bank account gas balance.
    **/
-  | "InsufficientGasBalance"
+  | 'InsufficientGasBalance'
   /**
    * Insufficient user's bank account gas balance.
    **/
-  | "InsufficientValueBalance"
+  | 'InsufficientValueBalance'
   /**
    * Insufficient bank account balance.
    * **Must be unreachable in Gear main protocol.**
    **/
-  | "InsufficientBankBalance"
+  | 'InsufficientBankBalance'
   /**
    * Deposit of funds that will not keep bank account alive.
    * **Must be unreachable in Gear main protocol.**
    **/
-  | "InsufficientDeposit"
+  | 'InsufficientDeposit'
   /**
    * Overflow during funds transfer.
    * **Must be unreachable in Gear main protocol.**
    **/
-  | "Overflow";
+  | 'Overflow';
 
 export type PalletGearStakingRewardsExtensionStakingBlackList = {};
 
@@ -12183,18 +11015,15 @@ export type VaraRuntimeCustomCheckNonce = number;
 
 export type FrameSystemExtensionsCheckWeight = {};
 
-export type PalletGearPaymentCustomChargeTransactionPayment =
-  PalletTransactionPaymentChargeTransactionPayment;
+export type PalletGearPaymentCustomChargeTransactionPayment = PalletTransactionPaymentChargeTransactionPayment;
 
 export type VaraRuntimeRuntime = {};
 
 export type PalletTransactionPaymentChargeTransactionPayment = bigint;
 
-export type FrameMetadataHashExtensionCheckMetadataHash = {
-  mode: FrameMetadataHashExtensionMode;
-};
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
 
-export type FrameMetadataHashExtensionMode = "Disabled" | "Enabled";
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
 export type SpConsensusBabeBabeConfiguration = {
   slotDuration: bigint;
@@ -12227,16 +11056,9 @@ export type PalletTransactionPaymentFeeDetails = {
   tip: bigint;
 };
 
-export type PalletTransactionPaymentInclusionFee = {
-  baseFee: bigint;
-  lenFee: bigint;
-  adjustedWeightFee: bigint;
-};
+export type PalletTransactionPaymentInclusionFee = { baseFee: bigint; lenFee: bigint; adjustedWeightFee: bigint };
 
-export type PalletGearStakingRewardsInflationInfo = {
-  inflation: Perquintill;
-  roi: Perquintill;
-};
+export type PalletGearStakingRewardsInflationInfo = { inflation: Perquintill; roi: Perquintill };
 
 export type PalletGearEthBridgeInternalProof = {
   root: H256;
@@ -12246,49 +11068,39 @@ export type PalletGearEthBridgeInternalProof = {
   leaf: H256;
 };
 
-export type SpRuntimeBlock = {
-  header: Header;
-  extrinsics: Array<UncheckedExtrinsic>;
-};
+export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
 
-export type SpRuntimeExtrinsicInclusionMode = "AllExtrinsics" | "OnlyInherents";
+export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 
 export type SpCoreOpaqueMetadata = Bytes;
 
 export type SpRuntimeTransactionValidityTransactionValidityError =
-  | { type: "Invalid"; value: SpRuntimeTransactionValidityInvalidTransaction }
-  | { type: "Unknown"; value: SpRuntimeTransactionValidityUnknownTransaction };
+  | { type: 'Invalid'; value: SpRuntimeTransactionValidityInvalidTransaction }
+  | { type: 'Unknown'; value: SpRuntimeTransactionValidityUnknownTransaction };
 
 export type SpRuntimeTransactionValidityInvalidTransaction =
-  | { type: "Call" }
-  | { type: "Payment" }
-  | { type: "Future" }
-  | { type: "Stale" }
-  | { type: "BadProof" }
-  | { type: "AncientBirthBlock" }
-  | { type: "ExhaustsResources" }
-  | { type: "Custom"; value: number }
-  | { type: "BadMandatory" }
-  | { type: "MandatoryValidation" }
-  | { type: "BadSigner" };
+  | { type: 'Call' }
+  | { type: 'Payment' }
+  | { type: 'Future' }
+  | { type: 'Stale' }
+  | { type: 'BadProof' }
+  | { type: 'AncientBirthBlock' }
+  | { type: 'ExhaustsResources' }
+  | { type: 'Custom'; value: number }
+  | { type: 'BadMandatory' }
+  | { type: 'MandatoryValidation' }
+  | { type: 'BadSigner' };
 
 export type SpRuntimeTransactionValidityUnknownTransaction =
-  | { type: "CannotLookup" }
-  | { type: "NoUnsignedValidator" }
-  | { type: "Custom"; value: number };
+  | { type: 'CannotLookup' }
+  | { type: 'NoUnsignedValidator' }
+  | { type: 'Custom'; value: number };
 
 export type SpInherentsInherentData = { data: Array<[FixedBytes<8>, Bytes]> };
 
-export type SpInherentsCheckInherentsResult = {
-  okay: boolean;
-  fatalError: boolean;
-  errors: SpInherentsInherentData;
-};
+export type SpInherentsCheckInherentsResult = { okay: boolean; fatalError: boolean; errors: SpInherentsInherentData };
 
-export type SpRuntimeTransactionValidityTransactionSource =
-  | "InBlock"
-  | "Local"
-  | "External";
+export type SpRuntimeTransactionValidityTransactionSource = 'InBlock' | 'Local' | 'External';
 
 export type SpRuntimeTransactionValidityValidTransaction = {
   priority: bigint;
@@ -12300,24 +11112,14 @@ export type SpRuntimeTransactionValidityValidTransaction = {
 
 export type SpRuntimeOpaqueValue = Bytes;
 
-export type GearCoreMessageReplyInfo = {
-  payload: Bytes;
-  value: bigint;
-  code: GearCoreErrorsSimpleReplyCode;
-};
+export type GearCoreMessageReplyInfo = { payload: Bytes; value: bigint; code: GearCoreErrorsSimpleReplyCode };
 
 export type PalletGearManagerHandleKind =
-  | { type: "Init"; value: Bytes }
-  | { type: "InitByHash"; value: GprimitivesCodeId }
-  | { type: "Handle"; value: GprimitivesActorId }
-  | {
-      type: "Reply";
-      value: [GprimitivesMessageId, GearCoreErrorsSimpleReplyCode];
-    }
-  | {
-      type: "Signal";
-      value: [GprimitivesMessageId, GearCoreErrorsSimpleSignalCode];
-    };
+  | { type: 'Init'; value: Bytes }
+  | { type: 'InitByHash'; value: GprimitivesCodeId }
+  | { type: 'Handle'; value: GprimitivesActorId }
+  | { type: 'Reply'; value: [GprimitivesMessageId, GearCoreErrorsSimpleReplyCode] }
+  | { type: 'Signal'; value: [GprimitivesMessageId, GearCoreErrorsSimpleSignalCode] };
 
 export type GearCoreGasGasInfo = {
   minLimit: bigint;
@@ -12328,39 +11130,36 @@ export type GearCoreGasGasInfo = {
 };
 
 export type VaraRuntimeRuntimeError =
-  | { pallet: "System"; palletError: FrameSystemError }
-  | { pallet: "Babe"; palletError: PalletBabeError }
-  | { pallet: "Grandpa"; palletError: PalletGrandpaError }
-  | { pallet: "Balances"; palletError: PalletBalancesError }
-  | { pallet: "Session"; palletError: PalletSessionError }
-  | { pallet: "Utility"; palletError: PalletUtilityError }
-  | { pallet: "Vesting"; palletError: PalletVestingError }
-  | { pallet: "BagsList"; palletError: PalletBagsListError }
-  | { pallet: "ImOnline"; palletError: PalletImOnlineError }
-  | { pallet: "Staking"; palletError: PalletStakingPalletError }
-  | { pallet: "Treasury"; palletError: PalletTreasuryError }
-  | { pallet: "ConvictionVoting"; palletError: PalletConvictionVotingError }
-  | { pallet: "Referenda"; palletError: PalletReferendaError }
-  | { pallet: "FellowshipCollective"; palletError: PalletRankedCollectiveError }
-  | { pallet: "FellowshipReferenda"; palletError: PalletReferendaError }
-  | { pallet: "Whitelist"; palletError: PalletWhitelistError }
-  | { pallet: "Scheduler"; palletError: PalletSchedulerError }
-  | { pallet: "Preimage"; palletError: PalletPreimageError }
-  | { pallet: "Identity"; palletError: PalletIdentityError }
-  | { pallet: "Proxy"; palletError: PalletProxyError }
-  | { pallet: "Multisig"; palletError: PalletMultisigError }
-  | {
-      pallet: "ElectionProviderMultiPhase";
-      palletError: PalletElectionProviderMultiPhaseError;
-    }
-  | { pallet: "Bounties"; palletError: PalletBountiesError }
-  | { pallet: "ChildBounties"; palletError: PalletChildBountiesError }
-  | { pallet: "NominationPools"; palletError: PalletNominationPoolsError }
-  | { pallet: "GearProgram"; palletError: PalletGearProgramError }
-  | { pallet: "GearMessenger"; palletError: PalletGearMessengerError }
-  | { pallet: "GearScheduler"; palletError: PalletGearSchedulerError }
-  | { pallet: "GearGas"; palletError: PalletGearGasError }
-  | { pallet: "Gear"; palletError: PalletGearError }
-  | { pallet: "StakingRewards"; palletError: PalletGearStakingRewardsError }
-  | { pallet: "GearVoucher"; palletError: PalletGearVoucherError }
-  | { pallet: "GearBank"; palletError: PalletGearBankError };
+  | { pallet: 'System'; palletError: FrameSystemError }
+  | { pallet: 'Babe'; palletError: PalletBabeError }
+  | { pallet: 'Grandpa'; palletError: PalletGrandpaError }
+  | { pallet: 'Balances'; palletError: PalletBalancesError }
+  | { pallet: 'Session'; palletError: PalletSessionError }
+  | { pallet: 'Utility'; palletError: PalletUtilityError }
+  | { pallet: 'Vesting'; palletError: PalletVestingError }
+  | { pallet: 'BagsList'; palletError: PalletBagsListError }
+  | { pallet: 'ImOnline'; palletError: PalletImOnlineError }
+  | { pallet: 'Staking'; palletError: PalletStakingPalletError }
+  | { pallet: 'Treasury'; palletError: PalletTreasuryError }
+  | { pallet: 'ConvictionVoting'; palletError: PalletConvictionVotingError }
+  | { pallet: 'Referenda'; palletError: PalletReferendaError }
+  | { pallet: 'FellowshipCollective'; palletError: PalletRankedCollectiveError }
+  | { pallet: 'FellowshipReferenda'; palletError: PalletReferendaError }
+  | { pallet: 'Whitelist'; palletError: PalletWhitelistError }
+  | { pallet: 'Scheduler'; palletError: PalletSchedulerError }
+  | { pallet: 'Preimage'; palletError: PalletPreimageError }
+  | { pallet: 'Identity'; palletError: PalletIdentityError }
+  | { pallet: 'Proxy'; palletError: PalletProxyError }
+  | { pallet: 'Multisig'; palletError: PalletMultisigError }
+  | { pallet: 'ElectionProviderMultiPhase'; palletError: PalletElectionProviderMultiPhaseError }
+  | { pallet: 'Bounties'; palletError: PalletBountiesError }
+  | { pallet: 'ChildBounties'; palletError: PalletChildBountiesError }
+  | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }
+  | { pallet: 'GearProgram'; palletError: PalletGearProgramError }
+  | { pallet: 'GearMessenger'; palletError: PalletGearMessengerError }
+  | { pallet: 'GearScheduler'; palletError: PalletGearSchedulerError }
+  | { pallet: 'GearGas'; palletError: PalletGearGasError }
+  | { pallet: 'Gear'; palletError: PalletGearError }
+  | { pallet: 'StakingRewards'; palletError: PalletGearStakingRewardsError }
+  | { pallet: 'GearVoucher'; palletError: PalletGearVoucherError }
+  | { pallet: 'GearBank'; palletError: PalletGearBankError };

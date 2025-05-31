@@ -93,6 +93,6 @@ export const networks: NetworkInfo[] = [
   },
   {
     chain: 'vara',
-    endpoint: ['wss://rpc.vara-network.io"'],
+    endpoint: ['wss://rpc.vara-network.io'],
   },
 ];

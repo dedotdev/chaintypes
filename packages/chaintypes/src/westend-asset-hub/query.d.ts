@@ -3191,6 +3191,42 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     pagedTargetSnapshotHash: GenericStorageQuery<Rv, (arg: [number, number]) => H256 | undefined, [number, number]>;
 
     /**
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<Array<AccountId32> | undefined> =} callback
+     **/
+    fakePagedTargetSnapshot: GenericStorageQuery<
+      Rv,
+      (arg: [number, number]) => Array<AccountId32> | undefined,
+      [number, number]
+    >;
+
+    /**
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    fakePagedTargetSnapshotHash: GenericStorageQuery<Rv, (arg: [number, number]) => H256 | undefined, [number, number]>;
+
+    /**
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<Array<[AccountId32, bigint, Array<AccountId32>]> | undefined> =} callback
+     **/
+    fakePagedVoterSnapshot: GenericStorageQuery<
+      Rv,
+      (arg: [number, number]) => Array<[AccountId32, bigint, Array<AccountId32>]> | undefined,
+      [number, number]
+    >;
+
+    /**
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    fakePagedVoterSnapshotHash: GenericStorageQuery<Rv, (arg: [number, number]) => H256 | undefined, [number, number]>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;

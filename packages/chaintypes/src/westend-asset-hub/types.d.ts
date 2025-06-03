@@ -16224,7 +16224,8 @@ export type PalletElectionProviderMultiBlockAdminOperation =
   | { type: 'ForceSetPhase'; value: PalletElectionProviderMultiBlockPhase }
   | { type: 'EmergencySetSolution'; value: [FrameElectionProviderSupportBoundedSupports, SpNposElectionsElectionScore] }
   | { type: 'EmergencyFallback' }
-  | { type: 'SetMinUntrustedScore'; value: SpNposElectionsElectionScore };
+  | { type: 'SetMinUntrustedScore'; value: SpNposElectionsElectionScore }
+  | { type: 'ForceCreateSnapshot'; value: number };
 
 export type FrameElectionProviderSupportBoundedSupports = Array<
   [AccountId32, FrameElectionProviderSupportBoundedSupport]

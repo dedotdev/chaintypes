@@ -9748,9 +9748,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
-   * Pallet `AssetHubStakingClient`'s transaction calls
+   * Pallet `StakingAhClient`'s transaction calls
    **/
-  assetHubStakingClient: {
+  stakingAhClient: {
     /**
      *
      * @param {PalletStakingAsyncRcClientValidatorSetReport} report
@@ -9760,7 +9760,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       (report: PalletStakingAsyncRcClientValidatorSetReport) => ChainSubmittableExtrinsic<
         Rv,
         {
-          pallet: 'AssetHubStakingClient';
+          pallet: 'StakingAhClient';
           palletCall: {
             name: 'ValidatorSet';
             params: { report: PalletStakingAsyncRcClientValidatorSetReport };
@@ -9779,7 +9779,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       (mode: PalletStakingAsyncAhClientOperatingMode) => ChainSubmittableExtrinsic<
         Rv,
         {
-          pallet: 'AssetHubStakingClient';
+          pallet: 'StakingAhClient';
           palletCall: {
             name: 'SetMode';
             params: { mode: PalletStakingAsyncAhClientOperatingMode };
@@ -9797,7 +9797,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       () => ChainSubmittableExtrinsic<
         Rv,
         {
-          pallet: 'AssetHubStakingClient';
+          pallet: 'StakingAhClient';
           palletCall: {
             name: 'ForceOnMigrationEnd';
           };

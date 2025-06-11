@@ -3084,9 +3084,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
-   * Pallet `StakingNextRcClient`'s storage queries
+   * Pallet `StakingRcClient`'s storage queries
    **/
-  stakingNextRcClient: {
+  stakingRcClient: {
     /**
      * An incomplete incoming session report that we have not acted upon yet.
      *
@@ -3114,9 +3114,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
-   * Pallet `MultiBlock`'s storage queries
+   * Pallet `MultiBlockElection`'s storage queries
    **/
-  multiBlock: {
+  multiBlockElection: {
     /**
      * Internal counter for the number of rounds.
      *
@@ -3232,9 +3232,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
-   * Pallet `MultiBlockVerifier`'s storage queries
+   * Pallet `MultiBlockElectionVerifier`'s storage queries
    **/
-  multiBlockVerifier: {
+  multiBlockElectionVerifier: {
     /**
      * The `X` variant of the current queued solution. Might be the valid one or not.
      *
@@ -3329,9 +3329,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
-   * Pallet `MultiBlockSigned`'s storage queries
+   * Pallet `MultiBlockElectionSigned`'s storage queries
    **/
-  multiBlockSigned: {
+  multiBlockElectionSigned: {
     /**
      *
      * @param {number} arg

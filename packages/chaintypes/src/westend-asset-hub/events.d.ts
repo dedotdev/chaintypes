@@ -3957,15 +3957,15 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
-   * Pallet `StakingNextRcClient`'s events
+   * Pallet `StakingRcClient`'s events
    **/
-  stakingNextRcClient: {
+  stakingRcClient: {
     /**
      * A said session report was received.
      **/
     SessionReportReceived: GenericPalletEvent<
       Rv,
-      'StakingNextRcClient',
+      'StakingRcClient',
       'SessionReportReceived',
       {
         endIndex: number;
@@ -3980,7 +3980,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      **/
     OffenceReceived: GenericPalletEvent<
       Rv,
-      'StakingNextRcClient',
+      'StakingRcClient',
       'OffenceReceived',
       { slashSession: number; offencesCount: number }
     >;
@@ -3989,7 +3989,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * Something occurred that should never happen under normal operation.
      * Logged as an event for fail-safe observability.
      **/
-    Unexpected: GenericPalletEvent<Rv, 'StakingNextRcClient', 'Unexpected', PalletStakingAsyncRcClientUnexpectedKind>;
+    Unexpected: GenericPalletEvent<Rv, 'StakingRcClient', 'Unexpected', PalletStakingAsyncRcClientUnexpectedKind>;
 
     /**
      * Generic pallet event
@@ -3997,16 +3997,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
-   * Pallet `MultiBlock`'s events
+   * Pallet `MultiBlockElection`'s events
    **/
-  multiBlock: {
+  multiBlockElection: {
     /**
      * A phase transition happened. Only checks major changes in the variants, not minor inner
      * values.
      **/
     PhaseTransitioned: GenericPalletEvent<
       Rv,
-      'MultiBlock',
+      'MultiBlockElection',
       'PhaseTransitioned',
       {
         /**
@@ -4027,13 +4027,18 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
-   * Pallet `MultiBlockVerifier`'s events
+   * Pallet `MultiBlockElectionVerifier`'s events
    **/
-  multiBlockVerifier: {
+  multiBlockElectionVerifier: {
     /**
      * The verification data was unavailable and it could not continue.
      **/
-    VerificationDataUnavailable: GenericPalletEvent<Rv, 'MultiBlockVerifier', 'VerificationDataUnavailable', null>;
+    VerificationDataUnavailable: GenericPalletEvent<
+      Rv,
+      'MultiBlockElectionVerifier',
+      'VerificationDataUnavailable',
+      null
+    >;
 
     /**
      * A verification failed at the given page.
@@ -4043,7 +4048,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      **/
     VerificationFailed: GenericPalletEvent<
       Rv,
-      'MultiBlockVerifier',
+      'MultiBlockElectionVerifier',
       'VerificationFailed',
       [number, PalletElectionProviderMultiBlockVerifierFeasibilityError]
     >;
@@ -4052,14 +4057,14 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * The given page of a solution has been verified, with the given number of winners being
      * found in it.
      **/
-    Verified: GenericPalletEvent<Rv, 'MultiBlockVerifier', 'Verified', [number, number]>;
+    Verified: GenericPalletEvent<Rv, 'MultiBlockElectionVerifier', 'Verified', [number, number]>;
 
     /**
      * A solution with the given score has replaced our current best solution.
      **/
     Queued: GenericPalletEvent<
       Rv,
-      'MultiBlockVerifier',
+      'MultiBlockElectionVerifier',
       'Queued',
       [SpNposElectionsElectionScore, SpNposElectionsElectionScore | undefined]
     >;
@@ -4070,15 +4075,15 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
-   * Pallet `MultiBlockSigned`'s events
+   * Pallet `MultiBlockElectionSigned`'s events
    **/
-  multiBlockSigned: {
+  multiBlockElectionSigned: {
     /**
      * Upcoming submission has been registered for the given account, with the given score.
      **/
     Registered: GenericPalletEvent<
       Rv,
-      'MultiBlockSigned',
+      'MultiBlockElectionSigned',
       'Registered',
       [number, AccountId32, SpNposElectionsElectionScore]
     >;
@@ -4086,32 +4091,32 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * A page of solution solution with the given index has been stored for the given account.
      **/
-    Stored: GenericPalletEvent<Rv, 'MultiBlockSigned', 'Stored', [number, AccountId32, number]>;
+    Stored: GenericPalletEvent<Rv, 'MultiBlockElectionSigned', 'Stored', [number, AccountId32, number]>;
 
     /**
      * The given account has been rewarded with the given amount.
      **/
-    Rewarded: GenericPalletEvent<Rv, 'MultiBlockSigned', 'Rewarded', [number, AccountId32, bigint]>;
+    Rewarded: GenericPalletEvent<Rv, 'MultiBlockElectionSigned', 'Rewarded', [number, AccountId32, bigint]>;
 
     /**
      * The given account has been slashed with the given amount.
      **/
-    Slashed: GenericPalletEvent<Rv, 'MultiBlockSigned', 'Slashed', [number, AccountId32, bigint]>;
+    Slashed: GenericPalletEvent<Rv, 'MultiBlockElectionSigned', 'Slashed', [number, AccountId32, bigint]>;
 
     /**
      * The given solution, for the given round, was ejected.
      **/
-    Ejected: GenericPalletEvent<Rv, 'MultiBlockSigned', 'Ejected', [number, AccountId32]>;
+    Ejected: GenericPalletEvent<Rv, 'MultiBlockElectionSigned', 'Ejected', [number, AccountId32]>;
 
     /**
      * The given account has been discarded.
      **/
-    Discarded: GenericPalletEvent<Rv, 'MultiBlockSigned', 'Discarded', [number, AccountId32]>;
+    Discarded: GenericPalletEvent<Rv, 'MultiBlockElectionSigned', 'Discarded', [number, AccountId32]>;
 
     /**
      * The given account has bailed.
      **/
-    Bailed: GenericPalletEvent<Rv, 'MultiBlockSigned', 'Bailed', [number, AccountId32]>;
+    Bailed: GenericPalletEvent<Rv, 'MultiBlockElectionSigned', 'Bailed', [number, AccountId32]>;
 
     /**
      * Generic pallet event

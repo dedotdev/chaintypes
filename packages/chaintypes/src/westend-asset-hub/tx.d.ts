@@ -13270,9 +13270,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
-   * Pallet `StakingNextRcClient`'s transaction calls
+   * Pallet `StakingRcClient`'s transaction calls
    **/
-  stakingNextRcClient: {
+  stakingRcClient: {
     /**
      * Called to indicate the start of a new session on the relay chain.
      *
@@ -13283,7 +13283,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       (report: PalletStakingAsyncRcClientSessionReport) => ChainSubmittableExtrinsic<
         Rv,
         {
-          pallet: 'StakingNextRcClient';
+          pallet: 'StakingRcClient';
           palletCall: {
             name: 'RelaySessionReport';
             params: { report: PalletStakingAsyncRcClientSessionReport };
@@ -13306,7 +13306,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
-          pallet: 'StakingNextRcClient';
+          pallet: 'StakingRcClient';
           palletCall: {
             name: 'RelayNewOffence';
             params: { slashSession: number; offences: Array<PalletStakingAsyncRcClientOffence> };
@@ -13321,9 +13321,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
-   * Pallet `MultiBlock`'s transaction calls
+   * Pallet `MultiBlockElection`'s transaction calls
    **/
-  multiBlock: {
+  multiBlockElection: {
     /**
      * Manage this pallet.
      *
@@ -13338,7 +13338,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       (op: PalletElectionProviderMultiBlockAdminOperation) => ChainSubmittableExtrinsic<
         Rv,
         {
-          pallet: 'MultiBlock';
+          pallet: 'MultiBlockElection';
           palletCall: {
             name: 'Manage';
             params: { op: PalletElectionProviderMultiBlockAdminOperation };
@@ -13353,18 +13353,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
-   * Pallet `MultiBlockVerifier`'s transaction calls
+   * Pallet `MultiBlockElectionVerifier`'s transaction calls
    **/
-  multiBlockVerifier: {
+  multiBlockElectionVerifier: {
     /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
-   * Pallet `MultiBlockUnsigned`'s transaction calls
+   * Pallet `MultiBlockElectionUnsigned`'s transaction calls
    **/
-  multiBlockUnsigned: {
+  multiBlockElectionUnsigned: {
     /**
      * Submit an unsigned solution.
      *
@@ -13389,7 +13389,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       (pagedSolution: PalletElectionProviderMultiBlockPagedRawSolution) => ChainSubmittableExtrinsic<
         Rv,
         {
-          pallet: 'MultiBlockUnsigned';
+          pallet: 'MultiBlockElectionUnsigned';
           palletCall: {
             name: 'SubmitUnsigned';
             params: { pagedSolution: PalletElectionProviderMultiBlockPagedRawSolution };
@@ -13404,9 +13404,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
-   * Pallet `MultiBlockSigned`'s transaction calls
+   * Pallet `MultiBlockElectionSigned`'s transaction calls
    **/
-  multiBlockSigned: {
+  multiBlockElectionSigned: {
     /**
      * Register oneself for an upcoming signed election.
      *
@@ -13417,7 +13417,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       (claimedScore: SpNposElectionsElectionScore) => ChainSubmittableExtrinsic<
         Rv,
         {
-          pallet: 'MultiBlockSigned';
+          pallet: 'MultiBlockElectionSigned';
           palletCall: {
             name: 'Register';
             params: { claimedScore: SpNposElectionsElectionScore };
@@ -13447,7 +13447,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
-          pallet: 'MultiBlockSigned';
+          pallet: 'MultiBlockElectionSigned';
           palletCall: {
             name: 'SubmitPage';
             params: { page: number; maybeSolution: AssetHubWestendRuntimeStakingNposCompactSolution16 | undefined };
@@ -13469,7 +13469,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       () => ChainSubmittableExtrinsic<
         Rv,
         {
-          pallet: 'MultiBlockSigned';
+          pallet: 'MultiBlockElectionSigned';
           palletCall: {
             name: 'Bail';
           };
@@ -13496,7 +13496,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
-          pallet: 'MultiBlockSigned';
+          pallet: 'MultiBlockElectionSigned';
           palletCall: {
             name: 'ClearOldRoundData';
             params: { round: number; witnessPages: number };

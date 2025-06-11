@@ -1262,9 +1262,9 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
-   * Pallet `AssetHubStakingClient`'s constants
+   * Pallet `StakingAhClient`'s constants
    **/
-  assetHubStakingClient: {
+  stakingAhClient: {
     /**
      * Generic pallet constant
      **/

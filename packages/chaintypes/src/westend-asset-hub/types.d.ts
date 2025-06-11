@@ -94,10 +94,10 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'FastUnstake'; palletEvent: PalletFastUnstakeEvent }
   | { pallet: 'VoterList'; palletEvent: PalletBagsListEvent }
   | { pallet: 'DelegatedStaking'; palletEvent: PalletDelegatedStakingEvent }
-  | { pallet: 'StakingNextRcClient'; palletEvent: PalletStakingAsyncRcClientEvent }
-  | { pallet: 'MultiBlock'; palletEvent: PalletElectionProviderMultiBlockEvent }
-  | { pallet: 'MultiBlockVerifier'; palletEvent: PalletElectionProviderMultiBlockVerifierImplsPalletEvent }
-  | { pallet: 'MultiBlockSigned'; palletEvent: PalletElectionProviderMultiBlockSignedPalletEvent }
+  | { pallet: 'StakingRcClient'; palletEvent: PalletStakingAsyncRcClientEvent }
+  | { pallet: 'MultiBlockElection'; palletEvent: PalletElectionProviderMultiBlockEvent }
+  | { pallet: 'MultiBlockElectionVerifier'; palletEvent: PalletElectionProviderMultiBlockVerifierImplsPalletEvent }
+  | { pallet: 'MultiBlockElectionSigned'; palletEvent: PalletElectionProviderMultiBlockSignedPalletEvent }
   | { pallet: 'ConvictionVoting'; palletEvent: PalletConvictionVotingEvent }
   | { pallet: 'Referenda'; palletEvent: PalletReferendaEvent }
   | { pallet: 'Whitelist'; palletEvent: PalletWhitelistEvent }
@@ -3659,11 +3659,11 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
   | { pallet: 'FastUnstake'; palletCall: PalletFastUnstakeCall }
   | { pallet: 'VoterList'; palletCall: PalletBagsListCall }
-  | { pallet: 'StakingNextRcClient'; palletCall: PalletStakingAsyncRcClientCall }
-  | { pallet: 'MultiBlock'; palletCall: PalletElectionProviderMultiBlockCall }
-  | { pallet: 'MultiBlockVerifier'; palletCall: PalletElectionProviderMultiBlockVerifierImplsPalletCall }
-  | { pallet: 'MultiBlockUnsigned'; palletCall: PalletElectionProviderMultiBlockUnsignedPalletCall }
-  | { pallet: 'MultiBlockSigned'; palletCall: PalletElectionProviderMultiBlockSignedPalletCall }
+  | { pallet: 'StakingRcClient'; palletCall: PalletStakingAsyncRcClientCall }
+  | { pallet: 'MultiBlockElection'; palletCall: PalletElectionProviderMultiBlockCall }
+  | { pallet: 'MultiBlockElectionVerifier'; palletCall: PalletElectionProviderMultiBlockVerifierImplsPalletCall }
+  | { pallet: 'MultiBlockElectionUnsigned'; palletCall: PalletElectionProviderMultiBlockUnsignedPalletCall }
+  | { pallet: 'MultiBlockElectionSigned'; palletCall: PalletElectionProviderMultiBlockSignedPalletCall }
   | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCall }
   | { pallet: 'Referenda'; palletCall: PalletReferendaCall }
   | { pallet: 'Whitelist'; palletCall: PalletWhitelistCall }
@@ -3710,11 +3710,11 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
   | { pallet: 'FastUnstake'; palletCall: PalletFastUnstakeCallLike }
   | { pallet: 'VoterList'; palletCall: PalletBagsListCallLike }
-  | { pallet: 'StakingNextRcClient'; palletCall: PalletStakingAsyncRcClientCallLike }
-  | { pallet: 'MultiBlock'; palletCall: PalletElectionProviderMultiBlockCallLike }
-  | { pallet: 'MultiBlockVerifier'; palletCall: PalletElectionProviderMultiBlockVerifierImplsPalletCallLike }
-  | { pallet: 'MultiBlockUnsigned'; palletCall: PalletElectionProviderMultiBlockUnsignedPalletCallLike }
-  | { pallet: 'MultiBlockSigned'; palletCall: PalletElectionProviderMultiBlockSignedPalletCallLike }
+  | { pallet: 'StakingRcClient'; palletCall: PalletStakingAsyncRcClientCallLike }
+  | { pallet: 'MultiBlockElection'; palletCall: PalletElectionProviderMultiBlockCallLike }
+  | { pallet: 'MultiBlockElectionVerifier'; palletCall: PalletElectionProviderMultiBlockVerifierImplsPalletCallLike }
+  | { pallet: 'MultiBlockElectionUnsigned'; palletCall: PalletElectionProviderMultiBlockUnsignedPalletCallLike }
+  | { pallet: 'MultiBlockElectionSigned'; palletCall: PalletElectionProviderMultiBlockSignedPalletCallLike }
   | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCallLike }
   | { pallet: 'Referenda'; palletCall: PalletReferendaCallLike }
   | { pallet: 'Whitelist'; palletCall: PalletWhitelistCallLike }
@@ -17381,7 +17381,7 @@ export type AssetHubWestendRuntimeRuntimeHoldReason =
   | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
   | { type: 'Staking'; value: PalletStakingAsyncPalletHoldReason }
   | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
-  | { type: 'MultiBlockSigned'; value: PalletElectionProviderMultiBlockSignedPalletHoldReason };
+  | { type: 'MultiBlockElectionSigned'; value: PalletElectionProviderMultiBlockSignedPalletHoldReason };
 
 export type PalletPreimageHoldReason = 'Preimage';
 
@@ -21360,9 +21360,9 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'FastUnstake'; palletError: PalletFastUnstakeError }
   | { pallet: 'VoterList'; palletError: PalletBagsListError }
   | { pallet: 'DelegatedStaking'; palletError: PalletDelegatedStakingError }
-  | { pallet: 'StakingNextRcClient'; palletError: PalletStakingAsyncRcClientError }
-  | { pallet: 'MultiBlock'; palletError: PalletElectionProviderMultiBlockError }
-  | { pallet: 'MultiBlockSigned'; palletError: PalletElectionProviderMultiBlockSignedPalletError }
+  | { pallet: 'StakingRcClient'; palletError: PalletStakingAsyncRcClientError }
+  | { pallet: 'MultiBlockElection'; palletError: PalletElectionProviderMultiBlockError }
+  | { pallet: 'MultiBlockElectionSigned'; palletError: PalletElectionProviderMultiBlockSignedPalletError }
   | { pallet: 'ConvictionVoting'; palletError: PalletConvictionVotingError }
   | { pallet: 'Referenda'; palletError: PalletReferendaError }
   | { pallet: 'Whitelist'; palletError: PalletWhitelistError }

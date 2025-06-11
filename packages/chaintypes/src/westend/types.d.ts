@@ -93,7 +93,7 @@ export type WestendRuntimeRuntimeEvent =
   | { pallet: 'Crowdloan'; palletEvent: PolkadotRuntimeCommonCrowdloanPalletEvent }
   | { pallet: 'AssignedSlots'; palletEvent: PolkadotRuntimeCommonAssignedSlotsPalletEvent }
   | { pallet: 'Coretime'; palletEvent: PolkadotRuntimeParachainsCoretimePalletEvent }
-  | { pallet: 'AssetHubStakingClient'; palletEvent: PalletStakingAsyncAhClientEvent }
+  | { pallet: 'StakingAhClient'; palletEvent: PalletStakingAsyncAhClientEvent }
   | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent }
   | { pallet: 'XcmPallet'; palletEvent: PalletXcmEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
@@ -1594,7 +1594,7 @@ export type WestendRuntimeRuntimeCall =
   | { pallet: 'Crowdloan'; palletCall: PolkadotRuntimeCommonCrowdloanPalletCall }
   | { pallet: 'AssignedSlots'; palletCall: PolkadotRuntimeCommonAssignedSlotsPalletCall }
   | { pallet: 'Coretime'; palletCall: PolkadotRuntimeParachainsCoretimePalletCall }
-  | { pallet: 'AssetHubStakingClient'; palletCall: PalletStakingAsyncAhClientCall }
+  | { pallet: 'StakingAhClient'; palletCall: PalletStakingAsyncAhClientCall }
   | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCall }
   | { pallet: 'XcmPallet'; palletCall: PalletXcmCall }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
@@ -1649,7 +1649,7 @@ export type WestendRuntimeRuntimeCallLike =
   | { pallet: 'Crowdloan'; palletCall: PolkadotRuntimeCommonCrowdloanPalletCallLike }
   | { pallet: 'AssignedSlots'; palletCall: PolkadotRuntimeCommonAssignedSlotsPalletCallLike }
   | { pallet: 'Coretime'; palletCall: PolkadotRuntimeParachainsCoretimePalletCallLike }
-  | { pallet: 'AssetHubStakingClient'; palletCall: PalletStakingAsyncAhClientCallLike }
+  | { pallet: 'StakingAhClient'; palletCall: PalletStakingAsyncAhClientCallLike }
   | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCallLike }
   | { pallet: 'XcmPallet'; palletCall: PalletXcmCallLike }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
@@ -16484,7 +16484,7 @@ export type WestendRuntimeRuntimeError =
   | { pallet: 'Crowdloan'; palletError: PolkadotRuntimeCommonCrowdloanPalletError }
   | { pallet: 'AssignedSlots'; palletError: PolkadotRuntimeCommonAssignedSlotsPalletError }
   | { pallet: 'Coretime'; palletError: PolkadotRuntimeParachainsCoretimePalletError }
-  | { pallet: 'AssetHubStakingClient'; palletError: PalletStakingAsyncAhClientError }
+  | { pallet: 'StakingAhClient'; palletError: PalletStakingAsyncAhClientError }
   | { pallet: 'MultiBlockMigrations'; palletError: PalletMigrationsError }
   | { pallet: 'XcmPallet'; palletError: PalletXcmError }
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }

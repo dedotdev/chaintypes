@@ -3594,9 +3594,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
-   * Pallet `AssetHubStakingClient`'s storage queries
+   * Pallet `StakingAhClient`'s storage queries
    **/
-  assetHubStakingClient: {
+  stakingAhClient: {
     /**
      * The queued validator sets for a given planning session index.
      *

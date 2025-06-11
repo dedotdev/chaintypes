@@ -1318,18 +1318,18 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
-   * Pallet `StakingNextRcClient`'s constants
+   * Pallet `StakingRcClient`'s constants
    **/
-  stakingNextRcClient: {
+  stakingRcClient: {
     /**
      * Generic pallet constant
      **/
     [name: string]: any;
   };
   /**
-   * Pallet `MultiBlock`'s constants
+   * Pallet `MultiBlockElection`'s constants
    **/
-  multiBlock: {
+  multiBlockElection: {
     /**
      * Duration of the unsigned phase.
      **/
@@ -1375,9 +1375,9 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
-   * Pallet `MultiBlockVerifier`'s constants
+   * Pallet `MultiBlockElectionVerifier`'s constants
    **/
-  multiBlockVerifier: {
+  multiBlockElectionVerifier: {
     /**
      * The minimum amount of improvement to the solution score that defines a solution as
      * "better".
@@ -1410,18 +1410,18 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
-   * Pallet `MultiBlockUnsigned`'s constants
+   * Pallet `MultiBlockElectionUnsigned`'s constants
    **/
-  multiBlockUnsigned: {
+  multiBlockElectionUnsigned: {
     /**
      * Generic pallet constant
      **/
     [name: string]: any;
   };
   /**
-   * Pallet `MultiBlockSigned`'s constants
+   * Pallet `MultiBlockElectionSigned`'s constants
    **/
-  multiBlockSigned: {
+  multiBlockElectionSigned: {
     /**
      * Generic pallet constant
      **/

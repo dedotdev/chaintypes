@@ -2518,9 +2518,9 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
-   * Pallet `AssetHubStakingClient`'s errors
+   * Pallet `StakingAhClient`'s errors
    **/
-  assetHubStakingClient: {
+  stakingAhClient: {
     /**
      * Could not process incoming message because incoming messages are blocked.
      **/

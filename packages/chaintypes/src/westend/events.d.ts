@@ -2755,15 +2755,15 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
-   * Pallet `AssetHubStakingClient`'s events
+   * Pallet `StakingAhClient`'s events
    **/
-  assetHubStakingClient: {
+  stakingAhClient: {
     /**
      * A new validator set has been received.
      **/
     ValidatorSetReceived: GenericPalletEvent<
       Rv,
-      'AssetHubStakingClient',
+      'StakingAhClient',
       'ValidatorSetReceived',
       { id: number; newValidatorSetCount: number; pruneUpTo?: number | undefined; leftover: boolean }
     >;
@@ -2774,19 +2774,19 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * Note that this event is more resembling an error, but we use an event because in this
      * pallet we need to mutate storage upon some failures.
      **/
-    CouldNotMergeAndDropped: GenericPalletEvent<Rv, 'AssetHubStakingClient', 'CouldNotMergeAndDropped', null>;
+    CouldNotMergeAndDropped: GenericPalletEvent<Rv, 'StakingAhClient', 'CouldNotMergeAndDropped', null>;
 
     /**
      * The validator set received is way too small, as per
      * [`Config::MinimumValidatorSetSize`].
      **/
-    SetTooSmallAndDropped: GenericPalletEvent<Rv, 'AssetHubStakingClient', 'SetTooSmallAndDropped', null>;
+    SetTooSmallAndDropped: GenericPalletEvent<Rv, 'StakingAhClient', 'SetTooSmallAndDropped', null>;
 
     /**
      * Something occurred that should never happen under normal operation. Logged as an event
      * for fail-safe observability.
      **/
-    Unexpected: GenericPalletEvent<Rv, 'AssetHubStakingClient', 'Unexpected', PalletStakingAsyncAhClientUnexpectedKind>;
+    Unexpected: GenericPalletEvent<Rv, 'StakingAhClient', 'Unexpected', PalletStakingAsyncAhClientUnexpectedKind>;
 
     /**
      * Generic pallet event

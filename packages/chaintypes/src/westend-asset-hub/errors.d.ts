@@ -2748,9 +2748,9 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
-   * Pallet `StakingNextRcClient`'s errors
+   * Pallet `StakingRcClient`'s errors
    **/
-  stakingNextRcClient: {
+  stakingRcClient: {
     /**
      * The session report was not valid, due to a bad end index.
      **/
@@ -2762,9 +2762,9 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
-   * Pallet `MultiBlock`'s errors
+   * Pallet `MultiBlockElection`'s errors
    **/
-  multiBlock: {
+  multiBlockElection: {
     /**
      * Triggering the `Fallback` failed.
      **/
@@ -2786,9 +2786,9 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
-   * Pallet `MultiBlockSigned`'s errors
+   * Pallet `MultiBlockElectionSigned`'s errors
    **/
-  multiBlockSigned: {
+  multiBlockElectionSigned: {
     /**
      * The phase is not signed.
      **/

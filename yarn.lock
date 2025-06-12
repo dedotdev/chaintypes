@@ -2238,7 +2238,7 @@ __metadata:
     lerna: "npm:^7.4.2"
     prettier: "npm:^3.3.3"
     prettier-plugin-organize-imports: "npm:^3.2.3"
-    tsx: "npm:^4.19.3"
+    tsx: "npm:^4.20.2"
     typescript: "npm:5.4.5"
   languageName: unknown
   linkType: soft
@@ -6137,9 +6137,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tsx@npm:^4.19.3":
-  version: 4.19.3
-  resolution: "tsx@npm:4.19.3"
+"tsx@npm:^4.20.2":
+  version: 4.20.2
+  resolution: "tsx@npm:4.20.2"
   dependencies:
     esbuild: "npm:~0.25.0"
     fsevents: "npm:~2.3.3"
@@ -6149,7 +6149,7 @@ __metadata:
       optional: true
   bin:
     tsx: dist/cli.mjs
-  checksum: 10/a7e7f41e5593b242772050abacf51908aa8a6d4d9ea6c29e80161eb557d664a0f4cc8d38d0c8c151fddb6c2e9e337af27ba0e269c9707ccd7eeff0e0ea7fcf98
+  checksum: 10/6e7636d9c7f98e6789a61379a01a8b3bc5224976b0f520e4371c85ae3d27dd689f3a232bbb17dcd394de12f9e1903f0e5e4b8742340755511fdf3966af0e1006
   languageName: node
   linkType: hard
 

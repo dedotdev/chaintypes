@@ -2,7 +2,6 @@
 
 import type { GenericChainEvents, GenericPalletEvent, RpcVersion } from 'dedot/types';
 import type {
-  DispatchInfo,
   DispatchError,
   AccountId32,
   H256,
@@ -14,6 +13,7 @@ import type {
   FixedU128,
 } from 'dedot/codecs';
 import type {
+  FrameSystemDispatchEventInfo,
   FrameSupportTokensMiscBalanceStatus,
   PalletStakingRewardDestination,
   PalletStakingValidatorPrefs,
@@ -34,7 +34,7 @@ import type {
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
-  PolkadotPrimitivesV8CandidateReceipt,
+  PolkadotPrimitivesVstagingCandidateReceiptV2,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotPrimitivesV8CoreIndex,
   PolkadotPrimitivesV8GroupIndex,
@@ -46,14 +46,14 @@ import type {
   PolkadotRuntimeParachainsDisputesDisputeResult,
   PalletStateTrieMigrationMigrationCompute,
   PalletStateTrieMigrationError,
-  StagingXcmV4TraitsOutcome,
-  StagingXcmV4Location,
-  StagingXcmV4Xcm,
-  StagingXcmV4Response,
+  StagingXcmV5TraitsOutcome,
+  StagingXcmV5Location,
+  StagingXcmV5Xcm,
+  StagingXcmV5Response,
   SpWeightsWeightV2Weight,
   XcmVersionedAssets,
-  StagingXcmV4AssetAssets,
-  XcmV3TraitsError,
+  StagingXcmV5AssetAssets,
+  XcmV5TraitsError,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
 } from './types.js';
@@ -66,7 +66,12 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * An extrinsic completed successfully.
      **/
-    ExtrinsicSuccess: GenericPalletEvent<Rv, 'System', 'ExtrinsicSuccess', { dispatchInfo: DispatchInfo }>;
+    ExtrinsicSuccess: GenericPalletEvent<
+      Rv,
+      'System',
+      'ExtrinsicSuccess',
+      { dispatchInfo: FrameSystemDispatchEventInfo }
+    >;
 
     /**
      * An extrinsic failed.
@@ -75,7 +80,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'System',
       'ExtrinsicFailed',
-      { dispatchError: DispatchError; dispatchInfo: DispatchInfo }
+      { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo }
     >;
 
     /**
@@ -484,13 +489,13 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Chilled: GenericPalletEvent<Rv, 'Staking', 'Chilled', { stash: AccountId32 }>;
 
     /**
-     * The stakers' rewards are getting paid.
+     * A Page of stakers rewards are getting paid. `next` is `None` if all pages are claimed.
      **/
     PayoutStarted: GenericPalletEvent<
       Rv,
       'Staking',
       'PayoutStarted',
-      { eraIndex: number; validatorStash: AccountId32 }
+      { eraIndex: number; validatorStash: AccountId32; page: number; next?: number | undefined }
     >;
 
     /**
@@ -1757,7 +1762,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateBacked',
       [
-        PolkadotPrimitivesV8CandidateReceipt,
+        PolkadotPrimitivesVstagingCandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
         PolkadotPrimitivesV8CoreIndex,
         PolkadotPrimitivesV8GroupIndex,
@@ -1772,7 +1777,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateIncluded',
       [
-        PolkadotPrimitivesV8CandidateReceipt,
+        PolkadotPrimitivesVstagingCandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
         PolkadotPrimitivesV8CoreIndex,
         PolkadotPrimitivesV8GroupIndex,
@@ -1787,7 +1792,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'ParaInclusion',
       'CandidateTimedOut',
       [
-        PolkadotPrimitivesV8CandidateReceipt,
+        PolkadotPrimitivesVstagingCandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
         PolkadotPrimitivesV8CoreIndex,
       ]
@@ -2339,7 +2344,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * Execution of an XCM message was attempted.
      **/
-    Attempted: GenericPalletEvent<Rv, 'XcmPallet', 'Attempted', { outcome: StagingXcmV4TraitsOutcome }>;
+    Attempted: GenericPalletEvent<Rv, 'XcmPallet', 'Attempted', { outcome: StagingXcmV5TraitsOutcome }>;
 
     /**
      * A XCM message was sent.
@@ -2349,9 +2354,9 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'XcmPallet',
       'Sent',
       {
-        origin: StagingXcmV4Location;
-        destination: StagingXcmV4Location;
-        message: StagingXcmV4Xcm;
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       }
     >;
@@ -2365,7 +2370,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmPallet',
       'UnexpectedResponse',
-      { origin: StagingXcmV4Location; queryId: bigint }
+      { origin: StagingXcmV5Location; queryId: bigint }
     >;
 
     /**
@@ -2376,7 +2381,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmPallet',
       'ResponseReady',
-      { queryId: bigint; response: StagingXcmV4Response }
+      { queryId: bigint; response: StagingXcmV5Response }
     >;
 
     /**
@@ -2440,7 +2445,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmPallet',
       'InvalidResponder',
-      { origin: StagingXcmV4Location; queryId: bigint; expectedLocation?: StagingXcmV4Location | undefined }
+      { origin: StagingXcmV5Location; queryId: bigint; expectedLocation?: StagingXcmV5Location | undefined }
     >;
 
     /**
@@ -2456,7 +2461,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmPallet',
       'InvalidResponderVersion',
-      { origin: StagingXcmV4Location; queryId: bigint }
+      { origin: StagingXcmV5Location; queryId: bigint }
     >;
 
     /**
@@ -2471,7 +2476,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmPallet',
       'AssetsTrapped',
-      { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets }
+      { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets }
     >;
 
     /**
@@ -2483,7 +2488,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmPallet',
       'VersionChangeNotified',
-      { destination: StagingXcmV4Location; result: number; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; result: number; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -2494,7 +2499,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmPallet',
       'SupportedVersionChanged',
-      { location: StagingXcmV4Location; version: number }
+      { location: StagingXcmV5Location; version: number }
     >;
 
     /**
@@ -2505,7 +2510,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmPallet',
       'NotifyTargetSendFail',
-      { location: StagingXcmV4Location; queryId: bigint; error: XcmV3TraitsError }
+      { location: StagingXcmV5Location; queryId: bigint; error: XcmV5TraitsError }
     >;
 
     /**
@@ -2532,7 +2537,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmPallet',
       'InvalidQuerierVersion',
-      { origin: StagingXcmV4Location; queryId: bigint }
+      { origin: StagingXcmV5Location; queryId: bigint }
     >;
 
     /**
@@ -2545,10 +2550,10 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'XcmPallet',
       'InvalidQuerier',
       {
-        origin: StagingXcmV4Location;
+        origin: StagingXcmV5Location;
         queryId: bigint;
-        expectedQuerier: StagingXcmV4Location;
-        maybeActualQuerier?: StagingXcmV4Location | undefined;
+        expectedQuerier: StagingXcmV5Location;
+        maybeActualQuerier?: StagingXcmV5Location | undefined;
       }
     >;
 
@@ -2560,7 +2565,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmPallet',
       'VersionNotifyStarted',
-      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -2570,7 +2575,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmPallet',
       'VersionNotifyRequested',
-      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -2581,7 +2586,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmPallet',
       'VersionNotifyUnrequested',
-      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -2591,7 +2596,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmPallet',
       'FeesPaid',
-      { paying: StagingXcmV4Location; fees: StagingXcmV4AssetAssets }
+      { paying: StagingXcmV5Location; fees: StagingXcmV5AssetAssets }
     >;
 
     /**
@@ -2601,7 +2606,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmPallet',
       'AssetsClaimed',
-      { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets }
+      { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets }
     >;
 
     /**

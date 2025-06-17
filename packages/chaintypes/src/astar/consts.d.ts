@@ -1187,4 +1187,13 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      **/
     [name: string]: any;
   };
+  /**
+   * Pallet `DemocracyMBM`'s constants
+   **/
+  democracyMBM: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
 }

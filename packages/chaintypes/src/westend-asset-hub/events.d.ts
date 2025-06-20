@@ -54,7 +54,6 @@ import type {
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
-  PolkadotParachainPrimitivesPrimitivesId,
   AssetHubWestendRuntimeRuntimeHoldReason,
   PalletAhMigratorMigrationStage,
   PalletAhMigratorPalletEventName,
@@ -4691,7 +4690,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'AhOps',
       'LeaseUnreserveRemaining',
-      { depositor: AccountId32; paraId: PolkadotParachainPrimitivesPrimitivesId; remaining: bigint }
+      { depositor: AccountId32; paraId: number; remaining: bigint }
     >;
 
     /**
@@ -4701,7 +4700,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'AhOps',
       'CrowdloanUnreserveRemaining',
-      { depositor: AccountId32; paraId: PolkadotParachainPrimitivesPrimitivesId; remaining: bigint }
+      { depositor: AccountId32; paraId: number; remaining: bigint }
     >;
 
     /**
@@ -4716,7 +4715,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
         /**
          * The parachain ID that had its account migrated.
          **/
-        paraId: PolkadotParachainPrimitivesPrimitivesId;
+        paraId: number;
 
         /**
          * The old account that was migrated out of.
@@ -4727,6 +4726,11 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
          * The new account that was migrated into.
          **/
         to: AccountId32;
+
+        /**
+         * Set if this account was derived from a para sovereign account.
+         **/
+        derivationIndex?: number | undefined;
       }
     >;
 

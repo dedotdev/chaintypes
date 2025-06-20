@@ -91,7 +91,6 @@ import type {
   PalletConvictionVotingConviction,
   FrameSupportPreimagesBounded,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
-  PolkadotParachainPrimitivesPrimitivesId,
   AssetHubWestendRuntimeRuntimeHoldReason,
   PalletRcMigratorAccountsAccount,
   PalletRcMigratorMultisigRcMultisig,
@@ -14479,25 +14478,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * @param {number} block
      * @param {AccountId32Like | undefined} depositor
-     * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
+     * @param {number} paraId
      **/
     unreserveLeaseDeposit: GenericTxCall<
       Rv,
       (
         block: number,
         depositor: AccountId32Like | undefined,
-        paraId: PolkadotParachainPrimitivesPrimitivesId,
+        paraId: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'AhOps';
           palletCall: {
             name: 'UnreserveLeaseDeposit';
-            params: {
-              block: number;
-              depositor: AccountId32Like | undefined;
-              paraId: PolkadotParachainPrimitivesPrimitivesId;
-            };
+            params: { block: number; depositor: AccountId32Like | undefined; paraId: number };
           };
         }
       >
@@ -14514,25 +14509,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * @param {number} block
      * @param {AccountId32Like | undefined} depositor
-     * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
+     * @param {number} paraId
      **/
     withdrawCrowdloanContribution: GenericTxCall<
       Rv,
       (
         block: number,
         depositor: AccountId32Like | undefined,
-        paraId: PolkadotParachainPrimitivesPrimitivesId,
+        paraId: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'AhOps';
           palletCall: {
             name: 'WithdrawCrowdloanContribution';
-            params: {
-              block: number;
-              depositor: AccountId32Like | undefined;
-              paraId: PolkadotParachainPrimitivesPrimitivesId;
-            };
+            params: { block: number; depositor: AccountId32Like | undefined; paraId: number };
           };
         }
       >
@@ -14550,25 +14541,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * @param {number} block
      * @param {AccountId32Like | undefined} depositor
-     * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
+     * @param {number} paraId
      **/
     unreserveCrowdloanReserve: GenericTxCall<
       Rv,
       (
         block: number,
         depositor: AccountId32Like | undefined,
-        paraId: PolkadotParachainPrimitivesPrimitivesId,
+        paraId: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'AhOps';
           palletCall: {
             name: 'UnreserveCrowdloanReserve';
-            params: {
-              block: number;
-              depositor: AccountId32Like | undefined;
-              paraId: PolkadotParachainPrimitivesPrimitivesId;
-            };
+            params: { block: number; depositor: AccountId32Like | undefined; paraId: number };
           };
         }
       >
@@ -14597,6 +14584,36 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'MigrateParachainSovereignAcc';
             params: { from: AccountId32Like; to: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Try to migrate a parachain sovereign child account to its respective sibling.
+     *
+     * Takes the old and new account and migrates it only if they are as expected. An event of
+     * `SovereignMigrated` will be emitted if the account was migrated successfully.
+     *
+     * Callable by any signed origin.
+     *
+     * @param {AccountId32Like} from
+     * @param {AccountId32Like} to
+     * @param {[AccountId32Like, number]} derivation
+     **/
+    migrateParachainSovereignDerivedAcc: GenericTxCall<
+      Rv,
+      (
+        from: AccountId32Like,
+        to: AccountId32Like,
+        derivation: [AccountId32Like, number],
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'AhOps';
+          palletCall: {
+            name: 'MigrateParachainSovereignDerivedAcc';
+            params: { from: AccountId32Like; to: AccountId32Like; derivation: [AccountId32Like, number] };
           };
         }
       >

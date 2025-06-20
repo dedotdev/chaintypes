@@ -17249,10 +17249,7 @@ export type PalletAhOpsCall =
    *
    * Solo bidder accounts that won lease auctions can use this to unreserve their amount.
    **/
-  | {
-      name: 'UnreserveLeaseDeposit';
-      params: { block: number; depositor?: AccountId32 | undefined; paraId: PolkadotParachainPrimitivesPrimitivesId };
-    }
+  | { name: 'UnreserveLeaseDeposit'; params: { block: number; depositor?: AccountId32 | undefined; paraId: number } }
   /**
    * Withdraw the contribution of a finished crowdloan.
    *
@@ -17264,7 +17261,7 @@ export type PalletAhOpsCall =
    **/
   | {
       name: 'WithdrawCrowdloanContribution';
-      params: { block: number; depositor?: AccountId32 | undefined; paraId: PolkadotParachainPrimitivesPrimitivesId };
+      params: { block: number; depositor?: AccountId32 | undefined; paraId: number };
     }
   /**
    * Unreserve the deposit that was taken for creating a crowdloan.
@@ -17278,7 +17275,7 @@ export type PalletAhOpsCall =
    **/
   | {
       name: 'UnreserveCrowdloanReserve';
-      params: { block: number; depositor?: AccountId32 | undefined; paraId: PolkadotParachainPrimitivesPrimitivesId };
+      params: { block: number; depositor?: AccountId32 | undefined; paraId: number };
     }
   /**
    * Try to migrate a parachain sovereign child account to its respective sibling.
@@ -17289,6 +17286,18 @@ export type PalletAhOpsCall =
    * Callable by any signed origin.
    **/
   | { name: 'MigrateParachainSovereignAcc'; params: { from: AccountId32; to: AccountId32 } }
+  /**
+   * Try to migrate a parachain sovereign child account to its respective sibling.
+   *
+   * Takes the old and new account and migrates it only if they are as expected. An event of
+   * `SovereignMigrated` will be emitted if the account was migrated successfully.
+   *
+   * Callable by any signed origin.
+   **/
+  | {
+      name: 'MigrateParachainSovereignDerivedAcc';
+      params: { from: AccountId32; to: AccountId32; derivation: [AccountId32, number] };
+    }
   /**
    * Force unreserve a named or unnamed reserve.
    **/
@@ -17310,11 +17319,7 @@ export type PalletAhOpsCallLike =
    **/
   | {
       name: 'UnreserveLeaseDeposit';
-      params: {
-        block: number;
-        depositor?: AccountId32Like | undefined;
-        paraId: PolkadotParachainPrimitivesPrimitivesId;
-      };
+      params: { block: number; depositor?: AccountId32Like | undefined; paraId: number };
     }
   /**
    * Withdraw the contribution of a finished crowdloan.
@@ -17327,11 +17332,7 @@ export type PalletAhOpsCallLike =
    **/
   | {
       name: 'WithdrawCrowdloanContribution';
-      params: {
-        block: number;
-        depositor?: AccountId32Like | undefined;
-        paraId: PolkadotParachainPrimitivesPrimitivesId;
-      };
+      params: { block: number; depositor?: AccountId32Like | undefined; paraId: number };
     }
   /**
    * Unreserve the deposit that was taken for creating a crowdloan.
@@ -17345,11 +17346,7 @@ export type PalletAhOpsCallLike =
    **/
   | {
       name: 'UnreserveCrowdloanReserve';
-      params: {
-        block: number;
-        depositor?: AccountId32Like | undefined;
-        paraId: PolkadotParachainPrimitivesPrimitivesId;
-      };
+      params: { block: number; depositor?: AccountId32Like | undefined; paraId: number };
     }
   /**
    * Try to migrate a parachain sovereign child account to its respective sibling.
@@ -17360,6 +17357,18 @@ export type PalletAhOpsCallLike =
    * Callable by any signed origin.
    **/
   | { name: 'MigrateParachainSovereignAcc'; params: { from: AccountId32Like; to: AccountId32Like } }
+  /**
+   * Try to migrate a parachain sovereign child account to its respective sibling.
+   *
+   * Takes the old and new account and migrates it only if they are as expected. An event of
+   * `SovereignMigrated` will be emitted if the account was migrated successfully.
+   *
+   * Callable by any signed origin.
+   **/
+  | {
+      name: 'MigrateParachainSovereignDerivedAcc';
+      params: { from: AccountId32Like; to: AccountId32Like; derivation: [AccountId32Like, number] };
+    }
   /**
    * Force unreserve a named or unnamed reserve.
    **/
@@ -18100,17 +18109,11 @@ export type PalletAhOpsEvent =
   /**
    * Some lease reserve could not be unreserved and needs manual cleanup.
    **/
-  | {
-      name: 'LeaseUnreserveRemaining';
-      data: { depositor: AccountId32; paraId: PolkadotParachainPrimitivesPrimitivesId; remaining: bigint };
-    }
+  | { name: 'LeaseUnreserveRemaining'; data: { depositor: AccountId32; paraId: number; remaining: bigint } }
   /**
    * Some amount for a crowdloan reserve could not be unreserved and needs manual cleanup.
    **/
-  | {
-      name: 'CrowdloanUnreserveRemaining';
-      data: { depositor: AccountId32; paraId: PolkadotParachainPrimitivesPrimitivesId; remaining: bigint };
-    }
+  | { name: 'CrowdloanUnreserveRemaining'; data: { depositor: AccountId32; paraId: number; remaining: bigint } }
   /**
    * A sovereign parachain account has been migrated from its child to sibling
    * representation.
@@ -18121,7 +18124,7 @@ export type PalletAhOpsEvent =
         /**
          * The parachain ID that had its account migrated.
          **/
-        paraId: PolkadotParachainPrimitivesPrimitivesId;
+        paraId: number;
 
         /**
          * The old account that was migrated out of.
@@ -18132,6 +18135,11 @@ export type PalletAhOpsEvent =
          * The new account that was migrated into.
          **/
         to: AccountId32;
+
+        /**
+         * Set if this account was derived from a para sovereign account.
+         **/
+        derivationIndex?: number | undefined;
       };
     }
   /**
@@ -20974,6 +20982,10 @@ export type PalletAhOpsError =
    **/
   | 'WrongSovereignTranslation'
   /**
+   * The account is not a derived account.
+   **/
+  | 'WrongDerivedTranslation'
+  /**
    * Account cannot be migrated since it is not a sovereign parachain account.
    **/
   | 'NotSovereign'
@@ -21002,9 +21014,21 @@ export type PalletAhOpsError =
    **/
   | 'FailedToSetFreeze'
   /**
+   * Failed to transfer a balance.
+   **/
+  | 'FailedToTransfer'
+  /**
+   * Failed to reserve a balance.
+   **/
+  | 'FailedToReserve'
+  /**
    * Failed to unreserve the full balance.
    **/
-  | 'CannotUnreserve';
+  | 'CannotUnreserve'
+  /**
+   * The from and to accounts are identical.
+   **/
+  | 'AccountIdentical';
 
 export type PalletAhMigratorBalancesBefore = { checkingAccount: bigint; totalIssuance: bigint };
 

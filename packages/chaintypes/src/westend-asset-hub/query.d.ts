@@ -3591,13 +3591,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * - The account that will have the balance unreserved.
      * - The balance to be unreserved.
      *
-     * @param {[number, PolkadotParachainPrimitivesPrimitivesId, AccountId32Like]} arg
+     * @param {[number, number, AccountId32Like]} arg
      * @param {Callback<bigint | undefined> =} callback
      **/
     rcLeaseReserve: GenericStorageQuery<
       Rv,
-      (arg: [number, PolkadotParachainPrimitivesPrimitivesId, AccountId32Like]) => bigint | undefined,
-      [number, PolkadotParachainPrimitivesPrimitivesId, AccountId32]
+      (arg: [number, number, AccountId32Like]) => bigint | undefined,
+      [number, number, AccountId32]
     >;
 
     /**
@@ -3614,13 +3614,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * The value is (fund_pot, balance). The contribution pot is the second key in the
      * `RcCrowdloanContribution` storage.
      *
-     * @param {[number, PolkadotParachainPrimitivesPrimitivesId, AccountId32Like]} arg
+     * @param {[number, number, AccountId32Like]} arg
      * @param {Callback<[AccountId32, bigint] | undefined> =} callback
      **/
     rcCrowdloanContribution: GenericStorageQuery<
       Rv,
-      (arg: [number, PolkadotParachainPrimitivesPrimitivesId, AccountId32Like]) => [AccountId32, bigint] | undefined,
-      [number, PolkadotParachainPrimitivesPrimitivesId, AccountId32]
+      (arg: [number, number, AccountId32Like]) => [AccountId32, bigint] | undefined,
+      [number, number, AccountId32]
     >;
 
     /**
@@ -3634,13 +3634,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * - The para_id of the crowdloan
      * - The account that will have the balance unreserved
      *
-     * @param {[number, PolkadotParachainPrimitivesPrimitivesId, AccountId32Like]} arg
+     * @param {[number, number, AccountId32Like]} arg
      * @param {Callback<bigint | undefined> =} callback
      **/
     rcCrowdloanReserve: GenericStorageQuery<
       Rv,
-      (arg: [number, PolkadotParachainPrimitivesPrimitivesId, AccountId32Like]) => bigint | undefined,
-      [number, PolkadotParachainPrimitivesPrimitivesId, AccountId32]
+      (arg: [number, number, AccountId32Like]) => bigint | undefined,
+      [number, number, AccountId32]
     >;
 
     /**

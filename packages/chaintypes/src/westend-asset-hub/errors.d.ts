@@ -3175,6 +3175,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     WrongSovereignTranslation: GenericPalletError<Rv>;
 
     /**
+     * The account is not a derived account.
+     **/
+    WrongDerivedTranslation: GenericPalletError<Rv>;
+
+    /**
      * Account cannot be migrated since it is not a sovereign parachain account.
      **/
     NotSovereign: GenericPalletError<Rv>;
@@ -3210,9 +3215,24 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     FailedToSetFreeze: GenericPalletError<Rv>;
 
     /**
+     * Failed to transfer a balance.
+     **/
+    FailedToTransfer: GenericPalletError<Rv>;
+
+    /**
+     * Failed to reserve a balance.
+     **/
+    FailedToReserve: GenericPalletError<Rv>;
+
+    /**
      * Failed to unreserve the full balance.
      **/
     CannotUnreserve: GenericPalletError<Rv>;
+
+    /**
+     * The from and to accounts are identical.
+     **/
+    AccountIdentical: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

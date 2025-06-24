@@ -13,6 +13,9 @@ import type {
   BytesLike,
   AccountId32Like,
   AccountId32,
+  U256,
+  H160,
+  FixedBytes,
 } from 'dedot/codecs';
 import type {
   SpConsensusSlotsSlotDuration,
@@ -44,6 +47,16 @@ import type {
   XcmRuntimeApisConversionsError,
   AssetsCommonRuntimeApiFungiblesAccessError,
   CumulusPrimitivesCoreCollationInfo,
+  PalletRevivePrimitivesContractResult,
+  PalletRevivePrimitivesContractResultInstantiateReturnValue,
+  PalletRevivePrimitivesCode,
+  PalletRevivePrimitivesEthTransactInfo,
+  PalletRevivePrimitivesEthTransactError,
+  PalletReviveEvmApiRpcTypesGenGenericTransaction,
+  PalletRevivePrimitivesCodeUploadReturnValue,
+  PalletRevivePrimitivesContractAccessError,
+  PalletReviveEvmApiDebugRpcTypesTrace,
+  PalletReviveEvmApiDebugRpcTypesTracerType,
 } from './types.js';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
@@ -79,7 +92,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     /**
      * Whether it is legal to extend the chain, assuming the given block is the most
      * recently included one as-of the relay parent that will be built against, and
-     * the given slot.
+     * the given relay chain slot.
      *
      * This should be consistent with the logic the runtime uses when validating blocks to
      * avoid issues.
@@ -717,6 +730,209 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: GenesisBuilder_preset_names
      **/
     presetNames: GenericRuntimeApiMethod<Rv, () => Promise<Array<string>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: ReviveApi - 0x8c403e5c4a9fd442
+   **/
+  reviveApi: {
+    /**
+     * Returns the block gas limit.
+     *
+     * @callname: ReviveApi_block_gas_limit
+     **/
+    blockGasLimit: GenericRuntimeApiMethod<Rv, () => Promise<U256>>;
+
+    /**
+     * Returns the free balance of the given `[H160]` address, using EVM decimals.
+     *
+     * @callname: ReviveApi_balance
+     * @param {H160} address
+     **/
+    balance: GenericRuntimeApiMethod<Rv, (address: H160) => Promise<U256>>;
+
+    /**
+     * Returns the gas price.
+     *
+     * @callname: ReviveApi_gas_price
+     **/
+    gasPrice: GenericRuntimeApiMethod<Rv, () => Promise<U256>>;
+
+    /**
+     * Returns the nonce of the given `[H160]` address.
+     *
+     * @callname: ReviveApi_nonce
+     * @param {H160} address
+     **/
+    nonce: GenericRuntimeApiMethod<Rv, (address: H160) => Promise<number>>;
+
+    /**
+     * Perform a call from a specified account to a given contract.
+     *
+     * See [`crate::Pallet::bare_call`].
+     *
+     * @callname: ReviveApi_call
+     * @param {AccountId32Like} origin
+     * @param {H160} dest
+     * @param {bigint} value
+     * @param {SpWeightsWeightV2Weight | undefined} gas_limit
+     * @param {bigint | undefined} storage_deposit_limit
+     * @param {BytesLike} input_data
+     **/
+    call: GenericRuntimeApiMethod<
+      Rv,
+      (
+        origin: AccountId32Like,
+        dest: H160,
+        value: bigint,
+        gasLimit: SpWeightsWeightV2Weight | undefined,
+        storageDepositLimit: bigint | undefined,
+        inputData: BytesLike,
+      ) => Promise<PalletRevivePrimitivesContractResult>
+    >;
+
+    /**
+     * Instantiate a new contract.
+     *
+     * See `[crate::Pallet::bare_instantiate]`.
+     *
+     * @callname: ReviveApi_instantiate
+     * @param {AccountId32Like} origin
+     * @param {bigint} value
+     * @param {SpWeightsWeightV2Weight | undefined} gas_limit
+     * @param {bigint | undefined} storage_deposit_limit
+     * @param {PalletRevivePrimitivesCode} code
+     * @param {BytesLike} data
+     * @param {FixedBytes<32> | undefined} salt
+     **/
+    instantiate: GenericRuntimeApiMethod<
+      Rv,
+      (
+        origin: AccountId32Like,
+        value: bigint,
+        gasLimit: SpWeightsWeightV2Weight | undefined,
+        storageDepositLimit: bigint | undefined,
+        code: PalletRevivePrimitivesCode,
+        data: BytesLike,
+        salt?: FixedBytes<32> | undefined,
+      ) => Promise<PalletRevivePrimitivesContractResultInstantiateReturnValue>
+    >;
+
+    /**
+     * Perform an Ethereum call.
+     *
+     * See [`crate::Pallet::bare_eth_transact`]
+     *
+     * @callname: ReviveApi_eth_transact
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
+     **/
+    ethTransact: GenericRuntimeApiMethod<
+      Rv,
+      (
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+      ) => Promise<Result<PalletRevivePrimitivesEthTransactInfo, PalletRevivePrimitivesEthTransactError>>
+    >;
+
+    /**
+     * Upload new code without instantiating a contract from it.
+     *
+     * See [`crate::Pallet::bare_upload_code`].
+     *
+     * @callname: ReviveApi_upload_code
+     * @param {AccountId32Like} origin
+     * @param {BytesLike} code
+     * @param {bigint | undefined} storage_deposit_limit
+     **/
+    uploadCode: GenericRuntimeApiMethod<
+      Rv,
+      (
+        origin: AccountId32Like,
+        code: BytesLike,
+        storageDepositLimit?: bigint | undefined,
+      ) => Promise<Result<PalletRevivePrimitivesCodeUploadReturnValue, DispatchError>>
+    >;
+
+    /**
+     * Query a given storage key in a given contract.
+     *
+     * Returns `Ok(Some(Vec<u8>))` if the storage value exists under the given key in the
+     * specified account and `Ok(None)` if it doesn't. If the account specified by the address
+     * doesn't exist, or doesn't have a contract then `Err` is returned.
+     *
+     * @callname: ReviveApi_get_storage
+     * @param {H160} address
+     * @param {FixedBytes<32>} key
+     **/
+    getStorage: GenericRuntimeApiMethod<
+      Rv,
+      (
+        address: H160,
+        key: FixedBytes<32>,
+      ) => Promise<Result<Bytes | undefined, PalletRevivePrimitivesContractAccessError>>
+    >;
+
+    /**
+     * Traces the execution of an entire block and returns call traces.
+     *
+     * This is intended to be called through `state_call` to replay the block from the
+     * parent block.
+     *
+     * See eth-rpc `debug_traceBlockByNumber` for usage.
+     *
+     * @callname: ReviveApi_trace_block
+     * @param {SpRuntimeBlock} block
+     * @param {PalletReviveEvmApiDebugRpcTypesTracerType} config
+     **/
+    traceBlock: GenericRuntimeApiMethod<
+      Rv,
+      (
+        block: SpRuntimeBlock,
+        config: PalletReviveEvmApiDebugRpcTypesTracerType,
+      ) => Promise<Array<[number, PalletReviveEvmApiDebugRpcTypesTrace]>>
+    >;
+
+    /**
+     * Traces the execution of a specific transaction within a block.
+     *
+     * This is intended to be called through `state_call` to replay the block from the
+     * parent hash up to the transaction.
+     *
+     * See eth-rpc `debug_traceTransaction` for usage.
+     *
+     * @callname: ReviveApi_trace_tx
+     * @param {SpRuntimeBlock} block
+     * @param {number} tx_index
+     * @param {PalletReviveEvmApiDebugRpcTypesTracerType} config
+     **/
+    traceTx: GenericRuntimeApiMethod<
+      Rv,
+      (
+        block: SpRuntimeBlock,
+        txIndex: number,
+        config: PalletReviveEvmApiDebugRpcTypesTracerType,
+      ) => Promise<PalletReviveEvmApiDebugRpcTypesTrace | undefined>
+    >;
+
+    /**
+     * Dry run and return the trace of the given call.
+     *
+     * See eth-rpc `debug_traceCall` for usage.
+     *
+     * @callname: ReviveApi_trace_call
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
+     * @param {PalletReviveEvmApiDebugRpcTypesTracerType} config
+     **/
+    traceCall: GenericRuntimeApiMethod<
+      Rv,
+      (
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+        config: PalletReviveEvmApiDebugRpcTypesTracerType,
+      ) => Promise<Result<PalletReviveEvmApiDebugRpcTypesTrace, PalletRevivePrimitivesEthTransactError>>
+    >;
 
     /**
      * Generic runtime api call

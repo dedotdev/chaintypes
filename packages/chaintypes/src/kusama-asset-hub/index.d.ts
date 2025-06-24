@@ -23,7 +23,7 @@ export interface VersionedKusamaAssetHubApi<Rv extends RpcVersion> extends Gener
 
 /**
  * @name: KusamaAssetHubApi
- * @specVersion: 1005001
+ * @specVersion: 1006000
  **/
 export interface KusamaAssetHubApi {
   legacy: VersionedKusamaAssetHubApi<RpcLegacy>;

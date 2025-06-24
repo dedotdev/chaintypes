@@ -11,6 +11,7 @@ import type {
   FixedU128,
   BytesLike,
   FixedBytes,
+  H160,
 } from 'dedot/codecs';
 import type {
   FrameSystemAccountInfo,
@@ -18,6 +19,7 @@ import type {
   FrameSystemEventRecord,
   FrameSystemLastRuntimeUpgradeInfo,
   FrameSystemCodeUpgradeAuthorization,
+  SpWeightsWeightV2Weight,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
   PolkadotPrimitivesV8PersistedValidationData,
@@ -29,7 +31,6 @@ import type {
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
-  SpWeightsWeightV2Weight,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
@@ -40,6 +41,7 @@ import type {
   PalletVestingReleases,
   PalletCollatorSelectionCandidateInfo,
   AssetHubKusamaRuntimeSessionKeys,
+  SpStakingOffenceOffenceSeverity,
   SpCoreCryptoKeyTypeId,
   SpConsensusAuraSr25519AppSr25519Public,
   SpConsensusSlotsSlot,
@@ -51,6 +53,7 @@ import type {
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
   StagingXcmV5Xcm,
+  PalletXcmAuthorizedAliasesEntry,
   BpXcmBridgeHubRouterBridgeState,
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
@@ -79,6 +82,9 @@ import type {
   StagingXcmV4Location,
   PalletNftFractionalizationDetails,
   PalletAssetConversionPoolInfo,
+  PalletReviveWasmCodeInfo,
+  PalletReviveStorageContractInfo,
+  PalletReviveStorageDeletionQueueManager,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationMigrationLimits,
 } from './types.js';
@@ -233,6 +239,19 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<FrameSystemCodeUpgradeAuthorization | undefined> =} callback
      **/
     authorizedUpgrade: GenericStorageQuery<Rv, () => FrameSystemCodeUpgradeAuthorization | undefined>;
+
+    /**
+     * The weight reclaimed for the extrinsic.
+     *
+     * This information is available until the end of the extrinsic execution.
+     * More precisely this information is removed in `note_applied_extrinsic`.
+     *
+     * Logic doing some post dispatch weight reduction must update this storage to avoid duplicate
+     * reduction.
+     *
+     * @param {Callback<SpWeightsWeightV2Weight> =} callback
+     **/
+    extrinsicWeightReclaimed: GenericStorageQuery<Rv, () => SpWeightsWeightV2Weight>;
 
     /**
      * Generic pallet storage query
@@ -783,9 +802,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * disabled using binary search. It gets cleared when `on_session_ending` returns
      * a new set of identities.
      *
-     * @param {Callback<Array<number>> =} callback
+     * @param {Callback<Array<[number, SpStakingOffenceOffenceSeverity]>> =} callback
      **/
-    disabledValidators: GenericStorageQuery<Rv, () => Array<number>>;
+    disabledValidators: GenericStorageQuery<Rv, () => Array<[number, SpStakingOffenceOffenceSeverity]>>;
 
     /**
      * The next session keys for a validator.
@@ -857,13 +876,14 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     authorities: GenericStorageQuery<Rv, () => Array<SpConsensusAuraSr25519AppSr25519Public>>;
 
     /**
-     * Current slot paired with a number of authored blocks.
+     * Current relay chain slot paired with a number of authored blocks.
      *
-     * Updated on each block initialization.
+     * This is updated in [`FixedVelocityConsensusHook::on_state_proof`] with the current relay
+     * chain slot as provided by the relay chain state proof.
      *
      * @param {Callback<[SpConsensusSlotsSlot, number] | undefined> =} callback
      **/
-    slotInfo: GenericStorageQuery<Rv, () => [SpConsensusSlotsSlot, number] | undefined>;
+    relaySlotInfo: GenericStorageQuery<Rv, () => [SpConsensusSlotsSlot, number] | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1101,6 +1121,20 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<StagingXcmV5Xcm | undefined> =} callback
      **/
     recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV5Xcm | undefined>;
+
+    /**
+     * Map of authorized aliasers of local origins. Each local location can authorize a list of
+     * other locations to alias into it. Each aliaser is only valid until its inner `expiry`
+     * block number.
+     *
+     * @param {XcmVersionedLocation} arg
+     * @param {Callback<PalletXcmAuthorizedAliasesEntry | undefined> =} callback
+     **/
+    authorizedAliases: GenericStorageQuery<
+      Rv,
+      (arg: XcmVersionedLocation) => PalletXcmAuthorizedAliasesEntry | undefined,
+      XcmVersionedLocation
+    >;
 
     /**
      * Generic pallet storage query
@@ -1761,6 +1795,79 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<number | undefined> =} callback
      **/
     nextPoolAssetId: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Revive`'s storage queries
+   **/
+  revive: {
+    /**
+     * A mapping from a contract's code hash to its code.
+     *
+     * @param {H256} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    pristineCode: GenericStorageQuery<Rv, (arg: H256) => Bytes | undefined, H256>;
+
+    /**
+     * A mapping from a contract's code hash to its code info.
+     *
+     * @param {H256} arg
+     * @param {Callback<PalletReviveWasmCodeInfo | undefined> =} callback
+     **/
+    codeInfoOf: GenericStorageQuery<Rv, (arg: H256) => PalletReviveWasmCodeInfo | undefined, H256>;
+
+    /**
+     * The code associated with a given account.
+     *
+     * @param {H160} arg
+     * @param {Callback<PalletReviveStorageContractInfo | undefined> =} callback
+     **/
+    contractInfoOf: GenericStorageQuery<Rv, (arg: H160) => PalletReviveStorageContractInfo | undefined, H160>;
+
+    /**
+     * The immutable data associated with a given account.
+     *
+     * @param {H160} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    immutableDataOf: GenericStorageQuery<Rv, (arg: H160) => Bytes | undefined, H160>;
+
+    /**
+     * Evicted contracts that await child trie deletion.
+     *
+     * Child trie deletion is a heavy operation depending on the amount of storage items
+     * stored in said trie. Therefore this operation is performed lazily in `on_idle`.
+     *
+     * @param {number} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    deletionQueue: GenericStorageQuery<Rv, (arg: number) => Bytes | undefined, number>;
+
+    /**
+     * A pair of monotonic counters used to track the latest contract marked for deletion
+     * and the latest deleted contract in queue.
+     *
+     * @param {Callback<PalletReviveStorageDeletionQueueManager> =} callback
+     **/
+    deletionQueueCounter: GenericStorageQuery<Rv, () => PalletReviveStorageDeletionQueueManager>;
+
+    /**
+     * Map a Ethereum address to its original `AccountId32`.
+     *
+     * When deriving a `H160` from an `AccountId32` we use a hash function. In order to
+     * reconstruct the original account we need to store the reverse mapping here.
+     * Register your `AccountId32` using [`Pallet::map_account`] in order to
+     * use it with this pallet.
+     *
+     * @param {H160} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    originalAccount: GenericStorageQuery<Rv, (arg: H160) => AccountId32 | undefined, H160>;
 
     /**
      * Generic pallet storage query

@@ -11,13 +11,16 @@ import type {
   FixedU128,
   Result,
   Permill,
+  H160,
   BytesLike,
   MultiAddress,
   MultiAddressLike,
   AccountId32Like,
+  Perbill,
   Era,
   Header,
   UncheckedExtrinsic,
+  U256,
 } from 'dedot/codecs';
 
 export type FrameSystemAccountInfo = {
@@ -71,6 +74,7 @@ export type AssetHubKusamaRuntimeRuntimeEvent =
   | { pallet: 'NftFractionalization'; palletEvent: PalletNftFractionalizationEvent }
   | { pallet: 'PoolAssets'; palletEvent: PalletAssetsEvent }
   | { pallet: 'AssetConversion'; palletEvent: PalletAssetConversionEvent }
+  | { pallet: 'Revive'; palletEvent: PalletReviveEvent }
   | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent };
 
 /**
@@ -104,7 +108,11 @@ export type FrameSystemEvent =
   /**
    * An upgrade was authorized.
    **/
-  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } };
+  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } }
+  /**
+   * An invalid authorized upgrade was rejected while trying to apply it.
+   **/
+  | { name: 'RejectedInvalidAuthorizedUpgrade'; data: { codeHash: H256; error: DispatchError } };
 
 export type FrameSystemDispatchEventInfo = {
   weight: SpWeightsWeightV2Weight;
@@ -418,7 +426,15 @@ export type PalletSessionEvent =
    * New session has happened. Note that the argument is the session index, not the
    * block number as the type might suggest.
    **/
-  { name: 'NewSession'; data: { sessionIndex: number } };
+  | { name: 'NewSession'; data: { sessionIndex: number } }
+  /**
+   * Validator has been disabled.
+   **/
+  | { name: 'ValidatorDisabled'; data: { validator: AccountId32 } }
+  /**
+   * Validator has been re-enabled.
+   **/
+  | { name: 'ValidatorReenabled'; data: { validator: AccountId32 } };
 
 /**
  * The `Event` enum of this pallet
@@ -438,7 +454,7 @@ export type PalletXcmEvent =
    **/
   | { name: 'Attempted'; data: { outcome: StagingXcmV5TraitsOutcome } }
   /**
-   * A XCM message was sent.
+   * An XCM message was sent.
    **/
   | {
       name: 'Sent';
@@ -448,6 +464,25 @@ export type PalletXcmEvent =
         message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       };
+    }
+  /**
+   * An XCM message failed to send.
+   **/
+  | {
+      name: 'SendFailed';
+      data: {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        error: XcmV3TraitsSendError;
+        messageId: FixedBytes<32>;
+      };
+    }
+  /**
+   * An XCM message failed to process.
+   **/
+  | {
+      name: 'ProcessXcmError';
+      data: { origin: StagingXcmV5Location; error: XcmV5TraitsError; messageId: FixedBytes<32> };
     }
   /**
    * Query response received which does not match a registered query. This may be because a
@@ -605,7 +640,23 @@ export type PalletXcmEvent =
   /**
    * A XCM version migration finished.
    **/
-  | { name: 'VersionMigrationFinished'; data: { version: number } };
+  | { name: 'VersionMigrationFinished'; data: { version: number } }
+  /**
+   * An `aliaser` location was authorized by `target` to alias it, authorization valid until
+   * `expiry` block number.
+   **/
+  | {
+      name: 'AliasAuthorized';
+      data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location; expiry?: bigint | undefined };
+    }
+  /**
+   * `target` removed alias authorization for `aliaser`.
+   **/
+  | { name: 'AliasAuthorizationRemoved'; data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location } }
+  /**
+   * `target` removed all alias authorizations.
+   **/
+  | { name: 'AliasesAuthorizationsRemoved'; data: { target: StagingXcmV5Location } };
 
 export type StagingXcmV5TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
@@ -870,6 +921,15 @@ export type StagingXcmV5AssetAssetTransferFilter =
   | { type: 'ReserveWithdraw'; value: StagingXcmV5AssetAssetFilter };
 
 export type StagingXcmV5Hint = { type: 'AssetClaimer'; value: { location: StagingXcmV5Location } };
+
+export type XcmV3TraitsSendError =
+  | 'NotApplicable'
+  | 'Transport'
+  | 'Unroutable'
+  | 'DestinationUnsupported'
+  | 'ExceedsMaxMessageSize'
+  | 'MissingArgument'
+  | 'Fees';
 
 export type XcmVersionedAssets =
   | { type: 'V3'; value: XcmV3MultiassetMultiAssets }
@@ -1170,7 +1230,15 @@ export type PalletUtilityEvent =
   /**
    * A call was dispatched.
    **/
-  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } };
+  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } }
+  /**
+   * Main call was dispatched.
+   **/
+  | { name: 'IfElseMainSuccess' }
+  /**
+   * The fallback call was dispatched.
+   **/
+  | { name: 'IfElseFallbackCalled'; data: { mainError: DispatchError } };
 
 /**
  * The `Event` enum of this pallet
@@ -1216,6 +1284,13 @@ export type PalletMultisigEvent =
         multisig: AccountId32;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * The deposit for a multisig operation has been updated/poked.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; callHash: FixedBytes<32>; oldDeposit: bigint; newDeposit: bigint };
     };
 
 export type PalletMultisigTimepoint = { height: number; index: number };
@@ -1268,6 +1343,13 @@ export type PalletProxyEvent =
         proxyType: AssetHubKusamaRuntimeProxyType;
         delay: number;
       };
+    }
+  /**
+   * A deposit stored for proxies or announcements was poked / updated.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; kind: PalletProxyDepositKind; oldDeposit: bigint; newDeposit: bigint };
     };
 
 export type AssetHubKusamaRuntimeProxyType =
@@ -1278,6 +1360,8 @@ export type AssetHubKusamaRuntimeProxyType =
   | 'AssetOwner'
   | 'AssetManager'
   | 'Collator';
+
+export type PalletProxyDepositKind = 'Proxies' | 'Announcements';
 
 /**
  * The `Event` enum of this pallet
@@ -2112,6 +2196,35 @@ export type PalletAssetConversionEvent =
     };
 
 /**
+ * The `Event` enum of this pallet
+ **/
+export type PalletReviveEvent =
+  /**
+   * A custom event emitted by the contract.
+   **/
+  {
+    name: 'ContractEmitted';
+    data: {
+      /**
+       * The contract that emitted the event.
+       **/
+      contract: H160;
+
+      /**
+       * Data supplied by the contract. Metadata generated during contract compilation
+       * is needed to decode it.
+       **/
+      data: Bytes;
+
+      /**
+       * A list of topics used to index the event.
+       * Number of topics is capped by [`limits::NUM_EVENT_TOPICS`].
+       **/
+      topics: Array<H256>;
+    };
+  };
+
+/**
  * Inner events of this pallet.
  **/
 export type PalletStateTrieMigrationEvent =
@@ -2546,15 +2659,7 @@ export type CumulusPalletParachainSystemError =
   /**
    * No validation function upgrade is currently scheduled.
    **/
-  | 'NotScheduled'
-  /**
-   * No code upgrade has been authorized.
-   **/
-  | 'NothingAuthorized'
-  /**
-   * The given code upgrade has not been authorized.
-   **/
-  | 'Unauthorized';
+  | 'NotScheduled';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2623,10 +2728,16 @@ export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 export type FrameSupportTokensMiscIdAmount = { id: AssetHubKusamaRuntimeRuntimeHoldReason; amount: bigint };
 
 export type AssetHubKusamaRuntimeRuntimeHoldReason =
+  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
   | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
+  | { type: 'Revive'; value: PalletReviveHoldReason }
   | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason };
 
+export type PalletXcmHoldReason = 'AuthorizeAlias';
+
 export type PalletNftFractionalizationHoldReason = 'Fractionalized';
+
+export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
 
 export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
 
@@ -3264,6 +3375,8 @@ export type PalletCollatorSelectionCallLike =
    **/
   | { name: 'TakeCandidateSlot'; params: { deposit: bigint; target: AccountId32Like } };
 
+export type FrameSupportPalletId = FixedBytes<8>;
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -3340,6 +3453,8 @@ export type PalletCollatorSelectionError =
 export type AssetHubKusamaRuntimeSessionKeys = { aura: SpConsensusAuraSr25519AppSr25519Public };
 
 export type SpConsensusAuraSr25519AppSr25519Public = FixedBytes<32>;
+
+export type SpStakingOffenceOffenceSeverity = Perbill;
 
 export type SpCoreCryptoKeyTypeId = FixedBytes<4>;
 
@@ -3667,6 +3782,20 @@ export type PalletXcmRemoteLockedFungibleRecord = {
   consumers: Array<[[], bigint]>;
 };
 
+export type PalletXcmAuthorizedAliasesEntry = {
+  aliasers: Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>;
+  ticket: FrameSupportStorageDisabled;
+};
+
+export type FrameSupportStorageDisabled = {};
+
+export type PalletXcmMaxAuthorizedAliases = {};
+
+export type XcmRuntimeApisAuthorizedAliasesOriginAliaser = {
+  location: XcmVersionedLocation;
+  expiry?: bigint | undefined;
+};
+
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
@@ -3980,7 +4109,31 @@ export type PalletXcmCall =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type PalletXcmCallLike =
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
@@ -4292,7 +4445,31 @@ export type PalletXcmCallLike =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type XcmVersionedXcm =
   | { type: 'V3'; value: XcmV3Xcm }
@@ -4639,7 +4816,19 @@ export type PalletXcmError =
   /**
    * Local XCM execution incomplete.
    **/
-  | 'LocalExecutionIncomplete';
+  | 'LocalExecutionIncomplete'
+  /**
+   * Too many locations authorized to alias origin.
+   **/
+  | 'TooManyAuthorizedAliases'
+  /**
+   * Expiry block number is in the past.
+   **/
+  | 'ExpiresInPast'
+  /**
+   * The alias to remove authorization for was not found.
+   **/
+  | 'AliasNotFound';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4891,7 +5080,44 @@ export type PalletUtilityCall =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: AssetHubKusamaRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } };
+  | { name: 'WithWeight'; params: { call: AssetHubKusamaRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | { name: 'IfElse'; params: { main: AssetHubKusamaRuntimeRuntimeCall; fallback: AssetHubKusamaRuntimeRuntimeCall } }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | {
+      name: 'DispatchAsFallible';
+      params: { asOrigin: AssetHubKusamaRuntimeOriginCaller; call: AssetHubKusamaRuntimeRuntimeCall };
+    };
 
 export type PalletUtilityCallLike =
   /**
@@ -4983,7 +5209,47 @@ export type PalletUtilityCallLike =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: AssetHubKusamaRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } };
+  | { name: 'WithWeight'; params: { call: AssetHubKusamaRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | {
+      name: 'IfElse';
+      params: { main: AssetHubKusamaRuntimeRuntimeCallLike; fallback: AssetHubKusamaRuntimeRuntimeCallLike };
+    }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | {
+      name: 'DispatchAsFallible';
+      params: { asOrigin: AssetHubKusamaRuntimeOriginCaller; call: AssetHubKusamaRuntimeRuntimeCallLike };
+    };
 
 export type AssetHubKusamaRuntimeRuntimeCall =
   | { pallet: 'System'; palletCall: FrameSystemCall }
@@ -5010,6 +5276,7 @@ export type AssetHubKusamaRuntimeRuntimeCall =
   | { pallet: 'NftFractionalization'; palletCall: PalletNftFractionalizationCall }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCall003 }
   | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall }
+  | { pallet: 'Revive'; palletCall: PalletReviveCall }
   | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall };
 
 export type AssetHubKusamaRuntimeRuntimeCallLike =
@@ -5037,6 +5304,7 @@ export type AssetHubKusamaRuntimeRuntimeCallLike =
   | { pallet: 'NftFractionalization'; palletCall: PalletNftFractionalizationCallLike }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCallLike003 }
   | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike }
+  | { pallet: 'Revive'; palletCall: PalletReviveCallLike }
   | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike };
 
 /**
@@ -5185,6 +5453,25 @@ export type PalletMultisigCall =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId32>; callHash: FixedBytes<32> };
     };
 
 export type PalletMultisigCallLike =
@@ -5330,6 +5617,25 @@ export type PalletMultisigCallLike =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
     };
 
 /**
@@ -5503,7 +5809,18 @@ export type PalletProxyCall =
         forceProxyType?: AssetHubKusamaRuntimeProxyType | undefined;
         call: AssetHubKusamaRuntimeRuntimeCall;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 export type PalletProxyCallLike =
   /**
@@ -5676,7 +5993,18 @@ export type PalletProxyCallLike =
         forceProxyType?: AssetHubKusamaRuntimeProxyType | undefined;
         call: AssetHubKusamaRuntimeRuntimeCallLike;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5895,6 +6223,9 @@ export type PalletAssetsCall =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
    **/
   | { name: 'StartDestroy'; params: { id: number } }
   /**
@@ -6319,6 +6650,9 @@ export type PalletAssetsCall =
    * refunded.
    * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'Refund'; params: { id: number; allowBurn: boolean } }
@@ -6359,6 +6693,9 @@ export type PalletAssetsCall =
    *
    * - `id`: The identifier of the asset for the account holding a deposit.
    * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
    *
    * Emits `Refunded` event when successful.
    **/
@@ -6451,6 +6788,9 @@ export type PalletAssetsCallLike =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
    **/
   | { name: 'StartDestroy'; params: { id: number } }
   /**
@@ -6881,6 +7221,9 @@ export type PalletAssetsCallLike =
    * refunded.
    * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'Refund'; params: { id: number; allowBurn: boolean } }
@@ -6921,6 +7264,9 @@ export type PalletAssetsCallLike =
    *
    * - `id`: The identifier of the asset for the account holding a deposit.
    * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
    *
    * Emits `Refunded` event when successful.
    **/
@@ -9420,6 +9766,9 @@ export type PalletAssetsCall002 =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
    **/
   | { name: 'StartDestroy'; params: { id: StagingXcmV4Location } }
   /**
@@ -9853,6 +10202,9 @@ export type PalletAssetsCall002 =
    * refunded.
    * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'Refund'; params: { id: StagingXcmV4Location; allowBurn: boolean } }
@@ -9893,6 +10245,9 @@ export type PalletAssetsCall002 =
    *
    * - `id`: The identifier of the asset for the account holding a deposit.
    * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
    *
    * Emits `Refunded` event when successful.
    **/
@@ -9988,6 +10343,9 @@ export type PalletAssetsCallLike002 =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
    **/
   | { name: 'StartDestroy'; params: { id: StagingXcmV4Location } }
   /**
@@ -10429,6 +10787,9 @@ export type PalletAssetsCallLike002 =
    * refunded.
    * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'Refund'; params: { id: StagingXcmV4Location; allowBurn: boolean } }
@@ -10469,6 +10830,9 @@ export type PalletAssetsCallLike002 =
    *
    * - `id`: The identifier of the asset for the account holding a deposit.
    * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
    *
    * Emits `Refunded` event when successful.
    **/
@@ -10664,6 +11028,9 @@ export type PalletAssetsCall003 =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
    **/
   | { name: 'StartDestroy'; params: { id: number } }
   /**
@@ -11088,6 +11455,9 @@ export type PalletAssetsCall003 =
    * refunded.
    * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'Refund'; params: { id: number; allowBurn: boolean } }
@@ -11128,6 +11498,9 @@ export type PalletAssetsCall003 =
    *
    * - `id`: The identifier of the asset for the account holding a deposit.
    * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
    *
    * Emits `Refunded` event when successful.
    **/
@@ -11220,6 +11593,9 @@ export type PalletAssetsCallLike003 =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
    **/
   | { name: 'StartDestroy'; params: { id: number } }
   /**
@@ -11650,6 +12026,9 @@ export type PalletAssetsCallLike003 =
    * refunded.
    * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'Refund'; params: { id: number; allowBurn: boolean } }
@@ -11690,6 +12069,9 @@ export type PalletAssetsCallLike003 =
    *
    * - `id`: The identifier of the asset for the account holding a deposit.
    * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
    *
    * Emits `Refunded` event when successful.
    **/
@@ -11939,6 +12321,335 @@ export type PalletAssetConversionCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletReviveCall =
+  /**
+   * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
+   *
+   * # Parameters
+   *
+   * * `payload`: The encoded [`crate::evm::TransactionSigned`].
+   * * `gas_limit`: The gas limit enforced during contract execution.
+   * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
+   * storage usage.
+   *
+   * # Note
+   *
+   * This call cannot be dispatched directly; attempting to do so will result in a failed
+   * transaction. It serves as a wrapper for an Ethereum transaction. When submitted, the
+   * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
+   * signer and validating the transaction.
+   **/
+  | { name: 'EthTransact'; params: { payload: Bytes } }
+  /**
+   * Makes a call to an account, optionally transferring some balance.
+   *
+   * # Parameters
+   *
+   * * `dest`: Address of the contract to call.
+   * * `value`: The balance to transfer from the `origin` to `dest`.
+   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
+   * caller to pay for the storage consumed.
+   * * `data`: The input data to pass to the contract.
+   *
+   * * If the account is a smart-contract account, the associated code will be
+   * executed and any value will be transferred.
+   * * If the account is a regular account, any value will be transferred.
+   * * If no account exists and the call value is not less than `existential_deposit`,
+   * a regular account will be created and any value will be transferred.
+   **/
+  | {
+      name: 'Call';
+      params: {
+        dest: H160;
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        data: Bytes;
+      };
+    }
+  /**
+   * Instantiates a contract from a previously deployed wasm binary.
+   *
+   * This function is identical to [`Self::instantiate_with_code`] but without the
+   * code deployment step. Instead, the `code_hash` of an on-chain deployed wasm binary
+   * must be supplied.
+   **/
+  | {
+      name: 'Instantiate';
+      params: {
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        codeHash: H256;
+        data: Bytes;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Instantiates a new contract from the supplied `code` optionally transferring
+   * some balance.
+   *
+   * This dispatchable has the same effect as calling [`Self::upload_code`] +
+   * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
+   * also check the documentation of [`Self::upload_code`].
+   *
+   * # Parameters
+   *
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
+   * from the caller to pay for the storage consumed.
+   * * `code`: The contract code to deploy in raw bytes.
+   * * `data`: The input data to pass to the contract constructor.
+   * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
+   * semantics are used. If `None` then `CRATE1` is used.
+   *
+   *
+   * Instantiation is executed as follows:
+   *
+   * - The supplied `code` is deployed, and a `code_hash` is created for that code.
+   * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
+   * - The destination address is computed based on the sender, code_hash and the salt.
+   * - The smart-contract account is created at the computed address.
+   * - The `value` is transferred to the new account.
+   * - The `deploy` function is executed in the context of the newly-created account.
+   **/
+  | {
+      name: 'InstantiateWithCode';
+      params: {
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        code: Bytes;
+        data: Bytes;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Upload new `code` without instantiating a contract from it.
+   *
+   * If the code does not already exist a deposit is reserved from the caller
+   * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
+   * depends on the size of the supplied `code`.
+   *
+   * # Note
+   *
+   * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
+   * To avoid this situation a constructor could employ access control so that it can
+   * only be instantiated by permissioned entities. The same is true when uploading
+   * through [`Self::instantiate_with_code`].
+   **/
+  | { name: 'UploadCode'; params: { code: Bytes; storageDepositLimit: bigint } }
+  /**
+   * Remove the code stored under `code_hash` and refund the deposit to its owner.
+   *
+   * A code can only be removed by its original uploader (its owner) and only if it is
+   * not used by any contract.
+   **/
+  | { name: 'RemoveCode'; params: { codeHash: H256 } }
+  /**
+   * Privileged function that changes the code of an existing contract.
+   *
+   * This takes care of updating refcounts and all other necessary operations. Returns
+   * an error if either the `code_hash` or `dest` do not exist.
+   *
+   * # Note
+   *
+   * This does **not** change the address of the contract in question. This means
+   * that the contract address is no longer derived from its code hash after calling
+   * this dispatchable.
+   **/
+  | { name: 'SetCode'; params: { dest: H160; codeHash: H256 } }
+  /**
+   * Register the callers account id so that it can be used in contract interactions.
+   *
+   * This will error if the origin is already mapped or is a eth native `Address20`. It will
+   * take a deposit that can be released by calling [`Self::unmap_account`].
+   **/
+  | { name: 'MapAccount' }
+  /**
+   * Unregister the callers account id in order to free the deposit.
+   *
+   * There is no reason to ever call this function other than freeing up the deposit.
+   * This is only useful when the account should no longer be used.
+   **/
+  | { name: 'UnmapAccount' }
+  /**
+   * Dispatch an `call` with the origin set to the callers fallback address.
+   *
+   * Every `AccountId32` can control its corresponding fallback account. The fallback account
+   * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
+   * recovery function in case an `AccountId20` was used without creating a mapping first.
+   **/
+  | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubKusamaRuntimeRuntimeCall } };
+
+export type PalletReviveCallLike =
+  /**
+   * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
+   *
+   * # Parameters
+   *
+   * * `payload`: The encoded [`crate::evm::TransactionSigned`].
+   * * `gas_limit`: The gas limit enforced during contract execution.
+   * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
+   * storage usage.
+   *
+   * # Note
+   *
+   * This call cannot be dispatched directly; attempting to do so will result in a failed
+   * transaction. It serves as a wrapper for an Ethereum transaction. When submitted, the
+   * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
+   * signer and validating the transaction.
+   **/
+  | { name: 'EthTransact'; params: { payload: BytesLike } }
+  /**
+   * Makes a call to an account, optionally transferring some balance.
+   *
+   * # Parameters
+   *
+   * * `dest`: Address of the contract to call.
+   * * `value`: The balance to transfer from the `origin` to `dest`.
+   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
+   * caller to pay for the storage consumed.
+   * * `data`: The input data to pass to the contract.
+   *
+   * * If the account is a smart-contract account, the associated code will be
+   * executed and any value will be transferred.
+   * * If the account is a regular account, any value will be transferred.
+   * * If no account exists and the call value is not less than `existential_deposit`,
+   * a regular account will be created and any value will be transferred.
+   **/
+  | {
+      name: 'Call';
+      params: {
+        dest: H160;
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        data: BytesLike;
+      };
+    }
+  /**
+   * Instantiates a contract from a previously deployed wasm binary.
+   *
+   * This function is identical to [`Self::instantiate_with_code`] but without the
+   * code deployment step. Instead, the `code_hash` of an on-chain deployed wasm binary
+   * must be supplied.
+   **/
+  | {
+      name: 'Instantiate';
+      params: {
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        codeHash: H256;
+        data: BytesLike;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Instantiates a new contract from the supplied `code` optionally transferring
+   * some balance.
+   *
+   * This dispatchable has the same effect as calling [`Self::upload_code`] +
+   * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
+   * also check the documentation of [`Self::upload_code`].
+   *
+   * # Parameters
+   *
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
+   * from the caller to pay for the storage consumed.
+   * * `code`: The contract code to deploy in raw bytes.
+   * * `data`: The input data to pass to the contract constructor.
+   * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
+   * semantics are used. If `None` then `CRATE1` is used.
+   *
+   *
+   * Instantiation is executed as follows:
+   *
+   * - The supplied `code` is deployed, and a `code_hash` is created for that code.
+   * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
+   * - The destination address is computed based on the sender, code_hash and the salt.
+   * - The smart-contract account is created at the computed address.
+   * - The `value` is transferred to the new account.
+   * - The `deploy` function is executed in the context of the newly-created account.
+   **/
+  | {
+      name: 'InstantiateWithCode';
+      params: {
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        code: BytesLike;
+        data: BytesLike;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Upload new `code` without instantiating a contract from it.
+   *
+   * If the code does not already exist a deposit is reserved from the caller
+   * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
+   * depends on the size of the supplied `code`.
+   *
+   * # Note
+   *
+   * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
+   * To avoid this situation a constructor could employ access control so that it can
+   * only be instantiated by permissioned entities. The same is true when uploading
+   * through [`Self::instantiate_with_code`].
+   **/
+  | { name: 'UploadCode'; params: { code: BytesLike; storageDepositLimit: bigint } }
+  /**
+   * Remove the code stored under `code_hash` and refund the deposit to its owner.
+   *
+   * A code can only be removed by its original uploader (its owner) and only if it is
+   * not used by any contract.
+   **/
+  | { name: 'RemoveCode'; params: { codeHash: H256 } }
+  /**
+   * Privileged function that changes the code of an existing contract.
+   *
+   * This takes care of updating refcounts and all other necessary operations. Returns
+   * an error if either the `code_hash` or `dest` do not exist.
+   *
+   * # Note
+   *
+   * This does **not** change the address of the contract in question. This means
+   * that the contract address is no longer derived from its code hash after calling
+   * this dispatchable.
+   **/
+  | { name: 'SetCode'; params: { dest: H160; codeHash: H256 } }
+  /**
+   * Register the callers account id so that it can be used in contract interactions.
+   *
+   * This will error if the origin is already mapped or is a eth native `Address20`. It will
+   * take a deposit that can be released by calling [`Self::unmap_account`].
+   **/
+  | { name: 'MapAccount' }
+  /**
+   * Unregister the callers account id in order to free the deposit.
+   *
+   * There is no reason to ever call this function other than freeing up the deposit.
+   * This is only useful when the account should no longer be used.
+   **/
+  | { name: 'UnmapAccount' }
+  /**
+   * Dispatch an `call` with the origin set to the callers fallback address.
+   *
+   * Every `AccountId32` can control its corresponding fallback account. The fallback account
+   * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
+   * recovery function in case an `AccountId20` was used without creating a mapping first.
+   **/
+  | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubKusamaRuntimeRuntimeCallLike } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletStateTrieMigrationCall =
   /**
    * Control the automatic migration.
@@ -12169,11 +12880,12 @@ export type PalletMultisigError =
    **/
   | 'SenderInSignatories'
   /**
-   * Multisig operation not found when attempting to cancel.
+   * Multisig operation not found in storage.
    **/
   | 'NotFound'
   /**
-   * Only the account that originally created the multisig is able to cancel it.
+   * Only the account that originally created the multisig is able to cancel it or update
+   * its deposits.
    **/
   | 'NotOwner'
   /**
@@ -12408,7 +13120,15 @@ export type PalletAssetsError =
   /**
    * The asset ID must be equal to the [`NextAssetId`].
    **/
-  | 'BadAssetId';
+  | 'BadAssetId'
+  /**
+   * The asset cannot be destroyed because some accounts for this asset contain freezes.
+   **/
+  | 'ContainsFreezes'
+  /**
+   * The asset cannot be destroyed because some accounts for this asset contain holds.
+   **/
+  | 'ContainsHolds';
 
 export type PalletUniquesCollectionDetails = {
   owner: AccountId32;
@@ -12743,8 +13463,6 @@ export type PalletNftFractionalizationDetails = {
   assetCreator: AccountId32;
 };
 
-export type FrameSupportPalletId = FixedBytes<8>;
-
 /**
  * The `Error` enum of this pallet.
  **/
@@ -12867,6 +13585,241 @@ export type PalletAssetConversionError =
    * The destination account cannot exist with the swapped funds.
    **/
   | 'BelowMinimum';
+
+export type PalletReviveWasmCodeInfo = {
+  owner: AccountId32;
+  deposit: bigint;
+  refcount: bigint;
+  codeLen: number;
+  behaviourVersion: number;
+};
+
+export type PalletReviveStorageContractInfo = {
+  trieId: Bytes;
+  codeHash: H256;
+  storageBytes: number;
+  storageItems: number;
+  storageByteDeposit: bigint;
+  storageItemDeposit: bigint;
+  storageBaseDeposit: bigint;
+  immutableDataLen: number;
+};
+
+export type PalletReviveStorageDeletionQueueManager = { insertCounter: number; deleteCounter: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletReviveError =
+  /**
+   * Invalid schedule supplied, e.g. with zero weight of a basic operation.
+   **/
+  | 'InvalidSchedule'
+  /**
+   * Invalid combination of flags supplied to `seal_call` or `seal_delegate_call`.
+   **/
+  | 'InvalidCallFlags'
+  /**
+   * The executed contract exhausted its gas limit.
+   **/
+  | 'OutOfGas'
+  /**
+   * Performing the requested transfer failed. Probably because there isn't enough
+   * free balance in the sender's account.
+   **/
+  | 'TransferFailed'
+  /**
+   * Performing a call was denied because the calling depth reached the limit
+   * of what is specified in the schedule.
+   **/
+  | 'MaxCallDepthReached'
+  /**
+   * No contract was found at the specified address.
+   **/
+  | 'ContractNotFound'
+  /**
+   * No code could be found at the supplied code hash.
+   **/
+  | 'CodeNotFound'
+  /**
+   * No code info could be found at the supplied code hash.
+   **/
+  | 'CodeInfoNotFound'
+  /**
+   * A buffer outside of sandbox memory was passed to a contract API function.
+   **/
+  | 'OutOfBounds'
+  /**
+   * Input passed to a contract API function failed to decode as expected type.
+   **/
+  | 'DecodingFailed'
+  /**
+   * Contract trapped during execution.
+   **/
+  | 'ContractTrapped'
+  /**
+   * The size defined in `T::MaxValueSize` was exceeded.
+   **/
+  | 'ValueTooLarge'
+  /**
+   * Termination of a contract is not allowed while the contract is already
+   * on the call stack. Can be triggered by `seal_terminate`.
+   **/
+  | 'TerminatedWhileReentrant'
+  /**
+   * `seal_call` forwarded this contracts input. It therefore is no longer available.
+   **/
+  | 'InputForwarded'
+  /**
+   * The amount of topics passed to `seal_deposit_events` exceeds the limit.
+   **/
+  | 'TooManyTopics'
+  /**
+   * The chain does not provide a chain extension. Calling the chain extension results
+   * in this error. Note that this usually shouldn't happen as deploying such contracts
+   * is rejected.
+   **/
+  | 'NoChainExtension'
+  /**
+   * Failed to decode the XCM program.
+   **/
+  | 'XcmDecodeFailed'
+  /**
+   * A contract with the same AccountId already exists.
+   **/
+  | 'DuplicateContract'
+  /**
+   * A contract self destructed in its constructor.
+   *
+   * This can be triggered by a call to `seal_terminate`.
+   **/
+  | 'TerminatedInConstructor'
+  /**
+   * A call tried to invoke a contract that is flagged as non-reentrant.
+   **/
+  | 'ReentranceDenied'
+  /**
+   * A contract called into the runtime which then called back into this pallet.
+   **/
+  | 'ReenteredPallet'
+  /**
+   * A contract attempted to invoke a state modifying API while being in read-only mode.
+   **/
+  | 'StateChangeDenied'
+  /**
+   * Origin doesn't have enough balance to pay the required storage deposits.
+   **/
+  | 'StorageDepositNotEnoughFunds'
+  /**
+   * More storage was created than allowed by the storage deposit limit.
+   **/
+  | 'StorageDepositLimitExhausted'
+  /**
+   * Code removal was denied because the code is still in use by at least one contract.
+   **/
+  | 'CodeInUse'
+  /**
+   * The contract ran to completion but decided to revert its storage changes.
+   * Please note that this error is only returned from extrinsics. When called directly
+   * or via RPC an `Ok` will be returned. In this case the caller needs to inspect the flags
+   * to determine whether a reversion has taken place.
+   **/
+  | 'ContractReverted'
+  /**
+   * The contract failed to compile or is missing the correct entry points.
+   *
+   * A more detailed error can be found on the node console if debug messages are enabled
+   * by supplying `-lruntime::revive=debug`.
+   **/
+  | 'CodeRejected'
+  /**
+   * The code blob supplied is larger than [`limits::code::BLOB_BYTES`].
+   **/
+  | 'BlobTooLarge'
+  /**
+   * The static memory consumption of the blob will be larger than
+   * [`limits::code::STATIC_MEMORY_BYTES`].
+   **/
+  | 'StaticMemoryTooLarge'
+  /**
+   * The program contains a basic block that is larger than allowed.
+   **/
+  | 'BasicBlockTooLarge'
+  /**
+   * The program contains an invalid instruction.
+   **/
+  | 'InvalidInstruction'
+  /**
+   * The contract has reached its maximum number of delegate dependencies.
+   **/
+  | 'MaxDelegateDependenciesReached'
+  /**
+   * The dependency was not found in the contract's delegate dependencies.
+   **/
+  | 'DelegateDependencyNotFound'
+  /**
+   * The contract already depends on the given delegate dependency.
+   **/
+  | 'DelegateDependencyAlreadyExists'
+  /**
+   * Can not add a delegate dependency to the code hash of the contract itself.
+   **/
+  | 'CannotAddSelfAsDelegateDependency'
+  /**
+   * Can not add more data to transient storage.
+   **/
+  | 'OutOfTransientStorage'
+  /**
+   * The contract tried to call a syscall which does not exist (at its current api level).
+   **/
+  | 'InvalidSyscall'
+  /**
+   * Invalid storage flags were passed to one of the storage syscalls.
+   **/
+  | 'InvalidStorageFlags'
+  /**
+   * PolkaVM failed during code execution. Probably due to a malformed program.
+   **/
+  | 'ExecutionFailed'
+  /**
+   * Failed to convert a U256 to a Balance.
+   **/
+  | 'BalanceConversionFailed'
+  /**
+   * Failed to convert an EVM balance to a native balance.
+   **/
+  | 'DecimalPrecisionLoss'
+  /**
+   * Immutable data can only be set during deploys and only be read during calls.
+   * Additionally, it is only valid to set the data once and it must not be empty.
+   **/
+  | 'InvalidImmutableAccess'
+  /**
+   * An `AccountID32` account tried to interact with the pallet without having a mapping.
+   *
+   * Call [`Pallet::map_account`] in order to create a mapping for the account.
+   **/
+  | 'AccountUnmapped'
+  /**
+   * Tried to map an account that is already mapped.
+   **/
+  | 'AccountAlreadyMapped'
+  /**
+   * The transaction used to dry-run a contract is invalid.
+   **/
+  | 'InvalidGenericTransaction'
+  /**
+   * The refcount of a code either over or underflowed.
+   **/
+  | 'RefcountOverOrUnderflow'
+  /**
+   * Unsupported precompile address
+   **/
+  | 'UnsupportedPrecompileAddress'
+  /**
+   * Precompile Error
+   **/
+  | 'PrecompileFailure';
 
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
@@ -13000,6 +13953,112 @@ export type CumulusPrimitivesCoreCollationInfo = {
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
 
+export type PalletRevivePrimitivesContractResult = {
+  gasConsumed: SpWeightsWeightV2Weight;
+  gasRequired: SpWeightsWeightV2Weight;
+  storageDeposit: PalletRevivePrimitivesStorageDeposit;
+  result: Result<PalletRevivePrimitivesExecReturnValue, DispatchError>;
+};
+
+export type PalletRevivePrimitivesExecReturnValue = { flags: PalletReviveUapiFlagsReturnFlags; data: Bytes };
+
+export type PalletReviveUapiFlagsReturnFlags = { bits: number };
+
+export type PalletRevivePrimitivesStorageDeposit =
+  | { type: 'Refund'; value: bigint }
+  | { type: 'Charge'; value: bigint };
+
+export type PalletRevivePrimitivesCode = { type: 'Upload'; value: Bytes } | { type: 'Existing'; value: H256 };
+
+export type PalletRevivePrimitivesContractResultInstantiateReturnValue = {
+  gasConsumed: SpWeightsWeightV2Weight;
+  gasRequired: SpWeightsWeightV2Weight;
+  storageDeposit: PalletRevivePrimitivesStorageDeposit;
+  result: Result<PalletRevivePrimitivesInstantiateReturnValue, DispatchError>;
+};
+
+export type PalletRevivePrimitivesInstantiateReturnValue = {
+  result: PalletRevivePrimitivesExecReturnValue;
+  addr: H160;
+};
+
+export type PalletReviveEvmApiRpcTypesGenGenericTransaction = {
+  accessList?: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry> | undefined;
+  blobVersionedHashes: Array<H256>;
+  blobs: Array<PalletReviveEvmApiByteBytes>;
+  chainId?: U256 | undefined;
+  from?: H160 | undefined;
+  gas?: U256 | undefined;
+  gasPrice?: U256 | undefined;
+  input: PalletReviveEvmApiRpcTypesGenInputOrData;
+  maxFeePerBlobGas?: U256 | undefined;
+  maxFeePerGas?: U256 | undefined;
+  maxPriorityFeePerGas?: U256 | undefined;
+  nonce?: U256 | undefined;
+  to?: H160 | undefined;
+  rType?: PalletReviveEvmApiByte | undefined;
+  value?: U256 | undefined;
+};
+
+export type PalletReviveEvmApiRpcTypesGenAccessListEntry = { address: H160; storageKeys: Array<H256> };
+
+export type PalletReviveEvmApiByteBytes = Bytes;
+
+export type PalletReviveEvmApiRpcTypesGenInputOrData = {
+  input?: PalletReviveEvmApiByteBytes | undefined;
+  data?: PalletReviveEvmApiByteBytes | undefined;
+};
+
+export type PalletReviveEvmApiByte = number;
+
+export type PalletRevivePrimitivesEthTransactInfo = {
+  gasRequired: SpWeightsWeightV2Weight;
+  storageDeposit: bigint;
+  ethGas: U256;
+  data: Bytes;
+};
+
+export type PalletRevivePrimitivesEthTransactError =
+  | { type: 'Data'; value: Bytes }
+  | { type: 'Message'; value: string };
+
+export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
+
+export type PalletRevivePrimitivesContractAccessError = 'DoesntExist' | 'KeyDecodingFailed';
+
+export type PalletReviveEvmApiDebugRpcTypesTracerType = {
+  type: 'CallTracer';
+  value?: PalletReviveEvmApiDebugRpcTypesCallTracerConfig | undefined;
+};
+
+export type PalletReviveEvmApiDebugRpcTypesCallTracerConfig = { withLogs: boolean; onlyTopCall: boolean };
+
+export type PalletReviveEvmApiDebugRpcTypesTrace = { type: 'Call'; value: PalletReviveEvmApiDebugRpcTypesCallTrace };
+
+export type PalletReviveEvmApiDebugRpcTypesCallTrace = {
+  from: H160;
+  gas: U256;
+  gasUsed: U256;
+  to: H160;
+  input: PalletReviveEvmApiByteBytes;
+  output: PalletReviveEvmApiByteBytes;
+  error?: string | undefined;
+  revertReason?: string | undefined;
+  calls: Array<PalletReviveEvmApiDebugRpcTypesCallTrace>;
+  logs: Array<PalletReviveEvmApiDebugRpcTypesCallLog>;
+  value?: U256 | undefined;
+  callType: PalletReviveEvmApiDebugRpcTypesCallType;
+};
+
+export type PalletReviveEvmApiDebugRpcTypesCallLog = {
+  address: H160;
+  topics: Array<H256>;
+  data: PalletReviveEvmApiByteBytes;
+  position: number;
+};
+
+export type PalletReviveEvmApiDebugRpcTypesCallType = 'Call' | 'StaticCall' | 'DelegateCall';
+
 export type AssetHubKusamaRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }
   | { pallet: 'ParachainSystem'; palletError: CumulusPalletParachainSystemError }
@@ -13021,4 +14080,5 @@ export type AssetHubKusamaRuntimeRuntimeError =
   | { pallet: 'NftFractionalization'; palletError: PalletNftFractionalizationError }
   | { pallet: 'PoolAssets'; palletError: PalletAssetsError }
   | { pallet: 'AssetConversion'; palletError: PalletAssetConversionError }
+  | { pallet: 'Revive'; palletError: PalletReviveError }
   | { pallet: 'StateTrieMigration'; palletError: PalletStateTrieMigrationError };

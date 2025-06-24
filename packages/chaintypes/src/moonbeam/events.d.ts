@@ -2,7 +2,6 @@
 
 import type { GenericChainEvents, GenericPalletEvent, RpcVersion } from 'dedot/types';
 import type {
-  DispatchInfo,
   DispatchError,
   AccountId20,
   H256,
@@ -15,6 +14,7 @@ import type {
   U256,
 } from 'dedot/codecs';
 import type {
+  FrameSystemDispatchEventInfo,
   SpWeightsWeightV2Weight,
   FrameSupportTokensMiscBalanceStatus,
   PalletParachainStakingDelegationRequestsCancelledScheduledRequest,
@@ -34,13 +34,14 @@ import type {
   PalletConvictionVotingTally,
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
-  StagingXcmV4TraitsOutcome,
-  StagingXcmV4Location,
-  StagingXcmV4Xcm,
-  StagingXcmV4Response,
+  FrameSupportTokensFungibleUnionOfNativeOrWithId,
+  StagingXcmV5TraitsOutcome,
+  StagingXcmV5Location,
+  StagingXcmV5Xcm,
+  StagingXcmV5Response,
   XcmVersionedAssets,
-  StagingXcmV4AssetAssets,
-  XcmV3TraitsError,
+  StagingXcmV5AssetAssets,
+  XcmV5TraitsError,
   XcmVersionedLocation,
   MoonbeamRuntimeXcmConfigAssetType,
   MoonbeamRuntimeAssetConfigAssetRegistrarMetadata,
@@ -58,7 +59,12 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * An extrinsic completed successfully.
      **/
-    ExtrinsicSuccess: GenericPalletEvent<Rv, 'System', 'ExtrinsicSuccess', { dispatchInfo: DispatchInfo }>;
+    ExtrinsicSuccess: GenericPalletEvent<
+      Rv,
+      'System',
+      'ExtrinsicSuccess',
+      { dispatchInfo: FrameSystemDispatchEventInfo }
+    >;
 
     /**
      * An extrinsic failed.
@@ -67,7 +73,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'System',
       'ExtrinsicFailed',
-      { dispatchError: DispatchError; dispatchInfo: DispatchInfo }
+      { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo }
     >;
 
     /**
@@ -980,6 +986,26 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * An account's sub-identities were set (in bulk).
+     **/
+    SubIdentitiesSet: GenericPalletEvent<
+      Rv,
+      'Identity',
+      'SubIdentitiesSet',
+      { main: AccountId20; numberOfSubs: number; newDeposit: bigint }
+    >;
+
+    /**
+     * A given sub-account's associated name was changed by its super-identity.
+     **/
+    SubIdentityRenamed: GenericPalletEvent<
+      Rv,
+      'Identity',
+      'SubIdentityRenamed',
+      { sub: AccountId20; main: AccountId20 }
+    >;
+
+    /**
      * A sub-identity was removed from an identity and the deposit freed.
      **/
     SubIdentityRemoved: GenericPalletEvent<
@@ -1045,6 +1071,21 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'DanglingUsernameRemoved',
       { who: AccountId20; username: Bytes }
     >;
+
+    /**
+     * A username has been unbound.
+     **/
+    UsernameUnbound: GenericPalletEvent<Rv, 'Identity', 'UsernameUnbound', { username: Bytes }>;
+
+    /**
+     * A username has been removed.
+     **/
+    UsernameRemoved: GenericPalletEvent<Rv, 'Identity', 'UsernameRemoved', { username: Bytes }>;
+
+    /**
+     * A username has been killed.
+     **/
+    UsernameKilled: GenericPalletEvent<Rv, 'Identity', 'UsernameKilled', { username: Bytes }>;
 
     /**
      * Generic pallet event
@@ -1828,6 +1869,31 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * A proposal was killed.
+     **/
+    Killed: GenericPalletEvent<Rv, 'TreasuryCouncilCollective', 'Killed', { proposalHash: H256 }>;
+
+    /**
+     * Some cost for storing a proposal was burned.
+     **/
+    ProposalCostBurned: GenericPalletEvent<
+      Rv,
+      'TreasuryCouncilCollective',
+      'ProposalCostBurned',
+      { proposalHash: H256; who: AccountId20 }
+    >;
+
+    /**
+     * Some cost for storing a proposal was released.
+     **/
+    ProposalCostReleased: GenericPalletEvent<
+      Rv,
+      'TreasuryCouncilCollective',
+      'ProposalCostReleased',
+      { proposalHash: H256; who: AccountId20 }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -1899,6 +1965,31 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * A proposal was killed.
+     **/
+    Killed: GenericPalletEvent<Rv, 'OpenTechCommitteeCollective', 'Killed', { proposalHash: H256 }>;
+
+    /**
+     * Some cost for storing a proposal was burned.
+     **/
+    ProposalCostBurned: GenericPalletEvent<
+      Rv,
+      'OpenTechCommitteeCollective',
+      'ProposalCostBurned',
+      { proposalHash: H256; who: AccountId20 }
+    >;
+
+    /**
+     * Some cost for storing a proposal was released.
+     **/
+    ProposalCostReleased: GenericPalletEvent<
+      Rv,
+      'OpenTechCommitteeCollective',
+      'ProposalCostReleased',
+      { proposalHash: H256; who: AccountId20 }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -1964,7 +2055,14 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'Treasury',
       'AssetSpendApproved',
-      { index: number; assetKind: []; amount: bigint; beneficiary: AccountId20; validFrom: number; expireAt: number }
+      {
+        index: number;
+        assetKind: FrameSupportTokensFungibleUnionOfNativeOrWithId;
+        amount: bigint;
+        beneficiary: AccountId20;
+        validFrom: number;
+        expireAt: number;
+      }
     >;
 
     /**
@@ -2092,7 +2190,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'CumulusXcm',
       'ExecutedDownward',
-      [FixedBytes<32>, StagingXcmV4TraitsOutcome]
+      [FixedBytes<32>, StagingXcmV5TraitsOutcome]
     >;
 
     /**
@@ -2107,7 +2205,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * Execution of an XCM message was attempted.
      **/
-    Attempted: GenericPalletEvent<Rv, 'PolkadotXcm', 'Attempted', { outcome: StagingXcmV4TraitsOutcome }>;
+    Attempted: GenericPalletEvent<Rv, 'PolkadotXcm', 'Attempted', { outcome: StagingXcmV5TraitsOutcome }>;
 
     /**
      * A XCM message was sent.
@@ -2117,9 +2215,9 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'PolkadotXcm',
       'Sent',
       {
-        origin: StagingXcmV4Location;
-        destination: StagingXcmV4Location;
-        message: StagingXcmV4Xcm;
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       }
     >;
@@ -2133,7 +2231,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'UnexpectedResponse',
-      { origin: StagingXcmV4Location; queryId: bigint }
+      { origin: StagingXcmV5Location; queryId: bigint }
     >;
 
     /**
@@ -2144,7 +2242,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'ResponseReady',
-      { queryId: bigint; response: StagingXcmV4Response }
+      { queryId: bigint; response: StagingXcmV5Response }
     >;
 
     /**
@@ -2208,7 +2306,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'InvalidResponder',
-      { origin: StagingXcmV4Location; queryId: bigint; expectedLocation?: StagingXcmV4Location | undefined }
+      { origin: StagingXcmV5Location; queryId: bigint; expectedLocation?: StagingXcmV5Location | undefined }
     >;
 
     /**
@@ -2224,7 +2322,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'InvalidResponderVersion',
-      { origin: StagingXcmV4Location; queryId: bigint }
+      { origin: StagingXcmV5Location; queryId: bigint }
     >;
 
     /**
@@ -2239,7 +2337,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'AssetsTrapped',
-      { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets }
+      { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets }
     >;
 
     /**
@@ -2251,7 +2349,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'VersionChangeNotified',
-      { destination: StagingXcmV4Location; result: number; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; result: number; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -2262,7 +2360,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'SupportedVersionChanged',
-      { location: StagingXcmV4Location; version: number }
+      { location: StagingXcmV5Location; version: number }
     >;
 
     /**
@@ -2273,7 +2371,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'NotifyTargetSendFail',
-      { location: StagingXcmV4Location; queryId: bigint; error: XcmV3TraitsError }
+      { location: StagingXcmV5Location; queryId: bigint; error: XcmV5TraitsError }
     >;
 
     /**
@@ -2300,7 +2398,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'InvalidQuerierVersion',
-      { origin: StagingXcmV4Location; queryId: bigint }
+      { origin: StagingXcmV5Location; queryId: bigint }
     >;
 
     /**
@@ -2313,10 +2411,10 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'PolkadotXcm',
       'InvalidQuerier',
       {
-        origin: StagingXcmV4Location;
+        origin: StagingXcmV5Location;
         queryId: bigint;
-        expectedQuerier: StagingXcmV4Location;
-        maybeActualQuerier?: StagingXcmV4Location | undefined;
+        expectedQuerier: StagingXcmV5Location;
+        maybeActualQuerier?: StagingXcmV5Location | undefined;
       }
     >;
 
@@ -2328,7 +2426,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'VersionNotifyStarted',
-      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -2338,7 +2436,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'VersionNotifyRequested',
-      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -2349,7 +2447,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'VersionNotifyUnrequested',
-      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -2359,7 +2457,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'FeesPaid',
-      { paying: StagingXcmV4Location; fees: StagingXcmV4AssetAssets }
+      { paying: StagingXcmV5Location; fees: StagingXcmV5AssetAssets }
     >;
 
     /**
@@ -2369,7 +2467,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'PolkadotXcm',
       'AssetsClaimed',
-      { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets }
+      { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets }
     >;
 
     /**
@@ -2651,7 +2749,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmTransactor',
       'TransactedDerivative',
-      { accountId: AccountId20; dest: StagingXcmV4Location; call: Bytes; index: number }
+      { accountId: AccountId20; dest: StagingXcmV5Location; call: Bytes; index: number }
     >;
 
     /**
@@ -2661,7 +2759,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmTransactor',
       'TransactedSovereign',
-      { feePayer?: AccountId20 | undefined; dest: StagingXcmV4Location; call: Bytes }
+      { feePayer?: AccountId20 | undefined; dest: StagingXcmV5Location; call: Bytes }
     >;
 
     /**
@@ -2671,7 +2769,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmTransactor',
       'TransactedSigned',
-      { feePayer: AccountId20; dest: StagingXcmV4Location; call: Bytes }
+      { feePayer: AccountId20; dest: StagingXcmV5Location; call: Bytes }
     >;
 
     /**
@@ -2688,7 +2786,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * Transact failed
      **/
-    TransactFailed: GenericPalletEvent<Rv, 'XcmTransactor', 'TransactFailed', { error: XcmV3TraitsError }>;
+    TransactFailed: GenericPalletEvent<Rv, 'XcmTransactor', 'TransactFailed', { error: XcmV5TraitsError }>;
 
     /**
      * Changed the transact info of a location
@@ -2697,7 +2795,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmTransactor',
       'TransactInfoChanged',
-      { location: StagingXcmV4Location; remoteInfo: PalletXcmTransactorRemoteTransactInfoWithMaxWeight }
+      { location: StagingXcmV5Location; remoteInfo: PalletXcmTransactorRemoteTransactInfoWithMaxWeight }
     >;
 
     /**
@@ -2707,7 +2805,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmTransactor',
       'TransactInfoRemoved',
-      { location: StagingXcmV4Location }
+      { location: StagingXcmV5Location }
     >;
 
     /**
@@ -2717,7 +2815,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmTransactor',
       'DestFeePerSecondChanged',
-      { location: StagingXcmV4Location; feePerSecond: bigint }
+      { location: StagingXcmV5Location; feePerSecond: bigint }
     >;
 
     /**
@@ -2727,7 +2825,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmTransactor',
       'DestFeePerSecondRemoved',
-      { location: StagingXcmV4Location }
+      { location: StagingXcmV5Location }
     >;
 
     /**
@@ -2892,7 +2990,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'EvmForeignAssets',
       'ForeignAssetCreated',
-      { contractAddress: H160; assetId: bigint; xcmLocation: StagingXcmV4Location; deposit?: bigint | undefined }
+      { contractAddress: H160; assetId: bigint; xcmLocation: StagingXcmV5Location; deposit?: bigint | undefined }
     >;
 
     /**
@@ -2902,19 +3000,19 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'EvmForeignAssets',
       'ForeignAssetXcmLocationChanged',
-      { assetId: bigint; previousXcmLocation: StagingXcmV4Location; newXcmLocation: StagingXcmV4Location }
+      { assetId: bigint; previousXcmLocation: StagingXcmV5Location; newXcmLocation: StagingXcmV5Location }
     >;
     ForeignAssetFrozen: GenericPalletEvent<
       Rv,
       'EvmForeignAssets',
       'ForeignAssetFrozen',
-      { assetId: bigint; xcmLocation: StagingXcmV4Location }
+      { assetId: bigint; xcmLocation: StagingXcmV5Location }
     >;
     ForeignAssetUnfrozen: GenericPalletEvent<
       Rv,
       'EvmForeignAssets',
       'ForeignAssetUnfrozen',
-      { assetId: bigint; xcmLocation: StagingXcmV4Location }
+      { assetId: bigint; xcmLocation: StagingXcmV5Location }
     >;
 
     /**
@@ -2938,7 +3036,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmWeightTrader',
       'SupportedAssetAdded',
-      { location: StagingXcmV4Location; relativePrice: bigint }
+      { location: StagingXcmV5Location; relativePrice: bigint }
     >;
 
     /**
@@ -2948,7 +3046,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmWeightTrader',
       'SupportedAssetEdited',
-      { location: StagingXcmV4Location; relativePrice: bigint }
+      { location: StagingXcmV5Location; relativePrice: bigint }
     >;
 
     /**
@@ -2958,7 +3056,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmWeightTrader',
       'PauseAssetSupport',
-      { location: StagingXcmV4Location }
+      { location: StagingXcmV5Location }
     >;
 
     /**
@@ -2968,7 +3066,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmWeightTrader',
       'ResumeAssetSupport',
-      { location: StagingXcmV4Location }
+      { location: StagingXcmV5Location }
     >;
 
     /**
@@ -2978,7 +3076,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'XcmWeightTrader',
       'SupportedAssetRemoved',
-      { location: StagingXcmV4Location }
+      { location: StagingXcmV5Location }
     >;
 
     /**
@@ -2999,6 +3097,141 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * The XCM incoming execution returned to normal operation
      **/
     NormalXcmOperationResumed: GenericPalletEvent<Rv, 'EmergencyParaXcm', 'NormalXcmOperationResumed', undefined>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s events
+   **/
+  multiBlockMigrations: {
+    /**
+     * A Runtime upgrade started.
+     *
+     * Its end is indicated by `UpgradeCompleted` or `UpgradeFailed`.
+     **/
+    UpgradeStarted: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'UpgradeStarted',
+      {
+        /**
+         * The number of migrations that this upgrade contains.
+         *
+         * This can be used to design a progress indicator in combination with counting the
+         * `MigrationCompleted` and `MigrationSkipped` events.
+         **/
+        migrations: number;
+      }
+    >;
+
+    /**
+     * The current runtime upgrade completed.
+     *
+     * This implies that all of its migrations completed successfully as well.
+     **/
+    UpgradeCompleted: GenericPalletEvent<Rv, 'MultiBlockMigrations', 'UpgradeCompleted', null>;
+
+    /**
+     * Runtime upgrade failed.
+     *
+     * This is very bad and will require governance intervention.
+     **/
+    UpgradeFailed: GenericPalletEvent<Rv, 'MultiBlockMigrations', 'UpgradeFailed', null>;
+
+    /**
+     * A migration was skipped since it was already executed in the past.
+     **/
+    MigrationSkipped: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'MigrationSkipped',
+      {
+        /**
+         * The index of the skipped migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+      }
+    >;
+
+    /**
+     * A migration progressed.
+     **/
+    MigrationAdvanced: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'MigrationAdvanced',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * A Migration completed.
+     **/
+    MigrationCompleted: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'MigrationCompleted',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * A Migration failed.
+     *
+     * This implies that the whole upgrade failed and governance intervention is required.
+     **/
+    MigrationFailed: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'MigrationFailed',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * The set of historical migrations has been cleared.
+     **/
+    HistoricCleared: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'HistoricCleared',
+      {
+        /**
+         * Should be passed to `clear_historic` in a successive call.
+         **/
+        nextCursor?: Bytes | undefined;
+      }
+    >;
 
     /**
      * Generic pallet event

@@ -43,11 +43,12 @@ import type {
   PalletConvictionVotingConviction,
   FrameSupportPreimagesBounded,
   FrameSupportScheduleDispatchTime,
+  FrameSupportTokensFungibleUnionOfNativeOrWithId,
   SpRuntimeMultiSignature,
   XcmVersionedLocation,
   XcmVersionedXcm,
   XcmVersionedAssets,
-  StagingXcmV4Location,
+  StagingXcmV5Location,
   XcmV3WeightLimit,
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
@@ -60,6 +61,8 @@ import type {
   PalletXcmTransactorHrmpOperation,
   XcmPrimitivesEthereumXcmEthereumXcmTransaction,
   CumulusPrimitivesCoreAggregateMessageOrigin,
+  PalletMigrationsMigrationCursor,
+  PalletMigrationsHistoricCleanupSelector,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -2730,8 +2733,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Add an `AccountId` with permission to grant usernames with a given `suffix` appended.
      *
-     * The authority can grant up to `allocation` usernames. To top up their allocation, they
-     * should just issue (or request via governance) a new `add_username_authority` call.
+     * The authority can grant up to `allocation` usernames. To top up the allocation or
+     * change the account used to grant usernames, this call can be used with the updated
+     * parameters to overwrite the existing configuration.
      *
      * @param {AccountId20Like} authority
      * @param {BytesLike} suffix
@@ -2758,17 +2762,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Remove `authority` from the username authorities.
      *
+     * @param {BytesLike} suffix
      * @param {AccountId20Like} authority
      **/
     removeUsernameAuthority: GenericTxCall<
       Rv,
-      (authority: AccountId20Like) => ChainSubmittableExtrinsic<
+      (
+        suffix: BytesLike,
+        authority: AccountId20Like,
+      ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Identity';
           palletCall: {
             name: 'RemoveUsernameAuthority';
-            params: { authority: AccountId20Like };
+            params: { suffix: BytesLike; authority: AccountId20Like };
           };
         }
       >
@@ -2777,7 +2785,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Set the username for `who`. Must be called by a username authority.
      *
-     * The authority must have an `allocation`. Users can either pre-sign their usernames or
+     * If `use_allocation` is set, the authority must have a username allocation available to
+     * spend. Otherwise, the authority will need to put up a deposit for registering the
+     * username.
+     *
+     * Users can either pre-sign their usernames or
      * accept them later.
      *
      * Usernames must:
@@ -2788,6 +2800,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId20Like} who
      * @param {BytesLike} username
      * @param {AccountEthereumSignature | undefined} signature
+     * @param {boolean} useAllocation
      **/
     setUsernameFor: GenericTxCall<
       Rv,
@@ -2795,13 +2808,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         who: AccountId20Like,
         username: BytesLike,
         signature: AccountEthereumSignature | undefined,
+        useAllocation: boolean,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Identity';
           palletCall: {
             name: 'SetUsernameFor';
-            params: { who: AccountId20Like; username: BytesLike; signature: AccountEthereumSignature | undefined };
+            params: {
+              who: AccountId20Like;
+              username: BytesLike;
+              signature: AccountEthereumSignature | undefined;
+              useAllocation: boolean;
+            };
           };
         }
       >
@@ -2868,19 +2887,60 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Remove a username that corresponds to an account with no identity. Exists when a user
-     * gets a username but then calls `clear_identity`.
+     * Start the process of removing a username by placing it in the unbinding usernames map.
+     * Once the grace period has passed, the username can be deleted by calling
+     * [remove_username](crate::Call::remove_username).
      *
      * @param {BytesLike} username
      **/
-    removeDanglingUsername: GenericTxCall<
+    unbindUsername: GenericTxCall<
       Rv,
       (username: BytesLike) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Identity';
           palletCall: {
-            name: 'RemoveDanglingUsername';
+            name: 'UnbindUsername';
+            params: { username: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Permanently delete a username which has been unbinding for longer than the grace period.
+     * Caller is refunded the fee if the username expired and the removal was successful.
+     *
+     * @param {BytesLike} username
+     **/
+    removeUsername: GenericTxCall<
+      Rv,
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'RemoveUsername';
+            params: { username: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Call with [ForceOrigin](crate::Config::ForceOrigin) privileges which deletes a username
+     * and slashes any deposit associated with it.
+     *
+     * @param {BytesLike} username
+     **/
+    killUsername: GenericTxCall<
+      Rv,
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'KillUsername';
             params: { username: BytesLike };
           };
         }
@@ -4704,6 +4764,58 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Disapprove the proposal and burn the cost held for storing this proposal.
+     *
+     * Parameters:
+     * - `origin`: must be the `KillOrigin`.
+     * - `proposal_hash`: The hash of the proposal that should be killed.
+     *
+     * Emits `Killed` and `ProposalCostBurned` if any cost was held for a given proposal.
+     *
+     * @param {H256} proposalHash
+     **/
+    kill: GenericTxCall<
+      Rv,
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TreasuryCouncilCollective';
+          palletCall: {
+            name: 'Kill';
+            params: { proposalHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Release the cost held for storing a proposal once the given proposal is completed.
+     *
+     * If there is no associated cost for the given proposal, this call will have no effect.
+     *
+     * Parameters:
+     * - `origin`: must be `Signed` or `Root`.
+     * - `proposal_hash`: The hash of the proposal.
+     *
+     * Emits `ProposalCostReleased` if any cost held for a given proposal.
+     *
+     * @param {H256} proposalHash
+     **/
+    releaseProposalCost: GenericTxCall<
+      Rv,
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TreasuryCouncilCollective';
+          palletCall: {
+            name: 'ReleaseProposalCost';
+            params: { proposalHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -4946,6 +5058,58 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Disapprove the proposal and burn the cost held for storing this proposal.
+     *
+     * Parameters:
+     * - `origin`: must be the `KillOrigin`.
+     * - `proposal_hash`: The hash of the proposal that should be killed.
+     *
+     * Emits `Killed` and `ProposalCostBurned` if any cost was held for a given proposal.
+     *
+     * @param {H256} proposalHash
+     **/
+    kill: GenericTxCall<
+      Rv,
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'OpenTechCommitteeCollective';
+          palletCall: {
+            name: 'Kill';
+            params: { proposalHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Release the cost held for storing a proposal once the given proposal is completed.
+     *
+     * If there is no associated cost for the given proposal, this call will have no effect.
+     *
+     * Parameters:
+     * - `origin`: must be `Signed` or `Root`.
+     * - `proposal_hash`: The hash of the proposal.
+     *
+     * Emits `ProposalCostReleased` if any cost held for a given proposal.
+     *
+     * @param {H256} proposalHash
+     **/
+    releaseProposalCost: GenericTxCall<
+      Rv,
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'OpenTechCommitteeCollective';
+          palletCall: {
+            name: 'ReleaseProposalCost';
+            params: { proposalHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -5060,7 +5224,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * Emits [`Event::AssetSpendApproved`] if successful.
      *
-     * @param {[]} assetKind
+     * @param {FrameSupportTokensFungibleUnionOfNativeOrWithId} assetKind
      * @param {bigint} amount
      * @param {AccountId20Like} beneficiary
      * @param {number | undefined} validFrom
@@ -5068,7 +5232,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     spend: GenericTxCall<
       Rv,
       (
-        assetKind: [],
+        assetKind: FrameSupportTokensFungibleUnionOfNativeOrWithId,
         amount: bigint,
         beneficiary: AccountId20Like,
         validFrom: number | undefined,
@@ -5078,7 +5242,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Treasury';
           palletCall: {
             name: 'Spend';
-            params: { assetKind: []; amount: bigint; beneficiary: AccountId20Like; validFrom: number | undefined };
+            params: {
+              assetKind: FrameSupportTokensFungibleUnionOfNativeOrWithId;
+              amount: bigint;
+              beneficiary: AccountId20Like;
+              validFrom: number | undefined;
+            };
           };
         }
       >
@@ -5521,13 +5690,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `location`: The destination that is being described.
      * - `xcm_version`: The latest version of XCM that `location` supports.
      *
-     * @param {StagingXcmV4Location} location
+     * @param {StagingXcmV5Location} location
      * @param {number} version
      **/
     forceXcmVersion: GenericTxCall<
       Rv,
       (
-        location: StagingXcmV4Location,
+        location: StagingXcmV5Location,
         version: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -5535,7 +5704,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'ForceXcmVersion';
-            params: { location: StagingXcmV4Location; version: number };
+            params: { location: StagingXcmV5Location; version: number };
           };
         }
       >
@@ -7767,7 +7936,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Create new asset with the ForeignAssetCreator
      *
      * @param {bigint} assetId
-     * @param {StagingXcmV4Location} assetXcmLocation
+     * @param {StagingXcmV5Location} assetXcmLocation
      * @param {number} decimals
      * @param {BytesLike} symbol
      * @param {BytesLike} name
@@ -7776,7 +7945,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       Rv,
       (
         assetId: bigint,
-        assetXcmLocation: StagingXcmV4Location,
+        assetXcmLocation: StagingXcmV5Location,
         decimals: number,
         symbol: BytesLike,
         name: BytesLike,
@@ -7788,7 +7957,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
             name: 'CreateForeignAsset';
             params: {
               assetId: bigint;
-              assetXcmLocation: StagingXcmV4Location;
+              assetXcmLocation: StagingXcmV5Location;
               decimals: number;
               symbol: BytesLike;
               name: BytesLike;
@@ -7804,20 +7973,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * assetType
      *
      * @param {bigint} assetId
-     * @param {StagingXcmV4Location} newXcmLocation
+     * @param {StagingXcmV5Location} newXcmLocation
      **/
     changeXcmLocation: GenericTxCall<
       Rv,
       (
         assetId: bigint,
-        newXcmLocation: StagingXcmV4Location,
+        newXcmLocation: StagingXcmV5Location,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'EvmForeignAssets';
           palletCall: {
             name: 'ChangeXcmLocation';
-            params: { assetId: bigint; newXcmLocation: StagingXcmV4Location };
+            params: { assetId: bigint; newXcmLocation: StagingXcmV5Location };
           };
         }
       >
@@ -7876,13 +8045,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
   xcmWeightTrader: {
     /**
      *
-     * @param {StagingXcmV4Location} location
+     * @param {StagingXcmV5Location} location
      * @param {bigint} relativePrice
      **/
     addAsset: GenericTxCall<
       Rv,
       (
-        location: StagingXcmV4Location,
+        location: StagingXcmV5Location,
         relativePrice: bigint,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -7890,7 +8059,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'XcmWeightTrader';
           palletCall: {
             name: 'AddAsset';
-            params: { location: StagingXcmV4Location; relativePrice: bigint };
+            params: { location: StagingXcmV5Location; relativePrice: bigint };
           };
         }
       >
@@ -7898,13 +8067,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
 
     /**
      *
-     * @param {StagingXcmV4Location} location
+     * @param {StagingXcmV5Location} location
      * @param {bigint} relativePrice
      **/
     editAsset: GenericTxCall<
       Rv,
       (
-        location: StagingXcmV4Location,
+        location: StagingXcmV5Location,
         relativePrice: bigint,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -7912,7 +8081,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'XcmWeightTrader';
           palletCall: {
             name: 'EditAsset';
-            params: { location: StagingXcmV4Location; relativePrice: bigint };
+            params: { location: StagingXcmV5Location; relativePrice: bigint };
           };
         }
       >
@@ -7920,17 +8089,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
 
     /**
      *
-     * @param {StagingXcmV4Location} location
+     * @param {StagingXcmV5Location} location
      **/
     pauseAssetSupport: GenericTxCall<
       Rv,
-      (location: StagingXcmV4Location) => ChainSubmittableExtrinsic<
+      (location: StagingXcmV5Location) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'XcmWeightTrader';
           palletCall: {
             name: 'PauseAssetSupport';
-            params: { location: StagingXcmV4Location };
+            params: { location: StagingXcmV5Location };
           };
         }
       >
@@ -7938,17 +8107,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
 
     /**
      *
-     * @param {StagingXcmV4Location} location
+     * @param {StagingXcmV5Location} location
      **/
     resumeAssetSupport: GenericTxCall<
       Rv,
-      (location: StagingXcmV4Location) => ChainSubmittableExtrinsic<
+      (location: StagingXcmV5Location) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'XcmWeightTrader';
           palletCall: {
             name: 'ResumeAssetSupport';
-            params: { location: StagingXcmV4Location };
+            params: { location: StagingXcmV5Location };
           };
         }
       >
@@ -7956,17 +8125,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
 
     /**
      *
-     * @param {StagingXcmV4Location} location
+     * @param {StagingXcmV5Location} location
      **/
     removeAsset: GenericTxCall<
       Rv,
-      (location: StagingXcmV4Location) => ChainSubmittableExtrinsic<
+      (location: StagingXcmV5Location) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'XcmWeightTrader';
           palletCall: {
             name: 'RemoveAsset';
-            params: { location: StagingXcmV4Location };
+            params: { location: StagingXcmV5Location };
           };
         }
       >
@@ -8012,6 +8181,111 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'FastAuthorizeUpgrade';
             params: { codeHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s transaction calls
+   **/
+  multiBlockMigrations: {
+    /**
+     * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+     *
+     * Should normally not be needed and is only in place as emergency measure. Note that
+     * restarting the migration process in this manner will not call the
+     * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+     *
+     * @param {PalletMigrationsMigrationCursor | undefined} cursor
+     **/
+    forceSetCursor: GenericTxCall<
+      Rv,
+      (cursor: PalletMigrationsMigrationCursor | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceSetCursor';
+            params: { cursor: PalletMigrationsMigrationCursor | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Allows root to set an active cursor to forcefully start/forward the migration process.
+     *
+     * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+     * `started_at` value to the next block number. Otherwise this would not be possible, since
+     * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+     * indicates that the current block number plus one should be used.
+     *
+     * @param {number} index
+     * @param {BytesLike | undefined} innerCursor
+     * @param {number | undefined} startedAt
+     **/
+    forceSetActiveCursor: GenericTxCall<
+      Rv,
+      (
+        index: number,
+        innerCursor: BytesLike | undefined,
+        startedAt: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceSetActiveCursor';
+            params: { index: number; innerCursor: BytesLike | undefined; startedAt: number | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Forces the onboarding of the migrations.
+     *
+     * This process happens automatically on a runtime upgrade. It is in place as an emergency
+     * measurement. The cursor needs to be `None` for this to succeed.
+     *
+     **/
+    forceOnboardMbms: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceOnboardMbms';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Clears the `Historic` set.
+     *
+     * `map_cursor` must be set to the last value that was returned by the
+     * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+     * way that will result in a sensible weight.
+     *
+     * @param {PalletMigrationsHistoricCleanupSelector} selector
+     **/
+    clearHistoric: GenericTxCall<
+      Rv,
+      (selector: PalletMigrationsHistoricCleanupSelector) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ClearHistoric';
+            params: { selector: PalletMigrationsHistoricCleanupSelector };
           };
         }
       >

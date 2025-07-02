@@ -94,6 +94,7 @@ export type HydradxRuntimeRuntimeEvent =
   | { pallet: 'Xyk'; palletEvent: PalletXykEvent }
   | { pallet: 'Referrals'; palletEvent: PalletReferralsEvent }
   | { pallet: 'Liquidation'; palletEvent: PalletLiquidationEvent }
+  | { pallet: 'Hsm'; palletEvent: PalletHsmEvent }
   | { pallet: 'Tokens'; palletEvent: OrmlTokensModuleEvent }
   | { pallet: 'Currencies'; palletEvent: PalletCurrenciesModuleEvent }
   | { pallet: 'Vesting'; palletEvent: OrmlVestingModuleEvent }
@@ -1359,6 +1360,7 @@ export type HydradxRuntimeRuntimeCall =
   | { pallet: 'Xyk'; palletCall: PalletXykCall }
   | { pallet: 'Referrals'; palletCall: PalletReferralsCall }
   | { pallet: 'Liquidation'; palletCall: PalletLiquidationCall }
+  | { pallet: 'Hsm'; palletCall: PalletHsmCall }
   | { pallet: 'Tokens'; palletCall: OrmlTokensModuleCall }
   | { pallet: 'Currencies'; palletCall: PalletCurrenciesModuleCall }
   | { pallet: 'Vesting'; palletCall: OrmlVestingModuleCall }
@@ -1424,6 +1426,7 @@ export type HydradxRuntimeRuntimeCallLike =
   | { pallet: 'Xyk'; palletCall: PalletXykCallLike }
   | { pallet: 'Referrals'; palletCall: PalletReferralsCallLike }
   | { pallet: 'Liquidation'; palletCall: PalletLiquidationCallLike }
+  | { pallet: 'Hsm'; palletCall: PalletHsmCallLike }
   | { pallet: 'Tokens'; palletCall: OrmlTokensModuleCallLike }
   | { pallet: 'Currencies'; palletCall: PalletCurrenciesModuleCallLike }
   | { pallet: 'Vesting'; palletCall: OrmlVestingModuleCallLike }
@@ -8522,7 +8525,8 @@ export type HydradxTraitsRouterPoolType =
   | { type: 'Lbp' }
   | { type: 'Stableswap'; value: number }
   | { type: 'Omnipool' }
-  | { type: 'Aave' };
+  | { type: 'Aave' }
+  | { type: 'Hsm' };
 
 export type HydradxTraitsRouterAssetPair = { assetIn: number; assetOut: number };
 
@@ -9271,7 +9275,8 @@ export type PalletStableswapTradability = { bits: number };
 
 export type PalletStableswapPegSource =
   | { type: 'Value'; value: [bigint, bigint] }
-  | { type: 'Oracle'; value: [FixedBytes<8>, HydradxTraitsOracleOraclePeriod, number] };
+  | { type: 'Oracle'; value: [FixedBytes<8>, HydradxTraitsOracleOraclePeriod, number] }
+  | { type: 'MmOracle'; value: H160 };
 
 export type HydradxTraitsOracleOraclePeriod = 'LastBlock' | 'Short' | 'TenMinutes' | 'Hour' | 'Day' | 'Week';
 
@@ -10052,6 +10057,361 @@ export type PalletLiquidationCallLike =
    * Set the borrowing market contract address.
    **/
   | { name: 'SetBorrowingContract'; params: { contract: H160 } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletHsmCall =
+  /**
+   * Add a new collateral asset
+   *
+   * This function adds a new asset as an approved collateral for Hollar. Only callable by
+   * the governance (root origin).
+   *
+   * Parameters:
+   * - `origin`: Must be Root
+   * - `asset_id`: Asset ID to be added as collateral
+   * - `pool_id`: StableSwap pool ID where this asset and Hollar are paired
+   * - `purchase_fee`: Fee applied when buying Hollar with this asset (added to purchase price)
+   * - `max_buy_price_coefficient`: Maximum buy price coefficient for HSM to buy back Hollar
+   * - `buy_back_fee`: Fee applied when buying back Hollar (subtracted from buy price)
+   * - `buyback_rate`: Parameter that controls how quickly HSM can buy Hollar with this asset
+   * - `max_in_holding`: Optional maximum amount of collateral HSM can hold
+   *
+   * Emits:
+   * - `CollateralAdded` when the collateral is successfully added
+   *
+   * Errors:
+   * - `AssetAlreadyApproved` if the asset is already registered as a collateral
+   * - `PoolAlreadyHasCollateral` if another asset from the same pool is already approved
+   * - `HollarNotInPool` if Hollar is not found in the specified pool
+   * - `AssetNotInPool` if the collateral asset is not found in the specified pool
+   * - Other errors from underlying calls
+   **/
+  | {
+      name: 'AddCollateralAsset';
+      params: {
+        assetId: number;
+        poolId: number;
+        purchaseFee: Permill;
+        maxBuyPriceCoefficient: FixedU128;
+        buyBackFee: Permill;
+        buybackRate: Perbill;
+        maxInHolding?: bigint | undefined;
+      };
+    }
+  /**
+   * Remove a collateral asset
+   *
+   * Removes an asset from the approved collaterals list. Only callable by the governance (root origin).
+   * The collateral must have a zero balance in the HSM account before it can be removed.
+   *
+   * Parameters:
+   * - `origin`: Must be Root
+   * - `asset_id`: Asset ID to remove from collaterals
+   *
+   * Emits:
+   * - `CollateralRemoved` when the collateral is successfully removed
+   *
+   * Errors:
+   * - `AssetNotApproved` if the asset is not a registered collateral
+   * - `CollateralNotEmpty` if the HSM account still holds some of this asset
+   **/
+  | { name: 'RemoveCollateralAsset'; params: { assetId: number } }
+  /**
+   * Update collateral asset parameters
+   *
+   * Updates the parameters for an existing collateral asset. Only callable by the governance (root origin).
+   * Each parameter is optional and only provided parameters will be updated.
+   *
+   * Parameters:
+   * - `origin`: Must be Root
+   * - `asset_id`: Asset ID to update
+   * - `purchase_fee`: New purchase fee (optional)
+   * - `max_buy_price_coefficient`: New max buy price coefficient (optional)
+   * - `buy_back_fee`: New buy back fee (optional)
+   * - `buyback_rate`: New buyback rate parameter (optional)
+   * - `max_in_holding`: New maximum holding amount (optional)
+   *
+   * Emits:
+   * - `CollateralUpdated` when the collateral is successfully updated
+   *
+   * Errors:
+   * - `AssetNotApproved` if the asset is not a registered collateral
+   **/
+  | {
+      name: 'UpdateCollateralAsset';
+      params: {
+        assetId: number;
+        purchaseFee?: Permill | undefined;
+        maxBuyPriceCoefficient?: FixedU128 | undefined;
+        buyBackFee?: Permill | undefined;
+        buybackRate?: Perbill | undefined;
+        maxInHolding?: bigint | undefined | undefined;
+      };
+    }
+  /**
+   * Sell asset to HSM
+   *
+   * This function allows users to:
+   * 1. Sell Hollar back to HSM in exchange for collateral assets
+   * 2. Sell collateral assets to HSM in exchange for newly minted Hollar
+   *
+   * The valid pairs must include Hollar as one side and an approved collateral as the other side.
+   *
+   * Parameters:
+   * - `origin`: Account selling the asset
+   * - `asset_in`: Asset ID being sold
+   * - `asset_out`: Asset ID being bought
+   * - `amount_in`: Amount of asset_in to sell
+   * - `slippage_limit`: Minimum amount out for slippage protection
+   *
+   * Emits:
+   * - `Swapped3` when the sell is successful
+   *
+   * Errors:
+   * - `InvalidAssetPair` if the pair is not Hollar and an approved collateral
+   * - `AssetNotApproved` if the collateral asset isn't registered
+   * - `SlippageLimitExceeded` if the amount received is less than the slippage limit
+   * - `MaxBuyBackExceeded` if the sell would exceed the maximum buy back rate
+   * - `MaxBuyPriceExceeded` if the sell would exceed the maximum buy price
+   * - `InsufficientCollateralBalance` if HSM doesn't have enough collateral
+   * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+   * - Other errors from underlying calls
+   **/
+  | { name: 'Sell'; params: { assetIn: number; assetOut: number; amountIn: bigint; slippageLimit: bigint } }
+  /**
+   * Buy asset from HSM
+   *
+   * This function allows users to:
+   * 1. Buy Hollar from HSM using collateral assets
+   * 2. Buy collateral assets from HSM using Hollar
+   *
+   * The valid pairs must include Hollar as one side and an approved collateral as the other side.
+   *
+   * Parameters:
+   * - `origin`: Account buying the asset
+   * - `asset_in`: Asset ID being sold by the user
+   * - `asset_out`: Asset ID being bought by the user
+   * - `amount_out`: Amount of asset_out to buy
+   * - `slippage_limit`: Maximum amount in for slippage protection
+   *
+   * Emits:
+   * - `Swapped3` when the buy is successful
+   *
+   * Errors:
+   * - `InvalidAssetPair` if the pair is not Hollar and an approved collateral
+   * - `AssetNotApproved` if the collateral asset isn't registered
+   * - `SlippageLimitExceeded` if the amount input exceeds the slippage limit
+   * - `MaxHoldingExceeded` if the buy would cause HSM to exceed its maximum holding
+   * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+   * - Other errors from underlying calls
+   **/
+  | { name: 'Buy'; params: { assetIn: number; assetOut: number; amountOut: bigint; slippageLimit: bigint } }
+  /**
+   * Execute arbitrage opportunity between HSM and collateral stable pool
+   *
+   * This call is designed to be triggered automatically by offchain workers. It:
+   * 1. Detects price imbalances between HSM and a stable pool for a collateral
+   * 2. If an opportunity exists, mints Hollar, swaps it for collateral on HSM
+   * 3. Swaps that collateral for Hollar on the stable pool
+   * 4. Burns the Hollar received from the arbitrage
+   *
+   * This helps maintain the peg of Hollar by profiting from and correcting price imbalances.
+   * The call is unsigned and should only be executed by offchain workers.
+   *
+   * Parameters:
+   * - `origin`: Must be None (unsigned)
+   * - `collateral_asset_id`: The ID of the collateral asset to check for arbitrage
+   *
+   * Emits:
+   * - `ArbitrageExecuted` when the arbitrage is successful
+   *
+   * Errors:
+   * - `AssetNotApproved` if the asset is not a registered collateral
+   * - `NoArbitrageOpportunity` if there's no profitable arbitrage opportunity
+   * - `MaxBuyPriceExceeded` if the arbitrage would exceed the maximum buy price
+   * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+   * - Other errors from underlying calls
+   **/
+  | { name: 'ExecuteArbitrage'; params: { collateralAssetId: number } }
+  | { name: 'SetFlashMinter'; params: { flashMinterAddr: H160 } };
+
+export type PalletHsmCallLike =
+  /**
+   * Add a new collateral asset
+   *
+   * This function adds a new asset as an approved collateral for Hollar. Only callable by
+   * the governance (root origin).
+   *
+   * Parameters:
+   * - `origin`: Must be Root
+   * - `asset_id`: Asset ID to be added as collateral
+   * - `pool_id`: StableSwap pool ID where this asset and Hollar are paired
+   * - `purchase_fee`: Fee applied when buying Hollar with this asset (added to purchase price)
+   * - `max_buy_price_coefficient`: Maximum buy price coefficient for HSM to buy back Hollar
+   * - `buy_back_fee`: Fee applied when buying back Hollar (subtracted from buy price)
+   * - `buyback_rate`: Parameter that controls how quickly HSM can buy Hollar with this asset
+   * - `max_in_holding`: Optional maximum amount of collateral HSM can hold
+   *
+   * Emits:
+   * - `CollateralAdded` when the collateral is successfully added
+   *
+   * Errors:
+   * - `AssetAlreadyApproved` if the asset is already registered as a collateral
+   * - `PoolAlreadyHasCollateral` if another asset from the same pool is already approved
+   * - `HollarNotInPool` if Hollar is not found in the specified pool
+   * - `AssetNotInPool` if the collateral asset is not found in the specified pool
+   * - Other errors from underlying calls
+   **/
+  | {
+      name: 'AddCollateralAsset';
+      params: {
+        assetId: number;
+        poolId: number;
+        purchaseFee: Permill;
+        maxBuyPriceCoefficient: FixedU128;
+        buyBackFee: Permill;
+        buybackRate: Perbill;
+        maxInHolding?: bigint | undefined;
+      };
+    }
+  /**
+   * Remove a collateral asset
+   *
+   * Removes an asset from the approved collaterals list. Only callable by the governance (root origin).
+   * The collateral must have a zero balance in the HSM account before it can be removed.
+   *
+   * Parameters:
+   * - `origin`: Must be Root
+   * - `asset_id`: Asset ID to remove from collaterals
+   *
+   * Emits:
+   * - `CollateralRemoved` when the collateral is successfully removed
+   *
+   * Errors:
+   * - `AssetNotApproved` if the asset is not a registered collateral
+   * - `CollateralNotEmpty` if the HSM account still holds some of this asset
+   **/
+  | { name: 'RemoveCollateralAsset'; params: { assetId: number } }
+  /**
+   * Update collateral asset parameters
+   *
+   * Updates the parameters for an existing collateral asset. Only callable by the governance (root origin).
+   * Each parameter is optional and only provided parameters will be updated.
+   *
+   * Parameters:
+   * - `origin`: Must be Root
+   * - `asset_id`: Asset ID to update
+   * - `purchase_fee`: New purchase fee (optional)
+   * - `max_buy_price_coefficient`: New max buy price coefficient (optional)
+   * - `buy_back_fee`: New buy back fee (optional)
+   * - `buyback_rate`: New buyback rate parameter (optional)
+   * - `max_in_holding`: New maximum holding amount (optional)
+   *
+   * Emits:
+   * - `CollateralUpdated` when the collateral is successfully updated
+   *
+   * Errors:
+   * - `AssetNotApproved` if the asset is not a registered collateral
+   **/
+  | {
+      name: 'UpdateCollateralAsset';
+      params: {
+        assetId: number;
+        purchaseFee?: Permill | undefined;
+        maxBuyPriceCoefficient?: FixedU128 | undefined;
+        buyBackFee?: Permill | undefined;
+        buybackRate?: Perbill | undefined;
+        maxInHolding?: bigint | undefined | undefined;
+      };
+    }
+  /**
+   * Sell asset to HSM
+   *
+   * This function allows users to:
+   * 1. Sell Hollar back to HSM in exchange for collateral assets
+   * 2. Sell collateral assets to HSM in exchange for newly minted Hollar
+   *
+   * The valid pairs must include Hollar as one side and an approved collateral as the other side.
+   *
+   * Parameters:
+   * - `origin`: Account selling the asset
+   * - `asset_in`: Asset ID being sold
+   * - `asset_out`: Asset ID being bought
+   * - `amount_in`: Amount of asset_in to sell
+   * - `slippage_limit`: Minimum amount out for slippage protection
+   *
+   * Emits:
+   * - `Swapped3` when the sell is successful
+   *
+   * Errors:
+   * - `InvalidAssetPair` if the pair is not Hollar and an approved collateral
+   * - `AssetNotApproved` if the collateral asset isn't registered
+   * - `SlippageLimitExceeded` if the amount received is less than the slippage limit
+   * - `MaxBuyBackExceeded` if the sell would exceed the maximum buy back rate
+   * - `MaxBuyPriceExceeded` if the sell would exceed the maximum buy price
+   * - `InsufficientCollateralBalance` if HSM doesn't have enough collateral
+   * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+   * - Other errors from underlying calls
+   **/
+  | { name: 'Sell'; params: { assetIn: number; assetOut: number; amountIn: bigint; slippageLimit: bigint } }
+  /**
+   * Buy asset from HSM
+   *
+   * This function allows users to:
+   * 1. Buy Hollar from HSM using collateral assets
+   * 2. Buy collateral assets from HSM using Hollar
+   *
+   * The valid pairs must include Hollar as one side and an approved collateral as the other side.
+   *
+   * Parameters:
+   * - `origin`: Account buying the asset
+   * - `asset_in`: Asset ID being sold by the user
+   * - `asset_out`: Asset ID being bought by the user
+   * - `amount_out`: Amount of asset_out to buy
+   * - `slippage_limit`: Maximum amount in for slippage protection
+   *
+   * Emits:
+   * - `Swapped3` when the buy is successful
+   *
+   * Errors:
+   * - `InvalidAssetPair` if the pair is not Hollar and an approved collateral
+   * - `AssetNotApproved` if the collateral asset isn't registered
+   * - `SlippageLimitExceeded` if the amount input exceeds the slippage limit
+   * - `MaxHoldingExceeded` if the buy would cause HSM to exceed its maximum holding
+   * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+   * - Other errors from underlying calls
+   **/
+  | { name: 'Buy'; params: { assetIn: number; assetOut: number; amountOut: bigint; slippageLimit: bigint } }
+  /**
+   * Execute arbitrage opportunity between HSM and collateral stable pool
+   *
+   * This call is designed to be triggered automatically by offchain workers. It:
+   * 1. Detects price imbalances between HSM and a stable pool for a collateral
+   * 2. If an opportunity exists, mints Hollar, swaps it for collateral on HSM
+   * 3. Swaps that collateral for Hollar on the stable pool
+   * 4. Burns the Hollar received from the arbitrage
+   *
+   * This helps maintain the peg of Hollar by profiting from and correcting price imbalances.
+   * The call is unsigned and should only be executed by offchain workers.
+   *
+   * Parameters:
+   * - `origin`: Must be None (unsigned)
+   * - `collateral_asset_id`: The ID of the collateral asset to check for arbitrage
+   *
+   * Emits:
+   * - `ArbitrageExecuted` when the arbitrage is successful
+   *
+   * Errors:
+   * - `AssetNotApproved` if the asset is not a registered collateral
+   * - `NoArbitrageOpportunity` if there's no profitable arbitrage opportunity
+   * - `MaxBuyPriceExceeded` if the arbitrage would exceed the maximum buy price
+   * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+   * - Other errors from underlying calls
+   **/
+  | { name: 'ExecuteArbitrage'; params: { collateralAssetId: number } }
+  | { name: 'SetFlashMinter'; params: { flashMinterAddr: H160 } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -14376,6 +14736,76 @@ export type PalletLiquidationEvent =
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletHsmEvent =
+  /**
+   * A new collateral asset was added
+   *
+   * Parameters:
+   * - `asset_id`: The ID of the asset added as collateral
+   * - `pool_id`: The StableSwap pool ID where this asset belongs
+   * - `purchase_fee`: Fee applied when buying Hollar with this asset
+   * - `max_buy_price_coefficient`: Maximum buy price coefficient for HSM to buy back Hollar
+   * - `buy_back_fee`: Fee applied when buying back Hollar
+   * - `buyback_rate`: Parameter that controls how quickly HSM can buy Hollar with this asset
+   **/
+  | {
+      name: 'CollateralAdded';
+      data: {
+        assetId: number;
+        poolId: number;
+        purchaseFee: Permill;
+        maxBuyPriceCoefficient: FixedU128;
+        buyBackFee: Permill;
+        buybackRate: Perbill;
+      };
+    }
+  /**
+   * A collateral asset was removed
+   *
+   * Parameters:
+   * - `asset_id`: The ID of the asset removed from collaterals
+   * - `amount`: The amount of the asset that was returned (should be zero)
+   **/
+  | { name: 'CollateralRemoved'; data: { assetId: number; amount: bigint } }
+  /**
+   * A collateral asset was updated
+   *
+   * Parameters:
+   * - `asset_id`: The ID of the updated collateral asset
+   * - `purchase_fee`: New purchase fee if updated (None if not changed)
+   * - `max_buy_price_coefficient`: New max buy price coefficient if updated (None if not changed)
+   * - `buy_back_fee`: New buy back fee if updated (None if not changed)
+   * - `buyback_rate`: New buyback rate if updated (None if not changed)
+   **/
+  | {
+      name: 'CollateralUpdated';
+      data: {
+        assetId: number;
+        purchaseFee?: Permill | undefined;
+        maxBuyPriceCoefficient?: FixedU128 | undefined;
+        buyBackFee?: Permill | undefined;
+        buybackRate?: Perbill | undefined;
+      };
+    }
+  /**
+   * Arbitrage executed successfully
+   *
+   * Parameters:
+   * - `asset_id`: The collateral asset used in the arbitrage
+   * - `hollar_amount`: Amount of Hollar that was included in the arbitrage operation
+   **/
+  | { name: 'ArbitrageExecuted'; data: { assetId: number; hollarAmount: bigint } }
+  /**
+   * Flash minter address set
+   *
+   * Parameters:
+   * - `flash_minter`: The EVM address of the flash minter contract
+   **/
+  | { name: 'FlashMinterSet'; data: { flashMinter: H160 } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type OrmlTokensModuleEvent =
   /**
    * An account was created with some free balance.
@@ -15330,7 +15760,8 @@ export type PalletBroadcastFiller =
   | { type: 'Xyk'; value: number }
   | { type: 'Lbp' }
   | { type: 'Otc'; value: number }
-  | { type: 'Aave' };
+  | { type: 'Aave' }
+  | { type: 'Hsm' };
 
 export type PalletBroadcastTradeOperation = 'ExactIn' | 'ExactOut' | 'Limit' | 'LiquidityAdd' | 'LiquidityRemove';
 
@@ -16909,10 +17340,6 @@ export type PalletLiquidityMiningError =
    **/
   | { name: 'LiquidityMiningIsNotStopped' }
   /**
-   * LP shares amount is not valid.
-   **/
-  | { name: 'InvalidDepositAmount' }
-  /**
    * Account is not allowed to perform action.
    **/
   | { name: 'Forbidden' }
@@ -17300,6 +17727,17 @@ export type PalletStableswapPoolInfo = {
   finalBlock: number;
   fee: Permill;
 };
+
+export type PalletStableswapPoolSnapshot = {
+  assets: Array<number>;
+  reserves: Array<HydraDxMathStableswapTypesAssetReserve>;
+  amplification: bigint;
+  fee: Permill;
+  pegs: Array<[bigint, bigint]>;
+  shareIssuance: bigint;
+};
+
+export type HydraDxMathStableswapTypesAssetReserve = { amount: bigint; decimals: number };
 
 /**
  * The `Error` enum of this pallet.
@@ -17768,7 +18206,155 @@ export type PalletLiquidationError =
   /**
    * Liquidation was not profitable enough to repay flash loan
    **/
-  | 'NotProfitable';
+  | 'NotProfitable'
+  /**
+   * Flash minter contract address not set. It is required for Hollar liquidations.
+   **/
+  | 'FlashMinterNotSet'
+  /**
+   * Invalid liquidation data provided
+   **/
+  | 'InvalidLiquidationData';
+
+export type PalletHsmCollateralInfo = {
+  poolId: number;
+  purchaseFee: Permill;
+  maxBuyPriceCoefficient: FixedU128;
+  buybackRate: Perbill;
+  buyBackFee: Permill;
+  maxInHolding?: bigint | undefined;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletHsmError =
+  /**
+   * Asset is not approved as collateral
+   *
+   * The operation attempted to use an asset that is not registered as an approved collateral.
+   **/
+  | 'AssetNotApproved'
+  /**
+   * Asset is already approved as collateral
+   *
+   * Attempted to add an asset that is already registered as a collateral.
+   **/
+  | 'AssetAlreadyApproved'
+  /**
+   * Another asset from the same pool is already approved
+   *
+   * Only one asset from each StableSwap pool can be used as collateral.
+   **/
+  | 'PoolAlreadyHasCollateral'
+  /**
+   * Invalid asset pair, must be Hollar and approved collateral
+   *
+   * The asset pair for buy/sell operations must include Hollar as one side and an approved collateral as the other.
+   **/
+  | 'InvalidAssetPair'
+  /**
+   * Max buy price exceeded
+   *
+   * The calculated buy price exceeds the maximum allowed buy price for the collateral.
+   **/
+  | 'MaxBuyPriceExceeded'
+  /**
+   * Max buy back amount in single block exceeded
+   *
+   * The amount of Hollar being sold to HSM exceeds the maximum allowed in a single block for this collateral.
+   **/
+  | 'MaxBuyBackExceeded'
+  /**
+   * Max holding amount for collateral exceeded
+   *
+   * The operation would cause the HSM to hold more of the collateral than the configured maximum.
+   **/
+  | 'MaxHoldingExceeded'
+  /**
+   * Slippage limit exceeded
+   *
+   * The calculated amount is worse than the provided slippage limit.
+   **/
+  | 'SlippageLimitExceeded'
+  /**
+   * Invalid EVM contract interaction
+   *
+   * The call to the EVM contract (GHO Hollar token) failed.
+   **/
+  | 'InvalidEVMInteraction'
+  /**
+   * Decimal retrieval failed
+   *
+   * Failed to retrieve the decimal information for an asset.
+   **/
+  | 'DecimalRetrievalFailed'
+  /**
+   * No arbitrage opportunity
+   *
+   * There is no profitable arbitrage opportunity for the specified collateral.
+   **/
+  | 'NoArbitrageOpportunity'
+  /**
+   * Offchain lock error
+   *
+   * Failed to acquire the lock for offchain workers, likely because another operation is in progress.
+   **/
+  | 'OffchainLockError'
+  /**
+   * Asset not in the pool
+   *
+   * The specified asset was not found in the pool.
+   **/
+  | 'AssetNotFound'
+  /**
+   * Provided pool state is invalid
+   *
+   * The retrieved pool state has inconsistent or invalid data.
+   **/
+  | 'InvalidPoolState'
+  /**
+   * Collateral is not empty
+   *
+   * Cannot remove a collateral asset that still has a non-zero balance in the HSM account.
+   **/
+  | 'CollateralNotEmpty'
+  /**
+   * Asset not in the pool
+   *
+   * The collateral asset is not present in the specified pool.
+   **/
+  | 'AssetNotInPool'
+  /**
+   * Hollar is not in the pool
+   *
+   * The Hollar asset is not present in the specified pool.
+   **/
+  | 'HollarNotInPool'
+  /**
+   * Insufficient collateral balance
+   *
+   * The HSM does not have enough of the collateral asset to complete the operation.
+   **/
+  | 'InsufficientCollateralBalance'
+  /**
+   * GHO Contract address not found
+   *
+   * The EVM address for the GHO (Hollar) token contract was not found.
+   **/
+  | 'HollarContractAddressNotFound'
+  /**
+   * HSM contains maximum number of allowed collateral assets.
+   **/
+  | 'MaxNumberOfCollateralsReached'
+  /**
+   * Flash minter address not set
+   **/
+  | 'FlashMinterNotSet'
+  /**
+   * Provided arbitrage data is invalid
+   **/
+  | 'InvalidArbitrageData';
 
 export type OrmlTokensBalanceLock = { id: FixedBytes<8>; amount: bigint };
 
@@ -18828,6 +19414,8 @@ export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataH
 
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
+export type CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim = {};
+
 export type HydradxRuntimeRuntime = {};
 
 export type SpRuntimeBlock = { header: Header; extrinsics: Array<FpSelfContainedUncheckedExtrinsic> };
@@ -19001,6 +19589,7 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'Xyk'; palletError: PalletXykError }
   | { pallet: 'Referrals'; palletError: PalletReferralsError }
   | { pallet: 'Liquidation'; palletError: PalletLiquidationError }
+  | { pallet: 'Hsm'; palletError: PalletHsmError }
   | { pallet: 'Tokens'; palletError: OrmlTokensModuleError }
   | { pallet: 'Currencies'; palletError: PalletCurrenciesModuleError }
   | { pallet: 'Vesting'; palletError: OrmlVestingModuleError }

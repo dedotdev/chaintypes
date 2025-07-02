@@ -1701,11 +1701,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     LiquidityMiningIsNotStopped: GenericPalletError<Rv>;
 
     /**
-     * LP shares amount is not valid.
-     **/
-    InvalidDepositAmount: GenericPalletError<Rv>;
-
-    /**
      * Account is not allowed to perform action.
      **/
     Forbidden: GenericPalletError<Rv>;
@@ -2701,6 +2696,173 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NotProfitable: GenericPalletError<Rv>;
 
     /**
+     * Flash minter contract address not set. It is required for Hollar liquidations.
+     **/
+    FlashMinterNotSet: GenericPalletError<Rv>;
+
+    /**
+     * Invalid liquidation data provided
+     **/
+    InvalidLiquidationData: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `HSM`'s errors
+   **/
+  hsm: {
+    /**
+     * Asset is not approved as collateral
+     *
+     * The operation attempted to use an asset that is not registered as an approved collateral.
+     **/
+    AssetNotApproved: GenericPalletError<Rv>;
+
+    /**
+     * Asset is already approved as collateral
+     *
+     * Attempted to add an asset that is already registered as a collateral.
+     **/
+    AssetAlreadyApproved: GenericPalletError<Rv>;
+
+    /**
+     * Another asset from the same pool is already approved
+     *
+     * Only one asset from each StableSwap pool can be used as collateral.
+     **/
+    PoolAlreadyHasCollateral: GenericPalletError<Rv>;
+
+    /**
+     * Invalid asset pair, must be Hollar and approved collateral
+     *
+     * The asset pair for buy/sell operations must include Hollar as one side and an approved collateral as the other.
+     **/
+    InvalidAssetPair: GenericPalletError<Rv>;
+
+    /**
+     * Max buy price exceeded
+     *
+     * The calculated buy price exceeds the maximum allowed buy price for the collateral.
+     **/
+    MaxBuyPriceExceeded: GenericPalletError<Rv>;
+
+    /**
+     * Max buy back amount in single block exceeded
+     *
+     * The amount of Hollar being sold to HSM exceeds the maximum allowed in a single block for this collateral.
+     **/
+    MaxBuyBackExceeded: GenericPalletError<Rv>;
+
+    /**
+     * Max holding amount for collateral exceeded
+     *
+     * The operation would cause the HSM to hold more of the collateral than the configured maximum.
+     **/
+    MaxHoldingExceeded: GenericPalletError<Rv>;
+
+    /**
+     * Slippage limit exceeded
+     *
+     * The calculated amount is worse than the provided slippage limit.
+     **/
+    SlippageLimitExceeded: GenericPalletError<Rv>;
+
+    /**
+     * Invalid EVM contract interaction
+     *
+     * The call to the EVM contract (GHO Hollar token) failed.
+     **/
+    InvalidEVMInteraction: GenericPalletError<Rv>;
+
+    /**
+     * Decimal retrieval failed
+     *
+     * Failed to retrieve the decimal information for an asset.
+     **/
+    DecimalRetrievalFailed: GenericPalletError<Rv>;
+
+    /**
+     * No arbitrage opportunity
+     *
+     * There is no profitable arbitrage opportunity for the specified collateral.
+     **/
+    NoArbitrageOpportunity: GenericPalletError<Rv>;
+
+    /**
+     * Offchain lock error
+     *
+     * Failed to acquire the lock for offchain workers, likely because another operation is in progress.
+     **/
+    OffchainLockError: GenericPalletError<Rv>;
+
+    /**
+     * Asset not in the pool
+     *
+     * The specified asset was not found in the pool.
+     **/
+    AssetNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Provided pool state is invalid
+     *
+     * The retrieved pool state has inconsistent or invalid data.
+     **/
+    InvalidPoolState: GenericPalletError<Rv>;
+
+    /**
+     * Collateral is not empty
+     *
+     * Cannot remove a collateral asset that still has a non-zero balance in the HSM account.
+     **/
+    CollateralNotEmpty: GenericPalletError<Rv>;
+
+    /**
+     * Asset not in the pool
+     *
+     * The collateral asset is not present in the specified pool.
+     **/
+    AssetNotInPool: GenericPalletError<Rv>;
+
+    /**
+     * Hollar is not in the pool
+     *
+     * The Hollar asset is not present in the specified pool.
+     **/
+    HollarNotInPool: GenericPalletError<Rv>;
+
+    /**
+     * Insufficient collateral balance
+     *
+     * The HSM does not have enough of the collateral asset to complete the operation.
+     **/
+    InsufficientCollateralBalance: GenericPalletError<Rv>;
+
+    /**
+     * GHO Contract address not found
+     *
+     * The EVM address for the GHO (Hollar) token contract was not found.
+     **/
+    HollarContractAddressNotFound: GenericPalletError<Rv>;
+
+    /**
+     * HSM contains maximum number of allowed collateral assets.
+     **/
+    MaxNumberOfCollateralsReached: GenericPalletError<Rv>;
+
+    /**
+     * Flash minter address not set
+     **/
+    FlashMinterNotSet: GenericPalletError<Rv>;
+
+    /**
+     * Provided arbitrage data is invalid
+     **/
+    InvalidArbitrageData: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -3042,11 +3204,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Liquidity mining is in `active` or `terminated` state and action cannot be completed.
      **/
     LiquidityMiningIsNotStopped: GenericPalletError<Rv>;
-
-    /**
-     * LP shares amount is not valid.
-     **/
-    InvalidDepositAmount: GenericPalletError<Rv>;
 
     /**
      * Account is not allowed to perform action.

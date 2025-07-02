@@ -13,6 +13,7 @@ import type {
   Permill,
   Perquintill,
   H160,
+  Perbill,
 } from 'dedot/codecs';
 import type {
   FrameSupportTokensMiscBalanceStatus,
@@ -2912,6 +2913,89 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Liquidated',
       { user: H160; collateralAsset: number; debtAsset: number; debtToCover: bigint; profit: bigint }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `HSM`'s events
+   **/
+  hsm: {
+    /**
+     * A new collateral asset was added
+     *
+     * Parameters:
+     * - `asset_id`: The ID of the asset added as collateral
+     * - `pool_id`: The StableSwap pool ID where this asset belongs
+     * - `purchase_fee`: Fee applied when buying Hollar with this asset
+     * - `max_buy_price_coefficient`: Maximum buy price coefficient for HSM to buy back Hollar
+     * - `buy_back_fee`: Fee applied when buying back Hollar
+     * - `buyback_rate`: Parameter that controls how quickly HSM can buy Hollar with this asset
+     **/
+    CollateralAdded: GenericPalletEvent<
+      Rv,
+      'HSM',
+      'CollateralAdded',
+      {
+        assetId: number;
+        poolId: number;
+        purchaseFee: Permill;
+        maxBuyPriceCoefficient: FixedU128;
+        buyBackFee: Permill;
+        buybackRate: Perbill;
+      }
+    >;
+
+    /**
+     * A collateral asset was removed
+     *
+     * Parameters:
+     * - `asset_id`: The ID of the asset removed from collaterals
+     * - `amount`: The amount of the asset that was returned (should be zero)
+     **/
+    CollateralRemoved: GenericPalletEvent<Rv, 'HSM', 'CollateralRemoved', { assetId: number; amount: bigint }>;
+
+    /**
+     * A collateral asset was updated
+     *
+     * Parameters:
+     * - `asset_id`: The ID of the updated collateral asset
+     * - `purchase_fee`: New purchase fee if updated (None if not changed)
+     * - `max_buy_price_coefficient`: New max buy price coefficient if updated (None if not changed)
+     * - `buy_back_fee`: New buy back fee if updated (None if not changed)
+     * - `buyback_rate`: New buyback rate if updated (None if not changed)
+     **/
+    CollateralUpdated: GenericPalletEvent<
+      Rv,
+      'HSM',
+      'CollateralUpdated',
+      {
+        assetId: number;
+        purchaseFee?: Permill | undefined;
+        maxBuyPriceCoefficient?: FixedU128 | undefined;
+        buyBackFee?: Permill | undefined;
+        buybackRate?: Perbill | undefined;
+      }
+    >;
+
+    /**
+     * Arbitrage executed successfully
+     *
+     * Parameters:
+     * - `asset_id`: The collateral asset used in the arbitrage
+     * - `hollar_amount`: Amount of Hollar that was included in the arbitrage operation
+     **/
+    ArbitrageExecuted: GenericPalletEvent<Rv, 'HSM', 'ArbitrageExecuted', { assetId: number; hollarAmount: bigint }>;
+
+    /**
+     * Flash minter address set
+     *
+     * Parameters:
+     * - `flash_minter`: The EVM address of the flash minter contract
+     **/
+    FlashMinterSet: GenericPalletEvent<Rv, 'HSM', 'FlashMinterSet', { flashMinter: H160 }>;
 
     /**
      * Generic pallet event

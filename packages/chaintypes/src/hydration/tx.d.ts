@@ -22,6 +22,7 @@ import type {
   FixedBytes,
   Permill,
   Perquintill,
+  Perbill,
 } from 'dedot/codecs';
 import type {
   HydradxRuntimeRuntimeCallLike,
@@ -9628,6 +9629,332 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SetBorrowingContract';
             params: { contract: H160 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `HSM`'s transaction calls
+   **/
+  hsm: {
+    /**
+     * Add a new collateral asset
+     *
+     * This function adds a new asset as an approved collateral for Hollar. Only callable by
+     * the governance (root origin).
+     *
+     * Parameters:
+     * - `origin`: Must be Root
+     * - `asset_id`: Asset ID to be added as collateral
+     * - `pool_id`: StableSwap pool ID where this asset and Hollar are paired
+     * - `purchase_fee`: Fee applied when buying Hollar with this asset (added to purchase price)
+     * - `max_buy_price_coefficient`: Maximum buy price coefficient for HSM to buy back Hollar
+     * - `buy_back_fee`: Fee applied when buying back Hollar (subtracted from buy price)
+     * - `buyback_rate`: Parameter that controls how quickly HSM can buy Hollar with this asset
+     * - `max_in_holding`: Optional maximum amount of collateral HSM can hold
+     *
+     * Emits:
+     * - `CollateralAdded` when the collateral is successfully added
+     *
+     * Errors:
+     * - `AssetAlreadyApproved` if the asset is already registered as a collateral
+     * - `PoolAlreadyHasCollateral` if another asset from the same pool is already approved
+     * - `HollarNotInPool` if Hollar is not found in the specified pool
+     * - `AssetNotInPool` if the collateral asset is not found in the specified pool
+     * - Other errors from underlying calls
+     *
+     * @param {number} assetId
+     * @param {number} poolId
+     * @param {Permill} purchaseFee
+     * @param {FixedU128} maxBuyPriceCoefficient
+     * @param {Permill} buyBackFee
+     * @param {Perbill} buybackRate
+     * @param {bigint | undefined} maxInHolding
+     **/
+    addCollateralAsset: GenericTxCall<
+      Rv,
+      (
+        assetId: number,
+        poolId: number,
+        purchaseFee: Permill,
+        maxBuyPriceCoefficient: FixedU128,
+        buyBackFee: Permill,
+        buybackRate: Perbill,
+        maxInHolding: bigint | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hsm';
+          palletCall: {
+            name: 'AddCollateralAsset';
+            params: {
+              assetId: number;
+              poolId: number;
+              purchaseFee: Permill;
+              maxBuyPriceCoefficient: FixedU128;
+              buyBackFee: Permill;
+              buybackRate: Perbill;
+              maxInHolding: bigint | undefined;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a collateral asset
+     *
+     * Removes an asset from the approved collaterals list. Only callable by the governance (root origin).
+     * The collateral must have a zero balance in the HSM account before it can be removed.
+     *
+     * Parameters:
+     * - `origin`: Must be Root
+     * - `asset_id`: Asset ID to remove from collaterals
+     *
+     * Emits:
+     * - `CollateralRemoved` when the collateral is successfully removed
+     *
+     * Errors:
+     * - `AssetNotApproved` if the asset is not a registered collateral
+     * - `CollateralNotEmpty` if the HSM account still holds some of this asset
+     *
+     * @param {number} assetId
+     **/
+    removeCollateralAsset: GenericTxCall<
+      Rv,
+      (assetId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hsm';
+          palletCall: {
+            name: 'RemoveCollateralAsset';
+            params: { assetId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Update collateral asset parameters
+     *
+     * Updates the parameters for an existing collateral asset. Only callable by the governance (root origin).
+     * Each parameter is optional and only provided parameters will be updated.
+     *
+     * Parameters:
+     * - `origin`: Must be Root
+     * - `asset_id`: Asset ID to update
+     * - `purchase_fee`: New purchase fee (optional)
+     * - `max_buy_price_coefficient`: New max buy price coefficient (optional)
+     * - `buy_back_fee`: New buy back fee (optional)
+     * - `buyback_rate`: New buyback rate parameter (optional)
+     * - `max_in_holding`: New maximum holding amount (optional)
+     *
+     * Emits:
+     * - `CollateralUpdated` when the collateral is successfully updated
+     *
+     * Errors:
+     * - `AssetNotApproved` if the asset is not a registered collateral
+     *
+     * @param {number} assetId
+     * @param {Permill | undefined} purchaseFee
+     * @param {FixedU128 | undefined} maxBuyPriceCoefficient
+     * @param {Permill | undefined} buyBackFee
+     * @param {Perbill | undefined} buybackRate
+     * @param {bigint | undefined | undefined} maxInHolding
+     **/
+    updateCollateralAsset: GenericTxCall<
+      Rv,
+      (
+        assetId: number,
+        purchaseFee: Permill | undefined,
+        maxBuyPriceCoefficient: FixedU128 | undefined,
+        buyBackFee: Permill | undefined,
+        buybackRate: Perbill | undefined,
+        maxInHolding: bigint | undefined | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hsm';
+          palletCall: {
+            name: 'UpdateCollateralAsset';
+            params: {
+              assetId: number;
+              purchaseFee: Permill | undefined;
+              maxBuyPriceCoefficient: FixedU128 | undefined;
+              buyBackFee: Permill | undefined;
+              buybackRate: Perbill | undefined;
+              maxInHolding: bigint | undefined | undefined;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Sell asset to HSM
+     *
+     * This function allows users to:
+     * 1. Sell Hollar back to HSM in exchange for collateral assets
+     * 2. Sell collateral assets to HSM in exchange for newly minted Hollar
+     *
+     * The valid pairs must include Hollar as one side and an approved collateral as the other side.
+     *
+     * Parameters:
+     * - `origin`: Account selling the asset
+     * - `asset_in`: Asset ID being sold
+     * - `asset_out`: Asset ID being bought
+     * - `amount_in`: Amount of asset_in to sell
+     * - `slippage_limit`: Minimum amount out for slippage protection
+     *
+     * Emits:
+     * - `Swapped3` when the sell is successful
+     *
+     * Errors:
+     * - `InvalidAssetPair` if the pair is not Hollar and an approved collateral
+     * - `AssetNotApproved` if the collateral asset isn't registered
+     * - `SlippageLimitExceeded` if the amount received is less than the slippage limit
+     * - `MaxBuyBackExceeded` if the sell would exceed the maximum buy back rate
+     * - `MaxBuyPriceExceeded` if the sell would exceed the maximum buy price
+     * - `InsufficientCollateralBalance` if HSM doesn't have enough collateral
+     * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+     * - Other errors from underlying calls
+     *
+     * @param {number} assetIn
+     * @param {number} assetOut
+     * @param {bigint} amountIn
+     * @param {bigint} slippageLimit
+     **/
+    sell: GenericTxCall<
+      Rv,
+      (
+        assetIn: number,
+        assetOut: number,
+        amountIn: bigint,
+        slippageLimit: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hsm';
+          palletCall: {
+            name: 'Sell';
+            params: { assetIn: number; assetOut: number; amountIn: bigint; slippageLimit: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Buy asset from HSM
+     *
+     * This function allows users to:
+     * 1. Buy Hollar from HSM using collateral assets
+     * 2. Buy collateral assets from HSM using Hollar
+     *
+     * The valid pairs must include Hollar as one side and an approved collateral as the other side.
+     *
+     * Parameters:
+     * - `origin`: Account buying the asset
+     * - `asset_in`: Asset ID being sold by the user
+     * - `asset_out`: Asset ID being bought by the user
+     * - `amount_out`: Amount of asset_out to buy
+     * - `slippage_limit`: Maximum amount in for slippage protection
+     *
+     * Emits:
+     * - `Swapped3` when the buy is successful
+     *
+     * Errors:
+     * - `InvalidAssetPair` if the pair is not Hollar and an approved collateral
+     * - `AssetNotApproved` if the collateral asset isn't registered
+     * - `SlippageLimitExceeded` if the amount input exceeds the slippage limit
+     * - `MaxHoldingExceeded` if the buy would cause HSM to exceed its maximum holding
+     * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+     * - Other errors from underlying calls
+     *
+     * @param {number} assetIn
+     * @param {number} assetOut
+     * @param {bigint} amountOut
+     * @param {bigint} slippageLimit
+     **/
+    buy: GenericTxCall<
+      Rv,
+      (
+        assetIn: number,
+        assetOut: number,
+        amountOut: bigint,
+        slippageLimit: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hsm';
+          palletCall: {
+            name: 'Buy';
+            params: { assetIn: number; assetOut: number; amountOut: bigint; slippageLimit: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Execute arbitrage opportunity between HSM and collateral stable pool
+     *
+     * This call is designed to be triggered automatically by offchain workers. It:
+     * 1. Detects price imbalances between HSM and a stable pool for a collateral
+     * 2. If an opportunity exists, mints Hollar, swaps it for collateral on HSM
+     * 3. Swaps that collateral for Hollar on the stable pool
+     * 4. Burns the Hollar received from the arbitrage
+     *
+     * This helps maintain the peg of Hollar by profiting from and correcting price imbalances.
+     * The call is unsigned and should only be executed by offchain workers.
+     *
+     * Parameters:
+     * - `origin`: Must be None (unsigned)
+     * - `collateral_asset_id`: The ID of the collateral asset to check for arbitrage
+     *
+     * Emits:
+     * - `ArbitrageExecuted` when the arbitrage is successful
+     *
+     * Errors:
+     * - `AssetNotApproved` if the asset is not a registered collateral
+     * - `NoArbitrageOpportunity` if there's no profitable arbitrage opportunity
+     * - `MaxBuyPriceExceeded` if the arbitrage would exceed the maximum buy price
+     * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+     * - Other errors from underlying calls
+     *
+     * @param {number} collateralAssetId
+     **/
+    executeArbitrage: GenericTxCall<
+      Rv,
+      (collateralAssetId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hsm';
+          palletCall: {
+            name: 'ExecuteArbitrage';
+            params: { collateralAssetId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {H160} flashMinterAddr
+     **/
+    setFlashMinter: GenericTxCall<
+      Rv,
+      (flashMinterAddr: H160) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hsm';
+          palletCall: {
+            name: 'SetFlashMinter';
+            params: { flashMinterAddr: H160 };
           };
         }
       >

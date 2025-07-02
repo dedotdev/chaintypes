@@ -23,7 +23,7 @@ export interface VersionedHydrationApi<Rv extends RpcVersion> extends GenericSub
 
 /**
  * @name: HydrationApi
- * @specVersion: 315
+ * @specVersion: 323
  **/
 export interface HydrationApi {
   legacy: VersionedHydrationApi<RpcLegacy>;

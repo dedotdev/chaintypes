@@ -1344,6 +1344,35 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     profitReceiver: AccountId32;
 
     /**
+     * Asset ID of Hollar
+     **/
+    hollarId: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `HSM`'s constants
+   **/
+  hsm: {
+    /**
+     * Asset ID of Hollar
+     **/
+    hollarId: number;
+
+    /**
+     * Pallet ID to determine HSM account
+     **/
+    palletId: FrameSupportPalletId;
+
+    /**
+     * The gas limit for the execution of EVM calls
+     **/
+    gasLimit: bigint;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;

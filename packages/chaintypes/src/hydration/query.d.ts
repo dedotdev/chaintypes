@@ -78,9 +78,11 @@ import type {
   PalletStableswapPoolInfo,
   PalletStableswapPoolPegInfo,
   PalletStableswapTradability,
+  PalletStableswapPoolSnapshot,
   PalletLbpPool,
   PalletReferralsLevel,
   PalletReferralsFeeDistribution,
+  PalletHsmCollateralInfo,
   OrmlTokensBalanceLock,
   OrmlTokensAccountData,
   OrmlTokensReserveData,
@@ -1799,6 +1801,14 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     assetTradability: GenericStorageQuery<Rv, (arg: [number, number]) => PalletStableswapTradability, [number, number]>;
 
     /**
+     * Temporary pool state storage. Used to save a state of pool in a single block.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletStableswapPoolSnapshot | undefined> =} callback
+     **/
+    poolSnapshots: GenericStorageQuery<Rv, (arg: number) => PalletStableswapPoolSnapshot | undefined, number>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -2001,6 +2011,46 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<H160> =} callback
      **/
     borrowingContract: GenericStorageQuery<Rv, () => H160>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `HSM`'s storage queries
+   **/
+  hsm: {
+    /**
+     * List of approved assets that Hollar can be purchased with
+     *
+     * This storage maps asset IDs to their collateral configuration information.
+     * Only assets in this map can be used to mint or redeem Hollar through HSM.
+     * Each collateral has specific parameters controlling its usage in the HSM mechanism.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletHsmCollateralInfo | undefined> =} callback
+     **/
+    collaterals: GenericStorageQuery<Rv, (arg: number) => PalletHsmCollateralInfo | undefined, number>;
+
+    /**
+     * Amount of Hollar bought with an asset in a single block
+     *
+     * This storage tracks how much Hollar has been bought back by HSM for each collateral
+     * asset within the current block. This is used to enforce rate limiting on Hollar redemptions.
+     * Values are reset to zero at the end of each block in on_finalize.
+     *
+     * @param {number} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    hollarAmountReceived: GenericStorageQuery<Rv, (arg: number) => bigint, number>;
+
+    /**
+     * Address of the flash loan receiver.
+     *
+     * @param {Callback<H160 | undefined> =} callback
+     **/
+    flashMinter: GenericStorageQuery<Rv, () => H160 | undefined>;
 
     /**
      * Generic pallet storage query

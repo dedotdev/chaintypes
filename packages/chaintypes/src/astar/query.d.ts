@@ -2507,19 +2507,4 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      **/
     [storage: string]: GenericStorageQuery<Rv>;
   };
-  /**
-   * Pallet `DemocracyMBM`'s storage queries
-   **/
-  democracyMBM: {
-    /**
-     *
-     * @param {Callback<number> =} callback
-     **/
-    migrationBlockNumber: GenericStorageQuery<Rv, () => number>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
 }

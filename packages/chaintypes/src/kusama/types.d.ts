@@ -134,7 +134,11 @@ export type FrameSystemEvent =
   /**
    * An upgrade was authorized.
    **/
-  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } };
+  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } }
+  /**
+   * An invalid authorized upgrade was rejected while trying to apply it.
+   **/
+  | { name: 'RejectedInvalidAuthorizedUpgrade'; data: { codeHash: H256; error: DispatchError } };
 
 export type FrameSystemDispatchEventInfo = {
   weight: SpWeightsWeightV2Weight;
@@ -177,7 +181,11 @@ export type PalletIndicesEvent =
   /**
    * A account index has been frozen to its current account ID.
    **/
-  | { name: 'IndexFrozen'; data: { index: number; who: AccountId32 } };
+  | { name: 'IndexFrozen'; data: { index: number; who: AccountId32 } }
+  /**
+   * A deposit to reserve an index has been poked/reconsidered.
+   **/
+  | { name: 'DepositPoked'; data: { who: AccountId32; index: number; oldDeposit: bigint; newDeposit: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -379,7 +387,12 @@ export type PalletStakingPalletEvent =
   /**
    * Report of a controller batch deprecation.
    **/
-  | { name: 'ControllerBatchDeprecated'; data: { failures: number } };
+  | { name: 'ControllerBatchDeprecated'; data: { failures: number } }
+  /**
+   * Staking balance migrated from locks to holds, with any balance that could not be held
+   * is force withdrawn.
+   **/
+  | { name: 'CurrencyMigrated'; data: { stash: AccountId32; forceWithdraw: bigint } };
 
 export type PalletStakingRewardDestination =
   | { type: 'Staked' }
@@ -411,7 +424,15 @@ export type PalletSessionEvent =
    * New session has happened. Note that the argument is the session index, not the
    * block number as the type might suggest.
    **/
-  { name: 'NewSession'; data: { sessionIndex: number } };
+  | { name: 'NewSession'; data: { sessionIndex: number } }
+  /**
+   * Validator has been disabled.
+   **/
+  | { name: 'ValidatorDisabled'; data: { validator: AccountId32 } }
+  /**
+   * Validator has been re-enabled.
+   **/
+  | { name: 'ValidatorReenabled'; data: { validator: AccountId32 } };
 
 /**
  * The `Event` enum of this pallet
@@ -672,13 +693,17 @@ export type PalletConvictionVotingEvent =
    **/
   | { name: 'Undelegated'; data: AccountId32 }
   /**
-   * An account that has voted
+   * An account has voted
    **/
   | { name: 'Voted'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } }
   /**
-   * A vote that been removed
+   * A vote has been removed
    **/
-  | { name: 'VoteRemoved'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } };
+  | { name: 'VoteRemoved'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } }
+  /**
+   * The lockup period of a conviction vote expired, and the funds have been unlocked.
+   **/
+  | { name: 'VoteUnlocked'; data: { who: AccountId32; class: number } };
 
 export type PalletConvictionVotingVoteAccountVote =
   | { type: 'Standard'; value: { vote: PalletConvictionVotingVote; balance: bigint } }
@@ -1453,7 +1478,20 @@ export type PalletIndicesCall =
    * ## Complexity
    * - `O(1)`.
    **/
-  | { name: 'Freeze'; params: { index: number } };
+  | { name: 'Freeze'; params: { index: number } }
+  /**
+   * Poke the deposit reserved for an index.
+   *
+   * The dispatch origin for this call must be _Signed_ and the signing account must have a
+   * non-frozen account `index`.
+   *
+   * The transaction fees is waived if the deposit is changed after poking/reconsideration.
+   *
+   * - `index`: the index whose deposit is to be poked/reconsidered.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit'; params: { index: number } };
 
 export type PalletIndicesCallLike =
   /**
@@ -1531,7 +1569,20 @@ export type PalletIndicesCallLike =
    * ## Complexity
    * - `O(1)`.
    **/
-  | { name: 'Freeze'; params: { index: number } };
+  | { name: 'Freeze'; params: { index: number } }
+  /**
+   * Poke the deposit reserved for an index.
+   *
+   * The dispatch origin for this call must be _Signed_ and the signing account must have a
+   * non-frozen account `index`.
+   *
+   * The transaction fees is waived if the deposit is changed after poking/reconsideration.
+   *
+   * - `index`: the index whose deposit is to be poked/reconsidered.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit'; params: { index: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2157,14 +2208,39 @@ export type PalletStakingPalletCall =
       };
     }
   /**
-   * Adjusts the staking ledger by withdrawing any excess staked amount.
+   * Removes the legacy Staking locks if they exist.
    *
-   * This function corrects cases where a user's recorded stake in the ledger
-   * exceeds their actual staked funds. This situation can arise due to cases such as
-   * external slashing by another pallet, leading to an inconsistency between the ledger
-   * and the actual stake.
+   * This removes the legacy lock on the stake with [`Config::OldCurrency`] and creates a
+   * hold on it if needed. If all stake cannot be held, the best effort is made to hold as
+   * much as possible. The remaining stake is forced withdrawn from the ledger.
+   *
+   * The fee is waived if the migration is successful.
    **/
-  | { name: 'WithdrawOverstake'; params: { stash: AccountId32 } };
+  | { name: 'MigrateCurrency'; params: { stash: AccountId32 } }
+  /**
+   * This function allows governance to manually slash a validator and is a
+   * **fallback mechanism**.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   *
+   * ## Parameters
+   * - `validator_stash` - The stash account of the validator to slash.
+   * - `era` - The era in which the validator was in the active set.
+   * - `slash_fraction` - The percentage of the stake to slash, expressed as a Perbill.
+   *
+   * ## Behavior
+   *
+   * The slash will be applied using the standard slashing mechanics, respecting the
+   * configured `SlashDeferDuration`.
+   *
+   * This means:
+   * - If the validator was already slashed by a higher percentage for the same era, this
+   * slash will have no additional effect.
+   * - If the validator was previously slashed by a lower percentage, only the difference
+   * will be applied.
+   * - The slash will be deferred by `SlashDeferDuration` eras before being enacted.
+   **/
+  | { name: 'ManualSlash'; params: { validatorStash: AccountId32; era: number; slashFraction: Perbill } };
 
 export type PalletStakingPalletCallLike =
   /**
@@ -2612,14 +2688,39 @@ export type PalletStakingPalletCallLike =
       };
     }
   /**
-   * Adjusts the staking ledger by withdrawing any excess staked amount.
+   * Removes the legacy Staking locks if they exist.
    *
-   * This function corrects cases where a user's recorded stake in the ledger
-   * exceeds their actual staked funds. This situation can arise due to cases such as
-   * external slashing by another pallet, leading to an inconsistency between the ledger
-   * and the actual stake.
+   * This removes the legacy lock on the stake with [`Config::OldCurrency`] and creates a
+   * hold on it if needed. If all stake cannot be held, the best effort is made to hold as
+   * much as possible. The remaining stake is forced withdrawn from the ledger.
+   *
+   * The fee is waived if the migration is successful.
    **/
-  | { name: 'WithdrawOverstake'; params: { stash: AccountId32Like } };
+  | { name: 'MigrateCurrency'; params: { stash: AccountId32Like } }
+  /**
+   * This function allows governance to manually slash a validator and is a
+   * **fallback mechanism**.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   *
+   * ## Parameters
+   * - `validator_stash` - The stash account of the validator to slash.
+   * - `era` - The era in which the validator was in the active set.
+   * - `slash_fraction` - The percentage of the stake to slash, expressed as a Perbill.
+   *
+   * ## Behavior
+   *
+   * The slash will be applied using the standard slashing mechanics, respecting the
+   * configured `SlashDeferDuration`.
+   *
+   * This means:
+   * - If the validator was already slashed by a higher percentage for the same era, this
+   * slash will have no additional effect.
+   * - If the validator was previously slashed by a lower percentage, only the difference
+   * will be applied.
+   * - The slash will be deferred by `SlashDeferDuration` eras before being enacted.
+   **/
+  | { name: 'ManualSlash'; params: { validatorStash: AccountId32Like; era: number; slashFraction: Perbill } };
 
 export type PalletStakingPalletConfigOp = { type: 'Noop' } | { type: 'Set'; value: bigint } | { type: 'Remove' };
 
@@ -4203,7 +4304,44 @@ export type PalletUtilityCall =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: StagingKusamaRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } };
+  | { name: 'WithWeight'; params: { call: StagingKusamaRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | { name: 'IfElse'; params: { main: StagingKusamaRuntimeRuntimeCall; fallback: StagingKusamaRuntimeRuntimeCall } }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | {
+      name: 'DispatchAsFallible';
+      params: { asOrigin: StagingKusamaRuntimeOriginCaller; call: StagingKusamaRuntimeRuntimeCall };
+    };
 
 export type PalletUtilityCallLike =
   /**
@@ -4295,7 +4433,47 @@ export type PalletUtilityCallLike =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: StagingKusamaRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } };
+  | { name: 'WithWeight'; params: { call: StagingKusamaRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | {
+      name: 'IfElse';
+      params: { main: StagingKusamaRuntimeRuntimeCallLike; fallback: StagingKusamaRuntimeRuntimeCallLike };
+    }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | {
+      name: 'DispatchAsFallible';
+      params: { asOrigin: StagingKusamaRuntimeOriginCaller; call: StagingKusamaRuntimeRuntimeCallLike };
+    };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4748,7 +4926,7 @@ export type PalletRecoveryCall =
    **/
   | { name: 'AsRecovered'; params: { account: MultiAddress; call: StagingKusamaRuntimeRuntimeCall } }
   /**
-   * Allow ROOT to bypass the recovery process and set an a rescuer account
+   * Allow ROOT to bypass the recovery process and set a rescuer account
    * for a lost account directly.
    *
    * The dispatch origin for this call must be _ROOT_.
@@ -4870,7 +5048,7 @@ export type PalletRecoveryCallLike =
    **/
   | { name: 'AsRecovered'; params: { account: MultiAddressLike; call: StagingKusamaRuntimeRuntimeCallLike } }
   /**
-   * Allow ROOT to bypass the recovery process and set an a rescuer account
+   * Allow ROOT to bypass the recovery process and set a rescuer account
    * for a lost account directly.
    *
    * The dispatch origin for this call must be _ROOT_.
@@ -5551,7 +5729,18 @@ export type PalletProxyCall =
         forceProxyType?: KusamaRuntimeConstantsProxyProxyType | undefined;
         call: StagingKusamaRuntimeRuntimeCall;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 export type PalletProxyCallLike =
   /**
@@ -5724,7 +5913,18 @@ export type PalletProxyCallLike =
         forceProxyType?: KusamaRuntimeConstantsProxyProxyType | undefined;
         call: StagingKusamaRuntimeRuntimeCallLike;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 export type KusamaRuntimeConstantsProxyProxyType =
   | 'Any'
@@ -5884,6 +6084,25 @@ export type PalletMultisigCall =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId32>; callHash: FixedBytes<32> };
     };
 
 export type PalletMultisigCallLike =
@@ -6029,6 +6248,25 @@ export type PalletMultisigCallLike =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
     };
 
 export type PalletMultisigTimepoint = { height: number; index: number };
@@ -6067,7 +6305,7 @@ export type PalletPreimageCall =
    **/
   | { name: 'UnrequestPreimage'; params: { hash: H256 } }
   /**
-   * Ensure that the a bulk of pre-images is upgraded.
+   * Ensure that the bulk of pre-images is upgraded.
    *
    * The caller pays no fee if at least 90% of pre-images were successfully updated.
    **/
@@ -6104,7 +6342,7 @@ export type PalletPreimageCallLike =
    **/
   | { name: 'UnrequestPreimage'; params: { hash: H256 } }
   /**
-   * Ensure that the a bulk of pre-images is upgraded.
+   * Ensure that the bulk of pre-images is upgraded.
    *
    * The caller pays no fee if at least 90% of pre-images were successfully updated.
    **/
@@ -7084,8 +7322,9 @@ export type PalletBagsListCallLike =
  **/
 export type PalletNominationPoolsCall =
   /**
-   * Stake funds with a pool. The amount to bond is transferred from the member to the pool
-   * account and immediately increases the pools bond.
+   * Stake funds with a pool. The amount to bond is delegated (or transferred based on
+   * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
+   * increases the pool's bond.
    *
    * The method of transferring the amount to the pool account is determined by
    * [`adapter::StakeStrategyType`]. If the pool is configured to use
@@ -7228,13 +7467,13 @@ export type PalletNominationPoolsCall =
    * The dispatch origin of this call must be signed by the pool nominator or the pool
    * root role.
    *
-   * This directly forward the call to the staking pallet, on behalf of the pool bonded
-   * account.
+   * This directly forwards the call to an implementation of `StakingInterface` (e.g.,
+   * `pallet-staking`) through [`Config::StakeAdapter`], on behalf of the bonded pool.
    *
    * # Note
    *
-   * In addition to a `root` or `nominator` role of `origin`, pool's depositor needs to have
-   * at least `depositor_min_bond` in the pool to start nominating.
+   * In addition to a `root` or `nominator` role of `origin`, the pool's depositor needs to
+   * have at least `depositor_min_bond` in the pool to start nominating.
    **/
   | { name: 'Nominate'; params: { poolId: number; validators: Array<AccountId32> } }
   /**
@@ -7305,6 +7544,9 @@ export type PalletNominationPoolsCall =
    * The dispatch origin of this call can be signed by the pool nominator or the pool
    * root role, same as [`Pallet::nominate`].
    *
+   * This directly forwards the call to an implementation of `StakingInterface` (e.g.,
+   * `pallet-staking`) through [`Config::StakeAdapter`], on behalf of the bonded pool.
+   *
    * Under certain conditions, this call can be dispatched permissionlessly (i.e. by any
    * account).
    *
@@ -7313,9 +7555,7 @@ export type PalletNominationPoolsCall =
    * are unable to unbond.
    *
    * # Conditions for permissioned dispatch:
-   * * The caller has a nominator or root role of the pool.
-   * This directly forward the call to the staking pallet, on behalf of the pool bonded
-   * account.
+   * * The caller is the pool's nominator or root.
    **/
   | { name: 'Chill'; params: { poolId: number } }
   /**
@@ -7376,9 +7616,20 @@ export type PalletNominationPoolsCall =
   /**
    * Claim pending commission.
    *
-   * The dispatch origin of this call must be signed by the `root` role of the pool. Pending
-   * commission is paid out and added to total claimed commission`. Total pending commission
-   * is reset to zero. the current.
+   * The `root` role of the pool is _always_ allowed to claim the pool's commission.
+   *
+   * If the pool has set `CommissionClaimPermission::Permissionless`, then any account can
+   * trigger the process of claiming the pool's commission.
+   *
+   * If the pool has set its `CommissionClaimPermission` to `Account(acc)`, then only
+   * accounts
+   * * `acc`, and
+   * * the pool's root account
+   *
+   * may call this extrinsic on behalf of the pool.
+   *
+   * Pending commissions are paid out and added to the total claimed commission.
+   * The total pending commission is reset to zero.
    **/
   | { name: 'ClaimCommission'; params: { poolId: number } }
   /**
@@ -7440,8 +7691,9 @@ export type PalletNominationPoolsCall =
 
 export type PalletNominationPoolsCallLike =
   /**
-   * Stake funds with a pool. The amount to bond is transferred from the member to the pool
-   * account and immediately increases the pools bond.
+   * Stake funds with a pool. The amount to bond is delegated (or transferred based on
+   * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
+   * increases the pool's bond.
    *
    * The method of transferring the amount to the pool account is determined by
    * [`adapter::StakeStrategyType`]. If the pool is configured to use
@@ -7593,13 +7845,13 @@ export type PalletNominationPoolsCallLike =
    * The dispatch origin of this call must be signed by the pool nominator or the pool
    * root role.
    *
-   * This directly forward the call to the staking pallet, on behalf of the pool bonded
-   * account.
+   * This directly forwards the call to an implementation of `StakingInterface` (e.g.,
+   * `pallet-staking`) through [`Config::StakeAdapter`], on behalf of the bonded pool.
    *
    * # Note
    *
-   * In addition to a `root` or `nominator` role of `origin`, pool's depositor needs to have
-   * at least `depositor_min_bond` in the pool to start nominating.
+   * In addition to a `root` or `nominator` role of `origin`, the pool's depositor needs to
+   * have at least `depositor_min_bond` in the pool to start nominating.
    **/
   | { name: 'Nominate'; params: { poolId: number; validators: Array<AccountId32Like> } }
   /**
@@ -7670,6 +7922,9 @@ export type PalletNominationPoolsCallLike =
    * The dispatch origin of this call can be signed by the pool nominator or the pool
    * root role, same as [`Pallet::nominate`].
    *
+   * This directly forwards the call to an implementation of `StakingInterface` (e.g.,
+   * `pallet-staking`) through [`Config::StakeAdapter`], on behalf of the bonded pool.
+   *
    * Under certain conditions, this call can be dispatched permissionlessly (i.e. by any
    * account).
    *
@@ -7678,9 +7933,7 @@ export type PalletNominationPoolsCallLike =
    * are unable to unbond.
    *
    * # Conditions for permissioned dispatch:
-   * * The caller has a nominator or root role of the pool.
-   * This directly forward the call to the staking pallet, on behalf of the pool bonded
-   * account.
+   * * The caller is the pool's nominator or root.
    **/
   | { name: 'Chill'; params: { poolId: number } }
   /**
@@ -7741,9 +7994,20 @@ export type PalletNominationPoolsCallLike =
   /**
    * Claim pending commission.
    *
-   * The dispatch origin of this call must be signed by the `root` role of the pool. Pending
-   * commission is paid out and added to total claimed commission`. Total pending commission
-   * is reset to zero. the current.
+   * The `root` role of the pool is _always_ allowed to claim the pool's commission.
+   *
+   * If the pool has set `CommissionClaimPermission::Permissionless`, then any account can
+   * trigger the process of claiming the pool's commission.
+   *
+   * If the pool has set its `CommissionClaimPermission` to `Account(acc)`, then only
+   * accounts
+   * * `acc`, and
+   * * the pool's root account
+   *
+   * may call this extrinsic on behalf of the pool.
+   *
+   * Pending commissions are paid out and added to the total claimed commission.
+   * The total pending commission is reset to zero.
    **/
   | { name: 'ClaimCommission'; params: { poolId: number } }
   /**
@@ -9045,17 +9309,17 @@ export type PolkadotRuntimeParachainsDisputesPalletCallLike = 'ForceUnfreeze';
  **/
 export type PolkadotRuntimeParachainsDisputesSlashingPalletCall = {
   name: 'ReportDisputeLostUnsigned';
-  params: { disputeProof: PolkadotPrimitivesV8SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+  params: { disputeProof: PolkadotPrimitivesVstagingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
 };
 
 export type PolkadotRuntimeParachainsDisputesSlashingPalletCallLike = {
   name: 'ReportDisputeLostUnsigned';
-  params: { disputeProof: PolkadotPrimitivesV8SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+  params: { disputeProof: PolkadotPrimitivesVstagingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
 };
 
-export type PolkadotPrimitivesV8SlashingDisputeProof = {
+export type PolkadotPrimitivesVstagingDisputeProof = {
   timeSlot: PolkadotPrimitivesV8SlashingDisputesTimeSlot;
-  kind: PolkadotPrimitivesV8SlashingSlashingOffenceKind;
+  kind: PolkadotPrimitivesVstagingDisputeOffenceKind;
   validatorIndex: PolkadotPrimitivesV8ValidatorIndex;
   validatorId: PolkadotPrimitivesV8ValidatorAppPublic;
 };
@@ -9065,7 +9329,7 @@ export type PolkadotPrimitivesV8SlashingDisputesTimeSlot = {
   candidateHash: PolkadotCorePrimitivesCandidateHash;
 };
 
-export type PolkadotPrimitivesV8SlashingSlashingOffenceKind = 'ForInvalid' | 'AgainstValid';
+export type PolkadotPrimitivesVstagingDisputeOffenceKind = 'ForInvalidBacked' | 'AgainstValid' | 'ForInvalidApproved';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -9106,7 +9370,27 @@ export type PolkadotRuntimeParachainsOnDemandPalletCall =
    * Events:
    * - `OnDemandOrderPlaced`
    **/
-  | { name: 'PlaceOrderKeepAlive'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } };
+  | { name: 'PlaceOrderKeepAlive'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } }
+  /**
+   * Create a single on demand core order with credits.
+   * Will charge the owner's on-demand credit account the spot price for the current block.
+   *
+   * Parameters:
+   * - `origin`: The sender of the call, on-demand credits will be withdrawn from this
+   * account.
+   * - `max_amount`: The maximum number of credits to spend from the origin to place an
+   * order.
+   * - `para_id`: A `ParaId` the origin wants to provide blockspace for.
+   *
+   * Errors:
+   * - `InsufficientCredits`
+   * - `QueueFull`
+   * - `SpotPriceHigherThanMaxAmount`
+   *
+   * Events:
+   * - `OnDemandOrderPlaced`
+   **/
+  | { name: 'PlaceOrderWithCredits'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } };
 
 export type PolkadotRuntimeParachainsOnDemandPalletCallLike =
   /**
@@ -9144,7 +9428,27 @@ export type PolkadotRuntimeParachainsOnDemandPalletCallLike =
    * Events:
    * - `OnDemandOrderPlaced`
    **/
-  | { name: 'PlaceOrderKeepAlive'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } };
+  | { name: 'PlaceOrderKeepAlive'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } }
+  /**
+   * Create a single on demand core order with credits.
+   * Will charge the owner's on-demand credit account the spot price for the current block.
+   *
+   * Parameters:
+   * - `origin`: The sender of the call, on-demand credits will be withdrawn from this
+   * account.
+   * - `max_amount`: The maximum number of credits to spend from the origin to place an
+   * order.
+   * - `para_id`: A `ParaId` the origin wants to provide blockspace for.
+   *
+   * Errors:
+   * - `InsufficientCredits`
+   * - `QueueFull`
+   * - `SpotPriceHigherThanMaxAmount`
+   *
+   * Events:
+   * - `OnDemandOrderPlaced`
+   **/
+  | { name: 'PlaceOrderWithCredits'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -9826,6 +10130,7 @@ export type PolkadotRuntimeParachainsCoretimePalletCall =
    * teleported to the Coretime chain.
    **/
   | { name: 'RequestRevenueAt'; params: { when: number } }
+  | { name: 'CreditAccount'; params: { who: AccountId32; amount: bigint } }
   /**
    * Receive instructions from the `ExternalBrokerOrigin`, detailing how a specific core is
    * to be used.
@@ -9866,6 +10171,7 @@ export type PolkadotRuntimeParachainsCoretimePalletCallLike =
    * teleported to the Coretime chain.
    **/
   | { name: 'RequestRevenueAt'; params: { when: number } }
+  | { name: 'CreditAccount'; params: { who: AccountId32Like; amount: bigint } }
   /**
    * Receive instructions from the `ExternalBrokerOrigin`, detailing how a specific core is
    * to be used.
@@ -10209,7 +10515,31 @@ export type PalletXcmCall =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type PalletXcmCallLike =
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
@@ -10521,7 +10851,31 @@ export type PalletXcmCallLike =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type XcmVersionedXcm =
   | { type: 'V3'; value: XcmV3Xcm }
@@ -11881,7 +12235,15 @@ export type PalletUtilityEvent =
   /**
    * A call was dispatched.
    **/
-  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } };
+  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } }
+  /**
+   * Main call was dispatched.
+   **/
+  | { name: 'IfElseMainSuccess' }
+  /**
+   * The fallback call was dispatched.
+   **/
+  | { name: 'IfElseFallbackCalled'; data: { mainError: DispatchError } };
 
 /**
  * The `Event` enum of this pallet
@@ -12055,7 +12417,11 @@ export type PalletSchedulerEvent =
   /**
    * The given task can never be executed since it is overweight.
    **/
-  | { name: 'PermanentlyOverweight'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } };
+  | { name: 'PermanentlyOverweight'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } }
+  /**
+   * Agenda is incomplete from `when`.
+   **/
+  | { name: 'AgendaIncomplete'; data: { when: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -12105,7 +12471,16 @@ export type PalletProxyEvent =
         proxyType: KusamaRuntimeConstantsProxyProxyType;
         delay: number;
       };
+    }
+  /**
+   * A deposit stored for proxies or announcements was poked / updated.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; kind: PalletProxyDepositKind; oldDeposit: bigint; newDeposit: bigint };
     };
+
+export type PalletProxyDepositKind = 'Proxies' | 'Announcements';
 
 /**
  * The `Event` enum of this pallet
@@ -12151,6 +12526,13 @@ export type PalletMultisigEvent =
         multisig: AccountId32;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * The deposit for a multisig operation has been updated/poked.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; callHash: FixedBytes<32>; oldDeposit: bigint; newDeposit: bigint };
     };
 
 /**
@@ -12509,7 +12891,41 @@ export type PalletNominationPoolsEvent =
   /**
    * Claimed excess frozen ED of af the reward pool.
    **/
-  | { name: 'MinBalanceExcessAdjusted'; data: { poolId: number; amount: bigint } };
+  | { name: 'MinBalanceExcessAdjusted'; data: { poolId: number; amount: bigint } }
+  /**
+   * A pool member's claim permission has been updated.
+   **/
+  | {
+      name: 'MemberClaimPermissionUpdated';
+      data: { member: AccountId32; permission: PalletNominationPoolsClaimPermission };
+    }
+  /**
+   * A pool's metadata was updated.
+   **/
+  | { name: 'MetadataUpdated'; data: { poolId: number; caller: AccountId32 } }
+  /**
+   * A pool's nominating account (or the pool's root account) has nominated a validator set
+   * on behalf of the pool.
+   **/
+  | { name: 'PoolNominationMade'; data: { poolId: number; caller: AccountId32 } }
+  /**
+   * The pool is chilled i.e. no longer nominating.
+   **/
+  | { name: 'PoolNominatorChilled'; data: { poolId: number; caller: AccountId32 } }
+  /**
+   * Global parameters regulating nomination pools have been updated.
+   **/
+  | {
+      name: 'GlobalParamsUpdated';
+      data: {
+        minJoinBond: bigint;
+        minCreateBond: bigint;
+        maxPools?: number | undefined;
+        maxMembers?: number | undefined;
+        maxMembersPerPool?: number | undefined;
+        globalMaxCommission?: Perbill | undefined;
+      };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -12782,7 +13198,11 @@ export type PolkadotRuntimeParachainsOnDemandPalletEvent =
   /**
    * The value of the spot price has likely changed
    **/
-  | { name: 'SpotPriceSet'; data: { spotPrice: bigint } };
+  | { name: 'SpotPriceSet'; data: { spotPrice: bigint } }
+  /**
+   * An account was given credits.
+   **/
+  | { name: 'AccountCredited'; data: { who: AccountId32; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -12944,7 +13364,7 @@ export type PalletXcmEvent =
    **/
   | { name: 'Attempted'; data: { outcome: StagingXcmV5TraitsOutcome } }
   /**
-   * A XCM message was sent.
+   * An XCM message was sent.
    **/
   | {
       name: 'Sent';
@@ -12954,6 +13374,25 @@ export type PalletXcmEvent =
         message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       };
+    }
+  /**
+   * An XCM message failed to send.
+   **/
+  | {
+      name: 'SendFailed';
+      data: {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        error: XcmV3TraitsSendError;
+        messageId: FixedBytes<32>;
+      };
+    }
+  /**
+   * An XCM message failed to process.
+   **/
+  | {
+      name: 'ProcessXcmError';
+      data: { origin: StagingXcmV5Location; error: XcmV5TraitsError; messageId: FixedBytes<32> };
     }
   /**
    * Query response received which does not match a registered query. This may be because a
@@ -13111,12 +13550,37 @@ export type PalletXcmEvent =
   /**
    * A XCM version migration finished.
    **/
-  | { name: 'VersionMigrationFinished'; data: { version: number } };
+  | { name: 'VersionMigrationFinished'; data: { version: number } }
+  /**
+   * An `aliaser` location was authorized by `target` to alias it, authorization valid until
+   * `expiry` block number.
+   **/
+  | {
+      name: 'AliasAuthorized';
+      data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location; expiry?: bigint | undefined };
+    }
+  /**
+   * `target` removed alias authorization for `aliaser`.
+   **/
+  | { name: 'AliasAuthorizationRemoved'; data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location } }
+  /**
+   * `target` removed all alias authorizations.
+   **/
+  | { name: 'AliasesAuthorizationsRemoved'; data: { target: StagingXcmV5Location } };
 
 export type StagingXcmV5TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
   | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV5TraitsError } }
   | { type: 'Error'; value: { error: XcmV5TraitsError } };
+
+export type XcmV3TraitsSendError =
+  | 'NotApplicable'
+  | 'Transport'
+  | 'Unroutable'
+  | 'DestinationUnsupported'
+  | 'ExceedsMaxMessageSize'
+  | 'MissingArgument'
+  | 'Fees';
 
 /**
  * The `Event` enum of this pallet
@@ -13398,15 +13862,21 @@ export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 export type FrameSupportTokensMiscIdAmount = { id: StagingKusamaRuntimeRuntimeHoldReason; amount: bigint };
 
 export type StagingKusamaRuntimeRuntimeHoldReason =
+  | { type: 'Staking'; value: PalletStakingPalletHoldReason }
   | { type: 'Preimage'; value: PalletPreimageHoldReason }
   | { type: 'Nis'; value: PalletNisHoldReason }
-  | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason };
+  | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
+  | { type: 'XcmPallet'; value: PalletXcmHoldReason };
+
+export type PalletStakingPalletHoldReason = 'Staking';
 
 export type PalletPreimageHoldReason = 'Preimage';
 
 export type PalletNisHoldReason = 'NftReceipt';
 
 export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
+
+export type PalletXcmHoldReason = 'AuthorizeAlias';
 
 export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
   id: StagingKusamaRuntimeRuntimeFreezeReason;
@@ -13645,12 +14115,27 @@ export type PalletStakingPalletError =
   /**
    * Operation not allowed for virtual stakers.
    **/
-  | 'VirtualStakerNotAllowed';
+  | 'VirtualStakerNotAllowed'
+  /**
+   * Stash could not be reaped as other pallet might depend on it.
+   **/
+  | 'CannotReapStash'
+  /**
+   * The stake of this account is already migrated to `Fungible` holds.
+   **/
+  | 'AlreadyMigrated'
+  /**
+   * Account is restricted from participation in staking. This may happen if the account is
+   * staking in another way already, such as via pool.
+   **/
+  | 'Restricted';
 
 export type SpStakingOffenceOffenceDetails = {
   offender: [AccountId32, SpStakingExposure];
   reporters: Array<AccountId32>;
 };
+
+export type SpStakingOffenceOffenceSeverity = Perbill;
 
 export type SpCoreCryptoKeyTypeId = FixedBytes<4>;
 
@@ -13897,7 +14382,7 @@ export type PalletReferendaDeposit = { who: AccountId32; amount: bigint };
 
 export type PalletReferendaDecidingStatus = { since: number; confirming?: number | undefined };
 
-export type PalletReferendaTrackInfo = {
+export type PalletReferendaTrackDetails = {
   name: string;
   maxDeciding: number;
   decisionDeposit: bigint;
@@ -14500,11 +14985,12 @@ export type PalletMultisigError =
    **/
   | 'SenderInSignatories'
   /**
-   * Multisig operation not found when attempting to cancel.
+   * Multisig operation not found in storage.
    **/
   | 'NotFound'
   /**
-   * Only the account that originally created the multisig is able to cancel it.
+   * Only the account that originally created the multisig is able to cancel it or update
+   * its deposits.
    **/
   | 'NotOwner'
   /**
@@ -15062,6 +15548,10 @@ export type PalletNominationPoolsError =
    **/
   | { name: 'NothingToSlash' }
   /**
+   * The slash amount is too low to be applied.
+   **/
+  | { name: 'SlashTooLow' }
+  /**
    * The pool or member delegation has already migrated to delegate stake.
    **/
   | { name: 'AlreadyMigrated' }
@@ -15070,10 +15560,14 @@ export type PalletNominationPoolsError =
    **/
   | { name: 'NotMigrated' }
   /**
-   * This call is not allowed in the current state of the pallet or an unspecific error
-   * occurred.
+   * This call is not allowed in the current state of the pallet.
    **/
-  | { name: 'NotSupported' };
+  | { name: 'NotSupported' }
+  /**
+   * Account is restricted from participation in pools. This may happen if the account is
+   * staking in another way already.
+   **/
+  | { name: 'Restricted' };
 
 export type PalletNominationPoolsDefensiveError =
   | 'NotEnoughSpaceInUnbondPool'
@@ -15657,9 +16151,9 @@ export type PolkadotRuntimeParachainsDisputesPalletError =
    **/
   | 'UnconfirmedDispute';
 
-export type PolkadotPrimitivesV8SlashingPendingSlashes = {
+export type PolkadotPrimitivesVstagingPendingSlashes = {
   keys: Array<[PolkadotPrimitivesV8ValidatorIndex, PolkadotPrimitivesV8ValidatorAppPublic]>;
-  kind: PolkadotPrimitivesV8SlashingSlashingOffenceKind;
+  kind: PolkadotPrimitivesVstagingDisputeOffenceKind;
 };
 
 /**
@@ -15729,7 +16223,11 @@ export type PolkadotRuntimeParachainsOnDemandPalletError =
    * The current spot price is higher than the max amount specified in the `place_order`
    * call, making it invalid.
    **/
-  | 'SpotPriceHigherThanMaxAmount';
+  | 'SpotPriceHigherThanMaxAmount'
+  /**
+   * The account doesn't have enough credits to purchase on-demand coretime.
+   **/
+  | 'InsufficientCredits';
 
 export type PolkadotRuntimeParachainsAssignerCoretimeSchedule = {
   assignments: Array<
@@ -16051,6 +16549,20 @@ export type PalletXcmRemoteLockedFungibleRecord = {
   consumers: Array<[[], bigint]>;
 };
 
+export type PalletXcmAuthorizedAliasesEntry = {
+  aliasers: Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>;
+  ticket: FrameSupportStorageDisabled;
+};
+
+export type FrameSupportStorageDisabled = {};
+
+export type PalletXcmMaxAuthorizedAliases = {};
+
+export type XcmRuntimeApisAuthorizedAliasesOriginAliaser = {
+  location: XcmVersionedLocation;
+  expiry?: bigint | undefined;
+};
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -16153,7 +16665,19 @@ export type PalletXcmError =
   /**
    * Local XCM execution incomplete.
    **/
-  | 'LocalExecutionIncomplete';
+  | 'LocalExecutionIncomplete'
+  /**
+   * Too many locations authorized to alias origin.
+   **/
+  | 'TooManyAuthorizedAliases'
+  /**
+   * Expiry block number is in the past.
+   **/
+  | 'ExpiresInPast'
+  /**
+   * The alias to remove authorization for was not found.
+   **/
+  | 'AliasNotFound';
 
 export type PalletMessageQueueBookState = {
   begin: number;
@@ -16411,7 +16935,21 @@ export type PolkadotPrimitivesVstagingCandidateEvent =
       ];
     };
 
+export type PolkadotPrimitivesV8SlashingPendingSlashes = {
+  keys: Array<[PolkadotPrimitivesV8ValidatorIndex, PolkadotPrimitivesV8ValidatorAppPublic]>;
+  kind: PolkadotPrimitivesV8SlashingSlashingOffenceKind;
+};
+
+export type PolkadotPrimitivesV8SlashingSlashingOffenceKind = 'ForInvalid' | 'AgainstValid';
+
 export type PolkadotPrimitivesV8SlashingOpaqueKeyOwnershipProof = Bytes;
+
+export type PolkadotPrimitivesV8SlashingDisputeProof = {
+  timeSlot: PolkadotPrimitivesV8SlashingDisputesTimeSlot;
+  kind: PolkadotPrimitivesV8SlashingSlashingOffenceKind;
+  validatorIndex: PolkadotPrimitivesV8ValidatorIndex;
+  validatorId: PolkadotPrimitivesV8ValidatorAppPublic;
+};
 
 export type PolkadotPrimitivesVstagingAsyncBackingBackingState = {
   constraints: PolkadotPrimitivesV8AsyncBackingConstraints;
@@ -16450,6 +16988,26 @@ export type PolkadotPrimitivesVstagingAsyncBackingCandidatePendingAvailability =
   commitments: PolkadotPrimitivesV8CandidateCommitments;
   relayParentNumber: number;
   maxPovSize: number;
+};
+
+export type PolkadotPrimitivesVstagingAsyncBackingConstraints = {
+  minRelayParentNumber: number;
+  maxPovSize: number;
+  maxCodeSize: number;
+  maxHeadDataSize: number;
+  umpRemaining: number;
+  umpRemainingBytes: number;
+  maxUmpNumPerCandidate: number;
+  dmpRemainingMessages: Array<number>;
+  hrmpInbound: PolkadotPrimitivesV8AsyncBackingInboundHrmpLimitations;
+  hrmpChannelsOut: Array<
+    [PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AsyncBackingOutboundHrmpChannelLimitations]
+  >;
+  maxHrmpNumPerCandidate: number;
+  requiredParent: PolkadotParachainPrimitivesPrimitivesHeadData;
+  validationCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
+  upgradeRestriction?: PolkadotPrimitivesV8UpgradeRestriction | undefined;
+  futureValidationCode?: [number, PolkadotParachainPrimitivesPrimitivesValidationCodeHash] | undefined;
 };
 
 export type SpConsensusBeefyValidatorSet = { validators: Array<SpConsensusBeefyEcdsaCryptoPublic>; id: bigint };

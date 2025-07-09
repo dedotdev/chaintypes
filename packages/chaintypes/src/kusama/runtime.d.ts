@@ -53,6 +53,7 @@ import type {
   PolkadotPrimitivesV8AsyncBackingAsyncBackingParams,
   PolkadotPrimitivesV8ApprovalVotingParams,
   PolkadotPrimitivesV8CoreIndex,
+  PolkadotPrimitivesVstagingAsyncBackingConstraints,
   SpConsensusBeefyValidatorSet,
   SpConsensusBeefyDoubleVotingProof,
   SpRuntimeOpaqueValue,
@@ -660,6 +661,27 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: ParachainHost_validation_code_bomb_limit
      **/
     validationCodeBombLimit: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
+
+    /**
+     * Returns the constraints on the actions that can be taken by a new parachain
+     * block.
+     *
+     * @callname: ParachainHost_backing_constraints
+     * @param {PolkadotParachainPrimitivesPrimitivesId} para_id
+     **/
+    backingConstraints: GenericRuntimeApiMethod<
+      Rv,
+      (
+        paraId: PolkadotParachainPrimitivesPrimitivesId,
+      ) => Promise<PolkadotPrimitivesVstagingAsyncBackingConstraints | undefined>
+    >;
+
+    /**
+     * Retrieve the scheduling lookahead
+     *
+     * @callname: ParachainHost_scheduling_lookahead
+     **/
+    schedulingLookahead: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
 
     /**
      * Generic runtime api call

@@ -23,6 +23,7 @@ import type {
   FrameSystemEventRecord,
   FrameSystemLastRuntimeUpgradeInfo,
   FrameSystemCodeUpgradeAuthorization,
+  SpWeightsWeightV2Weight,
   SpConsensusBabeAppPublic,
   SpConsensusSlotsSlot,
   SpConsensusBabeDigestsNextConfigDescriptor,
@@ -49,6 +50,7 @@ import type {
   PalletStakingSlashingSpanRecord,
   SpStakingOffenceOffenceDetails,
   StagingKusamaRuntimeSessionKeys,
+  SpStakingOffenceOffenceSeverity,
   SpCoreCryptoKeyTypeId,
   PalletGrandpaStoredState,
   PalletGrandpaStoredPendingChange,
@@ -134,7 +136,7 @@ import type {
   PolkadotPrimitivesV8ExecutorParams,
   PolkadotPrimitivesV8DisputeState,
   PolkadotCorePrimitivesCandidateHash,
-  PolkadotPrimitivesV8SlashingPendingSlashes,
+  PolkadotPrimitivesVstagingPendingSlashes,
   PolkadotRuntimeParachainsOnDemandTypesCoreAffinityCount,
   PolkadotRuntimeParachainsOnDemandTypesQueueStatusType,
   BinaryHeapEnqueuedOrder,
@@ -144,11 +146,11 @@ import type {
   PolkadotRuntimeCommonCrowdloanFundInfo,
   PalletXcmQueryStatus,
   XcmVersionedLocation,
-  SpWeightsWeightV2Weight,
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
   StagingXcmV5Xcm,
+  PalletXcmAuthorizedAliasesEntry,
   PalletMessageQueueBookState,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   PalletMessageQueuePage,
@@ -307,6 +309,19 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<FrameSystemCodeUpgradeAuthorization | undefined> =} callback
      **/
     authorizedUpgrade: GenericStorageQuery<Rv, () => FrameSystemCodeUpgradeAuthorization | undefined>;
+
+    /**
+     * The weight reclaimed for the extrinsic.
+     *
+     * This information is available until the end of the extrinsic execution.
+     * More precisely this information is removed in `note_applied_extrinsic`.
+     *
+     * Logic doing some post dispatch weight reduction must update this storage to avoid duplicate
+     * reduction.
+     *
+     * @param {Callback<SpWeightsWeightV2Weight> =} callback
+     **/
+    extrinsicWeightReclaimed: GenericStorageQuery<Rv, () => SpWeightsWeightV2Weight>;
 
     /**
      * Generic pallet storage query
@@ -1113,19 +1128,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     currentPlannedSession: GenericStorageQuery<Rv, () => number>;
 
     /**
-     * Indices of validators that have offended in the active era. The offenders are disabled for a
-     * whole era. For this reason they are kept here - only staking pallet knows about eras. The
-     * implementor of [`DisablingStrategy`] defines if a validator should be disabled which
-     * implicitly means that the implementor also controls the max number of disabled validators.
-     *
-     * The vec is always kept sorted so that we can find whether a given validator has previously
-     * offended using binary search.
-     *
-     * @param {Callback<Array<number>> =} callback
-     **/
-    disabledValidators: GenericStorageQuery<Rv, () => Array<number>>;
-
-    /**
      * The threshold for when users can start calling `chill_other` for other validators /
      * nominators. The threshold is compared to the actual number of validators / nominators
      * (`CountFor*`) in the system compared to the configured max (`Max*Count`).
@@ -1233,9 +1235,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * disabled using binary search. It gets cleared when `on_session_ending` returns
      * a new set of identities.
      *
-     * @param {Callback<Array<number>> =} callback
+     * @param {Callback<Array<[number, SpStakingOffenceOffenceSeverity]>> =} callback
      **/
-    disabledValidators: GenericStorageQuery<Rv, () => Array<number>>;
+    disabledValidators: GenericStorageQuery<Rv, () => Array<[number, SpStakingOffenceOffenceSeverity]>>;
 
     /**
      * The next session keys for a validator.
@@ -1984,6 +1986,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   scheduler: {
     /**
+     * Block number at which the agenda began incomplete execution.
      *
      * @param {Callback<number | undefined> =} callback
      **/
@@ -3692,11 +3695,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Validators pending dispute slashes.
      *
      * @param {[number, PolkadotCorePrimitivesCandidateHash]} arg
-     * @param {Callback<PolkadotPrimitivesV8SlashingPendingSlashes | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesVstagingPendingSlashes | undefined> =} callback
      **/
     unappliedSlashes: GenericStorageQuery<
       Rv,
-      (arg: [number, PolkadotCorePrimitivesCandidateHash]) => PolkadotPrimitivesV8SlashingPendingSlashes | undefined,
+      (arg: [number, PolkadotCorePrimitivesCandidateHash]) => PolkadotPrimitivesVstagingPendingSlashes | undefined,
       [number, PolkadotCorePrimitivesCandidateHash]
     >;
 
@@ -3765,6 +3768,14 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<Array<bigint>> =} callback
      **/
     revenue: GenericStorageQuery<Rv, () => Array<bigint>>;
+
+    /**
+     * Keeps track of credits owned by each account.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    credits: GenericStorageQuery<Rv, (arg: AccountId32Like) => bigint, AccountId32>;
 
     /**
      * Generic pallet storage query
@@ -4134,6 +4145,20 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<StagingXcmV5Xcm | undefined> =} callback
      **/
     recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV5Xcm | undefined>;
+
+    /**
+     * Map of authorized aliasers of local origins. Each local location can authorize a list of
+     * other locations to alias into it. Each aliaser is only valid until its inner `expiry`
+     * block number.
+     *
+     * @param {XcmVersionedLocation} arg
+     * @param {Callback<PalletXcmAuthorizedAliasesEntry | undefined> =} callback
+     **/
+    authorizedAliases: GenericStorageQuery<
+      Rv,
+      (arg: XcmVersionedLocation) => PalletXcmAuthorizedAliasesEntry | undefined,
+      XcmVersionedLocation
+    >;
 
     /**
      * Generic pallet storage query

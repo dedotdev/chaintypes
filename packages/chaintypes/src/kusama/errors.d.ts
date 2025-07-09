@@ -357,6 +357,22 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     VirtualStakerNotAllowed: GenericPalletError<Rv>;
 
     /**
+     * Stash could not be reaped as other pallet might depend on it.
+     **/
+    CannotReapStash: GenericPalletError<Rv>;
+
+    /**
+     * The stake of this account is already migrated to `Fungible` holds.
+     **/
+    AlreadyMigrated: GenericPalletError<Rv>;
+
+    /**
+     * Account is restricted from participation in staking. This may happen if the account is
+     * staking in another way already, such as via pool.
+     **/
+    Restricted: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1302,12 +1318,13 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     SenderInSignatories: GenericPalletError<Rv>;
 
     /**
-     * Multisig operation not found when attempting to cancel.
+     * Multisig operation not found in storage.
      **/
     NotFound: GenericPalletError<Rv>;
 
     /**
-     * Only the account that originally created the multisig is able to cancel it.
+     * Only the account that originally created the multisig is able to cancel it or update
+     * its deposits.
      **/
     NotOwner: GenericPalletError<Rv>;
 
@@ -1909,6 +1926,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NothingToSlash: GenericPalletError<Rv>;
 
     /**
+     * The slash amount is too low to be applied.
+     **/
+    SlashTooLow: GenericPalletError<Rv>;
+
+    /**
      * The pool or member delegation has already migrated to delegate stake.
      **/
     AlreadyMigrated: GenericPalletError<Rv>;
@@ -1919,10 +1941,15 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NotMigrated: GenericPalletError<Rv>;
 
     /**
-     * This call is not allowed in the current state of the pallet or an unspecific error
-     * occurred.
+     * This call is not allowed in the current state of the pallet.
      **/
     NotSupported: GenericPalletError<Rv>;
+
+    /**
+     * Account is restricted from participation in pools. This may happen if the account is
+     * staking in another way already.
+     **/
+    Restricted: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -2478,6 +2505,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     SpotPriceHigherThanMaxAmount: GenericPalletError<Rv>;
 
     /**
+     * The account doesn't have enough credits to purchase on-demand coretime.
+     **/
+    InsufficientCredits: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -2919,6 +2951,21 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Local XCM execution incomplete.
      **/
     LocalExecutionIncomplete: GenericPalletError<Rv>;
+
+    /**
+     * Too many locations authorized to alias origin.
+     **/
+    TooManyAuthorizedAliases: GenericPalletError<Rv>;
+
+    /**
+     * Expiry block number is in the past.
+     **/
+    ExpiresInPast: GenericPalletError<Rv>;
+
+    /**
+     * The alias to remove authorization for was not found.
+     **/
+    AliasNotFound: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

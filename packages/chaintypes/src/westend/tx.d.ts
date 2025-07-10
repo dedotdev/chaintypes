@@ -78,7 +78,7 @@ import type {
   PolkadotPrimitivesV8PvfCheckStatement,
   PolkadotPrimitivesV8ValidatorAppSignature,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
-  PolkadotPrimitivesV8SlashingDisputeProof,
+  PolkadotPrimitivesVstagingDisputeProof,
   PolkadotRuntimeParachainsParasParaGenesisArgs,
   XcmVersionedXcm,
   SpRuntimeMultiSigner,
@@ -99,7 +99,6 @@ import type {
   SpConsensusBeefyDoubleVotingProof,
   SpConsensusBeefyForkVotingProof,
   SpConsensusBeefyFutureBlockVotingProof,
-  PalletRcMigratorMigrationStage,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -4262,7 +4261,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * The dispatch origin for this call must be _Signed_.
      *
-     * WARNING: This may be called on accounts created by `pure`, however if done, then
+     * WARNING: This may be called on accounts created by `create_pure`, however if done, then
      * the unreserved fees will be inaccessible. **All access to this account will be lost.**
      *
      **/
@@ -4328,16 +4327,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * inaccessible.
      *
      * Requires a `Signed` origin, and the sender account must have been created by a call to
-     * `pure` with corresponding parameters.
+     * `create_pure` with corresponding parameters.
      *
-     * - `spawner`: The account that originally called `pure` to create this account.
+     * - `spawner`: The account that originally called `create_pure` to create this account.
      * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
-     * - `proxy_type`: The proxy type originally passed to `pure`.
-     * - `height`: The height of the chain when the call to `pure` was processed.
-     * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+     * - `proxy_type`: The proxy type originally passed to `create_pure`.
+     * - `height`: The height of the chain when the call to `create_pure` was processed.
+     * - `ext_index`: The extrinsic index in which the call to `create_pure` was processed.
      *
      * Fails with `NoPermission` in case the caller is not a previously created pure
-     * account whose `pure` call has corresponding parameters.
+     * account whose `create_pure` call has corresponding parameters.
      *
      * @param {MultiAddressLike} spawner
      * @param {WestendRuntimeProxyType} proxyType
@@ -8041,6 +8040,72 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Sets the storage for the authorized current code hash of the parachain.
+     * If not applied, it will be removed at the `System::block_number() + valid_period` block.
+     *
+     * This can be useful, when triggering `Paras::force_set_current_code(para, code)`
+     * from a different chain than the one where the `Paras` pallet is deployed.
+     *
+     * The main purpose is to avoid transferring the entire `code` Wasm blob between chains.
+     * Instead, we authorize `code_hash` with `root`, which can later be applied by
+     * `Paras::apply_authorized_force_set_current_code(para, code)` by anyone.
+     *
+     * Authorizations are stored in an **overwriting manner**.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} para
+     * @param {PolkadotParachainPrimitivesPrimitivesValidationCodeHash} newCodeHash
+     * @param {number} validPeriod
+     **/
+    authorizeForceSetCurrentCodeHash: GenericTxCall<
+      Rv,
+      (
+        para: PolkadotParachainPrimitivesPrimitivesId,
+        newCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
+        validPeriod: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Paras';
+          palletCall: {
+            name: 'AuthorizeForceSetCurrentCodeHash';
+            params: {
+              para: PolkadotParachainPrimitivesPrimitivesId;
+              newCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
+              validPeriod: number;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Applies the already authorized current code for the parachain,
+     * triggering the same functionality as `force_set_current_code`.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} para
+     * @param {PolkadotParachainPrimitivesPrimitivesValidationCode} newCode
+     **/
+    applyAuthorizedForceSetCurrentCode: GenericTxCall<
+      Rv,
+      (
+        para: PolkadotParachainPrimitivesPrimitivesId,
+        newCode: PolkadotParachainPrimitivesPrimitivesValidationCode,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Paras';
+          palletCall: {
+            name: 'ApplyAuthorizedForceSetCurrentCode';
+            params: {
+              para: PolkadotParachainPrimitivesPrimitivesId;
+              newCode: PolkadotParachainPrimitivesPrimitivesValidationCode;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -8442,13 +8507,13 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
   parasSlashing: {
     /**
      *
-     * @param {PolkadotPrimitivesV8SlashingDisputeProof} disputeProof
+     * @param {PolkadotPrimitivesVstagingDisputeProof} disputeProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
     reportDisputeLostUnsigned: GenericTxCall<
       Rv,
       (
-        disputeProof: PolkadotPrimitivesV8SlashingDisputeProof,
+        disputeProof: PolkadotPrimitivesVstagingDisputeProof,
         keyOwnerProof: SpSessionMembershipProof,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -8456,7 +8521,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'ParasSlashing';
           palletCall: {
             name: 'ReportDisputeLostUnsigned';
-            params: { disputeProof: PolkadotPrimitivesV8SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+            params: { disputeProof: PolkadotPrimitivesVstagingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
           };
         }
       >
@@ -11052,118 +11117,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'PokeDeposit';
             params: { who: AccountId32Like };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
-   * Pallet `RcMigrator`'s transaction calls
-   **/
-  rcMigrator: {
-    /**
-     * Set the migration stage.
-     *
-     * This call is intended for emergency use only and is guarded by the
-     * [`Config::ManagerOrigin`].
-     *
-     * @param {PalletRcMigratorMigrationStage} stage
-     **/
-    forceSetStage: GenericTxCall<
-      Rv,
-      (stage: PalletRcMigratorMigrationStage) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'ForceSetStage';
-            params: { stage: PalletRcMigratorMigrationStage };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Schedule the migration to start at a given moment.
-     *
-     * @param {FrameSupportScheduleDispatchTime} startMoment
-     **/
-    scheduleMigration: GenericTxCall<
-      Rv,
-      (startMoment: FrameSupportScheduleDispatchTime) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'ScheduleMigration';
-            params: { startMoment: FrameSupportScheduleDispatchTime };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Start the data migration.
-     *
-     * This is typically called by the Asset Hub to indicate it's readiness to receive the
-     * migration data.
-     *
-     **/
-    startDataMigration: GenericTxCall<
-      Rv,
-      () => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'StartDataMigration';
-          };
-        }
-      >
-    >;
-
-    /**
-     * Update the total number of XCM messages processed by the Asset Hub.
-     *
-     * @param {number} count
-     **/
-    updateAhMsgProcessedCount: GenericTxCall<
-      Rv,
-      (count: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'UpdateAhMsgProcessedCount';
-            params: { count: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Update the total number of XCM messages sent and processed by the Asset Hub.
-     *
-     * @param {number} sent
-     * @param {number} processed
-     **/
-    updateAhMsgCounts: GenericTxCall<
-      Rv,
-      (
-        sent: number,
-        processed: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'UpdateAhMsgCounts';
-            params: { sent: number; processed: number };
           };
         }
       >

@@ -692,6 +692,13 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     schedulingLookahead: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
 
     /**
+     * Retrieve paraids at relay parent
+     *
+     * @callname: ParachainHost_para_ids
+     **/
+    paraIds: GenericRuntimeApiMethod<Rv, () => Promise<Array<PolkadotParachainPrimitivesPrimitivesId>>>;
+
+    /**
      * Generic runtime api call
      **/
     [method: string]: GenericRuntimeApiMethod<Rv>;

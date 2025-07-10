@@ -1866,6 +1866,21 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     InvalidCode: GenericPalletError<Rv>;
 
     /**
+     * No upgrade authorized.
+     **/
+    NothingAuthorized: GenericPalletError<Rv>;
+
+    /**
+     * The submitted code is not authorized.
+     **/
+    Unauthorized: GenericPalletError<Rv>;
+
+    /**
+     * Invalid block number.
+     **/
+    InvalidBlockNumber: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -2688,6 +2703,12 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     AliasNotFound: GenericPalletError<Rv>;
 
     /**
+     * Local XCM execution incomplete with the actual XCM error and the index of the
+     * instruction that caused the error.
+     **/
+    LocalExecutionIncompleteWithError: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -2853,43 +2874,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Submitted configuration is invalid.
      **/
     InvalidConfiguration: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
-   * Pallet `RcMigrator`'s errors
-   **/
-  rcMigrator: {
-    Unreachable: GenericPalletError<Rv>;
-    OutOfWeight: GenericPalletError<Rv>;
-
-    /**
-     * Failed to send XCM message to AH.
-     **/
-    XcmError: GenericPalletError<Rv>;
-
-    /**
-     * Failed to withdraw account from RC for migration to AH.
-     **/
-    FailedToWithdrawAccount: GenericPalletError<Rv>;
-
-    /**
-     * Indicates that the specified block number is in the past.
-     **/
-    PastBlockNumber: GenericPalletError<Rv>;
-
-    /**
-     * Balance accounting overflow.
-     **/
-    BalanceOverflow: GenericPalletError<Rv>;
-
-    /**
-     * Balance accounting underflow.
-     **/
-    BalanceUnderflow: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

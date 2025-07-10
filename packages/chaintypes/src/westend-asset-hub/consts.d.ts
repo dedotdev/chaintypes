@@ -9,6 +9,7 @@ import type {
   PolkadotParachainPrimitivesPrimitivesId,
   SpWeightsWeightV2Weight,
   FrameSupportPalletId,
+  StagingXcmV5Junctions,
   PalletNftsBitFlagsPalletFeature,
   StagingXcmV5Location,
   PalletReferendaTrackDetails,
@@ -327,6 +328,11 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   session: {
     /**
+     * The amount to be held when setting keys.
+     **/
+    keyDeposit: bigint;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -401,10 +407,25 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   polkadotXcm: {
     /**
+     * This chain's Universal Location.
+     **/
+    universalLocation: StagingXcmV5Junctions;
+
+    /**
      * The latest supported version that we advertise. Generally just set it to
      * `pallet_xcm::CurrentXcmVersion`.
      **/
     advertisedXcmVersion: number;
+
+    /**
+     * The maximum number of local XCM locks that a single account may have.
+     **/
+    maxLockers: number;
+
+    /**
+     * The maximum number of consumers a single remote lock may have.
+     **/
+    maxRemoteLockConsumers: number;
 
     /**
      * Generic pallet constant
@@ -1092,7 +1113,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      *
      * Following information is kept for eras in `[current_era -
      * HistoryDepth, current_era]`: `ErasValidatorPrefs`, `ErasValidatorReward`,
-     * `ErasRewardPoints`, `ErasTotalStake`, `ErasClaimedRewards`,
+     * `ErasRewardPoints`, `ErasTotalStake`, `ClaimedRewards`,
      * `ErasStakersPaged`, `ErasStakersOverview`.
      *
      * Must be more than the number of eras delayed by session.
@@ -1105,7 +1126,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     historyDepth: number;
 
     /**
-     * Number of sessions per era.
+     * Number of sessions per era, as per the preferences of the **relay chain**.
      **/
     sessionsPerEra: number;
 
@@ -1150,7 +1171,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * `MaxExposurePageSize` nominators. This is to limit the i/o cost for the
      * nominator payout.
      *
-     * Note: `MaxExposurePageSize` is used to bound `ErasClaimedRewards` and is unsafe to
+     * Note: `MaxExposurePageSize` is used to bound `ClaimedRewards` and is unsafe to
      * reduce without handling it in a migration.
      **/
     maxExposurePageSize: number;
@@ -1183,9 +1204,16 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     maxInvulnerables: number;
 
     /**
-     * Maximum number of disabled validators.
+     * Maximum allowed era duration in milliseconds.
+     *
+     * This provides a defensive upper bound to cap the effective era duration, preventing
+     * excessively long eras from causing runaway inflation (e.g., due to bugs). If the actual
+     * era duration exceeds this value, it will be clamped to this maximum.
+     *
+     * Example: For an ideal era duration of 24 hours (86,400,000 ms),
+     * this can be set to 604,800,000 ms (7 days).
      **/
-    maxDisabledValidators: number;
+    maxEraDuration: bigint;
 
     /**
      * Generic pallet constant
@@ -1292,6 +1320,14 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * With that `List::migrate` can be called, which will perform the appropriate migration.
      **/
     bagThresholds: Array<bigint>;
+
+    /**
+     * Maximum number of accounts that may be re-bagged automatically in `on_idle`.
+     *
+     * A value of `0` (obtained by configuring `type MaxAutoRebagPerBlock = ();`) disables
+     * the feature.
+     **/
+    maxAutoRebagPerBlock: number;
 
     /**
      * Generic pallet constant
@@ -1575,15 +1611,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    * Pallet `AhOps`'s constants
    **/
   ahOps: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `AhMigrator`'s constants
-   **/
-  ahMigrator: {
     /**
      * Generic pallet constant
      **/

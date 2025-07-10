@@ -26,7 +26,8 @@ import type {
   AssetHubWestendRuntimeRuntimeCallLike,
   SpRuntimeMultiSignature,
   FrameSystemEventRecord,
-  CumulusPrimitivesParachainInherentParachainInherentData,
+  CumulusPalletParachainSystemParachainInherentBasicParachainInherentData,
+  CumulusPalletParachainSystemParachainInherentInboundMessagesData,
   PalletMigrationsMigrationCursor,
   PalletMigrationsHistoricCleanupSelector,
   SpWeightsWeightV2Weight,
@@ -43,8 +44,8 @@ import type {
   CumulusPrimitivesCoreAggregateMessageOrigin,
   SnowbridgeCoreOperatingModeBasicOperatingMode,
   SnowbridgeCoreAssetMetadata,
-  SnowbridgeCoreRewardMessageId,
   StagingXcmV5Asset,
+  SnowbridgeCoreRewardMessageId,
   AssetHubWestendRuntimeOriginCaller,
   PalletMultisigTimepoint,
   AssetHubWestendRuntimeProxyType,
@@ -91,26 +92,8 @@ import type {
   PalletConvictionVotingConviction,
   FrameSupportPreimagesBounded,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
+  ParachainsCommonPayVersionedLocatableAccount,
   AssetHubWestendRuntimeRuntimeHoldReason,
-  PalletRcMigratorAccountsAccount,
-  PalletRcMigratorMultisigRcMultisig,
-  PalletRcMigratorProxyRcProxy,
-  PalletRcMigratorProxyRcProxyAnnouncement,
-  PalletRcMigratorPreimageChunksRcPreimageChunk,
-  PalletRcMigratorPreimageRequestStatusRcPreimageRequestStatus,
-  PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus,
-  PalletRcMigratorStakingNomPoolsRcNomPoolsMessage,
-  PalletRcMigratorVestingRcVestingSchedule,
-  PalletRcMigratorStakingFastUnstakeRcFastUnstakeMessage,
-  PalletReferendaReferendumInfo,
-  PalletRcMigratorStakingBagsListRcBagsListMessage,
-  PalletRcMigratorSchedulerRcSchedulerMessage,
-  PalletRcMigratorIndicesRcIndicesIndex,
-  PalletRcMigratorConvictionVotingRcConvictionVotingMessage,
-  PalletRcMigratorSchedulerAliasScheduled,
-  PalletRcMigratorStakingMessageRcStakingMessage,
-  PalletAhMigratorMigrationStage,
-  PalletRcMigratorMigrationFinishedData,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -387,17 +370,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * As a side effect, this function upgrades the current validation function
      * if the appropriate time has come.
      *
-     * @param {CumulusPrimitivesParachainInherentParachainInherentData} data
+     * @param {CumulusPalletParachainSystemParachainInherentBasicParachainInherentData} data
+     * @param {CumulusPalletParachainSystemParachainInherentInboundMessagesData} inboundMessagesData
      **/
     setValidationData: GenericTxCall<
       Rv,
-      (data: CumulusPrimitivesParachainInherentParachainInherentData) => ChainSubmittableExtrinsic<
+      (
+        data: CumulusPalletParachainSystemParachainInherentBasicParachainInherentData,
+        inboundMessagesData: CumulusPalletParachainSystemParachainInherentInboundMessagesData,
+      ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ParachainSystem';
           palletCall: {
             name: 'SetValidationData';
-            params: { data: CumulusPrimitivesParachainInherentParachainInherentData };
+            params: {
+              data: CumulusPalletParachainSystemParachainInherentBasicParachainInherentData;
+              inboundMessagesData: CumulusPalletParachainSystemParachainInherentInboundMessagesData;
+            };
           };
         }
       >
@@ -2812,19 +2802,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * @param {XcmVersionedLocation} assetId
      * @param {SnowbridgeCoreAssetMetadata} metadata
+     * @param {StagingXcmV5Asset} feeAsset
      **/
     registerToken: GenericTxCall<
       Rv,
       (
         assetId: XcmVersionedLocation,
         metadata: SnowbridgeCoreAssetMetadata,
+        feeAsset: StagingXcmV5Asset,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'SnowbridgeSystemFrontend';
           palletCall: {
             name: 'RegisterToken';
-            params: { assetId: XcmVersionedLocation; metadata: SnowbridgeCoreAssetMetadata };
+            params: {
+              assetId: XcmVersionedLocation;
+              metadata: SnowbridgeCoreAssetMetadata;
+              feeAsset: StagingXcmV5Asset;
+            };
           };
         }
       >
@@ -3508,7 +3504,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * The dispatch origin for this call must be _Signed_.
      *
-     * WARNING: This may be called on accounts created by `pure`, however if done, then
+     * WARNING: This may be called on accounts created by `create_pure`, however if done, then
      * the unreserved fees will be inaccessible. **All access to this account will be lost.**
      *
      **/
@@ -3574,16 +3570,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * inaccessible.
      *
      * Requires a `Signed` origin, and the sender account must have been created by a call to
-     * `pure` with corresponding parameters.
+     * `create_pure` with corresponding parameters.
      *
-     * - `spawner`: The account that originally called `pure` to create this account.
+     * - `spawner`: The account that originally called `create_pure` to create this account.
      * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
-     * - `proxy_type`: The proxy type originally passed to `pure`.
-     * - `height`: The height of the chain when the call to `pure` was processed.
-     * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+     * - `proxy_type`: The proxy type originally passed to `create_pure`.
+     * - `height`: The height of the chain when the call to `create_pure` was processed.
+     * - `ext_index`: The extrinsic index in which the call to `create_pure` was processed.
      *
      * Fails with `NoPermission` in case the caller is not a previously created pure
-     * account whose `pure` call has corresponding parameters.
+     * account whose `create_pure` call has corresponding parameters.
      *
      * @param {MultiAddressLike} spawner
      * @param {AssetHubWestendRuntimeProxyType} proxyType
@@ -10526,10 +10522,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Instantiates a contract from a previously deployed wasm binary.
+     * Instantiates a contract from a previously deployed vm binary.
      *
      * This function is identical to [`Self::instantiate_with_code`] but without the
-     * code deployment step. Instead, the `code_hash` of an on-chain deployed wasm binary
+     * code deployment step. Instead, the `code_hash` of an on-chain deployed vm binary
      * must be supplied.
      *
      * @param {bigint} value
@@ -10625,6 +10621,47 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               code: BytesLike;
               data: BytesLike;
               salt: FixedBytes<32> | undefined;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
+     * by an EVM transaction through the EVM compatibility layer.
+     *
+     * Calling this dispatchable ensures that the origin's nonce is bumped only once,
+     * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
+     * also bumps the nonce after contract instantiation, since it may be invoked multiple
+     * times within a batch call transaction.
+     *
+     * @param {bigint} value
+     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {bigint} storageDepositLimit
+     * @param {BytesLike} code
+     * @param {BytesLike} data
+     **/
+    ethInstantiateWithCode: GenericTxCall<
+      Rv,
+      (
+        value: bigint,
+        gasLimit: SpWeightsWeightV2Weight,
+        storageDepositLimit: bigint,
+        code: BytesLike,
+        data: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'EthInstantiateWithCode';
+            params: {
+              value: bigint;
+              gasLimit: SpWeightsWeightV2Weight;
+              storageDepositLimit: bigint;
+              code: BytesLike;
+              data: BytesLike;
             };
           };
         }
@@ -11781,8 +11818,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Remove all data structures concerning a staker/stash once it is at a state where it can
      * be considered `dust` in the staking system. The requirements are:
      *
-     * 1. the `total_balance` of the stash is below existential deposit.
-     * 2. or, the `ledger.total` of the stash is below existential deposit.
+     * 1. the `total_balance` of the stash is below minimum bond.
+     * 2. or, the `ledger.total` of the stash is below minimum bond.
      * 3. or, existential deposit is zero and either `total_balance` or `ledger.total` is zero.
      *
      * The former can happen in cases like a slash; the latter when a fully unbonded account
@@ -12187,30 +12224,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ApplySlash';
             params: { slashEra: number; slashKey: [AccountId32Like, Perbill, number] };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Adjusts the staking ledger by withdrawing any excess staked amount.
-     *
-     * This function corrects cases where a user's recorded stake in the ledger
-     * exceeds their actual staked funds. This situation can arise due to cases such as
-     * external slashing by another pallet, leading to an inconsistency between the ledger
-     * and the actual stake.
-     *
-     * @param {AccountId32Like} stash
-     **/
-    withdrawOverstake: GenericTxCall<
-      Rv,
-      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'WithdrawOverstake';
-            params: { stash: AccountId32Like };
           };
         }
       >
@@ -13505,6 +13518,27 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Set the invulnerable list.
+     *
+     * Dispatch origin must the the same as [`crate::Config::AdminOrigin`].
+     *
+     * @param {Array<AccountId32Like>} inv
+     **/
+    setInvulnerables: GenericTxCall<
+      Rv,
+      (inv: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockElectionSigned';
+          palletCall: {
+            name: 'SetInvulnerables';
+            params: { inv: Array<AccountId32Like> };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -14204,7 +14238,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * @param {PolkadotRuntimeCommonImplsVersionedLocatableAsset} assetKind
      * @param {bigint} amount
-     * @param {XcmVersionedLocation} beneficiary
+     * @param {ParachainsCommonPayVersionedLocatableAccount} beneficiary
      * @param {number | undefined} validFrom
      **/
     spend: GenericTxCall<
@@ -14212,7 +14246,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
       (
         assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset,
         amount: bigint,
-        beneficiary: XcmVersionedLocation,
+        beneficiary: ParachainsCommonPayVersionedLocatableAccount,
         validFrom: number | undefined,
       ) => ChainSubmittableExtrinsic<
         Rv,
@@ -14223,7 +14257,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
             params: {
               assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
               amount: bigint;
-              beneficiary: XcmVersionedLocation;
+              beneficiary: ParachainsCommonPayVersionedLocatableAccount;
               validFrom: number | undefined;
             };
           };
@@ -14643,492 +14677,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               amount: bigint;
               reason: AssetHubWestendRuntimeRuntimeHoldReason | undefined;
             };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
-   * Pallet `AhMigrator`'s transaction calls
-   **/
-  ahMigrator: {
-    /**
-     * Receive accounts from the Relay Chain.
-     *
-     * The accounts sent with `pallet_rc_migrator::Pallet::migrate_accounts` function.
-     *
-     * @param {Array<PalletRcMigratorAccountsAccount>} accounts
-     **/
-    receiveAccounts: GenericTxCall<
-      Rv,
-      (accounts: Array<PalletRcMigratorAccountsAccount>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveAccounts';
-            params: { accounts: Array<PalletRcMigratorAccountsAccount> };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Receive multisigs from the Relay Chain.
-     *
-     * This will be called from an XCM `Transact` inside a DMP from the relay chain. The
-     * multisigs were prepared by
-     * `pallet_rc_migrator::multisig::MultisigMigrator::migrate_many`.
-     *
-     * @param {Array<PalletRcMigratorMultisigRcMultisig>} accounts
-     **/
-    receiveMultisigs: GenericTxCall<
-      Rv,
-      (accounts: Array<PalletRcMigratorMultisigRcMultisig>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveMultisigs';
-            params: { accounts: Array<PalletRcMigratorMultisigRcMultisig> };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Receive proxies from the Relay Chain.
-     *
-     * @param {Array<PalletRcMigratorProxyRcProxy>} proxies
-     **/
-    receiveProxyProxies: GenericTxCall<
-      Rv,
-      (proxies: Array<PalletRcMigratorProxyRcProxy>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveProxyProxies';
-            params: { proxies: Array<PalletRcMigratorProxyRcProxy> };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Receive proxy announcements from the Relay Chain.
-     *
-     * @param {Array<PalletRcMigratorProxyRcProxyAnnouncement>} announcements
-     **/
-    receiveProxyAnnouncements: GenericTxCall<
-      Rv,
-      (announcements: Array<PalletRcMigratorProxyRcProxyAnnouncement>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveProxyAnnouncements';
-            params: { announcements: Array<PalletRcMigratorProxyRcProxyAnnouncement> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorPreimageChunksRcPreimageChunk>} chunks
-     **/
-    receivePreimageChunks: GenericTxCall<
-      Rv,
-      (chunks: Array<PalletRcMigratorPreimageChunksRcPreimageChunk>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceivePreimageChunks';
-            params: { chunks: Array<PalletRcMigratorPreimageChunksRcPreimageChunk> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorPreimageRequestStatusRcPreimageRequestStatus>} requestStatus
-     **/
-    receivePreimageRequestStatus: GenericTxCall<
-      Rv,
-      (requestStatus: Array<PalletRcMigratorPreimageRequestStatusRcPreimageRequestStatus>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceivePreimageRequestStatus';
-            params: { requestStatus: Array<PalletRcMigratorPreimageRequestStatusRcPreimageRequestStatus> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus>} legacyStatus
-     **/
-    receivePreimageLegacyStatus: GenericTxCall<
-      Rv,
-      (
-        legacyStatus: Array<PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus>,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceivePreimageLegacyStatus';
-            params: { legacyStatus: Array<PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorStakingNomPoolsRcNomPoolsMessage>} messages
-     **/
-    receiveNomPoolsMessages: GenericTxCall<
-      Rv,
-      (messages: Array<PalletRcMigratorStakingNomPoolsRcNomPoolsMessage>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveNomPoolsMessages';
-            params: { messages: Array<PalletRcMigratorStakingNomPoolsRcNomPoolsMessage> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorVestingRcVestingSchedule>} schedules
-     **/
-    receiveVestingSchedules: GenericTxCall<
-      Rv,
-      (schedules: Array<PalletRcMigratorVestingRcVestingSchedule>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveVestingSchedules';
-            params: { schedules: Array<PalletRcMigratorVestingRcVestingSchedule> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorStakingFastUnstakeRcFastUnstakeMessage>} messages
-     **/
-    receiveFastUnstakeMessages: GenericTxCall<
-      Rv,
-      (messages: Array<PalletRcMigratorStakingFastUnstakeRcFastUnstakeMessage>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveFastUnstakeMessages';
-            params: { messages: Array<PalletRcMigratorStakingFastUnstakeRcFastUnstakeMessage> };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Receive referendum counts, deciding counts, votes for the track queue.
-     *
-     * @param {number} referendumCount
-     * @param {Array<[number, number]>} decidingCount
-     * @param {Array<[number, Array<[number, bigint]>]>} trackQueue
-     **/
-    receiveReferendaValues: GenericTxCall<
-      Rv,
-      (
-        referendumCount: number,
-        decidingCount: Array<[number, number]>,
-        trackQueue: Array<[number, Array<[number, bigint]>]>,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveReferendaValues';
-            params: {
-              referendumCount: number;
-              decidingCount: Array<[number, number]>;
-              trackQueue: Array<[number, Array<[number, bigint]>]>;
-            };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Receive referendums from the Relay Chain.
-     *
-     * @param {Array<[number, PalletReferendaReferendumInfo]>} referendums
-     **/
-    receiveReferendums: GenericTxCall<
-      Rv,
-      (referendums: Array<[number, PalletReferendaReferendumInfo]>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveReferendums';
-            params: { referendums: Array<[number, PalletReferendaReferendumInfo]> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorStakingBagsListRcBagsListMessage>} messages
-     **/
-    receiveBagsListMessages: GenericTxCall<
-      Rv,
-      (messages: Array<PalletRcMigratorStakingBagsListRcBagsListMessage>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveBagsListMessages';
-            params: { messages: Array<PalletRcMigratorStakingBagsListRcBagsListMessage> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorSchedulerRcSchedulerMessage>} messages
-     **/
-    receiveSchedulerMessages: GenericTxCall<
-      Rv,
-      (messages: Array<PalletRcMigratorSchedulerRcSchedulerMessage>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveSchedulerMessages';
-            params: { messages: Array<PalletRcMigratorSchedulerRcSchedulerMessage> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorIndicesRcIndicesIndex>} indices
-     **/
-    receiveIndices: GenericTxCall<
-      Rv,
-      (indices: Array<PalletRcMigratorIndicesRcIndicesIndex>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveIndices';
-            params: { indices: Array<PalletRcMigratorIndicesRcIndicesIndex> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorConvictionVotingRcConvictionVotingMessage>} messages
-     **/
-    receiveConvictionVotingMessages: GenericTxCall<
-      Rv,
-      (messages: Array<PalletRcMigratorConvictionVotingRcConvictionVotingMessage>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveConvictionVotingMessages';
-            params: { messages: Array<PalletRcMigratorConvictionVotingRcConvictionVotingMessage> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<[PolkadotRuntimeCommonImplsVersionedLocatableAsset, FixedU128]>} rates
-     **/
-    receiveAssetRates: GenericTxCall<
-      Rv,
-      (rates: Array<[PolkadotRuntimeCommonImplsVersionedLocatableAsset, FixedU128]>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveAssetRates';
-            params: { rates: Array<[PolkadotRuntimeCommonImplsVersionedLocatableAsset, FixedU128]> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<[number, H256]>} metadata
-     **/
-    receiveReferendaMetadata: GenericTxCall<
-      Rv,
-      (metadata: Array<[number, H256]>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveReferendaMetadata';
-            params: { metadata: Array<[number, H256]> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<[number, Array<PalletRcMigratorSchedulerAliasScheduled | undefined>]>} messages
-     **/
-    receiveSchedulerAgendaMessages: GenericTxCall<
-      Rv,
-      (
-        messages: Array<[number, Array<PalletRcMigratorSchedulerAliasScheduled | undefined>]>,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveSchedulerAgendaMessages';
-            params: { messages: Array<[number, Array<PalletRcMigratorSchedulerAliasScheduled | undefined>]> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorStakingMessageRcStakingMessage>} messages
-     **/
-    receiveStakingMessages: GenericTxCall<
-      Rv,
-      (messages: Array<PalletRcMigratorStakingMessageRcStakingMessage>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveStakingMessages';
-            params: { messages: Array<PalletRcMigratorStakingMessageRcStakingMessage> };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Set the migration stage.
-     *
-     * This call is intended for emergency use only and is guarded by the
-     * [`Config::ManagerOrigin`].
-     *
-     * @param {PalletAhMigratorMigrationStage} stage
-     **/
-    forceSetStage: GenericTxCall<
-      Rv,
-      (stage: PalletAhMigratorMigrationStage) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ForceSetStage';
-            params: { stage: PalletAhMigratorMigrationStage };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Start the data migration.
-     *
-     * This is typically called by the Relay Chain to start the migration on the Asset Hub and
-     * receive a handshake message indicating the Asset Hub's readiness.
-     *
-     **/
-    startMigration: GenericTxCall<
-      Rv,
-      () => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'StartMigration';
-          };
-        }
-      >
-    >;
-
-    /**
-     * Finish the migration.
-     *
-     * This is typically called by the Relay Chain to signal the migration has finished.
-     *
-     * @param {PalletRcMigratorMigrationFinishedData} data
-     **/
-    finishMigration: GenericTxCall<
-      Rv,
-      (data: PalletRcMigratorMigrationFinishedData) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'FinishMigration';
-            params: { data: PalletRcMigratorMigrationFinishedData };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Fix hold reasons that were incorrectly assigned during migration.
-     * This should only be used post-migration to repair bad hold reasons.
-     *
-     * Only the `ManagerOrigin` can call this function.
-     *
-     * @param {AccountId32Like} account
-     * @param {bigint} delegationHold
-     * @param {bigint} stakingHold
-     **/
-    fixMisplacedHold: GenericTxCall<
-      Rv,
-      (
-        account: AccountId32Like,
-        delegationHold: bigint,
-        stakingHold: bigint,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'FixMisplacedHold';
-            params: { account: AccountId32Like; delegationHold: bigint; stakingHold: bigint };
           };
         }
       >

@@ -92,6 +92,22 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
+   * @runtimeapi: RelayParentOffsetApi - 0x04e70521a0d3d2f8
+   **/
+  relayParentOffsetApi: {
+    /**
+     * Fetch the slot offset that is expected from the relay chain.
+     *
+     * @callname: RelayParentOffsetApi_relay_parent_offset
+     **/
+    relayParentOffset: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
    * @runtimeapi: AuraUnincludedSegmentApi - 0xd7bdd8a272ca0d65
    **/
   auraUnincludedSegmentApi: {
@@ -1166,7 +1182,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     /**
      * Perform an Ethereum call.
      *
-     * See [`crate::Pallet::bare_eth_transact`]
+     * See [`crate::Pallet::dry_run_eth_transact`]
      *
      * @callname: ReviveApi_eth_transact
      * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
@@ -1290,6 +1306,36 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
         config: PalletReviveEvmApiDebugRpcTypesTracerType,
       ) => Promise<Result<PalletReviveEvmApiDebugRpcTypesTrace, PalletRevivePrimitivesEthTransactError>>
     >;
+
+    /**
+     * The address of the validator that produced the current block.
+     *
+     * @callname: ReviveApi_block_author
+     **/
+    blockAuthor: GenericRuntimeApiMethod<Rv, () => Promise<H160 | undefined>>;
+
+    /**
+     * Get the H160 address associated to this account id
+     *
+     * @callname: ReviveApi_address
+     * @param {AccountId32Like} account_id
+     **/
+    address: GenericRuntimeApiMethod<Rv, (accountId: AccountId32Like) => Promise<H160>>;
+
+    /**
+     * The address used to call the runtime's pallets dispatchables
+     *
+     * @callname: ReviveApi_runtime_pallets_address
+     **/
+    runtimePalletsAddress: GenericRuntimeApiMethod<Rv, () => Promise<H160>>;
+
+    /**
+     * The code at the specified address taking pre-compiles into account.
+     *
+     * @callname: ReviveApi_code
+     * @param {H160} address
+     **/
+    code: GenericRuntimeApiMethod<Rv, (address: H160) => Promise<Bytes>>;
 
     /**
      * Generic runtime api call

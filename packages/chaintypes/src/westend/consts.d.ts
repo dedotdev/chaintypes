@@ -325,6 +325,11 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   session: {
     /**
+     * The amount to be held when setting keys.
+     **/
+    keyDeposit: bigint;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -767,6 +772,14 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * With that `List::migrate` can be called, which will perform the appropriate migration.
      **/
     bagThresholds: Array<bigint>;
+
+    /**
+     * Maximum number of accounts that may be re-bagged automatically in `on_idle`.
+     *
+     * A value of `0` (obtained by configuring `type MaxAutoRebagPerBlock = ();`) disables
+     * the feature.
+     **/
+    maxAutoRebagPerBlock: number;
 
     /**
      * Generic pallet constant
@@ -1300,10 +1313,25 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   xcmPallet: {
     /**
+     * This chain's Universal Location.
+     **/
+    universalLocation: StagingXcmV5Junctions;
+
+    /**
      * The latest supported version that we advertise. Generally just set it to
      * `pallet_xcm::CurrentXcmVersion`.
      **/
     advertisedXcmVersion: number;
+
+    /**
+     * The maximum number of local XCM locks that a single account may have.
+     **/
+    maxLockers: number;
+
+    /**
+     * The maximum number of consumers a single remote lock may have.
+     **/
+    maxRemoteLockConsumers: number;
 
     /**
      * Generic pallet constant
@@ -1441,15 +1469,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    * Pallet `IdentityMigrator`'s constants
    **/
   identityMigrator: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `RcMigrator`'s constants
-   **/
-  rcMigrator: {
     /**
      * Generic pallet constant
      **/

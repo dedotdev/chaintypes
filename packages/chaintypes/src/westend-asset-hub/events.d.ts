@@ -40,6 +40,7 @@ import type {
   PalletStakingAsyncRewardDestination,
   PalletStakingAsyncValidatorPrefs,
   PalletStakingAsyncForcing,
+  PalletStakingAsyncPalletUnexpectedKind,
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
@@ -54,9 +55,8 @@ import type {
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
+  ParachainsCommonPayVersionedLocatableAccount,
   AssetHubWestendRuntimeRuntimeHoldReason,
-  PalletAhMigratorMigrationStage,
-  PalletAhMigratorPalletEventName,
 } from './types.js';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -3150,6 +3150,11 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * Contract deployed by deployer at the specified address.
+     **/
+    Instantiated: GenericPalletEvent<Rv, 'Revive', 'Instantiated', { deployer: H160; contract: H160 }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -3589,6 +3594,12 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * Something occurred that should never happen under normal operation.
+     * Logged as an event for fail-safe observability.
+     **/
+    Unexpected: GenericPalletEvent<Rv, 'Staking', 'Unexpected', PalletStakingAsyncPalletUnexpectedKind>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -4021,6 +4032,21 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * Target snapshot creation failed
+     **/
+    UnexpectedTargetSnapshotFailed: GenericPalletEvent<
+      Rv,
+      'MultiBlockElection',
+      'UnexpectedTargetSnapshotFailed',
+      null
+    >;
+
+    /**
+     * Voter snapshot creation failed
+     **/
+    UnexpectedVoterSnapshotFailed: GenericPalletEvent<Rv, 'MultiBlockElection', 'UnexpectedVoterSnapshotFailed', null>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -4029,16 +4055,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
    * Pallet `MultiBlockElectionVerifier`'s events
    **/
   multiBlockElectionVerifier: {
-    /**
-     * The verification data was unavailable and it could not continue.
-     **/
-    VerificationDataUnavailable: GenericPalletEvent<
-      Rv,
-      'MultiBlockElectionVerifier',
-      'VerificationDataUnavailable',
-      null
-    >;
-
     /**
      * A verification failed at the given page.
      *
@@ -4585,7 +4601,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
         index: number;
         assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
         amount: bigint;
-        beneficiary: XcmVersionedLocation;
+        beneficiary: ParachainsCommonPayVersionedLocatableAccount;
         validFrom: number;
         expireAt: number;
       }
@@ -4753,74 +4769,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'HoldReleased',
       { account: AccountId32; amount: bigint; reason: AssetHubWestendRuntimeRuntimeHoldReason }
     >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
-   * Pallet `AhMigrator`'s events
-   **/
-  ahMigrator: {
-    /**
-     * A stage transition has occurred.
-     **/
-    StageTransition: GenericPalletEvent<
-      Rv,
-      'AhMigrator',
-      'StageTransition',
-      {
-        /**
-         * The old stage before the transition.
-         **/
-        old: PalletAhMigratorMigrationStage;
-
-        /**
-         * The new stage after the transition.
-         **/
-        new: PalletAhMigratorMigrationStage;
-      }
-    >;
-
-    /**
-     * We received a batch of messages that will be integrated into a pallet.
-     **/
-    BatchReceived: GenericPalletEvent<
-      Rv,
-      'AhMigrator',
-      'BatchReceived',
-      { pallet: PalletAhMigratorPalletEventName; count: number }
-    >;
-
-    /**
-     * We processed a batch of messages for this pallet.
-     **/
-    BatchProcessed: GenericPalletEvent<
-      Rv,
-      'AhMigrator',
-      'BatchProcessed',
-      { pallet: PalletAhMigratorPalletEventName; countGood: number; countBad: number }
-    >;
-
-    /**
-     * The Asset Hub Migration started and is active until `AssetHubMigrationFinished` is
-     * emitted.
-     *
-     * This event is equivalent to `StageTransition { new: DataMigrationOngoing, .. }` but is
-     * easier to understand. The activation is immediate and affects all events happening
-     * afterwards.
-     **/
-    AssetHubMigrationStarted: GenericPalletEvent<Rv, 'AhMigrator', 'AssetHubMigrationStarted', null>;
-
-    /**
-     * The Asset Hub Migration finished.
-     *
-     * This event is equivalent to `StageTransition { new: MigrationDone, .. }` but is easier
-     * to understand. The finishing is immediate and affects all events happening
-     * afterwards.
-     **/
-    AssetHubMigrationFinished: GenericPalletEvent<Rv, 'AhMigrator', 'AssetHubMigrationFinished', null>;
 
     /**
      * Generic pallet event

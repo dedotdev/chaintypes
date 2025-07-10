@@ -100,8 +100,7 @@ export type WestendRuntimeRuntimeEvent =
   | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
   | { pallet: 'RootTesting'; palletEvent: PalletRootTestingEvent }
   | { pallet: 'MetaTx'; palletEvent: PalletMetaTxEvent }
-  | { pallet: 'IdentityMigrator'; palletEvent: PolkadotRuntimeCommonIdentityMigratorPalletEvent }
-  | { pallet: 'RcMigrator'; palletEvent: PalletRcMigratorEvent };
+  | { pallet: 'IdentityMigrator'; palletEvent: PolkadotRuntimeCommonIdentityMigratorPalletEvent };
 
 /**
  * Event for the System pallet.
@@ -1602,8 +1601,7 @@ export type WestendRuntimeRuntimeCall =
   | { pallet: 'RootTesting'; palletCall: PalletRootTestingCall }
   | { pallet: 'MetaTx'; palletCall: PalletMetaTxCall }
   | { pallet: 'Beefy'; palletCall: PalletBeefyCall }
-  | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCall }
-  | { pallet: 'RcMigrator'; palletCall: PalletRcMigratorCall };
+  | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCall };
 
 export type WestendRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -1657,8 +1655,7 @@ export type WestendRuntimeRuntimeCallLike =
   | { pallet: 'RootTesting'; palletCall: PalletRootTestingCallLike }
   | { pallet: 'MetaTx'; palletCall: PalletMetaTxCallLike }
   | { pallet: 'Beefy'; palletCall: PalletBeefyCallLike }
-  | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCallLike }
-  | { pallet: 'RcMigrator'; palletCall: PalletRcMigratorCallLike };
+  | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5303,7 +5300,7 @@ export type PalletProxyCall =
    *
    * The dispatch origin for this call must be _Signed_.
    *
-   * WARNING: This may be called on accounts created by `pure`, however if done, then
+   * WARNING: This may be called on accounts created by `create_pure`, however if done, then
    * the unreserved fees will be inaccessible. **All access to this account will be lost.**
    **/
   | { name: 'RemoveProxies' }
@@ -5335,16 +5332,16 @@ export type PalletProxyCall =
    * inaccessible.
    *
    * Requires a `Signed` origin, and the sender account must have been created by a call to
-   * `pure` with corresponding parameters.
+   * `create_pure` with corresponding parameters.
    *
-   * - `spawner`: The account that originally called `pure` to create this account.
+   * - `spawner`: The account that originally called `create_pure` to create this account.
    * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
-   * - `proxy_type`: The proxy type originally passed to `pure`.
-   * - `height`: The height of the chain when the call to `pure` was processed.
-   * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+   * - `proxy_type`: The proxy type originally passed to `create_pure`.
+   * - `height`: The height of the chain when the call to `create_pure` was processed.
+   * - `ext_index`: The extrinsic index in which the call to `create_pure` was processed.
    *
    * Fails with `NoPermission` in case the caller is not a previously created pure
-   * account whose `pure` call has corresponding parameters.
+   * account whose `create_pure` call has corresponding parameters.
    **/
   | {
       name: 'KillPure';
@@ -5481,7 +5478,7 @@ export type PalletProxyCallLike =
    *
    * The dispatch origin for this call must be _Signed_.
    *
-   * WARNING: This may be called on accounts created by `pure`, however if done, then
+   * WARNING: This may be called on accounts created by `create_pure`, however if done, then
    * the unreserved fees will be inaccessible. **All access to this account will be lost.**
    **/
   | { name: 'RemoveProxies' }
@@ -5513,16 +5510,16 @@ export type PalletProxyCallLike =
    * inaccessible.
    *
    * Requires a `Signed` origin, and the sender account must have been created by a call to
-   * `pure` with corresponding parameters.
+   * `create_pure` with corresponding parameters.
    *
-   * - `spawner`: The account that originally called `pure` to create this account.
+   * - `spawner`: The account that originally called `create_pure` to create this account.
    * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
-   * - `proxy_type`: The proxy type originally passed to `pure`.
-   * - `height`: The height of the chain when the call to `pure` was processed.
-   * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+   * - `proxy_type`: The proxy type originally passed to `create_pure`.
+   * - `height`: The height of the chain when the call to `create_pure` was processed.
+   * - `ext_index`: The extrinsic index in which the call to `create_pure` was processed.
    *
    * Fails with `NoPermission` in case the caller is not a previously created pure
-   * account whose `pure` call has corresponding parameters.
+   * account whose `create_pure` call has corresponding parameters.
    **/
   | {
       name: 'KillPure';
@@ -8614,7 +8611,39 @@ export type PolkadotRuntimeParachainsParasPalletCall =
    * The cost for removing the cooldown earlier depends on the time left for the cooldown
    * multiplied by [`Config::CooldownRemovalMultiplier`]. The paid tokens are burned.
    **/
-  | { name: 'RemoveUpgradeCooldown'; params: { para: PolkadotParachainPrimitivesPrimitivesId } };
+  | { name: 'RemoveUpgradeCooldown'; params: { para: PolkadotParachainPrimitivesPrimitivesId } }
+  /**
+   * Sets the storage for the authorized current code hash of the parachain.
+   * If not applied, it will be removed at the `System::block_number() + valid_period` block.
+   *
+   * This can be useful, when triggering `Paras::force_set_current_code(para, code)`
+   * from a different chain than the one where the `Paras` pallet is deployed.
+   *
+   * The main purpose is to avoid transferring the entire `code` Wasm blob between chains.
+   * Instead, we authorize `code_hash` with `root`, which can later be applied by
+   * `Paras::apply_authorized_force_set_current_code(para, code)` by anyone.
+   *
+   * Authorizations are stored in an **overwriting manner**.
+   **/
+  | {
+      name: 'AuthorizeForceSetCurrentCodeHash';
+      params: {
+        para: PolkadotParachainPrimitivesPrimitivesId;
+        newCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
+        validPeriod: number;
+      };
+    }
+  /**
+   * Applies the already authorized current code for the parachain,
+   * triggering the same functionality as `force_set_current_code`.
+   **/
+  | {
+      name: 'ApplyAuthorizedForceSetCurrentCode';
+      params: {
+        para: PolkadotParachainPrimitivesPrimitivesId;
+        newCode: PolkadotParachainPrimitivesPrimitivesValidationCode;
+      };
+    };
 
 export type PolkadotRuntimeParachainsParasPalletCallLike =
   /**
@@ -8707,7 +8736,39 @@ export type PolkadotRuntimeParachainsParasPalletCallLike =
    * The cost for removing the cooldown earlier depends on the time left for the cooldown
    * multiplied by [`Config::CooldownRemovalMultiplier`]. The paid tokens are burned.
    **/
-  | { name: 'RemoveUpgradeCooldown'; params: { para: PolkadotParachainPrimitivesPrimitivesId } };
+  | { name: 'RemoveUpgradeCooldown'; params: { para: PolkadotParachainPrimitivesPrimitivesId } }
+  /**
+   * Sets the storage for the authorized current code hash of the parachain.
+   * If not applied, it will be removed at the `System::block_number() + valid_period` block.
+   *
+   * This can be useful, when triggering `Paras::force_set_current_code(para, code)`
+   * from a different chain than the one where the `Paras` pallet is deployed.
+   *
+   * The main purpose is to avoid transferring the entire `code` Wasm blob between chains.
+   * Instead, we authorize `code_hash` with `root`, which can later be applied by
+   * `Paras::apply_authorized_force_set_current_code(para, code)` by anyone.
+   *
+   * Authorizations are stored in an **overwriting manner**.
+   **/
+  | {
+      name: 'AuthorizeForceSetCurrentCodeHash';
+      params: {
+        para: PolkadotParachainPrimitivesPrimitivesId;
+        newCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
+        validPeriod: number;
+      };
+    }
+  /**
+   * Applies the already authorized current code for the parachain,
+   * triggering the same functionality as `force_set_current_code`.
+   **/
+  | {
+      name: 'ApplyAuthorizedForceSetCurrentCode';
+      params: {
+        para: PolkadotParachainPrimitivesPrimitivesId;
+        newCode: PolkadotParachainPrimitivesPrimitivesValidationCode;
+      };
+    };
 
 export type PolkadotPrimitivesV8PvfCheckStatement = {
   accept: boolean;
@@ -9047,17 +9108,17 @@ export type PolkadotRuntimeParachainsDisputesPalletCallLike = 'ForceUnfreeze';
  **/
 export type PolkadotRuntimeParachainsDisputesSlashingPalletCall = {
   name: 'ReportDisputeLostUnsigned';
-  params: { disputeProof: PolkadotPrimitivesV8SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+  params: { disputeProof: PolkadotPrimitivesVstagingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
 };
 
 export type PolkadotRuntimeParachainsDisputesSlashingPalletCallLike = {
   name: 'ReportDisputeLostUnsigned';
-  params: { disputeProof: PolkadotPrimitivesV8SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+  params: { disputeProof: PolkadotPrimitivesVstagingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
 };
 
-export type PolkadotPrimitivesV8SlashingDisputeProof = {
+export type PolkadotPrimitivesVstagingDisputeProof = {
   timeSlot: PolkadotPrimitivesV8SlashingDisputesTimeSlot;
-  kind: PolkadotPrimitivesV8SlashingSlashingOffenceKind;
+  kind: PolkadotPrimitivesVstagingDisputeOffenceKind;
   validatorIndex: PolkadotPrimitivesV8ValidatorIndex;
   validatorId: PolkadotPrimitivesV8ValidatorAppPublic;
 };
@@ -9067,7 +9128,7 @@ export type PolkadotPrimitivesV8SlashingDisputesTimeSlot = {
   candidateHash: PolkadotCorePrimitivesCandidateHash;
 };
 
-export type PolkadotPrimitivesV8SlashingSlashingOffenceKind = 'ForInvalid' | 'AgainstValid';
+export type PolkadotPrimitivesVstagingDisputeOffenceKind = 'ForInvalidBacked' | 'AgainstValid' | 'ForInvalidApproved';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11910,195 +11971,6 @@ export type PolkadotRuntimeCommonIdentityMigratorPalletCallLike =
    **/
   | { name: 'PokeDeposit'; params: { who: AccountId32Like } };
 
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletRcMigratorCall =
-  /**
-   * Set the migration stage.
-   *
-   * This call is intended for emergency use only and is guarded by the
-   * [`Config::ManagerOrigin`].
-   **/
-  | { name: 'ForceSetStage'; params: { stage: PalletRcMigratorMigrationStage } }
-  /**
-   * Schedule the migration to start at a given moment.
-   **/
-  | { name: 'ScheduleMigration'; params: { startMoment: FrameSupportScheduleDispatchTime } }
-  /**
-   * Start the data migration.
-   *
-   * This is typically called by the Asset Hub to indicate it's readiness to receive the
-   * migration data.
-   **/
-  | { name: 'StartDataMigration' }
-  /**
-   * Update the total number of XCM messages processed by the Asset Hub.
-   **/
-  | { name: 'UpdateAhMsgProcessedCount'; params: { count: number } }
-  /**
-   * Update the total number of XCM messages sent and processed by the Asset Hub.
-   **/
-  | { name: 'UpdateAhMsgCounts'; params: { sent: number; processed: number } };
-
-export type PalletRcMigratorCallLike =
-  /**
-   * Set the migration stage.
-   *
-   * This call is intended for emergency use only and is guarded by the
-   * [`Config::ManagerOrigin`].
-   **/
-  | { name: 'ForceSetStage'; params: { stage: PalletRcMigratorMigrationStage } }
-  /**
-   * Schedule the migration to start at a given moment.
-   **/
-  | { name: 'ScheduleMigration'; params: { startMoment: FrameSupportScheduleDispatchTime } }
-  /**
-   * Start the data migration.
-   *
-   * This is typically called by the Asset Hub to indicate it's readiness to receive the
-   * migration data.
-   **/
-  | { name: 'StartDataMigration' }
-  /**
-   * Update the total number of XCM messages processed by the Asset Hub.
-   **/
-  | { name: 'UpdateAhMsgProcessedCount'; params: { count: number } }
-  /**
-   * Update the total number of XCM messages sent and processed by the Asset Hub.
-   **/
-  | { name: 'UpdateAhMsgCounts'; params: { sent: number; processed: number } };
-
-export type PalletRcMigratorMigrationStage =
-  | { type: 'Pending' }
-  | { type: 'Scheduled'; value: { blockNumber: number } }
-  | { type: 'WaitingForAh' }
-  | { type: 'Starting' }
-  | { type: 'AccountsMigrationInit' }
-  | { type: 'AccountsMigrationOngoing'; value: { lastKey?: AccountId32 | undefined } }
-  | { type: 'AccountsMigrationDone' }
-  | { type: 'MultisigMigrationInit' }
-  | { type: 'MultisigMigrationOngoing'; value: { lastKey?: [AccountId32, FixedBytes<32>] | undefined } }
-  | { type: 'MultisigMigrationDone' }
-  | { type: 'ClaimsMigrationDone' }
-  | { type: 'ProxyMigrationInit' }
-  | { type: 'ProxyMigrationProxies'; value: { lastKey?: AccountId32 | undefined } }
-  | { type: 'ProxyMigrationAnnouncements'; value: { lastKey?: AccountId32 | undefined } }
-  | { type: 'ProxyMigrationDone' }
-  | { type: 'PreimageMigrationInit' }
-  | { type: 'PreimageMigrationChunksOngoing'; value: { lastKey?: [[H256, number], number] | undefined } }
-  | { type: 'PreimageMigrationChunksDone' }
-  | { type: 'PreimageMigrationRequestStatusOngoing'; value: { nextKey?: H256 | undefined } }
-  | { type: 'PreimageMigrationRequestStatusDone' }
-  | { type: 'PreimageMigrationLegacyRequestStatusInit' }
-  | { type: 'PreimageMigrationLegacyRequestStatusOngoing'; value: { nextKey?: H256 | undefined } }
-  | { type: 'PreimageMigrationLegacyRequestStatusDone' }
-  | { type: 'PreimageMigrationDone' }
-  | { type: 'NomPoolsMigrationInit' }
-  | { type: 'NomPoolsMigrationOngoing'; value: { nextKey?: PalletRcMigratorStakingNomPoolsNomPoolsStage | undefined } }
-  | { type: 'NomPoolsMigrationDone' }
-  | { type: 'VestingMigrationInit' }
-  | { type: 'VestingMigrationOngoing'; value: { nextKey?: AccountId32 | undefined } }
-  | { type: 'VestingMigrationDone' }
-  | { type: 'FastUnstakeMigrationInit' }
-  | {
-      type: 'FastUnstakeMigrationOngoing';
-      value: { nextKey?: PalletRcMigratorStakingFastUnstakeFastUnstakeStage | undefined };
-    }
-  | { type: 'FastUnstakeMigrationDone' }
-  | { type: 'IndicesMigrationInit' }
-  | { type: 'IndicesMigrationOngoing'; value: { nextKey?: [] | undefined } }
-  | { type: 'IndicesMigrationDone' }
-  | { type: 'ReferendaMigrationInit' }
-  | { type: 'ReferendaMigrationOngoing'; value: { lastKey?: PalletRcMigratorReferendaReferendaStage | undefined } }
-  | { type: 'ReferendaMigrationDone' }
-  | { type: 'BagsListMigrationInit' }
-  | { type: 'BagsListMigrationOngoing'; value: { nextKey?: PalletRcMigratorStakingBagsListBagsListStage | undefined } }
-  | { type: 'BagsListMigrationDone' }
-  | { type: 'SchedulerMigrationInit' }
-  | { type: 'SchedulerMigrationOngoing'; value: { lastKey?: PalletRcMigratorSchedulerSchedulerStage | undefined } }
-  | { type: 'SchedulerAgendaMigrationOngoing'; value: { lastKey?: number | undefined } }
-  | { type: 'SchedulerMigrationDone' }
-  | { type: 'ConvictionVotingMigrationInit' }
-  | {
-      type: 'ConvictionVotingMigrationOngoing';
-      value: { lastKey?: PalletRcMigratorConvictionVotingConvictionVotingStage | undefined };
-    }
-  | { type: 'ConvictionVotingMigrationDone' }
-  | { type: 'BountiesMigrationDone' }
-  | { type: 'AssetRateMigrationInit' }
-  | {
-      type: 'AssetRateMigrationOngoing';
-      value: { lastKey?: PolkadotRuntimeCommonImplsVersionedLocatableAsset | undefined };
-    }
-  | { type: 'AssetRateMigrationDone' }
-  | { type: 'CrowdloanMigrationDone' }
-  | { type: 'TreasuryMigrationDone' }
-  | { type: 'StakingMigrationInit' }
-  | { type: 'StakingMigrationOngoing'; value: { nextKey?: PalletRcMigratorStakingStakingStage | undefined } }
-  | { type: 'StakingMigrationDone' }
-  | { type: 'SignalMigrationFinish' }
-  | { type: 'MigrationDone' };
-
-export type PalletRcMigratorStakingNomPoolsNomPoolsStage =
-  | { type: 'StorageValues' }
-  | { type: 'PoolMembers'; value?: AccountId32 | undefined }
-  | { type: 'BondedPools'; value?: number | undefined }
-  | { type: 'RewardPools'; value?: number | undefined }
-  | { type: 'SubPoolsStorage'; value?: number | undefined }
-  | { type: 'Metadata'; value?: number | undefined }
-  | { type: 'ReversePoolIdLookup'; value?: AccountId32 | undefined }
-  | { type: 'ClaimPermissions'; value?: AccountId32 | undefined }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorStakingFastUnstakeFastUnstakeStage =
-  | { type: 'StorageValues' }
-  | { type: 'Queue'; value?: AccountId32 | undefined }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorReferendaReferendaStage =
-  | { type: 'StorageValues' }
-  | { type: 'Metadata'; value?: number | undefined }
-  | { type: 'ReferendumInfo'; value?: number | undefined };
-
-export type PalletRcMigratorStakingBagsListBagsListStage =
-  | { type: 'ListNodes'; value?: AccountId32 | undefined }
-  | { type: 'ListBags'; value?: bigint | undefined }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorSchedulerSchedulerStage =
-  | { type: 'IncompleteSince' }
-  | { type: 'Retries'; value?: [number, number] | undefined }
-  | { type: 'Lookup'; value?: FixedBytes<32> | undefined }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorConvictionVotingConvictionVotingStage =
-  | { type: 'VotingFor'; value?: [AccountId32, number] | undefined }
-  | { type: 'ClassLocksFor'; value?: AccountId32 | undefined }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorStakingStakingStage =
-  | { type: 'Values' }
-  | { type: 'Invulnerables' }
-  | { type: 'Bonded'; value?: AccountId32 | undefined }
-  | { type: 'Ledger'; value?: AccountId32 | undefined }
-  | { type: 'Payee'; value?: AccountId32 | undefined }
-  | { type: 'Validators'; value?: AccountId32 | undefined }
-  | { type: 'Nominators'; value?: AccountId32 | undefined }
-  | { type: 'VirtualStakers'; value?: AccountId32 | undefined }
-  | { type: 'ErasStakersOverview'; value?: [number, AccountId32] | undefined }
-  | { type: 'ErasStakersPaged'; value?: [number, AccountId32, number] | undefined }
-  | { type: 'ClaimedRewards'; value?: [number, AccountId32] | undefined }
-  | { type: 'ErasValidatorPrefs'; value?: [number, AccountId32] | undefined }
-  | { type: 'ErasValidatorReward'; value?: number | undefined }
-  | { type: 'ErasRewardPoints'; value?: number | undefined }
-  | { type: 'ErasTotalStake'; value?: number | undefined }
-  | { type: 'UnappliedSlashes'; value?: number | undefined }
-  | { type: 'BondedEras' }
-  | { type: 'ValidatorSlashInEra'; value?: [number, AccountId32] | undefined }
-  | { type: 'NominatorSlashInEra'; value?: [number, AccountId32] | undefined }
-  | { type: 'Finished' };
-
 export type SpRuntimeBlakeTwo256 = {};
 
 export type PalletConvictionVotingTally = { ayes: bigint; nays: bigint; support: bigint };
@@ -12323,6 +12195,28 @@ export type PolkadotRuntimeParachainsParasPalletEvent =
          * The parachain for which the cooldown got removed.
          **/
         paraId: PolkadotParachainPrimitivesPrimitivesId;
+      };
+    }
+  /**
+   * A new code hash has been authorized for a Para.
+   **/
+  | {
+      name: 'CodeAuthorized';
+      data: {
+        /**
+         * Para
+         **/
+        paraId: PolkadotParachainPrimitivesPrimitivesId;
+
+        /**
+         * Authorized code hash.
+         **/
+        codeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
+
+        /**
+         * Block at which authorization expires and will be removed.
+         **/
+        expireAt: number;
       };
     };
 
@@ -12981,8 +12875,10 @@ export type PalletXcmEvent =
 
 export type StagingXcmV5TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
-  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV5TraitsError } }
-  | { type: 'Error'; value: { error: XcmV5TraitsError } };
+  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: StagingXcmV5TraitsInstructionError } }
+  | { type: 'Error'; value: StagingXcmV5TraitsInstructionError };
+
+export type StagingXcmV5TraitsInstructionError = { index: number; error: XcmV5TraitsError };
 
 export type XcmV3TraitsSendError =
   | 'NotApplicable'
@@ -13159,45 +13055,6 @@ export type PolkadotRuntimeCommonIdentityMigratorPalletEvent =
    **/
   | { name: 'DepositUpdated'; data: { who: AccountId32; identity: bigint; subs: bigint } };
 
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletRcMigratorEvent =
-  /**
-   * A stage transition has occurred.
-   **/
-  | {
-      name: 'StageTransition';
-      data: {
-        /**
-         * The old stage before the transition.
-         **/
-        old: PalletRcMigratorMigrationStage;
-
-        /**
-         * The new stage after the transition.
-         **/
-        new: PalletRcMigratorMigrationStage;
-      };
-    }
-  /**
-   * The Asset Hub Migration started and is active until `AssetHubMigrationFinished` is
-   * emitted.
-   *
-   * This event is equivalent to `StageTransition { new: Initializing, .. }` but is easier
-   * to understand. The activation is immediate and affects all events happening
-   * afterwards.
-   **/
-  | { name: 'AssetHubMigrationStarted' }
-  /**
-   * The Asset Hub Migration finished.
-   *
-   * This event is equivalent to `StageTransition { new: MigrationDone, .. }` but is easier
-   * to understand. The finishing is immediate and affects all events happening
-   * afterwards.
-   **/
-  | { name: 'AssetHubMigrationFinished' };
-
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
 export type FrameSystemCodeUpgradeAuthorization = { codeHash: H256; checkVersion: boolean };
@@ -13351,11 +13208,14 @@ export type FrameSupportTokensMiscIdAmount = { id: WestendRuntimeRuntimeHoldReas
 
 export type WestendRuntimeRuntimeHoldReason =
   | { type: 'Staking'; value: PalletStakingPalletHoldReason }
+  | { type: 'Session'; value: PalletSessionHoldReason }
   | { type: 'Preimage'; value: PalletPreimageHoldReason }
   | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
   | { type: 'XcmPallet'; value: PalletXcmHoldReason };
 
 export type PalletStakingPalletHoldReason = 'Staking';
+
+export type PalletSessionHoldReason = 'Keys';
 
 export type PalletPreimageHoldReason = 'Preimage';
 
@@ -15093,6 +14953,11 @@ export type PolkadotRuntimeParachainsParasParaPastCodeMeta = {
 
 export type PolkadotRuntimeParachainsParasReplacementTimes = { expectedAt: number; activatedAt: number };
 
+export type PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry = {
+  codeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
+  expireAt: number;
+};
+
 export type PolkadotPrimitivesV8UpgradeGoAhead = 'Abort' | 'GoAhead';
 
 export type PolkadotPrimitivesV8UpgradeRestriction = 'Present';
@@ -15152,7 +15017,19 @@ export type PolkadotRuntimeParachainsParasPalletError =
   /**
    * Invalid validation code size.
    **/
-  | 'InvalidCode';
+  | 'InvalidCode'
+  /**
+   * No upgrade authorized.
+   **/
+  | 'NothingAuthorized'
+  /**
+   * The submitted code is not authorized.
+   **/
+  | 'Unauthorized'
+  /**
+   * Invalid block number.
+   **/
+  | 'InvalidBlockNumber';
 
 export type PolkadotRuntimeParachainsInitializerBufferedSessionChange = {
   validators: Array<PolkadotPrimitivesV8ValidatorAppPublic>;
@@ -15337,9 +15214,9 @@ export type PolkadotRuntimeParachainsDisputesPalletError =
    **/
   | 'UnconfirmedDispute';
 
-export type PolkadotPrimitivesV8SlashingPendingSlashes = {
+export type PolkadotPrimitivesVstagingPendingSlashes = {
   keys: Array<[PolkadotPrimitivesV8ValidatorIndex, PolkadotPrimitivesV8ValidatorAppPublic]>;
-  kind: PolkadotPrimitivesV8SlashingSlashingOffenceKind;
+  kind: PolkadotPrimitivesVstagingDisputeOffenceKind;
 };
 
 /**
@@ -15795,11 +15672,7 @@ export type PolkadotRuntimeParachainsCoretimePalletError =
    **/
   | 'AssetTransferFailed';
 
-export type PalletStakingAsyncRcClientOffence = {
-  offender: AccountId32;
-  reporters: Array<AccountId32>;
-  slashFraction: Perbill;
-};
+export type PalletStakingAsyncAhClientBufferedOffence = { reporter?: AccountId32 | undefined; slashFraction: Perbill };
 
 /**
  * The `Error` enum of this pallet.
@@ -15872,113 +15745,161 @@ export type PalletXcmError =
    * The desired destination was unreachable, generally because there is a no way of routing
    * to it.
    **/
-  | 'Unreachable'
+  | { name: 'Unreachable' }
   /**
    * There was some other issue (i.e. not to do with routing) in sending the message.
    * Perhaps a lack of space for buffering the message.
    **/
-  | 'SendFailure'
+  | { name: 'SendFailure' }
   /**
    * The message execution fails the filter.
    **/
-  | 'Filtered'
+  | { name: 'Filtered' }
   /**
    * The message's weight could not be determined.
    **/
-  | 'UnweighableMessage'
+  | { name: 'UnweighableMessage' }
   /**
    * The destination `Location` provided cannot be inverted.
    **/
-  | 'DestinationNotInvertible'
+  | { name: 'DestinationNotInvertible' }
   /**
    * The assets to be sent are empty.
    **/
-  | 'Empty'
+  | { name: 'Empty' }
   /**
    * Could not re-anchor the assets to declare the fees for the destination chain.
    **/
-  | 'CannotReanchor'
+  | { name: 'CannotReanchor' }
   /**
    * Too many assets have been attempted for transfer.
    **/
-  | 'TooManyAssets'
+  | { name: 'TooManyAssets' }
   /**
    * Origin is invalid for sending.
    **/
-  | 'InvalidOrigin'
+  | { name: 'InvalidOrigin' }
   /**
    * The version of the `Versioned` value used is not able to be interpreted.
    **/
-  | 'BadVersion'
+  | { name: 'BadVersion' }
   /**
    * The given location could not be used (e.g. because it cannot be expressed in the
    * desired version of XCM).
    **/
-  | 'BadLocation'
+  | { name: 'BadLocation' }
   /**
    * The referenced subscription could not be found.
    **/
-  | 'NoSubscription'
+  | { name: 'NoSubscription' }
   /**
    * The location is invalid since it already has a subscription from us.
    **/
-  | 'AlreadySubscribed'
+  | { name: 'AlreadySubscribed' }
   /**
    * Could not check-out the assets for teleportation to the destination chain.
    **/
-  | 'CannotCheckOutTeleport'
+  | { name: 'CannotCheckOutTeleport' }
   /**
    * The owner does not own (all) of the asset that they wish to do the operation on.
    **/
-  | 'LowBalance'
+  | { name: 'LowBalance' }
   /**
    * The asset owner has too many locks on the asset.
    **/
-  | 'TooManyLocks'
+  | { name: 'TooManyLocks' }
   /**
    * The given account is not an identifiable sovereign account for any location.
    **/
-  | 'AccountNotSovereign'
+  | { name: 'AccountNotSovereign' }
   /**
    * The operation required fees to be paid which the initiator could not meet.
    **/
-  | 'FeesNotMet'
+  | { name: 'FeesNotMet' }
   /**
    * A remote lock with the corresponding data could not be found.
    **/
-  | 'LockNotFound'
+  | { name: 'LockNotFound' }
   /**
    * The unlock operation cannot succeed because there are still consumers of the lock.
    **/
-  | 'InUse'
+  | { name: 'InUse' }
   /**
    * Invalid asset, reserve chain could not be determined for it.
    **/
-  | 'InvalidAssetUnknownReserve'
+  | { name: 'InvalidAssetUnknownReserve' }
   /**
    * Invalid asset, do not support remote asset reserves with different fees reserves.
    **/
-  | 'InvalidAssetUnsupportedReserve'
+  | { name: 'InvalidAssetUnsupportedReserve' }
   /**
    * Too many assets with different reserve locations have been attempted for transfer.
    **/
-  | 'TooManyReserves'
+  | { name: 'TooManyReserves' }
   /**
    * Local XCM execution incomplete.
    **/
-  | 'LocalExecutionIncomplete'
+  | { name: 'LocalExecutionIncomplete' }
   /**
    * Too many locations authorized to alias origin.
    **/
-  | 'TooManyAuthorizedAliases'
+  | { name: 'TooManyAuthorizedAliases' }
   /**
    * Expiry block number is in the past.
    **/
-  | 'ExpiresInPast'
+  | { name: 'ExpiresInPast' }
   /**
    * The alias to remove authorization for was not found.
    **/
-  | 'AliasNotFound';
+  | { name: 'AliasNotFound' }
+  /**
+   * Local XCM execution incomplete with the actual XCM error and the index of the
+   * instruction that caused the error.
+   **/
+  | { name: 'LocalExecutionIncompleteWithError'; data: { index: number; error: PalletXcmErrorsExecutionError } };
+
+export type PalletXcmErrorsExecutionError =
+  | 'Overflow'
+  | 'Unimplemented'
+  | 'UntrustedReserveLocation'
+  | 'UntrustedTeleportLocation'
+  | 'LocationFull'
+  | 'LocationNotInvertible'
+  | 'BadOrigin'
+  | 'InvalidLocation'
+  | 'AssetNotFound'
+  | 'FailedToTransactAsset'
+  | 'NotWithdrawable'
+  | 'LocationCannotHold'
+  | 'ExceedsMaxMessageSize'
+  | 'DestinationUnsupported'
+  | 'Transport'
+  | 'Unroutable'
+  | 'UnknownClaim'
+  | 'FailedToDecode'
+  | 'MaxWeightInvalid'
+  | 'NotHoldingFees'
+  | 'TooExpensive'
+  | 'Trap'
+  | 'ExpectationFalse'
+  | 'PalletNotFound'
+  | 'NameMismatch'
+  | 'VersionIncompatible'
+  | 'HoldingWouldOverflow'
+  | 'ExportError'
+  | 'ReanchorFailed'
+  | 'NoDeal'
+  | 'FeesNotMet'
+  | 'LockError'
+  | 'NoPermission'
+  | 'Unanchored'
+  | 'NotDepositable'
+  | 'TooManyAssets'
+  | 'UnhandledXcmVersion'
+  | 'WeightLimitReached'
+  | 'Barrier'
+  | 'WeightNotComputable'
+  | 'ExceedsStackLimit';
 
 export type PalletMessageQueueBookState = {
   begin: number;
@@ -16131,40 +16052,6 @@ export type PalletBeefyError =
 
 export type SpConsensusBeefyMmrBeefyAuthoritySet = { id: bigint; len: number; keysetCommitment: H256 };
 
-export type PalletRcMigratorAccountsAccountState =
-  | { type: 'Migrate' }
-  | { type: 'Preserve' }
-  | { type: 'Part'; value: { reserved: bigint } };
-
-export type PalletRcMigratorAccountsMigratedBalances = { kept: bigint; migrated: bigint };
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletRcMigratorError =
-  | 'Unreachable'
-  | 'OutOfWeight'
-  /**
-   * Failed to send XCM message to AH.
-   **/
-  | 'XcmError'
-  /**
-   * Failed to withdraw account from RC for migration to AH.
-   **/
-  | 'FailedToWithdrawAccount'
-  /**
-   * Indicates that the specified block number is in the past.
-   **/
-  | 'PastBlockNumber'
-  /**
-   * Balance accounting overflow.
-   **/
-  | 'BalanceOverflow'
-  /**
-   * Balance accounting underflow.
-   **/
-  | 'BalanceUnderflow';
-
 export type FrameSystemExtensionsAuthorizeCall = {};
 
 export type FrameSystemExtensionsCheckWeight = {};
@@ -16290,7 +16177,21 @@ export type PolkadotPrimitivesVstagingCandidateEvent =
       ];
     };
 
+export type PolkadotPrimitivesV8SlashingPendingSlashes = {
+  keys: Array<[PolkadotPrimitivesV8ValidatorIndex, PolkadotPrimitivesV8ValidatorAppPublic]>;
+  kind: PolkadotPrimitivesV8SlashingSlashingOffenceKind;
+};
+
+export type PolkadotPrimitivesV8SlashingSlashingOffenceKind = 'ForInvalid' | 'AgainstValid';
+
 export type PolkadotPrimitivesV8SlashingOpaqueKeyOwnershipProof = Bytes;
+
+export type PolkadotPrimitivesV8SlashingDisputeProof = {
+  timeSlot: PolkadotPrimitivesV8SlashingDisputesTimeSlot;
+  kind: PolkadotPrimitivesV8SlashingSlashingOffenceKind;
+  validatorIndex: PolkadotPrimitivesV8ValidatorIndex;
+  validatorId: PolkadotPrimitivesV8ValidatorAppPublic;
+};
 
 export type PolkadotPrimitivesVstagingAsyncBackingBackingState = {
   constraints: PolkadotPrimitivesV8AsyncBackingConstraints;
@@ -16490,5 +16391,4 @@ export type WestendRuntimeRuntimeError =
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }
   | { pallet: 'AssetRate'; palletError: PalletAssetRateError }
   | { pallet: 'MetaTx'; palletError: PalletMetaTxError }
-  | { pallet: 'Beefy'; palletError: PalletBeefyError }
-  | { pallet: 'RcMigrator'; palletError: PalletRcMigratorError };
+  | { pallet: 'Beefy'; palletError: PalletBeefyError };

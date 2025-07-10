@@ -107,6 +107,7 @@ import type {
   PolkadotRuntimeParachainsParasParaLifecycle,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotRuntimeParachainsParasParaPastCodeMeta,
+  PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry,
   PolkadotPrimitivesV8UpgradeGoAhead,
   PolkadotPrimitivesV8UpgradeRestriction,
   PolkadotRuntimeParachainsParasParaGenesisArgs,
@@ -122,7 +123,7 @@ import type {
   PolkadotPrimitivesV8ExecutorParams,
   PolkadotPrimitivesV8DisputeState,
   PolkadotCorePrimitivesCandidateHash,
-  PolkadotPrimitivesV8SlashingPendingSlashes,
+  PolkadotPrimitivesVstagingPendingSlashes,
   PolkadotRuntimeParachainsOnDemandTypesCoreAffinityCount,
   PolkadotRuntimeParachainsOnDemandTypesQueueStatusType,
   BinaryHeapEnqueuedOrder,
@@ -133,7 +134,7 @@ import type {
   PolkadotRuntimeCommonAssignedSlotsParachainTemporarySlot,
   PalletStakingAsyncRcClientValidatorSetReport,
   PalletStakingAsyncAhClientOperatingMode,
-  PalletStakingAsyncRcClientOffence,
+  PalletStakingAsyncAhClientBufferedOffence,
   PalletMigrationsMigrationCursor,
   PalletXcmQueryStatus,
   XcmVersionedLocation,
@@ -148,9 +149,6 @@ import type {
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   SpConsensusBeefyEcdsaCryptoPublic,
   SpConsensusBeefyMmrBeefyAuthoritySet,
-  PalletRcMigratorMigrationStage,
-  PalletRcMigratorAccountsAccountState,
-  PalletRcMigratorAccountsMigratedBalances,
 } from './types.js';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
@@ -1859,6 +1857,14 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     listBags: GenericStorageQuery<Rv, (arg: bigint) => PalletBagsListListBag | undefined, bigint>;
 
     /**
+     * Pointer that remembers the next node that will be auto-rebagged.
+     * When `None`, the next scan will start from the list head again.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    nextNodeAutoRebagged: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
      * Lock all updates to this pallet.
      *
      * If any nodes needs updating, removal or addition due to a temporary lock, the
@@ -2697,6 +2703,20 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     >;
 
     /**
+     * The code hash authorizations for a para which will expire `expire_at` `BlockNumberFor<T>`.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} arg
+     * @param {Callback<PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry | undefined> =} callback
+     **/
+    authorizedCodeHash: GenericStorageQuery<
+      Rv,
+      (
+        arg: PolkadotParachainPrimitivesPrimitivesId,
+      ) => PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry | undefined,
+      PolkadotParachainPrimitivesPrimitivesId
+    >;
+
+    /**
      * This is used by the relay-chain to communicate to a parachain a go-ahead with in the upgrade
      * procedure.
      *
@@ -3219,11 +3239,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Validators pending dispute slashes.
      *
      * @param {[number, PolkadotCorePrimitivesCandidateHash]} arg
-     * @param {Callback<PolkadotPrimitivesV8SlashingPendingSlashes | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesVstagingPendingSlashes | undefined> =} callback
      **/
     unappliedSlashes: GenericStorageQuery<
       Rv,
-      (arg: [number, PolkadotCorePrimitivesCandidateHash]) => PolkadotPrimitivesV8SlashingPendingSlashes | undefined,
+      (arg: [number, PolkadotCorePrimitivesCandidateHash]) => PolkadotPrimitivesVstagingPendingSlashes | undefined,
       [number, PolkadotCorePrimitivesCandidateHash]
     >;
 
@@ -3662,19 +3682,23 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     validatorSetAppliedAt: GenericStorageQuery<Rv, () => number | undefined>;
 
     /**
-     * Stores offences that have been received while the pallet is in [`OperatingMode::Buffered`]
-     * mode.
+     * Offences collected while in [`OperatingMode::Buffered`] mode.
      *
-     * These offences are collected and buffered for later processing when the pallet transitions
-     * to [`OperatingMode::Active`]. This allows the system to defer slashing or reporting logic
-     * until communication with the counterpart pallet on AssetHub is fully established.
+     * These are temporarily stored and sent once the pallet switches to [`OperatingMode::Active`].
+     * For each offender, only the highest `slash_fraction` is kept.
      *
-     * This storage is only used in `Buffered` mode; in `Active` mode, offences are immediately
-     * sent, and in `Passive` mode, they are delegated to the [`Config::Fallback`] implementation.
+     * Internally stores as a nested BTreeMap:
+     * `session_index -> (offender -> (reporter, slash_fraction))`.
      *
-     * @param {Callback<Array<[number, Array<PalletStakingAsyncRcClientOffence>]>> =} callback
+     * Note: While the [`rc_client::Offence`] type includes a list of reporters, in practice there
+     * is only one. In this pallet, we assume this is the case and store only the first reporter.
+     *
+     * @param {Callback<Array<[number, Array<[AccountId32, PalletStakingAsyncAhClientBufferedOffence]>]>> =} callback
      **/
-    bufferedOffences: GenericStorageQuery<Rv, () => Array<[number, Array<PalletStakingAsyncRcClientOffence>]>>;
+    bufferedOffences: GenericStorageQuery<
+      Rv,
+      () => Array<[number, Array<[AccountId32, PalletStakingAsyncAhClientBufferedOffence]>]>
+    >;
 
     /**
      * Generic pallet storage query
@@ -4048,60 +4072,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<SpConsensusBeefyMmrBeefyAuthoritySet> =} callback
      **/
     beefyNextAuthorities: GenericStorageQuery<Rv, () => SpConsensusBeefyMmrBeefyAuthoritySet>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
-   * Pallet `RcMigrator`'s storage queries
-   **/
-  rcMigrator: {
-    /**
-     * The Relay Chain migration state.
-     *
-     * @param {Callback<PalletRcMigratorMigrationStage> =} callback
-     **/
-    rcMigrationStage: GenericStorageQuery<Rv, () => PalletRcMigratorMigrationStage>;
-
-    /**
-     * Helper storage item to obtain and store the known accounts that should be kept partially or
-     * fully on Relay Chain.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<PalletRcMigratorAccountsAccountState | undefined> =} callback
-     **/
-    rcAccounts: GenericStorageQuery<
-      Rv,
-      (arg: AccountId32Like) => PalletRcMigratorAccountsAccountState | undefined,
-      AccountId32
-    >;
-
-    /**
-     * Helper storage item to store the total balance that should be kept on Relay Chain.
-     *
-     * @param {Callback<PalletRcMigratorAccountsMigratedBalances> =} callback
-     **/
-    rcMigratedBalance: GenericStorageQuery<Rv, () => PalletRcMigratorAccountsMigratedBalances>;
-
-    /**
-     * The total number of XCM data messages sent to the Asset Hub and the number of XCM messages
-     * the Asset Hub has confirmed as processed.
-     *
-     * The difference between these two numbers are the messages that are "in-flight". We aim to
-     * keep this number low to not accidentally overload the asset hub.
-     *
-     * @param {Callback<[number, number]> =} callback
-     **/
-    dmpDataMessageCounts: GenericStorageQuery<Rv, () => [number, number]>;
-
-    /**
-     *
-     * @param {H256} arg
-     * @param {Callback<StagingXcmV5Xcm | undefined> =} callback
-     **/
-    dmpMessagesFailed: GenericStorageQuery<Rv, (arg: H256) => StagingXcmV5Xcm | undefined, H256>;
 
     /**
      * Generic pallet storage query

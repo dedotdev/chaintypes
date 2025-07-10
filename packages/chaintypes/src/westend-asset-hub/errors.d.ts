@@ -621,6 +621,12 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     AliasNotFound: GenericPalletError<Rv>;
 
     /**
+     * Local XCM execution incomplete with the actual XCM error and the index of the
+     * instruction that caused the error.
+     **/
+    LocalExecutionIncompleteWithError: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1952,11 +1958,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     TooManyTopics: GenericPalletError<Rv>;
 
     /**
-     * Failed to decode the XCM program.
-     **/
-    XcmDecodeFailed: GenericPalletError<Rv>;
-
-    /**
      * A contract with the same AccountId already exists.
      **/
     DuplicateContract: GenericPalletError<Rv>;
@@ -2267,7 +2268,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     InvalidSlashRecord: GenericPalletError<Rv>;
 
     /**
-     * Cannot have a validator or nominator role, with value less than the minimum defined by
+     * Cannot bond, nominate or validate with value less than the minimum defined by
      * governance (see `MinValidatorBond` and `MinNominatorBond`). If unbonding is the
      * intention, `chill` first to remove one's role as validator/nominator.
      **/
@@ -2748,20 +2749,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
-   * Pallet `StakingRcClient`'s errors
-   **/
-  stakingRcClient: {
-    /**
-     * The session report was not valid, due to a bad end index.
-     **/
-    SessionIndexNotValid: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
    * Pallet `MultiBlockElection`'s errors
    **/
   multiBlockElection: {
@@ -2828,6 +2815,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Bad witness data provided.
      **/
     BadWitnessData: GenericPalletError<Rv>;
+
+    /**
+     * Too many invulnerable accounts are provided,
+     **/
+    TooManyInvulnerables: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -3233,82 +3225,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The from and to accounts are identical.
      **/
     AccountIdentical: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
-   * Pallet `AhMigrator`'s errors
-   **/
-  ahMigrator: {
-    /**
-     * The error that should to be replaced by something meaningful.
-     **/
-    Todo: GenericPalletError<Rv>;
-    FailedToUnreserveDeposit: GenericPalletError<Rv>;
-
-    /**
-     * Failed to process an account data from RC.
-     **/
-    FailedToProcessAccount: GenericPalletError<Rv>;
-
-    /**
-     * Some item could not be inserted because it already exists.
-     **/
-    InsertConflict: GenericPalletError<Rv>;
-
-    /**
-     * Failed to convert RC type to AH type.
-     **/
-    FailedToConvertType: GenericPalletError<Rv>;
-
-    /**
-     * Failed to fetch preimage.
-     **/
-    PreimageNotFound: GenericPalletError<Rv>;
-
-    /**
-     * Failed to convert RC call to AH call.
-     **/
-    FailedToConvertCall: GenericPalletError<Rv>;
-
-    /**
-     * Failed to bound a call.
-     **/
-    FailedToBoundCall: GenericPalletError<Rv>;
-
-    /**
-     * Failed to send XCM message.
-     **/
-    XcmError: GenericPalletError<Rv>;
-
-    /**
-     * Failed to integrate a vesting schedule.
-     **/
-    FailedToIntegrateVestingSchedule: GenericPalletError<Rv>;
-
-    /**
-     * Checking account overflow or underflow.
-     **/
-    FailedToCalculateCheckingAccount: GenericPalletError<Rv>;
-
-    /**
-     * Vector did not fit into its compile-time bound.
-     **/
-    FailedToBoundVector: GenericPalletError<Rv>;
-    Unreachable: GenericPalletError<Rv>;
-
-    /**
-     * No misplaced hold found.
-     **/
-    NoMisplacedHoldFound: GenericPalletError<Rv>;
-
-    /**
-     * No free balance to hold.
-     **/
-    NoFreeBalanceToHold: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

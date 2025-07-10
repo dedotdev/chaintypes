@@ -51,7 +51,6 @@ import type {
   StagingXcmV5AssetAssets,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
-  PalletRcMigratorMigrationStage,
 } from './types.js';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -2284,6 +2283,31 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * A new code hash has been authorized for a Para.
+     **/
+    CodeAuthorized: GenericPalletEvent<
+      Rv,
+      'Paras',
+      'CodeAuthorized',
+      {
+        /**
+         * Para
+         **/
+        paraId: PolkadotParachainPrimitivesPrimitivesId;
+
+        /**
+         * Authorized code hash.
+         **/
+        codeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
+
+        /**
+         * Block at which authorization expires and will be removed.
+         **/
+        expireAt: number;
+      }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -3471,54 +3495,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'DepositUpdated',
       { who: AccountId32; identity: bigint; subs: bigint }
     >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
-   * Pallet `RcMigrator`'s events
-   **/
-  rcMigrator: {
-    /**
-     * A stage transition has occurred.
-     **/
-    StageTransition: GenericPalletEvent<
-      Rv,
-      'RcMigrator',
-      'StageTransition',
-      {
-        /**
-         * The old stage before the transition.
-         **/
-        old: PalletRcMigratorMigrationStage;
-
-        /**
-         * The new stage after the transition.
-         **/
-        new: PalletRcMigratorMigrationStage;
-      }
-    >;
-
-    /**
-     * The Asset Hub Migration started and is active until `AssetHubMigrationFinished` is
-     * emitted.
-     *
-     * This event is equivalent to `StageTransition { new: Initializing, .. }` but is easier
-     * to understand. The activation is immediate and affects all events happening
-     * afterwards.
-     **/
-    AssetHubMigrationStarted: GenericPalletEvent<Rv, 'RcMigrator', 'AssetHubMigrationStarted', null>;
-
-    /**
-     * The Asset Hub Migration finished.
-     *
-     * This event is equivalent to `StageTransition { new: MigrationDone, .. }` but is easier
-     * to understand. The finishing is immediate and affects all events happening
-     * afterwards.
-     **/
-    AssetHubMigrationFinished: GenericPalletEvent<Rv, 'RcMigrator', 'AssetHubMigrationFinished', null>;
 
     /**
      * Generic pallet event

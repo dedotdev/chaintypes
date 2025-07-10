@@ -32,6 +32,7 @@ import type {
   PolkadotPrimitivesV8AbridgedHostConfiguration,
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
+  CumulusPalletParachainSystemParachainInherentInboundMessageId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
   PalletMigrationsMigrationCursor,
   PalletPreimageOldRequestStatus,
@@ -41,7 +42,7 @@ import type {
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
-  FrameSupportTokensMiscIdAmountRuntimeHoldReason,
+  FrameSupportTokensMiscIdAmount,
   FrameSupportTokensMiscIdAmountRuntimeFreezeReason,
   PalletTransactionPaymentReleases,
   PalletVestingVestingInfo,
@@ -67,7 +68,7 @@ import type {
   PalletMessageQueuePage,
   SnowbridgeCoreOperatingModeBasicOperatingMode,
   PalletMultisigMultisig,
-  PalletProxyProxyDefinitionProxyType,
+  PalletProxyProxyDefinition,
   PalletProxyAnnouncement,
   PalletAssetsAssetDetails,
   PalletAssetsAssetAccount,
@@ -90,7 +91,7 @@ import type {
   StagingXcmV5Location,
   PalletNftFractionalizationDetails,
   PalletAssetConversionPoolInfo,
-  PalletReviveWasmCodeInfo,
+  PalletReviveVmCodeInfo,
   PalletReviveStorageContractInfo,
   PalletReviveStorageDeletionQueueManager,
   PalletAssetRewardsPoolStakerInfo,
@@ -130,13 +131,10 @@ import type {
   AssetHubWestendRuntimeStakingNposCompactSolution16,
   PalletElectionProviderMultiBlockSignedSubmissionMetadata,
   PalletConvictionVotingVoteVoting,
-  PalletReferendaReferendumInfoOriginCaller,
+  PalletReferendaReferendumInfo,
   PalletTreasuryProposal,
   PalletTreasurySpendStatus,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
-  PalletRcMigratorAccountsAccount,
-  PalletAhMigratorMigrationStage,
-  PalletAhMigratorBalancesBefore,
 } from './types.js';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
@@ -481,13 +479,35 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     processedDownwardMessages: GenericStorageQuery<Rv, () => number>;
 
     /**
-     * HRMP watermark that was set in a block.
+     * The last processed downward message.
      *
-     * This will be cleared in `on_initialize` of each new block.
+     * We need to keep track of this to filter the messages that have been already processed.
+     *
+     * @param {Callback<CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined> =} callback
+     **/
+    lastProcessedDownwardMessage: GenericStorageQuery<
+      Rv,
+      () => CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined
+    >;
+
+    /**
+     * HRMP watermark that was set in a block.
      *
      * @param {Callback<number> =} callback
      **/
     hrmpWatermark: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * The last processed HRMP message.
+     *
+     * We need to keep track of this to filter the messages that have been already processed.
+     *
+     * @param {Callback<CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined> =} callback
+     **/
+    lastProcessedHrmpMessage: GenericStorageQuery<
+      Rv,
+      () => CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined
+    >;
 
     /**
      * HRMP messages that were sent in a block.
@@ -798,13 +818,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Holds on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<FrameSupportTokensMiscIdAmountRuntimeHoldReason>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
      **/
-    holds: GenericStorageQuery<
-      Rv,
-      (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmountRuntimeHoldReason>,
-      AccountId32
-    >;
+    holds: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount>, AccountId32>;
 
     /**
      * Freeze locks on account balances.
@@ -1431,11 +1447,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * which are being delegated to, together with the amount held on deposit.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<[Array<PalletProxyProxyDefinitionProxyType>, bigint]> =} callback
+     * @param {Callback<[Array<PalletProxyProxyDefinition>, bigint]> =} callback
      **/
     proxies: GenericStorageQuery<
       Rv,
-      (arg: AccountId32Like) => [Array<PalletProxyProxyDefinitionProxyType>, bigint],
+      (arg: AccountId32Like) => [Array<PalletProxyProxyDefinition>, bigint],
       AccountId32
     >;
 
@@ -2114,9 +2130,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * A mapping from a contract's code hash to its code info.
      *
      * @param {H256} arg
-     * @param {Callback<PalletReviveWasmCodeInfo | undefined> =} callback
+     * @param {Callback<PalletReviveVmCodeInfo | undefined> =} callback
      **/
-    codeInfoOf: GenericStorageQuery<Rv, (arg: H256) => PalletReviveWasmCodeInfo | undefined, H256>;
+    codeInfoOf: GenericStorageQuery<Rv, (arg: H256) => PalletReviveVmCodeInfo | undefined, H256>;
 
     /**
      * The code associated with a given account.
@@ -2523,11 +2539,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {[number, AccountId32Like]} arg
      * @param {Callback<Array<number>> =} callback
      **/
-    erasClaimedRewards: GenericStorageQuery<
-      Rv,
-      (arg: [number, AccountId32Like]) => Array<number>,
-      [number, AccountId32]
-    >;
+    claimedRewards: GenericStorageQuery<Rv, (arg: [number, AccountId32Like]) => Array<number>, [number, AccountId32]>;
 
     /**
      * Exposure of validator at era with the preferences of validators.
@@ -2687,18 +2699,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     validatorSlashInEra: GenericStorageQuery<
       Rv,
       (arg: [number, AccountId32Like]) => [Perbill, bigint] | undefined,
-      [number, AccountId32]
-    >;
-
-    /**
-     * All slashing events on nominators, mapped by era to the highest slash value of the era.
-     *
-     * @param {[number, AccountId32Like]} arg
-     * @param {Callback<bigint | undefined> =} callback
-     **/
-    nominatorSlashInEra: GenericStorageQuery<
-      Rv,
-      (arg: [number, AccountId32Like]) => bigint | undefined,
       [number, AccountId32]
     >;
 
@@ -3019,6 +3019,14 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     listBags: GenericStorageQuery<Rv, (arg: bigint) => PalletBagsListListBag | undefined, bigint>;
 
     /**
+     * Pointer that remembers the next node that will be auto-rebagged.
+     * When `None`, the next scan will start from the list head again.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    nextNodeAutoRebagged: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
      * Lock all updates to this pallet.
      *
      * If any nodes needs updating, removal or addition due to a temporary lock, the
@@ -3191,42 +3199,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     pagedTargetSnapshotHash: GenericStorageQuery<Rv, (arg: [number, number]) => H256 | undefined, [number, number]>;
 
     /**
-     *
-     * @param {[number, number]} arg
-     * @param {Callback<Array<AccountId32> | undefined> =} callback
-     **/
-    fakePagedTargetSnapshot: GenericStorageQuery<
-      Rv,
-      (arg: [number, number]) => Array<AccountId32> | undefined,
-      [number, number]
-    >;
-
-    /**
-     *
-     * @param {[number, number]} arg
-     * @param {Callback<H256 | undefined> =} callback
-     **/
-    fakePagedTargetSnapshotHash: GenericStorageQuery<Rv, (arg: [number, number]) => H256 | undefined, [number, number]>;
-
-    /**
-     *
-     * @param {[number, number]} arg
-     * @param {Callback<Array<[AccountId32, bigint, Array<AccountId32>]> | undefined> =} callback
-     **/
-    fakePagedVoterSnapshot: GenericStorageQuery<
-      Rv,
-      (arg: [number, number]) => Array<[AccountId32, bigint, Array<AccountId32>]> | undefined,
-      [number, number]
-    >;
-
-    /**
-     *
-     * @param {[number, number]} arg
-     * @param {Callback<H256 | undefined> =} callback
-     **/
-    fakePagedVoterSnapshotHash: GenericStorageQuery<Rv, (arg: [number, number]) => H256 | undefined, [number, number]>;
-
-    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -3333,6 +3305,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   multiBlockElectionSigned: {
     /**
+     * Accounts whitelisted by governance to always submit their solutions.
+     *
+     * They are different in that:
+     *
+     * * They always pay a fixed deposit for submission, specified by
+     * [`Config::InvulnerableDeposit`]. They pay no page deposit.
+     * * If _ejected_ by better solution from [`SortedScores`], they will get their full deposit
+     * back.
+     * * They always get their tx-fee back even if they are _discarded_.
+     *
+     * @param {Callback<Array<AccountId32>> =} callback
+     **/
+    invulnerables: GenericStorageQuery<Rv, () => Array<AccountId32>>;
+
+    /**
      *
      * @param {number} arg
      * @param {Callback<Array<[AccountId32, SpNposElectionsElectionScore]>> =} callback
@@ -3418,13 +3405,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Information concerning any given referendum.
      *
      * @param {number} arg
-     * @param {Callback<PalletReferendaReferendumInfoOriginCaller | undefined> =} callback
+     * @param {Callback<PalletReferendaReferendumInfo | undefined> =} callback
      **/
-    referendumInfoFor: GenericStorageQuery<
-      Rv,
-      (arg: number) => PalletReferendaReferendumInfoOriginCaller | undefined,
-      number
-    >;
+    referendumInfoFor: GenericStorageQuery<Rv, (arg: number) => PalletReferendaReferendumInfo | undefined, number>;
 
     /**
      * The sorted list of referenda ready to be decided but not yet being decided, ordered by
@@ -3642,53 +3625,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       (arg: [number, number, AccountId32Like]) => bigint | undefined,
       [number, number, AccountId32]
     >;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
-   * Pallet `AhMigrator`'s storage queries
-   **/
-  ahMigrator: {
-    /**
-     * RC accounts that failed to migrate when were received on the Asset Hub.
-     *
-     * This is unlikely to happen, since we dry run the migration, but we keep it for completeness.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<PalletRcMigratorAccountsAccount | undefined> =} callback
-     **/
-    rcAccounts: GenericStorageQuery<
-      Rv,
-      (arg: AccountId32Like) => PalletRcMigratorAccountsAccount | undefined,
-      AccountId32
-    >;
-
-    /**
-     * The Asset Hub migration state.
-     *
-     * @param {Callback<PalletAhMigratorMigrationStage> =} callback
-     **/
-    ahMigrationStage: GenericStorageQuery<Rv, () => PalletAhMigratorMigrationStage>;
-
-    /**
-     * The total number of XCM data messages processed from the Relay Chain and the number of XCM
-     * messages that encountered an error during processing.
-     *
-     * @param {Callback<[number, number]> =} callback
-     **/
-    dmpDataMessageCounts: GenericStorageQuery<Rv, () => [number, number]>;
-
-    /**
-     * Helper storage item to store the total balance / total issuance of native token at the start
-     * of the migration. Since teleports are disabled during migration, the total issuance will not
-     * change for other reason than the migration itself.
-     *
-     * @param {Callback<PalletAhMigratorBalancesBefore> =} callback
-     **/
-    ahBalancesBefore: GenericStorageQuery<Rv, () => PalletAhMigratorBalancesBefore>;
 
     /**
      * Generic pallet storage query

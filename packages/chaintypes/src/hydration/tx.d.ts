@@ -8733,6 +8733,87 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Update the peg source for a specific asset in a pool.
+     *
+     * This function allows updating the peg source for an asset within a pool.
+     * The pool must exist and have pegs configured. The asset must be part of the pool.
+     * The current price is always preserved when updating the peg source.
+     *
+     * Parameters:
+     * - `origin`: Must be `T::AuthorityOrigin`.
+     * - `pool_id`: The ID of the pool containing the asset.
+     * - `asset_id`: The ID of the asset whose peg source is to be updated.
+     * - `peg_source`: The new peg source for the asset.
+     *
+     * Emits `PoolPegSourceUpdated` event when successful.
+     *
+     * # Errors
+     * - `PoolNotFound`: If the specified pool does not exist.
+     * - `NoPegSource`: If the pool does not have pegs configured.
+     * - `AssetNotInPool`: If the specified asset is not part of the pool.
+     *
+     *
+     * @param {number} poolId
+     * @param {number} assetId
+     * @param {PalletStableswapPegSource} pegSource
+     **/
+    updateAssetPegSource: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        assetId: number,
+        pegSource: PalletStableswapPegSource,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Stableswap';
+          palletCall: {
+            name: 'UpdateAssetPegSource';
+            params: { poolId: number; assetId: number; pegSource: PalletStableswapPegSource };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Update the maximum peg update percentage for a pool.
+     *
+     * This function allows updating the maximum percentage by which peg values
+     * can change in a pool with pegs configured.
+     *
+     * Parameters:
+     * - `origin`: Must be `T::AuthorityOrigin`.
+     * - `pool_id`: The ID of the pool to update.
+     * - `max_peg_update`: The new maximum peg update percentage.
+     *
+     * Emits `PoolMaxPegUpdateUpdated` event when successful.
+     *
+     * # Errors
+     * - `PoolNotFound`: If the specified pool does not exist.
+     * - `NoPegSource`: If the pool does not have pegs configured.
+     *
+     *
+     * @param {number} poolId
+     * @param {Permill} maxPegUpdate
+     **/
+    updatePoolMaxPegUpdate: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        maxPegUpdate: Permill,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Stableswap';
+          palletCall: {
+            name: 'UpdatePoolMaxPegUpdate';
+            params: { poolId: number; maxPegUpdate: Permill };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;

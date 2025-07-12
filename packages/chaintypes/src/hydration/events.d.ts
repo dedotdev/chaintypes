@@ -38,6 +38,7 @@ import type {
   PalletStableswapPoolPegInfo,
   HydradxTraitsStableswapAssetAmount,
   PalletStableswapTradability,
+  PalletStableswapPegSource,
   PalletLbpPool,
   PalletReferralsAssetAmount,
   PalletReferralsLevel,
@@ -2614,6 +2615,26 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * A pool has been destroyed.
      **/
     PoolDestroyed: GenericPalletEvent<Rv, 'Stableswap', 'PoolDestroyed', { poolId: number }>;
+
+    /**
+     * Pool peg source has been updated.
+     **/
+    PoolPegSourceUpdated: GenericPalletEvent<
+      Rv,
+      'Stableswap',
+      'PoolPegSourceUpdated',
+      { poolId: number; assetId: number; pegSource: PalletStableswapPegSource }
+    >;
+
+    /**
+     * Pool max peg update has been updated.
+     **/
+    PoolMaxPegUpdateUpdated: GenericPalletEvent<
+      Rv,
+      'Stableswap',
+      'PoolMaxPegUpdateUpdated',
+      { poolId: number; maxPegUpdate: Permill }
+    >;
 
     /**
      * Generic pallet event

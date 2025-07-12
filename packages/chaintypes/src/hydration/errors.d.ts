@@ -2235,6 +2235,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     IncorrectAssetDecimals: GenericPalletError<Rv>;
 
     /**
+     * Pool does not have pegs configured.
+     **/
+    NoPegSource: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;

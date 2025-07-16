@@ -27,6 +27,7 @@ import type {
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
   PolkadotRuntimeConstantsProxyProxyType,
+  PalletProxyDepositKind,
   PalletMultisigTimepoint,
   PalletElectionProviderMultiPhaseElectionCompute,
   SpNposElectionsElectionScore,
@@ -34,6 +35,7 @@ import type {
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
+  PalletNominationPoolsClaimPermission,
   PolkadotPrimitivesVstagingCandidateReceiptV2,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotPrimitivesV8CoreIndex,
@@ -49,11 +51,12 @@ import type {
   StagingXcmV5TraitsOutcome,
   StagingXcmV5Location,
   StagingXcmV5Xcm,
+  XcmV3TraitsSendError,
+  XcmV5TraitsError,
   StagingXcmV5Response,
   SpWeightsWeightV2Weight,
   XcmVersionedAssets,
   StagingXcmV5AssetAssets,
-  XcmV5TraitsError,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
 } from './types.js';
@@ -107,6 +110,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * An upgrade was authorized.
      **/
     UpgradeAuthorized: GenericPalletEvent<Rv, 'System', 'UpgradeAuthorized', { codeHash: H256; checkVersion: boolean }>;
+
+    /**
+     * An invalid authorized upgrade was rejected while trying to apply it.
+     **/
+    RejectedInvalidAuthorizedUpgrade: GenericPalletEvent<
+      Rv,
+      'System',
+      'RejectedInvalidAuthorizedUpgrade',
+      { codeHash: H256; error: DispatchError }
+    >;
 
     /**
      * Generic pallet event
@@ -199,6 +212,11 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * Agenda is incomplete from `when`.
+     **/
+    AgendaIncomplete: GenericPalletEvent<Rv, 'Scheduler', 'AgendaIncomplete', { when: number }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -245,6 +263,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * A account index has been frozen to its current account ID.
      **/
     IndexFrozen: GenericPalletEvent<Rv, 'Indices', 'IndexFrozen', { index: number; who: AccountId32 }>;
+
+    /**
+     * A deposit to reserve an index has been poked/reconsidered.
+     **/
+    DepositPoked: GenericPalletEvent<
+      Rv,
+      'Indices',
+      'DepositPoked',
+      { who: AccountId32; index: number; oldDeposit: bigint; newDeposit: bigint }
+    >;
 
     /**
      * Generic pallet event
@@ -529,6 +557,17 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     ControllerBatchDeprecated: GenericPalletEvent<Rv, 'Staking', 'ControllerBatchDeprecated', { failures: number }>;
 
     /**
+     * Staking balance migrated from locks to holds, with any balance that could not be held
+     * is force withdrawn.
+     **/
+    CurrencyMigrated: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'CurrencyMigrated',
+      { stash: AccountId32; forceWithdraw: bigint }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -558,6 +597,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * block number as the type might suggest.
      **/
     NewSession: GenericPalletEvent<Rv, 'Session', 'NewSession', { sessionIndex: number }>;
+
+    /**
+     * Validator has been disabled.
+     **/
+    ValidatorDisabled: GenericPalletEvent<Rv, 'Session', 'ValidatorDisabled', { validator: AccountId32 }>;
+
+    /**
+     * Validator has been re-enabled.
+     **/
+    ValidatorReenabled: GenericPalletEvent<Rv, 'Session', 'ValidatorReenabled', { validator: AccountId32 }>;
 
     /**
      * Generic pallet event
@@ -705,7 +754,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Undelegated: GenericPalletEvent<Rv, 'ConvictionVoting', 'Undelegated', AccountId32>;
 
     /**
-     * An account that has voted
+     * An account has voted
      **/
     Voted: GenericPalletEvent<
       Rv,
@@ -715,7 +764,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
-     * A vote that been removed
+     * A vote has been removed
      **/
     VoteRemoved: GenericPalletEvent<
       Rv,
@@ -723,6 +772,11 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'VoteRemoved',
       { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
     >;
+
+    /**
+     * The lockup period of a conviction vote expired, and the funds have been unlocked.
+     **/
+    VoteUnlocked: GenericPalletEvent<Rv, 'ConvictionVoting', 'VoteUnlocked', { who: AccountId32; class: number }>;
 
     /**
      * Generic pallet event
@@ -1158,6 +1212,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     DispatchedAs: GenericPalletEvent<Rv, 'Utility', 'DispatchedAs', { result: Result<[], DispatchError> }>;
 
     /**
+     * Main call was dispatched.
+     **/
+    IfElseMainSuccess: GenericPalletEvent<Rv, 'Utility', 'IfElseMainSuccess', null>;
+
+    /**
+     * The fallback call was dispatched.
+     **/
+    IfElseFallbackCalled: GenericPalletEvent<Rv, 'Utility', 'IfElseFallbackCalled', { mainError: DispatchError }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -1223,6 +1287,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * A deposit stored for proxies or announcements was poked / updated.
+     **/
+    DepositPoked: GenericPalletEvent<
+      Rv,
+      'Proxy',
+      'DepositPoked',
+      { who: AccountId32; kind: PalletProxyDepositKind; oldDeposit: bigint; newDeposit: bigint }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -1275,6 +1349,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Multisig',
       'MultisigCancelled',
       { cancelling: AccountId32; timepoint: PalletMultisigTimepoint; multisig: AccountId32; callHash: FixedBytes<32> }
+    >;
+
+    /**
+     * The deposit for a multisig operation has been updated/poked.
+     **/
+    DepositPoked: GenericPalletEvent<
+      Rv,
+      'Multisig',
+      'DepositPoked',
+      { who: AccountId32; callHash: FixedBytes<32>; oldDeposit: bigint; newDeposit: bigint }
     >;
 
     /**
@@ -1662,6 +1746,64 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'NominationPools',
       'MinBalanceExcessAdjusted',
       { poolId: number; amount: bigint }
+    >;
+
+    /**
+     * A pool member's claim permission has been updated.
+     **/
+    MemberClaimPermissionUpdated: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'MemberClaimPermissionUpdated',
+      { member: AccountId32; permission: PalletNominationPoolsClaimPermission }
+    >;
+
+    /**
+     * A pool's metadata was updated.
+     **/
+    MetadataUpdated: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'MetadataUpdated',
+      { poolId: number; caller: AccountId32 }
+    >;
+
+    /**
+     * A pool's nominating account (or the pool's root account) has nominated a validator set
+     * on behalf of the pool.
+     **/
+    PoolNominationMade: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'PoolNominationMade',
+      { poolId: number; caller: AccountId32 }
+    >;
+
+    /**
+     * The pool is chilled i.e. no longer nominating.
+     **/
+    PoolNominatorChilled: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'PoolNominatorChilled',
+      { poolId: number; caller: AccountId32 }
+    >;
+
+    /**
+     * Global parameters regulating nomination pools have been updated.
+     **/
+    GlobalParamsUpdated: GenericPalletEvent<
+      Rv,
+      'NominationPools',
+      'GlobalParamsUpdated',
+      {
+        minJoinBond: bigint;
+        minCreateBond: bigint;
+        maxPools?: number | undefined;
+        maxMembers?: number | undefined;
+        maxMembersPerPool?: number | undefined;
+        globalMaxCommission?: Perbill | undefined;
+      }
     >;
 
     /**
@@ -2053,6 +2195,11 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     SpotPriceSet: GenericPalletEvent<Rv, 'OnDemand', 'SpotPriceSet', { spotPrice: bigint }>;
 
     /**
+     * An account was given credits.
+     **/
+    AccountCredited: GenericPalletEvent<Rv, 'OnDemand', 'AccountCredited', { who: AccountId32; amount: bigint }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -2357,7 +2504,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Attempted: GenericPalletEvent<Rv, 'XcmPallet', 'Attempted', { outcome: StagingXcmV5TraitsOutcome }>;
 
     /**
-     * A XCM message was sent.
+     * An XCM message was sent.
      **/
     Sent: GenericPalletEvent<
       Rv,
@@ -2369,6 +2516,31 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
         message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       }
+    >;
+
+    /**
+     * An XCM message failed to send.
+     **/
+    SendFailed: GenericPalletEvent<
+      Rv,
+      'XcmPallet',
+      'SendFailed',
+      {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        error: XcmV3TraitsSendError;
+        messageId: FixedBytes<32>;
+      }
+    >;
+
+    /**
+     * An XCM message failed to process.
+     **/
+    ProcessXcmError: GenericPalletEvent<
+      Rv,
+      'XcmPallet',
+      'ProcessXcmError',
+      { origin: StagingXcmV5Location; error: XcmV5TraitsError; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -2623,6 +2795,37 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * A XCM version migration finished.
      **/
     VersionMigrationFinished: GenericPalletEvent<Rv, 'XcmPallet', 'VersionMigrationFinished', { version: number }>;
+
+    /**
+     * An `aliaser` location was authorized by `target` to alias it, authorization valid until
+     * `expiry` block number.
+     **/
+    AliasAuthorized: GenericPalletEvent<
+      Rv,
+      'XcmPallet',
+      'AliasAuthorized',
+      { aliaser: StagingXcmV5Location; target: StagingXcmV5Location; expiry?: bigint | undefined }
+    >;
+
+    /**
+     * `target` removed alias authorization for `aliaser`.
+     **/
+    AliasAuthorizationRemoved: GenericPalletEvent<
+      Rv,
+      'XcmPallet',
+      'AliasAuthorizationRemoved',
+      { aliaser: StagingXcmV5Location; target: StagingXcmV5Location }
+    >;
+
+    /**
+     * `target` removed all alias authorizations.
+     **/
+    AliasesAuthorizationsRemoved: GenericPalletEvent<
+      Rv,
+      'XcmPallet',
+      'AliasesAuthorizationsRemoved',
+      { target: StagingXcmV5Location }
+    >;
 
     /**
      * Generic pallet event

@@ -1078,13 +1078,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/types-support@npm:~16.1.1":
-  version: 16.1.1
-  resolution: "@polkadot/types-support@npm:16.1.1"
+"@polkadot/types-support@npm:~16.4.2":
+  version: 16.4.2
+  resolution: "@polkadot/types-support@npm:16.4.2"
   dependencies:
-    "@polkadot/util": "npm:^13.5.1"
+    "@polkadot/util": "npm:^13.5.3"
     tslib: "npm:^2.8.1"
-  checksum: 10/64e941ce160d337b18812a58ddfb05ea46fc1e7041bd4371c68000cb11fc0f696db57a76d2d29c6b5d3536f53143c7bbb620b4ac204a9bf2d71dab8ef68bd674
+  checksum: 10/c554523e05692af1d45dab6c01e11c837729bf95e50accc76252dd1685bc3f5998d261c1ff20fe27607f1148a4c0d02db324961236e28c476b82c113fb00c58d
   languageName: node
   linkType: hard
 
@@ -1103,18 +1103,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/util@npm:^13.5.1":
-  version: 13.5.1
-  resolution: "@polkadot/util@npm:13.5.1"
+"@polkadot/util@npm:^13.5.3":
+  version: 13.5.3
+  resolution: "@polkadot/util@npm:13.5.3"
   dependencies:
-    "@polkadot/x-bigint": "npm:13.5.1"
-    "@polkadot/x-global": "npm:13.5.1"
-    "@polkadot/x-textdecoder": "npm:13.5.1"
-    "@polkadot/x-textencoder": "npm:13.5.1"
+    "@polkadot/x-bigint": "npm:13.5.3"
+    "@polkadot/x-global": "npm:13.5.3"
+    "@polkadot/x-textdecoder": "npm:13.5.3"
+    "@polkadot/x-textencoder": "npm:13.5.3"
     "@types/bn.js": "npm:^5.1.6"
     bn.js: "npm:^5.2.1"
     tslib: "npm:^2.8.0"
-  checksum: 10/26b7c564012afec2c877dbf265021883335a28f369c84d59eeaf6bba72a9fd4e70d259cf24619332e9c44fc55093d9f51ec212a7d48fcae92e962f42f4310d6f
+  checksum: 10/5274dacf09df4b43155f20d0e709bf86c8a95995cf46f62ab23947b9a745e0c9c0a31d504e9984b07903f31f741f0cfa5b7e25bd7bcd7cbeb686be06ca48bd35
   languageName: node
   linkType: hard
 
@@ -1128,13 +1128,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/x-bigint@npm:13.5.1":
-  version: 13.5.1
-  resolution: "@polkadot/x-bigint@npm:13.5.1"
+"@polkadot/x-bigint@npm:13.5.3":
+  version: 13.5.3
+  resolution: "@polkadot/x-bigint@npm:13.5.3"
   dependencies:
-    "@polkadot/x-global": "npm:13.5.1"
+    "@polkadot/x-global": "npm:13.5.3"
     tslib: "npm:^2.8.0"
-  checksum: 10/726bc63bc9a51dbfc21de3913ac546c296ca82b05a78014a9de7268a22c4db85552c6143ab058e0bf3e92defaa36a7d7a803a3deb6607e5928f408ee245dc55e
+  checksum: 10/f70d898a83ba8dc476c5164e2466dbfb9ab3722ec205a3dd448e96c2d764b9f30c532cf21d422005574e27b48e22c3cf3e7d2b0fb9b7b67e416941209875bd09
   languageName: node
   linkType: hard
 
@@ -1156,12 +1156,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/x-global@npm:13.5.1":
-  version: 13.5.1
-  resolution: "@polkadot/x-global@npm:13.5.1"
+"@polkadot/x-global@npm:13.5.3":
+  version: 13.5.3
+  resolution: "@polkadot/x-global@npm:13.5.3"
   dependencies:
     tslib: "npm:^2.8.0"
-  checksum: 10/6db58bbed5c6506c2f6d542cd836b242750a01d93e30fb6f19543a43ca7573a96813df44344df5d9ec938a913e2ddb8af0258f51770d3aa9f9bcbb896d8e5d1b
+  checksum: 10/3976491290df8f7a5929c85c1f5f962ac968594666a60488060511c41dcf878089caeb41ae662dde70deae6c875abd0a46533c2f0448f5da1831eed1dda53c7d
   languageName: node
   linkType: hard
 
@@ -1175,13 +1175,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/x-textdecoder@npm:13.5.1":
-  version: 13.5.1
-  resolution: "@polkadot/x-textdecoder@npm:13.5.1"
+"@polkadot/x-textdecoder@npm:13.5.3":
+  version: 13.5.3
+  resolution: "@polkadot/x-textdecoder@npm:13.5.3"
   dependencies:
-    "@polkadot/x-global": "npm:13.5.1"
+    "@polkadot/x-global": "npm:13.5.3"
     tslib: "npm:^2.8.0"
-  checksum: 10/705b3f3b3c757cf2f7077e71f6c765c088e6636e5580408a8f95bf9b2e17c59bfa0846d89ba423131422a0bbb381fe0eff13cd7ac3d366272ebe269876789a52
+  checksum: 10/5914ce2bad6f858ba2d509a6cecde61c9d547c83791697f79a3d4bf7675782ac470c60d62d39974b246ee74d07c58b006ddae22823945ca1e474a6040ab058ce
   languageName: node
   linkType: hard
 
@@ -1195,13 +1195,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot/x-textencoder@npm:13.5.1":
-  version: 13.5.1
-  resolution: "@polkadot/x-textencoder@npm:13.5.1"
+"@polkadot/x-textencoder@npm:13.5.3":
+  version: 13.5.3
+  resolution: "@polkadot/x-textencoder@npm:13.5.3"
   dependencies:
-    "@polkadot/x-global": "npm:13.5.1"
+    "@polkadot/x-global": "npm:13.5.3"
     tslib: "npm:^2.8.0"
-  checksum: 10/d5309785674a034e21717236f7f2a438da77d29c514c9cfae8517c8db690e1cff55820cfbac6f2307c9e1d4dc2c4e24ad01f915b585823af5ee73737441d1766
+  checksum: 10/bf3219c4a37dcc4b3de42e291b7fa137147b9497268699b9f35184967114a80da3de3785e2bf628bb02172f963fb7dc5ba150edb6cd2e28a0a6f7d142d55309f
   languageName: node
   linkType: hard
 
@@ -2231,7 +2231,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "dedot.dev@workspace:."
   dependencies:
-    "@polkadot/types-support": "npm:~16.1.1"
+    "@polkadot/types-support": "npm:~16.4.2"
     "@trivago/prettier-plugin-sort-imports": "npm:^4.1.1"
     dedot: "npm:^0.10.0"
     husky: "npm:^8.0.3"

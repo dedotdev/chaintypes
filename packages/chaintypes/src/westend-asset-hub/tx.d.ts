@@ -2041,6 +2041,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_teleport_assets` or `transfer_assets`
      **/
     teleportAssets: GenericTxCall<
       Rv,
@@ -2102,6 +2104,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_reserve_transfer_assets` or `transfer_assets`
      **/
     reserveTransferAssets: GenericTxCall<
       Rv,
@@ -14287,6 +14291,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Emits [`Event::Paid`] if successful.
      *
      * @param {number} index
+     *
+     * @deprecated The `spend_local` call will be removed by May 2025. Migrate to the new flow and use the `spend` call.
      **/
     payout: GenericTxCall<
       Rv,
@@ -14324,6 +14330,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
      *
      * @param {number} index
+     *
+     * @deprecated The `remove_approval` call will be removed by May 2025. It associated with the deprecated `spend_local` call.
      **/
     checkStatus: GenericTxCall<
       Rv,

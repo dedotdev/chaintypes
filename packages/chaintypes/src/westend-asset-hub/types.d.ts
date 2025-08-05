@@ -20,9 +20,9 @@ import type {
   AccountId32Like,
   Percent,
   PerU16,
-  FixedI64,
-  Era,
   UncheckedExtrinsic,
+  Era,
+  FixedI64,
   U256,
 } from 'dedot/codecs';
 
@@ -17752,6 +17752,46 @@ export type FrameSystemError =
    **/
   | 'Unauthorized';
 
+export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
+
+export type CumulusPalletWeightReclaimStorageWeightReclaim = [
+  FrameSystemExtensionsAuthorizeCall,
+  FrameSystemExtensionsCheckNonZeroSender,
+  FrameSystemExtensionsCheckSpecVersion,
+  FrameSystemExtensionsCheckTxVersion,
+  FrameSystemExtensionsCheckGenesis,
+  FrameSystemExtensionsCheckMortality,
+  FrameSystemExtensionsCheckNonce,
+  FrameSystemExtensionsCheckWeight,
+  PalletAssetConversionTxPaymentChargeAssetTxPayment,
+  FrameMetadataHashExtensionCheckMetadataHash,
+];
+
+export type FrameSystemExtensionsAuthorizeCall = {};
+
+export type FrameSystemExtensionsCheckNonZeroSender = {};
+
+export type FrameSystemExtensionsCheckSpecVersion = {};
+
+export type FrameSystemExtensionsCheckTxVersion = {};
+
+export type FrameSystemExtensionsCheckGenesis = {};
+
+export type FrameSystemExtensionsCheckMortality = Era;
+
+export type FrameSystemExtensionsCheckNonce = number;
+
+export type FrameSystemExtensionsCheckWeight = {};
+
+export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
+  tip: bigint;
+  assetId?: StagingXcmV5Location | undefined;
+};
+
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
+
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
+
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
@@ -20600,49 +20640,7 @@ export type PalletAhOpsError =
    **/
   | 'AccountIdentical';
 
-export type CumulusPalletWeightReclaimStorageWeightReclaim = [
-  FrameSystemExtensionsAuthorizeCall,
-  FrameSystemExtensionsCheckNonZeroSender,
-  FrameSystemExtensionsCheckSpecVersion,
-  FrameSystemExtensionsCheckTxVersion,
-  FrameSystemExtensionsCheckGenesis,
-  FrameSystemExtensionsCheckMortality,
-  FrameSystemExtensionsCheckNonce,
-  FrameSystemExtensionsCheckWeight,
-  PalletAssetConversionTxPaymentChargeAssetTxPayment,
-  FrameMetadataHashExtensionCheckMetadataHash,
-];
-
-export type FrameSystemExtensionsAuthorizeCall = {};
-
-export type FrameSystemExtensionsCheckNonZeroSender = {};
-
-export type FrameSystemExtensionsCheckSpecVersion = {};
-
-export type FrameSystemExtensionsCheckTxVersion = {};
-
-export type FrameSystemExtensionsCheckGenesis = {};
-
-export type FrameSystemExtensionsCheckMortality = Era;
-
-export type FrameSystemExtensionsCheckNonce = number;
-
-export type FrameSystemExtensionsCheckWeight = {};
-
-export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
-  tip: bigint;
-  assetId?: StagingXcmV5Location | undefined;
-};
-
-export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
-
-export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
-
-export type AssetHubWestendRuntimeRuntime = {};
-
 export type SpConsensusSlotsSlotDuration = bigint;
-
-export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
 
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 

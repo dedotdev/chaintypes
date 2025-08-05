@@ -658,6 +658,8 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      *
      * @param {H256} arg
      * @param {Callback<PalletPreimageOldRequestStatus | undefined> =} callback
+     *
+     * @deprecated RequestStatusFor
      **/
     statusFor: GenericStorageQuery<Rv, (arg: H256) => PalletPreimageOldRequestStatus | undefined, H256>;
 

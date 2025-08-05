@@ -22,8 +22,8 @@ import type {
   BitSequence,
   FixedU128,
   Era,
-  FixedI64,
   UncheckedExtrinsic,
+  FixedI64,
 } from 'dedot/codecs';
 
 export type FrameSystemAccountInfo = {
@@ -13129,6 +13129,16 @@ export type FrameSystemError =
    **/
   | 'Unauthorized';
 
+export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
+
+export type FrameSystemExtensionsAuthorizeCall = {};
+
+export type FrameSystemExtensionsCheckWeight = {};
+
+export type PalletTransactionPaymentChargeTransactionPayment = bigint;
+
+export type FrameSystemExtensionsWeightReclaim = {};
+
 export type SpConsensusBabeDigestsPreDigest =
   | { type: 'Primary'; value: SpConsensusBabeDigestsPrimaryPreDigest }
   | { type: 'SecondaryPlain'; value: SpConsensusBabeDigestsSecondaryPlainPreDigest }
@@ -16051,16 +16061,6 @@ export type PalletBeefyError =
   | 'InvalidConfiguration';
 
 export type SpConsensusBeefyMmrBeefyAuthoritySet = { id: bigint; len: number; keysetCommitment: H256 };
-
-export type FrameSystemExtensionsAuthorizeCall = {};
-
-export type FrameSystemExtensionsCheckWeight = {};
-
-export type PalletTransactionPaymentChargeTransactionPayment = bigint;
-
-export type FrameSystemExtensionsWeightReclaim = {};
-
-export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
 
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 

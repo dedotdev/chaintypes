@@ -22,6 +22,7 @@ import type {
   FixedBytes,
   Permill,
   Perquintill,
+  Perbill,
 } from 'dedot/codecs';
 import type {
   HydradxRuntimeRuntimeCallLike,
@@ -36,7 +37,6 @@ import type {
   PalletDemocracyVoteAccountVote,
   PalletDemocracyConviction,
   PalletDemocracyMetadataOwner,
-  PalletElectionsPhragmenRenouncing,
   HydradxRuntimeSystemProxyType,
   PalletMultisigTimepoint,
   PalletUniquesDestroyWitness,
@@ -54,6 +54,7 @@ import type {
   HydradxTraitsStableswapAssetAmount,
   HydradxTraitsRouterTrade,
   HydradxTraitsRouterAssetPair,
+  PalletDynamicFeesAssetFeeConfig,
   PalletStableswapTradability,
   PalletStableswapPegSource,
   PalletLbpWeightCurveType,
@@ -2605,461 +2606,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
-   * Pallet `Elections`'s transaction calls
-   **/
-  elections: {
-    /**
-     * Vote for a set of candidates for the upcoming round of election. This can be called to
-     * set the initial votes, or update already existing votes.
-     *
-     * Upon initial voting, `value` units of `who`'s balance is locked and a deposit amount is
-     * reserved. The deposit is based on the number of votes and can be updated over time.
-     *
-     * The `votes` should:
-     * - not be empty.
-     * - be less than the number of possible candidates. Note that all current members and
-     * runners-up are also automatically candidates for the next round.
-     *
-     * If `value` is more than `who`'s free balance, then the maximum of the two is used.
-     *
-     * The dispatch origin of this call must be signed.
-     *
-     * ### Warning
-     *
-     * It is the responsibility of the caller to **NOT** place all of their balance into the
-     * lock and keep some for further operations.
-     *
-     * @param {Array<AccountId32Like>} votes
-     * @param {bigint} value
-     **/
-    vote: GenericTxCall<
-      Rv,
-      (
-        votes: Array<AccountId32Like>,
-        value: bigint,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Elections';
-          palletCall: {
-            name: 'Vote';
-            params: { votes: Array<AccountId32Like>; value: bigint };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Remove `origin` as a voter.
-     *
-     * This removes the lock and returns the deposit.
-     *
-     * The dispatch origin of this call must be signed and be a voter.
-     *
-     **/
-    removeVoter: GenericTxCall<
-      Rv,
-      () => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Elections';
-          palletCall: {
-            name: 'RemoveVoter';
-          };
-        }
-      >
-    >;
-
-    /**
-     * Submit oneself for candidacy. A fixed amount of deposit is recorded.
-     *
-     * All candidates are wiped at the end of the term. They either become a member/runner-up,
-     * or leave the system while their deposit is slashed.
-     *
-     * The dispatch origin of this call must be signed.
-     *
-     * ### Warning
-     *
-     * Even if a candidate ends up being a member, they must call [`Call::renounce_candidacy`]
-     * to get their deposit back. Losing the spot in an election will always lead to a slash.
-     *
-     * The number of current candidates must be provided as witness data.
-     * ## Complexity
-     * O(C + log(C)) where C is candidate_count.
-     *
-     * @param {number} candidateCount
-     **/
-    submitCandidacy: GenericTxCall<
-      Rv,
-      (candidateCount: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Elections';
-          palletCall: {
-            name: 'SubmitCandidacy';
-            params: { candidateCount: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Renounce one's intention to be a candidate for the next election round. 3 potential
-     * outcomes exist:
-     *
-     * - `origin` is a candidate and not elected in any set. In this case, the deposit is
-     * unreserved, returned and origin is removed as a candidate.
-     * - `origin` is a current runner-up. In this case, the deposit is unreserved, returned and
-     * origin is removed as a runner-up.
-     * - `origin` is a current member. In this case, the deposit is unreserved and origin is
-     * removed as a member, consequently not being a candidate for the next round anymore.
-     * Similar to [`remove_member`](Self::remove_member), if replacement runners exists, they
-     * are immediately used. If the prime is renouncing, then no prime will exist until the
-     * next round.
-     *
-     * The dispatch origin of this call must be signed, and have one of the above roles.
-     * The type of renouncing must be provided as witness data.
-     *
-     * ## Complexity
-     * - Renouncing::Candidate(count): O(count + log(count))
-     * - Renouncing::Member: O(1)
-     * - Renouncing::RunnerUp: O(1)
-     *
-     * @param {PalletElectionsPhragmenRenouncing} renouncing
-     **/
-    renounceCandidacy: GenericTxCall<
-      Rv,
-      (renouncing: PalletElectionsPhragmenRenouncing) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Elections';
-          palletCall: {
-            name: 'RenounceCandidacy';
-            params: { renouncing: PalletElectionsPhragmenRenouncing };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Remove a particular member from the set. This is effective immediately and the bond of
-     * the outgoing member is slashed.
-     *
-     * If a runner-up is available, then the best runner-up will be removed and replaces the
-     * outgoing member. Otherwise, if `rerun_election` is `true`, a new phragmen election is
-     * started, else, nothing happens.
-     *
-     * If `slash_bond` is set to true, the bond of the member being removed is slashed. Else,
-     * it is returned.
-     *
-     * The dispatch origin of this call must be root.
-     *
-     * Note that this does not affect the designated block number of the next election.
-     *
-     * ## Complexity
-     * - Check details of remove_and_replace_member() and do_phragmen().
-     *
-     * @param {AccountId32Like} who
-     * @param {boolean} slashBond
-     * @param {boolean} rerunElection
-     **/
-    removeMember: GenericTxCall<
-      Rv,
-      (
-        who: AccountId32Like,
-        slashBond: boolean,
-        rerunElection: boolean,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Elections';
-          palletCall: {
-            name: 'RemoveMember';
-            params: { who: AccountId32Like; slashBond: boolean; rerunElection: boolean };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Clean all voters who are defunct (i.e. they do not serve any purpose at all). The
-     * deposit of the removed voters are returned.
-     *
-     * This is an root function to be used only for cleaning the state.
-     *
-     * The dispatch origin of this call must be root.
-     *
-     * ## Complexity
-     * - Check is_defunct_voter() details.
-     *
-     * @param {number} numVoters
-     * @param {number} numDefunct
-     **/
-    cleanDefunctVoters: GenericTxCall<
-      Rv,
-      (
-        numVoters: number,
-        numDefunct: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Elections';
-          palletCall: {
-            name: 'CleanDefunctVoters';
-            params: { numVoters: number; numDefunct: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
-   * Pallet `Council`'s transaction calls
-   **/
-  council: {
-    /**
-     * Set the collective's membership.
-     *
-     * - `new_members`: The new member list. Be nice to the chain and provide it sorted.
-     * - `prime`: The prime member whose vote sets the default.
-     * - `old_count`: The upper bound for the previous number of members in storage. Used for
-     * weight estimation.
-     *
-     * The dispatch of this call must be `SetMembersOrigin`.
-     *
-     * NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but
-     * the weight estimations rely on it to estimate dispatchable weight.
-     *
-     * # WARNING:
-     *
-     * The `pallet-collective` can also be managed by logic outside of the pallet through the
-     * implementation of the trait [`ChangeMembers`].
-     * Any call to `set_members` must be careful that the member set doesn't get out of sync
-     * with other logic managing the member set.
-     *
-     * ## Complexity:
-     * - `O(MP + N)` where:
-     * - `M` old-members-count (code- and governance-bounded)
-     * - `N` new-members-count (code- and governance-bounded)
-     * - `P` proposals-count (code-bounded)
-     *
-     * @param {Array<AccountId32Like>} newMembers
-     * @param {AccountId32Like | undefined} prime
-     * @param {number} oldCount
-     **/
-    setMembers: GenericTxCall<
-      Rv,
-      (
-        newMembers: Array<AccountId32Like>,
-        prime: AccountId32Like | undefined,
-        oldCount: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Council';
-          palletCall: {
-            name: 'SetMembers';
-            params: { newMembers: Array<AccountId32Like>; prime: AccountId32Like | undefined; oldCount: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Dispatch a proposal from a member using the `Member` origin.
-     *
-     * Origin must be a member of the collective.
-     *
-     * ## Complexity:
-     * - `O(B + M + P)` where:
-     * - `B` is `proposal` size in bytes (length-fee-bounded)
-     * - `M` members-count (code-bounded)
-     * - `P` complexity of dispatching `proposal`
-     *
-     * @param {HydradxRuntimeRuntimeCallLike} proposal
-     * @param {number} lengthBound
-     **/
-    execute: GenericTxCall<
-      Rv,
-      (
-        proposal: HydradxRuntimeRuntimeCallLike,
-        lengthBound: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Council';
-          palletCall: {
-            name: 'Execute';
-            params: { proposal: HydradxRuntimeRuntimeCallLike; lengthBound: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Add a new proposal to either be voted on or executed directly.
-     *
-     * Requires the sender to be member.
-     *
-     * `threshold` determines whether `proposal` is executed directly (`threshold < 2`)
-     * or put up for voting.
-     *
-     * ## Complexity
-     * - `O(B + M + P1)` or `O(B + M + P2)` where:
-     * - `B` is `proposal` size in bytes (length-fee-bounded)
-     * - `M` is members-count (code- and governance-bounded)
-     * - branching is influenced by `threshold` where:
-     * - `P1` is proposal execution complexity (`threshold < 2`)
-     * - `P2` is proposals-count (code-bounded) (`threshold >= 2`)
-     *
-     * @param {number} threshold
-     * @param {HydradxRuntimeRuntimeCallLike} proposal
-     * @param {number} lengthBound
-     **/
-    propose: GenericTxCall<
-      Rv,
-      (
-        threshold: number,
-        proposal: HydradxRuntimeRuntimeCallLike,
-        lengthBound: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Council';
-          palletCall: {
-            name: 'Propose';
-            params: { threshold: number; proposal: HydradxRuntimeRuntimeCallLike; lengthBound: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Add an aye or nay vote for the sender to the given proposal.
-     *
-     * Requires the sender to be a member.
-     *
-     * Transaction fees will be waived if the member is voting on any particular proposal
-     * for the first time and the call is successful. Subsequent vote changes will charge a
-     * fee.
-     * ## Complexity
-     * - `O(M)` where `M` is members-count (code- and governance-bounded)
-     *
-     * @param {H256} proposal
-     * @param {number} index
-     * @param {boolean} approve
-     **/
-    vote: GenericTxCall<
-      Rv,
-      (
-        proposal: H256,
-        index: number,
-        approve: boolean,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Council';
-          palletCall: {
-            name: 'Vote';
-            params: { proposal: H256; index: number; approve: boolean };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Disapprove a proposal, close, and remove it from the system, regardless of its current
-     * state.
-     *
-     * Must be called by the Root origin.
-     *
-     * Parameters:
-     * * `proposal_hash`: The hash of the proposal that should be disapproved.
-     *
-     * ## Complexity
-     * O(P) where P is the number of max proposals
-     *
-     * @param {H256} proposalHash
-     **/
-    disapproveProposal: GenericTxCall<
-      Rv,
-      (proposalHash: H256) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Council';
-          palletCall: {
-            name: 'DisapproveProposal';
-            params: { proposalHash: H256 };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Close a vote that is either approved, disapproved or whose voting period has ended.
-     *
-     * May be called by any signed account in order to finish voting and close the proposal.
-     *
-     * If called before the end of the voting period it will only close the vote if it is
-     * has enough votes to be approved or disapproved.
-     *
-     * If called after the end of the voting period abstentions are counted as rejections
-     * unless there is a prime member set and the prime member cast an approval.
-     *
-     * If the close operation completes successfully with disapproval, the transaction fee will
-     * be waived. Otherwise execution of the approved operation will be charged to the caller.
-     *
-     * + `proposal_weight_bound`: The maximum amount of weight consumed by executing the closed
-     * proposal.
-     * + `length_bound`: The upper bound for the length of the proposal in storage. Checked via
-     * `storage::read` so it is `size_of::<u32>() == 4` larger than the pure length.
-     *
-     * ## Complexity
-     * - `O(B + M + P1 + P2)` where:
-     * - `B` is `proposal` size in bytes (length-fee-bounded)
-     * - `M` is members-count (code- and governance-bounded)
-     * - `P1` is the complexity of `proposal` preimage.
-     * - `P2` is proposal-count (code-bounded)
-     *
-     * @param {H256} proposalHash
-     * @param {number} index
-     * @param {SpWeightsWeightV2Weight} proposalWeightBound
-     * @param {number} lengthBound
-     **/
-    close: GenericTxCall<
-      Rv,
-      (
-        proposalHash: H256,
-        index: number,
-        proposalWeightBound: SpWeightsWeightV2Weight,
-        lengthBound: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Council';
-          palletCall: {
-            name: 'Close';
-            params: {
-              proposalHash: H256;
-              index: number;
-              proposalWeightBound: SpWeightsWeightV2Weight;
-              lengthBound: number;
-            };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
    * Pallet `TechnicalCommittee`'s transaction calls
    **/
   technicalCommittee: {
@@ -3291,232 +2837,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               proposalWeightBound: SpWeightsWeightV2Weight;
               lengthBound: number;
             };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
-   * Pallet `Tips`'s transaction calls
-   **/
-  tips: {
-    /**
-     * Report something `reason` that deserves a tip and claim any eventual the finder's fee.
-     *
-     * The dispatch origin for this call must be _Signed_.
-     *
-     * Payment: `TipReportDepositBase` will be reserved from the origin account, as well as
-     * `DataDepositPerByte` for each byte in `reason`.
-     *
-     * - `reason`: The reason for, or the thing that deserves, the tip; generally this will be
-     * a UTF-8-encoded URL.
-     * - `who`: The account which should be credited for the tip.
-     *
-     * Emits `NewTip` if successful.
-     *
-     * ## Complexity
-     * - `O(R)` where `R` length of `reason`.
-     * - encoding and hashing of 'reason'
-     *
-     * @param {BytesLike} reason
-     * @param {AccountId32Like} who
-     **/
-    reportAwesome: GenericTxCall<
-      Rv,
-      (
-        reason: BytesLike,
-        who: AccountId32Like,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Tips';
-          palletCall: {
-            name: 'ReportAwesome';
-            params: { reason: BytesLike; who: AccountId32Like };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Retract a prior tip-report from `report_awesome`, and cancel the process of tipping.
-     *
-     * If successful, the original deposit will be unreserved.
-     *
-     * The dispatch origin for this call must be _Signed_ and the tip identified by `hash`
-     * must have been reported by the signing account through `report_awesome` (and not
-     * through `tip_new`).
-     *
-     * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-     * as the hash of the tuple of the original tip `reason` and the beneficiary account ID.
-     *
-     * Emits `TipRetracted` if successful.
-     *
-     * ## Complexity
-     * - `O(1)`
-     * - Depends on the length of `T::Hash` which is fixed.
-     *
-     * @param {H256} hash
-     **/
-    retractTip: GenericTxCall<
-      Rv,
-      (hash: H256) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Tips';
-          palletCall: {
-            name: 'RetractTip';
-            params: { hash: H256 };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Give a tip for something new; no finder's fee will be taken.
-     *
-     * The dispatch origin for this call must be _Signed_ and the signing account must be a
-     * member of the `Tippers` set.
-     *
-     * - `reason`: The reason for, or the thing that deserves, the tip; generally this will be
-     * a UTF-8-encoded URL.
-     * - `who`: The account which should be credited for the tip.
-     * - `tip_value`: The amount of tip that the sender would like to give. The median tip
-     * value of active tippers will be given to the `who`.
-     *
-     * Emits `NewTip` if successful.
-     *
-     * ## Complexity
-     * - `O(R + T)` where `R` length of `reason`, `T` is the number of tippers.
-     * - `O(T)`: decoding `Tipper` vec of length `T`. `T` is charged as upper bound given by
-     * `ContainsLengthBound`. The actual cost depends on the implementation of
-     * `T::Tippers`.
-     * - `O(R)`: hashing and encoding of reason of length `R`
-     *
-     * @param {BytesLike} reason
-     * @param {AccountId32Like} who
-     * @param {bigint} tipValue
-     **/
-    tipNew: GenericTxCall<
-      Rv,
-      (
-        reason: BytesLike,
-        who: AccountId32Like,
-        tipValue: bigint,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Tips';
-          palletCall: {
-            name: 'TipNew';
-            params: { reason: BytesLike; who: AccountId32Like; tipValue: bigint };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Declare a tip value for an already-open tip.
-     *
-     * The dispatch origin for this call must be _Signed_ and the signing account must be a
-     * member of the `Tippers` set.
-     *
-     * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-     * as the hash of the tuple of the hash of the original tip `reason` and the beneficiary
-     * account ID.
-     * - `tip_value`: The amount of tip that the sender would like to give. The median tip
-     * value of active tippers will be given to the `who`.
-     *
-     * Emits `TipClosing` if the threshold of tippers has been reached and the countdown period
-     * has started.
-     *
-     * ## Complexity
-     * - `O(T)` where `T` is the number of tippers. decoding `Tipper` vec of length `T`, insert
-     * tip and check closing, `T` is charged as upper bound given by `ContainsLengthBound`.
-     * The actual cost depends on the implementation of `T::Tippers`.
-     *
-     * Actually weight could be lower as it depends on how many tips are in `OpenTip` but it
-     * is weighted as if almost full i.e of length `T-1`.
-     *
-     * @param {H256} hash
-     * @param {bigint} tipValue
-     **/
-    tip: GenericTxCall<
-      Rv,
-      (
-        hash: H256,
-        tipValue: bigint,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Tips';
-          palletCall: {
-            name: 'Tip';
-            params: { hash: H256; tipValue: bigint };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Close and payout a tip.
-     *
-     * The dispatch origin for this call must be _Signed_.
-     *
-     * The tip identified by `hash` must have finished its countdown period.
-     *
-     * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-     * as the hash of the tuple of the original tip `reason` and the beneficiary account ID.
-     *
-     * ## Complexity
-     * - : `O(T)` where `T` is the number of tippers. decoding `Tipper` vec of length `T`. `T`
-     * is charged as upper bound given by `ContainsLengthBound`. The actual cost depends on
-     * the implementation of `T::Tippers`.
-     *
-     * @param {H256} hash
-     **/
-    closeTip: GenericTxCall<
-      Rv,
-      (hash: H256) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Tips';
-          palletCall: {
-            name: 'CloseTip';
-            params: { hash: H256 };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Remove and slash an already-open tip.
-     *
-     * May only be called from `T::RejectOrigin`.
-     *
-     * As a result, the finder is slashed and the deposits are lost.
-     *
-     * Emits `TipSlashed` if successful.
-     *
-     * ## Complexity
-     * - O(1).
-     *
-     * @param {H256} hash
-     **/
-    slashTip: GenericTxCall<
-      Rv,
-      (hash: H256) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Tips';
-          palletCall: {
-            name: 'SlashTip';
-            params: { hash: H256 };
           };
         }
       >
@@ -7774,6 +7094,102 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Lockdown an asset for minting
+     *
+     * Can be called only by an authority origin
+     *
+     * Parameters:
+     * - `origin`: The dispatch origin for this call. Must be `AuthorityOrigin`
+     * - `asset_id`: The identifier of an asset
+     * - `until`: The block number until which the asset is locked
+     *
+     * /// Emits `AssetLockdowned` event when successful.
+     *
+     * @param {number} assetId
+     * @param {number} until
+     **/
+    lockdownAsset: GenericTxCall<
+      Rv,
+      (
+        assetId: number,
+        until: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'LockdownAsset';
+            params: { assetId: number; until: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove asset lockdown regardless of the state.
+     *
+     * Can be called only by an authority origin
+     *
+     * Parameters:
+     *
+     * - `origin`: The dispatch origin for this call. Must be `AuthorityOrigin`
+     * - `asset_id`: The identifier of an asset
+     *
+     * Emits `AssetLockdownRemoved` event when successful.
+     *
+     * @param {number} assetId
+     **/
+    forceLiftLockdown: GenericTxCall<
+      Rv,
+      (assetId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'ForceLiftLockdown';
+            params: { assetId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Release deposit of an asset.
+     *
+     * It releases all the pallet reserved balance of the asset for the given account
+     *
+     * Can be called by any origin, but only if the asset is not in active lockdown.
+     *
+     * The caller does not pay for this call if successful.
+     *
+     * Parameters:
+     * - `origin`: The dispatch origin for this call. Can be signed or root.
+     * - `who`: The account that is saving the deposit.
+     * - `asset_id`: The identifier of the asset.
+     *
+     * Emits `DepositReleased` event when successful.
+     *
+     * @param {AccountId32Like} who
+     * @param {number} assetId
+     **/
+    releaseDeposit: GenericTxCall<
+      Rv,
+      (
+        who: AccountId32Like,
+        assetId: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'ReleaseDeposit';
+            params: { who: AccountId32Like; assetId: number };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -8004,6 +7420,62 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
    * Pallet `DynamicFees`'s transaction calls
    **/
   dynamicFees: {
+    /**
+     * Set fee configuration for an asset
+     *
+     * This function allows setting either fixed or dynamic fee configuration for a specific asset.
+     *
+     * # Arguments
+     * * `origin` - Root origin required
+     * * `asset_id` - The asset ID to configure
+     * * `config` - Fee configuration (Fixed or Dynamic)
+     *
+     * @param {number} assetId
+     * @param {PalletDynamicFeesAssetFeeConfig} config
+     **/
+    setAssetFee: GenericTxCall<
+      Rv,
+      (
+        assetId: number,
+        config: PalletDynamicFeesAssetFeeConfig,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'DynamicFees';
+          palletCall: {
+            name: 'SetAssetFee';
+            params: { assetId: number; config: PalletDynamicFeesAssetFeeConfig };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove fee configuration for an asset (will use default parameters)
+     *
+     * This function removes any custom fee configuration for the specified asset.
+     * After removal, the asset will use the default dynamic fee parameters configured in the runtime.
+     *
+     * # Arguments
+     * * `origin` - Root origin required
+     * * `asset_id` - The asset ID to remove configuration for
+     *
+     * @param {number} assetId
+     **/
+    removeAssetFee: GenericTxCall<
+      Rv,
+      (assetId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'DynamicFees';
+          palletCall: {
+            name: 'RemoveAssetFee';
+            params: { assetId: number };
+          };
+        }
+      >
+    >;
+
     /**
      * Generic pallet tx call
      **/
@@ -8726,6 +8198,87 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'AddAssetsLiquidity';
             params: { poolId: number; assets: Array<HydradxTraitsStableswapAssetAmount>; minShares: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Update the peg source for a specific asset in a pool.
+     *
+     * This function allows updating the peg source for an asset within a pool.
+     * The pool must exist and have pegs configured. The asset must be part of the pool.
+     * The current price is always preserved when updating the peg source.
+     *
+     * Parameters:
+     * - `origin`: Must be `T::AuthorityOrigin`.
+     * - `pool_id`: The ID of the pool containing the asset.
+     * - `asset_id`: The ID of the asset whose peg source is to be updated.
+     * - `peg_source`: The new peg source for the asset.
+     *
+     * Emits `PoolPegSourceUpdated` event when successful.
+     *
+     * # Errors
+     * - `PoolNotFound`: If the specified pool does not exist.
+     * - `NoPegSource`: If the pool does not have pegs configured.
+     * - `AssetNotInPool`: If the specified asset is not part of the pool.
+     *
+     *
+     * @param {number} poolId
+     * @param {number} assetId
+     * @param {PalletStableswapPegSource} pegSource
+     **/
+    updateAssetPegSource: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        assetId: number,
+        pegSource: PalletStableswapPegSource,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Stableswap';
+          palletCall: {
+            name: 'UpdateAssetPegSource';
+            params: { poolId: number; assetId: number; pegSource: PalletStableswapPegSource };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Update the maximum peg update percentage for a pool.
+     *
+     * This function allows updating the maximum percentage by which peg values
+     * can change in a pool with pegs configured.
+     *
+     * Parameters:
+     * - `origin`: Must be `T::AuthorityOrigin`.
+     * - `pool_id`: The ID of the pool to update.
+     * - `max_peg_update`: The new maximum peg update percentage.
+     *
+     * Emits `PoolMaxPegUpdateUpdated` event when successful.
+     *
+     * # Errors
+     * - `PoolNotFound`: If the specified pool does not exist.
+     * - `NoPegSource`: If the pool does not have pegs configured.
+     *
+     *
+     * @param {number} poolId
+     * @param {Permill} maxPegUpdate
+     **/
+    updatePoolMaxPegUpdate: GenericTxCall<
+      Rv,
+      (
+        poolId: number,
+        maxPegUpdate: Permill,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Stableswap';
+          palletCall: {
+            name: 'UpdatePoolMaxPegUpdate';
+            params: { poolId: number; maxPegUpdate: Permill };
           };
         }
       >
@@ -9628,6 +9181,332 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SetBorrowingContract';
             params: { contract: H160 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `HSM`'s transaction calls
+   **/
+  hsm: {
+    /**
+     * Add a new collateral asset
+     *
+     * This function adds a new asset as an approved collateral for Hollar. Only callable by
+     * the governance (root origin).
+     *
+     * Parameters:
+     * - `origin`: Must be Root
+     * - `asset_id`: Asset ID to be added as collateral
+     * - `pool_id`: StableSwap pool ID where this asset and Hollar are paired
+     * - `purchase_fee`: Fee applied when buying Hollar with this asset (added to purchase price)
+     * - `max_buy_price_coefficient`: Maximum buy price coefficient for HSM to buy back Hollar
+     * - `buy_back_fee`: Fee applied when buying back Hollar (subtracted from buy price)
+     * - `buyback_rate`: Parameter that controls how quickly HSM can buy Hollar with this asset
+     * - `max_in_holding`: Optional maximum amount of collateral HSM can hold
+     *
+     * Emits:
+     * - `CollateralAdded` when the collateral is successfully added
+     *
+     * Errors:
+     * - `AssetAlreadyApproved` if the asset is already registered as a collateral
+     * - `PoolAlreadyHasCollateral` if another asset from the same pool is already approved
+     * - `HollarNotInPool` if Hollar is not found in the specified pool
+     * - `AssetNotInPool` if the collateral asset is not found in the specified pool
+     * - Other errors from underlying calls
+     *
+     * @param {number} assetId
+     * @param {number} poolId
+     * @param {Permill} purchaseFee
+     * @param {FixedU128} maxBuyPriceCoefficient
+     * @param {Permill} buyBackFee
+     * @param {Perbill} buybackRate
+     * @param {bigint | undefined} maxInHolding
+     **/
+    addCollateralAsset: GenericTxCall<
+      Rv,
+      (
+        assetId: number,
+        poolId: number,
+        purchaseFee: Permill,
+        maxBuyPriceCoefficient: FixedU128,
+        buyBackFee: Permill,
+        buybackRate: Perbill,
+        maxInHolding: bigint | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hsm';
+          palletCall: {
+            name: 'AddCollateralAsset';
+            params: {
+              assetId: number;
+              poolId: number;
+              purchaseFee: Permill;
+              maxBuyPriceCoefficient: FixedU128;
+              buyBackFee: Permill;
+              buybackRate: Perbill;
+              maxInHolding: bigint | undefined;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a collateral asset
+     *
+     * Removes an asset from the approved collaterals list. Only callable by the governance (root origin).
+     * The collateral must have a zero balance in the HSM account before it can be removed.
+     *
+     * Parameters:
+     * - `origin`: Must be Root
+     * - `asset_id`: Asset ID to remove from collaterals
+     *
+     * Emits:
+     * - `CollateralRemoved` when the collateral is successfully removed
+     *
+     * Errors:
+     * - `AssetNotApproved` if the asset is not a registered collateral
+     * - `CollateralNotEmpty` if the HSM account still holds some of this asset
+     *
+     * @param {number} assetId
+     **/
+    removeCollateralAsset: GenericTxCall<
+      Rv,
+      (assetId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hsm';
+          palletCall: {
+            name: 'RemoveCollateralAsset';
+            params: { assetId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Update collateral asset parameters
+     *
+     * Updates the parameters for an existing collateral asset. Only callable by the governance (root origin).
+     * Each parameter is optional and only provided parameters will be updated.
+     *
+     * Parameters:
+     * - `origin`: Must be Root
+     * - `asset_id`: Asset ID to update
+     * - `purchase_fee`: New purchase fee (optional)
+     * - `max_buy_price_coefficient`: New max buy price coefficient (optional)
+     * - `buy_back_fee`: New buy back fee (optional)
+     * - `buyback_rate`: New buyback rate parameter (optional)
+     * - `max_in_holding`: New maximum holding amount (optional)
+     *
+     * Emits:
+     * - `CollateralUpdated` when the collateral is successfully updated
+     *
+     * Errors:
+     * - `AssetNotApproved` if the asset is not a registered collateral
+     *
+     * @param {number} assetId
+     * @param {Permill | undefined} purchaseFee
+     * @param {FixedU128 | undefined} maxBuyPriceCoefficient
+     * @param {Permill | undefined} buyBackFee
+     * @param {Perbill | undefined} buybackRate
+     * @param {bigint | undefined | undefined} maxInHolding
+     **/
+    updateCollateralAsset: GenericTxCall<
+      Rv,
+      (
+        assetId: number,
+        purchaseFee: Permill | undefined,
+        maxBuyPriceCoefficient: FixedU128 | undefined,
+        buyBackFee: Permill | undefined,
+        buybackRate: Perbill | undefined,
+        maxInHolding: bigint | undefined | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hsm';
+          palletCall: {
+            name: 'UpdateCollateralAsset';
+            params: {
+              assetId: number;
+              purchaseFee: Permill | undefined;
+              maxBuyPriceCoefficient: FixedU128 | undefined;
+              buyBackFee: Permill | undefined;
+              buybackRate: Perbill | undefined;
+              maxInHolding: bigint | undefined | undefined;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Sell asset to HSM
+     *
+     * This function allows users to:
+     * 1. Sell Hollar back to HSM in exchange for collateral assets
+     * 2. Sell collateral assets to HSM in exchange for newly minted Hollar
+     *
+     * The valid pairs must include Hollar as one side and an approved collateral as the other side.
+     *
+     * Parameters:
+     * - `origin`: Account selling the asset
+     * - `asset_in`: Asset ID being sold
+     * - `asset_out`: Asset ID being bought
+     * - `amount_in`: Amount of asset_in to sell
+     * - `slippage_limit`: Minimum amount out for slippage protection
+     *
+     * Emits:
+     * - `Swapped3` when the sell is successful
+     *
+     * Errors:
+     * - `InvalidAssetPair` if the pair is not Hollar and an approved collateral
+     * - `AssetNotApproved` if the collateral asset isn't registered
+     * - `SlippageLimitExceeded` if the amount received is less than the slippage limit
+     * - `MaxBuyBackExceeded` if the sell would exceed the maximum buy back rate
+     * - `MaxBuyPriceExceeded` if the sell would exceed the maximum buy price
+     * - `InsufficientCollateralBalance` if HSM doesn't have enough collateral
+     * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+     * - Other errors from underlying calls
+     *
+     * @param {number} assetIn
+     * @param {number} assetOut
+     * @param {bigint} amountIn
+     * @param {bigint} slippageLimit
+     **/
+    sell: GenericTxCall<
+      Rv,
+      (
+        assetIn: number,
+        assetOut: number,
+        amountIn: bigint,
+        slippageLimit: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hsm';
+          palletCall: {
+            name: 'Sell';
+            params: { assetIn: number; assetOut: number; amountIn: bigint; slippageLimit: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Buy asset from HSM
+     *
+     * This function allows users to:
+     * 1. Buy Hollar from HSM using collateral assets
+     * 2. Buy collateral assets from HSM using Hollar
+     *
+     * The valid pairs must include Hollar as one side and an approved collateral as the other side.
+     *
+     * Parameters:
+     * - `origin`: Account buying the asset
+     * - `asset_in`: Asset ID being sold by the user
+     * - `asset_out`: Asset ID being bought by the user
+     * - `amount_out`: Amount of asset_out to buy
+     * - `slippage_limit`: Maximum amount in for slippage protection
+     *
+     * Emits:
+     * - `Swapped3` when the buy is successful
+     *
+     * Errors:
+     * - `InvalidAssetPair` if the pair is not Hollar and an approved collateral
+     * - `AssetNotApproved` if the collateral asset isn't registered
+     * - `SlippageLimitExceeded` if the amount input exceeds the slippage limit
+     * - `MaxHoldingExceeded` if the buy would cause HSM to exceed its maximum holding
+     * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+     * - Other errors from underlying calls
+     *
+     * @param {number} assetIn
+     * @param {number} assetOut
+     * @param {bigint} amountOut
+     * @param {bigint} slippageLimit
+     **/
+    buy: GenericTxCall<
+      Rv,
+      (
+        assetIn: number,
+        assetOut: number,
+        amountOut: bigint,
+        slippageLimit: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hsm';
+          palletCall: {
+            name: 'Buy';
+            params: { assetIn: number; assetOut: number; amountOut: bigint; slippageLimit: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Execute arbitrage opportunity between HSM and collateral stable pool
+     *
+     * This call is designed to be triggered automatically by offchain workers. It:
+     * 1. Detects price imbalances between HSM and a stable pool for a collateral
+     * 2. If an opportunity exists, mints Hollar, swaps it for collateral on HSM
+     * 3. Swaps that collateral for Hollar on the stable pool
+     * 4. Burns the Hollar received from the arbitrage
+     *
+     * This helps maintain the peg of Hollar by profiting from and correcting price imbalances.
+     * The call is unsigned and should only be executed by offchain workers.
+     *
+     * Parameters:
+     * - `origin`: Must be None (unsigned)
+     * - `collateral_asset_id`: The ID of the collateral asset to check for arbitrage
+     *
+     * Emits:
+     * - `ArbitrageExecuted` when the arbitrage is successful
+     *
+     * Errors:
+     * - `AssetNotApproved` if the asset is not a registered collateral
+     * - `NoArbitrageOpportunity` if there's no profitable arbitrage opportunity
+     * - `MaxBuyPriceExceeded` if the arbitrage would exceed the maximum buy price
+     * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+     * - Other errors from underlying calls
+     *
+     * @param {number} collateralAssetId
+     **/
+    executeArbitrage: GenericTxCall<
+      Rv,
+      (collateralAssetId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hsm';
+          palletCall: {
+            name: 'ExecuteArbitrage';
+            params: { collateralAssetId: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {H160} flashMinterAddr
+     **/
+    setFlashMinter: GenericTxCall<
+      Rv,
+      (flashMinterAddr: H160) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Hsm';
+          palletCall: {
+            name: 'SetFlashMinter';
+            params: { flashMinterAddr: H160 };
           };
         }
       >
@@ -11103,6 +10982,41 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'Terminate';
             params: { scheduleId: number; nextExecutionBlock: number | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Unlocks DCA reserves of provided asset for the caller if they have no active schedules.
+     *
+     * This is a utility function to help users recover their reserved funds in case
+     * a DCA schedule was terminated but left some reserved amounts.
+     *
+     * This can only be called when the user has no active DCA schedules.
+     *
+     * Parameters:
+     * - `origin`: The account to unlock reserves for (must be signed)
+     * - `asset_id`: The asset ID for which reserves should be unlocked.
+     *
+     * Emits `ReserveUnlocked` event when successful.
+     *
+     *
+     * @param {AccountId32Like} who
+     * @param {number} assetId
+     **/
+    unlockReserves: GenericTxCall<
+      Rv,
+      (
+        who: AccountId32Like,
+        assetId: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Dca';
+          palletCall: {
+            name: 'UnlockReserves';
+            params: { who: AccountId32Like; assetId: number };
           };
         }
       >

@@ -62,10 +62,7 @@ export type HydradxRuntimeRuntimeEvent =
   | { pallet: 'Preimage'; palletEvent: PalletPreimageEvent }
   | { pallet: 'Identity'; palletEvent: PalletIdentityEvent }
   | { pallet: 'Democracy'; palletEvent: PalletDemocracyEvent }
-  | { pallet: 'Elections'; palletEvent: PalletElectionsPhragmenEvent }
-  | { pallet: 'Council'; palletEvent: PalletCollectiveEvent }
   | { pallet: 'TechnicalCommittee'; palletEvent: PalletCollectiveEvent }
-  | { pallet: 'Tips'; palletEvent: PalletTipsEvent }
   | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
   | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
   | { pallet: 'Uniques'; palletEvent: PalletUniquesEvent }
@@ -94,6 +91,7 @@ export type HydradxRuntimeRuntimeEvent =
   | { pallet: 'Xyk'; palletEvent: PalletXykEvent }
   | { pallet: 'Referrals'; palletEvent: PalletReferralsEvent }
   | { pallet: 'Liquidation'; palletEvent: PalletLiquidationEvent }
+  | { pallet: 'Hsm'; palletEvent: PalletHsmEvent }
   | { pallet: 'Tokens'; palletEvent: OrmlTokensModuleEvent }
   | { pallet: 'Currencies'; palletEvent: PalletCurrenciesModuleEvent }
   | { pallet: 'Vesting'; palletEvent: OrmlVestingModuleEvent }
@@ -623,48 +621,6 @@ export type PalletDemocracyMetadataOwner =
 /**
  * The `Event` enum of this pallet
  **/
-export type PalletElectionsPhragmenEvent =
-  /**
-   * A new term with new_members. This indicates that enough candidates existed to run
-   * the election, not that enough have has been elected. The inner value must be examined
-   * for this purpose. A `NewTerm(\[\])` indicates that some candidates got their bond
-   * slashed and none were elected, whilst `EmptyTerm` means that no candidates existed to
-   * begin with.
-   **/
-  | { name: 'NewTerm'; data: { newMembers: Array<[AccountId32, bigint]> } }
-  /**
-   * No (or not enough) candidates existed for this round. This is different from
-   * `NewTerm(\[\])`. See the description of `NewTerm`.
-   **/
-  | { name: 'EmptyTerm' }
-  /**
-   * Internal error happened while trying to perform election.
-   **/
-  | { name: 'ElectionError' }
-  /**
-   * A member has been removed. This should always be followed by either `NewTerm` or
-   * `EmptyTerm`.
-   **/
-  | { name: 'MemberKicked'; data: { member: AccountId32 } }
-  /**
-   * Someone has renounced their candidacy.
-   **/
-  | { name: 'Renounced'; data: { candidate: AccountId32 } }
-  /**
-   * A candidate was slashed by amount due to failing to obtain a seat as member or
-   * runner-up.
-   *
-   * Note that old members and runners-up are also candidates.
-   **/
-  | { name: 'CandidateSlashed'; data: { candidate: AccountId32; amount: bigint } }
-  /**
-   * A seat holder was slashed by amount by being forcefully removed from the set.
-   **/
-  | { name: 'SeatHolderSlashed'; data: { seatHolder: AccountId32; amount: bigint } };
-
-/**
- * The `Event` enum of this pallet
- **/
 export type PalletCollectiveEvent =
   /**
    * A motion (given hash) has been proposed (by given account) with a threshold (given
@@ -696,31 +652,6 @@ export type PalletCollectiveEvent =
    * A proposal was closed because its threshold was reached or after its duration was up.
    **/
   | { name: 'Closed'; data: { proposalHash: H256; yes: number; no: number } };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletTipsEvent =
-  /**
-   * A new tip suggestion has been opened.
-   **/
-  | { name: 'NewTip'; data: { tipHash: H256 } }
-  /**
-   * A tip suggestion has reached threshold and is closing.
-   **/
-  | { name: 'TipClosing'; data: { tipHash: H256 } }
-  /**
-   * A tip suggestion has been closed.
-   **/
-  | { name: 'TipClosed'; data: { tipHash: H256; who: AccountId32; payout: bigint } }
-  /**
-   * A tip suggestion has been retracted.
-   **/
-  | { name: 'TipRetracted'; data: { tipHash: H256 } }
-  /**
-   * A tip suggestion has been slashed.
-   **/
-  | { name: 'TipSlashed'; data: { tipHash: H256; finder: AccountId32; deposit: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -1327,10 +1258,7 @@ export type HydradxRuntimeRuntimeCall =
   | { pallet: 'Preimage'; palletCall: PalletPreimageCall }
   | { pallet: 'Identity'; palletCall: PalletIdentityCall }
   | { pallet: 'Democracy'; palletCall: PalletDemocracyCall }
-  | { pallet: 'Elections'; palletCall: PalletElectionsPhragmenCall }
-  | { pallet: 'Council'; palletCall: PalletCollectiveCall }
   | { pallet: 'TechnicalCommittee'; palletCall: PalletCollectiveCall }
-  | { pallet: 'Tips'; palletCall: PalletTipsCall }
   | { pallet: 'Proxy'; palletCall: PalletProxyCall }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
   | { pallet: 'Uniques'; palletCall: PalletUniquesCall }
@@ -1359,6 +1287,7 @@ export type HydradxRuntimeRuntimeCall =
   | { pallet: 'Xyk'; palletCall: PalletXykCall }
   | { pallet: 'Referrals'; palletCall: PalletReferralsCall }
   | { pallet: 'Liquidation'; palletCall: PalletLiquidationCall }
+  | { pallet: 'Hsm'; palletCall: PalletHsmCall }
   | { pallet: 'Tokens'; palletCall: OrmlTokensModuleCall }
   | { pallet: 'Currencies'; palletCall: PalletCurrenciesModuleCall }
   | { pallet: 'Vesting'; palletCall: OrmlVestingModuleCall }
@@ -1392,10 +1321,7 @@ export type HydradxRuntimeRuntimeCallLike =
   | { pallet: 'Preimage'; palletCall: PalletPreimageCallLike }
   | { pallet: 'Identity'; palletCall: PalletIdentityCallLike }
   | { pallet: 'Democracy'; palletCall: PalletDemocracyCallLike }
-  | { pallet: 'Elections'; palletCall: PalletElectionsPhragmenCallLike }
-  | { pallet: 'Council'; palletCall: PalletCollectiveCallLike }
   | { pallet: 'TechnicalCommittee'; palletCall: PalletCollectiveCallLike }
-  | { pallet: 'Tips'; palletCall: PalletTipsCallLike }
   | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
   | { pallet: 'Uniques'; palletCall: PalletUniquesCallLike }
@@ -1424,6 +1350,7 @@ export type HydradxRuntimeRuntimeCallLike =
   | { pallet: 'Xyk'; palletCall: PalletXykCallLike }
   | { pallet: 'Referrals'; palletCall: PalletReferralsCallLike }
   | { pallet: 'Liquidation'; palletCall: PalletLiquidationCallLike }
+  | { pallet: 'Hsm'; palletCall: PalletHsmCallLike }
   | { pallet: 'Tokens'; palletCall: OrmlTokensModuleCallLike }
   | { pallet: 'Currencies'; palletCall: PalletCurrenciesModuleCallLike }
   | { pallet: 'Vesting'; palletCall: OrmlVestingModuleCallLike }
@@ -2421,7 +2348,6 @@ export type PalletUtilityCallLike =
 
 export type HydradxRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
-  | { type: 'Council'; value: PalletCollectiveRawOrigin }
   | { type: 'TechnicalCommittee'; value: PalletCollectiveRawOrigin }
   | { type: 'Origins'; value: HydradxRuntimeGovernanceOriginsPalletCustomOriginsOrigin }
   | { type: 'Ethereum'; value: PalletEthereumRawOrigin }
@@ -3686,222 +3612,6 @@ export type PalletDemocracyConviction =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletElectionsPhragmenCall =
-  /**
-   * Vote for a set of candidates for the upcoming round of election. This can be called to
-   * set the initial votes, or update already existing votes.
-   *
-   * Upon initial voting, `value` units of `who`'s balance is locked and a deposit amount is
-   * reserved. The deposit is based on the number of votes and can be updated over time.
-   *
-   * The `votes` should:
-   * - not be empty.
-   * - be less than the number of possible candidates. Note that all current members and
-   * runners-up are also automatically candidates for the next round.
-   *
-   * If `value` is more than `who`'s free balance, then the maximum of the two is used.
-   *
-   * The dispatch origin of this call must be signed.
-   *
-   * ### Warning
-   *
-   * It is the responsibility of the caller to **NOT** place all of their balance into the
-   * lock and keep some for further operations.
-   **/
-  | { name: 'Vote'; params: { votes: Array<AccountId32>; value: bigint } }
-  /**
-   * Remove `origin` as a voter.
-   *
-   * This removes the lock and returns the deposit.
-   *
-   * The dispatch origin of this call must be signed and be a voter.
-   **/
-  | { name: 'RemoveVoter' }
-  /**
-   * Submit oneself for candidacy. A fixed amount of deposit is recorded.
-   *
-   * All candidates are wiped at the end of the term. They either become a member/runner-up,
-   * or leave the system while their deposit is slashed.
-   *
-   * The dispatch origin of this call must be signed.
-   *
-   * ### Warning
-   *
-   * Even if a candidate ends up being a member, they must call [`Call::renounce_candidacy`]
-   * to get their deposit back. Losing the spot in an election will always lead to a slash.
-   *
-   * The number of current candidates must be provided as witness data.
-   * ## Complexity
-   * O(C + log(C)) where C is candidate_count.
-   **/
-  | { name: 'SubmitCandidacy'; params: { candidateCount: number } }
-  /**
-   * Renounce one's intention to be a candidate for the next election round. 3 potential
-   * outcomes exist:
-   *
-   * - `origin` is a candidate and not elected in any set. In this case, the deposit is
-   * unreserved, returned and origin is removed as a candidate.
-   * - `origin` is a current runner-up. In this case, the deposit is unreserved, returned and
-   * origin is removed as a runner-up.
-   * - `origin` is a current member. In this case, the deposit is unreserved and origin is
-   * removed as a member, consequently not being a candidate for the next round anymore.
-   * Similar to [`remove_member`](Self::remove_member), if replacement runners exists, they
-   * are immediately used. If the prime is renouncing, then no prime will exist until the
-   * next round.
-   *
-   * The dispatch origin of this call must be signed, and have one of the above roles.
-   * The type of renouncing must be provided as witness data.
-   *
-   * ## Complexity
-   * - Renouncing::Candidate(count): O(count + log(count))
-   * - Renouncing::Member: O(1)
-   * - Renouncing::RunnerUp: O(1)
-   **/
-  | { name: 'RenounceCandidacy'; params: { renouncing: PalletElectionsPhragmenRenouncing } }
-  /**
-   * Remove a particular member from the set. This is effective immediately and the bond of
-   * the outgoing member is slashed.
-   *
-   * If a runner-up is available, then the best runner-up will be removed and replaces the
-   * outgoing member. Otherwise, if `rerun_election` is `true`, a new phragmen election is
-   * started, else, nothing happens.
-   *
-   * If `slash_bond` is set to true, the bond of the member being removed is slashed. Else,
-   * it is returned.
-   *
-   * The dispatch origin of this call must be root.
-   *
-   * Note that this does not affect the designated block number of the next election.
-   *
-   * ## Complexity
-   * - Check details of remove_and_replace_member() and do_phragmen().
-   **/
-  | { name: 'RemoveMember'; params: { who: AccountId32; slashBond: boolean; rerunElection: boolean } }
-  /**
-   * Clean all voters who are defunct (i.e. they do not serve any purpose at all). The
-   * deposit of the removed voters are returned.
-   *
-   * This is an root function to be used only for cleaning the state.
-   *
-   * The dispatch origin of this call must be root.
-   *
-   * ## Complexity
-   * - Check is_defunct_voter() details.
-   **/
-  | { name: 'CleanDefunctVoters'; params: { numVoters: number; numDefunct: number } };
-
-export type PalletElectionsPhragmenCallLike =
-  /**
-   * Vote for a set of candidates for the upcoming round of election. This can be called to
-   * set the initial votes, or update already existing votes.
-   *
-   * Upon initial voting, `value` units of `who`'s balance is locked and a deposit amount is
-   * reserved. The deposit is based on the number of votes and can be updated over time.
-   *
-   * The `votes` should:
-   * - not be empty.
-   * - be less than the number of possible candidates. Note that all current members and
-   * runners-up are also automatically candidates for the next round.
-   *
-   * If `value` is more than `who`'s free balance, then the maximum of the two is used.
-   *
-   * The dispatch origin of this call must be signed.
-   *
-   * ### Warning
-   *
-   * It is the responsibility of the caller to **NOT** place all of their balance into the
-   * lock and keep some for further operations.
-   **/
-  | { name: 'Vote'; params: { votes: Array<AccountId32Like>; value: bigint } }
-  /**
-   * Remove `origin` as a voter.
-   *
-   * This removes the lock and returns the deposit.
-   *
-   * The dispatch origin of this call must be signed and be a voter.
-   **/
-  | { name: 'RemoveVoter' }
-  /**
-   * Submit oneself for candidacy. A fixed amount of deposit is recorded.
-   *
-   * All candidates are wiped at the end of the term. They either become a member/runner-up,
-   * or leave the system while their deposit is slashed.
-   *
-   * The dispatch origin of this call must be signed.
-   *
-   * ### Warning
-   *
-   * Even if a candidate ends up being a member, they must call [`Call::renounce_candidacy`]
-   * to get their deposit back. Losing the spot in an election will always lead to a slash.
-   *
-   * The number of current candidates must be provided as witness data.
-   * ## Complexity
-   * O(C + log(C)) where C is candidate_count.
-   **/
-  | { name: 'SubmitCandidacy'; params: { candidateCount: number } }
-  /**
-   * Renounce one's intention to be a candidate for the next election round. 3 potential
-   * outcomes exist:
-   *
-   * - `origin` is a candidate and not elected in any set. In this case, the deposit is
-   * unreserved, returned and origin is removed as a candidate.
-   * - `origin` is a current runner-up. In this case, the deposit is unreserved, returned and
-   * origin is removed as a runner-up.
-   * - `origin` is a current member. In this case, the deposit is unreserved and origin is
-   * removed as a member, consequently not being a candidate for the next round anymore.
-   * Similar to [`remove_member`](Self::remove_member), if replacement runners exists, they
-   * are immediately used. If the prime is renouncing, then no prime will exist until the
-   * next round.
-   *
-   * The dispatch origin of this call must be signed, and have one of the above roles.
-   * The type of renouncing must be provided as witness data.
-   *
-   * ## Complexity
-   * - Renouncing::Candidate(count): O(count + log(count))
-   * - Renouncing::Member: O(1)
-   * - Renouncing::RunnerUp: O(1)
-   **/
-  | { name: 'RenounceCandidacy'; params: { renouncing: PalletElectionsPhragmenRenouncing } }
-  /**
-   * Remove a particular member from the set. This is effective immediately and the bond of
-   * the outgoing member is slashed.
-   *
-   * If a runner-up is available, then the best runner-up will be removed and replaces the
-   * outgoing member. Otherwise, if `rerun_election` is `true`, a new phragmen election is
-   * started, else, nothing happens.
-   *
-   * If `slash_bond` is set to true, the bond of the member being removed is slashed. Else,
-   * it is returned.
-   *
-   * The dispatch origin of this call must be root.
-   *
-   * Note that this does not affect the designated block number of the next election.
-   *
-   * ## Complexity
-   * - Check details of remove_and_replace_member() and do_phragmen().
-   **/
-  | { name: 'RemoveMember'; params: { who: AccountId32Like; slashBond: boolean; rerunElection: boolean } }
-  /**
-   * Clean all voters who are defunct (i.e. they do not serve any purpose at all). The
-   * deposit of the removed voters are returned.
-   *
-   * This is an root function to be used only for cleaning the state.
-   *
-   * The dispatch origin of this call must be root.
-   *
-   * ## Complexity
-   * - Check is_defunct_voter() details.
-   **/
-  | { name: 'CleanDefunctVoters'; params: { numVoters: number; numDefunct: number } };
-
-export type PalletElectionsPhragmenRenouncing =
-  | { type: 'Member' }
-  | { type: 'RunnerUp' }
-  | { type: 'Candidate'; value: number };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
 export type PalletCollectiveCall =
   /**
    * Set the collective's membership.
@@ -4133,239 +3843,6 @@ export type PalletCollectiveCallLike =
       name: 'Close';
       params: { proposalHash: H256; index: number; proposalWeightBound: SpWeightsWeightV2Weight; lengthBound: number };
     };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletTipsCall =
-  /**
-   * Report something `reason` that deserves a tip and claim any eventual the finder's fee.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Payment: `TipReportDepositBase` will be reserved from the origin account, as well as
-   * `DataDepositPerByte` for each byte in `reason`.
-   *
-   * - `reason`: The reason for, or the thing that deserves, the tip; generally this will be
-   * a UTF-8-encoded URL.
-   * - `who`: The account which should be credited for the tip.
-   *
-   * Emits `NewTip` if successful.
-   *
-   * ## Complexity
-   * - `O(R)` where `R` length of `reason`.
-   * - encoding and hashing of 'reason'
-   **/
-  | { name: 'ReportAwesome'; params: { reason: Bytes; who: AccountId32 } }
-  /**
-   * Retract a prior tip-report from `report_awesome`, and cancel the process of tipping.
-   *
-   * If successful, the original deposit will be unreserved.
-   *
-   * The dispatch origin for this call must be _Signed_ and the tip identified by `hash`
-   * must have been reported by the signing account through `report_awesome` (and not
-   * through `tip_new`).
-   *
-   * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-   * as the hash of the tuple of the original tip `reason` and the beneficiary account ID.
-   *
-   * Emits `TipRetracted` if successful.
-   *
-   * ## Complexity
-   * - `O(1)`
-   * - Depends on the length of `T::Hash` which is fixed.
-   **/
-  | { name: 'RetractTip'; params: { hash: H256 } }
-  /**
-   * Give a tip for something new; no finder's fee will be taken.
-   *
-   * The dispatch origin for this call must be _Signed_ and the signing account must be a
-   * member of the `Tippers` set.
-   *
-   * - `reason`: The reason for, or the thing that deserves, the tip; generally this will be
-   * a UTF-8-encoded URL.
-   * - `who`: The account which should be credited for the tip.
-   * - `tip_value`: The amount of tip that the sender would like to give. The median tip
-   * value of active tippers will be given to the `who`.
-   *
-   * Emits `NewTip` if successful.
-   *
-   * ## Complexity
-   * - `O(R + T)` where `R` length of `reason`, `T` is the number of tippers.
-   * - `O(T)`: decoding `Tipper` vec of length `T`. `T` is charged as upper bound given by
-   * `ContainsLengthBound`. The actual cost depends on the implementation of
-   * `T::Tippers`.
-   * - `O(R)`: hashing and encoding of reason of length `R`
-   **/
-  | { name: 'TipNew'; params: { reason: Bytes; who: AccountId32; tipValue: bigint } }
-  /**
-   * Declare a tip value for an already-open tip.
-   *
-   * The dispatch origin for this call must be _Signed_ and the signing account must be a
-   * member of the `Tippers` set.
-   *
-   * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-   * as the hash of the tuple of the hash of the original tip `reason` and the beneficiary
-   * account ID.
-   * - `tip_value`: The amount of tip that the sender would like to give. The median tip
-   * value of active tippers will be given to the `who`.
-   *
-   * Emits `TipClosing` if the threshold of tippers has been reached and the countdown period
-   * has started.
-   *
-   * ## Complexity
-   * - `O(T)` where `T` is the number of tippers. decoding `Tipper` vec of length `T`, insert
-   * tip and check closing, `T` is charged as upper bound given by `ContainsLengthBound`.
-   * The actual cost depends on the implementation of `T::Tippers`.
-   *
-   * Actually weight could be lower as it depends on how many tips are in `OpenTip` but it
-   * is weighted as if almost full i.e of length `T-1`.
-   **/
-  | { name: 'Tip'; params: { hash: H256; tipValue: bigint } }
-  /**
-   * Close and payout a tip.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * The tip identified by `hash` must have finished its countdown period.
-   *
-   * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-   * as the hash of the tuple of the original tip `reason` and the beneficiary account ID.
-   *
-   * ## Complexity
-   * - : `O(T)` where `T` is the number of tippers. decoding `Tipper` vec of length `T`. `T`
-   * is charged as upper bound given by `ContainsLengthBound`. The actual cost depends on
-   * the implementation of `T::Tippers`.
-   **/
-  | { name: 'CloseTip'; params: { hash: H256 } }
-  /**
-   * Remove and slash an already-open tip.
-   *
-   * May only be called from `T::RejectOrigin`.
-   *
-   * As a result, the finder is slashed and the deposits are lost.
-   *
-   * Emits `TipSlashed` if successful.
-   *
-   * ## Complexity
-   * - O(1).
-   **/
-  | { name: 'SlashTip'; params: { hash: H256 } };
-
-export type PalletTipsCallLike =
-  /**
-   * Report something `reason` that deserves a tip and claim any eventual the finder's fee.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Payment: `TipReportDepositBase` will be reserved from the origin account, as well as
-   * `DataDepositPerByte` for each byte in `reason`.
-   *
-   * - `reason`: The reason for, or the thing that deserves, the tip; generally this will be
-   * a UTF-8-encoded URL.
-   * - `who`: The account which should be credited for the tip.
-   *
-   * Emits `NewTip` if successful.
-   *
-   * ## Complexity
-   * - `O(R)` where `R` length of `reason`.
-   * - encoding and hashing of 'reason'
-   **/
-  | { name: 'ReportAwesome'; params: { reason: BytesLike; who: AccountId32Like } }
-  /**
-   * Retract a prior tip-report from `report_awesome`, and cancel the process of tipping.
-   *
-   * If successful, the original deposit will be unreserved.
-   *
-   * The dispatch origin for this call must be _Signed_ and the tip identified by `hash`
-   * must have been reported by the signing account through `report_awesome` (and not
-   * through `tip_new`).
-   *
-   * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-   * as the hash of the tuple of the original tip `reason` and the beneficiary account ID.
-   *
-   * Emits `TipRetracted` if successful.
-   *
-   * ## Complexity
-   * - `O(1)`
-   * - Depends on the length of `T::Hash` which is fixed.
-   **/
-  | { name: 'RetractTip'; params: { hash: H256 } }
-  /**
-   * Give a tip for something new; no finder's fee will be taken.
-   *
-   * The dispatch origin for this call must be _Signed_ and the signing account must be a
-   * member of the `Tippers` set.
-   *
-   * - `reason`: The reason for, or the thing that deserves, the tip; generally this will be
-   * a UTF-8-encoded URL.
-   * - `who`: The account which should be credited for the tip.
-   * - `tip_value`: The amount of tip that the sender would like to give. The median tip
-   * value of active tippers will be given to the `who`.
-   *
-   * Emits `NewTip` if successful.
-   *
-   * ## Complexity
-   * - `O(R + T)` where `R` length of `reason`, `T` is the number of tippers.
-   * - `O(T)`: decoding `Tipper` vec of length `T`. `T` is charged as upper bound given by
-   * `ContainsLengthBound`. The actual cost depends on the implementation of
-   * `T::Tippers`.
-   * - `O(R)`: hashing and encoding of reason of length `R`
-   **/
-  | { name: 'TipNew'; params: { reason: BytesLike; who: AccountId32Like; tipValue: bigint } }
-  /**
-   * Declare a tip value for an already-open tip.
-   *
-   * The dispatch origin for this call must be _Signed_ and the signing account must be a
-   * member of the `Tippers` set.
-   *
-   * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-   * as the hash of the tuple of the hash of the original tip `reason` and the beneficiary
-   * account ID.
-   * - `tip_value`: The amount of tip that the sender would like to give. The median tip
-   * value of active tippers will be given to the `who`.
-   *
-   * Emits `TipClosing` if the threshold of tippers has been reached and the countdown period
-   * has started.
-   *
-   * ## Complexity
-   * - `O(T)` where `T` is the number of tippers. decoding `Tipper` vec of length `T`, insert
-   * tip and check closing, `T` is charged as upper bound given by `ContainsLengthBound`.
-   * The actual cost depends on the implementation of `T::Tippers`.
-   *
-   * Actually weight could be lower as it depends on how many tips are in `OpenTip` but it
-   * is weighted as if almost full i.e of length `T-1`.
-   **/
-  | { name: 'Tip'; params: { hash: H256; tipValue: bigint } }
-  /**
-   * Close and payout a tip.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * The tip identified by `hash` must have finished its countdown period.
-   *
-   * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-   * as the hash of the tuple of the original tip `reason` and the beneficiary account ID.
-   *
-   * ## Complexity
-   * - : `O(T)` where `T` is the number of tippers. decoding `Tipper` vec of length `T`. `T`
-   * is charged as upper bound given by `ContainsLengthBound`. The actual cost depends on
-   * the implementation of `T::Tippers`.
-   **/
-  | { name: 'CloseTip'; params: { hash: H256 } }
-  /**
-   * Remove and slash an already-open tip.
-   *
-   * May only be called from `T::RejectOrigin`.
-   *
-   * As a result, the finder is slashed and the deposits are lost.
-   *
-   * Emits `TipSlashed` if successful.
-   *
-   * ## Complexity
-   * - O(1).
-   **/
-  | { name: 'SlashTip'; params: { hash: H256 } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8240,7 +7717,50 @@ export type PalletCircuitBreakerCall =
    * Emits `RemoveLiquidityLimitChanged` event when successful.
    *
    **/
-  | { name: 'SetRemoveLiquidityLimit'; params: { assetId: number; liquidityLimit?: [number, number] | undefined } };
+  | { name: 'SetRemoveLiquidityLimit'; params: { assetId: number; liquidityLimit?: [number, number] | undefined } }
+  /**
+   * Lockdown an asset for minting
+   *
+   * Can be called only by an authority origin
+   *
+   * Parameters:
+   * - `origin`: The dispatch origin for this call. Must be `AuthorityOrigin`
+   * - `asset_id`: The identifier of an asset
+   * - `until`: The block number until which the asset is locked
+   *
+   * /// Emits `AssetLockdowned` event when successful.
+   **/
+  | { name: 'LockdownAsset'; params: { assetId: number; until: number } }
+  /**
+   * Remove asset lockdown regardless of the state.
+   *
+   * Can be called only by an authority origin
+   *
+   * Parameters:
+   *
+   * - `origin`: The dispatch origin for this call. Must be `AuthorityOrigin`
+   * - `asset_id`: The identifier of an asset
+   *
+   * Emits `AssetLockdownRemoved` event when successful.
+   **/
+  | { name: 'ForceLiftLockdown'; params: { assetId: number } }
+  /**
+   * Release deposit of an asset.
+   *
+   * It releases all the pallet reserved balance of the asset for the given account
+   *
+   * Can be called by any origin, but only if the asset is not in active lockdown.
+   *
+   * The caller does not pay for this call if successful.
+   *
+   * Parameters:
+   * - `origin`: The dispatch origin for this call. Can be signed or root.
+   * - `who`: The account that is saving the deposit.
+   * - `asset_id`: The identifier of the asset.
+   *
+   * Emits `DepositReleased` event when successful.
+   **/
+  | { name: 'ReleaseDeposit'; params: { who: AccountId32; assetId: number } };
 
 export type PalletCircuitBreakerCallLike =
   /**
@@ -8278,7 +7798,50 @@ export type PalletCircuitBreakerCallLike =
    * Emits `RemoveLiquidityLimitChanged` event when successful.
    *
    **/
-  | { name: 'SetRemoveLiquidityLimit'; params: { assetId: number; liquidityLimit?: [number, number] | undefined } };
+  | { name: 'SetRemoveLiquidityLimit'; params: { assetId: number; liquidityLimit?: [number, number] | undefined } }
+  /**
+   * Lockdown an asset for minting
+   *
+   * Can be called only by an authority origin
+   *
+   * Parameters:
+   * - `origin`: The dispatch origin for this call. Must be `AuthorityOrigin`
+   * - `asset_id`: The identifier of an asset
+   * - `until`: The block number until which the asset is locked
+   *
+   * /// Emits `AssetLockdowned` event when successful.
+   **/
+  | { name: 'LockdownAsset'; params: { assetId: number; until: number } }
+  /**
+   * Remove asset lockdown regardless of the state.
+   *
+   * Can be called only by an authority origin
+   *
+   * Parameters:
+   *
+   * - `origin`: The dispatch origin for this call. Must be `AuthorityOrigin`
+   * - `asset_id`: The identifier of an asset
+   *
+   * Emits `AssetLockdownRemoved` event when successful.
+   **/
+  | { name: 'ForceLiftLockdown'; params: { assetId: number } }
+  /**
+   * Release deposit of an asset.
+   *
+   * It releases all the pallet reserved balance of the asset for the given account
+   *
+   * Can be called by any origin, but only if the asset is not in active lockdown.
+   *
+   * The caller does not pay for this call if successful.
+   *
+   * Parameters:
+   * - `origin`: The dispatch origin for this call. Can be signed or root.
+   * - `who`: The account that is saving the deposit.
+   * - `asset_id`: The identifier of the asset.
+   *
+   * Emits `DepositReleased` event when successful.
+   **/
+  | { name: 'ReleaseDeposit'; params: { who: AccountId32Like; assetId: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8522,16 +8085,75 @@ export type HydradxTraitsRouterPoolType =
   | { type: 'Lbp' }
   | { type: 'Stableswap'; value: number }
   | { type: 'Omnipool' }
-  | { type: 'Aave' };
+  | { type: 'Aave' }
+  | { type: 'Hsm' };
 
 export type HydradxTraitsRouterAssetPair = { assetIn: number; assetOut: number };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletDynamicFeesCall = null;
+export type PalletDynamicFeesCall =
+  /**
+   * Set fee configuration for an asset
+   *
+   * This function allows setting either fixed or dynamic fee configuration for a specific asset.
+   *
+   * # Arguments
+   * * `origin` - Root origin required
+   * * `asset_id` - The asset ID to configure
+   * * `config` - Fee configuration (Fixed or Dynamic)
+   **/
+  | { name: 'SetAssetFee'; params: { assetId: number; config: PalletDynamicFeesAssetFeeConfig } }
+  /**
+   * Remove fee configuration for an asset (will use default parameters)
+   *
+   * This function removes any custom fee configuration for the specified asset.
+   * After removal, the asset will use the default dynamic fee parameters configured in the runtime.
+   *
+   * # Arguments
+   * * `origin` - Root origin required
+   * * `asset_id` - The asset ID to remove configuration for
+   **/
+  | { name: 'RemoveAssetFee'; params: { assetId: number } };
 
-export type PalletDynamicFeesCallLike = null;
+export type PalletDynamicFeesCallLike =
+  /**
+   * Set fee configuration for an asset
+   *
+   * This function allows setting either fixed or dynamic fee configuration for a specific asset.
+   *
+   * # Arguments
+   * * `origin` - Root origin required
+   * * `asset_id` - The asset ID to configure
+   * * `config` - Fee configuration (Fixed or Dynamic)
+   **/
+  | { name: 'SetAssetFee'; params: { assetId: number; config: PalletDynamicFeesAssetFeeConfig } }
+  /**
+   * Remove fee configuration for an asset (will use default parameters)
+   *
+   * This function removes any custom fee configuration for the specified asset.
+   * After removal, the asset will use the default dynamic fee parameters configured in the runtime.
+   *
+   * # Arguments
+   * * `origin` - Root origin required
+   * * `asset_id` - The asset ID to remove configuration for
+   **/
+  | { name: 'RemoveAssetFee'; params: { assetId: number } };
+
+export type PalletDynamicFeesAssetFeeConfig =
+  | { type: 'Fixed'; value: { assetFee: Permill; protocolFee: Permill } }
+  | {
+      type: 'Dynamic';
+      value: { assetFeeParams: PalletDynamicFeesFeeParams; protocolFeeParams: PalletDynamicFeesFeeParams };
+    };
+
+export type PalletDynamicFeesFeeParams = {
+  minFee: Permill;
+  maxFee: Permill;
+  decay: FixedU128;
+  amplification: FixedU128;
+};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8981,7 +8603,48 @@ export type PalletStableswapCall =
   | {
       name: 'AddAssetsLiquidity';
       params: { poolId: number; assets: Array<HydradxTraitsStableswapAssetAmount>; minShares: bigint };
-    };
+    }
+  /**
+   * Update the peg source for a specific asset in a pool.
+   *
+   * This function allows updating the peg source for an asset within a pool.
+   * The pool must exist and have pegs configured. The asset must be part of the pool.
+   * The current price is always preserved when updating the peg source.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`.
+   * - `pool_id`: The ID of the pool containing the asset.
+   * - `asset_id`: The ID of the asset whose peg source is to be updated.
+   * - `peg_source`: The new peg source for the asset.
+   *
+   * Emits `PoolPegSourceUpdated` event when successful.
+   *
+   * # Errors
+   * - `PoolNotFound`: If the specified pool does not exist.
+   * - `NoPegSource`: If the pool does not have pegs configured.
+   * - `AssetNotInPool`: If the specified asset is not part of the pool.
+   *
+   **/
+  | { name: 'UpdateAssetPegSource'; params: { poolId: number; assetId: number; pegSource: PalletStableswapPegSource } }
+  /**
+   * Update the maximum peg update percentage for a pool.
+   *
+   * This function allows updating the maximum percentage by which peg values
+   * can change in a pool with pegs configured.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`.
+   * - `pool_id`: The ID of the pool to update.
+   * - `max_peg_update`: The new maximum peg update percentage.
+   *
+   * Emits `PoolMaxPegUpdateUpdated` event when successful.
+   *
+   * # Errors
+   * - `PoolNotFound`: If the specified pool does not exist.
+   * - `NoPegSource`: If the pool does not have pegs configured.
+   *
+   **/
+  | { name: 'UpdatePoolMaxPegUpdate'; params: { poolId: number; maxPegUpdate: Permill } };
 
 export type PalletStableswapCallLike =
   /**
@@ -9265,13 +8928,55 @@ export type PalletStableswapCallLike =
   | {
       name: 'AddAssetsLiquidity';
       params: { poolId: number; assets: Array<HydradxTraitsStableswapAssetAmount>; minShares: bigint };
-    };
+    }
+  /**
+   * Update the peg source for a specific asset in a pool.
+   *
+   * This function allows updating the peg source for an asset within a pool.
+   * The pool must exist and have pegs configured. The asset must be part of the pool.
+   * The current price is always preserved when updating the peg source.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`.
+   * - `pool_id`: The ID of the pool containing the asset.
+   * - `asset_id`: The ID of the asset whose peg source is to be updated.
+   * - `peg_source`: The new peg source for the asset.
+   *
+   * Emits `PoolPegSourceUpdated` event when successful.
+   *
+   * # Errors
+   * - `PoolNotFound`: If the specified pool does not exist.
+   * - `NoPegSource`: If the pool does not have pegs configured.
+   * - `AssetNotInPool`: If the specified asset is not part of the pool.
+   *
+   **/
+  | { name: 'UpdateAssetPegSource'; params: { poolId: number; assetId: number; pegSource: PalletStableswapPegSource } }
+  /**
+   * Update the maximum peg update percentage for a pool.
+   *
+   * This function allows updating the maximum percentage by which peg values
+   * can change in a pool with pegs configured.
+   *
+   * Parameters:
+   * - `origin`: Must be `T::AuthorityOrigin`.
+   * - `pool_id`: The ID of the pool to update.
+   * - `max_peg_update`: The new maximum peg update percentage.
+   *
+   * Emits `PoolMaxPegUpdateUpdated` event when successful.
+   *
+   * # Errors
+   * - `PoolNotFound`: If the specified pool does not exist.
+   * - `NoPegSource`: If the pool does not have pegs configured.
+   *
+   **/
+  | { name: 'UpdatePoolMaxPegUpdate'; params: { poolId: number; maxPegUpdate: Permill } };
 
 export type PalletStableswapTradability = { bits: number };
 
 export type PalletStableswapPegSource =
   | { type: 'Value'; value: [bigint, bigint] }
-  | { type: 'Oracle'; value: [FixedBytes<8>, HydradxTraitsOracleOraclePeriod, number] };
+  | { type: 'Oracle'; value: [FixedBytes<8>, HydradxTraitsOracleOraclePeriod, number] }
+  | { type: 'MmOracle'; value: H160 };
 
 export type HydradxTraitsOracleOraclePeriod = 'LastBlock' | 'Short' | 'TenMinutes' | 'Hour' | 'Day' | 'Week';
 
@@ -10052,6 +9757,361 @@ export type PalletLiquidationCallLike =
    * Set the borrowing market contract address.
    **/
   | { name: 'SetBorrowingContract'; params: { contract: H160 } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletHsmCall =
+  /**
+   * Add a new collateral asset
+   *
+   * This function adds a new asset as an approved collateral for Hollar. Only callable by
+   * the governance (root origin).
+   *
+   * Parameters:
+   * - `origin`: Must be Root
+   * - `asset_id`: Asset ID to be added as collateral
+   * - `pool_id`: StableSwap pool ID where this asset and Hollar are paired
+   * - `purchase_fee`: Fee applied when buying Hollar with this asset (added to purchase price)
+   * - `max_buy_price_coefficient`: Maximum buy price coefficient for HSM to buy back Hollar
+   * - `buy_back_fee`: Fee applied when buying back Hollar (subtracted from buy price)
+   * - `buyback_rate`: Parameter that controls how quickly HSM can buy Hollar with this asset
+   * - `max_in_holding`: Optional maximum amount of collateral HSM can hold
+   *
+   * Emits:
+   * - `CollateralAdded` when the collateral is successfully added
+   *
+   * Errors:
+   * - `AssetAlreadyApproved` if the asset is already registered as a collateral
+   * - `PoolAlreadyHasCollateral` if another asset from the same pool is already approved
+   * - `HollarNotInPool` if Hollar is not found in the specified pool
+   * - `AssetNotInPool` if the collateral asset is not found in the specified pool
+   * - Other errors from underlying calls
+   **/
+  | {
+      name: 'AddCollateralAsset';
+      params: {
+        assetId: number;
+        poolId: number;
+        purchaseFee: Permill;
+        maxBuyPriceCoefficient: FixedU128;
+        buyBackFee: Permill;
+        buybackRate: Perbill;
+        maxInHolding?: bigint | undefined;
+      };
+    }
+  /**
+   * Remove a collateral asset
+   *
+   * Removes an asset from the approved collaterals list. Only callable by the governance (root origin).
+   * The collateral must have a zero balance in the HSM account before it can be removed.
+   *
+   * Parameters:
+   * - `origin`: Must be Root
+   * - `asset_id`: Asset ID to remove from collaterals
+   *
+   * Emits:
+   * - `CollateralRemoved` when the collateral is successfully removed
+   *
+   * Errors:
+   * - `AssetNotApproved` if the asset is not a registered collateral
+   * - `CollateralNotEmpty` if the HSM account still holds some of this asset
+   **/
+  | { name: 'RemoveCollateralAsset'; params: { assetId: number } }
+  /**
+   * Update collateral asset parameters
+   *
+   * Updates the parameters for an existing collateral asset. Only callable by the governance (root origin).
+   * Each parameter is optional and only provided parameters will be updated.
+   *
+   * Parameters:
+   * - `origin`: Must be Root
+   * - `asset_id`: Asset ID to update
+   * - `purchase_fee`: New purchase fee (optional)
+   * - `max_buy_price_coefficient`: New max buy price coefficient (optional)
+   * - `buy_back_fee`: New buy back fee (optional)
+   * - `buyback_rate`: New buyback rate parameter (optional)
+   * - `max_in_holding`: New maximum holding amount (optional)
+   *
+   * Emits:
+   * - `CollateralUpdated` when the collateral is successfully updated
+   *
+   * Errors:
+   * - `AssetNotApproved` if the asset is not a registered collateral
+   **/
+  | {
+      name: 'UpdateCollateralAsset';
+      params: {
+        assetId: number;
+        purchaseFee?: Permill | undefined;
+        maxBuyPriceCoefficient?: FixedU128 | undefined;
+        buyBackFee?: Permill | undefined;
+        buybackRate?: Perbill | undefined;
+        maxInHolding?: bigint | undefined | undefined;
+      };
+    }
+  /**
+   * Sell asset to HSM
+   *
+   * This function allows users to:
+   * 1. Sell Hollar back to HSM in exchange for collateral assets
+   * 2. Sell collateral assets to HSM in exchange for newly minted Hollar
+   *
+   * The valid pairs must include Hollar as one side and an approved collateral as the other side.
+   *
+   * Parameters:
+   * - `origin`: Account selling the asset
+   * - `asset_in`: Asset ID being sold
+   * - `asset_out`: Asset ID being bought
+   * - `amount_in`: Amount of asset_in to sell
+   * - `slippage_limit`: Minimum amount out for slippage protection
+   *
+   * Emits:
+   * - `Swapped3` when the sell is successful
+   *
+   * Errors:
+   * - `InvalidAssetPair` if the pair is not Hollar and an approved collateral
+   * - `AssetNotApproved` if the collateral asset isn't registered
+   * - `SlippageLimitExceeded` if the amount received is less than the slippage limit
+   * - `MaxBuyBackExceeded` if the sell would exceed the maximum buy back rate
+   * - `MaxBuyPriceExceeded` if the sell would exceed the maximum buy price
+   * - `InsufficientCollateralBalance` if HSM doesn't have enough collateral
+   * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+   * - Other errors from underlying calls
+   **/
+  | { name: 'Sell'; params: { assetIn: number; assetOut: number; amountIn: bigint; slippageLimit: bigint } }
+  /**
+   * Buy asset from HSM
+   *
+   * This function allows users to:
+   * 1. Buy Hollar from HSM using collateral assets
+   * 2. Buy collateral assets from HSM using Hollar
+   *
+   * The valid pairs must include Hollar as one side and an approved collateral as the other side.
+   *
+   * Parameters:
+   * - `origin`: Account buying the asset
+   * - `asset_in`: Asset ID being sold by the user
+   * - `asset_out`: Asset ID being bought by the user
+   * - `amount_out`: Amount of asset_out to buy
+   * - `slippage_limit`: Maximum amount in for slippage protection
+   *
+   * Emits:
+   * - `Swapped3` when the buy is successful
+   *
+   * Errors:
+   * - `InvalidAssetPair` if the pair is not Hollar and an approved collateral
+   * - `AssetNotApproved` if the collateral asset isn't registered
+   * - `SlippageLimitExceeded` if the amount input exceeds the slippage limit
+   * - `MaxHoldingExceeded` if the buy would cause HSM to exceed its maximum holding
+   * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+   * - Other errors from underlying calls
+   **/
+  | { name: 'Buy'; params: { assetIn: number; assetOut: number; amountOut: bigint; slippageLimit: bigint } }
+  /**
+   * Execute arbitrage opportunity between HSM and collateral stable pool
+   *
+   * This call is designed to be triggered automatically by offchain workers. It:
+   * 1. Detects price imbalances between HSM and a stable pool for a collateral
+   * 2. If an opportunity exists, mints Hollar, swaps it for collateral on HSM
+   * 3. Swaps that collateral for Hollar on the stable pool
+   * 4. Burns the Hollar received from the arbitrage
+   *
+   * This helps maintain the peg of Hollar by profiting from and correcting price imbalances.
+   * The call is unsigned and should only be executed by offchain workers.
+   *
+   * Parameters:
+   * - `origin`: Must be None (unsigned)
+   * - `collateral_asset_id`: The ID of the collateral asset to check for arbitrage
+   *
+   * Emits:
+   * - `ArbitrageExecuted` when the arbitrage is successful
+   *
+   * Errors:
+   * - `AssetNotApproved` if the asset is not a registered collateral
+   * - `NoArbitrageOpportunity` if there's no profitable arbitrage opportunity
+   * - `MaxBuyPriceExceeded` if the arbitrage would exceed the maximum buy price
+   * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+   * - Other errors from underlying calls
+   **/
+  | { name: 'ExecuteArbitrage'; params: { collateralAssetId: number } }
+  | { name: 'SetFlashMinter'; params: { flashMinterAddr: H160 } };
+
+export type PalletHsmCallLike =
+  /**
+   * Add a new collateral asset
+   *
+   * This function adds a new asset as an approved collateral for Hollar. Only callable by
+   * the governance (root origin).
+   *
+   * Parameters:
+   * - `origin`: Must be Root
+   * - `asset_id`: Asset ID to be added as collateral
+   * - `pool_id`: StableSwap pool ID where this asset and Hollar are paired
+   * - `purchase_fee`: Fee applied when buying Hollar with this asset (added to purchase price)
+   * - `max_buy_price_coefficient`: Maximum buy price coefficient for HSM to buy back Hollar
+   * - `buy_back_fee`: Fee applied when buying back Hollar (subtracted from buy price)
+   * - `buyback_rate`: Parameter that controls how quickly HSM can buy Hollar with this asset
+   * - `max_in_holding`: Optional maximum amount of collateral HSM can hold
+   *
+   * Emits:
+   * - `CollateralAdded` when the collateral is successfully added
+   *
+   * Errors:
+   * - `AssetAlreadyApproved` if the asset is already registered as a collateral
+   * - `PoolAlreadyHasCollateral` if another asset from the same pool is already approved
+   * - `HollarNotInPool` if Hollar is not found in the specified pool
+   * - `AssetNotInPool` if the collateral asset is not found in the specified pool
+   * - Other errors from underlying calls
+   **/
+  | {
+      name: 'AddCollateralAsset';
+      params: {
+        assetId: number;
+        poolId: number;
+        purchaseFee: Permill;
+        maxBuyPriceCoefficient: FixedU128;
+        buyBackFee: Permill;
+        buybackRate: Perbill;
+        maxInHolding?: bigint | undefined;
+      };
+    }
+  /**
+   * Remove a collateral asset
+   *
+   * Removes an asset from the approved collaterals list. Only callable by the governance (root origin).
+   * The collateral must have a zero balance in the HSM account before it can be removed.
+   *
+   * Parameters:
+   * - `origin`: Must be Root
+   * - `asset_id`: Asset ID to remove from collaterals
+   *
+   * Emits:
+   * - `CollateralRemoved` when the collateral is successfully removed
+   *
+   * Errors:
+   * - `AssetNotApproved` if the asset is not a registered collateral
+   * - `CollateralNotEmpty` if the HSM account still holds some of this asset
+   **/
+  | { name: 'RemoveCollateralAsset'; params: { assetId: number } }
+  /**
+   * Update collateral asset parameters
+   *
+   * Updates the parameters for an existing collateral asset. Only callable by the governance (root origin).
+   * Each parameter is optional and only provided parameters will be updated.
+   *
+   * Parameters:
+   * - `origin`: Must be Root
+   * - `asset_id`: Asset ID to update
+   * - `purchase_fee`: New purchase fee (optional)
+   * - `max_buy_price_coefficient`: New max buy price coefficient (optional)
+   * - `buy_back_fee`: New buy back fee (optional)
+   * - `buyback_rate`: New buyback rate parameter (optional)
+   * - `max_in_holding`: New maximum holding amount (optional)
+   *
+   * Emits:
+   * - `CollateralUpdated` when the collateral is successfully updated
+   *
+   * Errors:
+   * - `AssetNotApproved` if the asset is not a registered collateral
+   **/
+  | {
+      name: 'UpdateCollateralAsset';
+      params: {
+        assetId: number;
+        purchaseFee?: Permill | undefined;
+        maxBuyPriceCoefficient?: FixedU128 | undefined;
+        buyBackFee?: Permill | undefined;
+        buybackRate?: Perbill | undefined;
+        maxInHolding?: bigint | undefined | undefined;
+      };
+    }
+  /**
+   * Sell asset to HSM
+   *
+   * This function allows users to:
+   * 1. Sell Hollar back to HSM in exchange for collateral assets
+   * 2. Sell collateral assets to HSM in exchange for newly minted Hollar
+   *
+   * The valid pairs must include Hollar as one side and an approved collateral as the other side.
+   *
+   * Parameters:
+   * - `origin`: Account selling the asset
+   * - `asset_in`: Asset ID being sold
+   * - `asset_out`: Asset ID being bought
+   * - `amount_in`: Amount of asset_in to sell
+   * - `slippage_limit`: Minimum amount out for slippage protection
+   *
+   * Emits:
+   * - `Swapped3` when the sell is successful
+   *
+   * Errors:
+   * - `InvalidAssetPair` if the pair is not Hollar and an approved collateral
+   * - `AssetNotApproved` if the collateral asset isn't registered
+   * - `SlippageLimitExceeded` if the amount received is less than the slippage limit
+   * - `MaxBuyBackExceeded` if the sell would exceed the maximum buy back rate
+   * - `MaxBuyPriceExceeded` if the sell would exceed the maximum buy price
+   * - `InsufficientCollateralBalance` if HSM doesn't have enough collateral
+   * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+   * - Other errors from underlying calls
+   **/
+  | { name: 'Sell'; params: { assetIn: number; assetOut: number; amountIn: bigint; slippageLimit: bigint } }
+  /**
+   * Buy asset from HSM
+   *
+   * This function allows users to:
+   * 1. Buy Hollar from HSM using collateral assets
+   * 2. Buy collateral assets from HSM using Hollar
+   *
+   * The valid pairs must include Hollar as one side and an approved collateral as the other side.
+   *
+   * Parameters:
+   * - `origin`: Account buying the asset
+   * - `asset_in`: Asset ID being sold by the user
+   * - `asset_out`: Asset ID being bought by the user
+   * - `amount_out`: Amount of asset_out to buy
+   * - `slippage_limit`: Maximum amount in for slippage protection
+   *
+   * Emits:
+   * - `Swapped3` when the buy is successful
+   *
+   * Errors:
+   * - `InvalidAssetPair` if the pair is not Hollar and an approved collateral
+   * - `AssetNotApproved` if the collateral asset isn't registered
+   * - `SlippageLimitExceeded` if the amount input exceeds the slippage limit
+   * - `MaxHoldingExceeded` if the buy would cause HSM to exceed its maximum holding
+   * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+   * - Other errors from underlying calls
+   **/
+  | { name: 'Buy'; params: { assetIn: number; assetOut: number; amountOut: bigint; slippageLimit: bigint } }
+  /**
+   * Execute arbitrage opportunity between HSM and collateral stable pool
+   *
+   * This call is designed to be triggered automatically by offchain workers. It:
+   * 1. Detects price imbalances between HSM and a stable pool for a collateral
+   * 2. If an opportunity exists, mints Hollar, swaps it for collateral on HSM
+   * 3. Swaps that collateral for Hollar on the stable pool
+   * 4. Burns the Hollar received from the arbitrage
+   *
+   * This helps maintain the peg of Hollar by profiting from and correcting price imbalances.
+   * The call is unsigned and should only be executed by offchain workers.
+   *
+   * Parameters:
+   * - `origin`: Must be None (unsigned)
+   * - `collateral_asset_id`: The ID of the collateral asset to check for arbitrage
+   *
+   * Emits:
+   * - `ArbitrageExecuted` when the arbitrage is successful
+   *
+   * Errors:
+   * - `AssetNotApproved` if the asset is not a registered collateral
+   * - `NoArbitrageOpportunity` if there's no profitable arbitrage opportunity
+   * - `MaxBuyPriceExceeded` if the arbitrage would exceed the maximum buy price
+   * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
+   * - Other errors from underlying calls
+   **/
+  | { name: 'ExecuteArbitrage'; params: { collateralAssetId: number } }
+  | { name: 'SetFlashMinter'; params: { flashMinterAddr: H160 } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11313,7 +11373,23 @@ export type PalletDcaCall =
    * Emits `Terminated` event when successful.
    *
    **/
-  | { name: 'Terminate'; params: { scheduleId: number; nextExecutionBlock?: number | undefined } };
+  | { name: 'Terminate'; params: { scheduleId: number; nextExecutionBlock?: number | undefined } }
+  /**
+   * Unlocks DCA reserves of provided asset for the caller if they have no active schedules.
+   *
+   * This is a utility function to help users recover their reserved funds in case
+   * a DCA schedule was terminated but left some reserved amounts.
+   *
+   * This can only be called when the user has no active DCA schedules.
+   *
+   * Parameters:
+   * - `origin`: The account to unlock reserves for (must be signed)
+   * - `asset_id`: The asset ID for which reserves should be unlocked.
+   *
+   * Emits `ReserveUnlocked` event when successful.
+   *
+   **/
+  | { name: 'UnlockReserves'; params: { who: AccountId32; assetId: number } };
 
 export type PalletDcaCallLike =
   /**
@@ -11357,7 +11433,23 @@ export type PalletDcaCallLike =
    * Emits `Terminated` event when successful.
    *
    **/
-  | { name: 'Terminate'; params: { scheduleId: number; nextExecutionBlock?: number | undefined } };
+  | { name: 'Terminate'; params: { scheduleId: number; nextExecutionBlock?: number | undefined } }
+  /**
+   * Unlocks DCA reserves of provided asset for the caller if they have no active schedules.
+   *
+   * This is a utility function to help users recover their reserved funds in case
+   * a DCA schedule was terminated but left some reserved amounts.
+   *
+   * This can only be called when the user has no active DCA schedules.
+   *
+   * Parameters:
+   * - `origin`: The account to unlock reserves for (must be signed)
+   * - `asset_id`: The asset ID for which reserves should be unlocked.
+   *
+   * Emits `ReserveUnlocked` event when successful.
+   *
+   **/
+  | { name: 'UnlockReserves'; params: { who: AccountId32Like; assetId: number } };
 
 export type PalletDcaSchedule = {
   owner: AccountId32;
@@ -13981,7 +14073,19 @@ export type PalletCircuitBreakerEvent =
   /**
    * Remove liquidity limit of an asset was changed.
    **/
-  | { name: 'RemoveLiquidityLimitChanged'; data: { assetId: number; liquidityLimit?: [number, number] | undefined } };
+  | { name: 'RemoveLiquidityLimitChanged'; data: { assetId: number; liquidityLimit?: [number, number] | undefined } }
+  /**
+   * Asset went to lockdown
+   **/
+  | { name: 'AssetLockdown'; data: { assetId: number; until: number } }
+  /**
+   * Asset lockdown was removed
+   **/
+  | { name: 'AssetLockdownRemoved'; data: { assetId: number } }
+  /**
+   * All reserved amount of deposit was released
+   **/
+  | { name: 'DepositReleased'; data: { who: AccountId32; assetId: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -14002,7 +14106,15 @@ export type PalletRouteExecutorEvent =
 /**
  * The `Event` enum of this pallet
  **/
-export type PalletDynamicFeesEvent = null;
+export type PalletDynamicFeesEvent =
+  /**
+   * Asset fee configuration has been set
+   **/
+  | { name: 'AssetFeeConfigSet'; data: { assetId: number; params: PalletDynamicFeesAssetFeeConfig } }
+  /**
+   * Asset fee configuration has been removed
+   **/
+  | { name: 'AssetFeeConfigRemoved'; data: { assetId: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -14148,7 +14260,15 @@ export type PalletStableswapEvent =
   /**
    * A pool has been destroyed.
    **/
-  | { name: 'PoolDestroyed'; data: { poolId: number } };
+  | { name: 'PoolDestroyed'; data: { poolId: number } }
+  /**
+   * Pool peg source has been updated.
+   **/
+  | { name: 'PoolPegSourceUpdated'; data: { poolId: number; assetId: number; pegSource: PalletStableswapPegSource } }
+  /**
+   * Pool max peg update has been updated.
+   **/
+  | { name: 'PoolMaxPegUpdateUpdated'; data: { poolId: number; maxPegUpdate: Permill } };
 
 export type NonZeroU16 = number;
 
@@ -14372,6 +14492,76 @@ export type PalletLiquidationEvent =
     name: 'Liquidated';
     data: { user: H160; collateralAsset: number; debtAsset: number; debtToCover: bigint; profit: bigint };
   };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletHsmEvent =
+  /**
+   * A new collateral asset was added
+   *
+   * Parameters:
+   * - `asset_id`: The ID of the asset added as collateral
+   * - `pool_id`: The StableSwap pool ID where this asset belongs
+   * - `purchase_fee`: Fee applied when buying Hollar with this asset
+   * - `max_buy_price_coefficient`: Maximum buy price coefficient for HSM to buy back Hollar
+   * - `buy_back_fee`: Fee applied when buying back Hollar
+   * - `buyback_rate`: Parameter that controls how quickly HSM can buy Hollar with this asset
+   **/
+  | {
+      name: 'CollateralAdded';
+      data: {
+        assetId: number;
+        poolId: number;
+        purchaseFee: Permill;
+        maxBuyPriceCoefficient: FixedU128;
+        buyBackFee: Permill;
+        buybackRate: Perbill;
+      };
+    }
+  /**
+   * A collateral asset was removed
+   *
+   * Parameters:
+   * - `asset_id`: The ID of the asset removed from collaterals
+   * - `amount`: The amount of the asset that was returned (should be zero)
+   **/
+  | { name: 'CollateralRemoved'; data: { assetId: number; amount: bigint } }
+  /**
+   * A collateral asset was updated
+   *
+   * Parameters:
+   * - `asset_id`: The ID of the updated collateral asset
+   * - `purchase_fee`: New purchase fee if updated (None if not changed)
+   * - `max_buy_price_coefficient`: New max buy price coefficient if updated (None if not changed)
+   * - `buy_back_fee`: New buy back fee if updated (None if not changed)
+   * - `buyback_rate`: New buyback rate if updated (None if not changed)
+   **/
+  | {
+      name: 'CollateralUpdated';
+      data: {
+        assetId: number;
+        purchaseFee?: Permill | undefined;
+        maxBuyPriceCoefficient?: FixedU128 | undefined;
+        buyBackFee?: Permill | undefined;
+        buybackRate?: Perbill | undefined;
+      };
+    }
+  /**
+   * Arbitrage executed successfully
+   *
+   * Parameters:
+   * - `asset_id`: The collateral asset used in the arbitrage
+   * - `hollar_amount`: Amount of Hollar that was included in the arbitrage operation
+   **/
+  | { name: 'ArbitrageExecuted'; data: { assetId: number; hollarAmount: bigint } }
+  /**
+   * Flash minter address set
+   *
+   * Parameters:
+   * - `flash_minter`: The EVM address of the flash minter contract
+   **/
+  | { name: 'FlashMinterSet'; data: { flashMinter: H160 } };
 
 /**
  * The `Event` enum of this pallet
@@ -14788,7 +14978,11 @@ export type PalletDcaEvent =
   /**
    * Randomness generation failed possibly coming from missing data about relay chain
    **/
-  | { name: 'RandomnessGenerationFailed'; data: { block: number; error: DispatchError } };
+  | { name: 'RandomnessGenerationFailed'; data: { block: number; error: DispatchError } }
+  /**
+   * DCA reserve for the given asset have been unlocked for a user
+   **/
+  | { name: 'ReserveUnlocked'; data: { who: AccountId32; assetId: number } };
 
 /**
  * Events type.
@@ -15330,7 +15524,8 @@ export type PalletBroadcastFiller =
   | { type: 'Xyk'; value: number }
   | { type: 'Lbp' }
   | { type: 'Otc'; value: number }
-  | { type: 'Aave' };
+  | { type: 'Aave' }
+  | { type: 'Hsm' };
 
 export type PalletBroadcastTradeOperation = 'ExactIn' | 'ExactOut' | 'Limit' | 'LiquidityAdd' | 'LiquidityRemove';
 
@@ -15941,83 +16136,6 @@ export type PalletDemocracyError =
    **/
   | 'PreimageNotExist';
 
-export type PalletElectionsPhragmenSeatHolder = { who: AccountId32; stake: bigint; deposit: bigint };
-
-export type PalletElectionsPhragmenVoter = { votes: Array<AccountId32>; stake: bigint; deposit: bigint };
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletElectionsPhragmenError =
-  /**
-   * Cannot vote when no candidates or members exist.
-   **/
-  | 'UnableToVote'
-  /**
-   * Must vote for at least one candidate.
-   **/
-  | 'NoVotes'
-  /**
-   * Cannot vote more than candidates.
-   **/
-  | 'TooManyVotes'
-  /**
-   * Cannot vote more than maximum allowed.
-   **/
-  | 'MaximumVotesExceeded'
-  /**
-   * Cannot vote with stake less than minimum balance.
-   **/
-  | 'LowBalance'
-  /**
-   * Voter can not pay voting bond.
-   **/
-  | 'UnableToPayBond'
-  /**
-   * Must be a voter.
-   **/
-  | 'MustBeVoter'
-  /**
-   * Duplicated candidate submission.
-   **/
-  | 'DuplicatedCandidate'
-  /**
-   * Too many candidates have been created.
-   **/
-  | 'TooManyCandidates'
-  /**
-   * Member cannot re-submit candidacy.
-   **/
-  | 'MemberSubmit'
-  /**
-   * Runner cannot re-submit candidacy.
-   **/
-  | 'RunnerUpSubmit'
-  /**
-   * Candidate does not have enough funds.
-   **/
-  | 'InsufficientCandidateFunds'
-  /**
-   * Not a member.
-   **/
-  | 'NotMember'
-  /**
-   * The provided count of number of candidates is incorrect.
-   **/
-  | 'InvalidWitnessData'
-  /**
-   * The provided count of number of votes is incorrect.
-   **/
-  | 'InvalidVoteCount'
-  /**
-   * The renouncing origin presented a wrong `Renouncing` parameter.
-   **/
-  | 'InvalidRenouncing'
-  /**
-   * Prediction regarding replacement after member removal is wrong.
-   **/
-  | 'InvalidReplacement';
-
 export type PalletCollectiveVotes = {
   index: number;
   threshold: number;
@@ -16074,49 +16192,6 @@ export type PalletCollectiveError =
    * Prime account is not a member
    **/
   | 'PrimeAccountNotMember';
-
-export type PalletTipsOpenTip = {
-  reason: H256;
-  who: AccountId32;
-  finder: AccountId32;
-  deposit: bigint;
-  closes?: number | undefined;
-  tips: Array<[AccountId32, bigint]>;
-  findersFee: boolean;
-};
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletTipsError =
-  /**
-   * The reason given is just too big.
-   **/
-  | 'ReasonTooBig'
-  /**
-   * The tip was already found/started.
-   **/
-  | 'AlreadyKnown'
-  /**
-   * The tip hash is unknown.
-   **/
-  | 'UnknownTip'
-  /**
-   * The tip given was too generous.
-   **/
-  | 'MaxTipAmountExceeded'
-  /**
-   * The account attempting to retract the tip is not the finder of the tip.
-   **/
-  | 'NotFinder'
-  /**
-   * The tip cannot be claimed/closed because there are not enough tippers yet.
-   **/
-  | 'StillOpen'
-  /**
-   * The tip cannot be claimed/closed because it's still in the countdown period.
-   **/
-  | 'Premature';
 
 export type PalletProxyProxyDefinition = {
   delegate: AccountId32;
@@ -16909,10 +16984,6 @@ export type PalletLiquidityMiningError =
    **/
   | { name: 'LiquidityMiningIsNotStopped' }
   /**
-   * LP shares amount is not valid.
-   **/
-  | { name: 'InvalidDepositAmount' }
-  /**
    * Account is not allowed to perform action.
    **/
   | { name: 'Forbidden' }
@@ -17110,6 +17181,10 @@ export type PalletCircuitBreakerTradeVolumeLimit = { volumeIn: bigint; volumeOut
 
 export type PalletCircuitBreakerLiquidityLimit = { liquidity: bigint; limit: bigint };
 
+export type PalletCircuitBreakerLockdownStatus =
+  | { type: 'Locked'; value: number }
+  | { type: 'Unlocked'; value: [number, bigint] };
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -17137,7 +17212,21 @@ export type PalletCircuitBreakerError =
   /**
    * Asset is not allowed to have a limit
    **/
-  | 'NotAllowed';
+  | 'NotAllowed'
+  /**
+   * Asset still in lockdown as it reached the allowed deposit limit for the period
+   * Query the `asset_lockdown_state` storage to determine until which block the asset is locked,
+   * so that the deposit can be released afterward.
+   **/
+  | 'AssetInLockdown'
+  /**
+   * Asset is not in a lockdown
+   **/
+  | 'AssetNotInLockdown'
+  /**
+   * Invalid amount to save deposit
+   **/
+  | 'InvalidAmount';
 
 /**
  * The `Error` enum of this pallet.
@@ -17186,17 +17275,14 @@ export type PalletRouteExecutorError =
 
 export type PalletDynamicFeesFeeEntry = { assetFee: Permill; protocolFee: Permill; timestamp: number };
 
-export type PalletDynamicFeesFeeParams = {
-  minFee: Permill;
-  maxFee: Permill;
-  decay: FixedU128;
-  amplification: FixedU128;
-};
-
 /**
  * The `Error` enum of this pallet.
  **/
-export type PalletDynamicFeesError = null;
+export type PalletDynamicFeesError =
+  /**
+   * Invalid fee parameters provided
+   **/
+  'InvalidFeeParameters';
 
 export type PalletStakingStakingData = {
   totalStake: bigint;
@@ -17300,6 +17386,17 @@ export type PalletStableswapPoolInfo = {
   finalBlock: number;
   fee: Permill;
 };
+
+export type PalletStableswapPoolSnapshot = {
+  assets: Array<number>;
+  reserves: Array<HydraDxMathStableswapTypesAssetReserve>;
+  amplification: bigint;
+  fee: Permill;
+  pegs: Array<[bigint, bigint]>;
+  shareIssuance: bigint;
+};
+
+export type HydraDxMathStableswapTypesAssetReserve = { amount: bigint; decimals: number };
 
 /**
  * The `Error` enum of this pallet.
@@ -17412,7 +17509,11 @@ export type PalletStableswapError =
   /**
    * Creating pool with pegs is not allowed for asset with different decimals.
    **/
-  | 'IncorrectAssetDecimals';
+  | 'IncorrectAssetDecimals'
+  /**
+   * Pool does not have pegs configured.
+   **/
+  | 'NoPegSource';
 
 /**
  * The `Error` enum of this pallet.
@@ -17768,7 +17869,155 @@ export type PalletLiquidationError =
   /**
    * Liquidation was not profitable enough to repay flash loan
    **/
-  | 'NotProfitable';
+  | 'NotProfitable'
+  /**
+   * Flash minter contract address not set. It is required for Hollar liquidations.
+   **/
+  | 'FlashMinterNotSet'
+  /**
+   * Invalid liquidation data provided
+   **/
+  | 'InvalidLiquidationData';
+
+export type PalletHsmCollateralInfo = {
+  poolId: number;
+  purchaseFee: Permill;
+  maxBuyPriceCoefficient: FixedU128;
+  buybackRate: Perbill;
+  buyBackFee: Permill;
+  maxInHolding?: bigint | undefined;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletHsmError =
+  /**
+   * Asset is not approved as collateral
+   *
+   * The operation attempted to use an asset that is not registered as an approved collateral.
+   **/
+  | 'AssetNotApproved'
+  /**
+   * Asset is already approved as collateral
+   *
+   * Attempted to add an asset that is already registered as a collateral.
+   **/
+  | 'AssetAlreadyApproved'
+  /**
+   * Another asset from the same pool is already approved
+   *
+   * Only one asset from each StableSwap pool can be used as collateral.
+   **/
+  | 'PoolAlreadyHasCollateral'
+  /**
+   * Invalid asset pair, must be Hollar and approved collateral
+   *
+   * The asset pair for buy/sell operations must include Hollar as one side and an approved collateral as the other.
+   **/
+  | 'InvalidAssetPair'
+  /**
+   * Max buy price exceeded
+   *
+   * The calculated buy price exceeds the maximum allowed buy price for the collateral.
+   **/
+  | 'MaxBuyPriceExceeded'
+  /**
+   * Max buy back amount in single block exceeded
+   *
+   * The amount of Hollar being sold to HSM exceeds the maximum allowed in a single block for this collateral.
+   **/
+  | 'MaxBuyBackExceeded'
+  /**
+   * Max holding amount for collateral exceeded
+   *
+   * The operation would cause the HSM to hold more of the collateral than the configured maximum.
+   **/
+  | 'MaxHoldingExceeded'
+  /**
+   * Slippage limit exceeded
+   *
+   * The calculated amount is worse than the provided slippage limit.
+   **/
+  | 'SlippageLimitExceeded'
+  /**
+   * Invalid EVM contract interaction
+   *
+   * The call to the EVM contract (GHO Hollar token) failed.
+   **/
+  | 'InvalidEVMInteraction'
+  /**
+   * Decimal retrieval failed
+   *
+   * Failed to retrieve the decimal information for an asset.
+   **/
+  | 'DecimalRetrievalFailed'
+  /**
+   * No arbitrage opportunity
+   *
+   * There is no profitable arbitrage opportunity for the specified collateral.
+   **/
+  | 'NoArbitrageOpportunity'
+  /**
+   * Offchain lock error
+   *
+   * Failed to acquire the lock for offchain workers, likely because another operation is in progress.
+   **/
+  | 'OffchainLockError'
+  /**
+   * Asset not in the pool
+   *
+   * The specified asset was not found in the pool.
+   **/
+  | 'AssetNotFound'
+  /**
+   * Provided pool state is invalid
+   *
+   * The retrieved pool state has inconsistent or invalid data.
+   **/
+  | 'InvalidPoolState'
+  /**
+   * Collateral is not empty
+   *
+   * Cannot remove a collateral asset that still has a non-zero balance in the HSM account.
+   **/
+  | 'CollateralNotEmpty'
+  /**
+   * Asset not in the pool
+   *
+   * The collateral asset is not present in the specified pool.
+   **/
+  | 'AssetNotInPool'
+  /**
+   * Hollar is not in the pool
+   *
+   * The Hollar asset is not present in the specified pool.
+   **/
+  | 'HollarNotInPool'
+  /**
+   * Insufficient collateral balance
+   *
+   * The HSM does not have enough of the collateral asset to complete the operation.
+   **/
+  | 'InsufficientCollateralBalance'
+  /**
+   * GHO Contract address not found
+   *
+   * The EVM address for the GHO (Hollar) token contract was not found.
+   **/
+  | 'HollarContractAddressNotFound'
+  /**
+   * HSM contains maximum number of allowed collateral assets.
+   **/
+  | 'MaxNumberOfCollateralsReached'
+  /**
+   * Flash minter address not set
+   **/
+  | 'FlashMinterNotSet'
+  /**
+   * Provided arbitrage data is invalid
+   **/
+  | 'InvalidArbitrageData';
 
 export type OrmlTokensBalanceLock = { id: FixedBytes<8>; amount: bigint };
 
@@ -18054,7 +18303,11 @@ export type PalletXykLiquidityMiningError =
   /**
    * No global farm - yield farm pairs specified to join
    **/
-  | 'NoFarmsSpecified';
+  | 'NoFarmsSpecified'
+  /**
+   * Failed to calculate value of xyk shares
+   **/
+  | 'FailedToValueShares';
 
 export type PalletLiquidityMiningDepositData002 = {
   shares: bigint;
@@ -18142,7 +18395,15 @@ export type PalletDcaError =
   /**
    * Stability threshold cannot be higher than `MaxConfigurablePriceDifferenceBetweenBlock`
    **/
-  | 'StabilityThresholdTooHigh';
+  | 'StabilityThresholdTooHigh'
+  /**
+   * User still has active DCA schedules and cannot unlock reserves
+   **/
+  | 'HasActiveSchedules'
+  /**
+   * No reserves are locked for the user for the given asset
+   **/
+  | 'NoReservesLocked';
 
 export type PalletSchedulerScheduled = {
   maybeId?: FixedBytes<32> | undefined;
@@ -18768,6 +19029,7 @@ export type PalletEmaOracleOracleEntry = {
   price: HydraDxMathRatio;
   volume: HydradxTraitsOracleVolume;
   liquidity: HydradxTraitsOracleLiquidity;
+  sharesIssuance?: bigint | undefined;
   updatedAt: number;
 };
 
@@ -18827,6 +19089,8 @@ export type PalletClaimsValidateClaim = {};
 export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
 
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
+
+export type CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim = {};
 
 export type HydradxRuntimeRuntime = {};
 
@@ -18970,10 +19234,7 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'Preimage'; palletError: PalletPreimageError }
   | { pallet: 'Identity'; palletError: PalletIdentityError }
   | { pallet: 'Democracy'; palletError: PalletDemocracyError }
-  | { pallet: 'Elections'; palletError: PalletElectionsPhragmenError }
-  | { pallet: 'Council'; palletError: PalletCollectiveError }
   | { pallet: 'TechnicalCommittee'; palletError: PalletCollectiveError }
-  | { pallet: 'Tips'; palletError: PalletTipsError }
   | { pallet: 'Proxy'; palletError: PalletProxyError }
   | { pallet: 'Multisig'; palletError: PalletMultisigError }
   | { pallet: 'Uniques'; palletError: PalletUniquesError }
@@ -19001,6 +19262,7 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'Xyk'; palletError: PalletXykError }
   | { pallet: 'Referrals'; palletError: PalletReferralsError }
   | { pallet: 'Liquidation'; palletError: PalletLiquidationError }
+  | { pallet: 'Hsm'; palletError: PalletHsmError }
   | { pallet: 'Tokens'; palletError: OrmlTokensModuleError }
   | { pallet: 'Currencies'; palletError: PalletCurrenciesModuleError }
   | { pallet: 'Vesting'; palletError: OrmlVestingModuleError }

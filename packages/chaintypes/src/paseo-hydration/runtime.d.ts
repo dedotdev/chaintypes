@@ -669,6 +669,31 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
+   * @runtimeapi: Erc20MappingApi - 0x542334fe4fd7cada
+   **/
+  erc20MappingApi: {
+    /**
+     * Get the EVM address of the asset.
+     *
+     * @callname: Erc20MappingApi_asset_address
+     * @param {number} asset_id
+     **/
+    assetAddress: GenericRuntimeApiMethod<Rv, (assetId: number) => Promise<H160>>;
+
+    /**
+     * Get the asset id corresponding to EVM address. If not found, returns `None`.
+     *
+     * @callname: Erc20MappingApi_address_to_asset
+     * @param {H160} address
+     **/
+    addressToAsset: GenericRuntimeApiMethod<Rv, (address: H160) => Promise<number | undefined>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
    * @runtimeapi: XcmPaymentApi - 0x6ff52ee858e6c5bd
    **/
   xcmPaymentApi: {

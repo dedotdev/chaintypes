@@ -62,10 +62,7 @@ export type HydradxRuntimeRuntimeEvent =
   | { pallet: 'Preimage'; palletEvent: PalletPreimageEvent }
   | { pallet: 'Identity'; palletEvent: PalletIdentityEvent }
   | { pallet: 'Democracy'; palletEvent: PalletDemocracyEvent }
-  | { pallet: 'Elections'; palletEvent: PalletElectionsPhragmenEvent }
-  | { pallet: 'Council'; palletEvent: PalletCollectiveEvent }
   | { pallet: 'TechnicalCommittee'; palletEvent: PalletCollectiveEvent }
-  | { pallet: 'Tips'; palletEvent: PalletTipsEvent }
   | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
   | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
   | { pallet: 'Uniques'; palletEvent: PalletUniquesEvent }
@@ -624,48 +621,6 @@ export type PalletDemocracyMetadataOwner =
 /**
  * The `Event` enum of this pallet
  **/
-export type PalletElectionsPhragmenEvent =
-  /**
-   * A new term with new_members. This indicates that enough candidates existed to run
-   * the election, not that enough have has been elected. The inner value must be examined
-   * for this purpose. A `NewTerm(\[\])` indicates that some candidates got their bond
-   * slashed and none were elected, whilst `EmptyTerm` means that no candidates existed to
-   * begin with.
-   **/
-  | { name: 'NewTerm'; data: { newMembers: Array<[AccountId32, bigint]> } }
-  /**
-   * No (or not enough) candidates existed for this round. This is different from
-   * `NewTerm(\[\])`. See the description of `NewTerm`.
-   **/
-  | { name: 'EmptyTerm' }
-  /**
-   * Internal error happened while trying to perform election.
-   **/
-  | { name: 'ElectionError' }
-  /**
-   * A member has been removed. This should always be followed by either `NewTerm` or
-   * `EmptyTerm`.
-   **/
-  | { name: 'MemberKicked'; data: { member: AccountId32 } }
-  /**
-   * Someone has renounced their candidacy.
-   **/
-  | { name: 'Renounced'; data: { candidate: AccountId32 } }
-  /**
-   * A candidate was slashed by amount due to failing to obtain a seat as member or
-   * runner-up.
-   *
-   * Note that old members and runners-up are also candidates.
-   **/
-  | { name: 'CandidateSlashed'; data: { candidate: AccountId32; amount: bigint } }
-  /**
-   * A seat holder was slashed by amount by being forcefully removed from the set.
-   **/
-  | { name: 'SeatHolderSlashed'; data: { seatHolder: AccountId32; amount: bigint } };
-
-/**
- * The `Event` enum of this pallet
- **/
 export type PalletCollectiveEvent =
   /**
    * A motion (given hash) has been proposed (by given account) with a threshold (given
@@ -697,31 +652,6 @@ export type PalletCollectiveEvent =
    * A proposal was closed because its threshold was reached or after its duration was up.
    **/
   | { name: 'Closed'; data: { proposalHash: H256; yes: number; no: number } };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletTipsEvent =
-  /**
-   * A new tip suggestion has been opened.
-   **/
-  | { name: 'NewTip'; data: { tipHash: H256 } }
-  /**
-   * A tip suggestion has reached threshold and is closing.
-   **/
-  | { name: 'TipClosing'; data: { tipHash: H256 } }
-  /**
-   * A tip suggestion has been closed.
-   **/
-  | { name: 'TipClosed'; data: { tipHash: H256; who: AccountId32; payout: bigint } }
-  /**
-   * A tip suggestion has been retracted.
-   **/
-  | { name: 'TipRetracted'; data: { tipHash: H256 } }
-  /**
-   * A tip suggestion has been slashed.
-   **/
-  | { name: 'TipSlashed'; data: { tipHash: H256; finder: AccountId32; deposit: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -1328,10 +1258,7 @@ export type HydradxRuntimeRuntimeCall =
   | { pallet: 'Preimage'; palletCall: PalletPreimageCall }
   | { pallet: 'Identity'; palletCall: PalletIdentityCall }
   | { pallet: 'Democracy'; palletCall: PalletDemocracyCall }
-  | { pallet: 'Elections'; palletCall: PalletElectionsPhragmenCall }
-  | { pallet: 'Council'; palletCall: PalletCollectiveCall }
   | { pallet: 'TechnicalCommittee'; palletCall: PalletCollectiveCall }
-  | { pallet: 'Tips'; palletCall: PalletTipsCall }
   | { pallet: 'Proxy'; palletCall: PalletProxyCall }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
   | { pallet: 'Uniques'; palletCall: PalletUniquesCall }
@@ -1394,10 +1321,7 @@ export type HydradxRuntimeRuntimeCallLike =
   | { pallet: 'Preimage'; palletCall: PalletPreimageCallLike }
   | { pallet: 'Identity'; palletCall: PalletIdentityCallLike }
   | { pallet: 'Democracy'; palletCall: PalletDemocracyCallLike }
-  | { pallet: 'Elections'; palletCall: PalletElectionsPhragmenCallLike }
-  | { pallet: 'Council'; palletCall: PalletCollectiveCallLike }
   | { pallet: 'TechnicalCommittee'; palletCall: PalletCollectiveCallLike }
-  | { pallet: 'Tips'; palletCall: PalletTipsCallLike }
   | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
   | { pallet: 'Uniques'; palletCall: PalletUniquesCallLike }
@@ -2424,7 +2348,6 @@ export type PalletUtilityCallLike =
 
 export type HydradxRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
-  | { type: 'Council'; value: PalletCollectiveRawOrigin }
   | { type: 'TechnicalCommittee'; value: PalletCollectiveRawOrigin }
   | { type: 'Origins'; value: HydradxRuntimeGovernanceOriginsPalletCustomOriginsOrigin }
   | { type: 'Ethereum'; value: PalletEthereumRawOrigin }
@@ -3689,222 +3612,6 @@ export type PalletDemocracyConviction =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletElectionsPhragmenCall =
-  /**
-   * Vote for a set of candidates for the upcoming round of election. This can be called to
-   * set the initial votes, or update already existing votes.
-   *
-   * Upon initial voting, `value` units of `who`'s balance is locked and a deposit amount is
-   * reserved. The deposit is based on the number of votes and can be updated over time.
-   *
-   * The `votes` should:
-   * - not be empty.
-   * - be less than the number of possible candidates. Note that all current members and
-   * runners-up are also automatically candidates for the next round.
-   *
-   * If `value` is more than `who`'s free balance, then the maximum of the two is used.
-   *
-   * The dispatch origin of this call must be signed.
-   *
-   * ### Warning
-   *
-   * It is the responsibility of the caller to **NOT** place all of their balance into the
-   * lock and keep some for further operations.
-   **/
-  | { name: 'Vote'; params: { votes: Array<AccountId32>; value: bigint } }
-  /**
-   * Remove `origin` as a voter.
-   *
-   * This removes the lock and returns the deposit.
-   *
-   * The dispatch origin of this call must be signed and be a voter.
-   **/
-  | { name: 'RemoveVoter' }
-  /**
-   * Submit oneself for candidacy. A fixed amount of deposit is recorded.
-   *
-   * All candidates are wiped at the end of the term. They either become a member/runner-up,
-   * or leave the system while their deposit is slashed.
-   *
-   * The dispatch origin of this call must be signed.
-   *
-   * ### Warning
-   *
-   * Even if a candidate ends up being a member, they must call [`Call::renounce_candidacy`]
-   * to get their deposit back. Losing the spot in an election will always lead to a slash.
-   *
-   * The number of current candidates must be provided as witness data.
-   * ## Complexity
-   * O(C + log(C)) where C is candidate_count.
-   **/
-  | { name: 'SubmitCandidacy'; params: { candidateCount: number } }
-  /**
-   * Renounce one's intention to be a candidate for the next election round. 3 potential
-   * outcomes exist:
-   *
-   * - `origin` is a candidate and not elected in any set. In this case, the deposit is
-   * unreserved, returned and origin is removed as a candidate.
-   * - `origin` is a current runner-up. In this case, the deposit is unreserved, returned and
-   * origin is removed as a runner-up.
-   * - `origin` is a current member. In this case, the deposit is unreserved and origin is
-   * removed as a member, consequently not being a candidate for the next round anymore.
-   * Similar to [`remove_member`](Self::remove_member), if replacement runners exists, they
-   * are immediately used. If the prime is renouncing, then no prime will exist until the
-   * next round.
-   *
-   * The dispatch origin of this call must be signed, and have one of the above roles.
-   * The type of renouncing must be provided as witness data.
-   *
-   * ## Complexity
-   * - Renouncing::Candidate(count): O(count + log(count))
-   * - Renouncing::Member: O(1)
-   * - Renouncing::RunnerUp: O(1)
-   **/
-  | { name: 'RenounceCandidacy'; params: { renouncing: PalletElectionsPhragmenRenouncing } }
-  /**
-   * Remove a particular member from the set. This is effective immediately and the bond of
-   * the outgoing member is slashed.
-   *
-   * If a runner-up is available, then the best runner-up will be removed and replaces the
-   * outgoing member. Otherwise, if `rerun_election` is `true`, a new phragmen election is
-   * started, else, nothing happens.
-   *
-   * If `slash_bond` is set to true, the bond of the member being removed is slashed. Else,
-   * it is returned.
-   *
-   * The dispatch origin of this call must be root.
-   *
-   * Note that this does not affect the designated block number of the next election.
-   *
-   * ## Complexity
-   * - Check details of remove_and_replace_member() and do_phragmen().
-   **/
-  | { name: 'RemoveMember'; params: { who: AccountId32; slashBond: boolean; rerunElection: boolean } }
-  /**
-   * Clean all voters who are defunct (i.e. they do not serve any purpose at all). The
-   * deposit of the removed voters are returned.
-   *
-   * This is an root function to be used only for cleaning the state.
-   *
-   * The dispatch origin of this call must be root.
-   *
-   * ## Complexity
-   * - Check is_defunct_voter() details.
-   **/
-  | { name: 'CleanDefunctVoters'; params: { numVoters: number; numDefunct: number } };
-
-export type PalletElectionsPhragmenCallLike =
-  /**
-   * Vote for a set of candidates for the upcoming round of election. This can be called to
-   * set the initial votes, or update already existing votes.
-   *
-   * Upon initial voting, `value` units of `who`'s balance is locked and a deposit amount is
-   * reserved. The deposit is based on the number of votes and can be updated over time.
-   *
-   * The `votes` should:
-   * - not be empty.
-   * - be less than the number of possible candidates. Note that all current members and
-   * runners-up are also automatically candidates for the next round.
-   *
-   * If `value` is more than `who`'s free balance, then the maximum of the two is used.
-   *
-   * The dispatch origin of this call must be signed.
-   *
-   * ### Warning
-   *
-   * It is the responsibility of the caller to **NOT** place all of their balance into the
-   * lock and keep some for further operations.
-   **/
-  | { name: 'Vote'; params: { votes: Array<AccountId32Like>; value: bigint } }
-  /**
-   * Remove `origin` as a voter.
-   *
-   * This removes the lock and returns the deposit.
-   *
-   * The dispatch origin of this call must be signed and be a voter.
-   **/
-  | { name: 'RemoveVoter' }
-  /**
-   * Submit oneself for candidacy. A fixed amount of deposit is recorded.
-   *
-   * All candidates are wiped at the end of the term. They either become a member/runner-up,
-   * or leave the system while their deposit is slashed.
-   *
-   * The dispatch origin of this call must be signed.
-   *
-   * ### Warning
-   *
-   * Even if a candidate ends up being a member, they must call [`Call::renounce_candidacy`]
-   * to get their deposit back. Losing the spot in an election will always lead to a slash.
-   *
-   * The number of current candidates must be provided as witness data.
-   * ## Complexity
-   * O(C + log(C)) where C is candidate_count.
-   **/
-  | { name: 'SubmitCandidacy'; params: { candidateCount: number } }
-  /**
-   * Renounce one's intention to be a candidate for the next election round. 3 potential
-   * outcomes exist:
-   *
-   * - `origin` is a candidate and not elected in any set. In this case, the deposit is
-   * unreserved, returned and origin is removed as a candidate.
-   * - `origin` is a current runner-up. In this case, the deposit is unreserved, returned and
-   * origin is removed as a runner-up.
-   * - `origin` is a current member. In this case, the deposit is unreserved and origin is
-   * removed as a member, consequently not being a candidate for the next round anymore.
-   * Similar to [`remove_member`](Self::remove_member), if replacement runners exists, they
-   * are immediately used. If the prime is renouncing, then no prime will exist until the
-   * next round.
-   *
-   * The dispatch origin of this call must be signed, and have one of the above roles.
-   * The type of renouncing must be provided as witness data.
-   *
-   * ## Complexity
-   * - Renouncing::Candidate(count): O(count + log(count))
-   * - Renouncing::Member: O(1)
-   * - Renouncing::RunnerUp: O(1)
-   **/
-  | { name: 'RenounceCandidacy'; params: { renouncing: PalletElectionsPhragmenRenouncing } }
-  /**
-   * Remove a particular member from the set. This is effective immediately and the bond of
-   * the outgoing member is slashed.
-   *
-   * If a runner-up is available, then the best runner-up will be removed and replaces the
-   * outgoing member. Otherwise, if `rerun_election` is `true`, a new phragmen election is
-   * started, else, nothing happens.
-   *
-   * If `slash_bond` is set to true, the bond of the member being removed is slashed. Else,
-   * it is returned.
-   *
-   * The dispatch origin of this call must be root.
-   *
-   * Note that this does not affect the designated block number of the next election.
-   *
-   * ## Complexity
-   * - Check details of remove_and_replace_member() and do_phragmen().
-   **/
-  | { name: 'RemoveMember'; params: { who: AccountId32Like; slashBond: boolean; rerunElection: boolean } }
-  /**
-   * Clean all voters who are defunct (i.e. they do not serve any purpose at all). The
-   * deposit of the removed voters are returned.
-   *
-   * This is an root function to be used only for cleaning the state.
-   *
-   * The dispatch origin of this call must be root.
-   *
-   * ## Complexity
-   * - Check is_defunct_voter() details.
-   **/
-  | { name: 'CleanDefunctVoters'; params: { numVoters: number; numDefunct: number } };
-
-export type PalletElectionsPhragmenRenouncing =
-  | { type: 'Member' }
-  | { type: 'RunnerUp' }
-  | { type: 'Candidate'; value: number };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
 export type PalletCollectiveCall =
   /**
    * Set the collective's membership.
@@ -4136,239 +3843,6 @@ export type PalletCollectiveCallLike =
       name: 'Close';
       params: { proposalHash: H256; index: number; proposalWeightBound: SpWeightsWeightV2Weight; lengthBound: number };
     };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletTipsCall =
-  /**
-   * Report something `reason` that deserves a tip and claim any eventual the finder's fee.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Payment: `TipReportDepositBase` will be reserved from the origin account, as well as
-   * `DataDepositPerByte` for each byte in `reason`.
-   *
-   * - `reason`: The reason for, or the thing that deserves, the tip; generally this will be
-   * a UTF-8-encoded URL.
-   * - `who`: The account which should be credited for the tip.
-   *
-   * Emits `NewTip` if successful.
-   *
-   * ## Complexity
-   * - `O(R)` where `R` length of `reason`.
-   * - encoding and hashing of 'reason'
-   **/
-  | { name: 'ReportAwesome'; params: { reason: Bytes; who: AccountId32 } }
-  /**
-   * Retract a prior tip-report from `report_awesome`, and cancel the process of tipping.
-   *
-   * If successful, the original deposit will be unreserved.
-   *
-   * The dispatch origin for this call must be _Signed_ and the tip identified by `hash`
-   * must have been reported by the signing account through `report_awesome` (and not
-   * through `tip_new`).
-   *
-   * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-   * as the hash of the tuple of the original tip `reason` and the beneficiary account ID.
-   *
-   * Emits `TipRetracted` if successful.
-   *
-   * ## Complexity
-   * - `O(1)`
-   * - Depends on the length of `T::Hash` which is fixed.
-   **/
-  | { name: 'RetractTip'; params: { hash: H256 } }
-  /**
-   * Give a tip for something new; no finder's fee will be taken.
-   *
-   * The dispatch origin for this call must be _Signed_ and the signing account must be a
-   * member of the `Tippers` set.
-   *
-   * - `reason`: The reason for, or the thing that deserves, the tip; generally this will be
-   * a UTF-8-encoded URL.
-   * - `who`: The account which should be credited for the tip.
-   * - `tip_value`: The amount of tip that the sender would like to give. The median tip
-   * value of active tippers will be given to the `who`.
-   *
-   * Emits `NewTip` if successful.
-   *
-   * ## Complexity
-   * - `O(R + T)` where `R` length of `reason`, `T` is the number of tippers.
-   * - `O(T)`: decoding `Tipper` vec of length `T`. `T` is charged as upper bound given by
-   * `ContainsLengthBound`. The actual cost depends on the implementation of
-   * `T::Tippers`.
-   * - `O(R)`: hashing and encoding of reason of length `R`
-   **/
-  | { name: 'TipNew'; params: { reason: Bytes; who: AccountId32; tipValue: bigint } }
-  /**
-   * Declare a tip value for an already-open tip.
-   *
-   * The dispatch origin for this call must be _Signed_ and the signing account must be a
-   * member of the `Tippers` set.
-   *
-   * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-   * as the hash of the tuple of the hash of the original tip `reason` and the beneficiary
-   * account ID.
-   * - `tip_value`: The amount of tip that the sender would like to give. The median tip
-   * value of active tippers will be given to the `who`.
-   *
-   * Emits `TipClosing` if the threshold of tippers has been reached and the countdown period
-   * has started.
-   *
-   * ## Complexity
-   * - `O(T)` where `T` is the number of tippers. decoding `Tipper` vec of length `T`, insert
-   * tip and check closing, `T` is charged as upper bound given by `ContainsLengthBound`.
-   * The actual cost depends on the implementation of `T::Tippers`.
-   *
-   * Actually weight could be lower as it depends on how many tips are in `OpenTip` but it
-   * is weighted as if almost full i.e of length `T-1`.
-   **/
-  | { name: 'Tip'; params: { hash: H256; tipValue: bigint } }
-  /**
-   * Close and payout a tip.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * The tip identified by `hash` must have finished its countdown period.
-   *
-   * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-   * as the hash of the tuple of the original tip `reason` and the beneficiary account ID.
-   *
-   * ## Complexity
-   * - : `O(T)` where `T` is the number of tippers. decoding `Tipper` vec of length `T`. `T`
-   * is charged as upper bound given by `ContainsLengthBound`. The actual cost depends on
-   * the implementation of `T::Tippers`.
-   **/
-  | { name: 'CloseTip'; params: { hash: H256 } }
-  /**
-   * Remove and slash an already-open tip.
-   *
-   * May only be called from `T::RejectOrigin`.
-   *
-   * As a result, the finder is slashed and the deposits are lost.
-   *
-   * Emits `TipSlashed` if successful.
-   *
-   * ## Complexity
-   * - O(1).
-   **/
-  | { name: 'SlashTip'; params: { hash: H256 } };
-
-export type PalletTipsCallLike =
-  /**
-   * Report something `reason` that deserves a tip and claim any eventual the finder's fee.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Payment: `TipReportDepositBase` will be reserved from the origin account, as well as
-   * `DataDepositPerByte` for each byte in `reason`.
-   *
-   * - `reason`: The reason for, or the thing that deserves, the tip; generally this will be
-   * a UTF-8-encoded URL.
-   * - `who`: The account which should be credited for the tip.
-   *
-   * Emits `NewTip` if successful.
-   *
-   * ## Complexity
-   * - `O(R)` where `R` length of `reason`.
-   * - encoding and hashing of 'reason'
-   **/
-  | { name: 'ReportAwesome'; params: { reason: BytesLike; who: AccountId32Like } }
-  /**
-   * Retract a prior tip-report from `report_awesome`, and cancel the process of tipping.
-   *
-   * If successful, the original deposit will be unreserved.
-   *
-   * The dispatch origin for this call must be _Signed_ and the tip identified by `hash`
-   * must have been reported by the signing account through `report_awesome` (and not
-   * through `tip_new`).
-   *
-   * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-   * as the hash of the tuple of the original tip `reason` and the beneficiary account ID.
-   *
-   * Emits `TipRetracted` if successful.
-   *
-   * ## Complexity
-   * - `O(1)`
-   * - Depends on the length of `T::Hash` which is fixed.
-   **/
-  | { name: 'RetractTip'; params: { hash: H256 } }
-  /**
-   * Give a tip for something new; no finder's fee will be taken.
-   *
-   * The dispatch origin for this call must be _Signed_ and the signing account must be a
-   * member of the `Tippers` set.
-   *
-   * - `reason`: The reason for, or the thing that deserves, the tip; generally this will be
-   * a UTF-8-encoded URL.
-   * - `who`: The account which should be credited for the tip.
-   * - `tip_value`: The amount of tip that the sender would like to give. The median tip
-   * value of active tippers will be given to the `who`.
-   *
-   * Emits `NewTip` if successful.
-   *
-   * ## Complexity
-   * - `O(R + T)` where `R` length of `reason`, `T` is the number of tippers.
-   * - `O(T)`: decoding `Tipper` vec of length `T`. `T` is charged as upper bound given by
-   * `ContainsLengthBound`. The actual cost depends on the implementation of
-   * `T::Tippers`.
-   * - `O(R)`: hashing and encoding of reason of length `R`
-   **/
-  | { name: 'TipNew'; params: { reason: BytesLike; who: AccountId32Like; tipValue: bigint } }
-  /**
-   * Declare a tip value for an already-open tip.
-   *
-   * The dispatch origin for this call must be _Signed_ and the signing account must be a
-   * member of the `Tippers` set.
-   *
-   * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-   * as the hash of the tuple of the hash of the original tip `reason` and the beneficiary
-   * account ID.
-   * - `tip_value`: The amount of tip that the sender would like to give. The median tip
-   * value of active tippers will be given to the `who`.
-   *
-   * Emits `TipClosing` if the threshold of tippers has been reached and the countdown period
-   * has started.
-   *
-   * ## Complexity
-   * - `O(T)` where `T` is the number of tippers. decoding `Tipper` vec of length `T`, insert
-   * tip and check closing, `T` is charged as upper bound given by `ContainsLengthBound`.
-   * The actual cost depends on the implementation of `T::Tippers`.
-   *
-   * Actually weight could be lower as it depends on how many tips are in `OpenTip` but it
-   * is weighted as if almost full i.e of length `T-1`.
-   **/
-  | { name: 'Tip'; params: { hash: H256; tipValue: bigint } }
-  /**
-   * Close and payout a tip.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * The tip identified by `hash` must have finished its countdown period.
-   *
-   * - `hash`: The identity of the open tip for which a tip value is declared. This is formed
-   * as the hash of the tuple of the original tip `reason` and the beneficiary account ID.
-   *
-   * ## Complexity
-   * - : `O(T)` where `T` is the number of tippers. decoding `Tipper` vec of length `T`. `T`
-   * is charged as upper bound given by `ContainsLengthBound`. The actual cost depends on
-   * the implementation of `T::Tippers`.
-   **/
-  | { name: 'CloseTip'; params: { hash: H256 } }
-  /**
-   * Remove and slash an already-open tip.
-   *
-   * May only be called from `T::RejectOrigin`.
-   *
-   * As a result, the finder is slashed and the deposits are lost.
-   *
-   * Emits `TipSlashed` if successful.
-   *
-   * ## Complexity
-   * - O(1).
-   **/
-  | { name: 'SlashTip'; params: { hash: H256 } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8243,7 +7717,50 @@ export type PalletCircuitBreakerCall =
    * Emits `RemoveLiquidityLimitChanged` event when successful.
    *
    **/
-  | { name: 'SetRemoveLiquidityLimit'; params: { assetId: number; liquidityLimit?: [number, number] | undefined } };
+  | { name: 'SetRemoveLiquidityLimit'; params: { assetId: number; liquidityLimit?: [number, number] | undefined } }
+  /**
+   * Lockdown an asset for minting
+   *
+   * Can be called only by an authority origin
+   *
+   * Parameters:
+   * - `origin`: The dispatch origin for this call. Must be `AuthorityOrigin`
+   * - `asset_id`: The identifier of an asset
+   * - `until`: The block number until which the asset is locked
+   *
+   * /// Emits `AssetLockdowned` event when successful.
+   **/
+  | { name: 'LockdownAsset'; params: { assetId: number; until: number } }
+  /**
+   * Remove asset lockdown regardless of the state.
+   *
+   * Can be called only by an authority origin
+   *
+   * Parameters:
+   *
+   * - `origin`: The dispatch origin for this call. Must be `AuthorityOrigin`
+   * - `asset_id`: The identifier of an asset
+   *
+   * Emits `AssetLockdownRemoved` event when successful.
+   **/
+  | { name: 'ForceLiftLockdown'; params: { assetId: number } }
+  /**
+   * Release deposit of an asset.
+   *
+   * It releases all the pallet reserved balance of the asset for the given account
+   *
+   * Can be called by any origin, but only if the asset is not in active lockdown.
+   *
+   * The caller does not pay for this call if successful.
+   *
+   * Parameters:
+   * - `origin`: The dispatch origin for this call. Can be signed or root.
+   * - `who`: The account that is saving the deposit.
+   * - `asset_id`: The identifier of the asset.
+   *
+   * Emits `DepositReleased` event when successful.
+   **/
+  | { name: 'ReleaseDeposit'; params: { who: AccountId32; assetId: number } };
 
 export type PalletCircuitBreakerCallLike =
   /**
@@ -8281,7 +7798,50 @@ export type PalletCircuitBreakerCallLike =
    * Emits `RemoveLiquidityLimitChanged` event when successful.
    *
    **/
-  | { name: 'SetRemoveLiquidityLimit'; params: { assetId: number; liquidityLimit?: [number, number] | undefined } };
+  | { name: 'SetRemoveLiquidityLimit'; params: { assetId: number; liquidityLimit?: [number, number] | undefined } }
+  /**
+   * Lockdown an asset for minting
+   *
+   * Can be called only by an authority origin
+   *
+   * Parameters:
+   * - `origin`: The dispatch origin for this call. Must be `AuthorityOrigin`
+   * - `asset_id`: The identifier of an asset
+   * - `until`: The block number until which the asset is locked
+   *
+   * /// Emits `AssetLockdowned` event when successful.
+   **/
+  | { name: 'LockdownAsset'; params: { assetId: number; until: number } }
+  /**
+   * Remove asset lockdown regardless of the state.
+   *
+   * Can be called only by an authority origin
+   *
+   * Parameters:
+   *
+   * - `origin`: The dispatch origin for this call. Must be `AuthorityOrigin`
+   * - `asset_id`: The identifier of an asset
+   *
+   * Emits `AssetLockdownRemoved` event when successful.
+   **/
+  | { name: 'ForceLiftLockdown'; params: { assetId: number } }
+  /**
+   * Release deposit of an asset.
+   *
+   * It releases all the pallet reserved balance of the asset for the given account
+   *
+   * Can be called by any origin, but only if the asset is not in active lockdown.
+   *
+   * The caller does not pay for this call if successful.
+   *
+   * Parameters:
+   * - `origin`: The dispatch origin for this call. Can be signed or root.
+   * - `who`: The account that is saving the deposit.
+   * - `asset_id`: The identifier of the asset.
+   *
+   * Emits `DepositReleased` event when successful.
+   **/
+  | { name: 'ReleaseDeposit'; params: { who: AccountId32Like; assetId: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8533,9 +8093,67 @@ export type HydradxTraitsRouterAssetPair = { assetIn: number; assetOut: number }
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletDynamicFeesCall = null;
+export type PalletDynamicFeesCall =
+  /**
+   * Set fee configuration for an asset
+   *
+   * This function allows setting either fixed or dynamic fee configuration for a specific asset.
+   *
+   * # Arguments
+   * * `origin` - Root origin required
+   * * `asset_id` - The asset ID to configure
+   * * `config` - Fee configuration (Fixed or Dynamic)
+   **/
+  | { name: 'SetAssetFee'; params: { assetId: number; config: PalletDynamicFeesAssetFeeConfig } }
+  /**
+   * Remove fee configuration for an asset (will use default parameters)
+   *
+   * This function removes any custom fee configuration for the specified asset.
+   * After removal, the asset will use the default dynamic fee parameters configured in the runtime.
+   *
+   * # Arguments
+   * * `origin` - Root origin required
+   * * `asset_id` - The asset ID to remove configuration for
+   **/
+  | { name: 'RemoveAssetFee'; params: { assetId: number } };
 
-export type PalletDynamicFeesCallLike = null;
+export type PalletDynamicFeesCallLike =
+  /**
+   * Set fee configuration for an asset
+   *
+   * This function allows setting either fixed or dynamic fee configuration for a specific asset.
+   *
+   * # Arguments
+   * * `origin` - Root origin required
+   * * `asset_id` - The asset ID to configure
+   * * `config` - Fee configuration (Fixed or Dynamic)
+   **/
+  | { name: 'SetAssetFee'; params: { assetId: number; config: PalletDynamicFeesAssetFeeConfig } }
+  /**
+   * Remove fee configuration for an asset (will use default parameters)
+   *
+   * This function removes any custom fee configuration for the specified asset.
+   * After removal, the asset will use the default dynamic fee parameters configured in the runtime.
+   *
+   * # Arguments
+   * * `origin` - Root origin required
+   * * `asset_id` - The asset ID to remove configuration for
+   **/
+  | { name: 'RemoveAssetFee'; params: { assetId: number } };
+
+export type PalletDynamicFeesAssetFeeConfig =
+  | { type: 'Fixed'; value: { assetFee: Permill; protocolFee: Permill } }
+  | {
+      type: 'Dynamic';
+      value: { assetFeeParams: PalletDynamicFeesFeeParams; protocolFeeParams: PalletDynamicFeesFeeParams };
+    };
+
+export type PalletDynamicFeesFeeParams = {
+  minFee: Permill;
+  maxFee: Permill;
+  decay: FixedU128;
+  amplification: FixedU128;
+};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11755,7 +11373,23 @@ export type PalletDcaCall =
    * Emits `Terminated` event when successful.
    *
    **/
-  | { name: 'Terminate'; params: { scheduleId: number; nextExecutionBlock?: number | undefined } };
+  | { name: 'Terminate'; params: { scheduleId: number; nextExecutionBlock?: number | undefined } }
+  /**
+   * Unlocks DCA reserves of provided asset for the caller if they have no active schedules.
+   *
+   * This is a utility function to help users recover their reserved funds in case
+   * a DCA schedule was terminated but left some reserved amounts.
+   *
+   * This can only be called when the user has no active DCA schedules.
+   *
+   * Parameters:
+   * - `origin`: The account to unlock reserves for (must be signed)
+   * - `asset_id`: The asset ID for which reserves should be unlocked.
+   *
+   * Emits `ReserveUnlocked` event when successful.
+   *
+   **/
+  | { name: 'UnlockReserves'; params: { who: AccountId32; assetId: number } };
 
 export type PalletDcaCallLike =
   /**
@@ -11799,7 +11433,23 @@ export type PalletDcaCallLike =
    * Emits `Terminated` event when successful.
    *
    **/
-  | { name: 'Terminate'; params: { scheduleId: number; nextExecutionBlock?: number | undefined } };
+  | { name: 'Terminate'; params: { scheduleId: number; nextExecutionBlock?: number | undefined } }
+  /**
+   * Unlocks DCA reserves of provided asset for the caller if they have no active schedules.
+   *
+   * This is a utility function to help users recover their reserved funds in case
+   * a DCA schedule was terminated but left some reserved amounts.
+   *
+   * This can only be called when the user has no active DCA schedules.
+   *
+   * Parameters:
+   * - `origin`: The account to unlock reserves for (must be signed)
+   * - `asset_id`: The asset ID for which reserves should be unlocked.
+   *
+   * Emits `ReserveUnlocked` event when successful.
+   *
+   **/
+  | { name: 'UnlockReserves'; params: { who: AccountId32Like; assetId: number } };
 
 export type PalletDcaSchedule = {
   owner: AccountId32;
@@ -14423,7 +14073,19 @@ export type PalletCircuitBreakerEvent =
   /**
    * Remove liquidity limit of an asset was changed.
    **/
-  | { name: 'RemoveLiquidityLimitChanged'; data: { assetId: number; liquidityLimit?: [number, number] | undefined } };
+  | { name: 'RemoveLiquidityLimitChanged'; data: { assetId: number; liquidityLimit?: [number, number] | undefined } }
+  /**
+   * Asset went to lockdown
+   **/
+  | { name: 'AssetLockdown'; data: { assetId: number; until: number } }
+  /**
+   * Asset lockdown was removed
+   **/
+  | { name: 'AssetLockdownRemoved'; data: { assetId: number } }
+  /**
+   * All reserved amount of deposit was released
+   **/
+  | { name: 'DepositReleased'; data: { who: AccountId32; assetId: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -14444,7 +14106,15 @@ export type PalletRouteExecutorEvent =
 /**
  * The `Event` enum of this pallet
  **/
-export type PalletDynamicFeesEvent = null;
+export type PalletDynamicFeesEvent =
+  /**
+   * Asset fee configuration has been set
+   **/
+  | { name: 'AssetFeeConfigSet'; data: { assetId: number; params: PalletDynamicFeesAssetFeeConfig } }
+  /**
+   * Asset fee configuration has been removed
+   **/
+  | { name: 'AssetFeeConfigRemoved'; data: { assetId: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -15308,7 +14978,11 @@ export type PalletDcaEvent =
   /**
    * Randomness generation failed possibly coming from missing data about relay chain
    **/
-  | { name: 'RandomnessGenerationFailed'; data: { block: number; error: DispatchError } };
+  | { name: 'RandomnessGenerationFailed'; data: { block: number; error: DispatchError } }
+  /**
+   * DCA reserve for the given asset have been unlocked for a user
+   **/
+  | { name: 'ReserveUnlocked'; data: { who: AccountId32; assetId: number } };
 
 /**
  * Events type.
@@ -16462,83 +16136,6 @@ export type PalletDemocracyError =
    **/
   | 'PreimageNotExist';
 
-export type PalletElectionsPhragmenSeatHolder = { who: AccountId32; stake: bigint; deposit: bigint };
-
-export type PalletElectionsPhragmenVoter = { votes: Array<AccountId32>; stake: bigint; deposit: bigint };
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletElectionsPhragmenError =
-  /**
-   * Cannot vote when no candidates or members exist.
-   **/
-  | 'UnableToVote'
-  /**
-   * Must vote for at least one candidate.
-   **/
-  | 'NoVotes'
-  /**
-   * Cannot vote more than candidates.
-   **/
-  | 'TooManyVotes'
-  /**
-   * Cannot vote more than maximum allowed.
-   **/
-  | 'MaximumVotesExceeded'
-  /**
-   * Cannot vote with stake less than minimum balance.
-   **/
-  | 'LowBalance'
-  /**
-   * Voter can not pay voting bond.
-   **/
-  | 'UnableToPayBond'
-  /**
-   * Must be a voter.
-   **/
-  | 'MustBeVoter'
-  /**
-   * Duplicated candidate submission.
-   **/
-  | 'DuplicatedCandidate'
-  /**
-   * Too many candidates have been created.
-   **/
-  | 'TooManyCandidates'
-  /**
-   * Member cannot re-submit candidacy.
-   **/
-  | 'MemberSubmit'
-  /**
-   * Runner cannot re-submit candidacy.
-   **/
-  | 'RunnerUpSubmit'
-  /**
-   * Candidate does not have enough funds.
-   **/
-  | 'InsufficientCandidateFunds'
-  /**
-   * Not a member.
-   **/
-  | 'NotMember'
-  /**
-   * The provided count of number of candidates is incorrect.
-   **/
-  | 'InvalidWitnessData'
-  /**
-   * The provided count of number of votes is incorrect.
-   **/
-  | 'InvalidVoteCount'
-  /**
-   * The renouncing origin presented a wrong `Renouncing` parameter.
-   **/
-  | 'InvalidRenouncing'
-  /**
-   * Prediction regarding replacement after member removal is wrong.
-   **/
-  | 'InvalidReplacement';
-
 export type PalletCollectiveVotes = {
   index: number;
   threshold: number;
@@ -16595,49 +16192,6 @@ export type PalletCollectiveError =
    * Prime account is not a member
    **/
   | 'PrimeAccountNotMember';
-
-export type PalletTipsOpenTip = {
-  reason: H256;
-  who: AccountId32;
-  finder: AccountId32;
-  deposit: bigint;
-  closes?: number | undefined;
-  tips: Array<[AccountId32, bigint]>;
-  findersFee: boolean;
-};
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletTipsError =
-  /**
-   * The reason given is just too big.
-   **/
-  | 'ReasonTooBig'
-  /**
-   * The tip was already found/started.
-   **/
-  | 'AlreadyKnown'
-  /**
-   * The tip hash is unknown.
-   **/
-  | 'UnknownTip'
-  /**
-   * The tip given was too generous.
-   **/
-  | 'MaxTipAmountExceeded'
-  /**
-   * The account attempting to retract the tip is not the finder of the tip.
-   **/
-  | 'NotFinder'
-  /**
-   * The tip cannot be claimed/closed because there are not enough tippers yet.
-   **/
-  | 'StillOpen'
-  /**
-   * The tip cannot be claimed/closed because it's still in the countdown period.
-   **/
-  | 'Premature';
 
 export type PalletProxyProxyDefinition = {
   delegate: AccountId32;
@@ -17627,6 +17181,10 @@ export type PalletCircuitBreakerTradeVolumeLimit = { volumeIn: bigint; volumeOut
 
 export type PalletCircuitBreakerLiquidityLimit = { liquidity: bigint; limit: bigint };
 
+export type PalletCircuitBreakerLockdownStatus =
+  | { type: 'Locked'; value: number }
+  | { type: 'Unlocked'; value: [number, bigint] };
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -17654,7 +17212,21 @@ export type PalletCircuitBreakerError =
   /**
    * Asset is not allowed to have a limit
    **/
-  | 'NotAllowed';
+  | 'NotAllowed'
+  /**
+   * Asset still in lockdown as it reached the allowed deposit limit for the period
+   * Query the `asset_lockdown_state` storage to determine until which block the asset is locked,
+   * so that the deposit can be released afterward.
+   **/
+  | 'AssetInLockdown'
+  /**
+   * Asset is not in a lockdown
+   **/
+  | 'AssetNotInLockdown'
+  /**
+   * Invalid amount to save deposit
+   **/
+  | 'InvalidAmount';
 
 /**
  * The `Error` enum of this pallet.
@@ -17703,17 +17275,14 @@ export type PalletRouteExecutorError =
 
 export type PalletDynamicFeesFeeEntry = { assetFee: Permill; protocolFee: Permill; timestamp: number };
 
-export type PalletDynamicFeesFeeParams = {
-  minFee: Permill;
-  maxFee: Permill;
-  decay: FixedU128;
-  amplification: FixedU128;
-};
-
 /**
  * The `Error` enum of this pallet.
  **/
-export type PalletDynamicFeesError = null;
+export type PalletDynamicFeesError =
+  /**
+   * Invalid fee parameters provided
+   **/
+  'InvalidFeeParameters';
 
 export type PalletStakingStakingData = {
   totalStake: bigint;
@@ -18734,7 +18303,11 @@ export type PalletXykLiquidityMiningError =
   /**
    * No global farm - yield farm pairs specified to join
    **/
-  | 'NoFarmsSpecified';
+  | 'NoFarmsSpecified'
+  /**
+   * Failed to calculate value of xyk shares
+   **/
+  | 'FailedToValueShares';
 
 export type PalletLiquidityMiningDepositData002 = {
   shares: bigint;
@@ -18822,7 +18395,15 @@ export type PalletDcaError =
   /**
    * Stability threshold cannot be higher than `MaxConfigurablePriceDifferenceBetweenBlock`
    **/
-  | 'StabilityThresholdTooHigh';
+  | 'StabilityThresholdTooHigh'
+  /**
+   * User still has active DCA schedules and cannot unlock reserves
+   **/
+  | 'HasActiveSchedules'
+  /**
+   * No reserves are locked for the user for the given asset
+   **/
+  | 'NoReservesLocked';
 
 export type PalletSchedulerScheduled = {
   maybeId?: FixedBytes<32> | undefined;
@@ -19448,6 +19029,7 @@ export type PalletEmaOracleOracleEntry = {
   price: HydraDxMathRatio;
   volume: HydradxTraitsOracleVolume;
   liquidity: HydradxTraitsOracleLiquidity;
+  sharesIssuance?: bigint | undefined;
   updatedAt: number;
 };
 
@@ -19652,10 +19234,7 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'Preimage'; palletError: PalletPreimageError }
   | { pallet: 'Identity'; palletError: PalletIdentityError }
   | { pallet: 'Democracy'; palletError: PalletDemocracyError }
-  | { pallet: 'Elections'; palletError: PalletElectionsPhragmenError }
-  | { pallet: 'Council'; palletError: PalletCollectiveError }
   | { pallet: 'TechnicalCommittee'; palletError: PalletCollectiveError }
-  | { pallet: 'Tips'; palletError: PalletTipsError }
   | { pallet: 'Proxy'; palletError: PalletProxyError }
   | { pallet: 'Multisig'; palletError: PalletMultisigError }
   | { pallet: 'Uniques'; palletError: PalletUniquesError }

@@ -39,11 +39,8 @@ import type {
   PalletDemocracyVoteVoting,
   PalletDemocracyVoteThreshold,
   PalletDemocracyMetadataOwner,
-  PalletElectionsPhragmenSeatHolder,
-  PalletElectionsPhragmenVoter,
   HydradxRuntimeRuntimeCall,
   PalletCollectiveVotes,
-  PalletTipsOpenTip,
   PalletProxyProxyDefinition,
   PalletProxyAnnouncement,
   PalletMultisigMultisig,
@@ -68,9 +65,11 @@ import type {
   PalletOtcOrder,
   PalletCircuitBreakerTradeVolumeLimit,
   PalletCircuitBreakerLiquidityLimit,
+  PalletCircuitBreakerLockdownStatus,
   HydradxTraitsRouterTrade,
   HydradxTraitsRouterAssetPair,
   PalletDynamicFeesFeeEntry,
+  PalletDynamicFeesAssetFeeConfig,
   PalletStakingStakingData,
   PalletStakingPosition,
   PalletStakingVoting,
@@ -766,116 +765,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
-   * Pallet `Elections`'s storage queries
-   **/
-  elections: {
-    /**
-     * The current elected members.
-     *
-     * Invariant: Always sorted based on account id.
-     *
-     * @param {Callback<Array<PalletElectionsPhragmenSeatHolder>> =} callback
-     **/
-    members: GenericStorageQuery<Rv, () => Array<PalletElectionsPhragmenSeatHolder>>;
-
-    /**
-     * The current reserved runners-up.
-     *
-     * Invariant: Always sorted based on rank (worse to best). Upon removal of a member, the
-     * last (i.e. _best_) runner-up will be replaced.
-     *
-     * @param {Callback<Array<PalletElectionsPhragmenSeatHolder>> =} callback
-     **/
-    runnersUp: GenericStorageQuery<Rv, () => Array<PalletElectionsPhragmenSeatHolder>>;
-
-    /**
-     * The present candidate list. A current member or runner-up can never enter this vector
-     * and is always implicitly assumed to be a candidate.
-     *
-     * Second element is the deposit.
-     *
-     * Invariant: Always sorted based on account id.
-     *
-     * @param {Callback<Array<[AccountId32, bigint]>> =} callback
-     **/
-    candidates: GenericStorageQuery<Rv, () => Array<[AccountId32, bigint]>>;
-
-    /**
-     * The total number of vote rounds that have happened, excluding the upcoming one.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    electionRounds: GenericStorageQuery<Rv, () => number>;
-
-    /**
-     * Votes and locked stake of a particular voter.
-     *
-     * TWOX-NOTE: SAFE as `AccountId` is a crypto hash.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<PalletElectionsPhragmenVoter> =} callback
-     **/
-    voting: GenericStorageQuery<Rv, (arg: AccountId32Like) => PalletElectionsPhragmenVoter, AccountId32>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
-   * Pallet `Council`'s storage queries
-   **/
-  council: {
-    /**
-     * The hashes of the active proposals.
-     *
-     * @param {Callback<Array<H256>> =} callback
-     **/
-    proposals: GenericStorageQuery<Rv, () => Array<H256>>;
-
-    /**
-     * Actual proposal for a given hash, if it's current.
-     *
-     * @param {H256} arg
-     * @param {Callback<HydradxRuntimeRuntimeCall | undefined> =} callback
-     **/
-    proposalOf: GenericStorageQuery<Rv, (arg: H256) => HydradxRuntimeRuntimeCall | undefined, H256>;
-
-    /**
-     * Votes on a given proposal, if it is ongoing.
-     *
-     * @param {H256} arg
-     * @param {Callback<PalletCollectiveVotes | undefined> =} callback
-     **/
-    voting: GenericStorageQuery<Rv, (arg: H256) => PalletCollectiveVotes | undefined, H256>;
-
-    /**
-     * Proposals so far.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    proposalCount: GenericStorageQuery<Rv, () => number>;
-
-    /**
-     * The current members of the collective. This is stored sorted (just by value).
-     *
-     * @param {Callback<Array<AccountId32>> =} callback
-     **/
-    members: GenericStorageQuery<Rv, () => Array<AccountId32>>;
-
-    /**
-     * The prime member that helps determine the default vote behavior in case of abstentions.
-     *
-     * @param {Callback<AccountId32 | undefined> =} callback
-     **/
-    prime: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
    * Pallet `TechnicalCommittee`'s storage queries
    **/
   technicalCommittee: {
@@ -922,34 +811,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<AccountId32 | undefined> =} callback
      **/
     prime: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
-   * Pallet `Tips`'s storage queries
-   **/
-  tips: {
-    /**
-     * TipsMap that are not yet completed. Keyed by the hash of `(reason, who)` from the value.
-     * This has the insecure enumerable hash function since the key itself is already
-     * guaranteed to be a secure hash.
-     *
-     * @param {H256} arg
-     * @param {Callback<PalletTipsOpenTip | undefined> =} callback
-     **/
-    tips: GenericStorageQuery<Rv, (arg: H256) => PalletTipsOpenTip | undefined, H256>;
-
-    /**
-     * Simple preimage lookup from the reason's hash to the original data. Again, has an
-     * insecure enumerable hash since the key is guaranteed to be the result of a secure hash.
-     *
-     * @param {H256} arg
-     * @param {Callback<Bytes | undefined> =} callback
-     **/
-    reasons: GenericStorageQuery<Rv, (arg: H256) => Bytes | undefined, H256>;
 
     /**
      * Generic pallet storage query
@@ -1630,6 +1491,17 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     >;
 
     /**
+     *
+     * @param {number} arg
+     * @param {Callback<PalletCircuitBreakerLockdownStatus | undefined> =} callback
+     **/
+    assetLockdownState: GenericStorageQuery<
+      Rv,
+      (arg: number) => PalletCircuitBreakerLockdownStatus | undefined,
+      number
+    >;
+
+    /**
      * Liquidity limits of assets for removing liquidity.
      * If not set, returns the default limit.
      *
@@ -1688,6 +1560,18 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<PalletDynamicFeesFeeEntry | undefined> =} callback
      **/
     assetFee: GenericStorageQuery<Rv, (arg: number) => PalletDynamicFeesFeeEntry | undefined, number>;
+
+    /**
+     * Stores per-asset fee configuration (Fixed or Dynamic)
+     *
+     * @param {number} arg
+     * @param {Callback<PalletDynamicFeesAssetFeeConfig | undefined> =} callback
+     **/
+    assetFeeConfiguration: GenericStorageQuery<
+      Rv,
+      (arg: number) => PalletDynamicFeesAssetFeeConfig | undefined,
+      number
+    >;
 
     /**
      * Generic pallet storage query
@@ -2058,6 +1942,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
+   * Pallet `Parameters`'s storage queries
+   **/
+  parameters: {
+    /**
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    isTestnet: GenericStorageQuery<Rv, () => boolean>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
    * Pallet `Tokens`'s storage queries
    **/
   tokens: {
@@ -2191,12 +2090,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * Current building block's transactions and receipts.
      *
-     * @param {Callback<Array<[EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3]>> =} callback
+     * @param {number} arg
+     * @param {Callback<[EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3] | undefined> =} callback
      **/
     pending: GenericStorageQuery<
       Rv,
-      () => Array<[EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3]>
+      (arg: number) => [EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3] | undefined,
+      number
     >;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForPending: GenericStorageQuery<Rv, () => number>;
 
     /**
      * The current Ethereum block.

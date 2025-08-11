@@ -597,164 +597,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
-   * Pallet `Elections`'s errors
-   **/
-  elections: {
-    /**
-     * Cannot vote when no candidates or members exist.
-     **/
-    UnableToVote: GenericPalletError<Rv>;
-
-    /**
-     * Must vote for at least one candidate.
-     **/
-    NoVotes: GenericPalletError<Rv>;
-
-    /**
-     * Cannot vote more than candidates.
-     **/
-    TooManyVotes: GenericPalletError<Rv>;
-
-    /**
-     * Cannot vote more than maximum allowed.
-     **/
-    MaximumVotesExceeded: GenericPalletError<Rv>;
-
-    /**
-     * Cannot vote with stake less than minimum balance.
-     **/
-    LowBalance: GenericPalletError<Rv>;
-
-    /**
-     * Voter can not pay voting bond.
-     **/
-    UnableToPayBond: GenericPalletError<Rv>;
-
-    /**
-     * Must be a voter.
-     **/
-    MustBeVoter: GenericPalletError<Rv>;
-
-    /**
-     * Duplicated candidate submission.
-     **/
-    DuplicatedCandidate: GenericPalletError<Rv>;
-
-    /**
-     * Too many candidates have been created.
-     **/
-    TooManyCandidates: GenericPalletError<Rv>;
-
-    /**
-     * Member cannot re-submit candidacy.
-     **/
-    MemberSubmit: GenericPalletError<Rv>;
-
-    /**
-     * Runner cannot re-submit candidacy.
-     **/
-    RunnerUpSubmit: GenericPalletError<Rv>;
-
-    /**
-     * Candidate does not have enough funds.
-     **/
-    InsufficientCandidateFunds: GenericPalletError<Rv>;
-
-    /**
-     * Not a member.
-     **/
-    NotMember: GenericPalletError<Rv>;
-
-    /**
-     * The provided count of number of candidates is incorrect.
-     **/
-    InvalidWitnessData: GenericPalletError<Rv>;
-
-    /**
-     * The provided count of number of votes is incorrect.
-     **/
-    InvalidVoteCount: GenericPalletError<Rv>;
-
-    /**
-     * The renouncing origin presented a wrong `Renouncing` parameter.
-     **/
-    InvalidRenouncing: GenericPalletError<Rv>;
-
-    /**
-     * Prediction regarding replacement after member removal is wrong.
-     **/
-    InvalidReplacement: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
-   * Pallet `Council`'s errors
-   **/
-  council: {
-    /**
-     * Account is not a member
-     **/
-    NotMember: GenericPalletError<Rv>;
-
-    /**
-     * Duplicate proposals not allowed
-     **/
-    DuplicateProposal: GenericPalletError<Rv>;
-
-    /**
-     * Proposal must exist
-     **/
-    ProposalMissing: GenericPalletError<Rv>;
-
-    /**
-     * Mismatched index
-     **/
-    WrongIndex: GenericPalletError<Rv>;
-
-    /**
-     * Duplicate vote ignored
-     **/
-    DuplicateVote: GenericPalletError<Rv>;
-
-    /**
-     * Members are already initialized!
-     **/
-    AlreadyInitialized: GenericPalletError<Rv>;
-
-    /**
-     * The close call was made too early, before the end of the voting.
-     **/
-    TooEarly: GenericPalletError<Rv>;
-
-    /**
-     * There can only be a maximum of `MaxProposals` active proposals.
-     **/
-    TooManyProposals: GenericPalletError<Rv>;
-
-    /**
-     * The given weight bound for the proposal was too low.
-     **/
-    WrongProposalWeight: GenericPalletError<Rv>;
-
-    /**
-     * The given length bound for the proposal was too low.
-     **/
-    WrongProposalLength: GenericPalletError<Rv>;
-
-    /**
-     * Prime account is not a member
-     **/
-    PrimeAccountNotMember: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
    * Pallet `TechnicalCommittee`'s errors
    **/
   technicalCommittee: {
@@ -812,50 +654,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Prime account is not a member
      **/
     PrimeAccountNotMember: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
-   * Pallet `Tips`'s errors
-   **/
-  tips: {
-    /**
-     * The reason given is just too big.
-     **/
-    ReasonTooBig: GenericPalletError<Rv>;
-
-    /**
-     * The tip was already found/started.
-     **/
-    AlreadyKnown: GenericPalletError<Rv>;
-
-    /**
-     * The tip hash is unknown.
-     **/
-    UnknownTip: GenericPalletError<Rv>;
-
-    /**
-     * The tip given was too generous.
-     **/
-    MaxTipAmountExceeded: GenericPalletError<Rv>;
-
-    /**
-     * The account attempting to retract the tip is not the finder of the tip.
-     **/
-    NotFinder: GenericPalletError<Rv>;
-
-    /**
-     * The tip cannot be claimed/closed because there are not enough tippers yet.
-     **/
-    StillOpen: GenericPalletError<Rv>;
-
-    /**
-     * The tip cannot be claimed/closed because it's still in the countdown period.
-     **/
-    Premature: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1948,6 +1746,23 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NotAllowed: GenericPalletError<Rv>;
 
     /**
+     * Asset still in lockdown as it reached the allowed deposit limit for the period
+     * Query the `asset_lockdown_state` storage to determine until which block the asset is locked,
+     * so that the deposit can be released afterward.
+     **/
+    AssetInLockdown: GenericPalletError<Rv>;
+
+    /**
+     * Asset is not in a lockdown
+     **/
+    AssetNotInLockdown: GenericPalletError<Rv>;
+
+    /**
+     * Invalid amount to save deposit
+     **/
+    InvalidAmount: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -2015,6 +1830,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
    * Pallet `DynamicFees`'s errors
    **/
   dynamicFees: {
+    /**
+     * Invalid fee parameters provided
+     **/
+    InvalidFeeParameters: GenericPalletError<Rv>;
+
     /**
      * Generic pallet error
      **/
@@ -3172,6 +2992,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NoFarmsSpecified: GenericPalletError<Rv>;
 
     /**
+     * Failed to calculate value of xyk shares
+     **/
+    FailedToValueShares: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -3429,6 +3254,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Stability threshold cannot be higher than `MaxConfigurablePriceDifferenceBetweenBlock`
      **/
     StabilityThresholdTooHigh: GenericPalletError<Rv>;
+
+    /**
+     * User still has active DCA schedules and cannot unlock reserves
+     **/
+    HasActiveSchedules: GenericPalletError<Rv>;
+
+    /**
+     * No reserves are locked for the user for the given asset
+     **/
+    NoReservesLocked: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

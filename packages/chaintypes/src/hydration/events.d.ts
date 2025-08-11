@@ -34,6 +34,7 @@ import type {
   PalletClaimsEthereumAddress,
   PalletOmnipoolTradability,
   PalletLiquidityMiningLoyaltyCurve,
+  PalletDynamicFeesAssetFeeConfig,
   NonZeroU16,
   PalletStableswapPoolPegInfo,
   HydradxTraitsStableswapAssetAmount,
@@ -757,130 +758,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
-   * Pallet `Elections`'s events
-   **/
-  elections: {
-    /**
-     * A new term with new_members. This indicates that enough candidates existed to run
-     * the election, not that enough have has been elected. The inner value must be examined
-     * for this purpose. A `NewTerm(\[\])` indicates that some candidates got their bond
-     * slashed and none were elected, whilst `EmptyTerm` means that no candidates existed to
-     * begin with.
-     **/
-    NewTerm: GenericPalletEvent<Rv, 'Elections', 'NewTerm', { newMembers: Array<[AccountId32, bigint]> }>;
-
-    /**
-     * No (or not enough) candidates existed for this round. This is different from
-     * `NewTerm(\[\])`. See the description of `NewTerm`.
-     **/
-    EmptyTerm: GenericPalletEvent<Rv, 'Elections', 'EmptyTerm', null>;
-
-    /**
-     * Internal error happened while trying to perform election.
-     **/
-    ElectionError: GenericPalletEvent<Rv, 'Elections', 'ElectionError', null>;
-
-    /**
-     * A member has been removed. This should always be followed by either `NewTerm` or
-     * `EmptyTerm`.
-     **/
-    MemberKicked: GenericPalletEvent<Rv, 'Elections', 'MemberKicked', { member: AccountId32 }>;
-
-    /**
-     * Someone has renounced their candidacy.
-     **/
-    Renounced: GenericPalletEvent<Rv, 'Elections', 'Renounced', { candidate: AccountId32 }>;
-
-    /**
-     * A candidate was slashed by amount due to failing to obtain a seat as member or
-     * runner-up.
-     *
-     * Note that old members and runners-up are also candidates.
-     **/
-    CandidateSlashed: GenericPalletEvent<
-      Rv,
-      'Elections',
-      'CandidateSlashed',
-      { candidate: AccountId32; amount: bigint }
-    >;
-
-    /**
-     * A seat holder was slashed by amount by being forcefully removed from the set.
-     **/
-    SeatHolderSlashed: GenericPalletEvent<
-      Rv,
-      'Elections',
-      'SeatHolderSlashed',
-      { seatHolder: AccountId32; amount: bigint }
-    >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
-   * Pallet `Council`'s events
-   **/
-  council: {
-    /**
-     * A motion (given hash) has been proposed (by given account) with a threshold (given
-     * `MemberCount`).
-     **/
-    Proposed: GenericPalletEvent<
-      Rv,
-      'Council',
-      'Proposed',
-      { account: AccountId32; proposalIndex: number; proposalHash: H256; threshold: number }
-    >;
-
-    /**
-     * A motion (given hash) has been voted on by given account, leaving
-     * a tally (yes votes and no votes given respectively as `MemberCount`).
-     **/
-    Voted: GenericPalletEvent<
-      Rv,
-      'Council',
-      'Voted',
-      { account: AccountId32; proposalHash: H256; voted: boolean; yes: number; no: number }
-    >;
-
-    /**
-     * A motion was approved by the required threshold.
-     **/
-    Approved: GenericPalletEvent<Rv, 'Council', 'Approved', { proposalHash: H256 }>;
-
-    /**
-     * A motion was not approved by the required threshold.
-     **/
-    Disapproved: GenericPalletEvent<Rv, 'Council', 'Disapproved', { proposalHash: H256 }>;
-
-    /**
-     * A motion was executed; result will be `Ok` if it returned without error.
-     **/
-    Executed: GenericPalletEvent<Rv, 'Council', 'Executed', { proposalHash: H256; result: Result<[], DispatchError> }>;
-
-    /**
-     * A single member did some action; result will be `Ok` if it returned without error.
-     **/
-    MemberExecuted: GenericPalletEvent<
-      Rv,
-      'Council',
-      'MemberExecuted',
-      { proposalHash: H256; result: Result<[], DispatchError> }
-    >;
-
-    /**
-     * A proposal was closed because its threshold was reached or after its duration was up.
-     **/
-    Closed: GenericPalletEvent<Rv, 'Council', 'Closed', { proposalHash: H256; yes: number; no: number }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
    * Pallet `TechnicalCommittee`'s events
    **/
   technicalCommittee: {
@@ -940,40 +817,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * A proposal was closed because its threshold was reached or after its duration was up.
      **/
     Closed: GenericPalletEvent<Rv, 'TechnicalCommittee', 'Closed', { proposalHash: H256; yes: number; no: number }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
-   * Pallet `Tips`'s events
-   **/
-  tips: {
-    /**
-     * A new tip suggestion has been opened.
-     **/
-    NewTip: GenericPalletEvent<Rv, 'Tips', 'NewTip', { tipHash: H256 }>;
-
-    /**
-     * A tip suggestion has reached threshold and is closing.
-     **/
-    TipClosing: GenericPalletEvent<Rv, 'Tips', 'TipClosing', { tipHash: H256 }>;
-
-    /**
-     * A tip suggestion has been closed.
-     **/
-    TipClosed: GenericPalletEvent<Rv, 'Tips', 'TipClosed', { tipHash: H256; who: AccountId32; payout: bigint }>;
-
-    /**
-     * A tip suggestion has been retracted.
-     **/
-    TipRetracted: GenericPalletEvent<Rv, 'Tips', 'TipRetracted', { tipHash: H256 }>;
-
-    /**
-     * A tip suggestion has been slashed.
-     **/
-    TipSlashed: GenericPalletEvent<Rv, 'Tips', 'TipSlashed', { tipHash: H256; finder: AccountId32; deposit: bigint }>;
 
     /**
      * Generic pallet event
@@ -2379,6 +2222,21 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * Asset went to lockdown
+     **/
+    AssetLockdown: GenericPalletEvent<Rv, 'CircuitBreaker', 'AssetLockdown', { assetId: number; until: number }>;
+
+    /**
+     * Asset lockdown was removed
+     **/
+    AssetLockdownRemoved: GenericPalletEvent<Rv, 'CircuitBreaker', 'AssetLockdownRemoved', { assetId: number }>;
+
+    /**
+     * All reserved amount of deposit was released
+     **/
+    DepositReleased: GenericPalletEvent<Rv, 'CircuitBreaker', 'DepositReleased', { who: AccountId32; assetId: number }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -2411,6 +2269,21 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
    * Pallet `DynamicFees`'s events
    **/
   dynamicFees: {
+    /**
+     * Asset fee configuration has been set
+     **/
+    AssetFeeConfigSet: GenericPalletEvent<
+      Rv,
+      'DynamicFees',
+      'AssetFeeConfigSet',
+      { assetId: number; params: PalletDynamicFeesAssetFeeConfig }
+    >;
+
+    /**
+     * Asset fee configuration has been removed
+     **/
+    AssetFeeConfigRemoved: GenericPalletEvent<Rv, 'DynamicFees', 'AssetFeeConfigRemoved', { assetId: number }>;
+
     /**
      * Generic pallet event
      **/
@@ -3631,6 +3504,11 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'RandomnessGenerationFailed',
       { block: number; error: DispatchError }
     >;
+
+    /**
+     * DCA reserve for the given asset have been unlocked for a user
+     **/
+    ReserveUnlocked: GenericPalletEvent<Rv, 'DCA', 'ReserveUnlocked', { who: AccountId32; assetId: number }>;
 
     /**
      * Generic pallet event

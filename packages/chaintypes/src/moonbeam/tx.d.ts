@@ -21,6 +21,7 @@ import type {
   FixedBytes,
   H160,
   U256,
+  Header,
 } from 'dedot/codecs';
 import type {
   MoonbeamRuntimeRuntimeCallLike,
@@ -63,6 +64,17 @@ import type {
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMigrationsMigrationCursor,
   PalletMigrationsHistoricCleanupSelector,
+  BpHeaderChainJustificationGrandpaJustification,
+  BpHeaderChainInitializationData,
+  BpRuntimeBasicOperatingMode,
+  SpConsensusGrandpaAppPublic,
+  BpPolkadotCoreParachainsParaId,
+  BpPolkadotCoreParachainsParaHeadsProof,
+  BpMessagesMessagesOperatingMode,
+  BpMessagesTargetChainFromBridgedChainMessagesProof,
+  BpMessagesSourceChainFromBridgedChainMessagesDeliveryProof,
+  BpMessagesUnrewardedRelayersState,
+  XcmVersionedInteriorLocation,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -3201,94 +3213,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'CreateContractMetadata';
             params: { address: H160 };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<bigint>} assets
-     **/
-    approveAssetsToMigrate: GenericTxCall<
-      Rv,
-      (assets: Array<bigint>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'MoonbeamLazyMigrations';
-          palletCall: {
-            name: 'ApproveAssetsToMigrate';
-            params: { assets: Array<bigint> };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {bigint} assetId
-     **/
-    startForeignAssetsMigration: GenericTxCall<
-      Rv,
-      (assetId: bigint) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'MoonbeamLazyMigrations';
-          palletCall: {
-            name: 'StartForeignAssetsMigration';
-            params: { assetId: bigint };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {number} limit
-     **/
-    migrateForeignAssetBalances: GenericTxCall<
-      Rv,
-      (limit: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'MoonbeamLazyMigrations';
-          palletCall: {
-            name: 'MigrateForeignAssetBalances';
-            params: { limit: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     * @param {number} limit
-     **/
-    migrateForeignAssetApprovals: GenericTxCall<
-      Rv,
-      (limit: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'MoonbeamLazyMigrations';
-          palletCall: {
-            name: 'MigrateForeignAssetApprovals';
-            params: { limit: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     *
-     **/
-    finishForeignAssetsMigration: GenericTxCall<
-      Rv,
-      () => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'MoonbeamLazyMigrations';
-          palletCall: {
-            name: 'FinishForeignAssetsMigration';
           };
         }
       >
@@ -8311,6 +8235,558 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         {
           pallet: 'Randomness';
           palletCall: 'SetBabeRandomnessResults';
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `BridgeKusamaGrandpa`'s transaction calls
+   **/
+  bridgeKusamaGrandpa: {
+    /**
+     * This call is deprecated and will be removed around May 2024. Use the
+     * `submit_finality_proof_ex` instead. Semantically, this call is an equivalent of the
+     * `submit_finality_proof_ex` call without current authority set id check.
+     *
+     * @param {Header} finalityTarget
+     * @param {BpHeaderChainJustificationGrandpaJustification} justification
+     **/
+    submitFinalityProof: GenericTxCall<
+      Rv,
+      (
+        finalityTarget: Header,
+        justification: BpHeaderChainJustificationGrandpaJustification,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeKusamaGrandpa';
+          palletCall: {
+            name: 'SubmitFinalityProof';
+            params: { finalityTarget: Header; justification: BpHeaderChainJustificationGrandpaJustification };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Bootstrap the bridge pallet with an initial header and authority set from which to sync.
+     *
+     * The initial configuration provided does not need to be the genesis header of the bridged
+     * chain, it can be any arbitrary header. You can also provide the next scheduled set
+     * change if it is already know.
+     *
+     * This function is only allowed to be called from a trusted origin and writes to storage
+     * with practically no checks in terms of the validity of the data. It is important that
+     * you ensure that valid data is being passed in.
+     *
+     * @param {BpHeaderChainInitializationData} initData
+     **/
+    initialize: GenericTxCall<
+      Rv,
+      (initData: BpHeaderChainInitializationData) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeKusamaGrandpa';
+          palletCall: {
+            name: 'Initialize';
+            params: { initData: BpHeaderChainInitializationData };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Change `PalletOwner`.
+     *
+     * May only be called either by root, or by `PalletOwner`.
+     *
+     * @param {AccountId20Like | undefined} newOwner
+     **/
+    setOwner: GenericTxCall<
+      Rv,
+      (newOwner: AccountId20Like | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeKusamaGrandpa';
+          palletCall: {
+            name: 'SetOwner';
+            params: { newOwner: AccountId20Like | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Halt or resume all pallet operations.
+     *
+     * May only be called either by root, or by `PalletOwner`.
+     *
+     * @param {BpRuntimeBasicOperatingMode} operatingMode
+     **/
+    setOperatingMode: GenericTxCall<
+      Rv,
+      (operatingMode: BpRuntimeBasicOperatingMode) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeKusamaGrandpa';
+          palletCall: {
+            name: 'SetOperatingMode';
+            params: { operatingMode: BpRuntimeBasicOperatingMode };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Verify a target header is finalized according to the given finality proof. The proof
+     * is assumed to be signed by GRANDPA authorities set with `current_set_id` id.
+     *
+     * It will use the underlying storage pallet to fetch information about the current
+     * authorities and best finalized header in order to verify that the header is finalized.
+     *
+     * If successful in verification, it will write the target header to the underlying storage
+     * pallet.
+     *
+     * The call fails if:
+     *
+     * - the pallet is halted;
+     *
+     * - the pallet knows better header than the `finality_target`;
+     *
+     * - the id of best GRANDPA authority set, known to the pallet is not equal to the
+     * `current_set_id`;
+     *
+     * - verification is not optimized or invalid;
+     *
+     * - header contains forced authorities set change or change with non-zero delay.
+     *
+     * The `is_free_execution_expected` parameter is not really used inside the call. It is
+     * used by the transaction extension, which should be registered at the runtime level. If
+     * this parameter is `true`, the transaction will be treated as invalid, if the call won't
+     * be executed for free. If transaction extension is not used by the runtime, this
+     * parameter is not used at all.
+     *
+     * @param {Header} finalityTarget
+     * @param {BpHeaderChainJustificationGrandpaJustification} justification
+     * @param {bigint} currentSetId
+     * @param {boolean} isFreeExecutionExpected
+     **/
+    submitFinalityProofEx: GenericTxCall<
+      Rv,
+      (
+        finalityTarget: Header,
+        justification: BpHeaderChainJustificationGrandpaJustification,
+        currentSetId: bigint,
+        isFreeExecutionExpected: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeKusamaGrandpa';
+          palletCall: {
+            name: 'SubmitFinalityProofEx';
+            params: {
+              finalityTarget: Header;
+              justification: BpHeaderChainJustificationGrandpaJustification;
+              currentSetId: bigint;
+              isFreeExecutionExpected: boolean;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set current authorities set and best finalized bridged header to given values
+     * (almost) without any checks. This call can fail only if:
+     *
+     * - the call origin is not a root or a pallet owner;
+     *
+     * - there are too many authorities in the new set.
+     *
+     * No other checks are made. Previously imported headers stay in the storage and
+     * are still accessible after the call.
+     *
+     * @param {bigint} newCurrentSetId
+     * @param {Array<[SpConsensusGrandpaAppPublic, bigint]>} newAuthorities
+     * @param {Header} newBestHeader
+     **/
+    forceSetPalletState: GenericTxCall<
+      Rv,
+      (
+        newCurrentSetId: bigint,
+        newAuthorities: Array<[SpConsensusGrandpaAppPublic, bigint]>,
+        newBestHeader: Header,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeKusamaGrandpa';
+          palletCall: {
+            name: 'ForceSetPalletState';
+            params: {
+              newCurrentSetId: bigint;
+              newAuthorities: Array<[SpConsensusGrandpaAppPublic, bigint]>;
+              newBestHeader: Header;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `BridgeKusamaParachains`'s transaction calls
+   **/
+  bridgeKusamaParachains: {
+    /**
+     * Submit proof of one or several parachain heads.
+     *
+     * The proof is supposed to be proof of some `Heads` entries from the
+     * `polkadot-runtime-parachains::paras` pallet instance, deployed at the bridged chain.
+     * The proof is supposed to be crafted at the `relay_header_hash` that must already be
+     * imported by corresponding GRANDPA pallet at this chain.
+     *
+     * The call fails if:
+     *
+     * - the pallet is halted;
+     *
+     * - the relay chain block `at_relay_block` is not imported by the associated bridge
+     * GRANDPA pallet.
+     *
+     * The call may succeed, but some heads may not be updated e.g. because pallet knows
+     * better head or it isn't tracked by the pallet.
+     *
+     * @param {[number, H256]} atRelayBlock
+     * @param {Array<[BpPolkadotCoreParachainsParaId, H256]>} parachains
+     * @param {BpPolkadotCoreParachainsParaHeadsProof} parachainHeadsProof
+     **/
+    submitParachainHeads: GenericTxCall<
+      Rv,
+      (
+        atRelayBlock: [number, H256],
+        parachains: Array<[BpPolkadotCoreParachainsParaId, H256]>,
+        parachainHeadsProof: BpPolkadotCoreParachainsParaHeadsProof,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeKusamaParachains';
+          palletCall: {
+            name: 'SubmitParachainHeads';
+            params: {
+              atRelayBlock: [number, H256];
+              parachains: Array<[BpPolkadotCoreParachainsParaId, H256]>;
+              parachainHeadsProof: BpPolkadotCoreParachainsParaHeadsProof;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Change `PalletOwner`.
+     *
+     * May only be called either by root, or by `PalletOwner`.
+     *
+     * @param {AccountId20Like | undefined} newOwner
+     **/
+    setOwner: GenericTxCall<
+      Rv,
+      (newOwner: AccountId20Like | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeKusamaParachains';
+          palletCall: {
+            name: 'SetOwner';
+            params: { newOwner: AccountId20Like | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Halt or resume all pallet operations.
+     *
+     * May only be called either by root, or by `PalletOwner`.
+     *
+     * @param {BpRuntimeBasicOperatingMode} operatingMode
+     **/
+    setOperatingMode: GenericTxCall<
+      Rv,
+      (operatingMode: BpRuntimeBasicOperatingMode) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeKusamaParachains';
+          palletCall: {
+            name: 'SetOperatingMode';
+            params: { operatingMode: BpRuntimeBasicOperatingMode };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Submit proof of one or several parachain heads.
+     *
+     * The proof is supposed to be proof of some `Heads` entries from the
+     * `polkadot-runtime-parachains::paras` pallet instance, deployed at the bridged chain.
+     * The proof is supposed to be crafted at the `relay_header_hash` that must already be
+     * imported by corresponding GRANDPA pallet at this chain.
+     *
+     * The call fails if:
+     *
+     * - the pallet is halted;
+     *
+     * - the relay chain block `at_relay_block` is not imported by the associated bridge
+     * GRANDPA pallet.
+     *
+     * The call may succeed, but some heads may not be updated e.g. because pallet knows
+     * better head or it isn't tracked by the pallet.
+     *
+     * The `is_free_execution_expected` parameter is not really used inside the call. It is
+     * used by the transaction extension, which should be registered at the runtime level. If
+     * this parameter is `true`, the transaction will be treated as invalid, if the call won't
+     * be executed for free. If transaction extension is not used by the runtime, this
+     * parameter is not used at all.
+     *
+     * @param {[number, H256]} atRelayBlock
+     * @param {Array<[BpPolkadotCoreParachainsParaId, H256]>} parachains
+     * @param {BpPolkadotCoreParachainsParaHeadsProof} parachainHeadsProof
+     * @param {boolean} isFreeExecutionExpected
+     **/
+    submitParachainHeadsEx: GenericTxCall<
+      Rv,
+      (
+        atRelayBlock: [number, H256],
+        parachains: Array<[BpPolkadotCoreParachainsParaId, H256]>,
+        parachainHeadsProof: BpPolkadotCoreParachainsParaHeadsProof,
+        isFreeExecutionExpected: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeKusamaParachains';
+          palletCall: {
+            name: 'SubmitParachainHeadsEx';
+            params: {
+              atRelayBlock: [number, H256];
+              parachains: Array<[BpPolkadotCoreParachainsParaId, H256]>;
+              parachainHeadsProof: BpPolkadotCoreParachainsParaHeadsProof;
+              isFreeExecutionExpected: boolean;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `BridgeKusamaMessages`'s transaction calls
+   **/
+  bridgeKusamaMessages: {
+    /**
+     * Change `PalletOwner`.
+     *
+     * May only be called either by root, or by `PalletOwner`.
+     *
+     * @param {AccountId20Like | undefined} newOwner
+     **/
+    setOwner: GenericTxCall<
+      Rv,
+      (newOwner: AccountId20Like | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeKusamaMessages';
+          palletCall: {
+            name: 'SetOwner';
+            params: { newOwner: AccountId20Like | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Halt or resume all/some pallet operations.
+     *
+     * May only be called either by root, or by `PalletOwner`.
+     *
+     * @param {BpMessagesMessagesOperatingMode} operatingMode
+     **/
+    setOperatingMode: GenericTxCall<
+      Rv,
+      (operatingMode: BpMessagesMessagesOperatingMode) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeKusamaMessages';
+          palletCall: {
+            name: 'SetOperatingMode';
+            params: { operatingMode: BpMessagesMessagesOperatingMode };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Receive messages proof from bridged chain.
+     *
+     * The weight of the call assumes that the transaction always brings outbound lane
+     * state update. Because of that, the submitter (relayer) has no benefit of not including
+     * this data in the transaction, so reward confirmations lags should be minimal.
+     *
+     * The call fails if:
+     *
+     * - the pallet is halted;
+     *
+     * - the call origin is not `Signed(_)`;
+     *
+     * - there are too many messages in the proof;
+     *
+     * - the proof verification procedure returns an error - e.g. because header used to craft
+     * proof is not imported by the associated finality pallet;
+     *
+     * - the `dispatch_weight` argument is not sufficient to dispatch all bundled messages.
+     *
+     * The call may succeed, but some messages may not be delivered e.g. if they are not fit
+     * into the unrewarded relayers vector.
+     *
+     * @param {AccountId20Like} relayerIdAtBridgedChain
+     * @param {BpMessagesTargetChainFromBridgedChainMessagesProof} proof
+     * @param {number} messagesCount
+     * @param {SpWeightsWeightV2Weight} dispatchWeight
+     **/
+    receiveMessagesProof: GenericTxCall<
+      Rv,
+      (
+        relayerIdAtBridgedChain: AccountId20Like,
+        proof: BpMessagesTargetChainFromBridgedChainMessagesProof,
+        messagesCount: number,
+        dispatchWeight: SpWeightsWeightV2Weight,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeKusamaMessages';
+          palletCall: {
+            name: 'ReceiveMessagesProof';
+            params: {
+              relayerIdAtBridgedChain: AccountId20Like;
+              proof: BpMessagesTargetChainFromBridgedChainMessagesProof;
+              messagesCount: number;
+              dispatchWeight: SpWeightsWeightV2Weight;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Receive messages delivery proof from bridged chain.
+     *
+     * @param {BpMessagesSourceChainFromBridgedChainMessagesDeliveryProof} proof
+     * @param {BpMessagesUnrewardedRelayersState} relayersState
+     **/
+    receiveMessagesDeliveryProof: GenericTxCall<
+      Rv,
+      (
+        proof: BpMessagesSourceChainFromBridgedChainMessagesDeliveryProof,
+        relayersState: BpMessagesUnrewardedRelayersState,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeKusamaMessages';
+          palletCall: {
+            name: 'ReceiveMessagesDeliveryProof';
+            params: {
+              proof: BpMessagesSourceChainFromBridgedChainMessagesDeliveryProof;
+              relayersState: BpMessagesUnrewardedRelayersState;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `BridgeXcmOverMoonriver`'s transaction calls
+   **/
+  bridgeXcmOverMoonriver: {
+    /**
+     * Open a bridge between two locations.
+     *
+     * The caller must be within the `T::OpenBridgeOrigin` filter (presumably: a sibling
+     * parachain or a parent relay chain). The `bridge_destination_universal_location` must be
+     * a destination within the consensus of the `T::BridgedNetwork` network.
+     *
+     * The `BridgeDeposit` amount is reserved on the caller account. This deposit
+     * is unreserved after bridge is closed.
+     *
+     * The states after this call: bridge is `Opened`, outbound lane is `Opened`, inbound lane
+     * is `Opened`.
+     *
+     * @param {XcmVersionedInteriorLocation} bridgeDestinationUniversalLocation
+     **/
+    openBridge: GenericTxCall<
+      Rv,
+      (bridgeDestinationUniversalLocation: XcmVersionedInteriorLocation) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeXcmOverMoonriver';
+          palletCall: {
+            name: 'OpenBridge';
+            params: { bridgeDestinationUniversalLocation: XcmVersionedInteriorLocation };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Try to close the bridge.
+     *
+     * Can only be called by the "owner" of this side of the bridge, meaning that the
+     * inbound XCM channel with the local origin chain is working.
+     *
+     * Closed bridge is a bridge without any traces in the runtime storage. So this method
+     * first tries to prune all queued messages at the outbound lane. When there are no
+     * outbound messages left, outbound and inbound lanes are purged. After that, funds
+     * are returned back to the owner of this side of the bridge.
+     *
+     * The number of messages that we may prune in a single call is limited by the
+     * `may_prune_messages` argument. If there are more messages in the queue, the method
+     * prunes exactly `may_prune_messages` and exits early. The caller may call it again
+     * until outbound queue is depleted and get his funds back.
+     *
+     * The states after this call: everything is either `Closed`, or purged from the
+     * runtime storage.
+     *
+     * @param {XcmVersionedInteriorLocation} bridgeDestinationUniversalLocation
+     * @param {bigint} mayPruneMessages
+     **/
+    closeBridge: GenericTxCall<
+      Rv,
+      (
+        bridgeDestinationUniversalLocation: XcmVersionedInteriorLocation,
+        mayPruneMessages: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'BridgeXcmOverMoonriver';
+          palletCall: {
+            name: 'CloseBridge';
+            params: { bridgeDestinationUniversalLocation: XcmVersionedInteriorLocation; mayPruneMessages: bigint };
+          };
         }
       >
     >;

@@ -65,7 +65,6 @@ import type {
   PalletIdentityUsernameInformation,
   PalletIdentityProvider,
   PalletMultisigMultisig,
-  PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationStatus,
   MoonbeamRuntimeRuntimeParamsRuntimeParametersValue,
   MoonbeamRuntimeRuntimeParamsRuntimeParametersKey,
   PalletEvmCodeMetadata,
@@ -110,6 +109,20 @@ import type {
   PalletRandomnessRequestState,
   PalletRandomnessRandomnessResult,
   PalletRandomnessRequestType,
+  BpRuntimeHeaderId,
+  BpHeaderChainStoredHeaderData,
+  PalletBridgeGrandpaStorageTypesStoredAuthoritySet,
+  BpRuntimeBasicOperatingMode,
+  BpParachainsParaInfo,
+  BpPolkadotCoreParachainsParaId,
+  BpParachainsParaStoredHeaderData,
+  BpMessagesMessagesOperatingMode,
+  BpMessagesInboundLaneData,
+  BpMessagesLaneHashedLaneId,
+  BpMessagesOutboundLaneData,
+  BpMessagesMessageKey,
+  BpXcmBridgeHubBridge,
+  BpXcmBridgeHubBridgeId,
 } from './types.js';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
@@ -1269,22 +1282,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    * Pallet `MoonbeamLazyMigrations`'s storage queries
    **/
   moonbeamLazyMigrations: {
-    /**
-     *
-     * @param {Callback<PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationStatus> =} callback
-     **/
-    foreignAssetMigrationStatusValue: GenericStorageQuery<
-      Rv,
-      () => PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationStatus
-    >;
-
-    /**
-     *
-     * @param {bigint} arg
-     * @param {Callback<[] | undefined> =} callback
-     **/
-    approvedForeignAssets: GenericStorageQuery<Rv, (arg: bigint) => [] | undefined, bigint>;
-
     /**
      * Generic pallet storage query
      **/
@@ -2532,6 +2529,259 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<H256> =} callback
      **/
     previousLocalVrfOutput: GenericStorageQuery<Rv, () => H256>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `BridgeKusamaGrandpa`'s storage queries
+   **/
+  bridgeKusamaGrandpa: {
+    /**
+     * Number of free header submissions that we may yet accept in the current block.
+     *
+     * If the `FreeHeadersRemaining` hits zero, all following mandatory headers in the
+     * current block are accepted with fee (`Pays::Yes` is returned).
+     *
+     * The `FreeHeadersRemaining` is an ephemeral value that is set to
+     * `MaxFreeHeadersPerBlock` at each block initialization and is killed on block
+     * finalization. So it never ends up in the storage trie.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    freeHeadersRemaining: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Hash of the header used to bootstrap the pallet.
+     *
+     * @param {Callback<H256> =} callback
+     **/
+    initialHash: GenericStorageQuery<Rv, () => H256>;
+
+    /**
+     * Hash of the best finalized header.
+     *
+     * @param {Callback<BpRuntimeHeaderId | undefined> =} callback
+     **/
+    bestFinalized: GenericStorageQuery<Rv, () => BpRuntimeHeaderId | undefined>;
+
+    /**
+     * A ring buffer of imported hashes. Ordered by the insertion time.
+     *
+     * @param {number} arg
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    importedHashes: GenericStorageQuery<Rv, (arg: number) => H256 | undefined, number>;
+
+    /**
+     * Current ring buffer position.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    importedHashesPointer: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Relevant fields of imported headers.
+     *
+     * @param {H256} arg
+     * @param {Callback<BpHeaderChainStoredHeaderData | undefined> =} callback
+     **/
+    importedHeaders: GenericStorageQuery<Rv, (arg: H256) => BpHeaderChainStoredHeaderData | undefined, H256>;
+
+    /**
+     * The current GRANDPA Authority set.
+     *
+     * @param {Callback<PalletBridgeGrandpaStorageTypesStoredAuthoritySet> =} callback
+     **/
+    currentAuthoritySet: GenericStorageQuery<Rv, () => PalletBridgeGrandpaStorageTypesStoredAuthoritySet>;
+
+    /**
+     * Optional pallet owner.
+     *
+     * Pallet owner has a right to halt all pallet operations and then resume it. If it is
+     * `None`, then there are no direct ways to halt/resume pallet operations, but other
+     * runtime methods may still be used to do that (i.e. democracy::referendum to update halt
+     * flag directly or call the `set_operating_mode`).
+     *
+     * @param {Callback<AccountId20 | undefined> =} callback
+     **/
+    palletOwner: GenericStorageQuery<Rv, () => AccountId20 | undefined>;
+
+    /**
+     * The current operating mode of the pallet.
+     *
+     * Depending on the mode either all, or no transactions will be allowed.
+     *
+     * @param {Callback<BpRuntimeBasicOperatingMode> =} callback
+     **/
+    palletOperatingMode: GenericStorageQuery<Rv, () => BpRuntimeBasicOperatingMode>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `BridgeKusamaParachains`'s storage queries
+   **/
+  bridgeKusamaParachains: {
+    /**
+     * Optional pallet owner.
+     *
+     * Pallet owner has a right to halt all pallet operations and then resume them. If it is
+     * `None`, then there are no direct ways to halt/resume pallet operations, but other
+     * runtime methods may still be used to do that (i.e. democracy::referendum to update halt
+     * flag directly or call the `set_operating_mode`).
+     *
+     * @param {Callback<AccountId20 | undefined> =} callback
+     **/
+    palletOwner: GenericStorageQuery<Rv, () => AccountId20 | undefined>;
+
+    /**
+     * The current operating mode of the pallet.
+     *
+     * Depending on the mode either all, or no transactions will be allowed.
+     *
+     * @param {Callback<BpRuntimeBasicOperatingMode> =} callback
+     **/
+    palletOperatingMode: GenericStorageQuery<Rv, () => BpRuntimeBasicOperatingMode>;
+
+    /**
+     * Parachains info.
+     *
+     * Contains the following info:
+     * - best parachain head hash
+     * - the head of the `ImportedParaHashes` ring buffer
+     *
+     * @param {BpPolkadotCoreParachainsParaId} arg
+     * @param {Callback<BpParachainsParaInfo | undefined> =} callback
+     **/
+    parasInfo: GenericStorageQuery<
+      Rv,
+      (arg: BpPolkadotCoreParachainsParaId) => BpParachainsParaInfo | undefined,
+      BpPolkadotCoreParachainsParaId
+    >;
+
+    /**
+     * State roots of parachain heads which have been imported into the pallet.
+     *
+     * @param {[BpPolkadotCoreParachainsParaId, H256]} arg
+     * @param {Callback<BpParachainsParaStoredHeaderData | undefined> =} callback
+     **/
+    importedParaHeads: GenericStorageQuery<
+      Rv,
+      (arg: [BpPolkadotCoreParachainsParaId, H256]) => BpParachainsParaStoredHeaderData | undefined,
+      [BpPolkadotCoreParachainsParaId, H256]
+    >;
+
+    /**
+     * A ring buffer of imported parachain head hashes. Ordered by the insertion time.
+     *
+     * @param {[BpPolkadotCoreParachainsParaId, number]} arg
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    importedParaHashes: GenericStorageQuery<
+      Rv,
+      (arg: [BpPolkadotCoreParachainsParaId, number]) => H256 | undefined,
+      [BpPolkadotCoreParachainsParaId, number]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `BridgeKusamaMessages`'s storage queries
+   **/
+  bridgeKusamaMessages: {
+    /**
+     * Optional pallet owner.
+     *
+     * Pallet owner has a right to halt all pallet operations and then resume it. If it is
+     * `None`, then there are no direct ways to halt/resume pallet operations, but other
+     * runtime methods may still be used to do that (i.e. democracy::referendum to update halt
+     * flag directly or call the `set_operating_mode`).
+     *
+     * @param {Callback<AccountId20 | undefined> =} callback
+     **/
+    palletOwner: GenericStorageQuery<Rv, () => AccountId20 | undefined>;
+
+    /**
+     * The current operating mode of the pallet.
+     *
+     * Depending on the mode either all, some, or no transactions will be allowed.
+     *
+     * @param {Callback<BpMessagesMessagesOperatingMode> =} callback
+     **/
+    palletOperatingMode: GenericStorageQuery<Rv, () => BpMessagesMessagesOperatingMode>;
+
+    /**
+     * Map of lane id => inbound lane data.
+     *
+     * @param {BpMessagesLaneHashedLaneId} arg
+     * @param {Callback<BpMessagesInboundLaneData | undefined> =} callback
+     **/
+    inboundLanes: GenericStorageQuery<
+      Rv,
+      (arg: BpMessagesLaneHashedLaneId) => BpMessagesInboundLaneData | undefined,
+      BpMessagesLaneHashedLaneId
+    >;
+
+    /**
+     * Map of lane id => outbound lane data.
+     *
+     * @param {BpMessagesLaneHashedLaneId} arg
+     * @param {Callback<BpMessagesOutboundLaneData | undefined> =} callback
+     **/
+    outboundLanes: GenericStorageQuery<
+      Rv,
+      (arg: BpMessagesLaneHashedLaneId) => BpMessagesOutboundLaneData | undefined,
+      BpMessagesLaneHashedLaneId
+    >;
+
+    /**
+     * All queued outbound messages.
+     *
+     * @param {BpMessagesMessageKey} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    outboundMessages: GenericStorageQuery<Rv, (arg: BpMessagesMessageKey) => Bytes | undefined, BpMessagesMessageKey>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `BridgeXcmOverMoonriver`'s storage queries
+   **/
+  bridgeXcmOverMoonriver: {
+    /**
+     * All registered bridges.
+     *
+     * @param {BpXcmBridgeHubBridgeId} arg
+     * @param {Callback<BpXcmBridgeHubBridge | undefined> =} callback
+     **/
+    bridges: GenericStorageQuery<
+      Rv,
+      (arg: BpXcmBridgeHubBridgeId) => BpXcmBridgeHubBridge | undefined,
+      BpXcmBridgeHubBridgeId
+    >;
+
+    /**
+     * All registered `lane_id` and `bridge_id` mappings.
+     *
+     * @param {BpMessagesLaneHashedLaneId} arg
+     * @param {Callback<BpXcmBridgeHubBridgeId | undefined> =} callback
+     **/
+    laneToBridge: GenericStorageQuery<
+      Rv,
+      (arg: BpMessagesLaneHashedLaneId) => BpXcmBridgeHubBridgeId | undefined,
+      BpMessagesLaneHashedLaneId
+    >;
 
     /**
      * Generic pallet storage query

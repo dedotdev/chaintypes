@@ -16,10 +16,10 @@ import type {
   AccountId20Like,
   Data,
   U256,
+  Header,
   FixedI64,
   Era,
   UncheckedExtrinsic,
-  Header,
 } from 'dedot/codecs';
 
 export type FrameSystemAccountInfo = {
@@ -89,7 +89,11 @@ export type MoonbeamRuntimeRuntimeEvent =
   | { pallet: 'XcmWeightTrader'; palletEvent: PalletXcmWeightTraderEvent }
   | { pallet: 'EmergencyParaXcm'; palletEvent: PalletEmergencyParaXcmEvent }
   | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent002 }
-  | { pallet: 'Randomness'; palletEvent: PalletRandomnessEvent };
+  | { pallet: 'Randomness'; palletEvent: PalletRandomnessEvent }
+  | { pallet: 'BridgeKusamaGrandpa'; palletEvent: PalletBridgeGrandpaEvent }
+  | { pallet: 'BridgeKusamaParachains'; palletEvent: PalletBridgeParachainsEvent }
+  | { pallet: 'BridgeKusamaMessages'; palletEvent: PalletBridgeMessagesEvent }
+  | { pallet: 'BridgeXcmOverMoonriver'; palletEvent: PalletXcmBridgeHubEvent };
 
 /**
  * Event for the System pallet.
@@ -1450,7 +1454,11 @@ export type MoonbeamRuntimeRuntimeCall =
   | { pallet: 'XcmWeightTrader'; palletCall: PalletXcmWeightTraderCall }
   | { pallet: 'EmergencyParaXcm'; palletCall: PalletEmergencyParaXcmCall }
   | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCall }
-  | { pallet: 'Randomness'; palletCall: PalletRandomnessCall };
+  | { pallet: 'Randomness'; palletCall: PalletRandomnessCall }
+  | { pallet: 'BridgeKusamaGrandpa'; palletCall: PalletBridgeGrandpaCall }
+  | { pallet: 'BridgeKusamaParachains'; palletCall: PalletBridgeParachainsCall }
+  | { pallet: 'BridgeKusamaMessages'; palletCall: PalletBridgeMessagesCall }
+  | { pallet: 'BridgeXcmOverMoonriver'; palletCall: PalletXcmBridgeHubCall };
 
 export type MoonbeamRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -1491,7 +1499,11 @@ export type MoonbeamRuntimeRuntimeCallLike =
   | { pallet: 'XcmWeightTrader'; palletCall: PalletXcmWeightTraderCallLike }
   | { pallet: 'EmergencyParaXcm'; palletCall: PalletEmergencyParaXcmCallLike }
   | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCallLike }
-  | { pallet: 'Randomness'; palletCall: PalletRandomnessCallLike };
+  | { pallet: 'Randomness'; palletCall: PalletRandomnessCallLike }
+  | { pallet: 'BridgeKusamaGrandpa'; palletCall: PalletBridgeGrandpaCallLike }
+  | { pallet: 'BridgeKusamaParachains'; palletCall: PalletBridgeParachainsCallLike }
+  | { pallet: 'BridgeKusamaMessages'; palletCall: PalletBridgeMessagesCallLike }
+  | { pallet: 'BridgeXcmOverMoonriver'; palletCall: PalletXcmBridgeHubCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3910,21 +3922,9 @@ export type PalletMultisigCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletMoonbeamLazyMigrationsCall =
-  | { name: 'CreateContractMetadata'; params: { address: H160 } }
-  | { name: 'ApproveAssetsToMigrate'; params: { assets: Array<bigint> } }
-  | { name: 'StartForeignAssetsMigration'; params: { assetId: bigint } }
-  | { name: 'MigrateForeignAssetBalances'; params: { limit: number } }
-  | { name: 'MigrateForeignAssetApprovals'; params: { limit: number } }
-  | { name: 'FinishForeignAssetsMigration' };
+export type PalletMoonbeamLazyMigrationsCall = { name: 'CreateContractMetadata'; params: { address: H160 } };
 
-export type PalletMoonbeamLazyMigrationsCallLike =
-  | { name: 'CreateContractMetadata'; params: { address: H160 } }
-  | { name: 'ApproveAssetsToMigrate'; params: { assets: Array<bigint> } }
-  | { name: 'StartForeignAssetsMigration'; params: { assetId: bigint } }
-  | { name: 'MigrateForeignAssetBalances'; params: { limit: number } }
-  | { name: 'MigrateForeignAssetApprovals'; params: { limit: number } }
-  | { name: 'FinishForeignAssetsMigration' };
+export type PalletMoonbeamLazyMigrationsCallLike = { name: 'CreateContractMetadata'; params: { address: H160 } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8744,6 +8744,607 @@ export type PalletRandomnessCallLike =
    **/
   'SetBabeRandomnessResults';
 
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletBridgeGrandpaCall =
+  /**
+   * This call is deprecated and will be removed around May 2024. Use the
+   * `submit_finality_proof_ex` instead. Semantically, this call is an equivalent of the
+   * `submit_finality_proof_ex` call without current authority set id check.
+   **/
+  | {
+      name: 'SubmitFinalityProof';
+      params: { finalityTarget: Header; justification: BpHeaderChainJustificationGrandpaJustification };
+    }
+  /**
+   * Bootstrap the bridge pallet with an initial header and authority set from which to sync.
+   *
+   * The initial configuration provided does not need to be the genesis header of the bridged
+   * chain, it can be any arbitrary header. You can also provide the next scheduled set
+   * change if it is already know.
+   *
+   * This function is only allowed to be called from a trusted origin and writes to storage
+   * with practically no checks in terms of the validity of the data. It is important that
+   * you ensure that valid data is being passed in.
+   **/
+  | { name: 'Initialize'; params: { initData: BpHeaderChainInitializationData } }
+  /**
+   * Change `PalletOwner`.
+   *
+   * May only be called either by root, or by `PalletOwner`.
+   **/
+  | { name: 'SetOwner'; params: { newOwner?: AccountId20 | undefined } }
+  /**
+   * Halt or resume all pallet operations.
+   *
+   * May only be called either by root, or by `PalletOwner`.
+   **/
+  | { name: 'SetOperatingMode'; params: { operatingMode: BpRuntimeBasicOperatingMode } }
+  /**
+   * Verify a target header is finalized according to the given finality proof. The proof
+   * is assumed to be signed by GRANDPA authorities set with `current_set_id` id.
+   *
+   * It will use the underlying storage pallet to fetch information about the current
+   * authorities and best finalized header in order to verify that the header is finalized.
+   *
+   * If successful in verification, it will write the target header to the underlying storage
+   * pallet.
+   *
+   * The call fails if:
+   *
+   * - the pallet is halted;
+   *
+   * - the pallet knows better header than the `finality_target`;
+   *
+   * - the id of best GRANDPA authority set, known to the pallet is not equal to the
+   * `current_set_id`;
+   *
+   * - verification is not optimized or invalid;
+   *
+   * - header contains forced authorities set change or change with non-zero delay.
+   *
+   * The `is_free_execution_expected` parameter is not really used inside the call. It is
+   * used by the transaction extension, which should be registered at the runtime level. If
+   * this parameter is `true`, the transaction will be treated as invalid, if the call won't
+   * be executed for free. If transaction extension is not used by the runtime, this
+   * parameter is not used at all.
+   **/
+  | {
+      name: 'SubmitFinalityProofEx';
+      params: {
+        finalityTarget: Header;
+        justification: BpHeaderChainJustificationGrandpaJustification;
+        currentSetId: bigint;
+        isFreeExecutionExpected: boolean;
+      };
+    }
+  /**
+   * Set current authorities set and best finalized bridged header to given values
+   * (almost) without any checks. This call can fail only if:
+   *
+   * - the call origin is not a root or a pallet owner;
+   *
+   * - there are too many authorities in the new set.
+   *
+   * No other checks are made. Previously imported headers stay in the storage and
+   * are still accessible after the call.
+   **/
+  | {
+      name: 'ForceSetPalletState';
+      params: {
+        newCurrentSetId: bigint;
+        newAuthorities: Array<[SpConsensusGrandpaAppPublic, bigint]>;
+        newBestHeader: Header;
+      };
+    };
+
+export type PalletBridgeGrandpaCallLike =
+  /**
+   * This call is deprecated and will be removed around May 2024. Use the
+   * `submit_finality_proof_ex` instead. Semantically, this call is an equivalent of the
+   * `submit_finality_proof_ex` call without current authority set id check.
+   **/
+  | {
+      name: 'SubmitFinalityProof';
+      params: { finalityTarget: Header; justification: BpHeaderChainJustificationGrandpaJustification };
+    }
+  /**
+   * Bootstrap the bridge pallet with an initial header and authority set from which to sync.
+   *
+   * The initial configuration provided does not need to be the genesis header of the bridged
+   * chain, it can be any arbitrary header. You can also provide the next scheduled set
+   * change if it is already know.
+   *
+   * This function is only allowed to be called from a trusted origin and writes to storage
+   * with practically no checks in terms of the validity of the data. It is important that
+   * you ensure that valid data is being passed in.
+   **/
+  | { name: 'Initialize'; params: { initData: BpHeaderChainInitializationData } }
+  /**
+   * Change `PalletOwner`.
+   *
+   * May only be called either by root, or by `PalletOwner`.
+   **/
+  | { name: 'SetOwner'; params: { newOwner?: AccountId20Like | undefined } }
+  /**
+   * Halt or resume all pallet operations.
+   *
+   * May only be called either by root, or by `PalletOwner`.
+   **/
+  | { name: 'SetOperatingMode'; params: { operatingMode: BpRuntimeBasicOperatingMode } }
+  /**
+   * Verify a target header is finalized according to the given finality proof. The proof
+   * is assumed to be signed by GRANDPA authorities set with `current_set_id` id.
+   *
+   * It will use the underlying storage pallet to fetch information about the current
+   * authorities and best finalized header in order to verify that the header is finalized.
+   *
+   * If successful in verification, it will write the target header to the underlying storage
+   * pallet.
+   *
+   * The call fails if:
+   *
+   * - the pallet is halted;
+   *
+   * - the pallet knows better header than the `finality_target`;
+   *
+   * - the id of best GRANDPA authority set, known to the pallet is not equal to the
+   * `current_set_id`;
+   *
+   * - verification is not optimized or invalid;
+   *
+   * - header contains forced authorities set change or change with non-zero delay.
+   *
+   * The `is_free_execution_expected` parameter is not really used inside the call. It is
+   * used by the transaction extension, which should be registered at the runtime level. If
+   * this parameter is `true`, the transaction will be treated as invalid, if the call won't
+   * be executed for free. If transaction extension is not used by the runtime, this
+   * parameter is not used at all.
+   **/
+  | {
+      name: 'SubmitFinalityProofEx';
+      params: {
+        finalityTarget: Header;
+        justification: BpHeaderChainJustificationGrandpaJustification;
+        currentSetId: bigint;
+        isFreeExecutionExpected: boolean;
+      };
+    }
+  /**
+   * Set current authorities set and best finalized bridged header to given values
+   * (almost) without any checks. This call can fail only if:
+   *
+   * - the call origin is not a root or a pallet owner;
+   *
+   * - there are too many authorities in the new set.
+   *
+   * No other checks are made. Previously imported headers stay in the storage and
+   * are still accessible after the call.
+   **/
+  | {
+      name: 'ForceSetPalletState';
+      params: {
+        newCurrentSetId: bigint;
+        newAuthorities: Array<[SpConsensusGrandpaAppPublic, bigint]>;
+        newBestHeader: Header;
+      };
+    };
+
+export type BpHeaderChainJustificationGrandpaJustification = {
+  round: bigint;
+  commit: FinalityGrandpaCommit;
+  votesAncestries: Array<Header>;
+};
+
+export type FinalityGrandpaCommit = {
+  targetHash: H256;
+  targetNumber: number;
+  precommits: Array<FinalityGrandpaSignedPrecommit>;
+};
+
+export type SpConsensusGrandpaAppSignature = FixedBytes<64>;
+
+export type SpConsensusGrandpaAppPublic = FixedBytes<32>;
+
+export type FinalityGrandpaSignedPrecommit = {
+  precommit: FinalityGrandpaPrecommit;
+  signature: SpConsensusGrandpaAppSignature;
+  id: SpConsensusGrandpaAppPublic;
+};
+
+export type FinalityGrandpaPrecommit = { targetHash: H256; targetNumber: number };
+
+export type BpHeaderChainInitializationData = {
+  header: Header;
+  authorityList: Array<[SpConsensusGrandpaAppPublic, bigint]>;
+  setId: bigint;
+  operatingMode: BpRuntimeBasicOperatingMode;
+};
+
+export type BpRuntimeBasicOperatingMode = 'Normal' | 'Halted';
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletBridgeParachainsCall =
+  /**
+   * Submit proof of one or several parachain heads.
+   *
+   * The proof is supposed to be proof of some `Heads` entries from the
+   * `polkadot-runtime-parachains::paras` pallet instance, deployed at the bridged chain.
+   * The proof is supposed to be crafted at the `relay_header_hash` that must already be
+   * imported by corresponding GRANDPA pallet at this chain.
+   *
+   * The call fails if:
+   *
+   * - the pallet is halted;
+   *
+   * - the relay chain block `at_relay_block` is not imported by the associated bridge
+   * GRANDPA pallet.
+   *
+   * The call may succeed, but some heads may not be updated e.g. because pallet knows
+   * better head or it isn't tracked by the pallet.
+   **/
+  | {
+      name: 'SubmitParachainHeads';
+      params: {
+        atRelayBlock: [number, H256];
+        parachains: Array<[BpPolkadotCoreParachainsParaId, H256]>;
+        parachainHeadsProof: BpPolkadotCoreParachainsParaHeadsProof;
+      };
+    }
+  /**
+   * Change `PalletOwner`.
+   *
+   * May only be called either by root, or by `PalletOwner`.
+   **/
+  | { name: 'SetOwner'; params: { newOwner?: AccountId20 | undefined } }
+  /**
+   * Halt or resume all pallet operations.
+   *
+   * May only be called either by root, or by `PalletOwner`.
+   **/
+  | { name: 'SetOperatingMode'; params: { operatingMode: BpRuntimeBasicOperatingMode } }
+  /**
+   * Submit proof of one or several parachain heads.
+   *
+   * The proof is supposed to be proof of some `Heads` entries from the
+   * `polkadot-runtime-parachains::paras` pallet instance, deployed at the bridged chain.
+   * The proof is supposed to be crafted at the `relay_header_hash` that must already be
+   * imported by corresponding GRANDPA pallet at this chain.
+   *
+   * The call fails if:
+   *
+   * - the pallet is halted;
+   *
+   * - the relay chain block `at_relay_block` is not imported by the associated bridge
+   * GRANDPA pallet.
+   *
+   * The call may succeed, but some heads may not be updated e.g. because pallet knows
+   * better head or it isn't tracked by the pallet.
+   *
+   * The `is_free_execution_expected` parameter is not really used inside the call. It is
+   * used by the transaction extension, which should be registered at the runtime level. If
+   * this parameter is `true`, the transaction will be treated as invalid, if the call won't
+   * be executed for free. If transaction extension is not used by the runtime, this
+   * parameter is not used at all.
+   **/
+  | {
+      name: 'SubmitParachainHeadsEx';
+      params: {
+        atRelayBlock: [number, H256];
+        parachains: Array<[BpPolkadotCoreParachainsParaId, H256]>;
+        parachainHeadsProof: BpPolkadotCoreParachainsParaHeadsProof;
+        isFreeExecutionExpected: boolean;
+      };
+    };
+
+export type PalletBridgeParachainsCallLike =
+  /**
+   * Submit proof of one or several parachain heads.
+   *
+   * The proof is supposed to be proof of some `Heads` entries from the
+   * `polkadot-runtime-parachains::paras` pallet instance, deployed at the bridged chain.
+   * The proof is supposed to be crafted at the `relay_header_hash` that must already be
+   * imported by corresponding GRANDPA pallet at this chain.
+   *
+   * The call fails if:
+   *
+   * - the pallet is halted;
+   *
+   * - the relay chain block `at_relay_block` is not imported by the associated bridge
+   * GRANDPA pallet.
+   *
+   * The call may succeed, but some heads may not be updated e.g. because pallet knows
+   * better head or it isn't tracked by the pallet.
+   **/
+  | {
+      name: 'SubmitParachainHeads';
+      params: {
+        atRelayBlock: [number, H256];
+        parachains: Array<[BpPolkadotCoreParachainsParaId, H256]>;
+        parachainHeadsProof: BpPolkadotCoreParachainsParaHeadsProof;
+      };
+    }
+  /**
+   * Change `PalletOwner`.
+   *
+   * May only be called either by root, or by `PalletOwner`.
+   **/
+  | { name: 'SetOwner'; params: { newOwner?: AccountId20Like | undefined } }
+  /**
+   * Halt or resume all pallet operations.
+   *
+   * May only be called either by root, or by `PalletOwner`.
+   **/
+  | { name: 'SetOperatingMode'; params: { operatingMode: BpRuntimeBasicOperatingMode } }
+  /**
+   * Submit proof of one or several parachain heads.
+   *
+   * The proof is supposed to be proof of some `Heads` entries from the
+   * `polkadot-runtime-parachains::paras` pallet instance, deployed at the bridged chain.
+   * The proof is supposed to be crafted at the `relay_header_hash` that must already be
+   * imported by corresponding GRANDPA pallet at this chain.
+   *
+   * The call fails if:
+   *
+   * - the pallet is halted;
+   *
+   * - the relay chain block `at_relay_block` is not imported by the associated bridge
+   * GRANDPA pallet.
+   *
+   * The call may succeed, but some heads may not be updated e.g. because pallet knows
+   * better head or it isn't tracked by the pallet.
+   *
+   * The `is_free_execution_expected` parameter is not really used inside the call. It is
+   * used by the transaction extension, which should be registered at the runtime level. If
+   * this parameter is `true`, the transaction will be treated as invalid, if the call won't
+   * be executed for free. If transaction extension is not used by the runtime, this
+   * parameter is not used at all.
+   **/
+  | {
+      name: 'SubmitParachainHeadsEx';
+      params: {
+        atRelayBlock: [number, H256];
+        parachains: Array<[BpPolkadotCoreParachainsParaId, H256]>;
+        parachainHeadsProof: BpPolkadotCoreParachainsParaHeadsProof;
+        isFreeExecutionExpected: boolean;
+      };
+    };
+
+export type BpPolkadotCoreParachainsParaId = number;
+
+export type BpPolkadotCoreParachainsParaHeadsProof = { storageProof: Array<Bytes> };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletBridgeMessagesCall =
+  /**
+   * Change `PalletOwner`.
+   *
+   * May only be called either by root, or by `PalletOwner`.
+   **/
+  | { name: 'SetOwner'; params: { newOwner?: AccountId20 | undefined } }
+  /**
+   * Halt or resume all/some pallet operations.
+   *
+   * May only be called either by root, or by `PalletOwner`.
+   **/
+  | { name: 'SetOperatingMode'; params: { operatingMode: BpMessagesMessagesOperatingMode } }
+  /**
+   * Receive messages proof from bridged chain.
+   *
+   * The weight of the call assumes that the transaction always brings outbound lane
+   * state update. Because of that, the submitter (relayer) has no benefit of not including
+   * this data in the transaction, so reward confirmations lags should be minimal.
+   *
+   * The call fails if:
+   *
+   * - the pallet is halted;
+   *
+   * - the call origin is not `Signed(_)`;
+   *
+   * - there are too many messages in the proof;
+   *
+   * - the proof verification procedure returns an error - e.g. because header used to craft
+   * proof is not imported by the associated finality pallet;
+   *
+   * - the `dispatch_weight` argument is not sufficient to dispatch all bundled messages.
+   *
+   * The call may succeed, but some messages may not be delivered e.g. if they are not fit
+   * into the unrewarded relayers vector.
+   **/
+  | {
+      name: 'ReceiveMessagesProof';
+      params: {
+        relayerIdAtBridgedChain: AccountId20;
+        proof: BpMessagesTargetChainFromBridgedChainMessagesProof;
+        messagesCount: number;
+        dispatchWeight: SpWeightsWeightV2Weight;
+      };
+    }
+  /**
+   * Receive messages delivery proof from bridged chain.
+   **/
+  | {
+      name: 'ReceiveMessagesDeliveryProof';
+      params: {
+        proof: BpMessagesSourceChainFromBridgedChainMessagesDeliveryProof;
+        relayersState: BpMessagesUnrewardedRelayersState;
+      };
+    };
+
+export type PalletBridgeMessagesCallLike =
+  /**
+   * Change `PalletOwner`.
+   *
+   * May only be called either by root, or by `PalletOwner`.
+   **/
+  | { name: 'SetOwner'; params: { newOwner?: AccountId20Like | undefined } }
+  /**
+   * Halt or resume all/some pallet operations.
+   *
+   * May only be called either by root, or by `PalletOwner`.
+   **/
+  | { name: 'SetOperatingMode'; params: { operatingMode: BpMessagesMessagesOperatingMode } }
+  /**
+   * Receive messages proof from bridged chain.
+   *
+   * The weight of the call assumes that the transaction always brings outbound lane
+   * state update. Because of that, the submitter (relayer) has no benefit of not including
+   * this data in the transaction, so reward confirmations lags should be minimal.
+   *
+   * The call fails if:
+   *
+   * - the pallet is halted;
+   *
+   * - the call origin is not `Signed(_)`;
+   *
+   * - there are too many messages in the proof;
+   *
+   * - the proof verification procedure returns an error - e.g. because header used to craft
+   * proof is not imported by the associated finality pallet;
+   *
+   * - the `dispatch_weight` argument is not sufficient to dispatch all bundled messages.
+   *
+   * The call may succeed, but some messages may not be delivered e.g. if they are not fit
+   * into the unrewarded relayers vector.
+   **/
+  | {
+      name: 'ReceiveMessagesProof';
+      params: {
+        relayerIdAtBridgedChain: AccountId20Like;
+        proof: BpMessagesTargetChainFromBridgedChainMessagesProof;
+        messagesCount: number;
+        dispatchWeight: SpWeightsWeightV2Weight;
+      };
+    }
+  /**
+   * Receive messages delivery proof from bridged chain.
+   **/
+  | {
+      name: 'ReceiveMessagesDeliveryProof';
+      params: {
+        proof: BpMessagesSourceChainFromBridgedChainMessagesDeliveryProof;
+        relayersState: BpMessagesUnrewardedRelayersState;
+      };
+    };
+
+export type BpMessagesMessagesOperatingMode =
+  | { type: 'Basic'; value: BpRuntimeBasicOperatingMode }
+  | { type: 'RejectingOutboundMessages' };
+
+export type BpMessagesTargetChainFromBridgedChainMessagesProof = {
+  bridgedHeaderHash: H256;
+  storageProof: Array<Bytes>;
+  lane: BpMessagesLaneHashedLaneId;
+  noncesStart: bigint;
+  noncesEnd: bigint;
+};
+
+export type BpMessagesLaneHashedLaneId = H256;
+
+export type BpMessagesSourceChainFromBridgedChainMessagesDeliveryProof = {
+  bridgedHeaderHash: H256;
+  storageProof: Array<Bytes>;
+  lane: BpMessagesLaneHashedLaneId;
+};
+
+export type BpMessagesUnrewardedRelayersState = {
+  unrewardedRelayerEntries: bigint;
+  messagesInOldestEntry: bigint;
+  totalMessages: bigint;
+  lastDeliveredNonce: bigint;
+};
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletXcmBridgeHubCall =
+  /**
+   * Open a bridge between two locations.
+   *
+   * The caller must be within the `T::OpenBridgeOrigin` filter (presumably: a sibling
+   * parachain or a parent relay chain). The `bridge_destination_universal_location` must be
+   * a destination within the consensus of the `T::BridgedNetwork` network.
+   *
+   * The `BridgeDeposit` amount is reserved on the caller account. This deposit
+   * is unreserved after bridge is closed.
+   *
+   * The states after this call: bridge is `Opened`, outbound lane is `Opened`, inbound lane
+   * is `Opened`.
+   **/
+  | { name: 'OpenBridge'; params: { bridgeDestinationUniversalLocation: XcmVersionedInteriorLocation } }
+  /**
+   * Try to close the bridge.
+   *
+   * Can only be called by the "owner" of this side of the bridge, meaning that the
+   * inbound XCM channel with the local origin chain is working.
+   *
+   * Closed bridge is a bridge without any traces in the runtime storage. So this method
+   * first tries to prune all queued messages at the outbound lane. When there are no
+   * outbound messages left, outbound and inbound lanes are purged. After that, funds
+   * are returned back to the owner of this side of the bridge.
+   *
+   * The number of messages that we may prune in a single call is limited by the
+   * `may_prune_messages` argument. If there are more messages in the queue, the method
+   * prunes exactly `may_prune_messages` and exits early. The caller may call it again
+   * until outbound queue is depleted and get his funds back.
+   *
+   * The states after this call: everything is either `Closed`, or purged from the
+   * runtime storage.
+   **/
+  | {
+      name: 'CloseBridge';
+      params: { bridgeDestinationUniversalLocation: XcmVersionedInteriorLocation; mayPruneMessages: bigint };
+    };
+
+export type PalletXcmBridgeHubCallLike =
+  /**
+   * Open a bridge between two locations.
+   *
+   * The caller must be within the `T::OpenBridgeOrigin` filter (presumably: a sibling
+   * parachain or a parent relay chain). The `bridge_destination_universal_location` must be
+   * a destination within the consensus of the `T::BridgedNetwork` network.
+   *
+   * The `BridgeDeposit` amount is reserved on the caller account. This deposit
+   * is unreserved after bridge is closed.
+   *
+   * The states after this call: bridge is `Opened`, outbound lane is `Opened`, inbound lane
+   * is `Opened`.
+   **/
+  | { name: 'OpenBridge'; params: { bridgeDestinationUniversalLocation: XcmVersionedInteriorLocation } }
+  /**
+   * Try to close the bridge.
+   *
+   * Can only be called by the "owner" of this side of the bridge, meaning that the
+   * inbound XCM channel with the local origin chain is working.
+   *
+   * Closed bridge is a bridge without any traces in the runtime storage. So this method
+   * first tries to prune all queued messages at the outbound lane. When there are no
+   * outbound messages left, outbound and inbound lanes are purged. After that, funds
+   * are returned back to the owner of this side of the bridge.
+   *
+   * The number of messages that we may prune in a single call is limited by the
+   * `may_prune_messages` argument. If there are more messages in the queue, the method
+   * prunes exactly `may_prune_messages` and exits early. The caller may call it again
+   * until outbound queue is depleted and get his funds back.
+   *
+   * The states after this call: everything is either `Closed`, or purged from the
+   * runtime storage.
+   **/
+  | {
+      name: 'CloseBridge';
+      params: { bridgeDestinationUniversalLocation: XcmVersionedInteriorLocation; mayPruneMessages: bigint };
+    };
+
+export type XcmVersionedInteriorLocation =
+  | { type: 'V3'; value: XcmV3Junctions }
+  | { type: 'V4'; value: StagingXcmV4Junctions }
+  | { type: 'V5'; value: StagingXcmV5Junctions };
+
 export type SpRuntimeBlakeTwo256 = {};
 
 export type PalletConvictionVotingTally = { ayes: bigint; nays: bigint; support: bigint };
@@ -9674,6 +10275,309 @@ export type PalletRandomnessEvent =
   | { name: 'RequestFeeIncreased'; data: { id: bigint; newFee: bigint } }
   | { name: 'RequestExpirationExecuted'; data: { id: bigint } };
 
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletBridgeGrandpaEvent =
+  /**
+   * Best finalized chain header has been updated to the header with given number and hash.
+   **/
+  {
+    name: 'UpdatedBestFinalizedHeader';
+    data: {
+      /**
+       * Number of the new best finalized header.
+       **/
+      number: number;
+
+      /**
+       * Hash of the new best finalized header.
+       **/
+      hash: H256;
+
+      /**
+       * The Grandpa info associated to the new best finalized header.
+       **/
+      grandpaInfo: BpHeaderChainHeaderFinalityInfo;
+    };
+  };
+
+export type BpHeaderChainHeaderFinalityInfo = {
+  finalityProof: BpHeaderChainJustificationGrandpaJustification;
+  newVerificationContext?: BpHeaderChainAuthoritySet | undefined;
+};
+
+export type BpHeaderChainAuthoritySet = { authorities: Array<[SpConsensusGrandpaAppPublic, bigint]>; setId: bigint };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletBridgeParachainsEvent =
+  /**
+   * The caller has provided head of parachain that the pallet is not configured to track.
+   **/
+  | {
+      name: 'UntrackedParachainRejected';
+      data: {
+        /**
+         * Identifier of the parachain that is not tracked by the pallet.
+         **/
+        parachain: BpPolkadotCoreParachainsParaId;
+      };
+    }
+  /**
+   * The caller has declared that he has provided given parachain head, but it is missing
+   * from the storage proof.
+   **/
+  | {
+      name: 'MissingParachainHead';
+      data: {
+        /**
+         * Identifier of the parachain with missing head.
+         **/
+        parachain: BpPolkadotCoreParachainsParaId;
+      };
+    }
+  /**
+   * The caller has provided parachain head hash that is not matching the hash read from the
+   * storage proof.
+   **/
+  | {
+      name: 'IncorrectParachainHeadHash';
+      data: {
+        /**
+         * Identifier of the parachain with incorrect head hast.
+         **/
+        parachain: BpPolkadotCoreParachainsParaId;
+
+        /**
+         * Specified parachain head hash.
+         **/
+        parachainHeadHash: H256;
+
+        /**
+         * Actual parachain head hash.
+         **/
+        actualParachainHeadHash: H256;
+      };
+    }
+  /**
+   * The caller has provided obsolete parachain head, which is already known to the pallet.
+   **/
+  | {
+      name: 'RejectedObsoleteParachainHead';
+      data: {
+        /**
+         * Identifier of the parachain with obsolete head.
+         **/
+        parachain: BpPolkadotCoreParachainsParaId;
+
+        /**
+         * Obsolete parachain head hash.
+         **/
+        parachainHeadHash: H256;
+      };
+    }
+  /**
+   * The caller has provided parachain head that exceeds the maximal configured head size.
+   **/
+  | {
+      name: 'RejectedLargeParachainHead';
+      data: {
+        /**
+         * Identifier of the parachain with rejected head.
+         **/
+        parachain: BpPolkadotCoreParachainsParaId;
+
+        /**
+         * Parachain head hash.
+         **/
+        parachainHeadHash: H256;
+
+        /**
+         * Parachain head size.
+         **/
+        parachainHeadSize: number;
+      };
+    }
+  /**
+   * Parachain head has been updated.
+   **/
+  | {
+      name: 'UpdatedParachainHead';
+      data: {
+        /**
+         * Identifier of the parachain that has been updated.
+         **/
+        parachain: BpPolkadotCoreParachainsParaId;
+
+        /**
+         * Parachain head hash.
+         **/
+        parachainHeadHash: H256;
+      };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletBridgeMessagesEvent =
+  /**
+   * Message has been accepted and is waiting to be delivered.
+   **/
+  | {
+      name: 'MessageAccepted';
+      data: {
+        /**
+         * Lane, which has accepted the message.
+         **/
+        laneId: BpMessagesLaneHashedLaneId;
+
+        /**
+         * Nonce of accepted message.
+         **/
+        nonce: bigint;
+      };
+    }
+  /**
+   * Messages have been received from the bridged chain.
+   **/
+  | { name: 'MessagesReceived'; data: BpMessagesReceivedMessages }
+  /**
+   * Messages in the inclusive range have been delivered to the bridged chain.
+   **/
+  | {
+      name: 'MessagesDelivered';
+      data: {
+        /**
+         * Lane for which the delivery has been confirmed.
+         **/
+        laneId: BpMessagesLaneHashedLaneId;
+
+        /**
+         * Delivered messages.
+         **/
+        messages: BpMessagesDeliveredMessages;
+      };
+    };
+
+export type BpMessagesReceivedMessages = {
+  lane: BpMessagesLaneHashedLaneId;
+  receiveResults: Array<[bigint, BpMessagesReceptionResult]>;
+};
+
+export type PalletXcmBridgeHubDispatcherXcmBlobMessageDispatchResult =
+  | 'InvalidPayload'
+  | 'Dispatched'
+  | 'NotDispatched';
+
+export type BpMessagesReceptionResult =
+  | { type: 'Dispatched'; value: BpRuntimeMessagesMessageDispatchResult }
+  | { type: 'InvalidNonce' }
+  | { type: 'TooManyUnrewardedRelayers' }
+  | { type: 'TooManyUnconfirmedMessages' };
+
+export type BpRuntimeMessagesMessageDispatchResult = {
+  unspentWeight: SpWeightsWeightV2Weight;
+  dispatchLevelResult: PalletXcmBridgeHubDispatcherXcmBlobMessageDispatchResult;
+};
+
+export type BpMessagesDeliveredMessages = { begin: bigint; end: bigint };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletXcmBridgeHubEvent =
+  /**
+   * The bridge between two locations has been opened.
+   **/
+  | {
+      name: 'BridgeOpened';
+      data: {
+        /**
+         * Bridge identifier.
+         **/
+        bridgeId: BpXcmBridgeHubBridgeId;
+
+        /**
+         * Amount of deposit held.
+         **/
+        bridgeDeposit: bigint;
+
+        /**
+         * Universal location of local bridge endpoint.
+         **/
+        localEndpoint: StagingXcmV5Junctions;
+
+        /**
+         * Universal location of remote bridge endpoint.
+         **/
+        remoteEndpoint: StagingXcmV5Junctions;
+
+        /**
+         * Lane identifier.
+         **/
+        laneId: BpMessagesLaneHashedLaneId;
+      };
+    }
+  /**
+   * Bridge is going to be closed, but not yet fully pruned from the runtime storage.
+   **/
+  | {
+      name: 'ClosingBridge';
+      data: {
+        /**
+         * Bridge identifier.
+         **/
+        bridgeId: BpXcmBridgeHubBridgeId;
+
+        /**
+         * Lane identifier.
+         **/
+        laneId: BpMessagesLaneHashedLaneId;
+
+        /**
+         * Number of pruned messages during the close call.
+         **/
+        prunedMessages: bigint;
+
+        /**
+         * Number of enqueued messages that need to be pruned in follow up calls.
+         **/
+        enqueuedMessages: bigint;
+      };
+    }
+  /**
+   * Bridge has been closed and pruned from the runtime storage. It now may be reopened
+   * again by any participant.
+   **/
+  | {
+      name: 'BridgePruned';
+      data: {
+        /**
+         * Bridge identifier.
+         **/
+        bridgeId: BpXcmBridgeHubBridgeId;
+
+        /**
+         * Lane identifier.
+         **/
+        laneId: BpMessagesLaneHashedLaneId;
+
+        /**
+         * Amount of deposit released.
+         **/
+        bridgeDeposit: bigint;
+
+        /**
+         * Number of pruned messages during the close call.
+         **/
+        prunedMessages: bigint;
+      };
+    };
+
+export type BpXcmBridgeHubBridgeId = H256;
+
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
 export type FrameSystemCodeUpgradeAuthorization = { codeHash: H256; checkVersion: boolean };
@@ -9866,9 +10770,13 @@ export type PalletBalancesReserveData = { id: FixedBytes<4>; amount: bigint };
 
 export type FrameSupportTokensMiscIdAmount = { id: MoonbeamRuntimeRuntimeHoldReason; amount: bigint };
 
-export type MoonbeamRuntimeRuntimeHoldReason = { type: 'Preimage'; value: PalletPreimageHoldReason };
+export type MoonbeamRuntimeRuntimeHoldReason =
+  | { type: 'Preimage'; value: PalletPreimageHoldReason }
+  | { type: 'BridgeXcmOverMoonriver'; value: PalletXcmBridgeHubHoldReason };
 
 export type PalletPreimageHoldReason = 'Preimage';
+
+export type PalletXcmBridgeHubHoldReason = 'BridgeDeposit';
 
 export type FrameSupportTokensMiscIdAmount002 = { id: []; amount: bigint };
 
@@ -10464,24 +11372,10 @@ export type PalletMultisigError =
    **/
   | 'AlreadyStored';
 
-export type PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationStatus =
-  | { type: 'Idle' }
-  | { type: 'Migrating'; value: PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationInfo };
-
-export type PalletMoonbeamLazyMigrationsForeignAssetForeignAssetMigrationInfo = {
-  assetId: bigint;
-  remainingBalances: number;
-  remainingApprovals: number;
-};
-
 /**
  * The `Error` enum of this pallet.
  **/
 export type PalletMoonbeamLazyMigrationsError =
-  /**
-   * The limit cannot be zero
-   **/
-  | 'LimitCannotBeZero'
   /**
    * The contract already have metadata
    **/
@@ -10489,43 +11383,7 @@ export type PalletMoonbeamLazyMigrationsError =
   /**
    * Contract not exist
    **/
-  | 'ContractNotExist'
-  /**
-   * The symbol length exceeds the maximum allowed
-   **/
-  | 'SymbolTooLong'
-  /**
-   * The name length exceeds the maximum allowed
-   **/
-  | 'NameTooLong'
-  /**
-   * The asset type was not found
-   **/
-  | 'AssetTypeNotFound'
-  /**
-   * Asset not found
-   **/
-  | 'AssetNotFound'
-  /**
-   * The location of the asset was not found
-   **/
-  | 'LocationNotFound'
-  /**
-   * Migration is not finished yet
-   **/
-  | 'MigrationNotFinished'
-  /**
-   * No migration in progress
-   **/
-  | 'NoMigrationInProgress'
-  /**
-   * Fail to mint the foreign asset
-   **/
-  | 'MintFailed'
-  /**
-   * Fail to add an approval
-   **/
-  | 'ApprovalFailed';
+  | 'ContractNotExist';
 
 export type PalletEvmCodeMetadata = { size: bigint; hash: H256 };
 
@@ -11736,6 +12594,275 @@ export type PalletRandomnessError =
   | 'RandomnessResultDNE'
   | 'RandomnessResultNotFilled';
 
+export type BpRuntimeHeaderId = [number, H256];
+
+export type BpHeaderChainStoredHeaderData = { number: number; stateRoot: H256 };
+
+export type PalletBridgeGrandpaStorageTypesStoredAuthoritySet = {
+  authorities: Array<[SpConsensusGrandpaAppPublic, bigint]>;
+  setId: bigint;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletBridgeGrandpaError =
+  /**
+   * The given justification is invalid for the given header.
+   **/
+  | { name: 'InvalidJustification' }
+  /**
+   * The authority set from the underlying header chain is invalid.
+   **/
+  | { name: 'InvalidAuthoritySet' }
+  /**
+   * The header being imported is older than the best finalized header known to the pallet.
+   **/
+  | { name: 'OldHeader' }
+  /**
+   * The scheduled authority set change found in the header is unsupported by the pallet.
+   *
+   * This is the case for non-standard (e.g forced) authority set changes.
+   **/
+  | { name: 'UnsupportedScheduledChange' }
+  /**
+   * The pallet is not yet initialized.
+   **/
+  | { name: 'NotInitialized' }
+  /**
+   * The pallet has already been initialized.
+   **/
+  | { name: 'AlreadyInitialized' }
+  /**
+   * Too many authorities in the set.
+   **/
+  | { name: 'TooManyAuthoritiesInSet' }
+  /**
+   * Error generated by the `OwnedBridgeModule` trait.
+   **/
+  | { name: 'BridgeModule'; data: BpRuntimeOwnedBridgeModuleError }
+  /**
+   * The `current_set_id` argument of the `submit_finality_proof_ex` doesn't match
+   * the id of the current set, known to the pallet.
+   **/
+  | { name: 'InvalidAuthoritySetId' }
+  /**
+   * The submitter wanted free execution, but we can't fit more free transactions
+   * to the block.
+   **/
+  | { name: 'FreeHeadersLimitExceded' }
+  /**
+   * The submitter wanted free execution, but the difference between best known and
+   * bundled header numbers is below the `FreeHeadersInterval`.
+   **/
+  | { name: 'BelowFreeHeaderInterval' }
+  /**
+   * The header (and its finality) submission overflows hardcoded chain limits: size
+   * and/or weight are larger than expected.
+   **/
+  | { name: 'HeaderOverflowLimits' };
+
+export type BpRuntimeOwnedBridgeModuleError = 'Halted';
+
+export type BpParachainsParaInfo = { bestHeadHash: BpParachainsBestParaHeadHash; nextImportedHashPosition: number };
+
+export type BpParachainsBestParaHeadHash = { atRelayBlockNumber: number; headHash: H256 };
+
+export type BpParachainsParaStoredHeaderData = Bytes;
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletBridgeParachainsError =
+  /**
+   * Relay chain block hash is unknown to us.
+   **/
+  | { name: 'UnknownRelayChainBlock' }
+  /**
+   * The number of stored relay block is different from what the relayer has provided.
+   **/
+  | { name: 'InvalidRelayChainBlockNumber' }
+  /**
+   * Parachain heads storage proof is invalid.
+   **/
+  | { name: 'HeaderChainStorageProof'; data: BpHeaderChainHeaderChainError }
+  /**
+   * Error generated by the `OwnedBridgeModule` trait.
+   **/
+  | { name: 'BridgeModule'; data: BpRuntimeOwnedBridgeModuleError };
+
+export type BpHeaderChainHeaderChainError =
+  | { type: 'UnknownHeader' }
+  | { type: 'StorageProof'; value: BpRuntimeStorageProofStorageProofError };
+
+export type BpRuntimeStorageProofStorageProofError =
+  | 'UnableToGenerateTrieProof'
+  | 'InvalidProof'
+  | 'UnsortedEntries'
+  | 'UnavailableKey'
+  | 'EmptyVal'
+  | 'DecodeError'
+  | 'UnusedKey'
+  | 'StorageRootMismatch'
+  | 'StorageValueUnavailable'
+  | 'DuplicateNodes';
+
+export type BpMessagesInboundLaneData = {
+  relayers: Array<BpMessagesUnrewardedRelayer>;
+  lastConfirmedNonce: bigint;
+  state: BpMessagesLaneLaneState;
+};
+
+export type BpMessagesUnrewardedRelayer = { relayer: AccountId20; messages: BpMessagesDeliveredMessages };
+
+export type BpMessagesLaneLaneState = 'Opened' | 'Closed';
+
+export type BpMessagesOutboundLaneData = {
+  oldestUnprunedNonce: bigint;
+  latestReceivedNonce: bigint;
+  latestGeneratedNonce: bigint;
+  state: BpMessagesLaneLaneState;
+};
+
+export type BpMessagesMessageKey = { laneId: BpMessagesLaneHashedLaneId; nonce: bigint };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletBridgeMessagesError =
+  /**
+   * Pallet is not in Normal operating mode.
+   **/
+  | { name: 'NotOperatingNormally' }
+  /**
+   * Error that is reported by the lanes manager.
+   **/
+  | { name: 'LanesManager'; data: PalletBridgeMessagesLanesManagerLanesManagerError }
+  /**
+   * Message has been treated as invalid by the pallet logic.
+   **/
+  | { name: 'MessageRejectedByPallet'; data: BpMessagesVerificationError }
+  /**
+   * The transaction brings too many messages.
+   **/
+  | { name: 'TooManyMessagesInTheProof' }
+  /**
+   * Invalid messages has been submitted.
+   **/
+  | { name: 'InvalidMessagesProof' }
+  /**
+   * Invalid messages delivery proof has been submitted.
+   **/
+  | { name: 'InvalidMessagesDeliveryProof' }
+  /**
+   * The relayer has declared invalid unrewarded relayers state in the
+   * `receive_messages_delivery_proof` call.
+   **/
+  | { name: 'InvalidUnrewardedRelayersState' }
+  /**
+   * The cumulative dispatch weight, passed by relayer is not enough to cover dispatch
+   * of all bundled messages.
+   **/
+  | { name: 'InsufficientDispatchWeight' }
+  /**
+   * Error confirming messages receival.
+   **/
+  | { name: 'ReceptionConfirmation'; data: PalletBridgeMessagesOutboundLaneReceptionConfirmationError }
+  /**
+   * Error generated by the `OwnedBridgeModule` trait.
+   **/
+  | { name: 'BridgeModule'; data: BpRuntimeOwnedBridgeModuleError };
+
+export type PalletBridgeMessagesLanesManagerLanesManagerError =
+  | 'InboundLaneAlreadyExists'
+  | 'OutboundLaneAlreadyExists'
+  | 'UnknownInboundLane'
+  | 'UnknownOutboundLane'
+  | 'ClosedInboundLane'
+  | 'ClosedOutboundLane'
+  | 'LaneDispatcherInactive';
+
+export type BpMessagesVerificationError =
+  | { type: 'EmptyMessageProof' }
+  | { type: 'HeaderChain'; value: BpHeaderChainHeaderChainError }
+  | { type: 'InboundLaneStorage'; value: BpRuntimeStorageProofStorageProofError }
+  | { type: 'InvalidMessageWeight' }
+  | { type: 'MessagesCountMismatch' }
+  | { type: 'MessageStorage'; value: BpRuntimeStorageProofStorageProofError }
+  | { type: 'MessageTooLarge' }
+  | { type: 'OutboundLaneStorage'; value: BpRuntimeStorageProofStorageProofError }
+  | { type: 'StorageProof'; value: BpRuntimeStorageProofStorageProofError }
+  | { type: 'Other' };
+
+export type PalletBridgeMessagesOutboundLaneReceptionConfirmationError =
+  | 'FailedToConfirmFutureMessages'
+  | 'EmptyUnrewardedRelayerEntry'
+  | 'NonConsecutiveUnrewardedRelayerEntries'
+  | 'TryingToConfirmMoreMessagesThanExpected';
+
+export type BpXcmBridgeHubBridge = {
+  bridgeOriginRelativeLocation: XcmVersionedLocation;
+  bridgeOriginUniversalLocation: XcmVersionedInteriorLocation;
+  bridgeDestinationUniversalLocation: XcmVersionedInteriorLocation;
+  state: BpXcmBridgeHubBridgeState;
+  bridgeOwnerAccount: AccountId20;
+  deposit: bigint;
+  laneId: BpMessagesLaneHashedLaneId;
+};
+
+export type BpXcmBridgeHubBridgeState = 'Opened' | 'Suspended' | 'Closed';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletXcmBridgeHubError =
+  /**
+   * Bridge locations error.
+   **/
+  | { name: 'BridgeLocations'; data: BpXcmBridgeHubBridgeLocationsError }
+  /**
+   * Invalid local bridge origin account.
+   **/
+  | { name: 'InvalidBridgeOriginAccount' }
+  /**
+   * The bridge is already registered in this pallet.
+   **/
+  | { name: 'BridgeAlreadyExists' }
+  /**
+   * The local origin already owns a maximal number of bridges.
+   **/
+  | { name: 'TooManyBridgesForLocalOrigin' }
+  /**
+   * Trying to close already closed bridge.
+   **/
+  | { name: 'BridgeAlreadyClosed' }
+  /**
+   * Lanes manager error.
+   **/
+  | { name: 'LanesManager'; data: PalletBridgeMessagesLanesManagerLanesManagerError }
+  /**
+   * Trying to access unknown bridge.
+   **/
+  | { name: 'UnknownBridge' }
+  /**
+   * The bridge origin can't pay the required amount for opening the bridge.
+   **/
+  | { name: 'FailedToReserveBridgeDeposit' }
+  /**
+   * The version of XCM location argument is unsupported.
+   **/
+  | { name: 'UnsupportedXcmVersion' };
+
+export type BpXcmBridgeHubBridgeLocationsError =
+  | 'NonUniversalLocation'
+  | 'InvalidBridgeOrigin'
+  | 'InvalidBridgeDestination'
+  | 'DestinationIsLocal'
+  | 'UnreachableDestination'
+  | 'UnsupportedDestinationLocation'
+  | 'UnsupportedXcmVersion'
+  | 'UnsupportedLaneIdType';
+
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
 export type FrameSystemExtensionsCheckSpecVersion = {};
@@ -11751,6 +12878,8 @@ export type FrameSystemExtensionsCheckNonce = number;
 export type FrameSystemExtensionsCheckWeight = {};
 
 export type PalletTransactionPaymentChargeTransactionPayment = bigint;
+
+export type MoonbeamRuntimeBridgeRejectObsoleteHeadersAndMessages = {};
 
 export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
 
@@ -11793,6 +12922,10 @@ export type SpRuntimeTransactionValidityUnknownTransaction =
   | { type: 'CannotLookup' }
   | { type: 'NoUnsignedValidator' }
   | { type: 'Custom'; value: number };
+
+export type BpMessagesOutboundMessageDetails = { nonce: bigint; dispatchWeight: SpWeightsWeightV2Weight; size: number };
+
+export type BpMessagesInboundMessageDetails = { dispatchWeight: SpWeightsWeightV2Weight };
 
 export type SpRuntimeBlock = { header: Header; extrinsics: Array<FpSelfContainedUncheckedExtrinsic> };
 
@@ -11925,4 +13058,8 @@ export type MoonbeamRuntimeRuntimeError =
   | { pallet: 'EmergencyParaXcm'; palletError: PalletEmergencyParaXcmError }
   | { pallet: 'MultiBlockMigrations'; palletError: PalletMigrationsError002 }
   | { pallet: 'PrecompileBenchmarks'; palletError: PalletPrecompileBenchmarksError }
-  | { pallet: 'Randomness'; palletError: PalletRandomnessError };
+  | { pallet: 'Randomness'; palletError: PalletRandomnessError }
+  | { pallet: 'BridgeKusamaGrandpa'; palletError: PalletBridgeGrandpaError }
+  | { pallet: 'BridgeKusamaParachains'; palletError: PalletBridgeParachainsError }
+  | { pallet: 'BridgeKusamaMessages'; palletError: PalletBridgeMessagesError }
+  | { pallet: 'BridgeXcmOverMoonriver'; palletError: PalletXcmBridgeHubError };

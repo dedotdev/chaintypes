@@ -4,11 +4,11 @@ import type { GenericRuntimeApis, GenericRuntimeApiMethod, RpcVersion } from 'de
 import type {
   Result,
   H256,
+  BytesLike,
   RuntimeVersion,
   Header,
   DispatchError,
   Bytes,
-  BytesLike,
   AccountId20Like,
   H160,
   U256,
@@ -21,6 +21,11 @@ import type {
   SpRuntimeTransactionValidityTransactionSource,
   FpSelfContainedUncheckedExtrinsic,
   SpConsensusSlotsSlot,
+  BpRuntimeHeaderId,
+  BpHeaderChainHeaderFinalityInfo,
+  BpMessagesOutboundMessageDetails,
+  BpMessagesLaneHashedLaneId,
+  BpMessagesInboundMessageDetails,
   SpRuntimeBlock,
   SpRuntimeExtrinsicInclusionMode,
   SpCoreOpaqueMetadata,
@@ -112,6 +117,117 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @param {SpConsensusSlotsSlot} slot
      **/
     canBuildUpon: GenericRuntimeApiMethod<Rv, (includedHash: H256, slot: SpConsensusSlotsSlot) => Promise<boolean>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: KusamaFinalityApi - 0xdd5c5617e520964d
+   **/
+  kusamaFinalityApi: {
+    /**
+     * Returns number and hash of the best finalized header known to the bridge module.
+     *
+     * @callname: KusamaFinalityApi_best_finalized
+     **/
+    bestFinalized: GenericRuntimeApiMethod<Rv, () => Promise<BpRuntimeHeaderId | undefined>>;
+
+    /**
+     * Returns free headers interval, if it is configured in the runtime.
+     * The caller expects that if his transaction improves best known header
+     * at least by the free_headers_interval`, it will be fee-free.
+     *
+     * See [`pallet_bridge_grandpa::Config::FreeHeadersInterval`] for details.
+     *
+     * @callname: KusamaFinalityApi_free_headers_interval
+     **/
+    freeHeadersInterval: GenericRuntimeApiMethod<Rv, () => Promise<number | undefined>>;
+
+    /**
+     * Returns the justifications accepted in the current block.
+     *
+     * @callname: KusamaFinalityApi_synced_headers_grandpa_info
+     **/
+    syncedHeadersGrandpaInfo: GenericRuntimeApiMethod<Rv, () => Promise<Array<BpHeaderChainHeaderFinalityInfo>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: MoonriverKusamaFinalityApi - 0x597206dd17637029
+   **/
+  moonriverKusamaFinalityApi: {
+    /**
+     * Returns number and hash of the best finalized header known to the bridge module.
+     *
+     * @callname: MoonriverKusamaFinalityApi_best_finalized
+     **/
+    bestFinalized: GenericRuntimeApiMethod<Rv, () => Promise<BpRuntimeHeaderId | undefined>>;
+
+    /**
+     * Returns free headers interval, if it is configured in the runtime.
+     * The caller expects that if his transaction improves best known header
+     * at least by the free_headers_interval`, it will be fee-free.
+     *
+     * See [`pallet_bridge_grandpa::Config::FreeHeadersInterval`] for details.
+     *
+     * @callname: MoonriverKusamaFinalityApi_free_headers_interval
+     **/
+    freeHeadersInterval: GenericRuntimeApiMethod<Rv, () => Promise<number | undefined>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: ToMoonriverKusamaOutboundLaneApi - 0xad8e997e04156ad4
+   **/
+  toMoonriverKusamaOutboundLaneApi: {
+    /**
+     * Returns dispatch weight, encoded payload size and delivery+dispatch fee of all
+     * messages in given inclusive range.
+     *
+     * If some (or all) messages are missing from the storage, they'll also will
+     * be missing from the resulting vector. The vector is ordered by the nonce.
+     *
+     * @callname: ToMoonriverKusamaOutboundLaneApi_message_details
+     * @param {BpMessagesLaneHashedLaneId} lane
+     * @param {bigint} begin
+     * @param {bigint} end
+     **/
+    messageDetails: GenericRuntimeApiMethod<
+      Rv,
+      (lane: BpMessagesLaneHashedLaneId, begin: bigint, end: bigint) => Promise<Array<BpMessagesOutboundMessageDetails>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: FromMoonriverKusamaInboundLaneApi - 0xaceed5723e524773
+   **/
+  fromMoonriverKusamaInboundLaneApi: {
+    /**
+     * Return details of given inbound messages.
+     *
+     * @callname: FromMoonriverKusamaInboundLaneApi_message_details
+     * @param {BpMessagesLaneHashedLaneId} lane
+     * @param {Array<[BytesLike, BpMessagesOutboundMessageDetails]>} messages
+     **/
+    messageDetails: GenericRuntimeApiMethod<
+      Rv,
+      (
+        lane: BpMessagesLaneHashedLaneId,
+        messages: Array<[BytesLike, BpMessagesOutboundMessageDetails]>,
+      ) => Promise<Array<BpMessagesInboundMessageDetails>>
+    >;
 
     /**
      * Generic runtime api call

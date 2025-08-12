@@ -274,6 +274,12 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     maxCandidates: number;
 
     /**
+     * Threshold after which inflation become linear
+     * If you don't want to use it, set it to `()`
+     **/
+    linearInflationThreshold: bigint | undefined;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -1086,6 +1092,125 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * Babe requests expire and can be purged from storage after this many blocks/epochs
      **/
     epochExpirationDelay: bigint;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `BridgeKusamaGrandpa`'s constants
+   **/
+  bridgeKusamaGrandpa: {
+    /**
+     * Maximal number of "free" header transactions per block.
+     *
+     * To be able to track the bridged chain, the pallet requires all headers that are
+     * changing GRANDPA authorities set at the bridged chain (we call them mandatory).
+     * So it is a common good deed to submit mandatory headers to the pallet.
+     *
+     * The pallet may be configured (see `[Self::FreeHeadersInterval]`) to import some
+     * non-mandatory headers for free as well. It also may be treated as a common good
+     * deed, because it may help to reduce bridge fees - this cost may be deducted from
+     * bridge fees, paid by message senders.
+     *
+     * However, if the bridged chain gets compromised, its validators may generate as many
+     * "free" headers as they want. And they may fill the whole block (at this chain) for
+     * free. This constant limits number of calls that we may refund in a single block.
+     * All calls above this limit are accepted, but are not refunded.
+     **/
+    maxFreeHeadersPerBlock: number;
+
+    /**
+     * The distance between bridged chain headers, that may be submitted for free. The
+     * first free header is header number zero, the next one is header number
+     * `FreeHeadersInterval::get()` or any of its descendant if that header has not
+     * been submitted. In other words, interval between free headers should be at least
+     * `FreeHeadersInterval`.
+     **/
+    freeHeadersInterval: number | undefined;
+
+    /**
+     * Maximal number of finalized headers to keep in the storage.
+     *
+     * The setting is there to prevent growing the on-chain state indefinitely. Note
+     * the setting does not relate to block numbers - we will simply keep as much items
+     * in the storage, so it doesn't guarantee any fixed timeframe for finality headers.
+     *
+     * Incautious change of this constant may lead to orphan entries in the runtime storage.
+     **/
+    headersToKeep: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `BridgeKusamaParachains`'s constants
+   **/
+  bridgeKusamaParachains: {
+    /**
+     * Name of the original `paras` pallet in the `construct_runtime!()` call at the bridged
+     * chain.
+     *
+     * Please keep in mind that this should be the name of the `runtime_parachains::paras`
+     * pallet from polkadot repository, not the `pallet-bridge-parachains`.
+     **/
+    parasPalletName: string;
+
+    /**
+     * Maximal number of single parachain heads to keep in the storage.
+     *
+     * The setting is there to prevent growing the on-chain state indefinitely. Note
+     * the setting does not relate to parachain block numbers - we will simply keep as much
+     * items in the storage, so it doesn't guarantee any fixed timeframe for heads.
+     *
+     * Incautious change of this constant may lead to orphan entries in the runtime storage.
+     **/
+    headsToKeep: number;
+
+    /**
+     * Maximal size (in bytes) of the SCALE-encoded parachain head data
+     * (`bp_parachains::ParaStoredHeaderData`).
+     *
+     * Keep in mind that the size of any tracked parachain header data must not exceed this
+     * value. So if you're going to track multiple parachains, one of which is using large
+     * hashes, you shall choose this maximal value.
+     *
+     * There's no mandatory headers in this pallet, so it can't stall if there's some header
+     * that exceeds this bound.
+     **/
+    maxParaHeadDataSize: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `BridgeKusamaMessages`'s constants
+   **/
+  bridgeKusamaMessages: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `BridgeXcmOverMoonriver`'s constants
+   **/
+  bridgeXcmOverMoonriver: {
+    /**
+     * Bridged network as relative location of bridged `GlobalConsensus`.
+     **/
+    bridgedNetwork: StagingXcmV5Location;
+
+    /**
+     * Amount of this chain native tokens that is reserved on the sibling parachain account
+     * when bridge open request is registered.
+     **/
+    bridgeDeposit: bigint;
 
     /**
      * Generic pallet constant

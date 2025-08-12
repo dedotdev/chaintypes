@@ -49,6 +49,13 @@ import type {
   PalletXcmTransactorHrmpOperation,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
+  BpHeaderChainHeaderFinalityInfo,
+  BpPolkadotCoreParachainsParaId,
+  BpMessagesLaneHashedLaneId,
+  BpMessagesReceivedMessages,
+  BpMessagesDeliveredMessages,
+  BpXcmBridgeHubBridgeId,
+  StagingXcmV5Junctions,
 } from './types.js';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -3275,6 +3282,330 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     RequestFulfilled: GenericPalletEvent<Rv, 'Randomness', 'RequestFulfilled', { id: bigint }>;
     RequestFeeIncreased: GenericPalletEvent<Rv, 'Randomness', 'RequestFeeIncreased', { id: bigint; newFee: bigint }>;
     RequestExpirationExecuted: GenericPalletEvent<Rv, 'Randomness', 'RequestExpirationExecuted', { id: bigint }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `BridgeKusamaGrandpa`'s events
+   **/
+  bridgeKusamaGrandpa: {
+    /**
+     * Best finalized chain header has been updated to the header with given number and hash.
+     **/
+    UpdatedBestFinalizedHeader: GenericPalletEvent<
+      Rv,
+      'BridgeKusamaGrandpa',
+      'UpdatedBestFinalizedHeader',
+      {
+        /**
+         * Number of the new best finalized header.
+         **/
+        number: number;
+
+        /**
+         * Hash of the new best finalized header.
+         **/
+        hash: H256;
+
+        /**
+         * The Grandpa info associated to the new best finalized header.
+         **/
+        grandpaInfo: BpHeaderChainHeaderFinalityInfo;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `BridgeKusamaParachains`'s events
+   **/
+  bridgeKusamaParachains: {
+    /**
+     * The caller has provided head of parachain that the pallet is not configured to track.
+     **/
+    UntrackedParachainRejected: GenericPalletEvent<
+      Rv,
+      'BridgeKusamaParachains',
+      'UntrackedParachainRejected',
+      {
+        /**
+         * Identifier of the parachain that is not tracked by the pallet.
+         **/
+        parachain: BpPolkadotCoreParachainsParaId;
+      }
+    >;
+
+    /**
+     * The caller has declared that he has provided given parachain head, but it is missing
+     * from the storage proof.
+     **/
+    MissingParachainHead: GenericPalletEvent<
+      Rv,
+      'BridgeKusamaParachains',
+      'MissingParachainHead',
+      {
+        /**
+         * Identifier of the parachain with missing head.
+         **/
+        parachain: BpPolkadotCoreParachainsParaId;
+      }
+    >;
+
+    /**
+     * The caller has provided parachain head hash that is not matching the hash read from the
+     * storage proof.
+     **/
+    IncorrectParachainHeadHash: GenericPalletEvent<
+      Rv,
+      'BridgeKusamaParachains',
+      'IncorrectParachainHeadHash',
+      {
+        /**
+         * Identifier of the parachain with incorrect head hast.
+         **/
+        parachain: BpPolkadotCoreParachainsParaId;
+
+        /**
+         * Specified parachain head hash.
+         **/
+        parachainHeadHash: H256;
+
+        /**
+         * Actual parachain head hash.
+         **/
+        actualParachainHeadHash: H256;
+      }
+    >;
+
+    /**
+     * The caller has provided obsolete parachain head, which is already known to the pallet.
+     **/
+    RejectedObsoleteParachainHead: GenericPalletEvent<
+      Rv,
+      'BridgeKusamaParachains',
+      'RejectedObsoleteParachainHead',
+      {
+        /**
+         * Identifier of the parachain with obsolete head.
+         **/
+        parachain: BpPolkadotCoreParachainsParaId;
+
+        /**
+         * Obsolete parachain head hash.
+         **/
+        parachainHeadHash: H256;
+      }
+    >;
+
+    /**
+     * The caller has provided parachain head that exceeds the maximal configured head size.
+     **/
+    RejectedLargeParachainHead: GenericPalletEvent<
+      Rv,
+      'BridgeKusamaParachains',
+      'RejectedLargeParachainHead',
+      {
+        /**
+         * Identifier of the parachain with rejected head.
+         **/
+        parachain: BpPolkadotCoreParachainsParaId;
+
+        /**
+         * Parachain head hash.
+         **/
+        parachainHeadHash: H256;
+
+        /**
+         * Parachain head size.
+         **/
+        parachainHeadSize: number;
+      }
+    >;
+
+    /**
+     * Parachain head has been updated.
+     **/
+    UpdatedParachainHead: GenericPalletEvent<
+      Rv,
+      'BridgeKusamaParachains',
+      'UpdatedParachainHead',
+      {
+        /**
+         * Identifier of the parachain that has been updated.
+         **/
+        parachain: BpPolkadotCoreParachainsParaId;
+
+        /**
+         * Parachain head hash.
+         **/
+        parachainHeadHash: H256;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `BridgeKusamaMessages`'s events
+   **/
+  bridgeKusamaMessages: {
+    /**
+     * Message has been accepted and is waiting to be delivered.
+     **/
+    MessageAccepted: GenericPalletEvent<
+      Rv,
+      'BridgeKusamaMessages',
+      'MessageAccepted',
+      {
+        /**
+         * Lane, which has accepted the message.
+         **/
+        laneId: BpMessagesLaneHashedLaneId;
+
+        /**
+         * Nonce of accepted message.
+         **/
+        nonce: bigint;
+      }
+    >;
+
+    /**
+     * Messages have been received from the bridged chain.
+     **/
+    MessagesReceived: GenericPalletEvent<Rv, 'BridgeKusamaMessages', 'MessagesReceived', BpMessagesReceivedMessages>;
+
+    /**
+     * Messages in the inclusive range have been delivered to the bridged chain.
+     **/
+    MessagesDelivered: GenericPalletEvent<
+      Rv,
+      'BridgeKusamaMessages',
+      'MessagesDelivered',
+      {
+        /**
+         * Lane for which the delivery has been confirmed.
+         **/
+        laneId: BpMessagesLaneHashedLaneId;
+
+        /**
+         * Delivered messages.
+         **/
+        messages: BpMessagesDeliveredMessages;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `BridgeXcmOverMoonriver`'s events
+   **/
+  bridgeXcmOverMoonriver: {
+    /**
+     * The bridge between two locations has been opened.
+     **/
+    BridgeOpened: GenericPalletEvent<
+      Rv,
+      'BridgeXcmOverMoonriver',
+      'BridgeOpened',
+      {
+        /**
+         * Bridge identifier.
+         **/
+        bridgeId: BpXcmBridgeHubBridgeId;
+
+        /**
+         * Amount of deposit held.
+         **/
+        bridgeDeposit: bigint;
+
+        /**
+         * Universal location of local bridge endpoint.
+         **/
+        localEndpoint: StagingXcmV5Junctions;
+
+        /**
+         * Universal location of remote bridge endpoint.
+         **/
+        remoteEndpoint: StagingXcmV5Junctions;
+
+        /**
+         * Lane identifier.
+         **/
+        laneId: BpMessagesLaneHashedLaneId;
+      }
+    >;
+
+    /**
+     * Bridge is going to be closed, but not yet fully pruned from the runtime storage.
+     **/
+    ClosingBridge: GenericPalletEvent<
+      Rv,
+      'BridgeXcmOverMoonriver',
+      'ClosingBridge',
+      {
+        /**
+         * Bridge identifier.
+         **/
+        bridgeId: BpXcmBridgeHubBridgeId;
+
+        /**
+         * Lane identifier.
+         **/
+        laneId: BpMessagesLaneHashedLaneId;
+
+        /**
+         * Number of pruned messages during the close call.
+         **/
+        prunedMessages: bigint;
+
+        /**
+         * Number of enqueued messages that need to be pruned in follow up calls.
+         **/
+        enqueuedMessages: bigint;
+      }
+    >;
+
+    /**
+     * Bridge has been closed and pruned from the runtime storage. It now may be reopened
+     * again by any participant.
+     **/
+    BridgePruned: GenericPalletEvent<
+      Rv,
+      'BridgeXcmOverMoonriver',
+      'BridgePruned',
+      {
+        /**
+         * Bridge identifier.
+         **/
+        bridgeId: BpXcmBridgeHubBridgeId;
+
+        /**
+         * Lane identifier.
+         **/
+        laneId: BpMessagesLaneHashedLaneId;
+
+        /**
+         * Amount of deposit released.
+         **/
+        bridgeDeposit: bigint;
+
+        /**
+         * Number of pruned messages during the close call.
+         **/
+        prunedMessages: bigint;
+      }
+    >;
 
     /**
      * Generic pallet event

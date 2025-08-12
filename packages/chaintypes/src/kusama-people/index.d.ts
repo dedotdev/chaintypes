@@ -25,7 +25,7 @@ export interface VersionedKusamaPeopleApi<Rv extends RpcVersion> extends Generic
 
 /**
  * @name: KusamaPeopleApi
- * @specVersion: 1005001
+ * @specVersion: 1006001
  **/
 export interface KusamaPeopleApi {
   legacy: VersionedKusamaPeopleApi<RpcLegacy>;

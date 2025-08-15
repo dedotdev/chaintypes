@@ -3872,6 +3872,103 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `Ismp`'s errors
+   **/
+  ismp: {
+    /**
+     * Invalid ISMP message
+     **/
+    InvalidMessage: GenericPalletError<Rv>;
+
+    /**
+     * Requested message was not found
+     **/
+    MessageNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Encountered an error while creating the consensus client.
+     **/
+    ConsensusClientCreationFailed: GenericPalletError<Rv>;
+
+    /**
+     * Couldn't update unbonding period
+     **/
+    UnbondingPeriodUpdateFailed: GenericPalletError<Rv>;
+
+    /**
+     * Couldn't update challenge period
+     **/
+    ChallengePeriodUpdateFailed: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Hyperbridge`'s errors
+   **/
+  hyperbridge: {
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `TokenGateway`'s errors
+   **/
+  tokenGateway: {
+    /**
+     * A asset that has not been registered
+     **/
+    UnregisteredAsset: GenericPalletError<Rv>;
+
+    /**
+     * Error while teleporting asset
+     **/
+    AssetTeleportError: GenericPalletError<Rv>;
+
+    /**
+     * Coprocessor was not configured in the runtime
+     **/
+    CoprocessorNotConfigured: GenericPalletError<Rv>;
+
+    /**
+     * Asset or update Dispatch Error
+     **/
+    DispatchError: GenericPalletError<Rv>;
+
+    /**
+     * Asset Id creation failed
+     **/
+    AssetCreationError: GenericPalletError<Rv>;
+
+    /**
+     * Asset decimals not found
+     **/
+    AssetDecimalsNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Protocol Params have not been initialized
+     **/
+    NotInitialized: GenericPalletError<Rv>;
+
+    /**
+     * Unknown Asset
+     **/
+    UnknownAsset: GenericPalletError<Rv>;
+
+    /**
+     * Only root or asset owner can update asset
+     **/
+    NotAssetOwner: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `EmaOracle`'s errors
    **/
   emaOracle: {

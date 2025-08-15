@@ -2479,6 +2479,54 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
+   * Pallet `SafeMode`'s storage queries
+   **/
+  safeMode: {
+    /**
+     * Contains the last block number that the safe-mode will remain entered in.
+     *
+     * Set to `None` when safe-mode is exited.
+     *
+     * Safe-mode is automatically exited when the current block number exceeds this value.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    enteredUntil: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Holds the reserve that was taken from an account at a specific block number.
+     *
+     * This helps governance to have an overview of outstanding deposits that should be returned or
+     * slashed.
+     *
+     * @param {[AccountId32Like, number]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    deposits: GenericStorageQuery<Rv, (arg: [AccountId32Like, number]) => bigint | undefined, [AccountId32, number]>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `TxPause`'s storage queries
+   **/
+  txPause: {
+    /**
+     * The set of calls that are explicitly paused.
+     *
+     * @param {[BytesLike, BytesLike]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    pausedCalls: GenericStorageQuery<Rv, (arg: [BytesLike, BytesLike]) => [] | undefined, [Bytes, Bytes]>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
    * Pallet `MultiBlockMigrations`'s storage queries
    **/
   multiBlockMigrations: {

@@ -961,6 +961,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     AlreadyInvulnerable: GenericPalletError<Rv>;
 
     /**
+     * User is not an Invulnerable
+     **/
+    NotInvulnerable: GenericPalletError<Rv>;
+
+    /**
      * Account has no associated validator ID
      **/
     NoAssociatedValidatorId: GenericPalletError<Rv>;
@@ -2244,6 +2249,75 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Proposal has not been approved.
      **/
     ProposalNotApproved: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `SafeMode`'s errors
+   **/
+  safeMode: {
+    /**
+     * The safe-mode is (already or still) entered.
+     **/
+    Entered: GenericPalletError<Rv>;
+
+    /**
+     * The safe-mode is (already or still) exited.
+     **/
+    Exited: GenericPalletError<Rv>;
+
+    /**
+     * This functionality of the pallet is disabled by the configuration.
+     **/
+    NotConfigured: GenericPalletError<Rv>;
+
+    /**
+     * There is no balance reserved.
+     **/
+    NoDeposit: GenericPalletError<Rv>;
+
+    /**
+     * The account already has a deposit reserved and can therefore not enter or extend again.
+     **/
+    AlreadyDeposited: GenericPalletError<Rv>;
+
+    /**
+     * This deposit cannot be released yet.
+     **/
+    CannotReleaseYet: GenericPalletError<Rv>;
+
+    /**
+     * An error from the underlying `Currency`.
+     **/
+    CurrencyError: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `TxPause`'s errors
+   **/
+  txPause: {
+    /**
+     * The call is paused.
+     **/
+    IsPaused: GenericPalletError<Rv>;
+
+    /**
+     * The call is unpaused.
+     **/
+    IsUnpaused: GenericPalletError<Rv>;
+
+    /**
+     * The call is whitelisted and cannot be paused.
+     **/
+    Unpausable: GenericPalletError<Rv>;
+    NotFound: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

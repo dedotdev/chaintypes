@@ -31,6 +31,7 @@ import type {
   PalletDemocracyVoteThreshold,
   PalletDemocracyVoteAccountVote,
   PalletDemocracyMetadataOwner,
+  PalletSafeModeExitReason,
 } from './types.js';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -2783,6 +2784,78 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'CollectiveProxyExecuted',
       { result: Result<[], DispatchError> }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `SafeMode`'s events
+   **/
+  safeMode: {
+    /**
+     * The safe-mode was entered until inclusively this block.
+     **/
+    Entered: GenericPalletEvent<Rv, 'SafeMode', 'Entered', { until: number }>;
+
+    /**
+     * The safe-mode was extended until inclusively this block.
+     **/
+    Extended: GenericPalletEvent<Rv, 'SafeMode', 'Extended', { until: number }>;
+
+    /**
+     * Exited the safe-mode for a specific reason.
+     **/
+    Exited: GenericPalletEvent<Rv, 'SafeMode', 'Exited', { reason: PalletSafeModeExitReason }>;
+
+    /**
+     * An account reserved funds for either entering or extending the safe-mode.
+     **/
+    DepositPlaced: GenericPalletEvent<Rv, 'SafeMode', 'DepositPlaced', { account: AccountId32; amount: bigint }>;
+
+    /**
+     * An account had a reserve released that was reserved.
+     **/
+    DepositReleased: GenericPalletEvent<Rv, 'SafeMode', 'DepositReleased', { account: AccountId32; amount: bigint }>;
+
+    /**
+     * An account had reserve slashed that was reserved.
+     **/
+    DepositSlashed: GenericPalletEvent<Rv, 'SafeMode', 'DepositSlashed', { account: AccountId32; amount: bigint }>;
+
+    /**
+     * Could not hold funds for entering or extending the safe-mode.
+     *
+     * This error comes from the underlying `Currency`.
+     **/
+    CannotDeposit: GenericPalletEvent<Rv, 'SafeMode', 'CannotDeposit', null>;
+
+    /**
+     * Could not release funds for entering or extending the safe-mode.
+     *
+     * This error comes from the underlying `Currency`.
+     **/
+    CannotRelease: GenericPalletEvent<Rv, 'SafeMode', 'CannotRelease', null>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `TxPause`'s events
+   **/
+  txPause: {
+    /**
+     * This pallet, or a specific call is now paused.
+     **/
+    CallPaused: GenericPalletEvent<Rv, 'TxPause', 'CallPaused', { fullName: [Bytes, Bytes] }>;
+
+    /**
+     * This pallet, or a specific call is now unpaused.
+     **/
+    CallUnpaused: GenericPalletEvent<Rv, 'TxPause', 'CallUnpaused', { fullName: [Bytes, Bytes] }>;
 
     /**
      * Generic pallet event

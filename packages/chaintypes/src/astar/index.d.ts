@@ -25,7 +25,7 @@ export interface VersionedAstarApi<Rv extends RpcVersion> extends GenericSubstra
 
 /**
  * @name: AstarApi
- * @specVersion: 1601
+ * @specVersion: 1700
  **/
 export interface AstarApi {
   legacy: VersionedAstarApi<RpcLegacy>;

@@ -4816,6 +4816,44 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Add an invulnerable collator.
+     *
+     * @param {AccountId32Like} who
+     **/
+    addInvulnerable: GenericTxCall<
+      Rv,
+      (who: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CollatorSelection';
+          palletCall: {
+            name: 'AddInvulnerable';
+            params: { who: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove an invulnerable collator.
+     *
+     * @param {AccountId32Like} who
+     **/
+    removeInvulnerable: GenericTxCall<
+      Rv,
+      (who: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CollatorSelection';
+          palletCall: {
+            name: 'RemoveInvulnerable';
+            params: { who: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -9172,6 +9210,284 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ExecuteCall';
             params: { call: AstarRuntimeRuntimeCallLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `SafeMode`'s transaction calls
+   **/
+  safeMode: {
+    /**
+     * Enter safe-mode permissionlessly for [`Config::EnterDuration`] blocks.
+     *
+     * Reserves [`Config::EnterDepositAmount`] from the caller's account.
+     * Emits an [`Event::Entered`] event on success.
+     * Errors with [`Error::Entered`] if the safe-mode is already entered.
+     * Errors with [`Error::NotConfigured`] if the deposit amount is `None`.
+     *
+     **/
+    enter: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'Enter';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Enter safe-mode by force for a per-origin configured number of blocks.
+     *
+     * Emits an [`Event::Entered`] event on success.
+     * Errors with [`Error::Entered`] if the safe-mode is already entered.
+     *
+     * Can only be called by the [`Config::ForceEnterOrigin`] origin.
+     *
+     **/
+    forceEnter: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'ForceEnter';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Extend the safe-mode permissionlessly for [`Config::ExtendDuration`] blocks.
+     *
+     * This accumulates on top of the current remaining duration.
+     * Reserves [`Config::ExtendDepositAmount`] from the caller's account.
+     * Emits an [`Event::Extended`] event on success.
+     * Errors with [`Error::Exited`] if the safe-mode is entered.
+     * Errors with [`Error::NotConfigured`] if the deposit amount is `None`.
+     *
+     * This may be called by any signed origin with [`Config::ExtendDepositAmount`] free
+     * currency to reserve. This call can be disabled for all origins by configuring
+     * [`Config::ExtendDepositAmount`] to `None`.
+     *
+     **/
+    extend: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'Extend';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Extend the safe-mode by force for a per-origin configured number of blocks.
+     *
+     * Emits an [`Event::Extended`] event on success.
+     * Errors with [`Error::Exited`] if the safe-mode is inactive.
+     *
+     * Can only be called by the [`Config::ForceExtendOrigin`] origin.
+     *
+     **/
+    forceExtend: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'ForceExtend';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Exit safe-mode by force.
+     *
+     * Emits an [`Event::Exited`] with [`ExitReason::Force`] event on success.
+     * Errors with [`Error::Exited`] if the safe-mode is inactive.
+     *
+     * Note: `safe-mode` will be automatically deactivated by [`Pallet::on_initialize`] hook
+     * after the block height is greater than the [`EnteredUntil`] storage item.
+     * Emits an [`Event::Exited`] with [`ExitReason::Timeout`] event when deactivated in the
+     * hook.
+     *
+     **/
+    forceExit: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'ForceExit';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Slash a deposit for an account that entered or extended safe-mode at a given
+     * historical block.
+     *
+     * This can only be called while safe-mode is entered.
+     *
+     * Emits a [`Event::DepositSlashed`] event on success.
+     * Errors with [`Error::Entered`] if safe-mode is entered.
+     *
+     * Can only be called by the [`Config::ForceDepositOrigin`] origin.
+     *
+     * @param {AccountId32Like} account
+     * @param {number} block
+     **/
+    forceSlashDeposit: GenericTxCall<
+      Rv,
+      (
+        account: AccountId32Like,
+        block: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'ForceSlashDeposit';
+            params: { account: AccountId32Like; block: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Permissionlessly release a deposit for an account that entered safe-mode at a
+     * given historical block.
+     *
+     * The call can be completely disabled by setting [`Config::ReleaseDelay`] to `None`.
+     * This cannot be called while safe-mode is entered and not until
+     * [`Config::ReleaseDelay`] blocks have passed since safe-mode was entered.
+     *
+     * Emits a [`Event::DepositReleased`] event on success.
+     * Errors with [`Error::Entered`] if the safe-mode is entered.
+     * Errors with [`Error::CannotReleaseYet`] if [`Config::ReleaseDelay`] block have not
+     * passed since safe-mode was entered. Errors with [`Error::NoDeposit`] if the payee has no
+     * reserved currency at the block specified.
+     *
+     * @param {AccountId32Like} account
+     * @param {number} block
+     **/
+    releaseDeposit: GenericTxCall<
+      Rv,
+      (
+        account: AccountId32Like,
+        block: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'ReleaseDeposit';
+            params: { account: AccountId32Like; block: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force to release a deposit for an account that entered safe-mode at a given
+     * historical block.
+     *
+     * This can be called while safe-mode is still entered.
+     *
+     * Emits a [`Event::DepositReleased`] event on success.
+     * Errors with [`Error::Entered`] if safe-mode is entered.
+     * Errors with [`Error::NoDeposit`] if the payee has no reserved currency at the
+     * specified block.
+     *
+     * Can only be called by the [`Config::ForceDepositOrigin`] origin.
+     *
+     * @param {AccountId32Like} account
+     * @param {number} block
+     **/
+    forceReleaseDeposit: GenericTxCall<
+      Rv,
+      (
+        account: AccountId32Like,
+        block: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'SafeMode';
+          palletCall: {
+            name: 'ForceReleaseDeposit';
+            params: { account: AccountId32Like; block: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `TxPause`'s transaction calls
+   **/
+  txPause: {
+    /**
+     * Pause a call.
+     *
+     * Can only be called by [`Config::PauseOrigin`].
+     * Emits an [`Event::CallPaused`] event on success.
+     *
+     * @param {[BytesLike, BytesLike]} fullName
+     **/
+    pause: GenericTxCall<
+      Rv,
+      (fullName: [BytesLike, BytesLike]) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TxPause';
+          palletCall: {
+            name: 'Pause';
+            params: { fullName: [BytesLike, BytesLike] };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Un-pause a call.
+     *
+     * Can only be called by [`Config::UnpauseOrigin`].
+     * Emits an [`Event::CallUnpaused`] event on success.
+     *
+     * @param {[BytesLike, BytesLike]} ident
+     **/
+    unpause: GenericTxCall<
+      Rv,
+      (ident: [BytesLike, BytesLike]) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TxPause';
+          palletCall: {
+            name: 'Unpause';
+            params: { ident: [BytesLike, BytesLike] };
           };
         }
       >

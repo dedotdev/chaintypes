@@ -93,6 +93,8 @@ export type AstarRuntimeRuntimeEvent =
   | { pallet: 'Treasury'; palletEvent: PalletTreasuryEvent }
   | { pallet: 'CommunityTreasury'; palletEvent: PalletTreasuryEvent }
   | { pallet: 'CollectiveProxy'; palletEvent: PalletCollectiveProxyEvent }
+  | { pallet: 'SafeMode'; palletEvent: PalletSafeModeEvent }
+  | { pallet: 'TxPause'; palletEvent: PalletTxPauseEvent }
   | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent };
 
 /**
@@ -2270,6 +2272,62 @@ export type PalletCollectiveProxyEvent =
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletSafeModeEvent =
+  /**
+   * The safe-mode was entered until inclusively this block.
+   **/
+  | { name: 'Entered'; data: { until: number } }
+  /**
+   * The safe-mode was extended until inclusively this block.
+   **/
+  | { name: 'Extended'; data: { until: number } }
+  /**
+   * Exited the safe-mode for a specific reason.
+   **/
+  | { name: 'Exited'; data: { reason: PalletSafeModeExitReason } }
+  /**
+   * An account reserved funds for either entering or extending the safe-mode.
+   **/
+  | { name: 'DepositPlaced'; data: { account: AccountId32; amount: bigint } }
+  /**
+   * An account had a reserve released that was reserved.
+   **/
+  | { name: 'DepositReleased'; data: { account: AccountId32; amount: bigint } }
+  /**
+   * An account had reserve slashed that was reserved.
+   **/
+  | { name: 'DepositSlashed'; data: { account: AccountId32; amount: bigint } }
+  /**
+   * Could not hold funds for entering or extending the safe-mode.
+   *
+   * This error comes from the underlying `Currency`.
+   **/
+  | { name: 'CannotDeposit' }
+  /**
+   * Could not release funds for entering or extending the safe-mode.
+   *
+   * This error comes from the underlying `Currency`.
+   **/
+  | { name: 'CannotRelease' };
+
+export type PalletSafeModeExitReason = 'Timeout' | 'Force';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletTxPauseEvent =
+  /**
+   * This pallet, or a specific call is now paused.
+   **/
+  | { name: 'CallPaused'; data: { fullName: [Bytes, Bytes] } }
+  /**
+   * This pallet, or a specific call is now unpaused.
+   **/
+  | { name: 'CallUnpaused'; data: { fullName: [Bytes, Bytes] } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PalletMigrationsEvent =
   /**
    * A Runtime upgrade started.
@@ -2821,6 +2879,8 @@ export type AstarRuntimeRuntimeCall =
   | { pallet: 'Treasury'; palletCall: PalletTreasuryCall }
   | { pallet: 'CommunityTreasury'; palletCall: PalletTreasuryCall }
   | { pallet: 'CollectiveProxy'; palletCall: PalletCollectiveProxyCall }
+  | { pallet: 'SafeMode'; palletCall: PalletSafeModeCall }
+  | { pallet: 'TxPause'; palletCall: PalletTxPauseCall }
   | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCall };
 
 export type AstarRuntimeRuntimeCallLike =
@@ -2864,6 +2924,8 @@ export type AstarRuntimeRuntimeCallLike =
   | { pallet: 'Treasury'; palletCall: PalletTreasuryCallLike }
   | { pallet: 'CommunityTreasury'; palletCall: PalletTreasuryCallLike }
   | { pallet: 'CollectiveProxy'; palletCall: PalletCollectiveProxyCallLike }
+  | { pallet: 'SafeMode'; palletCall: PalletSafeModeCallLike }
+  | { pallet: 'TxPause'; palletCall: PalletTxPauseCallLike }
   | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCallLike };
 
 /**
@@ -6420,7 +6482,15 @@ export type PalletCollatorSelectionCall =
    * Set slash destination.
    * Use `Some` to deposit slashed balance into destination or `None` to burn it.
    **/
-  | { name: 'SetSlashDestination'; params: { destination?: AccountId32 | undefined } };
+  | { name: 'SetSlashDestination'; params: { destination?: AccountId32 | undefined } }
+  /**
+   * Add an invulnerable collator.
+   **/
+  | { name: 'AddInvulnerable'; params: { who: AccountId32 } }
+  /**
+   * Remove an invulnerable collator.
+   **/
+  | { name: 'RemoveInvulnerable'; params: { who: AccountId32 } };
 
 export type PalletCollatorSelectionCallLike =
   /**
@@ -6462,7 +6532,15 @@ export type PalletCollatorSelectionCallLike =
    * Set slash destination.
    * Use `Some` to deposit slashed balance into destination or `None` to burn it.
    **/
-  | { name: 'SetSlashDestination'; params: { destination?: AccountId32Like | undefined } };
+  | { name: 'SetSlashDestination'; params: { destination?: AccountId32Like | undefined } }
+  /**
+   * Add an invulnerable collator.
+   **/
+  | { name: 'AddInvulnerable'; params: { who: AccountId32Like } }
+  /**
+   * Remove an invulnerable collator.
+   **/
+  | { name: 'RemoveInvulnerable'; params: { who: AccountId32Like } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -9723,6 +9801,236 @@ export type PalletCollectiveProxyCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletSafeModeCall =
+  /**
+   * Enter safe-mode permissionlessly for [`Config::EnterDuration`] blocks.
+   *
+   * Reserves [`Config::EnterDepositAmount`] from the caller's account.
+   * Emits an [`Event::Entered`] event on success.
+   * Errors with [`Error::Entered`] if the safe-mode is already entered.
+   * Errors with [`Error::NotConfigured`] if the deposit amount is `None`.
+   **/
+  | { name: 'Enter' }
+  /**
+   * Enter safe-mode by force for a per-origin configured number of blocks.
+   *
+   * Emits an [`Event::Entered`] event on success.
+   * Errors with [`Error::Entered`] if the safe-mode is already entered.
+   *
+   * Can only be called by the [`Config::ForceEnterOrigin`] origin.
+   **/
+  | { name: 'ForceEnter' }
+  /**
+   * Extend the safe-mode permissionlessly for [`Config::ExtendDuration`] blocks.
+   *
+   * This accumulates on top of the current remaining duration.
+   * Reserves [`Config::ExtendDepositAmount`] from the caller's account.
+   * Emits an [`Event::Extended`] event on success.
+   * Errors with [`Error::Exited`] if the safe-mode is entered.
+   * Errors with [`Error::NotConfigured`] if the deposit amount is `None`.
+   *
+   * This may be called by any signed origin with [`Config::ExtendDepositAmount`] free
+   * currency to reserve. This call can be disabled for all origins by configuring
+   * [`Config::ExtendDepositAmount`] to `None`.
+   **/
+  | { name: 'Extend' }
+  /**
+   * Extend the safe-mode by force for a per-origin configured number of blocks.
+   *
+   * Emits an [`Event::Extended`] event on success.
+   * Errors with [`Error::Exited`] if the safe-mode is inactive.
+   *
+   * Can only be called by the [`Config::ForceExtendOrigin`] origin.
+   **/
+  | { name: 'ForceExtend' }
+  /**
+   * Exit safe-mode by force.
+   *
+   * Emits an [`Event::Exited`] with [`ExitReason::Force`] event on success.
+   * Errors with [`Error::Exited`] if the safe-mode is inactive.
+   *
+   * Note: `safe-mode` will be automatically deactivated by [`Pallet::on_initialize`] hook
+   * after the block height is greater than the [`EnteredUntil`] storage item.
+   * Emits an [`Event::Exited`] with [`ExitReason::Timeout`] event when deactivated in the
+   * hook.
+   **/
+  | { name: 'ForceExit' }
+  /**
+   * Slash a deposit for an account that entered or extended safe-mode at a given
+   * historical block.
+   *
+   * This can only be called while safe-mode is entered.
+   *
+   * Emits a [`Event::DepositSlashed`] event on success.
+   * Errors with [`Error::Entered`] if safe-mode is entered.
+   *
+   * Can only be called by the [`Config::ForceDepositOrigin`] origin.
+   **/
+  | { name: 'ForceSlashDeposit'; params: { account: AccountId32; block: number } }
+  /**
+   * Permissionlessly release a deposit for an account that entered safe-mode at a
+   * given historical block.
+   *
+   * The call can be completely disabled by setting [`Config::ReleaseDelay`] to `None`.
+   * This cannot be called while safe-mode is entered and not until
+   * [`Config::ReleaseDelay`] blocks have passed since safe-mode was entered.
+   *
+   * Emits a [`Event::DepositReleased`] event on success.
+   * Errors with [`Error::Entered`] if the safe-mode is entered.
+   * Errors with [`Error::CannotReleaseYet`] if [`Config::ReleaseDelay`] block have not
+   * passed since safe-mode was entered. Errors with [`Error::NoDeposit`] if the payee has no
+   * reserved currency at the block specified.
+   **/
+  | { name: 'ReleaseDeposit'; params: { account: AccountId32; block: number } }
+  /**
+   * Force to release a deposit for an account that entered safe-mode at a given
+   * historical block.
+   *
+   * This can be called while safe-mode is still entered.
+   *
+   * Emits a [`Event::DepositReleased`] event on success.
+   * Errors with [`Error::Entered`] if safe-mode is entered.
+   * Errors with [`Error::NoDeposit`] if the payee has no reserved currency at the
+   * specified block.
+   *
+   * Can only be called by the [`Config::ForceDepositOrigin`] origin.
+   **/
+  | { name: 'ForceReleaseDeposit'; params: { account: AccountId32; block: number } };
+
+export type PalletSafeModeCallLike =
+  /**
+   * Enter safe-mode permissionlessly for [`Config::EnterDuration`] blocks.
+   *
+   * Reserves [`Config::EnterDepositAmount`] from the caller's account.
+   * Emits an [`Event::Entered`] event on success.
+   * Errors with [`Error::Entered`] if the safe-mode is already entered.
+   * Errors with [`Error::NotConfigured`] if the deposit amount is `None`.
+   **/
+  | { name: 'Enter' }
+  /**
+   * Enter safe-mode by force for a per-origin configured number of blocks.
+   *
+   * Emits an [`Event::Entered`] event on success.
+   * Errors with [`Error::Entered`] if the safe-mode is already entered.
+   *
+   * Can only be called by the [`Config::ForceEnterOrigin`] origin.
+   **/
+  | { name: 'ForceEnter' }
+  /**
+   * Extend the safe-mode permissionlessly for [`Config::ExtendDuration`] blocks.
+   *
+   * This accumulates on top of the current remaining duration.
+   * Reserves [`Config::ExtendDepositAmount`] from the caller's account.
+   * Emits an [`Event::Extended`] event on success.
+   * Errors with [`Error::Exited`] if the safe-mode is entered.
+   * Errors with [`Error::NotConfigured`] if the deposit amount is `None`.
+   *
+   * This may be called by any signed origin with [`Config::ExtendDepositAmount`] free
+   * currency to reserve. This call can be disabled for all origins by configuring
+   * [`Config::ExtendDepositAmount`] to `None`.
+   **/
+  | { name: 'Extend' }
+  /**
+   * Extend the safe-mode by force for a per-origin configured number of blocks.
+   *
+   * Emits an [`Event::Extended`] event on success.
+   * Errors with [`Error::Exited`] if the safe-mode is inactive.
+   *
+   * Can only be called by the [`Config::ForceExtendOrigin`] origin.
+   **/
+  | { name: 'ForceExtend' }
+  /**
+   * Exit safe-mode by force.
+   *
+   * Emits an [`Event::Exited`] with [`ExitReason::Force`] event on success.
+   * Errors with [`Error::Exited`] if the safe-mode is inactive.
+   *
+   * Note: `safe-mode` will be automatically deactivated by [`Pallet::on_initialize`] hook
+   * after the block height is greater than the [`EnteredUntil`] storage item.
+   * Emits an [`Event::Exited`] with [`ExitReason::Timeout`] event when deactivated in the
+   * hook.
+   **/
+  | { name: 'ForceExit' }
+  /**
+   * Slash a deposit for an account that entered or extended safe-mode at a given
+   * historical block.
+   *
+   * This can only be called while safe-mode is entered.
+   *
+   * Emits a [`Event::DepositSlashed`] event on success.
+   * Errors with [`Error::Entered`] if safe-mode is entered.
+   *
+   * Can only be called by the [`Config::ForceDepositOrigin`] origin.
+   **/
+  | { name: 'ForceSlashDeposit'; params: { account: AccountId32Like; block: number } }
+  /**
+   * Permissionlessly release a deposit for an account that entered safe-mode at a
+   * given historical block.
+   *
+   * The call can be completely disabled by setting [`Config::ReleaseDelay`] to `None`.
+   * This cannot be called while safe-mode is entered and not until
+   * [`Config::ReleaseDelay`] blocks have passed since safe-mode was entered.
+   *
+   * Emits a [`Event::DepositReleased`] event on success.
+   * Errors with [`Error::Entered`] if the safe-mode is entered.
+   * Errors with [`Error::CannotReleaseYet`] if [`Config::ReleaseDelay`] block have not
+   * passed since safe-mode was entered. Errors with [`Error::NoDeposit`] if the payee has no
+   * reserved currency at the block specified.
+   **/
+  | { name: 'ReleaseDeposit'; params: { account: AccountId32Like; block: number } }
+  /**
+   * Force to release a deposit for an account that entered safe-mode at a given
+   * historical block.
+   *
+   * This can be called while safe-mode is still entered.
+   *
+   * Emits a [`Event::DepositReleased`] event on success.
+   * Errors with [`Error::Entered`] if safe-mode is entered.
+   * Errors with [`Error::NoDeposit`] if the payee has no reserved currency at the
+   * specified block.
+   *
+   * Can only be called by the [`Config::ForceDepositOrigin`] origin.
+   **/
+  | { name: 'ForceReleaseDeposit'; params: { account: AccountId32Like; block: number } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletTxPauseCall =
+  /**
+   * Pause a call.
+   *
+   * Can only be called by [`Config::PauseOrigin`].
+   * Emits an [`Event::CallPaused`] event on success.
+   **/
+  | { name: 'Pause'; params: { fullName: [Bytes, Bytes] } }
+  /**
+   * Un-pause a call.
+   *
+   * Can only be called by [`Config::UnpauseOrigin`].
+   * Emits an [`Event::CallUnpaused`] event on success.
+   **/
+  | { name: 'Unpause'; params: { ident: [Bytes, Bytes] } };
+
+export type PalletTxPauseCallLike =
+  /**
+   * Pause a call.
+   *
+   * Can only be called by [`Config::PauseOrigin`].
+   * Emits an [`Event::CallPaused`] event on success.
+   **/
+  | { name: 'Pause'; params: { fullName: [BytesLike, BytesLike] } }
+  /**
+   * Un-pause a call.
+   *
+   * Can only be called by [`Config::UnpauseOrigin`].
+   * Emits an [`Event::CallUnpaused`] event on success.
+   **/
+  | { name: 'Unpause'; params: { ident: [BytesLike, BytesLike] } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletMigrationsCall =
   /**
    * Allows root to set a cursor to forcefully start, stop or forward the migration process.
@@ -10257,13 +10565,16 @@ export type AstarRuntimeRuntimeHoldReason =
   | { type: 'Preimage'; value: PalletPreimageHoldReason }
   | { type: 'Council'; value: PalletCollectiveHoldReason }
   | { type: 'TechnicalCommittee'; value: PalletCollectiveHoldReason }
-  | { type: 'CommunityCouncil'; value: PalletCollectiveHoldReason };
+  | { type: 'CommunityCouncil'; value: PalletCollectiveHoldReason }
+  | { type: 'SafeMode'; value: PalletSafeModeHoldReason };
 
 export type PalletContractsHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve';
 
 export type PalletPreimageHoldReason = 'Preimage';
 
 export type PalletCollectiveHoldReason = 'ProposalSubmission';
+
+export type PalletSafeModeHoldReason = 'EnterOrExtend';
 
 export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = { id: AstarRuntimeRuntimeFreezeReason; amount: bigint };
 
@@ -10795,6 +11106,10 @@ export type PalletCollatorSelectionError =
    * User is already an Invulnerable
    **/
   | 'AlreadyInvulnerable'
+  /**
+   * User is not an Invulnerable
+   **/
+  | 'NotInvulnerable'
   /**
    * Account has no associated validator ID
    **/
@@ -11862,6 +12177,57 @@ export type PalletTreasuryError =
 /**
  * The `Error` enum of this pallet.
  **/
+export type PalletSafeModeError =
+  /**
+   * The safe-mode is (already or still) entered.
+   **/
+  | 'Entered'
+  /**
+   * The safe-mode is (already or still) exited.
+   **/
+  | 'Exited'
+  /**
+   * This functionality of the pallet is disabled by the configuration.
+   **/
+  | 'NotConfigured'
+  /**
+   * There is no balance reserved.
+   **/
+  | 'NoDeposit'
+  /**
+   * The account already has a deposit reserved and can therefore not enter or extend again.
+   **/
+  | 'AlreadyDeposited'
+  /**
+   * This deposit cannot be released yet.
+   **/
+  | 'CannotReleaseYet'
+  /**
+   * An error from the underlying `Currency`.
+   **/
+  | 'CurrencyError';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletTxPauseError =
+  /**
+   * The call is paused.
+   **/
+  | 'IsPaused'
+  /**
+   * The call is unpaused.
+   **/
+  | 'IsUnpaused'
+  /**
+   * The call is whitelisted and cannot be paused.
+   **/
+  | 'Unpausable'
+  | 'NotFound';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
 export type PalletMigrationsError =
   /**
    * The operation cannot complete since some MBMs are ongoing.
@@ -12094,4 +12460,6 @@ export type AstarRuntimeRuntimeError =
   | { pallet: 'Democracy'; palletError: PalletDemocracyError }
   | { pallet: 'Treasury'; palletError: PalletTreasuryError }
   | { pallet: 'CommunityTreasury'; palletError: PalletTreasuryError }
+  | { pallet: 'SafeMode'; palletError: PalletSafeModeError }
+  | { pallet: 'TxPause'; palletError: PalletTxPauseError }
   | { pallet: 'MultiBlockMigrations'; palletError: PalletMigrationsError };

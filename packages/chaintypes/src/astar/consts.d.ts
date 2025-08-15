@@ -1163,6 +1163,69 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
+   * Pallet `SafeMode`'s constants
+   **/
+  safeMode: {
+    /**
+     * For how many blocks the safe-mode will be entered by [`Pallet::enter`].
+     **/
+    enterDuration: number;
+
+    /**
+     * For how many blocks the safe-mode can be extended by each [`Pallet::extend`] call.
+     *
+     * This does not impose a hard limit as the safe-mode can be extended multiple times.
+     **/
+    extendDuration: number;
+
+    /**
+     * The amount that will be reserved upon calling [`Pallet::enter`].
+     *
+     * `None` disallows permissionlessly enabling the safe-mode and is a sane default.
+     **/
+    enterDepositAmount: bigint | undefined;
+
+    /**
+     * The amount that will be reserved upon calling [`Pallet::extend`].
+     *
+     * `None` disallows permissionlessly extending the safe-mode and is a sane default.
+     **/
+    extendDepositAmount: bigint | undefined;
+
+    /**
+     * The minimal duration a deposit will remain reserved after safe-mode is entered or
+     * extended, unless [`Pallet::force_release_deposit`] is successfully called sooner.
+     *
+     * Every deposit is tied to a specific activation or extension, thus each deposit can be
+     * released independently after the delay for it has passed.
+     *
+     * `None` disallows permissionlessly releasing the safe-mode deposits and is a sane
+     * default.
+     **/
+    releaseDelay: number | undefined;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `TxPause`'s constants
+   **/
+  txPause: {
+    /**
+     * Maximum length for pallet name and call name SCALE encoded string names.
+     *
+     * TOO LONG NAMES WILL BE TREATED AS PAUSED.
+     **/
+    maxNameLen: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `MultiBlockMigrations`'s constants
    **/
   multiBlockMigrations: {

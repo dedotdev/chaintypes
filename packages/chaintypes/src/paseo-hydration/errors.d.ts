@@ -1116,6 +1116,26 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `Dispatcher`'s errors
+   **/
+  dispatcher: {
+    /**
+     * The EVM call execution failed. This happens when the EVM returns an exit reason
+     * other than `ExitSucceed(Returned)` or `ExitSucceed(Stopped)`.
+     **/
+    EvmCallFailed: GenericPalletError<Rv>;
+
+    /**
+     * The provided call is not an EVM call. This extrinsic only accepts `pallet_evm::Call::call`.
+     **/
+    NotEvmCall: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `AssetRegistry`'s errors
    **/
   assetRegistry: {

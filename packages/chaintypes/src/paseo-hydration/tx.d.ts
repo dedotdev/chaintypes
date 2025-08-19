@@ -5321,6 +5321,33 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Execute a single EVM call.
+     * This extrinsic will fail if the EVM call returns any other ExitReason than `ExitSucceed(Returned)` or `ExitSucceed(Stopped)`.
+     * Look the [hydradx_runtime::evm::runner::WrapRunner] implementation for details.
+     *
+     * Parameters:
+     * - `origin`: Signed origin.
+     * - `call`: presumably `pallet_evm::Call::call` as boxed `RuntimeCall`.
+     *
+     * Emits `EvmCallFailed` event when failed.
+     *
+     * @param {HydradxRuntimeRuntimeCallLike} call
+     **/
+    dispatchEvmCall: GenericTxCall<
+      Rv,
+      (call: HydradxRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Dispatcher';
+          palletCall: {
+            name: 'DispatchEvmCall';
+            params: { call: HydradxRuntimeRuntimeCallLike };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -7437,7 +7464,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * This function allows setting either fixed or dynamic fee configuration for a specific asset.
      *
      * # Arguments
-     * * `origin` - Root origin required
+     * * `origin` - Authority origin required
      * * `asset_id` - The asset ID to configure
      * * `config` - Fee configuration (Fixed or Dynamic)
      *
@@ -7468,7 +7495,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * After removal, the asset will use the default dynamic fee parameters configured in the runtime.
      *
      * # Arguments
-     * * `origin` - Root origin required
+     * * `origin` - Authority origin required
      * * `asset_id` - The asset ID to remove configuration for
      *
      * @param {number} assetId

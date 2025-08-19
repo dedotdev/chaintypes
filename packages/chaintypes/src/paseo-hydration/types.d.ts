@@ -6092,7 +6092,19 @@ export type PalletDispatcherCall =
    * This allows executing calls with additional weight (gas) limit.
    * The extra gas is not refunded, even if not used.
    **/
-  | { name: 'DispatchWithExtraGas'; params: { call: HydradxRuntimeRuntimeCall; extraGas: bigint } };
+  | { name: 'DispatchWithExtraGas'; params: { call: HydradxRuntimeRuntimeCall; extraGas: bigint } }
+  /**
+   * Execute a single EVM call.
+   * This extrinsic will fail if the EVM call returns any other ExitReason than `ExitSucceed(Returned)` or `ExitSucceed(Stopped)`.
+   * Look the [hydradx_runtime::evm::runner::WrapRunner] implementation for details.
+   *
+   * Parameters:
+   * - `origin`: Signed origin.
+   * - `call`: presumably `pallet_evm::Call::call` as boxed `RuntimeCall`.
+   *
+   * Emits `EvmCallFailed` event when failed.
+   **/
+  | { name: 'DispatchEvmCall'; params: { call: HydradxRuntimeRuntimeCall } };
 
 export type PalletDispatcherCallLike =
   | { name: 'DispatchAsTreasury'; params: { call: HydradxRuntimeRuntimeCallLike } }
@@ -6112,7 +6124,19 @@ export type PalletDispatcherCallLike =
    * This allows executing calls with additional weight (gas) limit.
    * The extra gas is not refunded, even if not used.
    **/
-  | { name: 'DispatchWithExtraGas'; params: { call: HydradxRuntimeRuntimeCallLike; extraGas: bigint } };
+  | { name: 'DispatchWithExtraGas'; params: { call: HydradxRuntimeRuntimeCallLike; extraGas: bigint } }
+  /**
+   * Execute a single EVM call.
+   * This extrinsic will fail if the EVM call returns any other ExitReason than `ExitSucceed(Returned)` or `ExitSucceed(Stopped)`.
+   * Look the [hydradx_runtime::evm::runner::WrapRunner] implementation for details.
+   *
+   * Parameters:
+   * - `origin`: Signed origin.
+   * - `call`: presumably `pallet_evm::Call::call` as boxed `RuntimeCall`.
+   *
+   * Emits `EvmCallFailed` event when failed.
+   **/
+  | { name: 'DispatchEvmCall'; params: { call: HydradxRuntimeRuntimeCallLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8110,7 +8134,7 @@ export type PalletDynamicFeesCall =
    * This function allows setting either fixed or dynamic fee configuration for a specific asset.
    *
    * # Arguments
-   * * `origin` - Root origin required
+   * * `origin` - Authority origin required
    * * `asset_id` - The asset ID to configure
    * * `config` - Fee configuration (Fixed or Dynamic)
    **/
@@ -8122,7 +8146,7 @@ export type PalletDynamicFeesCall =
    * After removal, the asset will use the default dynamic fee parameters configured in the runtime.
    *
    * # Arguments
-   * * `origin` - Root origin required
+   * * `origin` - Authority origin required
    * * `asset_id` - The asset ID to remove configuration for
    **/
   | { name: 'RemoveAssetFee'; params: { assetId: number } };
@@ -8134,7 +8158,7 @@ export type PalletDynamicFeesCallLike =
    * This function allows setting either fixed or dynamic fee configuration for a specific asset.
    *
    * # Arguments
-   * * `origin` - Root origin required
+   * * `origin` - Authority origin required
    * * `asset_id` - The asset ID to configure
    * * `config` - Fee configuration (Fixed or Dynamic)
    **/
@@ -8146,7 +8170,7 @@ export type PalletDynamicFeesCallLike =
    * After removal, the asset will use the default dynamic fee parameters configured in the runtime.
    *
    * # Arguments
-   * * `origin` - Root origin required
+   * * `origin` - Authority origin required
    * * `asset_id` - The asset ID to remove configuration for
    **/
   | { name: 'RemoveAssetFee'; params: { assetId: number } };
@@ -17290,6 +17314,20 @@ export type PalletWhitelistError =
    **/
   | 'CallAlreadyWhitelisted';
 
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletDispatcherError =
+  /**
+   * The EVM call execution failed. This happens when the EVM returns an exit reason
+   * other than `ExitSucceed(Returned)` or `ExitSucceed(Stopped)`.
+   **/
+  | 'EvmCallFailed'
+  /**
+   * The provided call is not an EVM call. This extrinsic only accepts `pallet_evm::Call::call`.
+   **/
+  | 'NotEvmCall';
+
 export type PalletAssetRegistryAssetDetails = {
   name?: Bytes | undefined;
   assetType: PalletAssetRegistryAssetType;
@@ -20011,6 +20049,7 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'ConvictionVoting'; palletError: PalletConvictionVotingError }
   | { pallet: 'Referenda'; palletError: PalletReferendaError }
   | { pallet: 'Whitelist'; palletError: PalletWhitelistError }
+  | { pallet: 'Dispatcher'; palletError: PalletDispatcherError }
   | { pallet: 'AssetRegistry'; palletError: PalletAssetRegistryError }
   | { pallet: 'Claims'; palletError: PalletClaimsError }
   | { pallet: 'CollatorRewards'; palletError: PalletCollatorRewardsError }

@@ -17069,6 +17069,10 @@ export type PalletLiquidityMiningError =
    **/
   | { name: 'IncentivizedAssetNotRegistered' }
   /**
+   * Provided `amm_pool_id` doesn't match deposit's `amm_pool_id`.
+   **/
+  | { name: 'AmmPoolIdMismatch' }
+  /**
    * Action cannot be completed because unexpected error has occurred. This should be reported
    * to protocol maintainers.
    **/

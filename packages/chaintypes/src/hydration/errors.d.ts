@@ -1605,6 +1605,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     IncentivizedAssetNotRegistered: GenericPalletError<Rv>;
 
     /**
+     * Provided `amm_pool_id` doesn't match deposit's `amm_pool_id`.
+     **/
+    AmmPoolIdMismatch: GenericPalletError<Rv>;
+
+    /**
      * Action cannot be completed because unexpected error has occurred. This should be reported
      * to protocol maintainers.
      **/
@@ -3140,6 +3145,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * `incentivized_asset` is not registered in asset registry.
      **/
     IncentivizedAssetNotRegistered: GenericPalletError<Rv>;
+
+    /**
+     * Provided `amm_pool_id` doesn't match deposit's `amm_pool_id`.
+     **/
+    AmmPoolIdMismatch: GenericPalletError<Rv>;
 
     /**
      * Action cannot be completed because unexpected error has occurred. This should be reported

@@ -19,10 +19,10 @@ import type {
   Data,
   PerU16,
   FixedArray,
+  Perquintill,
   FixedI64,
   FixedU128,
   Era,
-  Perquintill,
   UncheckedExtrinsic,
 } from 'dedot/codecs';
 
@@ -7192,13 +7192,15 @@ export type PalletGearStakingRewardsCall =
   | { name: 'Refill'; params: { value: bigint } }
   | { name: 'ForceRefill'; params: { from: MultiAddress; value: bigint } }
   | { name: 'Withdraw'; params: { to: MultiAddress; value: bigint } }
-  | { name: 'AlignSupply'; params: { target: bigint } };
+  | { name: 'SetTargetInflation'; params: { p: bigint; n: bigint } }
+  | { name: 'SetIdealStakingRatio'; params: { p: bigint; n: bigint } };
 
 export type PalletGearStakingRewardsCallLike =
   | { name: 'Refill'; params: { value: bigint } }
   | { name: 'ForceRefill'; params: { from: MultiAddressLike; value: bigint } }
   | { name: 'Withdraw'; params: { to: MultiAddressLike; value: bigint } }
-  | { name: 'AlignSupply'; params: { target: bigint } };
+  | { name: 'SetTargetInflation'; params: { p: bigint; n: bigint } }
+  | { name: 'SetIdealStakingRatio'; params: { p: bigint; n: bigint } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8587,7 +8589,15 @@ export type PalletGearStakingRewardsEvent =
   /**
    * Minted to the pool.
    **/
-  | { name: 'Minted'; data: { amount: bigint } };
+  | { name: 'Minted'; data: { amount: bigint } }
+  /**
+   * Target inflation changed.
+   **/
+  | { name: 'TargetInflationChanged'; data: { value: Perquintill } }
+  /**
+   * Ideal staking ratio changed.
+   **/
+  | { name: 'IdealStakingRatioChanged'; data: { value: Perquintill } };
 
 /**
  * Pallet Gear Voucher event.

@@ -7270,17 +7270,43 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
 
     /**
      *
-     * @param {bigint} target
+     * @param {bigint} p
+     * @param {bigint} n
      **/
-    alignSupply: GenericTxCall<
+    setTargetInflation: GenericTxCall<
       Rv,
-      (target: bigint) => ChainSubmittableExtrinsic<
+      (
+        p: bigint,
+        n: bigint,
+      ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'StakingRewards';
           palletCall: {
-            name: 'AlignSupply';
-            params: { target: bigint };
+            name: 'SetTargetInflation';
+            params: { p: bigint; n: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {bigint} p
+     * @param {bigint} n
+     **/
+    setIdealStakingRatio: GenericTxCall<
+      Rv,
+      (
+        p: bigint,
+        n: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'StakingRewards';
+          palletCall: {
+            name: 'SetIdealStakingRatio';
+            params: { p: bigint; n: bigint };
           };
         }
       >

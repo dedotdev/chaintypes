@@ -25,7 +25,7 @@ export interface VersionedPaseoHydrationApi<Rv extends RpcVersion> extends Gener
 
 /**
  * @name: PaseoHydrationApi
- * @specVersion: 339
+ * @specVersion: 340
  **/
 export interface PaseoHydrationApi {
   legacy: VersionedPaseoHydrationApi<RpcLegacy>;

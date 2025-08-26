@@ -440,6 +440,22 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     VirtualStakerNotAllowed: GenericPalletError<Rv>;
 
     /**
+     * Stash could not be reaped as other pallet might depend on it.
+     **/
+    CannotReapStash: GenericPalletError<Rv>;
+
+    /**
+     * The stake of this account is already migrated to `Fungible` holds.
+     **/
+    AlreadyMigrated: GenericPalletError<Rv>;
+
+    /**
+     * Account is restricted from participation in staking. This may happen if the account is
+     * staking in another way already, such as via pool.
+     **/
+    Restricted: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -950,12 +966,13 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     SenderInSignatories: GenericPalletError<Rv>;
 
     /**
-     * Multisig operation not found when attempting to cancel.
+     * Multisig operation not found in storage.
      **/
     NotFound: GenericPalletError<Rv>;
 
     /**
-     * Only the account that originally created the multisig is able to cancel it.
+     * Only the account that originally created the multisig is able to cancel it or update
+     * its deposits.
      **/
     NotOwner: GenericPalletError<Rv>;
 
@@ -1172,6 +1189,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     List: GenericPalletError<Rv>;
 
     /**
+     * Could not update a node, because the pallet is locked.
+     **/
+    Locked: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1354,6 +1376,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NothingToSlash: GenericPalletError<Rv>;
 
     /**
+     * The slash amount is too low to be applied.
+     **/
+    SlashTooLow: GenericPalletError<Rv>;
+
+    /**
      * The pool or member delegation has already migrated to delegate stake.
      **/
     AlreadyMigrated: GenericPalletError<Rv>;
@@ -1364,10 +1391,15 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NotMigrated: GenericPalletError<Rv>;
 
     /**
-     * This call is not allowed in the current state of the pallet or an unspecific error
-     * occurred.
+     * This call is not allowed in the current state of the pallet.
      **/
     NotSupported: GenericPalletError<Rv>;
+
+    /**
+     * Account is restricted from participation in pools. This may happen if the account is
+     * staking in another way already.
+     **/
+    Restricted: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1482,6 +1514,20 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Operation not supported by this pallet.
      **/
     NotSupported: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `StakingAhClient`'s errors
+   **/
+  stakingAhClient: {
+    /**
+     * Could not process incoming message because incoming messages are blocked.
+     **/
+    Blocked: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1921,6 +1967,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * call, making it invalid.
      **/
     SpotPriceHigherThanMaxAmount: GenericPalletError<Rv>;
+
+    /**
+     * The account doesn't have enough credits to purchase on-demand coretime.
+     **/
+    InsufficientCredits: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -2411,6 +2462,21 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     LocalExecutionIncomplete: GenericPalletError<Rv>;
 
     /**
+     * Too many locations authorized to alias origin.
+     **/
+    TooManyAuthorizedAliases: GenericPalletError<Rv>;
+
+    /**
+     * Expiry block number is in the past.
+     **/
+    ExpiresInPast: GenericPalletError<Rv>;
+
+    /**
+     * The alias to remove authorization for was not found.
+     **/
+    AliasNotFound: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -2564,6 +2630,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ExceedsMaxMessageSize: GenericPalletError<Rv>;
 
     /**
+     * A DMP message couldn't be sent because the destination is unreachable.
+     **/
+    Unroutable: GenericPalletError<Rv>;
+
+    /**
      * Could not schedule para cleanup.
      **/
     CouldntCleanup: GenericPalletError<Rv>;
@@ -2606,6 +2677,95 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Sender must be the Sudo account.
      **/
     RequireSudo: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `RcMigrator`'s errors
+   **/
+  rcMigrator: {
+    Unreachable: GenericPalletError<Rv>;
+    OutOfWeight: GenericPalletError<Rv>;
+
+    /**
+     * Failed to send XCM message to AH.
+     **/
+    XcmError: GenericPalletError<Rv>;
+
+    /**
+     * Failed to withdraw account from RC for migration to AH.
+     **/
+    FailedToWithdrawAccount: GenericPalletError<Rv>;
+
+    /**
+     * Indicates that the specified block number is in the past.
+     **/
+    PastBlockNumber: GenericPalletError<Rv>;
+
+    /**
+     * Indicates that there is not enough time for staking to lock.
+     *
+     * Schedule the migration at least two sessions before the current era ends.
+     **/
+    EraEndsTooSoon: GenericPalletError<Rv>;
+
+    /**
+     * Balance accounting overflow.
+     **/
+    BalanceOverflow: GenericPalletError<Rv>;
+
+    /**
+     * Balance accounting underflow.
+     **/
+    BalanceUnderflow: GenericPalletError<Rv>;
+
+    /**
+     * The query response is invalid.
+     **/
+    InvalidQueryResponse: GenericPalletError<Rv>;
+
+    /**
+     * The xcm query was not found.
+     **/
+    QueryNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Failed to send XCM message.
+     **/
+    XcmSendError: GenericPalletError<Rv>;
+
+    /**
+     * The migration stage is not reachable from the current stage.
+     **/
+    UnreachableStage: GenericPalletError<Rv>;
+
+    /**
+     * Invalid parameter.
+     **/
+    InvalidParameter: GenericPalletError<Rv>;
+
+    /**
+     * The AH UMP queue priority configuration is already set.
+     **/
+    AhUmpQueuePriorityAlreadySet: GenericPalletError<Rv>;
+
+    /**
+     * The account is referenced by some other pallet. It might have freezes or holds.
+     **/
+    AccountReferenced: GenericPalletError<Rv>;
+
+    /**
+     * The XCM version is invalid.
+     **/
+    BadXcmVersion: GenericPalletError<Rv>;
+
+    /**
+     * The origin is invalid.
+     **/
+    InvalidOrigin: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

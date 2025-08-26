@@ -63,6 +63,7 @@ export type PaseoRuntimeRuntimeEvent =
   | { pallet: 'TransactionPayment'; palletEvent: PalletTransactionPaymentEvent }
   | { pallet: 'Staking'; palletEvent: PalletStakingPalletEvent }
   | { pallet: 'Offences'; palletEvent: PalletOffencesEvent }
+  | { pallet: 'Historical'; palletEvent: PalletSessionHistoricalPalletEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
   | { pallet: 'Grandpa'; palletEvent: PalletGrandpaEvent }
   | { pallet: 'Treasury'; palletEvent: PalletTreasuryEvent }
@@ -81,6 +82,7 @@ export type PaseoRuntimeRuntimeEvent =
   | { pallet: 'NominationPools'; palletEvent: PalletNominationPoolsEvent }
   | { pallet: 'FastUnstake'; palletEvent: PalletFastUnstakeEvent }
   | { pallet: 'DelegatedStaking'; palletEvent: PalletDelegatedStakingEvent }
+  | { pallet: 'StakingAhClient'; palletEvent: PalletStakingAsyncAhClientEvent }
   | { pallet: 'ParaInclusion'; palletEvent: PolkadotRuntimeParachainsInclusionPalletEvent }
   | { pallet: 'Paras'; palletEvent: PolkadotRuntimeParachainsParasPalletEvent }
   | { pallet: 'Hrmp'; palletEvent: PolkadotRuntimeParachainsHrmpPalletEvent }
@@ -95,7 +97,8 @@ export type PaseoRuntimeRuntimeEvent =
   | { pallet: 'XcmPallet'; palletEvent: PalletXcmEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
   | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
-  | { pallet: 'Sudo'; palletEvent: PalletSudoEvent };
+  | { pallet: 'Sudo'; palletEvent: PalletSudoEvent }
+  | { pallet: 'RcMigrator'; palletEvent: PalletRcMigratorEvent };
 
 /**
  * Event for the System pallet.
@@ -128,7 +131,11 @@ export type FrameSystemEvent =
   /**
    * An upgrade was authorized.
    **/
-  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } };
+  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } }
+  /**
+   * An invalid authorized upgrade was rejected while trying to apply it.
+   **/
+  | { name: 'RejectedInvalidAuthorizedUpgrade'; data: { codeHash: H256; error: DispatchError } };
 
 export type FrameSystemDispatchEventInfo = {
   weight: SpWeightsWeightV2Weight;
@@ -202,7 +209,11 @@ export type PalletSchedulerEvent =
   /**
    * The given task can never be executed since it is overweight.
    **/
-  | { name: 'PermanentlyOverweight'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } };
+  | { name: 'PermanentlyOverweight'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } }
+  /**
+   * Agenda is incomplete from `when`.
+   **/
+  | { name: 'AgendaIncomplete'; data: { when: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -236,7 +247,11 @@ export type PalletIndicesEvent =
   /**
    * A account index has been frozen to its current account ID.
    **/
-  | { name: 'IndexFrozen'; data: { index: number; who: AccountId32 } };
+  | { name: 'IndexFrozen'; data: { index: number; who: AccountId32 } }
+  /**
+   * A deposit to reserve an index has been poked/reconsidered.
+   **/
+  | { name: 'DepositPoked'; data: { who: AccountId32; index: number; oldDeposit: bigint; newDeposit: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -438,7 +453,12 @@ export type PalletStakingPalletEvent =
   /**
    * Report of a controller batch deprecation.
    **/
-  | { name: 'ControllerBatchDeprecated'; data: { failures: number } };
+  | { name: 'ControllerBatchDeprecated'; data: { failures: number } }
+  /**
+   * Staking balance migrated from locks to holds, with any balance that could not be held
+   * is force withdrawn.
+   **/
+  | { name: 'CurrencyMigrated'; data: { stash: AccountId32; forceWithdraw: bigint } };
 
 export type PalletStakingRewardDestination =
   | { type: 'Staked' }
@@ -465,12 +485,38 @@ export type PalletOffencesEvent =
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletSessionHistoricalPalletEvent =
+  /**
+   * The merkle root of the validators of the said session were stored
+   **/
+  | { name: 'RootStored'; data: { index: number } }
+  /**
+   * The merkle roots of up to this session index were pruned
+   **/
+  | { name: 'RootsPruned'; data: { upTo: number } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PalletSessionEvent =
   /**
    * New session has happened. Note that the argument is the session index, not the
    * block number as the type might suggest.
    **/
-  { name: 'NewSession'; data: { sessionIndex: number } };
+  | { name: 'NewSession'; data: { sessionIndex: number } }
+  /**
+   * The `NewSession` event in the current block also implies a new validator set to be
+   * queued.
+   **/
+  | { name: 'NewQueued' }
+  /**
+   * Validator has been disabled.
+   **/
+  | { name: 'ValidatorDisabled'; data: { validator: AccountId32 } }
+  /**
+   * Validator has been re-enabled.
+   **/
+  | { name: 'ValidatorReenabled'; data: { validator: AccountId32 } };
 
 /**
  * The `Event` enum of this pallet
@@ -731,13 +777,17 @@ export type PalletConvictionVotingEvent =
    **/
   | { name: 'Undelegated'; data: AccountId32 }
   /**
-   * An account that has voted
+   * An account has voted
    **/
   | { name: 'Voted'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } }
   /**
-   * A vote that been removed
+   * A vote has been removed
    **/
-  | { name: 'VoteRemoved'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } };
+  | { name: 'VoteRemoved'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } }
+  /**
+   * The lockup period of a conviction vote expired, and the funds have been unlocked.
+   **/
+  | { name: 'VoteUnlocked'; data: { who: AccountId32; class: number } };
 
 export type PalletConvictionVotingVoteAccountVote =
   | { type: 'Standard'; value: { vote: PalletConvictionVotingVote; balance: bigint } }
@@ -1063,6 +1113,7 @@ export type PaseoRuntimeRuntimeCall =
   | { pallet: 'VoterList'; palletCall: PalletBagsListCall }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
   | { pallet: 'FastUnstake'; palletCall: PalletFastUnstakeCall }
+  | { pallet: 'StakingAhClient'; palletCall: PalletStakingAsyncAhClientCall }
   | { pallet: 'Configuration'; palletCall: PolkadotRuntimeParachainsConfigurationPalletCall }
   | { pallet: 'ParasShared'; palletCall: PolkadotRuntimeParachainsSharedPalletCall }
   | { pallet: 'ParaInclusion'; palletCall: PolkadotRuntimeParachainsInclusionPalletCall }
@@ -1084,7 +1135,8 @@ export type PaseoRuntimeRuntimeCall =
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
   | { pallet: 'Beefy'; palletCall: PalletBeefyCall }
   | { pallet: 'ParaSudoWrapper'; palletCall: PolkadotRuntimeCommonParasSudoWrapperPalletCall }
-  | { pallet: 'Sudo'; palletCall: PalletSudoCall };
+  | { pallet: 'Sudo'; palletCall: PalletSudoCall }
+  | { pallet: 'RcMigrator'; palletCall: PalletRcMigratorCall };
 
 export type PaseoRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -1112,6 +1164,7 @@ export type PaseoRuntimeRuntimeCallLike =
   | { pallet: 'VoterList'; palletCall: PalletBagsListCallLike }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
   | { pallet: 'FastUnstake'; palletCall: PalletFastUnstakeCallLike }
+  | { pallet: 'StakingAhClient'; palletCall: PalletStakingAsyncAhClientCallLike }
   | { pallet: 'Configuration'; palletCall: PolkadotRuntimeParachainsConfigurationPalletCallLike }
   | { pallet: 'ParasShared'; palletCall: PolkadotRuntimeParachainsSharedPalletCallLike }
   | { pallet: 'ParaInclusion'; palletCall: PolkadotRuntimeParachainsInclusionPalletCallLike }
@@ -1133,7 +1186,8 @@ export type PaseoRuntimeRuntimeCallLike =
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
   | { pallet: 'Beefy'; palletCall: PalletBeefyCallLike }
   | { pallet: 'ParaSudoWrapper'; palletCall: PolkadotRuntimeCommonParasSudoWrapperPalletCallLike }
-  | { pallet: 'Sudo'; palletCall: PalletSudoCallLike };
+  | { pallet: 'Sudo'; palletCall: PalletSudoCallLike }
+  | { pallet: 'RcMigrator'; palletCall: PalletRcMigratorCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -1515,7 +1569,7 @@ export type PalletPreimageCall =
    **/
   | { name: 'UnrequestPreimage'; params: { hash: H256 } }
   /**
-   * Ensure that the a bulk of pre-images is upgraded.
+   * Ensure that the bulk of pre-images is upgraded.
    *
    * The caller pays no fee if at least 90% of pre-images were successfully updated.
    **/
@@ -1552,7 +1606,7 @@ export type PalletPreimageCallLike =
    **/
   | { name: 'UnrequestPreimage'; params: { hash: H256 } }
   /**
-   * Ensure that the a bulk of pre-images is upgraded.
+   * Ensure that the bulk of pre-images is upgraded.
    *
    * The caller pays no fee if at least 90% of pre-images were successfully updated.
    **/
@@ -1780,7 +1834,20 @@ export type PalletIndicesCall =
    * ## Complexity
    * - `O(1)`.
    **/
-  | { name: 'Freeze'; params: { index: number } };
+  | { name: 'Freeze'; params: { index: number } }
+  /**
+   * Poke the deposit reserved for an index.
+   *
+   * The dispatch origin for this call must be _Signed_ and the signing account must have a
+   * non-frozen account `index`.
+   *
+   * The transaction fees is waived if the deposit is changed after poking/reconsideration.
+   *
+   * - `index`: the index whose deposit is to be poked/reconsidered.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit'; params: { index: number } };
 
 export type PalletIndicesCallLike =
   /**
@@ -1858,7 +1925,20 @@ export type PalletIndicesCallLike =
    * ## Complexity
    * - `O(1)`.
    **/
-  | { name: 'Freeze'; params: { index: number } };
+  | { name: 'Freeze'; params: { index: number } }
+  /**
+   * Poke the deposit reserved for an index.
+   *
+   * The dispatch origin for this call must be _Signed_ and the signing account must have a
+   * non-frozen account `index`.
+   *
+   * The transaction fees is waived if the deposit is changed after poking/reconsideration.
+   *
+   * - `index`: the index whose deposit is to be poked/reconsidered.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit'; params: { index: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2080,6 +2160,8 @@ export type PalletStakingPalletCall =
    * period ends. If this leaves an amount actively bonded less than
    * [`asset::existential_deposit`], then it is increased to the full amount.
    *
+   * The stash may be chilled if the ledger total amount falls to 0 after unbonding.
+   *
    * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
    *
    * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
@@ -2286,6 +2368,7 @@ export type PalletStakingPalletCall =
    * Can be called by the `T::AdminOrigin`.
    *
    * Parameters: era and indices of the slashes for that era to kill.
+   * They **must** be sorted in ascending order, *and* unique.
    **/
   | { name: 'CancelDeferredSlash'; params: { era: number; slashIndices: Array<number> } }
   /**
@@ -2484,14 +2567,39 @@ export type PalletStakingPalletCall =
       };
     }
   /**
-   * Adjusts the staking ledger by withdrawing any excess staked amount.
+   * Removes the legacy Staking locks if they exist.
    *
-   * This function corrects cases where a user's recorded stake in the ledger
-   * exceeds their actual staked funds. This situation can arise due to cases such as
-   * external slashing by another pallet, leading to an inconsistency between the ledger
-   * and the actual stake.
+   * This removes the legacy lock on the stake with [`Config::OldCurrency`] and creates a
+   * hold on it if needed. If all stake cannot be held, the best effort is made to hold as
+   * much as possible. The remaining stake is forced withdrawn from the ledger.
+   *
+   * The fee is waived if the migration is successful.
    **/
-  | { name: 'WithdrawOverstake'; params: { stash: AccountId32 } };
+  | { name: 'MigrateCurrency'; params: { stash: AccountId32 } }
+  /**
+   * This function allows governance to manually slash a validator and is a
+   * **fallback mechanism**.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   *
+   * ## Parameters
+   * - `validator_stash` - The stash account of the validator to slash.
+   * - `era` - The era in which the validator was in the active set.
+   * - `slash_fraction` - The percentage of the stake to slash, expressed as a Perbill.
+   *
+   * ## Behavior
+   *
+   * The slash will be applied using the standard slashing mechanics, respecting the
+   * configured `SlashDeferDuration`.
+   *
+   * This means:
+   * - If the validator was already slashed by a higher percentage for the same era, this
+   * slash will have no additional effect.
+   * - If the validator was previously slashed by a lower percentage, only the difference
+   * will be applied.
+   * - The slash will be deferred by `SlashDeferDuration` eras before being enacted.
+   **/
+  | { name: 'ManualSlash'; params: { validatorStash: AccountId32; era: number; slashFraction: Perbill } };
 
 export type PalletStakingPalletCallLike =
   /**
@@ -2534,6 +2642,8 @@ export type PalletStakingPalletCallLike =
    * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
    * period ends. If this leaves an amount actively bonded less than
    * [`asset::existential_deposit`], then it is increased to the full amount.
+   *
+   * The stash may be chilled if the ledger total amount falls to 0 after unbonding.
    *
    * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
    *
@@ -2741,6 +2851,7 @@ export type PalletStakingPalletCallLike =
    * Can be called by the `T::AdminOrigin`.
    *
    * Parameters: era and indices of the slashes for that era to kill.
+   * They **must** be sorted in ascending order, *and* unique.
    **/
   | { name: 'CancelDeferredSlash'; params: { era: number; slashIndices: Array<number> } }
   /**
@@ -2939,14 +3050,39 @@ export type PalletStakingPalletCallLike =
       };
     }
   /**
-   * Adjusts the staking ledger by withdrawing any excess staked amount.
+   * Removes the legacy Staking locks if they exist.
    *
-   * This function corrects cases where a user's recorded stake in the ledger
-   * exceeds their actual staked funds. This situation can arise due to cases such as
-   * external slashing by another pallet, leading to an inconsistency between the ledger
-   * and the actual stake.
+   * This removes the legacy lock on the stake with [`Config::OldCurrency`] and creates a
+   * hold on it if needed. If all stake cannot be held, the best effort is made to hold as
+   * much as possible. The remaining stake is forced withdrawn from the ledger.
+   *
+   * The fee is waived if the migration is successful.
    **/
-  | { name: 'WithdrawOverstake'; params: { stash: AccountId32Like } };
+  | { name: 'MigrateCurrency'; params: { stash: AccountId32Like } }
+  /**
+   * This function allows governance to manually slash a validator and is a
+   * **fallback mechanism**.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   *
+   * ## Parameters
+   * - `validator_stash` - The stash account of the validator to slash.
+   * - `era` - The era in which the validator was in the active set.
+   * - `slash_fraction` - The percentage of the stake to slash, expressed as a Perbill.
+   *
+   * ## Behavior
+   *
+   * The slash will be applied using the standard slashing mechanics, respecting the
+   * configured `SlashDeferDuration`.
+   *
+   * This means:
+   * - If the validator was already slashed by a higher percentage for the same era, this
+   * slash will have no additional effect.
+   * - If the validator was previously slashed by a lower percentage, only the difference
+   * will be applied.
+   * - The slash will be deferred by `SlashDeferDuration` eras before being enacted.
+   **/
+  | { name: 'ManualSlash'; params: { validatorStash: AccountId32Like; era: number; slashFraction: Perbill } };
 
 export type PalletStakingPalletConfigOp = { type: 'Noop' } | { type: 'Set'; value: bigint } | { type: 'Remove' };
 
@@ -4499,7 +4635,41 @@ export type PalletUtilityCall =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: PaseoRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } };
+  | { name: 'WithWeight'; params: { call: PaseoRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | { name: 'IfElse'; params: { main: PaseoRuntimeRuntimeCall; fallback: PaseoRuntimeRuntimeCall } }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | { name: 'DispatchAsFallible'; params: { asOrigin: PaseoRuntimeOriginCaller; call: PaseoRuntimeRuntimeCall } };
 
 export type PalletUtilityCallLike =
   /**
@@ -4588,7 +4758,41 @@ export type PalletUtilityCallLike =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: PaseoRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } };
+  | { name: 'WithWeight'; params: { call: PaseoRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | { name: 'IfElse'; params: { main: PaseoRuntimeRuntimeCallLike; fallback: PaseoRuntimeRuntimeCallLike } }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | { name: 'DispatchAsFallible'; params: { asOrigin: PaseoRuntimeOriginCaller; call: PaseoRuntimeRuntimeCallLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4764,7 +4968,18 @@ export type PalletProxyCall =
         forceProxyType?: PaseoRuntimeConstantsProxyProxyType | undefined;
         call: PaseoRuntimeRuntimeCall;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 export type PalletProxyCallLike =
   /**
@@ -4937,7 +5152,18 @@ export type PalletProxyCallLike =
         forceProxyType?: PaseoRuntimeConstantsProxyProxyType | undefined;
         call: PaseoRuntimeRuntimeCallLike;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 export type PaseoRuntimeConstantsProxyProxyType =
   | 'Any'
@@ -5092,6 +5318,25 @@ export type PalletMultisigCall =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId32>; callHash: FixedBytes<32> };
     };
 
 export type PalletMultisigCallLike =
@@ -5237,6 +5482,25 @@ export type PalletMultisigCallLike =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
     };
 
 export type PalletMultisigTimepoint = { height: number; index: number };
@@ -5906,10 +6170,7 @@ export type PalletElectionProviderMultiPhaseCall =
    * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
    * calling [`Call::set_emergency_election_result`].
    **/
-  | {
-      name: 'GovernanceFallback';
-      params: { maybeMaxVoters?: number | undefined; maybeMaxTargets?: number | undefined };
-    };
+  | { name: 'GovernanceFallback' };
 
 export type PalletElectionProviderMultiPhaseCallLike =
   /**
@@ -5972,10 +6233,7 @@ export type PalletElectionProviderMultiPhaseCallLike =
    * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
    * calling [`Call::set_emergency_election_result`].
    **/
-  | {
-      name: 'GovernanceFallback';
-      params: { maybeMaxVoters?: number | undefined; maybeMaxTargets?: number | undefined };
-    };
+  | { name: 'GovernanceFallback' };
 
 export type PalletElectionProviderMultiPhaseRawSolution = {
   solution: PaseoRuntimeNposCompactSolution16;
@@ -6084,8 +6342,9 @@ export type PalletBagsListCallLike =
  **/
 export type PalletNominationPoolsCall =
   /**
-   * Stake funds with a pool. The amount to bond is transferred from the member to the pool
-   * account and immediately increases the pools bond.
+   * Stake funds with a pool. The amount to bond is delegated (or transferred based on
+   * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
+   * increases the pool's bond.
    *
    * The method of transferring the amount to the pool account is determined by
    * [`adapter::StakeStrategyType`]. If the pool is configured to use
@@ -6228,13 +6487,13 @@ export type PalletNominationPoolsCall =
    * The dispatch origin of this call must be signed by the pool nominator or the pool
    * root role.
    *
-   * This directly forward the call to the staking pallet, on behalf of the pool bonded
-   * account.
+   * This directly forwards the call to an implementation of `StakingInterface` (e.g.,
+   * `pallet-staking`) through [`Config::StakeAdapter`], on behalf of the bonded pool.
    *
    * # Note
    *
-   * In addition to a `root` or `nominator` role of `origin`, pool's depositor needs to have
-   * at least `depositor_min_bond` in the pool to start nominating.
+   * In addition to a `root` or `nominator` role of `origin`, the pool's depositor needs to
+   * have at least `depositor_min_bond` in the pool to start nominating.
    **/
   | { name: 'Nominate'; params: { poolId: number; validators: Array<AccountId32> } }
   /**
@@ -6305,6 +6564,9 @@ export type PalletNominationPoolsCall =
    * The dispatch origin of this call can be signed by the pool nominator or the pool
    * root role, same as [`Pallet::nominate`].
    *
+   * This directly forwards the call to an implementation of `StakingInterface` (e.g.,
+   * `pallet-staking`) through [`Config::StakeAdapter`], on behalf of the bonded pool.
+   *
    * Under certain conditions, this call can be dispatched permissionlessly (i.e. by any
    * account).
    *
@@ -6313,9 +6575,7 @@ export type PalletNominationPoolsCall =
    * are unable to unbond.
    *
    * # Conditions for permissioned dispatch:
-   * * The caller has a nominator or root role of the pool.
-   * This directly forward the call to the staking pallet, on behalf of the pool bonded
-   * account.
+   * * The caller is the pool's nominator or root.
    **/
   | { name: 'Chill'; params: { poolId: number } }
   /**
@@ -6376,9 +6636,20 @@ export type PalletNominationPoolsCall =
   /**
    * Claim pending commission.
    *
-   * The dispatch origin of this call must be signed by the `root` role of the pool. Pending
-   * commission is paid out and added to total claimed commission`. Total pending commission
-   * is reset to zero. the current.
+   * The `root` role of the pool is _always_ allowed to claim the pool's commission.
+   *
+   * If the pool has set `CommissionClaimPermission::Permissionless`, then any account can
+   * trigger the process of claiming the pool's commission.
+   *
+   * If the pool has set its `CommissionClaimPermission` to `Account(acc)`, then only
+   * accounts
+   * * `acc`, and
+   * * the pool's root account
+   *
+   * may call this extrinsic on behalf of the pool.
+   *
+   * Pending commissions are paid out and added to the total claimed commission.
+   * The total pending commission is reset to zero.
    **/
   | { name: 'ClaimCommission'; params: { poolId: number } }
   /**
@@ -6440,8 +6711,9 @@ export type PalletNominationPoolsCall =
 
 export type PalletNominationPoolsCallLike =
   /**
-   * Stake funds with a pool. The amount to bond is transferred from the member to the pool
-   * account and immediately increases the pools bond.
+   * Stake funds with a pool. The amount to bond is delegated (or transferred based on
+   * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
+   * increases the pool's bond.
    *
    * The method of transferring the amount to the pool account is determined by
    * [`adapter::StakeStrategyType`]. If the pool is configured to use
@@ -6593,13 +6865,13 @@ export type PalletNominationPoolsCallLike =
    * The dispatch origin of this call must be signed by the pool nominator or the pool
    * root role.
    *
-   * This directly forward the call to the staking pallet, on behalf of the pool bonded
-   * account.
+   * This directly forwards the call to an implementation of `StakingInterface` (e.g.,
+   * `pallet-staking`) through [`Config::StakeAdapter`], on behalf of the bonded pool.
    *
    * # Note
    *
-   * In addition to a `root` or `nominator` role of `origin`, pool's depositor needs to have
-   * at least `depositor_min_bond` in the pool to start nominating.
+   * In addition to a `root` or `nominator` role of `origin`, the pool's depositor needs to
+   * have at least `depositor_min_bond` in the pool to start nominating.
    **/
   | { name: 'Nominate'; params: { poolId: number; validators: Array<AccountId32Like> } }
   /**
@@ -6670,6 +6942,9 @@ export type PalletNominationPoolsCallLike =
    * The dispatch origin of this call can be signed by the pool nominator or the pool
    * root role, same as [`Pallet::nominate`].
    *
+   * This directly forwards the call to an implementation of `StakingInterface` (e.g.,
+   * `pallet-staking`) through [`Config::StakeAdapter`], on behalf of the bonded pool.
+   *
    * Under certain conditions, this call can be dispatched permissionlessly (i.e. by any
    * account).
    *
@@ -6678,9 +6953,7 @@ export type PalletNominationPoolsCallLike =
    * are unable to unbond.
    *
    * # Conditions for permissioned dispatch:
-   * * The caller has a nominator or root role of the pool.
-   * This directly forward the call to the staking pallet, on behalf of the pool bonded
-   * account.
+   * * The caller is the pool's nominator or root.
    **/
   | { name: 'Chill'; params: { poolId: number } }
   /**
@@ -6741,9 +7014,20 @@ export type PalletNominationPoolsCallLike =
   /**
    * Claim pending commission.
    *
-   * The dispatch origin of this call must be signed by the `root` role of the pool. Pending
-   * commission is paid out and added to total claimed commission`. Total pending commission
-   * is reset to zero. the current.
+   * The `root` role of the pool is _always_ allowed to claim the pool's commission.
+   *
+   * If the pool has set `CommissionClaimPermission::Permissionless`, then any account can
+   * trigger the process of claiming the pool's commission.
+   *
+   * If the pool has set its `CommissionClaimPermission` to `Account(acc)`, then only
+   * accounts
+   * * `acc`, and
+   * * the pool's root account
+   *
+   * may call this extrinsic on behalf of the pool.
+   *
+   * Pending commissions are paid out and added to the total claimed commission.
+   * The total pending commission is reset to zero.
    **/
   | { name: 'ClaimCommission'; params: { poolId: number } }
   /**
@@ -6971,6 +7255,40 @@ export type PalletFastUnstakeCallLike =
    * No events are emitted from this dispatch.
    **/
   | { name: 'Control'; params: { erasToCheck: number } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletStakingAsyncAhClientCall =
+  | { name: 'ValidatorSet'; params: { report: PalletStakingAsyncRcClientValidatorSetReport } }
+  /**
+   * Allows governance to force set the operating mode of the pallet.
+   **/
+  | { name: 'SetMode'; params: { mode: PalletStakingAsyncAhClientOperatingMode } }
+  /**
+   * manually do what this pallet was meant to do at the end of the migration.
+   **/
+  | { name: 'ForceOnMigrationEnd' };
+
+export type PalletStakingAsyncAhClientCallLike =
+  | { name: 'ValidatorSet'; params: { report: PalletStakingAsyncRcClientValidatorSetReport } }
+  /**
+   * Allows governance to force set the operating mode of the pallet.
+   **/
+  | { name: 'SetMode'; params: { mode: PalletStakingAsyncAhClientOperatingMode } }
+  /**
+   * manually do what this pallet was meant to do at the end of the migration.
+   **/
+  | { name: 'ForceOnMigrationEnd' };
+
+export type PalletStakingAsyncRcClientValidatorSetReport = {
+  newValidatorSet: Array<AccountId32>;
+  id: number;
+  pruneUpTo?: number | undefined;
+  leftover: boolean;
+};
+
+export type PalletStakingAsyncAhClientOperatingMode = 'Passive' | 'Buffered' | 'Active';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8045,17 +8363,17 @@ export type PolkadotRuntimeParachainsDisputesPalletCallLike = 'ForceUnfreeze';
  **/
 export type PolkadotRuntimeParachainsDisputesSlashingPalletCall = {
   name: 'ReportDisputeLostUnsigned';
-  params: { disputeProof: PolkadotPrimitivesV8SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+  params: { disputeProof: PolkadotPrimitivesVstagingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
 };
 
 export type PolkadotRuntimeParachainsDisputesSlashingPalletCallLike = {
   name: 'ReportDisputeLostUnsigned';
-  params: { disputeProof: PolkadotPrimitivesV8SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+  params: { disputeProof: PolkadotPrimitivesVstagingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
 };
 
-export type PolkadotPrimitivesV8SlashingDisputeProof = {
+export type PolkadotPrimitivesVstagingDisputeProof = {
   timeSlot: PolkadotPrimitivesV8SlashingDisputesTimeSlot;
-  kind: PolkadotPrimitivesV8SlashingSlashingOffenceKind;
+  kind: PolkadotPrimitivesVstagingDisputeOffenceKind;
   validatorIndex: PolkadotPrimitivesV8ValidatorIndex;
   validatorId: PolkadotPrimitivesV8ValidatorAppPublic;
 };
@@ -8065,7 +8383,7 @@ export type PolkadotPrimitivesV8SlashingDisputesTimeSlot = {
   candidateHash: PolkadotCorePrimitivesCandidateHash;
 };
 
-export type PolkadotPrimitivesV8SlashingSlashingOffenceKind = 'ForInvalid' | 'AgainstValid';
+export type PolkadotPrimitivesVstagingDisputeOffenceKind = 'ForInvalidBacked' | 'AgainstValid' | 'ForInvalidApproved';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8106,7 +8424,27 @@ export type PolkadotRuntimeParachainsOnDemandPalletCall =
    * Events:
    * - `OnDemandOrderPlaced`
    **/
-  | { name: 'PlaceOrderKeepAlive'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } };
+  | { name: 'PlaceOrderKeepAlive'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } }
+  /**
+   * Create a single on demand core order with credits.
+   * Will charge the owner's on-demand credit account the spot price for the current block.
+   *
+   * Parameters:
+   * - `origin`: The sender of the call, on-demand credits will be withdrawn from this
+   * account.
+   * - `max_amount`: The maximum number of credits to spend from the origin to place an
+   * order.
+   * - `para_id`: A `ParaId` the origin wants to provide blockspace for.
+   *
+   * Errors:
+   * - `InsufficientCredits`
+   * - `QueueFull`
+   * - `SpotPriceHigherThanMaxAmount`
+   *
+   * Events:
+   * - `OnDemandOrderPlaced`
+   **/
+  | { name: 'PlaceOrderWithCredits'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } };
 
 export type PolkadotRuntimeParachainsOnDemandPalletCallLike =
   /**
@@ -8144,7 +8482,27 @@ export type PolkadotRuntimeParachainsOnDemandPalletCallLike =
    * Events:
    * - `OnDemandOrderPlaced`
    **/
-  | { name: 'PlaceOrderKeepAlive'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } };
+  | { name: 'PlaceOrderKeepAlive'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } }
+  /**
+   * Create a single on demand core order with credits.
+   * Will charge the owner's on-demand credit account the spot price for the current block.
+   *
+   * Parameters:
+   * - `origin`: The sender of the call, on-demand credits will be withdrawn from this
+   * account.
+   * - `max_amount`: The maximum number of credits to spend from the origin to place an
+   * order.
+   * - `para_id`: A `ParaId` the origin wants to provide blockspace for.
+   *
+   * Errors:
+   * - `InsufficientCredits`
+   * - `QueueFull`
+   * - `SpotPriceHigherThanMaxAmount`
+   *
+   * Events:
+   * - `OnDemandOrderPlaced`
+   **/
+  | { name: 'PlaceOrderWithCredits'; params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8826,6 +9184,7 @@ export type PolkadotRuntimeParachainsCoretimePalletCall =
    * teleported to the Coretime chain.
    **/
   | { name: 'RequestRevenueAt'; params: { when: number } }
+  | { name: 'CreditAccount'; params: { who: AccountId32; amount: bigint } }
   /**
    * Receive instructions from the `ExternalBrokerOrigin`, detailing how a specific core is
    * to be used.
@@ -8866,6 +9225,7 @@ export type PolkadotRuntimeParachainsCoretimePalletCallLike =
    * teleported to the Coretime chain.
    **/
   | { name: 'RequestRevenueAt'; params: { when: number } }
+  | { name: 'CreditAccount'; params: { who: AccountId32Like; amount: bigint } }
   /**
    * Receive instructions from the `ExternalBrokerOrigin`, detailing how a specific core is
    * to be used.
@@ -9375,7 +9735,31 @@ export type PalletXcmCall =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type PalletXcmCallLike =
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
@@ -9687,7 +10071,31 @@ export type PalletXcmCallLike =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type XcmVersionedXcm =
   | { type: 'V3'; value: XcmV3Xcm }
@@ -10769,6 +11177,366 @@ export type PalletSudoCallLike =
    **/
   | { name: 'RemoveKey' };
 
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletRcMigratorCall =
+  /**
+   * Set the migration stage.
+   *
+   * This call is intended for emergency use only and is guarded by the
+   * [`Config::AdminOrigin`].
+   **/
+  | { name: 'ForceSetStage'; params: { stage: PalletRcMigratorMigrationStage } }
+  /**
+   * Schedule the migration to start at a given moment.
+   *
+   * ### Parameters:
+   * - `start`: The block number at which the migration will start. `DispatchTime` calculated
+   * at the moment of the extrinsic execution.
+   * - `warm_up`: Duration or timepoint that will be used to prepare for the migration. Calls
+   * are filtered during this period. It is intended to give enough time for UMP and DMP
+   * queues to empty. `DispatchTime` calculated at the moment of the transition to the
+   * warm-up stage.
+   * - `cool_off`: The block number at which the post migration cool-off period will end. The
+   * `DispatchTime` calculated at the moment of the transition to the cool-off stage.
+   * - `unsafe_ignore_staking_lock_check`: ONLY FOR TESTING. Ignore the check whether the
+   * scheduled time point is far enough in the future.
+   *
+   * Note: If the staking election for next era is already complete, and the next
+   * validator set is queued in `pallet-session`, we want to avoid starting the data
+   * migration at this point as it can lead to some missed validator rewards. To address
+   * this, we stop staking election at the start of migration and must wait atleast 1
+   * session (set via warm_up) before starting the data migration.
+   *
+   * Read [`MigrationStage::Scheduled`] documentation for more details.
+   **/
+  | {
+      name: 'ScheduleMigration';
+      params: {
+        start: FrameSupportScheduleDispatchTime;
+        warmUp: FrameSupportScheduleDispatchTime;
+        coolOff: FrameSupportScheduleDispatchTime;
+        unsafeIgnoreStakingLockCheck: boolean;
+      };
+    }
+  /**
+   * Start the data migration.
+   *
+   * This is typically called by the Asset Hub to indicate it's readiness to receive the
+   * migration data.
+   **/
+  | { name: 'StartDataMigration' }
+  /**
+   * Receive a query response from the Asset Hub for a previously sent xcm message.
+   **/
+  | { name: 'ReceiveQueryResponse'; params: { queryId: bigint; response: StagingXcmV5Response } }
+  /**
+   * Resend a previously sent and unconfirmed XCM message.
+   **/
+  | { name: 'ResendXcm'; params: { queryId: bigint } }
+  /**
+   * Set the unprocessed message buffer size.
+   *
+   * `None` means to use the configuration value.
+   **/
+  | { name: 'SetUnprocessedMsgBuffer'; params: { new?: number | undefined } }
+  /**
+   * Set the AH UMP queue priority configuration.
+   *
+   * Can only be called by the `AdminOrigin`.
+   **/
+  | { name: 'SetAhUmpQueuePriority'; params: { new: PalletRcMigratorQueuePriority } }
+  /**
+   * Set the manager account id.
+   *
+   * The manager has the similar to [`Config::AdminOrigin`] privileges except that it
+   * can not set the manager account id via `set_manager` call.
+   **/
+  | { name: 'SetManager'; params: { new?: AccountId32 | undefined } }
+  /**
+   * XCM send call identical to the [`pallet_xcm::Pallet::send`] call but with the
+   * [Config::SendXcm] router which will be able to send messages to the Asset Hub during
+   * the migration.
+   **/
+  | { name: 'SendXcmMessage'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } };
+
+export type PalletRcMigratorCallLike =
+  /**
+   * Set the migration stage.
+   *
+   * This call is intended for emergency use only and is guarded by the
+   * [`Config::AdminOrigin`].
+   **/
+  | { name: 'ForceSetStage'; params: { stage: PalletRcMigratorMigrationStage } }
+  /**
+   * Schedule the migration to start at a given moment.
+   *
+   * ### Parameters:
+   * - `start`: The block number at which the migration will start. `DispatchTime` calculated
+   * at the moment of the extrinsic execution.
+   * - `warm_up`: Duration or timepoint that will be used to prepare for the migration. Calls
+   * are filtered during this period. It is intended to give enough time for UMP and DMP
+   * queues to empty. `DispatchTime` calculated at the moment of the transition to the
+   * warm-up stage.
+   * - `cool_off`: The block number at which the post migration cool-off period will end. The
+   * `DispatchTime` calculated at the moment of the transition to the cool-off stage.
+   * - `unsafe_ignore_staking_lock_check`: ONLY FOR TESTING. Ignore the check whether the
+   * scheduled time point is far enough in the future.
+   *
+   * Note: If the staking election for next era is already complete, and the next
+   * validator set is queued in `pallet-session`, we want to avoid starting the data
+   * migration at this point as it can lead to some missed validator rewards. To address
+   * this, we stop staking election at the start of migration and must wait atleast 1
+   * session (set via warm_up) before starting the data migration.
+   *
+   * Read [`MigrationStage::Scheduled`] documentation for more details.
+   **/
+  | {
+      name: 'ScheduleMigration';
+      params: {
+        start: FrameSupportScheduleDispatchTime;
+        warmUp: FrameSupportScheduleDispatchTime;
+        coolOff: FrameSupportScheduleDispatchTime;
+        unsafeIgnoreStakingLockCheck: boolean;
+      };
+    }
+  /**
+   * Start the data migration.
+   *
+   * This is typically called by the Asset Hub to indicate it's readiness to receive the
+   * migration data.
+   **/
+  | { name: 'StartDataMigration' }
+  /**
+   * Receive a query response from the Asset Hub for a previously sent xcm message.
+   **/
+  | { name: 'ReceiveQueryResponse'; params: { queryId: bigint; response: StagingXcmV5Response } }
+  /**
+   * Resend a previously sent and unconfirmed XCM message.
+   **/
+  | { name: 'ResendXcm'; params: { queryId: bigint } }
+  /**
+   * Set the unprocessed message buffer size.
+   *
+   * `None` means to use the configuration value.
+   **/
+  | { name: 'SetUnprocessedMsgBuffer'; params: { new?: number | undefined } }
+  /**
+   * Set the AH UMP queue priority configuration.
+   *
+   * Can only be called by the `AdminOrigin`.
+   **/
+  | { name: 'SetAhUmpQueuePriority'; params: { new: PalletRcMigratorQueuePriority } }
+  /**
+   * Set the manager account id.
+   *
+   * The manager has the similar to [`Config::AdminOrigin`] privileges except that it
+   * can not set the manager account id via `set_manager` call.
+   **/
+  | { name: 'SetManager'; params: { new?: AccountId32Like | undefined } }
+  /**
+   * XCM send call identical to the [`pallet_xcm::Pallet::send`] call but with the
+   * [Config::SendXcm] router which will be able to send messages to the Asset Hub during
+   * the migration.
+   **/
+  | { name: 'SendXcmMessage'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } };
+
+export type PalletRcMigratorMigrationStage =
+  | { type: 'Pending' }
+  | { type: 'Scheduled'; value: { start: number } }
+  | { type: 'WaitingForAh' }
+  | { type: 'WarmUp'; value: { endAt: number } }
+  | { type: 'Starting' }
+  | { type: 'AccountsMigrationInit' }
+  | { type: 'AccountsMigrationOngoing'; value: { lastKey?: AccountId32 | undefined } }
+  | { type: 'AccountsMigrationDone' }
+  | { type: 'MultisigMigrationInit' }
+  | { type: 'MultisigMigrationOngoing'; value: { lastKey?: [AccountId32, FixedBytes<32>] | undefined } }
+  | { type: 'MultisigMigrationDone' }
+  | { type: 'ClaimsMigrationInit' }
+  | { type: 'ClaimsMigrationOngoing'; value: { currentKey?: PalletRcMigratorClaimsClaimsStage | undefined } }
+  | { type: 'ClaimsMigrationDone' }
+  | { type: 'ProxyMigrationInit' }
+  | { type: 'ProxyMigrationProxies'; value: { lastKey?: AccountId32 | undefined } }
+  | { type: 'ProxyMigrationAnnouncements'; value: { lastKey?: AccountId32 | undefined } }
+  | { type: 'ProxyMigrationDone' }
+  | { type: 'PreimageMigrationInit' }
+  | { type: 'PreimageMigrationChunksOngoing'; value: { lastKey?: [[H256, number], number] | undefined } }
+  | { type: 'PreimageMigrationChunksDone' }
+  | { type: 'PreimageMigrationRequestStatusOngoing'; value: { nextKey?: H256 | undefined } }
+  | { type: 'PreimageMigrationRequestStatusDone' }
+  | { type: 'PreimageMigrationLegacyRequestStatusInit' }
+  | { type: 'PreimageMigrationLegacyRequestStatusOngoing'; value: { nextKey?: H256 | undefined } }
+  | { type: 'PreimageMigrationLegacyRequestStatusDone' }
+  | { type: 'PreimageMigrationDone' }
+  | { type: 'NomPoolsMigrationInit' }
+  | { type: 'NomPoolsMigrationOngoing'; value: { nextKey?: PalletRcMigratorStakingNomPoolsNomPoolsStage | undefined } }
+  | { type: 'NomPoolsMigrationDone' }
+  | { type: 'VestingMigrationInit' }
+  | { type: 'VestingMigrationOngoing'; value: { nextKey?: AccountId32 | undefined } }
+  | { type: 'VestingMigrationDone' }
+  | { type: 'DelegatedStakingMigrationInit' }
+  | {
+      type: 'DelegatedStakingMigrationOngoing';
+      value: { nextKey?: PalletRcMigratorStakingDelegatedStakingDelegatedStakingStage | undefined };
+    }
+  | { type: 'DelegatedStakingMigrationDone' }
+  | { type: 'IndicesMigrationInit' }
+  | { type: 'IndicesMigrationOngoing'; value: { nextKey?: [] | undefined } }
+  | { type: 'IndicesMigrationDone' }
+  | { type: 'ReferendaMigrationInit' }
+  | { type: 'ReferendaMigrationOngoing'; value: { lastKey?: PalletRcMigratorReferendaReferendaStage | undefined } }
+  | { type: 'ReferendaMigrationDone' }
+  | { type: 'BagsListMigrationInit' }
+  | { type: 'BagsListMigrationOngoing'; value: { nextKey?: PalletRcMigratorStakingBagsListBagsListStage | undefined } }
+  | { type: 'BagsListMigrationDone' }
+  | { type: 'SchedulerMigrationInit' }
+  | { type: 'SchedulerMigrationOngoing'; value: { lastKey?: PalletRcMigratorSchedulerSchedulerStage | undefined } }
+  | { type: 'SchedulerAgendaMigrationOngoing'; value: { lastKey?: number | undefined } }
+  | { type: 'SchedulerMigrationDone' }
+  | { type: 'ConvictionVotingMigrationInit' }
+  | {
+      type: 'ConvictionVotingMigrationOngoing';
+      value: { lastKey?: PalletRcMigratorConvictionVotingConvictionVotingStage | undefined };
+    }
+  | { type: 'ConvictionVotingMigrationDone' }
+  | { type: 'BountiesMigrationInit' }
+  | { type: 'BountiesMigrationOngoing'; value: { lastKey?: PalletRcMigratorBountiesBountiesStage | undefined } }
+  | { type: 'BountiesMigrationDone' }
+  | { type: 'ChildBountiesMigrationInit' }
+  | {
+      type: 'ChildBountiesMigrationOngoing';
+      value: { lastKey?: PalletRcMigratorChildBountiesChildBountiesStage | undefined };
+    }
+  | { type: 'ChildBountiesMigrationDone' }
+  | { type: 'AssetRateMigrationInit' }
+  | {
+      type: 'AssetRateMigrationOngoing';
+      value: { lastKey?: PolkadotRuntimeCommonImplsVersionedLocatableAsset | undefined };
+    }
+  | { type: 'AssetRateMigrationDone' }
+  | { type: 'CrowdloanMigrationInit' }
+  | { type: 'CrowdloanMigrationOngoing'; value: { lastKey?: PalletRcMigratorCrowdloanCrowdloanStage | undefined } }
+  | { type: 'CrowdloanMigrationDone' }
+  | { type: 'TreasuryMigrationInit' }
+  | { type: 'TreasuryMigrationOngoing'; value: { lastKey?: PalletRcMigratorTreasuryTreasuryStage | undefined } }
+  | { type: 'TreasuryMigrationDone' }
+  | { type: 'StakingMigrationInit' }
+  | { type: 'StakingMigrationOngoing'; value: { nextKey?: PalletRcMigratorStakingStakingStage | undefined } }
+  | { type: 'StakingMigrationDone' }
+  | { type: 'CoolOff'; value: { endAt: number } }
+  | { type: 'SignalMigrationFinish' }
+  | { type: 'MigrationDone' };
+
+export type PalletRcMigratorClaimsClaimsStage =
+  | { type: 'StorageValues' }
+  | { type: 'Claims'; value?: EthereumAddress | undefined }
+  | { type: 'Vesting'; value?: EthereumAddress | undefined }
+  | { type: 'Signing'; value?: EthereumAddress | undefined }
+  | { type: 'Preclaims'; value?: AccountId32 | undefined }
+  | { type: 'Finished' };
+
+export type PalletRcMigratorStakingNomPoolsNomPoolsStage =
+  | { type: 'StorageValues' }
+  | { type: 'PoolMembers'; value?: AccountId32 | undefined }
+  | { type: 'BondedPools'; value?: number | undefined }
+  | { type: 'RewardPools'; value?: number | undefined }
+  | { type: 'SubPoolsStorage'; value?: number | undefined }
+  | { type: 'Metadata'; value?: number | undefined }
+  | { type: 'ReversePoolIdLookup'; value?: AccountId32 | undefined }
+  | { type: 'ClaimPermissions'; value?: AccountId32 | undefined }
+  | { type: 'Finished' };
+
+export type PalletRcMigratorStakingDelegatedStakingDelegatedStakingStage =
+  | { type: 'Delegators'; value?: AccountId32 | undefined }
+  | { type: 'Agents'; value?: AccountId32 | undefined }
+  | { type: 'Finished' };
+
+export type PalletRcMigratorReferendaReferendaStage =
+  | { type: 'StorageValues' }
+  | { type: 'Metadata'; value?: number | undefined }
+  | { type: 'ReferendumInfo'; value?: number | undefined };
+
+export type PalletRcMigratorStakingBagsListBagsListStage =
+  | { type: 'ListNodes'; value?: AccountId32 | undefined }
+  | { type: 'ListBags'; value?: bigint | undefined }
+  | { type: 'Finished' };
+
+export type PalletRcMigratorSchedulerSchedulerStage =
+  | { type: 'IncompleteSince' }
+  | { type: 'Retries'; value?: [number, number] | undefined }
+  | { type: 'Lookup'; value?: FixedBytes<32> | undefined }
+  | { type: 'Finished' };
+
+export type PalletRcMigratorConvictionVotingConvictionVotingStage =
+  | { type: 'VotingFor'; value?: [AccountId32, number] | undefined }
+  | { type: 'ClassLocksFor'; value?: AccountId32 | undefined }
+  | { type: 'Finished' };
+
+export type PalletRcMigratorBountiesBountiesStage =
+  | { type: 'BountyCount' }
+  | { type: 'BountyApprovals' }
+  | { type: 'BountyDescriptions'; value: { lastKey?: number | undefined } }
+  | { type: 'Bounties'; value: { lastKey?: number | undefined } }
+  | { type: 'Finished' };
+
+export type PalletRcMigratorChildBountiesChildBountiesStage =
+  | { type: 'ChildBountyCount' }
+  | { type: 'ParentChildBounties'; value: { parentId?: number | undefined } }
+  | { type: 'ParentTotalChildBounties'; value: { parentId?: number | undefined } }
+  | { type: 'ChildBounties'; value: { ids?: [number, number] | undefined } }
+  | { type: 'ChildBountyDescriptionsV1'; value: { ids?: [number, number] | undefined } }
+  | { type: 'V0ToV1ChildBountyIds'; value: { childId?: number | undefined } }
+  | { type: 'ChildrenCuratorFees'; value: { childId?: number | undefined } }
+  | { type: 'Finished' };
+
+export type PalletRcMigratorCrowdloanCrowdloanStage =
+  | { type: 'Setup' }
+  | { type: 'LeaseReserve'; value: { lastKey?: PolkadotParachainPrimitivesPrimitivesId | undefined } }
+  | { type: 'CrowdloanContribution'; value: { lastKey?: PolkadotParachainPrimitivesPrimitivesId | undefined } }
+  | { type: 'CrowdloanReserve' }
+  | { type: 'Finished' };
+
+export type PalletRcMigratorTreasuryTreasuryStage =
+  | { type: 'ProposalCount' }
+  | { type: 'Proposals'; value?: number | undefined }
+  | { type: 'Approvals' }
+  | { type: 'SpendCount' }
+  | { type: 'Spends'; value?: number | undefined }
+  | { type: 'LastSpendPeriod' }
+  | { type: 'Funds' }
+  | { type: 'Finished' };
+
+export type PalletRcMigratorStakingStakingStage =
+  | { type: 'Values' }
+  | { type: 'Invulnerables' }
+  | { type: 'Bonded'; value?: AccountId32 | undefined }
+  | { type: 'Ledger'; value?: AccountId32 | undefined }
+  | { type: 'Payee'; value?: AccountId32 | undefined }
+  | { type: 'Validators'; value?: AccountId32 | undefined }
+  | { type: 'Nominators'; value?: AccountId32 | undefined }
+  | { type: 'VirtualStakers'; value?: AccountId32 | undefined }
+  | { type: 'ErasStakersOverview'; value?: [number, AccountId32] | undefined }
+  | { type: 'ErasStakersPaged'; value?: [number, AccountId32, number] | undefined }
+  | { type: 'ClaimedRewards'; value?: [number, AccountId32] | undefined }
+  | { type: 'ErasValidatorPrefs'; value?: [number, AccountId32] | undefined }
+  | { type: 'ErasValidatorReward'; value?: number | undefined }
+  | { type: 'ErasRewardPoints'; value?: number | undefined }
+  | { type: 'ErasTotalStake'; value?: number | undefined }
+  | { type: 'UnappliedSlashes'; value?: number | undefined }
+  | { type: 'BondedEras' }
+  | { type: 'ValidatorSlashInEra'; value?: [number, AccountId32] | undefined }
+  | { type: 'NominatorSlashInEra'; value?: [number, AccountId32] | undefined }
+  | { type: 'SlashingSpans'; value?: AccountId32 | undefined }
+  | { type: 'SpanSlash'; value?: [AccountId32, number] | undefined }
+  | { type: 'Finished' };
+
+export type PalletRcMigratorQueuePriority =
+  | { type: 'Config' }
+  | { type: 'OverrideConfig'; value: [number, number] }
+  | { type: 'Disabled' };
+
 export type SpRuntimeBlakeTwo256 = {};
 
 export type PalletConvictionVotingTally = { ayes: bigint; nays: bigint; support: bigint };
@@ -10848,7 +11616,15 @@ export type PalletUtilityEvent =
   /**
    * A call was dispatched.
    **/
-  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } };
+  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } }
+  /**
+   * Main call was dispatched.
+   **/
+  | { name: 'IfElseMainSuccess' }
+  /**
+   * The fallback call was dispatched.
+   **/
+  | { name: 'IfElseFallbackCalled'; data: { mainError: DispatchError } };
 
 /**
  * The `Event` enum of this pallet
@@ -10898,7 +11674,16 @@ export type PalletProxyEvent =
         proxyType: PaseoRuntimeConstantsProxyProxyType;
         delay: number;
       };
+    }
+  /**
+   * A deposit stored for proxies or announcements was poked / updated.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; kind: PalletProxyDepositKind; oldDeposit: bigint; newDeposit: bigint };
     };
+
+export type PalletProxyDepositKind = 'Proxies' | 'Announcements';
 
 /**
  * The `Event` enum of this pallet
@@ -10944,6 +11729,13 @@ export type PalletMultisigEvent =
         multisig: AccountId32;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * The deposit for a multisig operation has been updated/poked.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; callHash: FixedBytes<32>; oldDeposit: bigint; newDeposit: bigint };
     };
 
 /**
@@ -11196,7 +11988,41 @@ export type PalletNominationPoolsEvent =
   /**
    * Claimed excess frozen ED of af the reward pool.
    **/
-  | { name: 'MinBalanceExcessAdjusted'; data: { poolId: number; amount: bigint } };
+  | { name: 'MinBalanceExcessAdjusted'; data: { poolId: number; amount: bigint } }
+  /**
+   * A pool member's claim permission has been updated.
+   **/
+  | {
+      name: 'MemberClaimPermissionUpdated';
+      data: { member: AccountId32; permission: PalletNominationPoolsClaimPermission };
+    }
+  /**
+   * A pool's metadata was updated.
+   **/
+  | { name: 'MetadataUpdated'; data: { poolId: number; caller: AccountId32 } }
+  /**
+   * A pool's nominating account (or the pool's root account) has nominated a validator set
+   * on behalf of the pool.
+   **/
+  | { name: 'PoolNominationMade'; data: { poolId: number; caller: AccountId32 } }
+  /**
+   * The pool is chilled i.e. no longer nominating.
+   **/
+  | { name: 'PoolNominatorChilled'; data: { poolId: number; caller: AccountId32 } }
+  /**
+   * Global parameters regulating nomination pools have been updated.
+   **/
+  | {
+      name: 'GlobalParamsUpdated';
+      data: {
+        minJoinBond: bigint;
+        minCreateBond: bigint;
+        maxPools?: number | undefined;
+        maxMembers?: number | undefined;
+        maxMembersPerPool?: number | undefined;
+        globalMaxCommission?: Perbill | undefined;
+      };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -11246,6 +12072,37 @@ export type PalletDelegatedStakingEvent =
    * Unclaimed delegation funds migrated to delegator.
    **/
   | { name: 'MigratedDelegation'; data: { agent: AccountId32; delegator: AccountId32; amount: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletStakingAsyncAhClientEvent =
+  /**
+   * A new validator set has been received.
+   **/
+  | {
+      name: 'ValidatorSetReceived';
+      data: { id: number; newValidatorSetCount: number; pruneUpTo?: number | undefined; leftover: boolean };
+    }
+  /**
+   * We could not merge, and therefore dropped a buffered message.
+   *
+   * Note that this event is more resembling an error, but we use an event because in this
+   * pallet we need to mutate storage upon some failures.
+   **/
+  | { name: 'CouldNotMergeAndDropped' }
+  /**
+   * The validator set received is way too small, as per
+   * [`Config::MinimumValidatorSetSize`].
+   **/
+  | { name: 'SetTooSmallAndDropped' }
+  /**
+   * Something occurred that should never happen under normal operation. Logged as an event
+   * for fail-safe observability.
+   **/
+  | { name: 'Unexpected'; data: PalletStakingAsyncAhClientUnexpectedKind };
+
+export type PalletStakingAsyncAhClientUnexpectedKind = 'ReceivedValidatorSetWhilePassive' | 'UnexpectedModeTransition';
 
 /**
  * The `Event` enum of this pallet
@@ -11469,7 +12326,11 @@ export type PolkadotRuntimeParachainsOnDemandPalletEvent =
   /**
    * The value of the spot price has likely changed
    **/
-  | { name: 'SpotPriceSet'; data: { spotPrice: bigint } };
+  | { name: 'SpotPriceSet'; data: { spotPrice: bigint } }
+  /**
+   * An account was given credits.
+   **/
+  | { name: 'AccountCredited'; data: { who: AccountId32; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -11690,7 +12551,7 @@ export type PalletXcmEvent =
    **/
   | { name: 'Attempted'; data: { outcome: StagingXcmV5TraitsOutcome } }
   /**
-   * A XCM message was sent.
+   * An XCM message was sent.
    **/
   | {
       name: 'Sent';
@@ -11700,6 +12561,25 @@ export type PalletXcmEvent =
         message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       };
+    }
+  /**
+   * An XCM message failed to send.
+   **/
+  | {
+      name: 'SendFailed';
+      data: {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        error: XcmV3TraitsSendError;
+        messageId: FixedBytes<32>;
+      };
+    }
+  /**
+   * An XCM message failed to process.
+   **/
+  | {
+      name: 'ProcessXcmError';
+      data: { origin: StagingXcmV5Location; error: XcmV5TraitsError; messageId: FixedBytes<32> };
     }
   /**
    * Query response received which does not match a registered query. This may be because a
@@ -11857,12 +12737,37 @@ export type PalletXcmEvent =
   /**
    * A XCM version migration finished.
    **/
-  | { name: 'VersionMigrationFinished'; data: { version: number } };
+  | { name: 'VersionMigrationFinished'; data: { version: number } }
+  /**
+   * An `aliaser` location was authorized by `target` to alias it, authorization valid until
+   * `expiry` block number.
+   **/
+  | {
+      name: 'AliasAuthorized';
+      data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location; expiry?: bigint | undefined };
+    }
+  /**
+   * `target` removed alias authorization for `aliaser`.
+   **/
+  | { name: 'AliasAuthorizationRemoved'; data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location } }
+  /**
+   * `target` removed all alias authorizations.
+   **/
+  | { name: 'AliasesAuthorizationsRemoved'; data: { target: StagingXcmV5Location } };
 
 export type StagingXcmV5TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
   | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV5TraitsError } }
   | { type: 'Error'; value: { error: XcmV5TraitsError } };
+
+export type XcmV3TraitsSendError =
+  | 'NotApplicable'
+  | 'Transport'
+  | 'Unroutable'
+  | 'DestinationUnsupported'
+  | 'ExceedsMaxMessageSize'
+  | 'MissingArgument'
+  | 'Fees';
 
 /**
  * The `Event` enum of this pallet
@@ -12041,6 +12946,178 @@ export type PalletSudoEvent =
         sudoResult: Result<[], DispatchError>;
       };
     };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletRcMigratorEvent =
+  /**
+   * A stage transition has occurred.
+   **/
+  | {
+      name: 'StageTransition';
+      data: {
+        /**
+         * The old stage before the transition.
+         **/
+        old: PalletRcMigratorMigrationStage;
+
+        /**
+         * The new stage after the transition.
+         **/
+        new: PalletRcMigratorMigrationStage;
+      };
+    }
+  /**
+   * The Asset Hub Migration started and is active until `AssetHubMigrationFinished` is
+   * emitted.
+   *
+   * This event is equivalent to `StageTransition { new: Initializing, .. }` but is easier
+   * to understand. The activation is immediate and affects all events happening
+   * afterwards.
+   **/
+  | { name: 'AssetHubMigrationStarted' }
+  /**
+   * The Asset Hub Migration finished.
+   *
+   * This event is equivalent to `StageTransition { new: MigrationDone, .. }` but is easier
+   * to understand. The finishing is immediate and affects all events happening
+   * afterwards.
+   **/
+  | { name: 'AssetHubMigrationFinished' }
+  /**
+   * A query response has been received.
+   **/
+  | {
+      name: 'QueryResponseReceived';
+      data: {
+        /**
+         * The query ID.
+         **/
+        queryId: bigint;
+
+        /**
+         * The response.
+         **/
+        response: XcmV3MaybeErrorCode;
+      };
+    }
+  /**
+   * A XCM message has been resent.
+   **/
+  | {
+      name: 'XcmResendAttempt';
+      data: {
+        /**
+         * The query ID.
+         **/
+        queryId: bigint;
+
+        /**
+         * The error message.
+         **/
+        sendError?: XcmV3TraitsSendError | undefined;
+      };
+    }
+  /**
+   * The unprocessed message buffer size has been set.
+   **/
+  | {
+      name: 'UnprocessedMsgBufferSet';
+      data: {
+        /**
+         * The new size.
+         **/
+        new: number;
+
+        /**
+         * The old size.
+         **/
+        old: number;
+      };
+    }
+  /**
+   * Whether the AH UMP queue was prioritized for the next block.
+   **/
+  | {
+      name: 'AhUmpQueuePrioritySet';
+      data: {
+        /**
+         * Indicates if AH UMP queue was successfully set as priority.
+         * If `false`, it means we're in the round-robin phase of our priority pattern
+         * (see [`Config::AhUmpQueuePriorityPattern`]), where no queue gets priority.
+         **/
+        prioritized: boolean;
+
+        /**
+         * Current block number within the pattern cycle (1 to period).
+         **/
+        cycleBlock: number;
+
+        /**
+         * Total number of blocks in the pattern cycle
+         **/
+        cyclePeriod: number;
+      };
+    }
+  /**
+   * The AH UMP queue priority config was set.
+   **/
+  | {
+      name: 'AhUmpQueuePriorityConfigSet';
+      data: {
+        /**
+         * The old priority pattern.
+         **/
+        old: PalletRcMigratorQueuePriority;
+
+        /**
+         * The new priority pattern.
+         **/
+        new: PalletRcMigratorQueuePriority;
+      };
+    }
+  /**
+   * The total issuance was recorded.
+   **/
+  | { name: 'MigratedBalanceRecordSet'; data: { kept: bigint; migrated: bigint } }
+  /**
+   * The RC kept balance was consumed.
+   **/
+  | { name: 'MigratedBalanceConsumed'; data: { kept: bigint; migrated: bigint } }
+  /**
+   * The manager account id was set.
+   **/
+  | {
+      name: 'ManagerSet';
+      data: {
+        /**
+         * The old manager account id.
+         **/
+        old?: AccountId32 | undefined;
+
+        /**
+         * The new manager account id.
+         **/
+        new?: AccountId32 | undefined;
+      };
+    }
+  /**
+   * An XCM message was sent.
+   **/
+  | {
+      name: 'XcmSent';
+      data: {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        message: StagingXcmV5Xcm;
+        messageId: FixedBytes<32>;
+      };
+    }
+  /**
+   * The staking elections were paused.
+   **/
+  | { name: 'StakingElectionsPaused' };
 
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
@@ -12287,14 +13364,23 @@ export type FrameSupportTokensMiscIdAmount = { id: PaseoRuntimeRuntimeHoldReason
 
 export type PaseoRuntimeRuntimeHoldReason =
   | { type: 'Preimage'; value: PalletPreimageHoldReason }
+  | { type: 'Staking'; value: PalletStakingPalletHoldReason }
+  | { type: 'Session'; value: PalletSessionHoldReason }
   | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
-  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason };
+  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
+  | { type: 'XcmPallet'; value: PalletXcmHoldReason };
 
 export type PalletPreimageHoldReason = 'Preimage';
+
+export type PalletStakingPalletHoldReason = 'Staking';
+
+export type PalletSessionHoldReason = 'Keys';
 
 export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
 
 export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
+
+export type PalletXcmHoldReason = 'AuthorizeAlias';
 
 export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = { id: PaseoRuntimeRuntimeFreezeReason; amount: bigint };
 
@@ -12527,12 +13613,27 @@ export type PalletStakingPalletError =
   /**
    * Operation not allowed for virtual stakers.
    **/
-  | 'VirtualStakerNotAllowed';
+  | 'VirtualStakerNotAllowed'
+  /**
+   * Stash could not be reaped as other pallet might depend on it.
+   **/
+  | 'CannotReapStash'
+  /**
+   * The stake of this account is already migrated to `Fungible` holds.
+   **/
+  | 'AlreadyMigrated'
+  /**
+   * Account is restricted from participation in staking. This may happen if the account is
+   * staking in another way already, such as via pool.
+   **/
+  | 'Restricted';
 
 export type SpStakingOffenceOffenceDetails = {
   offender: [AccountId32, SpStakingExposure];
   reporters: Array<AccountId32>;
 };
+
+export type SpStakingOffenceOffenceSeverity = Perbill;
 
 export type SpCoreCryptoKeyTypeId = FixedBytes<4>;
 
@@ -12779,7 +13880,7 @@ export type PalletReferendaDeposit = { who: AccountId32; amount: bigint };
 
 export type PalletReferendaDecidingStatus = { since: number; confirming?: number | undefined };
 
-export type PalletReferendaTrackInfo = {
+export type PalletReferendaTrackDetails = {
   name: string;
   maxDeciding: number;
   decisionDeposit: bigint;
@@ -13034,11 +14135,12 @@ export type PalletMultisigError =
    **/
   | 'SenderInSignatories'
   /**
-   * Multisig operation not found when attempting to cancel.
+   * Multisig operation not found in storage.
    **/
   | 'NotFound'
   /**
-   * Only the account that originally created the multisig is able to cancel it.
+   * Only the account that originally created the multisig is able to cancel it or update
+   * its deposits.
    **/
   | 'NotOwner'
   /**
@@ -13162,10 +14264,16 @@ export type PalletChildBountiesError =
   | 'TooManyChildBounties';
 
 export type PalletElectionProviderMultiPhaseReadySolution = {
-  supports: Array<[AccountId32, SpNposElectionsSupport]>;
+  supports: FrameElectionProviderSupportBoundedSupports;
   score: SpNposElectionsElectionScore;
   compute: PalletElectionProviderMultiPhaseElectionCompute;
 };
+
+export type FrameElectionProviderSupportBoundedSupports = Array<
+  [AccountId32, FrameElectionProviderSupportBoundedSupport]
+>;
+
+export type FrameElectionProviderSupportBoundedSupport = { total: bigint; voters: Array<[AccountId32, bigint]> };
 
 export type PalletElectionProviderMultiPhaseRoundSnapshot = {
   voters: Array<[AccountId32, bigint, Array<AccountId32>]>;
@@ -13261,9 +14369,13 @@ export type PalletBagsListError =
   /**
    * A error in the list interface implementation.
    **/
-  { name: 'List'; data: PalletBagsListListListError };
+  | { name: 'List'; data: PalletBagsListListListError }
+  /**
+   * Could not update a node, because the pallet is locked.
+   **/
+  | { name: 'Locked' };
 
-export type PalletBagsListListListError = 'Duplicate' | 'NotHeavier' | 'NotInSameBag' | 'NodeNotFound';
+export type PalletBagsListListListError = 'Duplicate' | 'NotHeavier' | 'NotInSameBag' | 'NodeNotFound' | 'Locked';
 
 export type PalletNominationPoolsPoolMember = {
   poolId: number;
@@ -13455,6 +14567,10 @@ export type PalletNominationPoolsError =
    **/
   | { name: 'NothingToSlash' }
   /**
+   * The slash amount is too low to be applied.
+   **/
+  | { name: 'SlashTooLow' }
+  /**
    * The pool or member delegation has already migrated to delegate stake.
    **/
   | { name: 'AlreadyMigrated' }
@@ -13463,10 +14579,14 @@ export type PalletNominationPoolsError =
    **/
   | { name: 'NotMigrated' }
   /**
-   * This call is not allowed in the current state of the pallet or an unspecific error
-   * occurred.
+   * This call is not allowed in the current state of the pallet.
    **/
-  | { name: 'NotSupported' };
+  | { name: 'NotSupported' }
+  /**
+   * Account is restricted from participation in pools. This may happen if the account is
+   * staking in another way already.
+   **/
+  | { name: 'Restricted' };
 
 export type PalletNominationPoolsDefensiveError =
   | 'NotEnoughSpaceInUnbondPool'
@@ -13575,6 +14695,17 @@ export type PalletDelegatedStakingError =
    * Operation not supported by this pallet.
    **/
   | 'NotSupported';
+
+export type PalletStakingAsyncAhClientBufferedOffence = { reporter?: AccountId32 | undefined; slashFraction: Perbill };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletStakingAsyncAhClientError =
+  /**
+   * Could not process incoming message because incoming messages are blocked.
+   **/
+  'Blocked';
 
 export type PolkadotRuntimeParachainsConfigurationHostConfiguration = {
   maxCodeSize: number;
@@ -14044,9 +15175,9 @@ export type PolkadotRuntimeParachainsDisputesPalletError =
    **/
   | 'UnconfirmedDispute';
 
-export type PolkadotPrimitivesV8SlashingPendingSlashes = {
+export type PolkadotPrimitivesVstagingPendingSlashes = {
   keys: Array<[PolkadotPrimitivesV8ValidatorIndex, PolkadotPrimitivesV8ValidatorAppPublic]>;
-  kind: PolkadotPrimitivesV8SlashingSlashingOffenceKind;
+  kind: PolkadotPrimitivesVstagingDisputeOffenceKind;
 };
 
 /**
@@ -14116,7 +15247,11 @@ export type PolkadotRuntimeParachainsOnDemandPalletError =
    * The current spot price is higher than the max amount specified in the `place_order`
    * call, making it invalid.
    **/
-  | 'SpotPriceHigherThanMaxAmount';
+  | 'SpotPriceHigherThanMaxAmount'
+  /**
+   * The account doesn't have enough credits to purchase on-demand coretime.
+   **/
+  | 'InsufficientCredits';
 
 export type PolkadotRuntimeParachainsAssignerCoretimeSchedule = {
   assignments: Array<
@@ -14438,6 +15573,20 @@ export type PalletXcmRemoteLockedFungibleRecord = {
   consumers: Array<[[], bigint]>;
 };
 
+export type PalletXcmAuthorizedAliasesEntry = {
+  aliasers: Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>;
+  ticket: FrameSupportStorageDisabled;
+};
+
+export type FrameSupportStorageDisabled = {};
+
+export type PalletXcmMaxAuthorizedAliases = {};
+
+export type XcmRuntimeApisAuthorizedAliasesOriginAliaser = {
+  location: XcmVersionedLocation;
+  expiry?: bigint | undefined;
+};
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -14540,7 +15689,19 @@ export type PalletXcmError =
   /**
    * Local XCM execution incomplete.
    **/
-  | 'LocalExecutionIncomplete';
+  | 'LocalExecutionIncomplete'
+  /**
+   * Too many locations authorized to alias origin.
+   **/
+  | 'TooManyAuthorizedAliases'
+  /**
+   * Expiry block number is in the past.
+   **/
+  | 'ExpiresInPast'
+  /**
+   * The alias to remove authorization for was not found.
+   **/
+  | 'AliasNotFound';
 
 export type PalletMessageQueueBookState = {
   begin: number;
@@ -14682,6 +15843,10 @@ export type PolkadotRuntimeCommonParasSudoWrapperPalletError =
    **/
   | 'ExceedsMaxMessageSize'
   /**
+   * A DMP message couldn't be sent because the destination is unreachable.
+   **/
+  | 'Unroutable'
+  /**
    * Could not schedule para cleanup.
    **/
   | 'CouldntCleanup'
@@ -14714,6 +15879,82 @@ export type PalletSudoError =
    * Sender must be the Sudo account.
    **/
   'RequireSudo';
+
+export type PalletRcMigratorAccountsAccountState =
+  | { type: 'Migrate' }
+  | { type: 'Preserve' }
+  | { type: 'Part'; value: { free: bigint; reserved: bigint; consumers: number } };
+
+export type PalletRcMigratorAccountsMigratedBalances = { kept: bigint; migrated: bigint };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletRcMigratorError =
+  | 'Unreachable'
+  | 'OutOfWeight'
+  /**
+   * Failed to send XCM message to AH.
+   **/
+  | 'XcmError'
+  /**
+   * Failed to withdraw account from RC for migration to AH.
+   **/
+  | 'FailedToWithdrawAccount'
+  /**
+   * Indicates that the specified block number is in the past.
+   **/
+  | 'PastBlockNumber'
+  /**
+   * Indicates that there is not enough time for staking to lock.
+   *
+   * Schedule the migration at least two sessions before the current era ends.
+   **/
+  | 'EraEndsTooSoon'
+  /**
+   * Balance accounting overflow.
+   **/
+  | 'BalanceOverflow'
+  /**
+   * Balance accounting underflow.
+   **/
+  | 'BalanceUnderflow'
+  /**
+   * The query response is invalid.
+   **/
+  | 'InvalidQueryResponse'
+  /**
+   * The xcm query was not found.
+   **/
+  | 'QueryNotFound'
+  /**
+   * Failed to send XCM message.
+   **/
+  | 'XcmSendError'
+  /**
+   * The migration stage is not reachable from the current stage.
+   **/
+  | 'UnreachableStage'
+  /**
+   * Invalid parameter.
+   **/
+  | 'InvalidParameter'
+  /**
+   * The AH UMP queue priority configuration is already set.
+   **/
+  | 'AhUmpQueuePriorityAlreadySet'
+  /**
+   * The account is referenced by some other pallet. It might have freezes or holds.
+   **/
+  | 'AccountReferenced'
+  /**
+   * The XCM version is invalid.
+   **/
+  | 'BadXcmVersion'
+  /**
+   * The origin is invalid.
+   **/
+  | 'InvalidOrigin';
 
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
@@ -14851,7 +16092,21 @@ export type PolkadotPrimitivesVstagingCandidateEvent =
       ];
     };
 
+export type PolkadotPrimitivesV8SlashingPendingSlashes = {
+  keys: Array<[PolkadotPrimitivesV8ValidatorIndex, PolkadotPrimitivesV8ValidatorAppPublic]>;
+  kind: PolkadotPrimitivesV8SlashingSlashingOffenceKind;
+};
+
+export type PolkadotPrimitivesV8SlashingSlashingOffenceKind = 'ForInvalid' | 'AgainstValid';
+
 export type PolkadotPrimitivesV8SlashingOpaqueKeyOwnershipProof = Bytes;
+
+export type PolkadotPrimitivesV8SlashingDisputeProof = {
+  timeSlot: PolkadotPrimitivesV8SlashingDisputesTimeSlot;
+  kind: PolkadotPrimitivesV8SlashingSlashingOffenceKind;
+  validatorIndex: PolkadotPrimitivesV8ValidatorIndex;
+  validatorId: PolkadotPrimitivesV8ValidatorAppPublic;
+};
 
 export type PolkadotPrimitivesVstagingAsyncBackingBackingState = {
   constraints: PolkadotPrimitivesV8AsyncBackingConstraints;
@@ -14890,6 +16145,26 @@ export type PolkadotPrimitivesVstagingAsyncBackingCandidatePendingAvailability =
   commitments: PolkadotPrimitivesV8CandidateCommitments;
   relayParentNumber: number;
   maxPovSize: number;
+};
+
+export type PolkadotPrimitivesVstagingAsyncBackingConstraints = {
+  minRelayParentNumber: number;
+  maxPovSize: number;
+  maxCodeSize: number;
+  maxHeadDataSize: number;
+  umpRemaining: number;
+  umpRemainingBytes: number;
+  maxUmpNumPerCandidate: number;
+  dmpRemainingMessages: Array<number>;
+  hrmpInbound: PolkadotPrimitivesV8AsyncBackingInboundHrmpLimitations;
+  hrmpChannelsOut: Array<
+    [PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AsyncBackingOutboundHrmpChannelLimitations]
+  >;
+  maxHrmpNumPerCandidate: number;
+  requiredParent: PolkadotParachainPrimitivesPrimitivesHeadData;
+  validationCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
+  upgradeRestriction?: PolkadotPrimitivesV8UpgradeRestriction | undefined;
+  futureValidationCode?: [number, PolkadotParachainPrimitivesPrimitivesValidationCodeHash] | undefined;
 };
 
 export type SpConsensusBeefyValidatorSet = { validators: Array<SpConsensusBeefyEcdsaCryptoPublic>; id: bigint };
@@ -15002,6 +16277,7 @@ export type PaseoRuntimeRuntimeError =
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }
   | { pallet: 'FastUnstake'; palletError: PalletFastUnstakeError }
   | { pallet: 'DelegatedStaking'; palletError: PalletDelegatedStakingError }
+  | { pallet: 'StakingAhClient'; palletError: PalletStakingAsyncAhClientError }
   | { pallet: 'Configuration'; palletError: PolkadotRuntimeParachainsConfigurationPalletError }
   | { pallet: 'ParaInclusion'; palletError: PolkadotRuntimeParachainsInclusionPalletError }
   | { pallet: 'ParaInherent'; palletError: PolkadotRuntimeParachainsParasInherentPalletError }
@@ -15022,4 +16298,5 @@ export type PaseoRuntimeRuntimeError =
   | { pallet: 'AssetRate'; palletError: PalletAssetRateError }
   | { pallet: 'Beefy'; palletError: PalletBeefyError }
   | { pallet: 'ParaSudoWrapper'; palletError: PolkadotRuntimeCommonParasSudoWrapperPalletError }
-  | { pallet: 'Sudo'; palletError: PalletSudoError };
+  | { pallet: 'Sudo'; palletError: PalletSudoError }
+  | { pallet: 'RcMigrator'; palletError: PalletRcMigratorError };

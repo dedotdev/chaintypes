@@ -77,7 +77,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     /**
      * Whether it is legal to extend the chain, assuming the given block is the most
      * recently included one as-of the relay parent that will be built against, and
-     * the given slot.
+     * the given relay chain slot.
      *
      * This should be consistent with the logic the runtime uses when validating blocks to
      * avoid issues.

@@ -13,6 +13,7 @@ import type {
   MultiAddress,
   MultiAddressLike,
   AccountId32Like,
+  Perbill,
   Data,
   Era,
   Header,
@@ -95,7 +96,11 @@ export type FrameSystemEvent =
   /**
    * An upgrade was authorized.
    **/
-  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } };
+  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } }
+  /**
+   * An invalid authorized upgrade was rejected while trying to apply it.
+   **/
+  | { name: 'RejectedInvalidAuthorizedUpgrade'; data: { codeHash: H256; error: DispatchError } };
 
 export type FrameSystemDispatchEventInfo = {
   weight: SpWeightsWeightV2Weight;
@@ -432,7 +437,15 @@ export type PalletSessionEvent =
    * New session has happened. Note that the argument is the session index, not the
    * block number as the type might suggest.
    **/
-  { name: 'NewSession'; data: { sessionIndex: number } };
+  | { name: 'NewSession'; data: { sessionIndex: number } }
+  /**
+   * Validator has been disabled.
+   **/
+  | { name: 'ValidatorDisabled'; data: { validator: AccountId32 } }
+  /**
+   * Validator has been re-enabled.
+   **/
+  | { name: 'ValidatorReenabled'; data: { validator: AccountId32 } };
 
 /**
  * The `Event` enum of this pallet
@@ -452,7 +465,7 @@ export type PalletXcmEvent =
    **/
   | { name: 'Attempted'; data: { outcome: StagingXcmV5TraitsOutcome } }
   /**
-   * A XCM message was sent.
+   * An XCM message was sent.
    **/
   | {
       name: 'Sent';
@@ -462,6 +475,25 @@ export type PalletXcmEvent =
         message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       };
+    }
+  /**
+   * An XCM message failed to send.
+   **/
+  | {
+      name: 'SendFailed';
+      data: {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        error: XcmV3TraitsSendError;
+        messageId: FixedBytes<32>;
+      };
+    }
+  /**
+   * An XCM message failed to process.
+   **/
+  | {
+      name: 'ProcessXcmError';
+      data: { origin: StagingXcmV5Location; error: XcmV5TraitsError; messageId: FixedBytes<32> };
     }
   /**
    * Query response received which does not match a registered query. This may be because a
@@ -619,7 +651,23 @@ export type PalletXcmEvent =
   /**
    * A XCM version migration finished.
    **/
-  | { name: 'VersionMigrationFinished'; data: { version: number } };
+  | { name: 'VersionMigrationFinished'; data: { version: number } }
+  /**
+   * An `aliaser` location was authorized by `target` to alias it, authorization valid until
+   * `expiry` block number.
+   **/
+  | {
+      name: 'AliasAuthorized';
+      data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location; expiry?: bigint | undefined };
+    }
+  /**
+   * `target` removed alias authorization for `aliaser`.
+   **/
+  | { name: 'AliasAuthorizationRemoved'; data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location } }
+  /**
+   * `target` removed all alias authorizations.
+   **/
+  | { name: 'AliasesAuthorizationsRemoved'; data: { target: StagingXcmV5Location } };
 
 export type StagingXcmV5TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
@@ -903,6 +951,15 @@ export type StagingXcmV5AssetAssetTransferFilter =
   | { type: 'ReserveWithdraw'; value: StagingXcmV5AssetAssetFilter };
 
 export type StagingXcmV5Hint = { type: 'AssetClaimer'; value: { location: StagingXcmV5Location } };
+
+export type XcmV3TraitsSendError =
+  | 'NotApplicable'
+  | 'Transport'
+  | 'Unroutable'
+  | 'DestinationUnsupported'
+  | 'ExceedsMaxMessageSize'
+  | 'MissingArgument'
+  | 'Fees';
 
 export type XcmVersionedAssets =
   | { type: 'V3'; value: XcmV3MultiassetMultiAssets }
@@ -1212,7 +1269,15 @@ export type PalletUtilityEvent =
   /**
    * A call was dispatched.
    **/
-  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } };
+  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } }
+  /**
+   * Main call was dispatched.
+   **/
+  | { name: 'IfElseMainSuccess' }
+  /**
+   * The fallback call was dispatched.
+   **/
+  | { name: 'IfElseFallbackCalled'; data: { mainError: DispatchError } };
 
 /**
  * The `Event` enum of this pallet
@@ -1258,6 +1323,13 @@ export type PalletMultisigEvent =
         multisig: AccountId32;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * The deposit for a multisig operation has been updated/poked.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; callHash: FixedBytes<32>; oldDeposit: bigint; newDeposit: bigint };
     };
 
 export type PalletMultisigTimepoint = { height: number; index: number };
@@ -1300,6 +1372,13 @@ export type PalletProxyEvent =
   | {
       name: 'ProxyRemoved';
       data: { delegator: AccountId32; delegatee: AccountId32; proxyType: PeoplePaseoRuntimeProxyType; delay: number };
+    }
+  /**
+   * A deposit stored for proxies or announcements was poked / updated.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; kind: PalletProxyDepositKind; oldDeposit: bigint; newDeposit: bigint };
     };
 
 export type PeoplePaseoRuntimeProxyType =
@@ -1309,6 +1388,8 @@ export type PeoplePaseoRuntimeProxyType =
   | 'Identity'
   | 'IdentityJudgement'
   | 'Collator';
+
+export type PalletProxyDepositKind = 'Proxies' | 'Announcements';
 
 /**
  * The `Event` enum of this pallet
@@ -1831,15 +1912,7 @@ export type CumulusPalletParachainSystemError =
   /**
    * No validation function upgrade is currently scheduled.
    **/
-  | 'NotScheduled'
-  /**
-   * No code upgrade has been authorized.
-   **/
-  | 'NothingAuthorized'
-  /**
-   * The given code upgrade has not been authorized.
-   **/
-  | 'Unauthorized';
+  | 'NotScheduled';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2003,7 +2076,9 @@ export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
 export type FrameSupportTokensMiscIdAmount = { id: PeoplePaseoRuntimeRuntimeHoldReason; amount: bigint };
 
-export type PeoplePaseoRuntimeRuntimeHoldReason = null;
+export type PeoplePaseoRuntimeRuntimeHoldReason = { type: 'PolkadotXcm'; value: PalletXcmHoldReason };
+
+export type PalletXcmHoldReason = 'AuthorizeAlias';
 
 export type FrameSupportTokensMiscIdAmount002 = { id: []; amount: bigint };
 
@@ -2412,6 +2487,8 @@ export type PalletCollatorSelectionCallLike =
    **/
   | { name: 'TakeCandidateSlot'; params: { deposit: bigint; target: AccountId32Like } };
 
+export type FrameSupportPalletId = FixedBytes<8>;
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -2488,6 +2565,8 @@ export type PalletCollatorSelectionError =
 export type PeoplePaseoRuntimeSessionKeys = { aura: SpConsensusAuraSr25519AppSr25519Public };
 
 export type SpConsensusAuraSr25519AppSr25519Public = FixedBytes<32>;
+
+export type SpStakingOffenceOffenceSeverity = Perbill;
 
 export type SpCoreCryptoKeyTypeId = FixedBytes<4>;
 
@@ -2815,6 +2894,20 @@ export type PalletXcmRemoteLockedFungibleRecord = {
   consumers: Array<[[], bigint]>;
 };
 
+export type PalletXcmAuthorizedAliasesEntry = {
+  aliasers: Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>;
+  ticket: FrameSupportStorageDisabled;
+};
+
+export type FrameSupportStorageDisabled = {};
+
+export type PalletXcmMaxAuthorizedAliases = {};
+
+export type XcmRuntimeApisAuthorizedAliasesOriginAliaser = {
+  location: XcmVersionedLocation;
+  expiry?: bigint | undefined;
+};
+
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
@@ -3128,7 +3221,31 @@ export type PalletXcmCall =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type PalletXcmCallLike =
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
@@ -3440,7 +3557,31 @@ export type PalletXcmCallLike =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type XcmVersionedXcm =
   | { type: 'V3'; value: XcmV3Xcm }
@@ -3787,7 +3928,19 @@ export type PalletXcmError =
   /**
    * Local XCM execution incomplete.
    **/
-  | 'LocalExecutionIncomplete';
+  | 'LocalExecutionIncomplete'
+  /**
+   * Too many locations authorized to alias origin.
+   **/
+  | 'TooManyAuthorizedAliases'
+  /**
+   * Expiry block number is in the past.
+   **/
+  | 'ExpiresInPast'
+  /**
+   * The alias to remove authorization for was not found.
+   **/
+  | 'AliasNotFound';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4019,7 +4172,44 @@ export type PalletUtilityCall =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: PeoplePaseoRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } };
+  | { name: 'WithWeight'; params: { call: PeoplePaseoRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | { name: 'IfElse'; params: { main: PeoplePaseoRuntimeRuntimeCall; fallback: PeoplePaseoRuntimeRuntimeCall } }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | {
+      name: 'DispatchAsFallible';
+      params: { asOrigin: PeoplePaseoRuntimeOriginCaller; call: PeoplePaseoRuntimeRuntimeCall };
+    };
 
 export type PalletUtilityCallLike =
   /**
@@ -4111,7 +4301,44 @@ export type PalletUtilityCallLike =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: PeoplePaseoRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } };
+  | { name: 'WithWeight'; params: { call: PeoplePaseoRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | { name: 'IfElse'; params: { main: PeoplePaseoRuntimeRuntimeCallLike; fallback: PeoplePaseoRuntimeRuntimeCallLike } }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | {
+      name: 'DispatchAsFallible';
+      params: { asOrigin: PeoplePaseoRuntimeOriginCaller; call: PeoplePaseoRuntimeRuntimeCallLike };
+    };
 
 export type PeoplePaseoRuntimeRuntimeCall =
   | { pallet: 'System'; palletCall: FrameSystemCall }
@@ -4294,6 +4521,25 @@ export type PalletMultisigCall =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId32>; callHash: FixedBytes<32> };
     };
 
 export type PalletMultisigCallLike =
@@ -4439,6 +4685,25 @@ export type PalletMultisigCallLike =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
     };
 
 /**
@@ -4609,7 +4874,18 @@ export type PalletProxyCall =
         forceProxyType?: PeoplePaseoRuntimeProxyType | undefined;
         call: PeoplePaseoRuntimeRuntimeCall;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 export type PalletProxyCallLike =
   /**
@@ -4779,7 +5055,18 @@ export type PalletProxyCallLike =
         forceProxyType?: PeoplePaseoRuntimeProxyType | undefined;
         call: PeoplePaseoRuntimeRuntimeCallLike;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 /**
  * Identity pallet declaration.
@@ -5454,11 +5741,12 @@ export type PalletMultisigError =
    **/
   | 'SenderInSignatories'
   /**
-   * Multisig operation not found when attempting to cancel.
+   * Multisig operation not found in storage.
    **/
   | 'NotFound'
   /**
-   * Only the account that originally created the multisig is able to cancel it.
+   * Only the account that originally created the multisig is able to cancel it or update
+   * its deposits.
    **/
   | 'NotOwner'
   /**

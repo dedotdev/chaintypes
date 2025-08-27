@@ -25,7 +25,7 @@ export interface VersionedPaseoAssetHubApi<Rv extends RpcVersion> extends Generi
 
 /**
  * @name: PaseoAssetHubApi
- * @specVersion: 1006001
+ * @specVersion: 1006002
  **/
 export interface PaseoAssetHubApi {
   legacy: VersionedPaseoAssetHubApi<RpcLegacy>;

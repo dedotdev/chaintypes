@@ -16,6 +16,7 @@ import type {
 import type {
   FrameSystemDispatchEventInfo,
   FrameSupportTokensMiscBalanceStatus,
+  PalletBalancesUnexpectedKind,
   PalletStakingRewardDestination,
   PalletStakingValidatorPrefs,
   PalletStakingForcing,
@@ -32,6 +33,7 @@ import type {
   StagingKusamaRuntimeRuntimeParametersKey,
   StagingKusamaRuntimeRuntimeParametersValue,
   PalletSocietyGroupParams,
+  PalletRecoveryDepositKind,
   KusamaRuntimeConstantsProxyProxyType,
   PalletProxyDepositKind,
   PalletMultisigTimepoint,
@@ -286,6 +288,11 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     TotalIssuanceForced: GenericPalletEvent<Rv, 'Balances', 'TotalIssuanceForced', { old: bigint; new: bigint }>;
 
     /**
+     * An unexpected/defensive event was triggered.
+     **/
+    Unexpected: GenericPalletEvent<Rv, 'Balances', 'Unexpected', PalletBalancesUnexpectedKind>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -474,6 +481,25 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
+   * Pallet `Historical`'s events
+   **/
+  historical: {
+    /**
+     * The merkle root of the validators of the said session were stored
+     **/
+    RootStored: GenericPalletEvent<Rv, 'Historical', 'RootStored', { index: number }>;
+
+    /**
+     * The merkle roots of up to this session index were pruned
+     **/
+    RootsPruned: GenericPalletEvent<Rv, 'Historical', 'RootsPruned', { upTo: number }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
    * Pallet `Session`'s events
    **/
   session: {
@@ -482,6 +508,12 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * block number as the type might suggest.
      **/
     NewSession: GenericPalletEvent<Rv, 'Session', 'NewSession', { sessionIndex: number }>;
+
+    /**
+     * The `NewSession` event in the current block also implies a new validator set to be
+     * queued.
+     **/
+    NewQueued: GenericPalletEvent<Rv, 'Session', 'NewQueued', null>;
 
     /**
      * Validator has been disabled.
@@ -1611,6 +1643,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Elevated: GenericPalletEvent<Rv, 'Society', 'Elevated', { member: AccountId32; rank: number }>;
 
     /**
+     * A deposit was poked / adjusted.
+     **/
+    DepositPoked: GenericPalletEvent<
+      Rv,
+      'Society',
+      'DepositPoked',
+      { who: AccountId32; oldDeposit: bigint; newDeposit: bigint }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -1670,6 +1712,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     RecoveryRemoved: GenericPalletEvent<Rv, 'Recovery', 'RecoveryRemoved', { lostAccount: AccountId32 }>;
 
     /**
+     * A deposit has been updated.
+     **/
+    DepositPoked: GenericPalletEvent<
+      Rv,
+      'Recovery',
+      'DepositPoked',
+      { who: AccountId32; kind: PalletRecoveryDepositKind; oldDeposit: bigint; newDeposit: bigint }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -1678,6 +1730,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
    * Pallet `Vesting`'s events
    **/
   vesting: {
+    /**
+     * A vesting schedule has been created.
+     **/
+    VestingCreated: GenericPalletEvent<
+      Rv,
+      'Vesting',
+      'VestingCreated',
+      { account: AccountId32; scheduleIndex: number }
+    >;
+
     /**
      * The amount vested has been updated. This could indicate a change in funds available.
      * The balance given is the amount which is left unvested (and thus locked).
@@ -1809,6 +1871,21 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       {
         pure: AccountId32;
         who: AccountId32;
+        proxyType: KusamaRuntimeConstantsProxyProxyType;
+        disambiguationIndex: number;
+      }
+    >;
+
+    /**
+     * A pure proxy was killed by its spawner.
+     **/
+    PureKilled: GenericPalletEvent<
+      Rv,
+      'Proxy',
+      'PureKilled',
+      {
+        pure: AccountId32;
+        spawner: AccountId32;
         proxyType: KusamaRuntimeConstantsProxyProxyType;
         disambiguationIndex: number;
       }
@@ -2006,6 +2083,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * A bounty curator is accepted.
      **/
     CuratorAccepted: GenericPalletEvent<Rv, 'Bounties', 'CuratorAccepted', { bountyId: number; curator: AccountId32 }>;
+
+    /**
+     * A bounty deposit has been poked.
+     **/
+    DepositPoked: GenericPalletEvent<
+      Rv,
+      'Bounties',
+      'DepositPoked',
+      { bountyId: number; proposer: AccountId32; oldDeposit: bigint; newDeposit: bigint }
+    >;
 
     /**
      * Generic pallet event
@@ -2351,6 +2438,11 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'TotalIssuanceForced',
       { old: bigint; new: bigint }
     >;
+
+    /**
+     * An unexpected/defensive event was triggered.
+     **/
+    Unexpected: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Unexpected', PalletBalancesUnexpectedKind>;
 
     /**
      * Generic pallet event
@@ -2847,6 +2939,46 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Paras',
       'PvfCheckRejected',
       [PolkadotParachainPrimitivesPrimitivesValidationCodeHash, PolkadotParachainPrimitivesPrimitivesId]
+    >;
+
+    /**
+     * The upgrade cooldown was removed.
+     **/
+    UpgradeCooldownRemoved: GenericPalletEvent<
+      Rv,
+      'Paras',
+      'UpgradeCooldownRemoved',
+      {
+        /**
+         * The parachain for which the cooldown got removed.
+         **/
+        paraId: PolkadotParachainPrimitivesPrimitivesId;
+      }
+    >;
+
+    /**
+     * A new code hash has been authorized for a Para.
+     **/
+    CodeAuthorized: GenericPalletEvent<
+      Rv,
+      'Paras',
+      'CodeAuthorized',
+      {
+        /**
+         * Para
+         **/
+        paraId: PolkadotParachainPrimitivesPrimitivesId;
+
+        /**
+         * Authorized code hash.
+         **/
+        codeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
+
+        /**
+         * Block at which authorization expires and will be removed.
+         **/
+        expireAt: number;
+      }
     >;
 
     /**

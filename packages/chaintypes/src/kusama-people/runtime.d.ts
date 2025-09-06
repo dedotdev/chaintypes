@@ -41,7 +41,12 @@ import type {
   PeopleKusamaRuntimeOriginCaller,
   XcmRuntimeApisDryRunXcmDryRunEffects,
   XcmRuntimeApisConversionsError,
+  XcmRuntimeApisTrustedQueryError,
+  XcmVersionedAsset,
+  XcmRuntimeApisAuthorizedAliasesOriginAliaser,
+  XcmRuntimeApisAuthorizedAliasesError,
   CumulusPrimitivesCoreCollationInfo,
+  PolkadotParachainPrimitivesPrimitivesId,
 } from './types.js';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
@@ -64,6 +69,22 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: AuraApi_authorities
      **/
     authorities: GenericRuntimeApiMethod<Rv, () => Promise<Array<SpConsensusAuraSr25519AppSr25519Public>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: RelayParentOffsetApi - 0x04e70521a0d3d2f8
+   **/
+  relayParentOffsetApi: {
+    /**
+     * Fetch the slot offset that is expected from the relay chain.
+     *
+     * @callname: RelayParentOffsetApi_relay_parent_offset
+     **/
+    relayParentOffset: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
 
     /**
      * Generic runtime api call
@@ -560,6 +581,90 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
+   * @runtimeapi: TrustedQueryApi - 0x2609be83ac4468dc
+   **/
+  trustedQueryApi: {
+    /**
+     * Returns if the location is a trusted reserve for the asset.
+     *
+     * # Arguments
+     * * `asset`: `VersionedAsset`.
+     * * `location`: `VersionedLocation`.
+     *
+     * @callname: TrustedQueryApi_is_trusted_reserve
+     * @param {XcmVersionedAsset} asset
+     * @param {XcmVersionedLocation} location
+     **/
+    isTrustedReserve: GenericRuntimeApiMethod<
+      Rv,
+      (
+        asset: XcmVersionedAsset,
+        location: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
+    >;
+
+    /**
+     * Returns if the asset can be teleported to the location.
+     *
+     * # Arguments
+     * * `asset`: `VersionedAsset`.
+     * * `location`: `VersionedLocation`.
+     *
+     * @callname: TrustedQueryApi_is_trusted_teleporter
+     * @param {XcmVersionedAsset} asset
+     * @param {XcmVersionedLocation} location
+     **/
+    isTrustedTeleporter: GenericRuntimeApiMethod<
+      Rv,
+      (
+        asset: XcmVersionedAsset,
+        location: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: AuthorizedAliasersApi - 0x12c8e3d4d7e06de0
+   **/
+  authorizedAliasersApi: {
+    /**
+     * Returns locations allowed to alias into and act as `target`.
+     *
+     * @callname: AuthorizedAliasersApi_authorized_aliasers
+     * @param {XcmVersionedLocation} target
+     **/
+    authorizedAliasers: GenericRuntimeApiMethod<
+      Rv,
+      (
+        target: XcmVersionedLocation,
+      ) => Promise<Result<Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>, XcmRuntimeApisAuthorizedAliasesError>>
+    >;
+
+    /**
+     * Returns whether `origin` is allowed to alias into and act as `target`.
+     *
+     * @callname: AuthorizedAliasersApi_is_authorized_alias
+     * @param {XcmVersionedLocation} origin
+     * @param {XcmVersionedLocation} target
+     **/
+    isAuthorizedAlias: GenericRuntimeApiMethod<
+      Rv,
+      (
+        origin: XcmVersionedLocation,
+        target: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisAuthorizedAliasesError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
    * @runtimeapi: CollectCollationInfo - 0xea93e3f16f3d6962
    **/
   collectCollationInfo: {
@@ -573,6 +678,22 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @param {Header} header
      **/
     collectCollationInfo: GenericRuntimeApiMethod<Rv, (header: Header) => Promise<CumulusPrimitivesCoreCollationInfo>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: GetParachainInfo - 0xa2ddb6a58477bf63
+   **/
+  getParachainInfo: {
+    /**
+     * Retrieve the parachain id used for runtime.
+     *
+     * @callname: GetParachainInfo_parachain_id
+     **/
+    parachainId: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotParachainPrimitivesPrimitivesId>>;
 
     /**
      * Generic runtime api call

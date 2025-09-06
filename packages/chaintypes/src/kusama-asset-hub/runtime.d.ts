@@ -30,7 +30,7 @@ import type {
   SpRuntimeTransactionValidityValidTransaction,
   SpRuntimeTransactionValidityTransactionSource,
   SpCoreCryptoKeyTypeId,
-  StagingXcmV4Location,
+  StagingXcmV5Location,
   PalletTransactionPaymentRuntimeDispatchInfo,
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
@@ -45,8 +45,13 @@ import type {
   AssetHubKusamaRuntimeOriginCaller,
   XcmRuntimeApisDryRunXcmDryRunEffects,
   XcmRuntimeApisConversionsError,
+  XcmRuntimeApisTrustedQueryError,
+  XcmVersionedAsset,
+  XcmRuntimeApisAuthorizedAliasesOriginAliaser,
+  XcmRuntimeApisAuthorizedAliasesError,
   AssetsCommonRuntimeApiFungiblesAccessError,
   CumulusPrimitivesCoreCollationInfo,
+  PolkadotParachainPrimitivesPrimitivesId,
   PalletRevivePrimitivesContractResult,
   PalletRevivePrimitivesContractResultInstantiateReturnValue,
   PalletRevivePrimitivesCode,
@@ -79,6 +84,22 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: AuraApi_authorities
      **/
     authorities: GenericRuntimeApiMethod<Rv, () => Promise<Array<SpConsensusAuraSr25519AppSr25519Public>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: RelayParentOffsetApi - 0x04e70521a0d3d2f8
+   **/
+  relayParentOffsetApi: {
+    /**
+     * Fetch the slot offset that is expected from the relay chain.
+     *
+     * @callname: RelayParentOffsetApi_relay_parent_offset
+     **/
+    relayParentOffset: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
 
     /**
      * Generic runtime api call
@@ -352,16 +373,16 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * (Use `amount_in_max` to control slippage.)
      *
      * @callname: AssetConversionApi_quote_price_tokens_for_exact_tokens
-     * @param {StagingXcmV4Location} asset1
-     * @param {StagingXcmV4Location} asset2
+     * @param {StagingXcmV5Location} asset1
+     * @param {StagingXcmV5Location} asset2
      * @param {bigint} amount
      * @param {boolean} include_fee
      **/
     quotePriceTokensForExactTokens: GenericRuntimeApiMethod<
       Rv,
       (
-        asset1: StagingXcmV4Location,
-        asset2: StagingXcmV4Location,
+        asset1: StagingXcmV5Location,
+        asset2: StagingXcmV5Location,
         amount: bigint,
         includeFee: boolean,
       ) => Promise<bigint | undefined>
@@ -374,16 +395,16 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * (Use `amount_out_min` to control slippage.)
      *
      * @callname: AssetConversionApi_quote_price_exact_tokens_for_tokens
-     * @param {StagingXcmV4Location} asset1
-     * @param {StagingXcmV4Location} asset2
+     * @param {StagingXcmV5Location} asset1
+     * @param {StagingXcmV5Location} asset2
      * @param {bigint} amount
      * @param {boolean} include_fee
      **/
     quotePriceExactTokensForTokens: GenericRuntimeApiMethod<
       Rv,
       (
-        asset1: StagingXcmV4Location,
-        asset2: StagingXcmV4Location,
+        asset1: StagingXcmV5Location,
+        asset2: StagingXcmV5Location,
         amount: bigint,
         includeFee: boolean,
       ) => Promise<bigint | undefined>
@@ -393,12 +414,12 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * Returns the size of the liquidity pool for the given asset pair.
      *
      * @callname: AssetConversionApi_get_reserves
-     * @param {StagingXcmV4Location} asset1
-     * @param {StagingXcmV4Location} asset2
+     * @param {StagingXcmV5Location} asset1
+     * @param {StagingXcmV5Location} asset2
      **/
     getReserves: GenericRuntimeApiMethod<
       Rv,
-      (asset1: StagingXcmV4Location, asset2: StagingXcmV4Location) => Promise<[bigint, bigint] | undefined>
+      (asset1: StagingXcmV5Location, asset2: StagingXcmV5Location) => Promise<[bigint, bigint] | undefined>
     >;
 
     /**
@@ -640,6 +661,90 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
+   * @runtimeapi: TrustedQueryApi - 0x2609be83ac4468dc
+   **/
+  trustedQueryApi: {
+    /**
+     * Returns if the location is a trusted reserve for the asset.
+     *
+     * # Arguments
+     * * `asset`: `VersionedAsset`.
+     * * `location`: `VersionedLocation`.
+     *
+     * @callname: TrustedQueryApi_is_trusted_reserve
+     * @param {XcmVersionedAsset} asset
+     * @param {XcmVersionedLocation} location
+     **/
+    isTrustedReserve: GenericRuntimeApiMethod<
+      Rv,
+      (
+        asset: XcmVersionedAsset,
+        location: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
+    >;
+
+    /**
+     * Returns if the asset can be teleported to the location.
+     *
+     * # Arguments
+     * * `asset`: `VersionedAsset`.
+     * * `location`: `VersionedLocation`.
+     *
+     * @callname: TrustedQueryApi_is_trusted_teleporter
+     * @param {XcmVersionedAsset} asset
+     * @param {XcmVersionedLocation} location
+     **/
+    isTrustedTeleporter: GenericRuntimeApiMethod<
+      Rv,
+      (
+        asset: XcmVersionedAsset,
+        location: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: AuthorizedAliasersApi - 0x12c8e3d4d7e06de0
+   **/
+  authorizedAliasersApi: {
+    /**
+     * Returns locations allowed to alias into and act as `target`.
+     *
+     * @callname: AuthorizedAliasersApi_authorized_aliasers
+     * @param {XcmVersionedLocation} target
+     **/
+    authorizedAliasers: GenericRuntimeApiMethod<
+      Rv,
+      (
+        target: XcmVersionedLocation,
+      ) => Promise<Result<Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>, XcmRuntimeApisAuthorizedAliasesError>>
+    >;
+
+    /**
+     * Returns whether `origin` is allowed to alias into and act as `target`.
+     *
+     * @callname: AuthorizedAliasersApi_is_authorized_alias
+     * @param {XcmVersionedLocation} origin
+     * @param {XcmVersionedLocation} target
+     **/
+    isAuthorizedAlias: GenericRuntimeApiMethod<
+      Rv,
+      (
+        origin: XcmVersionedLocation,
+        target: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisAuthorizedAliasesError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
    * @runtimeapi: FungiblesApi - 0xde92b8a0426b9bf6
    **/
   fungiblesApi: {
@@ -737,6 +842,22 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
+   * @runtimeapi: GetParachainInfo - 0xa2ddb6a58477bf63
+   **/
+  getParachainInfo: {
+    /**
+     * Retrieve the parachain id used for runtime.
+     *
+     * @callname: GetParachainInfo_parachain_id
+     **/
+    parachainId: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotParachainPrimitivesPrimitivesId>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
    * @runtimeapi: ReviveApi - 0x8c403e5c4a9fd442
    **/
   reviveApi: {
@@ -825,7 +946,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     /**
      * Perform an Ethereum call.
      *
-     * See [`crate::Pallet::bare_eth_transact`]
+     * See [`crate::Pallet::dry_run_eth_transact`]
      *
      * @callname: ReviveApi_eth_transact
      * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
@@ -873,6 +994,22 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
         address: H160,
         key: FixedBytes<32>,
       ) => Promise<Result<Bytes | undefined, PalletRevivePrimitivesContractAccessError>>
+    >;
+
+    /**
+     * Query a given variable-sized storage key in a given contract.
+     *
+     * Returns `Ok(Some(Vec<u8>))` if the storage value exists under the given key in the
+     * specified account and `Ok(None)` if it doesn't. If the account specified by the address
+     * doesn't exist, or doesn't have a contract then `Err` is returned.
+     *
+     * @callname: ReviveApi_get_storage_var_key
+     * @param {H160} address
+     * @param {BytesLike} key
+     **/
+    getStorageVarKey: GenericRuntimeApiMethod<
+      Rv,
+      (address: H160, key: BytesLike) => Promise<Result<Bytes | undefined, PalletRevivePrimitivesContractAccessError>>
     >;
 
     /**
@@ -933,6 +1070,36 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
         config: PalletReviveEvmApiDebugRpcTypesTracerType,
       ) => Promise<Result<PalletReviveEvmApiDebugRpcTypesTrace, PalletRevivePrimitivesEthTransactError>>
     >;
+
+    /**
+     * The address of the validator that produced the current block.
+     *
+     * @callname: ReviveApi_block_author
+     **/
+    blockAuthor: GenericRuntimeApiMethod<Rv, () => Promise<H160 | undefined>>;
+
+    /**
+     * Get the H160 address associated to this account id
+     *
+     * @callname: ReviveApi_address
+     * @param {AccountId32Like} account_id
+     **/
+    address: GenericRuntimeApiMethod<Rv, (accountId: AccountId32Like) => Promise<H160>>;
+
+    /**
+     * The address used to call the runtime's pallets dispatchables
+     *
+     * @callname: ReviveApi_runtime_pallets_address
+     **/
+    runtimePalletsAddress: GenericRuntimeApiMethod<Rv, () => Promise<H160>>;
+
+    /**
+     * The code at the specified address taking pre-compiles into account.
+     *
+     * @callname: ReviveApi_code
+     * @param {H160} address
+     **/
+    code: GenericRuntimeApiMethod<Rv, (address: H160) => Promise<Bytes>>;
 
     /**
      * Generic runtime api call

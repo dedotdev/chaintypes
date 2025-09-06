@@ -23,9 +23,9 @@ import type {
   BitSequence,
   FixedU128,
   Result,
-  FixedI64,
-  Era,
   UncheckedExtrinsic,
+  Era,
+  FixedI64,
 } from 'dedot/codecs';
 
 export type FrameSystemAccountInfo = {
@@ -62,6 +62,7 @@ export type StagingKusamaRuntimeRuntimeEvent =
   | { pallet: 'TransactionPayment'; palletEvent: PalletTransactionPaymentEvent }
   | { pallet: 'Staking'; palletEvent: PalletStakingPalletEvent }
   | { pallet: 'Offences'; palletEvent: PalletOffencesEvent }
+  | { pallet: 'Historical'; palletEvent: PalletSessionHistoricalPalletEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
   | { pallet: 'Grandpa'; palletEvent: PalletGrandpaEvent }
   | { pallet: 'Treasury'; palletEvent: PalletTreasuryEvent }
@@ -288,9 +289,15 @@ export type PalletBalancesEvent =
   /**
    * The `TotalIssuance` was forcefully changed.
    **/
-  | { name: 'TotalIssuanceForced'; data: { old: bigint; new: bigint } };
+  | { name: 'TotalIssuanceForced'; data: { old: bigint; new: bigint } }
+  /**
+   * An unexpected/defensive event was triggered.
+   **/
+  | { name: 'Unexpected'; data: PalletBalancesUnexpectedKind };
 
 export type FrameSupportTokensMiscBalanceStatus = 'Free' | 'Reserved';
+
+export type PalletBalancesUnexpectedKind = 'BalanceUpdated' | 'FailedToMutateAccount';
 
 /**
  * The `Event` enum of this pallet
@@ -419,12 +426,30 @@ export type PalletOffencesEvent =
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletSessionHistoricalPalletEvent =
+  /**
+   * The merkle root of the validators of the said session were stored
+   **/
+  | { name: 'RootStored'; data: { index: number } }
+  /**
+   * The merkle roots of up to this session index were pruned
+   **/
+  | { name: 'RootsPruned'; data: { upTo: number } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PalletSessionEvent =
   /**
    * New session has happened. Note that the argument is the session index, not the
    * block number as the type might suggest.
    **/
   | { name: 'NewSession'; data: { sessionIndex: number } }
+  /**
+   * The `NewSession` event in the current block also implies a new validator set to be
+   * queued.
+   **/
+  | { name: 'NewQueued' }
   /**
    * Validator has been disabled.
    **/
@@ -1804,6 +1829,8 @@ export type PalletStakingPalletCall =
    * period ends. If this leaves an amount actively bonded less than
    * [`asset::existential_deposit`], then it is increased to the full amount.
    *
+   * The stash may be chilled if the ledger total amount falls to 0 after unbonding.
+   *
    * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
    *
    * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
@@ -2010,6 +2037,7 @@ export type PalletStakingPalletCall =
    * Can be called by the `T::AdminOrigin`.
    *
    * Parameters: era and indices of the slashes for that era to kill.
+   * They **must** be sorted in ascending order, *and* unique.
    **/
   | { name: 'CancelDeferredSlash'; params: { era: number; slashIndices: Array<number> } }
   /**
@@ -2284,6 +2312,8 @@ export type PalletStakingPalletCallLike =
    * period ends. If this leaves an amount actively bonded less than
    * [`asset::existential_deposit`], then it is increased to the full amount.
    *
+   * The stash may be chilled if the ledger total amount falls to 0 after unbonding.
+   *
    * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
    *
    * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
@@ -2490,6 +2520,7 @@ export type PalletStakingPalletCallLike =
    * Can be called by the `T::AdminOrigin`.
    *
    * Parameters: era and indices of the slashes for that era to kill.
+   * They **must** be sorted in ascending order, *and* unique.
    **/
   | { name: 'CancelDeferredSlash'; params: { era: number; slashIndices: Array<number> } }
   /**
@@ -3692,7 +3723,8 @@ export type StagingKusamaRuntimeOriginCaller =
 export type FrameSupportDispatchRawOrigin =
   | { type: 'Root' }
   | { type: 'Signed'; value: AccountId32 }
-  | { type: 'None' };
+  | { type: 'None' }
+  | { type: 'Authorized' };
 
 export type StagingKusamaRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
   | 'StakingAdmin'
@@ -4692,7 +4724,17 @@ export type PalletSocietyCall =
    *
    * May be called by any Signed origin, but only after the challenge round is ended.
    **/
-  | { name: 'CleanupChallenge'; params: { challengeRound: number; max: number } };
+  | { name: 'CleanupChallenge'; params: { challengeRound: number; max: number } }
+  /**
+   * Poke the deposit reserved when bidding.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the bidder.
+   *
+   * The transaction fee is waived if the deposit is changed after poking/reconsideration.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 export type PalletSocietyCallLike =
   /**
@@ -4908,7 +4950,17 @@ export type PalletSocietyCallLike =
    *
    * May be called by any Signed origin, but only after the challenge round is ended.
    **/
-  | { name: 'CleanupChallenge'; params: { challengeRound: number; max: number } };
+  | { name: 'CleanupChallenge'; params: { challengeRound: number; max: number } }
+  /**
+   * Poke the deposit reserved when bidding.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the bidder.
+   *
+   * The transaction fee is waived if the deposit is changed after poking/reconsideration.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5033,7 +5085,33 @@ export type PalletRecoveryCall =
    * Parameters:
    * - `account`: The recovered account you are able to call on-behalf-of.
    **/
-  | { name: 'CancelRecovered'; params: { account: MultiAddress } };
+  | { name: 'CancelRecovered'; params: { account: MultiAddress } }
+  /**
+   * Poke deposits for recovery configurations and / or active recoveries.
+   *
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `maybe_account`: Optional recoverable account for which you have an active recovery
+   * and want to adjust the deposit for the active recovery.
+   *
+   * This function checks both recovery configuration deposit and active recovery deposits
+   * of the caller:
+   * - If the caller has created a recovery configuration, checks and adjusts its deposit
+   * - If the caller has initiated any active recoveries, and provides the account in
+   * `maybe_account`, checks and adjusts those deposits
+   *
+   * If any deposit is updated, the difference will be reserved/unreserved from the caller's
+   * account.
+   *
+   * The transaction is made free if any deposit is updated and paid otherwise.
+   *
+   * Emits `DepositPoked` if any deposit is updated.
+   * Multiple events may be emitted in case both types of deposits are updated.
+   **/
+  | { name: 'PokeDeposit'; params: { maybeAccount?: MultiAddress | undefined } };
 
 export type PalletRecoveryCallLike =
   /**
@@ -5155,7 +5233,33 @@ export type PalletRecoveryCallLike =
    * Parameters:
    * - `account`: The recovered account you are able to call on-behalf-of.
    **/
-  | { name: 'CancelRecovered'; params: { account: MultiAddressLike } };
+  | { name: 'CancelRecovered'; params: { account: MultiAddressLike } }
+  /**
+   * Poke deposits for recovery configurations and / or active recoveries.
+   *
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `maybe_account`: Optional recoverable account for which you have an active recovery
+   * and want to adjust the deposit for the active recovery.
+   *
+   * This function checks both recovery configuration deposit and active recovery deposits
+   * of the caller:
+   * - If the caller has created a recovery configuration, checks and adjusts its deposit
+   * - If the caller has initiated any active recoveries, and provides the account in
+   * `maybe_account`, checks and adjusts those deposits
+   *
+   * If any deposit is updated, the difference will be reserved/unreserved from the caller's
+   * account.
+   *
+   * The transaction is made free if any deposit is updated and paid otherwise.
+   *
+   * Emits `DepositPoked` if any deposit is updated.
+   * Multiple events may be emitted in case both types of deposits are updated.
+   **/
+  | { name: 'PokeDeposit'; params: { maybeAccount?: MultiAddressLike | undefined } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5611,7 +5715,7 @@ export type PalletProxyCall =
    *
    * The dispatch origin for this call must be _Signed_.
    *
-   * WARNING: This may be called on accounts created by `pure`, however if done, then
+   * WARNING: This may be called on accounts created by `create_pure`, however if done, then
    * the unreserved fees will be inaccessible. **All access to this account will be lost.**
    **/
   | { name: 'RemoveProxies' }
@@ -5643,16 +5747,16 @@ export type PalletProxyCall =
    * inaccessible.
    *
    * Requires a `Signed` origin, and the sender account must have been created by a call to
-   * `pure` with corresponding parameters.
+   * `create_pure` with corresponding parameters.
    *
-   * - `spawner`: The account that originally called `pure` to create this account.
-   * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
-   * - `proxy_type`: The proxy type originally passed to `pure`.
-   * - `height`: The height of the chain when the call to `pure` was processed.
-   * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+   * - `spawner`: The account that originally called `create_pure` to create this account.
+   * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
+   * - `proxy_type`: The proxy type originally passed to `create_pure`.
+   * - `height`: The height of the chain when the call to `create_pure` was processed.
+   * - `ext_index`: The extrinsic index in which the call to `create_pure` was processed.
    *
    * Fails with `NoPermission` in case the caller is not a previously created pure
-   * account whose `pure` call has corresponding parameters.
+   * account whose `create_pure` call has corresponding parameters.
    **/
   | {
       name: 'KillPure';
@@ -5795,7 +5899,7 @@ export type PalletProxyCallLike =
    *
    * The dispatch origin for this call must be _Signed_.
    *
-   * WARNING: This may be called on accounts created by `pure`, however if done, then
+   * WARNING: This may be called on accounts created by `create_pure`, however if done, then
    * the unreserved fees will be inaccessible. **All access to this account will be lost.**
    **/
   | { name: 'RemoveProxies' }
@@ -5827,16 +5931,16 @@ export type PalletProxyCallLike =
    * inaccessible.
    *
    * Requires a `Signed` origin, and the sender account must have been created by a call to
-   * `pure` with corresponding parameters.
+   * `create_pure` with corresponding parameters.
    *
-   * - `spawner`: The account that originally called `pure` to create this account.
-   * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
-   * - `proxy_type`: The proxy type originally passed to `pure`.
-   * - `height`: The height of the chain when the call to `pure` was processed.
-   * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+   * - `spawner`: The account that originally called `create_pure` to create this account.
+   * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
+   * - `proxy_type`: The proxy type originally passed to `create_pure`.
+   * - `height`: The height of the chain when the call to `create_pure` was processed.
+   * - `ext_index`: The extrinsic index in which the call to `create_pure` was processed.
    *
    * Fails with `NoPermission` in case the caller is not a previously created pure
-   * account whose `pure` call has corresponding parameters.
+   * account whose `create_pure` call has corresponding parameters.
    **/
   | {
       name: 'KillPure';
@@ -6477,7 +6581,25 @@ export type PalletBountiesCall =
    * ## Complexity
    * - O(1).
    **/
-  | { name: 'ApproveBountyWithCurator'; params: { bountyId: number; curator: MultiAddress; fee: bigint } };
+  | { name: 'ApproveBountyWithCurator'; params: { bountyId: number; curator: MultiAddress; fee: bigint } }
+  /**
+   * Poke the deposit reserved for creating a bounty proposal.
+   *
+   * This can be used by accounts to update their reserved amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `bounty_id`: The bounty id for which to adjust the deposit.
+   *
+   * If the deposit is updated, the difference will be reserved/unreserved from the
+   * proposer's account.
+   *
+   * The transaction is made free if the deposit is updated and paid otherwise.
+   *
+   * Emits `DepositPoked` if the deposit is updated.
+   **/
+  | { name: 'PokeDeposit'; params: { bountyId: number } };
 
 export type PalletBountiesCallLike =
   /**
@@ -6605,7 +6727,25 @@ export type PalletBountiesCallLike =
    * ## Complexity
    * - O(1).
    **/
-  | { name: 'ApproveBountyWithCurator'; params: { bountyId: number; curator: MultiAddressLike; fee: bigint } };
+  | { name: 'ApproveBountyWithCurator'; params: { bountyId: number; curator: MultiAddressLike; fee: bigint } }
+  /**
+   * Poke the deposit reserved for creating a bounty proposal.
+   *
+   * This can be used by accounts to update their reserved amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * Parameters:
+   * - `bounty_id`: The bounty id for which to adjust the deposit.
+   *
+   * If the deposit is updated, the difference will be reserved/unreserved from the
+   * proposer's account.
+   *
+   * The transaction is made free if the deposit is updated and paid otherwise.
+   *
+   * Emits `DepositPoked` if the deposit is updated.
+   **/
+  | { name: 'PokeDeposit'; params: { bountyId: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -7013,10 +7153,7 @@ export type PalletElectionProviderMultiPhaseCall =
    * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
    * calling [`Call::set_emergency_election_result`].
    **/
-  | {
-      name: 'GovernanceFallback';
-      params: { maybeMaxVoters?: number | undefined; maybeMaxTargets?: number | undefined };
-    };
+  | { name: 'GovernanceFallback' };
 
 export type PalletElectionProviderMultiPhaseCallLike =
   /**
@@ -7079,10 +7216,7 @@ export type PalletElectionProviderMultiPhaseCallLike =
    * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
    * calling [`Call::set_emergency_election_result`].
    **/
-  | {
-      name: 'GovernanceFallback';
-      params: { maybeMaxVoters?: number | undefined; maybeMaxTargets?: number | undefined };
-    };
+  | { name: 'GovernanceFallback' };
 
 export type PalletElectionProviderMultiPhaseRawSolution = {
   solution: StagingKusamaRuntimeNposCompactSolution24;
@@ -8883,7 +9017,46 @@ export type PolkadotRuntimeParachainsParasPalletCall =
   /**
    * Set the storage for the current parachain head data immediately.
    **/
-  | { name: 'ForceSetMostRecentContext'; params: { para: PolkadotParachainPrimitivesPrimitivesId; context: number } };
+  | { name: 'ForceSetMostRecentContext'; params: { para: PolkadotParachainPrimitivesPrimitivesId; context: number } }
+  /**
+   * Remove an upgrade cooldown for a parachain.
+   *
+   * The cost for removing the cooldown earlier depends on the time left for the cooldown
+   * multiplied by [`Config::CooldownRemovalMultiplier`]. The paid tokens are burned.
+   **/
+  | { name: 'RemoveUpgradeCooldown'; params: { para: PolkadotParachainPrimitivesPrimitivesId } }
+  /**
+   * Sets the storage for the authorized current code hash of the parachain.
+   * If not applied, it will be removed at the `System::block_number() + valid_period` block.
+   *
+   * This can be useful, when triggering `Paras::force_set_current_code(para, code)`
+   * from a different chain than the one where the `Paras` pallet is deployed.
+   *
+   * The main purpose is to avoid transferring the entire `code` Wasm blob between chains.
+   * Instead, we authorize `code_hash` with `root`, which can later be applied by
+   * `Paras::apply_authorized_force_set_current_code(para, code)` by anyone.
+   *
+   * Authorizations are stored in an **overwriting manner**.
+   **/
+  | {
+      name: 'AuthorizeForceSetCurrentCodeHash';
+      params: {
+        para: PolkadotParachainPrimitivesPrimitivesId;
+        newCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
+        validPeriod: number;
+      };
+    }
+  /**
+   * Applies the already authorized current code for the parachain,
+   * triggering the same functionality as `force_set_current_code`.
+   **/
+  | {
+      name: 'ApplyAuthorizedForceSetCurrentCode';
+      params: {
+        para: PolkadotParachainPrimitivesPrimitivesId;
+        newCode: PolkadotParachainPrimitivesPrimitivesValidationCode;
+      };
+    };
 
 export type PolkadotRuntimeParachainsParasPalletCallLike =
   /**
@@ -8969,7 +9142,46 @@ export type PolkadotRuntimeParachainsParasPalletCallLike =
   /**
    * Set the storage for the current parachain head data immediately.
    **/
-  | { name: 'ForceSetMostRecentContext'; params: { para: PolkadotParachainPrimitivesPrimitivesId; context: number } };
+  | { name: 'ForceSetMostRecentContext'; params: { para: PolkadotParachainPrimitivesPrimitivesId; context: number } }
+  /**
+   * Remove an upgrade cooldown for a parachain.
+   *
+   * The cost for removing the cooldown earlier depends on the time left for the cooldown
+   * multiplied by [`Config::CooldownRemovalMultiplier`]. The paid tokens are burned.
+   **/
+  | { name: 'RemoveUpgradeCooldown'; params: { para: PolkadotParachainPrimitivesPrimitivesId } }
+  /**
+   * Sets the storage for the authorized current code hash of the parachain.
+   * If not applied, it will be removed at the `System::block_number() + valid_period` block.
+   *
+   * This can be useful, when triggering `Paras::force_set_current_code(para, code)`
+   * from a different chain than the one where the `Paras` pallet is deployed.
+   *
+   * The main purpose is to avoid transferring the entire `code` Wasm blob between chains.
+   * Instead, we authorize `code_hash` with `root`, which can later be applied by
+   * `Paras::apply_authorized_force_set_current_code(para, code)` by anyone.
+   *
+   * Authorizations are stored in an **overwriting manner**.
+   **/
+  | {
+      name: 'AuthorizeForceSetCurrentCodeHash';
+      params: {
+        para: PolkadotParachainPrimitivesPrimitivesId;
+        newCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
+        validPeriod: number;
+      };
+    }
+  /**
+   * Applies the already authorized current code for the parachain,
+   * triggering the same functionality as `force_set_current_code`.
+   **/
+  | {
+      name: 'ApplyAuthorizedForceSetCurrentCode';
+      params: {
+        para: PolkadotParachainPrimitivesPrimitivesId;
+        newCode: PolkadotParachainPrimitivesPrimitivesValidationCode;
+      };
+    };
 
 export type PolkadotPrimitivesV8PvfCheckStatement = {
   accept: boolean;
@@ -12319,7 +12531,11 @@ export type PalletSocietyEvent =
   /**
    * A \[member\] got elevated to \[rank\].
    **/
-  | { name: 'Elevated'; data: { member: AccountId32; rank: number } };
+  | { name: 'Elevated'; data: { member: AccountId32; rank: number } }
+  /**
+   * A deposit was poked / adjusted.
+   **/
+  | { name: 'DepositPoked'; data: { who: AccountId32; oldDeposit: bigint; newDeposit: bigint } };
 
 export type PalletSocietyGroupParams = {
   maxMembers: number;
@@ -12355,12 +12571,27 @@ export type PalletRecoveryEvent =
   /**
    * A recovery process has been removed for an account.
    **/
-  | { name: 'RecoveryRemoved'; data: { lostAccount: AccountId32 } };
+  | { name: 'RecoveryRemoved'; data: { lostAccount: AccountId32 } }
+  /**
+   * A deposit has been updated.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; kind: PalletRecoveryDepositKind; oldDeposit: bigint; newDeposit: bigint };
+    };
+
+export type PalletRecoveryDepositKind = { type: 'RecoveryConfig' } | { type: 'ActiveRecoveryFor'; value: AccountId32 };
+
+export type StagingKusamaRuntimeRuntime = {};
 
 /**
  * The `Event` enum of this pallet
  **/
 export type PalletVestingEvent =
+  /**
+   * A vesting schedule has been created.
+   **/
+  | { name: 'VestingCreated'; data: { account: AccountId32; scheduleIndex: number } }
   /**
    * The amount vested has been updated. This could indicate a change in funds available.
    * The balance given is the amount which is left unvested (and thus locked).
@@ -12440,6 +12671,18 @@ export type PalletProxyEvent =
       data: {
         pure: AccountId32;
         who: AccountId32;
+        proxyType: KusamaRuntimeConstantsProxyProxyType;
+        disambiguationIndex: number;
+      };
+    }
+  /**
+   * A pure proxy was killed by its spawner.
+   **/
+  | {
+      name: 'PureKilled';
+      data: {
+        pure: AccountId32;
+        spawner: AccountId32;
         proxyType: KusamaRuntimeConstantsProxyProxyType;
         disambiguationIndex: number;
       };
@@ -12599,7 +12842,11 @@ export type PalletBountiesEvent =
   /**
    * A bounty curator is accepted.
    **/
-  | { name: 'CuratorAccepted'; data: { bountyId: number; curator: AccountId32 } };
+  | { name: 'CuratorAccepted'; data: { bountyId: number; curator: AccountId32 } }
+  /**
+   * A bounty deposit has been poked.
+   **/
+  | { name: 'DepositPoked'; data: { bountyId: number; proposer: AccountId32; oldDeposit: bigint; newDeposit: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -13076,6 +13323,40 @@ export type PolkadotRuntimeParachainsParasPalletEvent =
   | {
       name: 'PvfCheckRejected';
       data: [PolkadotParachainPrimitivesPrimitivesValidationCodeHash, PolkadotParachainPrimitivesPrimitivesId];
+    }
+  /**
+   * The upgrade cooldown was removed.
+   **/
+  | {
+      name: 'UpgradeCooldownRemoved';
+      data: {
+        /**
+         * The parachain for which the cooldown got removed.
+         **/
+        paraId: PolkadotParachainPrimitivesPrimitivesId;
+      };
+    }
+  /**
+   * A new code hash has been authorized for a Para.
+   **/
+  | {
+      name: 'CodeAuthorized';
+      data: {
+        /**
+         * Para
+         **/
+        paraId: PolkadotParachainPrimitivesPrimitivesId;
+
+        /**
+         * Authorized code hash.
+         **/
+        codeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
+
+        /**
+         * Block at which authorization expires and will be removed.
+         **/
+        expireAt: number;
+      };
     };
 
 /**
@@ -13570,8 +13851,10 @@ export type PalletXcmEvent =
 
 export type StagingXcmV5TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
-  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV5TraitsError } }
-  | { type: 'Error'; value: { error: XcmV5TraitsError } };
+  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: StagingXcmV5TraitsInstructionError } }
+  | { type: 'Error'; value: StagingXcmV5TraitsInstructionError };
+
+export type StagingXcmV5TraitsInstructionError = { index: number; error: XcmV5TraitsError };
 
 export type XcmV3TraitsSendError =
   | 'NotApplicable'
@@ -13784,6 +14067,28 @@ export type FrameSystemError =
    **/
   | 'Unauthorized';
 
+export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
+
+export type FrameSystemExtensionsCheckNonZeroSender = {};
+
+export type FrameSystemExtensionsCheckSpecVersion = {};
+
+export type FrameSystemExtensionsCheckTxVersion = {};
+
+export type FrameSystemExtensionsCheckGenesis = {};
+
+export type FrameSystemExtensionsCheckMortality = Era;
+
+export type FrameSystemExtensionsCheckNonce = number;
+
+export type FrameSystemExtensionsCheckWeight = {};
+
+export type PalletTransactionPaymentChargeTransactionPayment = bigint;
+
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
+
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
+
 export type SpConsensusBabeDigestsPreDigest =
   | { type: 'Primary'; value: SpConsensusBabeDigestsPrimaryPreDigest }
   | { type: 'SecondaryPlain'; value: SpConsensusBabeDigestsSecondaryPlainPreDigest }
@@ -13863,12 +14168,15 @@ export type FrameSupportTokensMiscIdAmount = { id: StagingKusamaRuntimeRuntimeHo
 
 export type StagingKusamaRuntimeRuntimeHoldReason =
   | { type: 'Staking'; value: PalletStakingPalletHoldReason }
+  | { type: 'Session'; value: PalletSessionHoldReason }
   | { type: 'Preimage'; value: PalletPreimageHoldReason }
   | { type: 'Nis'; value: PalletNisHoldReason }
   | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
   | { type: 'XcmPallet'; value: PalletXcmHoldReason };
 
 export type PalletStakingPalletHoldReason = 'Staking';
+
+export type PalletSessionHoldReason = 'Keys';
 
 export type PalletPreimageHoldReason = 'Preimage';
 
@@ -14757,7 +15065,11 @@ export type PalletSocietyError =
   /**
    * The candidate/defender has no stale votes to remove.
    **/
-  | 'NoVotes';
+  | 'NoVotes'
+  /**
+   * There is no deposit associated with a bid.
+   **/
+  | 'NoDeposit';
 
 export type PalletRecoveryRecoveryConfig = {
   delayPeriod: number;
@@ -15137,7 +15449,11 @@ export type PalletBountiesError =
   /**
    * Too many approvals are already queued.
    **/
-  | 'TooManyQueued';
+  | 'TooManyQueued'
+  /**
+   * User is not the proposer of the bounty.
+   **/
+  | 'NotProposer';
 
 export type PalletChildBountiesChildBounty = {
   parentBounty: number;
@@ -15171,10 +15487,16 @@ export type PalletChildBountiesError =
   | 'TooManyChildBounties';
 
 export type PalletElectionProviderMultiPhaseReadySolution = {
-  supports: Array<[AccountId32, SpNposElectionsSupport]>;
+  supports: FrameElectionProviderSupportBoundedSupports;
   score: SpNposElectionsElectionScore;
   compute: PalletElectionProviderMultiPhaseElectionCompute;
 };
+
+export type FrameElectionProviderSupportBoundedSupports = Array<
+  [AccountId32, FrameElectionProviderSupportBoundedSupport]
+>;
+
+export type FrameElectionProviderSupportBoundedSupport = { total: bigint; voters: Array<[AccountId32, bigint]> };
 
 export type PalletElectionProviderMultiPhaseRoundSnapshot = {
   voters: Array<[AccountId32, bigint, Array<AccountId32>]>;
@@ -15354,9 +15676,13 @@ export type PalletBagsListError =
   /**
    * A error in the list interface implementation.
    **/
-  { name: 'List'; data: PalletBagsListListListError };
+  | { name: 'List'; data: PalletBagsListListListError }
+  /**
+   * Could not update a node, because the pallet is locked.
+   **/
+  | { name: 'Locked' };
 
-export type PalletBagsListListListError = 'Duplicate' | 'NotHeavier' | 'NotInSameBag' | 'NodeNotFound';
+export type PalletBagsListListListError = 'Duplicate' | 'NotHeavier' | 'NotInSameBag' | 'NodeNotFound' | 'Locked';
 
 export type PalletNominationPoolsPoolMember = {
   poolId: number;
@@ -15901,6 +16227,11 @@ export type PolkadotRuntimeParachainsParasParaPastCodeMeta = {
 
 export type PolkadotRuntimeParachainsParasReplacementTimes = { expectedAt: number; activatedAt: number };
 
+export type PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry = {
+  codeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
+  expireAt: number;
+};
+
 export type PolkadotPrimitivesV8UpgradeGoAhead = 'Abort' | 'GoAhead';
 
 export type PolkadotPrimitivesV8UpgradeRestriction = 'Present';
@@ -15966,7 +16297,19 @@ export type PolkadotRuntimeParachainsParasPalletError =
   /**
    * Invalid validation code size.
    **/
-  | 'InvalidCode';
+  | 'InvalidCode'
+  /**
+   * No upgrade authorized.
+   **/
+  | 'NothingAuthorized'
+  /**
+   * The submitted code is not authorized.
+   **/
+  | 'Unauthorized'
+  /**
+   * Invalid block number.
+   **/
+  | 'InvalidBlockNumber';
 
 export type PolkadotRuntimeParachainsInitializerBufferedSessionChange = {
   validators: Array<PolkadotPrimitivesV8ValidatorAppPublic>;
@@ -16571,113 +16914,161 @@ export type PalletXcmError =
    * The desired destination was unreachable, generally because there is a no way of routing
    * to it.
    **/
-  | 'Unreachable'
+  | { name: 'Unreachable' }
   /**
    * There was some other issue (i.e. not to do with routing) in sending the message.
    * Perhaps a lack of space for buffering the message.
    **/
-  | 'SendFailure'
+  | { name: 'SendFailure' }
   /**
    * The message execution fails the filter.
    **/
-  | 'Filtered'
+  | { name: 'Filtered' }
   /**
    * The message's weight could not be determined.
    **/
-  | 'UnweighableMessage'
+  | { name: 'UnweighableMessage' }
   /**
    * The destination `Location` provided cannot be inverted.
    **/
-  | 'DestinationNotInvertible'
+  | { name: 'DestinationNotInvertible' }
   /**
    * The assets to be sent are empty.
    **/
-  | 'Empty'
+  | { name: 'Empty' }
   /**
    * Could not re-anchor the assets to declare the fees for the destination chain.
    **/
-  | 'CannotReanchor'
+  | { name: 'CannotReanchor' }
   /**
    * Too many assets have been attempted for transfer.
    **/
-  | 'TooManyAssets'
+  | { name: 'TooManyAssets' }
   /**
    * Origin is invalid for sending.
    **/
-  | 'InvalidOrigin'
+  | { name: 'InvalidOrigin' }
   /**
    * The version of the `Versioned` value used is not able to be interpreted.
    **/
-  | 'BadVersion'
+  | { name: 'BadVersion' }
   /**
    * The given location could not be used (e.g. because it cannot be expressed in the
    * desired version of XCM).
    **/
-  | 'BadLocation'
+  | { name: 'BadLocation' }
   /**
    * The referenced subscription could not be found.
    **/
-  | 'NoSubscription'
+  | { name: 'NoSubscription' }
   /**
    * The location is invalid since it already has a subscription from us.
    **/
-  | 'AlreadySubscribed'
+  | { name: 'AlreadySubscribed' }
   /**
    * Could not check-out the assets for teleportation to the destination chain.
    **/
-  | 'CannotCheckOutTeleport'
+  | { name: 'CannotCheckOutTeleport' }
   /**
    * The owner does not own (all) of the asset that they wish to do the operation on.
    **/
-  | 'LowBalance'
+  | { name: 'LowBalance' }
   /**
    * The asset owner has too many locks on the asset.
    **/
-  | 'TooManyLocks'
+  | { name: 'TooManyLocks' }
   /**
    * The given account is not an identifiable sovereign account for any location.
    **/
-  | 'AccountNotSovereign'
+  | { name: 'AccountNotSovereign' }
   /**
    * The operation required fees to be paid which the initiator could not meet.
    **/
-  | 'FeesNotMet'
+  | { name: 'FeesNotMet' }
   /**
    * A remote lock with the corresponding data could not be found.
    **/
-  | 'LockNotFound'
+  | { name: 'LockNotFound' }
   /**
    * The unlock operation cannot succeed because there are still consumers of the lock.
    **/
-  | 'InUse'
+  | { name: 'InUse' }
   /**
    * Invalid asset, reserve chain could not be determined for it.
    **/
-  | 'InvalidAssetUnknownReserve'
+  | { name: 'InvalidAssetUnknownReserve' }
   /**
    * Invalid asset, do not support remote asset reserves with different fees reserves.
    **/
-  | 'InvalidAssetUnsupportedReserve'
+  | { name: 'InvalidAssetUnsupportedReserve' }
   /**
    * Too many assets with different reserve locations have been attempted for transfer.
    **/
-  | 'TooManyReserves'
+  | { name: 'TooManyReserves' }
   /**
    * Local XCM execution incomplete.
    **/
-  | 'LocalExecutionIncomplete'
+  | { name: 'LocalExecutionIncomplete' }
   /**
    * Too many locations authorized to alias origin.
    **/
-  | 'TooManyAuthorizedAliases'
+  | { name: 'TooManyAuthorizedAliases' }
   /**
    * Expiry block number is in the past.
    **/
-  | 'ExpiresInPast'
+  | { name: 'ExpiresInPast' }
   /**
    * The alias to remove authorization for was not found.
    **/
-  | 'AliasNotFound';
+  | { name: 'AliasNotFound' }
+  /**
+   * Local XCM execution incomplete with the actual XCM error and the index of the
+   * instruction that caused the error.
+   **/
+  | { name: 'LocalExecutionIncompleteWithError'; data: { index: number; error: PalletXcmErrorsExecutionError } };
+
+export type PalletXcmErrorsExecutionError =
+  | 'Overflow'
+  | 'Unimplemented'
+  | 'UntrustedReserveLocation'
+  | 'UntrustedTeleportLocation'
+  | 'LocationFull'
+  | 'LocationNotInvertible'
+  | 'BadOrigin'
+  | 'InvalidLocation'
+  | 'AssetNotFound'
+  | 'FailedToTransactAsset'
+  | 'NotWithdrawable'
+  | 'LocationCannotHold'
+  | 'ExceedsMaxMessageSize'
+  | 'DestinationUnsupported'
+  | 'Transport'
+  | 'Unroutable'
+  | 'UnknownClaim'
+  | 'FailedToDecode'
+  | 'MaxWeightInvalid'
+  | 'NotHoldingFees'
+  | 'TooExpensive'
+  | 'Trap'
+  | 'ExpectationFalse'
+  | 'PalletNotFound'
+  | 'NameMismatch'
+  | 'VersionIncompatible'
+  | 'HoldingWouldOverflow'
+  | 'ExportError'
+  | 'ReanchorFailed'
+  | 'NoDeal'
+  | 'FeesNotMet'
+  | 'LockError'
+  | 'NoPermission'
+  | 'Unanchored'
+  | 'NotDepositable'
+  | 'TooManyAssets'
+  | 'UnhandledXcmVersion'
+  | 'WeightLimitReached'
+  | 'Barrier'
+  | 'WeightNotComputable'
+  | 'ExceedsStackLimit';
 
 export type PalletMessageQueueBookState = {
   begin: number;
@@ -16801,31 +17192,7 @@ export type PalletBeefyError =
 
 export type SpConsensusBeefyMmrBeefyAuthoritySet = { id: bigint; len: number; keysetCommitment: H256 };
 
-export type FrameSystemExtensionsCheckNonZeroSender = {};
-
-export type FrameSystemExtensionsCheckSpecVersion = {};
-
-export type FrameSystemExtensionsCheckTxVersion = {};
-
-export type FrameSystemExtensionsCheckGenesis = {};
-
-export type FrameSystemExtensionsCheckMortality = Era;
-
-export type FrameSystemExtensionsCheckNonce = number;
-
-export type FrameSystemExtensionsCheckWeight = {};
-
-export type PalletTransactionPaymentChargeTransactionPayment = bigint;
-
-export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
-
-export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
-
-export type StagingKusamaRuntimeRuntime = {};
-
 export type RelayCommonApisInflationInfo = { inflation: Perquintill; nextMint: [bigint, bigint] };
-
-export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
 
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 

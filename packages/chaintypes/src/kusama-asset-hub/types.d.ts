@@ -6,21 +6,21 @@ import type {
   DispatchError,
   AccountId32,
   FixedBytes,
-  FixedArray,
   Bytes,
+  FixedArray,
   FixedU128,
   Result,
   Permill,
   H160,
   BytesLike,
+  Header,
   MultiAddress,
   MultiAddressLike,
   AccountId32Like,
-  Perbill,
-  Era,
-  Header,
-  UncheckedExtrinsic,
   U256,
+  UncheckedExtrinsic,
+  Era,
+  Perbill,
 } from 'dedot/codecs';
 
 export type FrameSystemAccountInfo = {
@@ -53,6 +53,7 @@ export type FrameSystemEventRecord = { phase: Phase; event: AssetHubKusamaRuntim
 export type AssetHubKusamaRuntimeRuntimeEvent =
   | { pallet: 'System'; palletEvent: FrameSystemEvent }
   | { pallet: 'ParachainSystem'; palletEvent: CumulusPalletParachainSystemEvent }
+  | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent }
   | { pallet: 'Balances'; palletEvent: PalletBalancesEvent }
   | { pallet: 'TransactionPayment'; palletEvent: PalletTransactionPaymentEvent }
   | { pallet: 'AssetTxPayment'; palletEvent: PalletAssetConversionTxPaymentEvent }
@@ -172,6 +173,117 @@ export type CumulusPalletParachainSystemEvent =
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletMigrationsEvent =
+  /**
+   * A Runtime upgrade started.
+   *
+   * Its end is indicated by `UpgradeCompleted` or `UpgradeFailed`.
+   **/
+  | {
+      name: 'UpgradeStarted';
+      data: {
+        /**
+         * The number of migrations that this upgrade contains.
+         *
+         * This can be used to design a progress indicator in combination with counting the
+         * `MigrationCompleted` and `MigrationSkipped` events.
+         **/
+        migrations: number;
+      };
+    }
+  /**
+   * The current runtime upgrade completed.
+   *
+   * This implies that all of its migrations completed successfully as well.
+   **/
+  | { name: 'UpgradeCompleted' }
+  /**
+   * Runtime upgrade failed.
+   *
+   * This is very bad and will require governance intervention.
+   **/
+  | { name: 'UpgradeFailed' }
+  /**
+   * A migration was skipped since it was already executed in the past.
+   **/
+  | {
+      name: 'MigrationSkipped';
+      data: {
+        /**
+         * The index of the skipped migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+      };
+    }
+  /**
+   * A migration progressed.
+   **/
+  | {
+      name: 'MigrationAdvanced';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * A Migration completed.
+   **/
+  | {
+      name: 'MigrationCompleted';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * A Migration failed.
+   *
+   * This implies that the whole upgrade failed and governance intervention is required.
+   **/
+  | {
+      name: 'MigrationFailed';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * The set of historical migrations has been cleared.
+   **/
+  | {
+      name: 'HistoricCleared';
+      data: {
+        /**
+         * Should be passed to `clear_historic` in a successive call.
+         **/
+        nextCursor?: Bytes | undefined;
+      };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PalletBalancesEvent =
   /**
    * An account was created with some free balance.
@@ -270,9 +382,15 @@ export type PalletBalancesEvent =
   /**
    * The `TotalIssuance` was forcefully changed.
    **/
-  | { name: 'TotalIssuanceForced'; data: { old: bigint; new: bigint } };
+  | { name: 'TotalIssuanceForced'; data: { old: bigint; new: bigint } }
+  /**
+   * An unexpected/defensive event was triggered.
+   **/
+  | { name: 'Unexpected'; data: PalletBalancesUnexpectedKind };
 
 export type FrameSupportTokensMiscBalanceStatus = 'Free' | 'Reserved';
+
+export type PalletBalancesUnexpectedKind = 'BalanceUpdated' | 'FailedToMutateAccount';
 
 /**
  * The `Event` enum of this pallet
@@ -294,46 +412,43 @@ export type PalletAssetConversionTxPaymentEvent =
    **/
   | {
       name: 'AssetTxFeePaid';
-      data: { who: AccountId32; actualFee: bigint; tip: bigint; assetId: StagingXcmV4Location };
+      data: { who: AccountId32; actualFee: bigint; tip: bigint; assetId: StagingXcmV5Location };
     }
   /**
    * A swap of the refund in native currency back to asset failed.
    **/
   | { name: 'AssetRefundFailed'; data: { nativeAmountKept: bigint } };
 
-export type StagingXcmV4Location = { parents: number; interior: StagingXcmV4Junctions };
+export type StagingXcmV5Location = { parents: number; interior: StagingXcmV5Junctions };
 
-export type StagingXcmV4Junctions =
+export type StagingXcmV5Junctions =
   | { type: 'Here' }
-  | { type: 'X1'; value: FixedArray<StagingXcmV4Junction, 1> }
-  | { type: 'X2'; value: FixedArray<StagingXcmV4Junction, 2> }
-  | { type: 'X3'; value: FixedArray<StagingXcmV4Junction, 3> }
-  | { type: 'X4'; value: FixedArray<StagingXcmV4Junction, 4> }
-  | { type: 'X5'; value: FixedArray<StagingXcmV4Junction, 5> }
-  | { type: 'X6'; value: FixedArray<StagingXcmV4Junction, 6> }
-  | { type: 'X7'; value: FixedArray<StagingXcmV4Junction, 7> }
-  | { type: 'X8'; value: FixedArray<StagingXcmV4Junction, 8> };
+  | { type: 'X1'; value: FixedArray<StagingXcmV5Junction, 1> }
+  | { type: 'X2'; value: FixedArray<StagingXcmV5Junction, 2> }
+  | { type: 'X3'; value: FixedArray<StagingXcmV5Junction, 3> }
+  | { type: 'X4'; value: FixedArray<StagingXcmV5Junction, 4> }
+  | { type: 'X5'; value: FixedArray<StagingXcmV5Junction, 5> }
+  | { type: 'X6'; value: FixedArray<StagingXcmV5Junction, 6> }
+  | { type: 'X7'; value: FixedArray<StagingXcmV5Junction, 7> }
+  | { type: 'X8'; value: FixedArray<StagingXcmV5Junction, 8> };
 
-export type StagingXcmV4Junction =
+export type StagingXcmV5Junction =
   | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; index: bigint } }
-  | { type: 'AccountKey20'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; key: FixedBytes<20> } }
+  | { type: 'AccountId32'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; key: FixedBytes<20> } }
   | { type: 'PalletInstance'; value: number }
   | { type: 'GeneralIndex'; value: bigint }
   | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
   | { type: 'OnlyChild' }
   | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
-  | { type: 'GlobalConsensus'; value: StagingXcmV4JunctionNetworkId };
+  | { type: 'GlobalConsensus'; value: StagingXcmV5JunctionNetworkId };
 
-export type StagingXcmV4JunctionNetworkId =
+export type StagingXcmV5JunctionNetworkId =
   | { type: 'ByGenesis'; value: FixedBytes<32> }
   | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
   | { type: 'Polkadot' }
   | { type: 'Kusama' }
-  | { type: 'Westend' }
-  | { type: 'Rococo' }
-  | { type: 'Wococo' }
   | { type: 'Ethereum'; value: { chainId: bigint } }
   | { type: 'BitcoinCore' }
   | { type: 'BitcoinCash' }
@@ -362,6 +477,10 @@ export type XcmV3JunctionBodyPart =
  * The `Event` enum of this pallet
  **/
 export type PalletVestingEvent =
+  /**
+   * A vesting schedule has been created.
+   **/
+  | { name: 'VestingCreated'; data: { account: AccountId32; scheduleIndex: number } }
   /**
    * The amount vested has been updated. This could indicate a change in funds available.
    * The balance given is the amount which is left unvested (and thus locked).
@@ -427,6 +546,11 @@ export type PalletSessionEvent =
    * block number as the type might suggest.
    **/
   | { name: 'NewSession'; data: { sessionIndex: number } }
+  /**
+   * The `NewSession` event in the current block also implies a new validator set to be
+   * queued.
+   **/
+  | { name: 'NewQueued' }
   /**
    * Validator has been disabled.
    **/
@@ -660,8 +784,10 @@ export type PalletXcmEvent =
 
 export type StagingXcmV5TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
-  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV5TraitsError } }
-  | { type: 'Error'; value: { error: XcmV5TraitsError } };
+  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: StagingXcmV5TraitsInstructionError } }
+  | { type: 'Error'; value: StagingXcmV5TraitsInstructionError };
+
+export type StagingXcmV5TraitsInstructionError = { index: number; error: XcmV5TraitsError };
 
 export type XcmV5TraitsError =
   | { type: 'Overflow' }
@@ -705,41 +831,6 @@ export type XcmV5TraitsError =
   | { type: 'Barrier' }
   | { type: 'WeightNotComputable' }
   | { type: 'ExceedsStackLimit' };
-
-export type StagingXcmV5Location = { parents: number; interior: StagingXcmV5Junctions };
-
-export type StagingXcmV5Junctions =
-  | { type: 'Here' }
-  | { type: 'X1'; value: FixedArray<StagingXcmV5Junction, 1> }
-  | { type: 'X2'; value: FixedArray<StagingXcmV5Junction, 2> }
-  | { type: 'X3'; value: FixedArray<StagingXcmV5Junction, 3> }
-  | { type: 'X4'; value: FixedArray<StagingXcmV5Junction, 4> }
-  | { type: 'X5'; value: FixedArray<StagingXcmV5Junction, 5> }
-  | { type: 'X6'; value: FixedArray<StagingXcmV5Junction, 6> }
-  | { type: 'X7'; value: FixedArray<StagingXcmV5Junction, 7> }
-  | { type: 'X8'; value: FixedArray<StagingXcmV5Junction, 8> };
-
-export type StagingXcmV5Junction =
-  | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; index: bigint } }
-  | { type: 'AccountKey20'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; key: FixedBytes<20> } }
-  | { type: 'PalletInstance'; value: number }
-  | { type: 'GeneralIndex'; value: bigint }
-  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
-  | { type: 'OnlyChild' }
-  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
-  | { type: 'GlobalConsensus'; value: StagingXcmV5JunctionNetworkId };
-
-export type StagingXcmV5JunctionNetworkId =
-  | { type: 'ByGenesis'; value: FixedBytes<32> }
-  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
-  | { type: 'Polkadot' }
-  | { type: 'Kusama' }
-  | { type: 'Ethereum'; value: { chainId: bigint } }
-  | { type: 'BitcoinCore' }
-  | { type: 'BitcoinCash' }
-  | { type: 'PolkadotBulletin' };
 
 export type StagingXcmV5Xcm = Array<StagingXcmV5Instruction>;
 
@@ -1014,6 +1105,44 @@ export type StagingXcmV4AssetAssets = Array<StagingXcmV4Asset>;
 export type StagingXcmV4Asset = { id: StagingXcmV4AssetAssetId; fun: StagingXcmV4AssetFungibility };
 
 export type StagingXcmV4AssetAssetId = StagingXcmV4Location;
+
+export type StagingXcmV4Location = { parents: number; interior: StagingXcmV4Junctions };
+
+export type StagingXcmV4Junctions =
+  | { type: 'Here' }
+  | { type: 'X1'; value: FixedArray<StagingXcmV4Junction, 1> }
+  | { type: 'X2'; value: FixedArray<StagingXcmV4Junction, 2> }
+  | { type: 'X3'; value: FixedArray<StagingXcmV4Junction, 3> }
+  | { type: 'X4'; value: FixedArray<StagingXcmV4Junction, 4> }
+  | { type: 'X5'; value: FixedArray<StagingXcmV4Junction, 5> }
+  | { type: 'X6'; value: FixedArray<StagingXcmV4Junction, 6> }
+  | { type: 'X7'; value: FixedArray<StagingXcmV4Junction, 7> }
+  | { type: 'X8'; value: FixedArray<StagingXcmV4Junction, 8> };
+
+export type StagingXcmV4Junction =
+  | { type: 'Parachain'; value: number }
+  | { type: 'AccountId32'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; key: FixedBytes<20> } }
+  | { type: 'PalletInstance'; value: number }
+  | { type: 'GeneralIndex'; value: bigint }
+  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
+  | { type: 'OnlyChild' }
+  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
+  | { type: 'GlobalConsensus'; value: StagingXcmV4JunctionNetworkId };
+
+export type StagingXcmV4JunctionNetworkId =
+  | { type: 'ByGenesis'; value: FixedBytes<32> }
+  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
+  | { type: 'Polkadot' }
+  | { type: 'Kusama' }
+  | { type: 'Westend' }
+  | { type: 'Rococo' }
+  | { type: 'Wococo' }
+  | { type: 'Ethereum'; value: { chainId: bigint } }
+  | { type: 'BitcoinCore' }
+  | { type: 'BitcoinCash' }
+  | { type: 'PolkadotBulletin' };
 
 export type StagingXcmV4AssetFungibility =
   | { type: 'Fungible'; value: bigint }
@@ -1312,6 +1441,18 @@ export type PalletProxyEvent =
       data: {
         pure: AccountId32;
         who: AccountId32;
+        proxyType: AssetHubKusamaRuntimeProxyType;
+        disambiguationIndex: number;
+      };
+    }
+  /**
+   * A pure proxy was killed by its spawner.
+   **/
+  | {
+      name: 'PureKilled';
+      data: {
+        pure: AccountId32;
+        spawner: AccountId32;
         proxyType: AssetHubKusamaRuntimeProxyType;
         disambiguationIndex: number;
       };
@@ -1855,94 +1996,94 @@ export type PalletAssetsEvent002 =
   /**
    * Some asset class was created.
    **/
-  | { name: 'Created'; data: { assetId: StagingXcmV4Location; creator: AccountId32; owner: AccountId32 } }
+  | { name: 'Created'; data: { assetId: StagingXcmV5Location; creator: AccountId32; owner: AccountId32 } }
   /**
    * Some assets were issued.
    **/
-  | { name: 'Issued'; data: { assetId: StagingXcmV4Location; owner: AccountId32; amount: bigint } }
+  | { name: 'Issued'; data: { assetId: StagingXcmV5Location; owner: AccountId32; amount: bigint } }
   /**
    * Some assets were transferred.
    **/
-  | { name: 'Transferred'; data: { assetId: StagingXcmV4Location; from: AccountId32; to: AccountId32; amount: bigint } }
+  | { name: 'Transferred'; data: { assetId: StagingXcmV5Location; from: AccountId32; to: AccountId32; amount: bigint } }
   /**
    * Some assets were destroyed.
    **/
-  | { name: 'Burned'; data: { assetId: StagingXcmV4Location; owner: AccountId32; balance: bigint } }
+  | { name: 'Burned'; data: { assetId: StagingXcmV5Location; owner: AccountId32; balance: bigint } }
   /**
    * The management team changed.
    **/
   | {
       name: 'TeamChanged';
-      data: { assetId: StagingXcmV4Location; issuer: AccountId32; admin: AccountId32; freezer: AccountId32 };
+      data: { assetId: StagingXcmV5Location; issuer: AccountId32; admin: AccountId32; freezer: AccountId32 };
     }
   /**
    * The owner changed.
    **/
-  | { name: 'OwnerChanged'; data: { assetId: StagingXcmV4Location; owner: AccountId32 } }
+  | { name: 'OwnerChanged'; data: { assetId: StagingXcmV5Location; owner: AccountId32 } }
   /**
    * Some account `who` was frozen.
    **/
-  | { name: 'Frozen'; data: { assetId: StagingXcmV4Location; who: AccountId32 } }
+  | { name: 'Frozen'; data: { assetId: StagingXcmV5Location; who: AccountId32 } }
   /**
    * Some account `who` was thawed.
    **/
-  | { name: 'Thawed'; data: { assetId: StagingXcmV4Location; who: AccountId32 } }
+  | { name: 'Thawed'; data: { assetId: StagingXcmV5Location; who: AccountId32 } }
   /**
    * Some asset `asset_id` was frozen.
    **/
-  | { name: 'AssetFrozen'; data: { assetId: StagingXcmV4Location } }
+  | { name: 'AssetFrozen'; data: { assetId: StagingXcmV5Location } }
   /**
    * Some asset `asset_id` was thawed.
    **/
-  | { name: 'AssetThawed'; data: { assetId: StagingXcmV4Location } }
+  | { name: 'AssetThawed'; data: { assetId: StagingXcmV5Location } }
   /**
    * Accounts were destroyed for given asset.
    **/
   | {
       name: 'AccountsDestroyed';
-      data: { assetId: StagingXcmV4Location; accountsDestroyed: number; accountsRemaining: number };
+      data: { assetId: StagingXcmV5Location; accountsDestroyed: number; accountsRemaining: number };
     }
   /**
    * Approvals were destroyed for given asset.
    **/
   | {
       name: 'ApprovalsDestroyed';
-      data: { assetId: StagingXcmV4Location; approvalsDestroyed: number; approvalsRemaining: number };
+      data: { assetId: StagingXcmV5Location; approvalsDestroyed: number; approvalsRemaining: number };
     }
   /**
    * An asset class is in the process of being destroyed.
    **/
-  | { name: 'DestructionStarted'; data: { assetId: StagingXcmV4Location } }
+  | { name: 'DestructionStarted'; data: { assetId: StagingXcmV5Location } }
   /**
    * An asset class was destroyed.
    **/
-  | { name: 'Destroyed'; data: { assetId: StagingXcmV4Location } }
+  | { name: 'Destroyed'; data: { assetId: StagingXcmV5Location } }
   /**
    * Some asset class was force-created.
    **/
-  | { name: 'ForceCreated'; data: { assetId: StagingXcmV4Location; owner: AccountId32 } }
+  | { name: 'ForceCreated'; data: { assetId: StagingXcmV5Location; owner: AccountId32 } }
   /**
    * New metadata has been set for an asset.
    **/
   | {
       name: 'MetadataSet';
-      data: { assetId: StagingXcmV4Location; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean };
+      data: { assetId: StagingXcmV5Location; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean };
     }
   /**
    * Metadata has been cleared for an asset.
    **/
-  | { name: 'MetadataCleared'; data: { assetId: StagingXcmV4Location } }
+  | { name: 'MetadataCleared'; data: { assetId: StagingXcmV5Location } }
   /**
    * (Additional) funds have been approved for transfer to a destination account.
    **/
   | {
       name: 'ApprovedTransfer';
-      data: { assetId: StagingXcmV4Location; source: AccountId32; delegate: AccountId32; amount: bigint };
+      data: { assetId: StagingXcmV5Location; source: AccountId32; delegate: AccountId32; amount: bigint };
     }
   /**
    * An approval for account `delegate` was cancelled by `owner`.
    **/
-  | { name: 'ApprovalCancelled'; data: { assetId: StagingXcmV4Location; owner: AccountId32; delegate: AccountId32 } }
+  | { name: 'ApprovalCancelled'; data: { assetId: StagingXcmV5Location; owner: AccountId32; delegate: AccountId32 } }
   /**
    * An `amount` was transferred in its entirety from `owner` to `destination` by
    * the approved `delegate`.
@@ -1950,7 +2091,7 @@ export type PalletAssetsEvent002 =
   | {
       name: 'TransferredApproved';
       data: {
-        assetId: StagingXcmV4Location;
+        assetId: StagingXcmV5Location;
         owner: AccountId32;
         delegate: AccountId32;
         destination: AccountId32;
@@ -1960,27 +2101,27 @@ export type PalletAssetsEvent002 =
   /**
    * An asset has had its attributes changed by the `Force` origin.
    **/
-  | { name: 'AssetStatusChanged'; data: { assetId: StagingXcmV4Location } }
+  | { name: 'AssetStatusChanged'; data: { assetId: StagingXcmV5Location } }
   /**
    * The min_balance of an asset has been updated by the asset owner.
    **/
-  | { name: 'AssetMinBalanceChanged'; data: { assetId: StagingXcmV4Location; newMinBalance: bigint } }
+  | { name: 'AssetMinBalanceChanged'; data: { assetId: StagingXcmV5Location; newMinBalance: bigint } }
   /**
    * Some account `who` was created with a deposit from `depositor`.
    **/
-  | { name: 'Touched'; data: { assetId: StagingXcmV4Location; who: AccountId32; depositor: AccountId32 } }
+  | { name: 'Touched'; data: { assetId: StagingXcmV5Location; who: AccountId32; depositor: AccountId32 } }
   /**
    * Some account `who` was blocked.
    **/
-  | { name: 'Blocked'; data: { assetId: StagingXcmV4Location; who: AccountId32 } }
+  | { name: 'Blocked'; data: { assetId: StagingXcmV5Location; who: AccountId32 } }
   /**
    * Some assets were deposited (e.g. for transaction fees).
    **/
-  | { name: 'Deposited'; data: { assetId: StagingXcmV4Location; who: AccountId32; amount: bigint } }
+  | { name: 'Deposited'; data: { assetId: StagingXcmV5Location; who: AccountId32; amount: bigint } }
   /**
    * Some assets were withdrawn from the account (e.g. for transaction fees).
    **/
-  | { name: 'Withdrawn'; data: { assetId: StagingXcmV4Location; who: AccountId32; amount: bigint } };
+  | { name: 'Withdrawn'; data: { assetId: StagingXcmV5Location; who: AccountId32; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -2017,7 +2158,7 @@ export type PalletAssetConversionEvent =
          * The pool id associated with the pool. Note that the order of the assets may not be
          * the same as the order specified in the create pool extrinsic.
          **/
-        poolId: [StagingXcmV4Location, StagingXcmV4Location];
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
 
         /**
          * The account ID of the pool.
@@ -2050,7 +2191,7 @@ export type PalletAssetConversionEvent =
         /**
          * The pool id of the pool that the liquidity was added to.
          **/
-        poolId: [StagingXcmV4Location, StagingXcmV4Location];
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
 
         /**
          * The amount of the first asset that was added to the pool.
@@ -2092,7 +2233,7 @@ export type PalletAssetConversionEvent =
         /**
          * The pool id that the liquidity was removed from.
          **/
-        poolId: [StagingXcmV4Location, StagingXcmV4Location];
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
 
         /**
          * The amount of the first asset that was removed from the pool.
@@ -2151,7 +2292,7 @@ export type PalletAssetConversionEvent =
          * The route of asset IDs with amounts that the swap went through.
          * E.g. (A, amount_in) -> (Dot, amount_out) -> (B, amount_out)
          **/
-        path: Array<[StagingXcmV4Location, bigint]>;
+        path: Array<[StagingXcmV5Location, bigint]>;
       };
     }
   /**
@@ -2174,7 +2315,7 @@ export type PalletAssetConversionEvent =
          * The route of asset IDs with amounts that the swap went through.
          * E.g. (A, amount_in) -> (Dot, amount_out) -> (B, amount_out)
          **/
-        path: Array<[StagingXcmV4Location, bigint]>;
+        path: Array<[StagingXcmV5Location, bigint]>;
       };
     }
   /**
@@ -2186,7 +2327,7 @@ export type PalletAssetConversionEvent =
         /**
          * The ID of the pool.
          **/
-        poolId: [StagingXcmV4Location, StagingXcmV4Location];
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
 
         /**
          * The account initiating the touch.
@@ -2202,27 +2343,31 @@ export type PalletReviveEvent =
   /**
    * A custom event emitted by the contract.
    **/
-  {
-    name: 'ContractEmitted';
-    data: {
-      /**
-       * The contract that emitted the event.
-       **/
-      contract: H160;
+  | {
+      name: 'ContractEmitted';
+      data: {
+        /**
+         * The contract that emitted the event.
+         **/
+        contract: H160;
 
-      /**
-       * Data supplied by the contract. Metadata generated during contract compilation
-       * is needed to decode it.
-       **/
-      data: Bytes;
+        /**
+         * Data supplied by the contract. Metadata generated during contract compilation
+         * is needed to decode it.
+         **/
+        data: Bytes;
 
-      /**
-       * A list of topics used to index the event.
-       * Number of topics is capped by [`limits::NUM_EVENT_TOPICS`].
-       **/
-      topics: Array<H256>;
-    };
-  };
+        /**
+         * A list of topics used to index the event.
+         * Number of topics is capped by [`limits::NUM_EVENT_TOPICS`].
+         **/
+        topics: Array<H256>;
+      };
+    }
+  /**
+   * Contract deployed by deployer at the specified address.
+   **/
+  | { name: 'Instantiated'; data: { deployer: H160; contract: H160 } };
 
 /**
  * Inner events of this pallet.
@@ -2504,88 +2649,63 @@ export type FrameSystemError =
    **/
   | 'Unauthorized';
 
-export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
-  usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
-  paraHeadHash?: H256 | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
-};
+export type AssetHubKusamaRuntimeRuntimeCall =
+  | { pallet: 'System'; palletCall: FrameSystemCall }
+  | { pallet: 'ParachainSystem'; palletCall: CumulusPalletParachainSystemCall }
+  | { pallet: 'Timestamp'; palletCall: PalletTimestampCall }
+  | { pallet: 'ParachainInfo'; palletCall: StagingParachainInfoCall }
+  | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCall }
+  | { pallet: 'Balances'; palletCall: PalletBalancesCall }
+  | { pallet: 'Vesting'; palletCall: PalletVestingCall }
+  | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCall }
+  | { pallet: 'Session'; palletCall: PalletSessionCall }
+  | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCall }
+  | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCall }
+  | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCall }
+  | { pallet: 'ToPolkadotXcmRouter'; palletCall: PalletXcmBridgeHubRouterCall }
+  | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
+  | { pallet: 'Utility'; palletCall: PalletUtilityCall }
+  | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
+  | { pallet: 'Proxy'; palletCall: PalletProxyCall }
+  | { pallet: 'RemoteProxyRelayChain'; palletCall: PalletRemoteProxyCall }
+  | { pallet: 'Assets'; palletCall: PalletAssetsCall }
+  | { pallet: 'Uniques'; palletCall: PalletUniquesCall }
+  | { pallet: 'Nfts'; palletCall: PalletNftsCall }
+  | { pallet: 'ForeignAssets'; palletCall: PalletAssetsCall002 }
+  | { pallet: 'NftFractionalization'; palletCall: PalletNftFractionalizationCall }
+  | { pallet: 'PoolAssets'; palletCall: PalletAssetsCall003 }
+  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall }
+  | { pallet: 'Revive'; palletCall: PalletReviveCall }
+  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall };
 
-export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
-  umpMsgCount: number;
-  umpTotalBytes: number;
-  hrmpOutgoing: Array<
-    [PolkadotParachainPrimitivesPrimitivesId, CumulusPalletParachainSystemUnincludedSegmentHrmpChannelUpdate]
-  >;
-};
-
-export type CumulusPalletParachainSystemUnincludedSegmentHrmpChannelUpdate = { msgCount: number; totalBytes: number };
-
-export type PolkadotPrimitivesV8UpgradeGoAhead = 'Abort' | 'GoAhead';
-
-export type CumulusPalletParachainSystemUnincludedSegmentSegmentTracker = {
-  usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
-  hrmpWatermark?: number | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
-};
-
-export type PolkadotPrimitivesV8PersistedValidationData = {
-  parentHead: PolkadotParachainPrimitivesPrimitivesHeadData;
-  relayParentNumber: number;
-  relayParentStorageRoot: H256;
-  maxPovSize: number;
-};
-
-export type PolkadotParachainPrimitivesPrimitivesHeadData = Bytes;
-
-export type PolkadotPrimitivesV8UpgradeRestriction = 'Present';
-
-export type SpTrieStorageProof = { trieNodes: Array<Bytes> };
-
-export type CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot = {
-  dmqMqcHead: H256;
-  relayDispatchQueueRemainingCapacity: CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity;
-  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
-  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
-};
-
-export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity = {
-  remainingCount: number;
-  remainingSize: number;
-};
-
-export type PolkadotPrimitivesV8AbridgedHrmpChannel = {
-  maxCapacity: number;
-  maxTotalSize: number;
-  maxMessageSize: number;
-  msgCount: number;
-  totalSize: number;
-  mqcHead?: H256 | undefined;
-};
-
-export type PolkadotPrimitivesV8AbridgedHostConfiguration = {
-  maxCodeSize: number;
-  maxHeadDataSize: number;
-  maxUpwardQueueCount: number;
-  maxUpwardQueueSize: number;
-  maxUpwardMessageSize: number;
-  maxUpwardMessageNumPerCandidate: number;
-  hrmpMaxMessageNumPerCandidate: number;
-  validationUpgradeCooldown: number;
-  validationUpgradeDelay: number;
-  asyncBackingParams: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams;
-};
-
-export type PolkadotPrimitivesV8AsyncBackingAsyncBackingParams = {
-  maxCandidateDepth: number;
-  allowedAncestryLen: number;
-};
-
-export type CumulusPrimitivesParachainInherentMessageQueueChain = H256;
-
-export type PolkadotCorePrimitivesOutboundHrmpMessage = {
-  recipient: PolkadotParachainPrimitivesPrimitivesId;
-  data: Bytes;
-};
+export type AssetHubKusamaRuntimeRuntimeCallLike =
+  | { pallet: 'System'; palletCall: FrameSystemCallLike }
+  | { pallet: 'ParachainSystem'; palletCall: CumulusPalletParachainSystemCallLike }
+  | { pallet: 'Timestamp'; palletCall: PalletTimestampCallLike }
+  | { pallet: 'ParachainInfo'; palletCall: StagingParachainInfoCallLike }
+  | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCallLike }
+  | { pallet: 'Balances'; palletCall: PalletBalancesCallLike }
+  | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
+  | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCallLike }
+  | { pallet: 'Session'; palletCall: PalletSessionCallLike }
+  | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCallLike }
+  | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCallLike }
+  | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCallLike }
+  | { pallet: 'ToPolkadotXcmRouter'; palletCall: PalletXcmBridgeHubRouterCallLike }
+  | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
+  | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
+  | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
+  | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
+  | { pallet: 'RemoteProxyRelayChain'; palletCall: PalletRemoteProxyCallLike }
+  | { pallet: 'Assets'; palletCall: PalletAssetsCallLike }
+  | { pallet: 'Uniques'; palletCall: PalletUniquesCallLike }
+  | { pallet: 'Nfts'; palletCall: PalletNftsCallLike }
+  | { pallet: 'ForeignAssets'; palletCall: PalletAssetsCallLike002 }
+  | { pallet: 'NftFractionalization'; palletCall: PalletNftFractionalizationCallLike }
+  | { pallet: 'PoolAssets'; palletCall: PalletAssetsCallLike003 }
+  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike }
+  | { pallet: 'Revive'; palletCall: PalletReviveCallLike }
+  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2602,7 +2722,13 @@ export type CumulusPalletParachainSystemCall =
    * As a side effect, this function upgrades the current validation function
    * if the appropriate time has come.
    **/
-  | { name: 'SetValidationData'; params: { data: CumulusPrimitivesParachainInherentParachainInherentData } }
+  | {
+      name: 'SetValidationData';
+      params: {
+        data: CumulusPalletParachainSystemParachainInherentBasicParachainInherentData;
+        inboundMessagesData: CumulusPalletParachainSystemParachainInherentInboundMessagesData;
+      };
+    }
   | { name: 'SudoSendUpwardMessage'; params: { message: Bytes } };
 
 export type CumulusPalletParachainSystemCallLike =
@@ -2617,49 +2743,53 @@ export type CumulusPalletParachainSystemCallLike =
    * As a side effect, this function upgrades the current validation function
    * if the appropriate time has come.
    **/
-  | { name: 'SetValidationData'; params: { data: CumulusPrimitivesParachainInherentParachainInherentData } }
+  | {
+      name: 'SetValidationData';
+      params: {
+        data: CumulusPalletParachainSystemParachainInherentBasicParachainInherentData;
+        inboundMessagesData: CumulusPalletParachainSystemParachainInherentInboundMessagesData;
+      };
+    }
   | { name: 'SudoSendUpwardMessage'; params: { message: BytesLike } };
 
-export type CumulusPrimitivesParachainInherentParachainInherentData = {
+export type CumulusPalletParachainSystemParachainInherentBasicParachainInherentData = {
   validationData: PolkadotPrimitivesV8PersistedValidationData;
   relayChainState: SpTrieStorageProof;
-  downwardMessages: Array<PolkadotCorePrimitivesInboundDownwardMessage>;
-  horizontalMessages: Array<[PolkadotParachainPrimitivesPrimitivesId, Array<PolkadotCorePrimitivesInboundHrmpMessage>]>;
+  relayParentDescendants: Array<Header>;
+  collatorPeerId?: Bytes | undefined;
+};
+
+export type PolkadotPrimitivesV8PersistedValidationData = {
+  parentHead: PolkadotParachainPrimitivesPrimitivesHeadData;
+  relayParentNumber: number;
+  relayParentStorageRoot: H256;
+  maxPovSize: number;
+};
+
+export type PolkadotParachainPrimitivesPrimitivesHeadData = Bytes;
+
+export type SpTrieStorageProof = { trieNodes: Array<Bytes> };
+
+export type CumulusPalletParachainSystemParachainInherentInboundMessagesData = {
+  downwardMessages: CumulusPalletParachainSystemParachainInherentAbridgedInboundMessagesCollection;
+  horizontalMessages: CumulusPalletParachainSystemParachainInherentAbridgedInboundMessagesCollection002;
+};
+
+export type CumulusPalletParachainSystemParachainInherentAbridgedInboundMessagesCollection = {
+  fullMessages: Array<PolkadotCorePrimitivesInboundDownwardMessage>;
+  hashedMessages: Array<CumulusPrimitivesParachainInherentHashedMessage>;
 };
 
 export type PolkadotCorePrimitivesInboundDownwardMessage = { sentAt: number; msg: Bytes };
 
-export type PolkadotCorePrimitivesInboundHrmpMessage = { sentAt: number; data: Bytes };
+export type CumulusPrimitivesParachainInherentHashedMessage = { sentAt: number; msgHash: H256 };
 
-/**
- * The `Error` enum of this pallet.
- **/
-export type CumulusPalletParachainSystemError =
-  /**
-   * Attempt to upgrade validation function while existing upgrade pending.
-   **/
-  | 'OverlappingUpgrades'
-  /**
-   * Polkadot currently prohibits this parachain from upgrading its validation function.
-   **/
-  | 'ProhibitedByPolkadot'
-  /**
-   * The supplied validation function has compiled into a blob larger than Polkadot is
-   * willing to run.
-   **/
-  | 'TooBig'
-  /**
-   * The inherent which supplies the validation data did not run this block.
-   **/
-  | 'ValidationDataNotAvailable'
-  /**
-   * The inherent which supplies the host configuration did not run this block.
-   **/
-  | 'HostConfigurationNotAvailable'
-  /**
-   * No validation function upgrade is currently scheduled.
-   **/
-  | 'NotScheduled';
+export type CumulusPalletParachainSystemParachainInherentAbridgedInboundMessagesCollection002 = {
+  fullMessages: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotCorePrimitivesInboundHrmpMessage]>;
+  hashedMessages: Array<[PolkadotParachainPrimitivesPrimitivesId, CumulusPrimitivesParachainInherentHashedMessage]>;
+};
+
+export type PolkadotCorePrimitivesInboundHrmpMessage = { sentAt: number; data: Bytes };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2719,29 +2849,92 @@ export type StagingParachainInfoCall = null;
 
 export type StagingParachainInfoCallLike = null;
 
-export type PalletBalancesBalanceLock = { id: FixedBytes<8>; amount: bigint; reasons: PalletBalancesReasons };
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletMigrationsCall =
+  /**
+   * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+   *
+   * Should normally not be needed and is only in place as emergency measure. Note that
+   * restarting the migration process in this manner will not call the
+   * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+   **/
+  | { name: 'ForceSetCursor'; params: { cursor?: PalletMigrationsMigrationCursor | undefined } }
+  /**
+   * Allows root to set an active cursor to forcefully start/forward the migration process.
+   *
+   * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+   * `started_at` value to the next block number. Otherwise this would not be possible, since
+   * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+   * indicates that the current block number plus one should be used.
+   **/
+  | {
+      name: 'ForceSetActiveCursor';
+      params: { index: number; innerCursor?: Bytes | undefined; startedAt?: number | undefined };
+    }
+  /**
+   * Forces the onboarding of the migrations.
+   *
+   * This process happens automatically on a runtime upgrade. It is in place as an emergency
+   * measurement. The cursor needs to be `None` for this to succeed.
+   **/
+  | { name: 'ForceOnboardMbms' }
+  /**
+   * Clears the `Historic` set.
+   *
+   * `map_cursor` must be set to the last value that was returned by the
+   * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+   * way that will result in a sensible weight.
+   **/
+  | { name: 'ClearHistoric'; params: { selector: PalletMigrationsHistoricCleanupSelector } };
 
-export type PalletBalancesReasons = 'Fee' | 'Misc' | 'All';
+export type PalletMigrationsCallLike =
+  /**
+   * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+   *
+   * Should normally not be needed and is only in place as emergency measure. Note that
+   * restarting the migration process in this manner will not call the
+   * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+   **/
+  | { name: 'ForceSetCursor'; params: { cursor?: PalletMigrationsMigrationCursor | undefined } }
+  /**
+   * Allows root to set an active cursor to forcefully start/forward the migration process.
+   *
+   * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+   * `started_at` value to the next block number. Otherwise this would not be possible, since
+   * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+   * indicates that the current block number plus one should be used.
+   **/
+  | {
+      name: 'ForceSetActiveCursor';
+      params: { index: number; innerCursor?: BytesLike | undefined; startedAt?: number | undefined };
+    }
+  /**
+   * Forces the onboarding of the migrations.
+   *
+   * This process happens automatically on a runtime upgrade. It is in place as an emergency
+   * measurement. The cursor needs to be `None` for this to succeed.
+   **/
+  | { name: 'ForceOnboardMbms' }
+  /**
+   * Clears the `Historic` set.
+   *
+   * `map_cursor` must be set to the last value that was returned by the
+   * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+   * way that will result in a sensible weight.
+   **/
+  | { name: 'ClearHistoric'; params: { selector: PalletMigrationsHistoricCleanupSelector } };
 
-export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
+export type PalletMigrationsMigrationCursor =
+  | { type: 'Active'; value: PalletMigrationsActiveCursor }
+  | { type: 'Stuck' };
 
-export type FrameSupportTokensMiscIdAmount = { id: AssetHubKusamaRuntimeRuntimeHoldReason; amount: bigint };
+export type PalletMigrationsActiveCursor = { index: number; innerCursor?: Bytes | undefined; startedAt: number };
 
-export type AssetHubKusamaRuntimeRuntimeHoldReason =
-  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
-  | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
-  | { type: 'Revive'; value: PalletReviveHoldReason }
-  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason };
-
-export type PalletXcmHoldReason = 'AuthorizeAlias';
-
-export type PalletNftFractionalizationHoldReason = 'Fractionalized';
-
-export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
-
-export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
-
-export type FrameSupportTokensMiscIdAmount002 = { id: []; amount: bigint };
+export type PalletMigrationsHistoricCleanupSelector =
+  | { type: 'Specific'; value: Array<Bytes> }
+  | { type: 'Wildcard'; value: { limit?: number | undefined; previousCursor?: Bytes | undefined } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2917,65 +3110,6 @@ export type PalletBalancesCallLike =
   | { name: 'Burn'; params: { value: bigint; keepAlive: boolean } };
 
 export type PalletBalancesAdjustmentDirection = 'Increase' | 'Decrease';
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletBalancesError =
-  /**
-   * Vesting balance too high to send value.
-   **/
-  | 'VestingBalance'
-  /**
-   * Account liquidity restrictions prevent withdrawal.
-   **/
-  | 'LiquidityRestrictions'
-  /**
-   * Balance too low to send value.
-   **/
-  | 'InsufficientBalance'
-  /**
-   * Value too low to create account due to existential deposit.
-   **/
-  | 'ExistentialDeposit'
-  /**
-   * Transfer/payment would kill account.
-   **/
-  | 'Expendability'
-  /**
-   * A vesting schedule already exists for this account.
-   **/
-  | 'ExistingVestingSchedule'
-  /**
-   * Beneficiary account must pre-exist.
-   **/
-  | 'DeadAccount'
-  /**
-   * Number of named reserves exceed `MaxReserves`.
-   **/
-  | 'TooManyReserves'
-  /**
-   * Number of holds exceed `VariantCountOf<T::RuntimeHoldReason>`.
-   **/
-  | 'TooManyHolds'
-  /**
-   * Number of freezes exceed `MaxFreezes`.
-   **/
-  | 'TooManyFreezes'
-  /**
-   * The issuance cannot be modified since it is already deactivated.
-   **/
-  | 'IssuanceDeactivated'
-  /**
-   * The delta cannot be zero.
-   **/
-  | 'DeltaZero';
-
-export type PalletTransactionPaymentReleases = 'V1Ancient' | 'V2';
-
-export type PalletVestingVestingInfo = { locked: bigint; perBlock: bigint; startingBlock: number };
-
-export type PalletVestingReleases = 'V0' | 'V1';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3174,33 +3308,7 @@ export type PalletVestingCallLike =
    **/
   | { name: 'ForceRemoveVestingSchedule'; params: { target: MultiAddressLike; scheduleIndex: number } };
 
-/**
- * Error for the vesting pallet.
- **/
-export type PalletVestingError =
-  /**
-   * The account given is not vesting.
-   **/
-  | 'NotVesting'
-  /**
-   * The account already has `MaxVestingSchedules` count of schedules and thus
-   * cannot add another one. Consider merging existing schedules in order to add another.
-   **/
-  | 'AtMaxVestingSchedules'
-  /**
-   * Amount being transferred is too low to create a vesting schedule.
-   **/
-  | 'AmountLow'
-  /**
-   * An index was out of bounds of the vesting schedules.
-   **/
-  | 'ScheduleIndexOutOfBounds'
-  /**
-   * Failed to create a new schedule because some parameter was invalid.
-   **/
-  | 'InvalidScheduleParams';
-
-export type PalletCollatorSelectionCandidateInfo = { who: AccountId32; deposit: bigint };
+export type PalletVestingVestingInfo = { locked: bigint; perBlock: bigint; startingBlock: number };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3375,89 +3483,6 @@ export type PalletCollatorSelectionCallLike =
    **/
   | { name: 'TakeCandidateSlot'; params: { deposit: bigint; target: AccountId32Like } };
 
-export type FrameSupportPalletId = FixedBytes<8>;
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletCollatorSelectionError =
-  /**
-   * The pallet has too many candidates.
-   **/
-  | 'TooManyCandidates'
-  /**
-   * Leaving would result in too few candidates.
-   **/
-  | 'TooFewEligibleCollators'
-  /**
-   * Account is already a candidate.
-   **/
-  | 'AlreadyCandidate'
-  /**
-   * Account is not a candidate.
-   **/
-  | 'NotCandidate'
-  /**
-   * There are too many Invulnerables.
-   **/
-  | 'TooManyInvulnerables'
-  /**
-   * Account is already an Invulnerable.
-   **/
-  | 'AlreadyInvulnerable'
-  /**
-   * Account is not an Invulnerable.
-   **/
-  | 'NotInvulnerable'
-  /**
-   * Account has no associated validator ID.
-   **/
-  | 'NoAssociatedValidatorId'
-  /**
-   * Validator ID is not yet registered.
-   **/
-  | 'ValidatorNotRegistered'
-  /**
-   * Could not insert in the candidate list.
-   **/
-  | 'InsertToCandidateListFailed'
-  /**
-   * Could not remove from the candidate list.
-   **/
-  | 'RemoveFromCandidateListFailed'
-  /**
-   * New deposit amount would be below the minimum candidacy bond.
-   **/
-  | 'DepositTooLow'
-  /**
-   * Could not update the candidate list.
-   **/
-  | 'UpdateCandidateListFailed'
-  /**
-   * Deposit amount is too low to take the target's slot in the candidate list.
-   **/
-  | 'InsufficientBond'
-  /**
-   * The target account to be replaced in the candidate list is not a candidate.
-   **/
-  | 'TargetIsNotCandidate'
-  /**
-   * The updated deposit amount is equal to the amount already reserved.
-   **/
-  | 'IdenticalDeposit'
-  /**
-   * Cannot lower candidacy bond while occupying a future collator slot in the list.
-   **/
-  | 'InvalidUnreserve';
-
-export type AssetHubKusamaRuntimeSessionKeys = { aura: SpConsensusAuraSr25519AppSr25519Public };
-
-export type SpConsensusAuraSr25519AppSr25519Public = FixedBytes<32>;
-
-export type SpStakingOffenceOffenceSeverity = Perbill;
-
-export type SpCoreCryptoKeyTypeId = FixedBytes<4>;
-
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
@@ -3519,48 +3544,9 @@ export type PalletSessionCallLike =
    **/
   | { name: 'PurgeKeys' };
 
-/**
- * Error for the session pallet.
- **/
-export type PalletSessionError =
-  /**
-   * Invalid ownership proof.
-   **/
-  | 'InvalidProof'
-  /**
-   * No associated validator ID for account.
-   **/
-  | 'NoAssociatedValidatorId'
-  /**
-   * Registered duplicate key.
-   **/
-  | 'DuplicatedKey'
-  /**
-   * No keys are associated with this account.
-   **/
-  | 'NoKeys'
-  /**
-   * Key setting account is not live, so it's impossible to associate keys.
-   **/
-  | 'NoAccount';
+export type AssetHubKusamaRuntimeSessionKeys = { aura: SpConsensusAuraSr25519AppSr25519Public };
 
-export type SpConsensusSlotsSlot = bigint;
-
-export type CumulusPalletXcmpQueueOutboundChannelDetails = {
-  recipient: PolkadotParachainPrimitivesPrimitivesId;
-  state: CumulusPalletXcmpQueueOutboundState;
-  signalsExist: boolean;
-  firstIndex: number;
-  lastIndex: number;
-};
-
-export type CumulusPalletXcmpQueueOutboundState = 'Ok' | 'Suspended';
-
-export type CumulusPalletXcmpQueueQueueConfigData = {
-  suspendThreshold: number;
-  dropThreshold: number;
-  resumeThreshold: number;
-};
+export type SpConsensusAuraSr25519AppSr25519Public = FixedBytes<32>;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3644,157 +3630,6 @@ export type CumulusPalletXcmpQueueCallLike =
    * - `new`: Desired value for `QueueConfigData.resume_threshold`
    **/
   | { name: 'UpdateResumeThreshold'; params: { new: number } };
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type CumulusPalletXcmpQueueError =
-  /**
-   * Setting the queue config failed since one of its values was invalid.
-   **/
-  | 'BadQueueConfig'
-  /**
-   * The execution is already suspended.
-   **/
-  | 'AlreadySuspended'
-  /**
-   * The execution is already resumed.
-   **/
-  | 'AlreadyResumed'
-  /**
-   * There are too many active outbound channels.
-   **/
-  | 'TooManyActiveOutboundChannels'
-  /**
-   * The message is too big.
-   **/
-  | 'TooBig';
-
-export type PalletXcmQueryStatus =
-  | {
-      type: 'Pending';
-      value: {
-        responder: XcmVersionedLocation;
-        maybeMatchQuerier?: XcmVersionedLocation | undefined;
-        maybeNotify?: [number, number] | undefined;
-        timeout: number;
-      };
-    }
-  | { type: 'VersionNotifier'; value: { origin: XcmVersionedLocation; isActive: boolean } }
-  | { type: 'Ready'; value: { response: XcmVersionedResponse; at: number } };
-
-export type XcmVersionedResponse =
-  | { type: 'V3'; value: XcmV3Response }
-  | { type: 'V4'; value: StagingXcmV4Response }
-  | { type: 'V5'; value: StagingXcmV5Response };
-
-export type XcmV3Response =
-  | { type: 'Null' }
-  | { type: 'Assets'; value: XcmV3MultiassetMultiAssets }
-  | { type: 'ExecutionResult'; value?: [number, XcmV3TraitsError] | undefined }
-  | { type: 'Version'; value: number }
-  | { type: 'PalletsInfo'; value: Array<XcmV3PalletInfo> }
-  | { type: 'DispatchResult'; value: XcmV3MaybeErrorCode };
-
-export type XcmV3TraitsError =
-  | { type: 'Overflow' }
-  | { type: 'Unimplemented' }
-  | { type: 'UntrustedReserveLocation' }
-  | { type: 'UntrustedTeleportLocation' }
-  | { type: 'LocationFull' }
-  | { type: 'LocationNotInvertible' }
-  | { type: 'BadOrigin' }
-  | { type: 'InvalidLocation' }
-  | { type: 'AssetNotFound' }
-  | { type: 'FailedToTransactAsset' }
-  | { type: 'NotWithdrawable' }
-  | { type: 'LocationCannotHold' }
-  | { type: 'ExceedsMaxMessageSize' }
-  | { type: 'DestinationUnsupported' }
-  | { type: 'Transport' }
-  | { type: 'Unroutable' }
-  | { type: 'UnknownClaim' }
-  | { type: 'FailedToDecode' }
-  | { type: 'MaxWeightInvalid' }
-  | { type: 'NotHoldingFees' }
-  | { type: 'TooExpensive' }
-  | { type: 'Trap'; value: bigint }
-  | { type: 'ExpectationFalse' }
-  | { type: 'PalletNotFound' }
-  | { type: 'NameMismatch' }
-  | { type: 'VersionIncompatible' }
-  | { type: 'HoldingWouldOverflow' }
-  | { type: 'ExportError' }
-  | { type: 'ReanchorFailed' }
-  | { type: 'NoDeal' }
-  | { type: 'FeesNotMet' }
-  | { type: 'LockError' }
-  | { type: 'NoPermission' }
-  | { type: 'Unanchored' }
-  | { type: 'NotDepositable' }
-  | { type: 'UnhandledXcmVersion' }
-  | { type: 'WeightLimitReached'; value: SpWeightsWeightV2Weight }
-  | { type: 'Barrier' }
-  | { type: 'WeightNotComputable' }
-  | { type: 'ExceedsStackLimit' };
-
-export type XcmV3PalletInfo = {
-  index: number;
-  name: Bytes;
-  moduleName: Bytes;
-  major: number;
-  minor: number;
-  patch: number;
-};
-
-export type StagingXcmV4Response =
-  | { type: 'Null' }
-  | { type: 'Assets'; value: StagingXcmV4AssetAssets }
-  | { type: 'ExecutionResult'; value?: [number, XcmV3TraitsError] | undefined }
-  | { type: 'Version'; value: number }
-  | { type: 'PalletsInfo'; value: Array<StagingXcmV4PalletInfo> }
-  | { type: 'DispatchResult'; value: XcmV3MaybeErrorCode };
-
-export type StagingXcmV4PalletInfo = {
-  index: number;
-  name: Bytes;
-  moduleName: Bytes;
-  major: number;
-  minor: number;
-  patch: number;
-};
-
-export type PalletXcmVersionMigrationStage =
-  | { type: 'MigrateSupportedVersion' }
-  | { type: 'MigrateVersionNotifiers' }
-  | { type: 'NotifyCurrentTargets'; value?: Bytes | undefined }
-  | { type: 'MigrateAndNotifyOldTargets' };
-
-export type XcmVersionedAssetId =
-  | { type: 'V3'; value: XcmV3MultiassetAssetId }
-  | { type: 'V4'; value: StagingXcmV4AssetAssetId }
-  | { type: 'V5'; value: StagingXcmV5AssetAssetId };
-
-export type PalletXcmRemoteLockedFungibleRecord = {
-  amount: bigint;
-  owner: XcmVersionedLocation;
-  locker: XcmVersionedLocation;
-  consumers: Array<[[], bigint]>;
-};
-
-export type PalletXcmAuthorizedAliasesEntry = {
-  aliasers: Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>;
-  ticket: FrameSupportStorageDisabled;
-};
-
-export type FrameSupportStorageDisabled = {};
-
-export type PalletXcmMaxAuthorizedAliases = {};
-
-export type XcmRuntimeApisAuthorizedAliasesOriginAliaser = {
-  location: XcmVersionedLocation;
-  expiry?: bigint | undefined;
-};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4579,6 +4414,65 @@ export type XcmV3Instruction =
       value: { weightLimit: XcmV3WeightLimit; checkOrigin?: StagingXcmV3MultilocationMultiLocation | undefined };
     };
 
+export type XcmV3Response =
+  | { type: 'Null' }
+  | { type: 'Assets'; value: XcmV3MultiassetMultiAssets }
+  | { type: 'ExecutionResult'; value?: [number, XcmV3TraitsError] | undefined }
+  | { type: 'Version'; value: number }
+  | { type: 'PalletsInfo'; value: Array<XcmV3PalletInfo> }
+  | { type: 'DispatchResult'; value: XcmV3MaybeErrorCode };
+
+export type XcmV3TraitsError =
+  | { type: 'Overflow' }
+  | { type: 'Unimplemented' }
+  | { type: 'UntrustedReserveLocation' }
+  | { type: 'UntrustedTeleportLocation' }
+  | { type: 'LocationFull' }
+  | { type: 'LocationNotInvertible' }
+  | { type: 'BadOrigin' }
+  | { type: 'InvalidLocation' }
+  | { type: 'AssetNotFound' }
+  | { type: 'FailedToTransactAsset' }
+  | { type: 'NotWithdrawable' }
+  | { type: 'LocationCannotHold' }
+  | { type: 'ExceedsMaxMessageSize' }
+  | { type: 'DestinationUnsupported' }
+  | { type: 'Transport' }
+  | { type: 'Unroutable' }
+  | { type: 'UnknownClaim' }
+  | { type: 'FailedToDecode' }
+  | { type: 'MaxWeightInvalid' }
+  | { type: 'NotHoldingFees' }
+  | { type: 'TooExpensive' }
+  | { type: 'Trap'; value: bigint }
+  | { type: 'ExpectationFalse' }
+  | { type: 'PalletNotFound' }
+  | { type: 'NameMismatch' }
+  | { type: 'VersionIncompatible' }
+  | { type: 'HoldingWouldOverflow' }
+  | { type: 'ExportError' }
+  | { type: 'ReanchorFailed' }
+  | { type: 'NoDeal' }
+  | { type: 'FeesNotMet' }
+  | { type: 'LockError' }
+  | { type: 'NoPermission' }
+  | { type: 'Unanchored' }
+  | { type: 'NotDepositable' }
+  | { type: 'UnhandledXcmVersion' }
+  | { type: 'WeightLimitReached'; value: SpWeightsWeightV2Weight }
+  | { type: 'Barrier' }
+  | { type: 'WeightNotComputable' }
+  | { type: 'ExceedsStackLimit' };
+
+export type XcmV3PalletInfo = {
+  index: number;
+  name: Bytes;
+  moduleName: Bytes;
+  major: number;
+  minor: number;
+  patch: number;
+};
+
 export type XcmV3QueryResponseInfo = {
   destination: StagingXcmV3MultilocationMultiLocation;
   queryId: bigint;
@@ -4687,6 +4581,23 @@ export type StagingXcmV4Instruction =
       value: { weightLimit: XcmV3WeightLimit; checkOrigin?: StagingXcmV4Location | undefined };
     };
 
+export type StagingXcmV4Response =
+  | { type: 'Null' }
+  | { type: 'Assets'; value: StagingXcmV4AssetAssets }
+  | { type: 'ExecutionResult'; value?: [number, XcmV3TraitsError] | undefined }
+  | { type: 'Version'; value: number }
+  | { type: 'PalletsInfo'; value: Array<StagingXcmV4PalletInfo> }
+  | { type: 'DispatchResult'; value: XcmV3MaybeErrorCode };
+
+export type StagingXcmV4PalletInfo = {
+  index: number;
+  name: Bytes;
+  moduleName: Bytes;
+  major: number;
+  minor: number;
+  patch: number;
+};
+
 export type StagingXcmV4QueryResponseInfo = {
   destination: StagingXcmV4Location;
   queryId: bigint;
@@ -4714,121 +4625,10 @@ export type StagingXcmExecutorAssetTransferTransferType =
   | { type: 'DestinationReserve' }
   | { type: 'RemoteReserve'; value: XcmVersionedLocation };
 
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletXcmError =
-  /**
-   * The desired destination was unreachable, generally because there is a no way of routing
-   * to it.
-   **/
-  | 'Unreachable'
-  /**
-   * There was some other issue (i.e. not to do with routing) in sending the message.
-   * Perhaps a lack of space for buffering the message.
-   **/
-  | 'SendFailure'
-  /**
-   * The message execution fails the filter.
-   **/
-  | 'Filtered'
-  /**
-   * The message's weight could not be determined.
-   **/
-  | 'UnweighableMessage'
-  /**
-   * The destination `Location` provided cannot be inverted.
-   **/
-  | 'DestinationNotInvertible'
-  /**
-   * The assets to be sent are empty.
-   **/
-  | 'Empty'
-  /**
-   * Could not re-anchor the assets to declare the fees for the destination chain.
-   **/
-  | 'CannotReanchor'
-  /**
-   * Too many assets have been attempted for transfer.
-   **/
-  | 'TooManyAssets'
-  /**
-   * Origin is invalid for sending.
-   **/
-  | 'InvalidOrigin'
-  /**
-   * The version of the `Versioned` value used is not able to be interpreted.
-   **/
-  | 'BadVersion'
-  /**
-   * The given location could not be used (e.g. because it cannot be expressed in the
-   * desired version of XCM).
-   **/
-  | 'BadLocation'
-  /**
-   * The referenced subscription could not be found.
-   **/
-  | 'NoSubscription'
-  /**
-   * The location is invalid since it already has a subscription from us.
-   **/
-  | 'AlreadySubscribed'
-  /**
-   * Could not check-out the assets for teleportation to the destination chain.
-   **/
-  | 'CannotCheckOutTeleport'
-  /**
-   * The owner does not own (all) of the asset that they wish to do the operation on.
-   **/
-  | 'LowBalance'
-  /**
-   * The asset owner has too many locks on the asset.
-   **/
-  | 'TooManyLocks'
-  /**
-   * The given account is not an identifiable sovereign account for any location.
-   **/
-  | 'AccountNotSovereign'
-  /**
-   * The operation required fees to be paid which the initiator could not meet.
-   **/
-  | 'FeesNotMet'
-  /**
-   * A remote lock with the corresponding data could not be found.
-   **/
-  | 'LockNotFound'
-  /**
-   * The unlock operation cannot succeed because there are still consumers of the lock.
-   **/
-  | 'InUse'
-  /**
-   * Invalid asset, reserve chain could not be determined for it.
-   **/
-  | 'InvalidAssetUnknownReserve'
-  /**
-   * Invalid asset, do not support remote asset reserves with different fees reserves.
-   **/
-  | 'InvalidAssetUnsupportedReserve'
-  /**
-   * Too many assets with different reserve locations have been attempted for transfer.
-   **/
-  | 'TooManyReserves'
-  /**
-   * Local XCM execution incomplete.
-   **/
-  | 'LocalExecutionIncomplete'
-  /**
-   * Too many locations authorized to alias origin.
-   **/
-  | 'TooManyAuthorizedAliases'
-  /**
-   * Expiry block number is in the past.
-   **/
-  | 'ExpiresInPast'
-  /**
-   * The alias to remove authorization for was not found.
-   **/
-  | 'AliasNotFound';
+export type XcmVersionedAssetId =
+  | { type: 'V3'; value: XcmV3MultiassetAssetId }
+  | { type: 'V4'; value: StagingXcmV4AssetAssetId }
+  | { type: 'V5'; value: StagingXcmV5AssetAssetId };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4836,8 +4636,6 @@ export type PalletXcmError =
 export type CumulusPalletXcmCall = null;
 
 export type CumulusPalletXcmCallLike = null;
-
-export type BpXcmBridgeHubRouterBridgeState = { deliveryFeeFactor: FixedU128; isCongested: boolean };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4853,29 +4651,6 @@ export type PalletXcmBridgeHubRouterCallLike =
    * Notification about congested bridge queue.
    **/
   { name: 'ReportBridgeStatus'; params: { bridgeId: H256; isCongested: boolean } };
-
-export type PalletMessageQueueBookState = {
-  begin: number;
-  end: number;
-  count: number;
-  readyNeighbours?: PalletMessageQueueNeighbours | undefined;
-  messageCount: bigint;
-  size: bigint;
-};
-
-export type PalletMessageQueueNeighbours = {
-  prev: CumulusPrimitivesCoreAggregateMessageOrigin;
-  next: CumulusPrimitivesCoreAggregateMessageOrigin;
-};
-
-export type PalletMessageQueuePage = {
-  remaining: number;
-  remainingSize: number;
-  firstIndex: number;
-  first: number;
-  last: number;
-  heap: Bytes;
-};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4939,53 +4714,6 @@ export type PalletMessageQueueCallLike =
         weightLimit: SpWeightsWeightV2Weight;
       };
     };
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletMessageQueueError =
-  /**
-   * Page is not reapable because it has items remaining to be processed and is not old
-   * enough.
-   **/
-  | 'NotReapable'
-  /**
-   * Page to be reaped does not exist.
-   **/
-  | 'NoPage'
-  /**
-   * The referenced message could not be found.
-   **/
-  | 'NoMessage'
-  /**
-   * The message was already processed and cannot be processed again.
-   **/
-  | 'AlreadyProcessed'
-  /**
-   * The message is queued for future execution.
-   **/
-  | 'Queued'
-  /**
-   * There is temporarily not enough weight to continue servicing messages.
-   **/
-  | 'InsufficientWeight'
-  /**
-   * This message is temporarily unprocessable.
-   *
-   * Such errors are expected, but not guaranteed, to resolve themselves eventually through
-   * retrying.
-   **/
-  | 'TemporarilyUnprocessable'
-  /**
-   * The queue is paused and no message can be executed from it.
-   *
-   * This can change at any time and may resolve in the future by re-trying.
-   **/
-  | 'QueuePaused'
-  /**
-   * Another call is in progress and needs to finish before this call can happen.
-   **/
-  | 'RecursiveDisallowed';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5251,61 +4979,24 @@ export type PalletUtilityCallLike =
       params: { asOrigin: AssetHubKusamaRuntimeOriginCaller; call: AssetHubKusamaRuntimeRuntimeCallLike };
     };
 
-export type AssetHubKusamaRuntimeRuntimeCall =
-  | { pallet: 'System'; palletCall: FrameSystemCall }
-  | { pallet: 'ParachainSystem'; palletCall: CumulusPalletParachainSystemCall }
-  | { pallet: 'Timestamp'; palletCall: PalletTimestampCall }
-  | { pallet: 'ParachainInfo'; palletCall: StagingParachainInfoCall }
-  | { pallet: 'Balances'; palletCall: PalletBalancesCall }
-  | { pallet: 'Vesting'; palletCall: PalletVestingCall }
-  | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCall }
-  | { pallet: 'Session'; palletCall: PalletSessionCall }
-  | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCall }
-  | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCall }
-  | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCall }
-  | { pallet: 'ToPolkadotXcmRouter'; palletCall: PalletXcmBridgeHubRouterCall }
-  | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
-  | { pallet: 'Utility'; palletCall: PalletUtilityCall }
-  | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
-  | { pallet: 'Proxy'; palletCall: PalletProxyCall }
-  | { pallet: 'RemoteProxyRelayChain'; palletCall: PalletRemoteProxyCall }
-  | { pallet: 'Assets'; palletCall: PalletAssetsCall }
-  | { pallet: 'Uniques'; palletCall: PalletUniquesCall }
-  | { pallet: 'Nfts'; palletCall: PalletNftsCall }
-  | { pallet: 'ForeignAssets'; palletCall: PalletAssetsCall002 }
-  | { pallet: 'NftFractionalization'; palletCall: PalletNftFractionalizationCall }
-  | { pallet: 'PoolAssets'; palletCall: PalletAssetsCall003 }
-  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall }
-  | { pallet: 'Revive'; palletCall: PalletReviveCall }
-  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall };
+export type AssetHubKusamaRuntimeOriginCaller =
+  | { type: 'System'; value: FrameSupportDispatchRawOrigin }
+  | { type: 'PolkadotXcm'; value: PalletXcmOrigin }
+  | { type: 'CumulusXcm'; value: CumulusPalletXcmOrigin };
 
-export type AssetHubKusamaRuntimeRuntimeCallLike =
-  | { pallet: 'System'; palletCall: FrameSystemCallLike }
-  | { pallet: 'ParachainSystem'; palletCall: CumulusPalletParachainSystemCallLike }
-  | { pallet: 'Timestamp'; palletCall: PalletTimestampCallLike }
-  | { pallet: 'ParachainInfo'; palletCall: StagingParachainInfoCallLike }
-  | { pallet: 'Balances'; palletCall: PalletBalancesCallLike }
-  | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
-  | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCallLike }
-  | { pallet: 'Session'; palletCall: PalletSessionCallLike }
-  | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCallLike }
-  | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCallLike }
-  | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCallLike }
-  | { pallet: 'ToPolkadotXcmRouter'; palletCall: PalletXcmBridgeHubRouterCallLike }
-  | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
-  | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
-  | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
-  | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
-  | { pallet: 'RemoteProxyRelayChain'; palletCall: PalletRemoteProxyCallLike }
-  | { pallet: 'Assets'; palletCall: PalletAssetsCallLike }
-  | { pallet: 'Uniques'; palletCall: PalletUniquesCallLike }
-  | { pallet: 'Nfts'; palletCall: PalletNftsCallLike }
-  | { pallet: 'ForeignAssets'; palletCall: PalletAssetsCallLike002 }
-  | { pallet: 'NftFractionalization'; palletCall: PalletNftFractionalizationCallLike }
-  | { pallet: 'PoolAssets'; palletCall: PalletAssetsCallLike003 }
-  | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike }
-  | { pallet: 'Revive'; palletCall: PalletReviveCallLike }
-  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike };
+export type FrameSupportDispatchRawOrigin =
+  | { type: 'Root' }
+  | { type: 'Signed'; value: AccountId32 }
+  | { type: 'None' }
+  | { type: 'Authorized' };
+
+export type PalletXcmOrigin =
+  | { type: 'Xcm'; value: StagingXcmV5Location }
+  | { type: 'Response'; value: StagingXcmV5Location };
+
+export type CumulusPalletXcmOrigin =
+  | { type: 'Relay' }
+  | { type: 'SiblingParachain'; value: PolkadotParachainPrimitivesPrimitivesId };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5691,7 +5382,7 @@ export type PalletProxyCall =
    *
    * The dispatch origin for this call must be _Signed_.
    *
-   * WARNING: This may be called on accounts created by `pure`, however if done, then
+   * WARNING: This may be called on accounts created by `create_pure`, however if done, then
    * the unreserved fees will be inaccessible. **All access to this account will be lost.**
    **/
   | { name: 'RemoveProxies' }
@@ -5723,16 +5414,16 @@ export type PalletProxyCall =
    * inaccessible.
    *
    * Requires a `Signed` origin, and the sender account must have been created by a call to
-   * `pure` with corresponding parameters.
+   * `create_pure` with corresponding parameters.
    *
-   * - `spawner`: The account that originally called `pure` to create this account.
-   * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
-   * - `proxy_type`: The proxy type originally passed to `pure`.
-   * - `height`: The height of the chain when the call to `pure` was processed.
-   * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+   * - `spawner`: The account that originally called `create_pure` to create this account.
+   * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
+   * - `proxy_type`: The proxy type originally passed to `create_pure`.
+   * - `height`: The height of the chain when the call to `create_pure` was processed.
+   * - `ext_index`: The extrinsic index in which the call to `create_pure` was processed.
    *
    * Fails with `NoPermission` in case the caller is not a previously created pure
-   * account whose `pure` call has corresponding parameters.
+   * account whose `create_pure` call has corresponding parameters.
    **/
   | {
       name: 'KillPure';
@@ -5875,7 +5566,7 @@ export type PalletProxyCallLike =
    *
    * The dispatch origin for this call must be _Signed_.
    *
-   * WARNING: This may be called on accounts created by `pure`, however if done, then
+   * WARNING: This may be called on accounts created by `create_pure`, however if done, then
    * the unreserved fees will be inaccessible. **All access to this account will be lost.**
    **/
   | { name: 'RemoveProxies' }
@@ -5907,16 +5598,16 @@ export type PalletProxyCallLike =
    * inaccessible.
    *
    * Requires a `Signed` origin, and the sender account must have been created by a call to
-   * `pure` with corresponding parameters.
+   * `create_pure` with corresponding parameters.
    *
-   * - `spawner`: The account that originally called `pure` to create this account.
-   * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
-   * - `proxy_type`: The proxy type originally passed to `pure`.
-   * - `height`: The height of the chain when the call to `pure` was processed.
-   * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+   * - `spawner`: The account that originally called `create_pure` to create this account.
+   * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
+   * - `proxy_type`: The proxy type originally passed to `create_pure`.
+   * - `height`: The height of the chain when the call to `create_pure` was processed.
+   * - `ext_index`: The extrinsic index in which the call to `create_pure` was processed.
    *
    * Fails with `NoPermission` in case the caller is not a previously created pure
-   * account whose `pure` call has corresponding parameters.
+   * account whose `create_pure` call has corresponding parameters.
    **/
   | {
       name: 'KillPure';
@@ -9730,7 +9421,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Create'; params: { id: StagingXcmV4Location; admin: MultiAddress; minBalance: bigint } }
+  | { name: 'Create'; params: { id: StagingXcmV5Location; admin: MultiAddress; minBalance: bigint } }
   /**
    * Issue a new class of fungible assets from a privileged origin.
    *
@@ -9754,7 +9445,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'ForceCreate';
-      params: { id: StagingXcmV4Location; owner: MultiAddress; isSufficient: boolean; minBalance: bigint };
+      params: { id: StagingXcmV5Location; owner: MultiAddress; isSufficient: boolean; minBalance: bigint };
     }
   /**
    * Start the process of destroying a fungible asset class.
@@ -9770,7 +9461,7 @@ export type PalletAssetsCall002 =
    * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
    * an account contains holds or freezes in place.
    **/
-  | { name: 'StartDestroy'; params: { id: StagingXcmV4Location } }
+  | { name: 'StartDestroy'; params: { id: StagingXcmV5Location } }
   /**
    * Destroy all accounts associated with a given asset.
    *
@@ -9785,7 +9476,7 @@ export type PalletAssetsCall002 =
    *
    * Each call emits the `Event::DestroyedAccounts` event.
    **/
-  | { name: 'DestroyAccounts'; params: { id: StagingXcmV4Location } }
+  | { name: 'DestroyAccounts'; params: { id: StagingXcmV5Location } }
   /**
    * Destroy all approvals associated with a given asset up to the max (T::RemoveItemsLimit).
    *
@@ -9800,7 +9491,7 @@ export type PalletAssetsCall002 =
    *
    * Each call emits the `Event::DestroyedApprovals` event.
    **/
-  | { name: 'DestroyApprovals'; params: { id: StagingXcmV4Location } }
+  | { name: 'DestroyApprovals'; params: { id: StagingXcmV5Location } }
   /**
    * Complete destroying asset and unreserve currency.
    *
@@ -9813,7 +9504,7 @@ export type PalletAssetsCall002 =
    *
    * Each successful call emits the `Event::Destroyed` event.
    **/
-  | { name: 'FinishDestroy'; params: { id: StagingXcmV4Location } }
+  | { name: 'FinishDestroy'; params: { id: StagingXcmV5Location } }
   /**
    * Mint assets of a particular class.
    *
@@ -9828,7 +9519,7 @@ export type PalletAssetsCall002 =
    * Weight: `O(1)`
    * Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
    **/
-  | { name: 'Mint'; params: { id: StagingXcmV4Location; beneficiary: MultiAddress; amount: bigint } }
+  | { name: 'Mint'; params: { id: StagingXcmV5Location; beneficiary: MultiAddress; amount: bigint } }
   /**
    * Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
    *
@@ -9846,7 +9537,7 @@ export type PalletAssetsCall002 =
    * Weight: `O(1)`
    * Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
    **/
-  | { name: 'Burn'; params: { id: StagingXcmV4Location; who: MultiAddress; amount: bigint } }
+  | { name: 'Burn'; params: { id: StagingXcmV5Location; who: MultiAddress; amount: bigint } }
   /**
    * Move some assets from the sender account to another.
    *
@@ -9867,7 +9558,7 @@ export type PalletAssetsCall002 =
    * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
    * `target`.
    **/
-  | { name: 'Transfer'; params: { id: StagingXcmV4Location; target: MultiAddress; amount: bigint } }
+  | { name: 'Transfer'; params: { id: StagingXcmV5Location; target: MultiAddress; amount: bigint } }
   /**
    * Move some assets from the sender account to another, keeping the sender account alive.
    *
@@ -9888,7 +9579,7 @@ export type PalletAssetsCall002 =
    * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
    * `target`.
    **/
-  | { name: 'TransferKeepAlive'; params: { id: StagingXcmV4Location; target: MultiAddress; amount: bigint } }
+  | { name: 'TransferKeepAlive'; params: { id: StagingXcmV5Location; target: MultiAddress; amount: bigint } }
   /**
    * Move some assets from one account to another.
    *
@@ -9912,7 +9603,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'ForceTransfer';
-      params: { id: StagingXcmV4Location; source: MultiAddress; dest: MultiAddress; amount: bigint };
+      params: { id: StagingXcmV5Location; source: MultiAddress; dest: MultiAddress; amount: bigint };
     }
   /**
    * Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
@@ -9928,7 +9619,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Freeze'; params: { id: StagingXcmV4Location; who: MultiAddress } }
+  | { name: 'Freeze'; params: { id: StagingXcmV5Location; who: MultiAddress } }
   /**
    * Allow unprivileged transfers to and from an account again.
    *
@@ -9941,7 +9632,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Thaw'; params: { id: StagingXcmV4Location; who: MultiAddress } }
+  | { name: 'Thaw'; params: { id: StagingXcmV5Location; who: MultiAddress } }
   /**
    * Disallow further unprivileged transfers for the asset class.
    *
@@ -9953,7 +9644,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'FreezeAsset'; params: { id: StagingXcmV4Location } }
+  | { name: 'FreezeAsset'; params: { id: StagingXcmV5Location } }
   /**
    * Allow unprivileged transfers for the asset again.
    *
@@ -9965,7 +9656,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ThawAsset'; params: { id: StagingXcmV4Location } }
+  | { name: 'ThawAsset'; params: { id: StagingXcmV5Location } }
   /**
    * Change the Owner of an asset.
    *
@@ -9978,7 +9669,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'TransferOwnership'; params: { id: StagingXcmV4Location; owner: MultiAddress } }
+  | { name: 'TransferOwnership'; params: { id: StagingXcmV5Location; owner: MultiAddress } }
   /**
    * Change the Issuer, Admin and Freezer of an asset.
    *
@@ -9995,7 +9686,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'SetTeam';
-      params: { id: StagingXcmV4Location; issuer: MultiAddress; admin: MultiAddress; freezer: MultiAddress };
+      params: { id: StagingXcmV5Location; issuer: MultiAddress; admin: MultiAddress; freezer: MultiAddress };
     }
   /**
    * Set the metadata for an asset.
@@ -10015,7 +9706,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'SetMetadata'; params: { id: StagingXcmV4Location; name: Bytes; symbol: Bytes; decimals: number } }
+  | { name: 'SetMetadata'; params: { id: StagingXcmV5Location; name: Bytes; symbol: Bytes; decimals: number } }
   /**
    * Clear the metadata for an asset.
    *
@@ -10029,7 +9720,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ClearMetadata'; params: { id: StagingXcmV4Location } }
+  | { name: 'ClearMetadata'; params: { id: StagingXcmV5Location } }
   /**
    * Force the metadata for an asset to some value.
    *
@@ -10048,7 +9739,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'ForceSetMetadata';
-      params: { id: StagingXcmV4Location; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean };
+      params: { id: StagingXcmV5Location; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean };
     }
   /**
    * Clear the metadata for an asset.
@@ -10063,7 +9754,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ForceClearMetadata'; params: { id: StagingXcmV4Location } }
+  | { name: 'ForceClearMetadata'; params: { id: StagingXcmV5Location } }
   /**
    * Alter the attributes of a given asset.
    *
@@ -10091,7 +9782,7 @@ export type PalletAssetsCall002 =
   | {
       name: 'ForceAssetStatus';
       params: {
-        id: StagingXcmV4Location;
+        id: StagingXcmV5Location;
         owner: MultiAddress;
         issuer: MultiAddress;
         admin: MultiAddress;
@@ -10123,7 +9814,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ApproveTransfer'; params: { id: StagingXcmV4Location; delegate: MultiAddress; amount: bigint } }
+  | { name: 'ApproveTransfer'; params: { id: StagingXcmV5Location; delegate: MultiAddress; amount: bigint } }
   /**
    * Cancel all of some asset approved for delegated transfer by a third-party account.
    *
@@ -10139,7 +9830,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'CancelApproval'; params: { id: StagingXcmV4Location; delegate: MultiAddress } }
+  | { name: 'CancelApproval'; params: { id: StagingXcmV5Location; delegate: MultiAddress } }
   /**
    * Cancel all of some asset approved for delegated transfer by a third-party account.
    *
@@ -10155,7 +9846,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ForceCancelApproval'; params: { id: StagingXcmV4Location; owner: MultiAddress; delegate: MultiAddress } }
+  | { name: 'ForceCancelApproval'; params: { id: StagingXcmV5Location; owner: MultiAddress; delegate: MultiAddress } }
   /**
    * Transfer some asset balance from a previously delegated account to some third-party
    * account.
@@ -10178,7 +9869,7 @@ export type PalletAssetsCall002 =
    **/
   | {
       name: 'TransferApproved';
-      params: { id: StagingXcmV4Location; owner: MultiAddress; destination: MultiAddress; amount: bigint };
+      params: { id: StagingXcmV5Location; owner: MultiAddress; destination: MultiAddress; amount: bigint };
     }
   /**
    * Create an asset account for non-provider assets.
@@ -10191,7 +9882,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { id: StagingXcmV4Location } }
+  | { name: 'Touch'; params: { id: StagingXcmV5Location } }
   /**
    * Return the deposit (if any) of an asset account or a consumer reference (if any) of an
    * account.
@@ -10207,7 +9898,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `Refunded` event when successful.
    **/
-  | { name: 'Refund'; params: { id: StagingXcmV4Location; allowBurn: boolean } }
+  | { name: 'Refund'; params: { id: StagingXcmV5Location; allowBurn: boolean } }
   /**
    * Sets the minimum balance of an asset.
    *
@@ -10222,7 +9913,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `AssetMinBalanceChanged` event when successful.
    **/
-  | { name: 'SetMinBalance'; params: { id: StagingXcmV4Location; minBalance: bigint } }
+  | { name: 'SetMinBalance'; params: { id: StagingXcmV5Location; minBalance: bigint } }
   /**
    * Create an asset account for `who`.
    *
@@ -10235,7 +9926,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'TouchOther'; params: { id: StagingXcmV4Location; who: MultiAddress } }
+  | { name: 'TouchOther'; params: { id: StagingXcmV5Location; who: MultiAddress } }
   /**
    * Return the deposit (if any) of a target asset account. Useful if you are the depositor.
    *
@@ -10251,7 +9942,7 @@ export type PalletAssetsCall002 =
    *
    * Emits `Refunded` event when successful.
    **/
-  | { name: 'RefundOther'; params: { id: StagingXcmV4Location; who: MultiAddress } }
+  | { name: 'RefundOther'; params: { id: StagingXcmV5Location; who: MultiAddress } }
   /**
    * Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
    *
@@ -10264,7 +9955,7 @@ export type PalletAssetsCall002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Block'; params: { id: StagingXcmV4Location; who: MultiAddress } }
+  | { name: 'Block'; params: { id: StagingXcmV5Location; who: MultiAddress } }
   /**
    * Transfer the entire transferable balance from the caller asset account.
    *
@@ -10283,7 +9974,7 @@ export type PalletAssetsCall002 =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: StagingXcmV4Location; dest: MultiAddress; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddress; keepAlive: boolean } };
 
 export type PalletAssetsCallLike002 =
   /**
@@ -10307,7 +9998,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Create'; params: { id: StagingXcmV4Location; admin: MultiAddressLike; minBalance: bigint } }
+  | { name: 'Create'; params: { id: StagingXcmV5Location; admin: MultiAddressLike; minBalance: bigint } }
   /**
    * Issue a new class of fungible assets from a privileged origin.
    *
@@ -10331,7 +10022,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'ForceCreate';
-      params: { id: StagingXcmV4Location; owner: MultiAddressLike; isSufficient: boolean; minBalance: bigint };
+      params: { id: StagingXcmV5Location; owner: MultiAddressLike; isSufficient: boolean; minBalance: bigint };
     }
   /**
    * Start the process of destroying a fungible asset class.
@@ -10347,7 +10038,7 @@ export type PalletAssetsCallLike002 =
    * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
    * an account contains holds or freezes in place.
    **/
-  | { name: 'StartDestroy'; params: { id: StagingXcmV4Location } }
+  | { name: 'StartDestroy'; params: { id: StagingXcmV5Location } }
   /**
    * Destroy all accounts associated with a given asset.
    *
@@ -10362,7 +10053,7 @@ export type PalletAssetsCallLike002 =
    *
    * Each call emits the `Event::DestroyedAccounts` event.
    **/
-  | { name: 'DestroyAccounts'; params: { id: StagingXcmV4Location } }
+  | { name: 'DestroyAccounts'; params: { id: StagingXcmV5Location } }
   /**
    * Destroy all approvals associated with a given asset up to the max (T::RemoveItemsLimit).
    *
@@ -10377,7 +10068,7 @@ export type PalletAssetsCallLike002 =
    *
    * Each call emits the `Event::DestroyedApprovals` event.
    **/
-  | { name: 'DestroyApprovals'; params: { id: StagingXcmV4Location } }
+  | { name: 'DestroyApprovals'; params: { id: StagingXcmV5Location } }
   /**
    * Complete destroying asset and unreserve currency.
    *
@@ -10390,7 +10081,7 @@ export type PalletAssetsCallLike002 =
    *
    * Each successful call emits the `Event::Destroyed` event.
    **/
-  | { name: 'FinishDestroy'; params: { id: StagingXcmV4Location } }
+  | { name: 'FinishDestroy'; params: { id: StagingXcmV5Location } }
   /**
    * Mint assets of a particular class.
    *
@@ -10405,7 +10096,7 @@ export type PalletAssetsCallLike002 =
    * Weight: `O(1)`
    * Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
    **/
-  | { name: 'Mint'; params: { id: StagingXcmV4Location; beneficiary: MultiAddressLike; amount: bigint } }
+  | { name: 'Mint'; params: { id: StagingXcmV5Location; beneficiary: MultiAddressLike; amount: bigint } }
   /**
    * Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
    *
@@ -10423,7 +10114,7 @@ export type PalletAssetsCallLike002 =
    * Weight: `O(1)`
    * Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
    **/
-  | { name: 'Burn'; params: { id: StagingXcmV4Location; who: MultiAddressLike; amount: bigint } }
+  | { name: 'Burn'; params: { id: StagingXcmV5Location; who: MultiAddressLike; amount: bigint } }
   /**
    * Move some assets from the sender account to another.
    *
@@ -10444,7 +10135,7 @@ export type PalletAssetsCallLike002 =
    * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
    * `target`.
    **/
-  | { name: 'Transfer'; params: { id: StagingXcmV4Location; target: MultiAddressLike; amount: bigint } }
+  | { name: 'Transfer'; params: { id: StagingXcmV5Location; target: MultiAddressLike; amount: bigint } }
   /**
    * Move some assets from the sender account to another, keeping the sender account alive.
    *
@@ -10465,7 +10156,7 @@ export type PalletAssetsCallLike002 =
    * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
    * `target`.
    **/
-  | { name: 'TransferKeepAlive'; params: { id: StagingXcmV4Location; target: MultiAddressLike; amount: bigint } }
+  | { name: 'TransferKeepAlive'; params: { id: StagingXcmV5Location; target: MultiAddressLike; amount: bigint } }
   /**
    * Move some assets from one account to another.
    *
@@ -10489,7 +10180,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'ForceTransfer';
-      params: { id: StagingXcmV4Location; source: MultiAddressLike; dest: MultiAddressLike; amount: bigint };
+      params: { id: StagingXcmV5Location; source: MultiAddressLike; dest: MultiAddressLike; amount: bigint };
     }
   /**
    * Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
@@ -10505,7 +10196,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Freeze'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
+  | { name: 'Freeze'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
   /**
    * Allow unprivileged transfers to and from an account again.
    *
@@ -10518,7 +10209,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Thaw'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
+  | { name: 'Thaw'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
   /**
    * Disallow further unprivileged transfers for the asset class.
    *
@@ -10530,7 +10221,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'FreezeAsset'; params: { id: StagingXcmV4Location } }
+  | { name: 'FreezeAsset'; params: { id: StagingXcmV5Location } }
   /**
    * Allow unprivileged transfers for the asset again.
    *
@@ -10542,7 +10233,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ThawAsset'; params: { id: StagingXcmV4Location } }
+  | { name: 'ThawAsset'; params: { id: StagingXcmV5Location } }
   /**
    * Change the Owner of an asset.
    *
@@ -10555,7 +10246,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'TransferOwnership'; params: { id: StagingXcmV4Location; owner: MultiAddressLike } }
+  | { name: 'TransferOwnership'; params: { id: StagingXcmV5Location; owner: MultiAddressLike } }
   /**
    * Change the Issuer, Admin and Freezer of an asset.
    *
@@ -10573,7 +10264,7 @@ export type PalletAssetsCallLike002 =
   | {
       name: 'SetTeam';
       params: {
-        id: StagingXcmV4Location;
+        id: StagingXcmV5Location;
         issuer: MultiAddressLike;
         admin: MultiAddressLike;
         freezer: MultiAddressLike;
@@ -10597,7 +10288,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'SetMetadata'; params: { id: StagingXcmV4Location; name: BytesLike; symbol: BytesLike; decimals: number } }
+  | { name: 'SetMetadata'; params: { id: StagingXcmV5Location; name: BytesLike; symbol: BytesLike; decimals: number } }
   /**
    * Clear the metadata for an asset.
    *
@@ -10611,7 +10302,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ClearMetadata'; params: { id: StagingXcmV4Location } }
+  | { name: 'ClearMetadata'; params: { id: StagingXcmV5Location } }
   /**
    * Force the metadata for an asset to some value.
    *
@@ -10630,7 +10321,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'ForceSetMetadata';
-      params: { id: StagingXcmV4Location; name: BytesLike; symbol: BytesLike; decimals: number; isFrozen: boolean };
+      params: { id: StagingXcmV5Location; name: BytesLike; symbol: BytesLike; decimals: number; isFrozen: boolean };
     }
   /**
    * Clear the metadata for an asset.
@@ -10645,7 +10336,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ForceClearMetadata'; params: { id: StagingXcmV4Location } }
+  | { name: 'ForceClearMetadata'; params: { id: StagingXcmV5Location } }
   /**
    * Alter the attributes of a given asset.
    *
@@ -10673,7 +10364,7 @@ export type PalletAssetsCallLike002 =
   | {
       name: 'ForceAssetStatus';
       params: {
-        id: StagingXcmV4Location;
+        id: StagingXcmV5Location;
         owner: MultiAddressLike;
         issuer: MultiAddressLike;
         admin: MultiAddressLike;
@@ -10705,7 +10396,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'ApproveTransfer'; params: { id: StagingXcmV4Location; delegate: MultiAddressLike; amount: bigint } }
+  | { name: 'ApproveTransfer'; params: { id: StagingXcmV5Location; delegate: MultiAddressLike; amount: bigint } }
   /**
    * Cancel all of some asset approved for delegated transfer by a third-party account.
    *
@@ -10721,7 +10412,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'CancelApproval'; params: { id: StagingXcmV4Location; delegate: MultiAddressLike } }
+  | { name: 'CancelApproval'; params: { id: StagingXcmV5Location; delegate: MultiAddressLike } }
   /**
    * Cancel all of some asset approved for delegated transfer by a third-party account.
    *
@@ -10739,7 +10430,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'ForceCancelApproval';
-      params: { id: StagingXcmV4Location; owner: MultiAddressLike; delegate: MultiAddressLike };
+      params: { id: StagingXcmV5Location; owner: MultiAddressLike; delegate: MultiAddressLike };
     }
   /**
    * Transfer some asset balance from a previously delegated account to some third-party
@@ -10763,7 +10454,7 @@ export type PalletAssetsCallLike002 =
    **/
   | {
       name: 'TransferApproved';
-      params: { id: StagingXcmV4Location; owner: MultiAddressLike; destination: MultiAddressLike; amount: bigint };
+      params: { id: StagingXcmV5Location; owner: MultiAddressLike; destination: MultiAddressLike; amount: bigint };
     }
   /**
    * Create an asset account for non-provider assets.
@@ -10776,7 +10467,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { id: StagingXcmV4Location } }
+  | { name: 'Touch'; params: { id: StagingXcmV5Location } }
   /**
    * Return the deposit (if any) of an asset account or a consumer reference (if any) of an
    * account.
@@ -10792,7 +10483,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `Refunded` event when successful.
    **/
-  | { name: 'Refund'; params: { id: StagingXcmV4Location; allowBurn: boolean } }
+  | { name: 'Refund'; params: { id: StagingXcmV5Location; allowBurn: boolean } }
   /**
    * Sets the minimum balance of an asset.
    *
@@ -10807,7 +10498,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `AssetMinBalanceChanged` event when successful.
    **/
-  | { name: 'SetMinBalance'; params: { id: StagingXcmV4Location; minBalance: bigint } }
+  | { name: 'SetMinBalance'; params: { id: StagingXcmV5Location; minBalance: bigint } }
   /**
    * Create an asset account for `who`.
    *
@@ -10820,7 +10511,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'TouchOther'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
+  | { name: 'TouchOther'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
   /**
    * Return the deposit (if any) of a target asset account. Useful if you are the depositor.
    *
@@ -10836,7 +10527,7 @@ export type PalletAssetsCallLike002 =
    *
    * Emits `Refunded` event when successful.
    **/
-  | { name: 'RefundOther'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
+  | { name: 'RefundOther'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
   /**
    * Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
    *
@@ -10849,7 +10540,7 @@ export type PalletAssetsCallLike002 =
    *
    * Weight: `O(1)`
    **/
-  | { name: 'Block'; params: { id: StagingXcmV4Location; who: MultiAddressLike } }
+  | { name: 'Block'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
   /**
    * Transfer the entire transferable balance from the caller asset account.
    *
@@ -10868,7 +10559,7 @@ export type PalletAssetsCallLike002 =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: StagingXcmV4Location; dest: MultiAddressLike; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddressLike; keepAlive: boolean } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -12119,7 +11810,7 @@ export type PalletAssetConversionCall =
    *
    * Once a pool is created, someone may [`Pallet::add_liquidity`] to it.
    **/
-  | { name: 'CreatePool'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } }
+  | { name: 'CreatePool'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } }
   /**
    * Provide liquidity into the pool of `asset1` and `asset2`.
    * NOTE: an optimal amount of asset1 and asset2 will be calculated and
@@ -12139,8 +11830,8 @@ export type PalletAssetConversionCall =
   | {
       name: 'AddLiquidity';
       params: {
-        asset1: StagingXcmV4Location;
-        asset2: StagingXcmV4Location;
+        asset1: StagingXcmV5Location;
+        asset2: StagingXcmV5Location;
         amount1Desired: bigint;
         amount2Desired: bigint;
         amount1Min: bigint;
@@ -12156,8 +11847,8 @@ export type PalletAssetConversionCall =
   | {
       name: 'RemoveLiquidity';
       params: {
-        asset1: StagingXcmV4Location;
-        asset2: StagingXcmV4Location;
+        asset1: StagingXcmV5Location;
+        asset2: StagingXcmV5Location;
         lpTokenBurn: bigint;
         amount1MinReceive: bigint;
         amount2MinReceive: bigint;
@@ -12175,7 +11866,7 @@ export type PalletAssetConversionCall =
   | {
       name: 'SwapExactTokensForTokens';
       params: {
-        path: Array<StagingXcmV4Location>;
+        path: Array<StagingXcmV5Location>;
         amountIn: bigint;
         amountOutMin: bigint;
         sendTo: AccountId32;
@@ -12193,7 +11884,7 @@ export type PalletAssetConversionCall =
   | {
       name: 'SwapTokensForExactTokens';
       params: {
-        path: Array<StagingXcmV4Location>;
+        path: Array<StagingXcmV5Location>;
         amountOut: bigint;
         amountInMax: bigint;
         sendTo: AccountId32;
@@ -12213,7 +11904,7 @@ export type PalletAssetConversionCall =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } };
+  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
 
 export type PalletAssetConversionCallLike =
   /**
@@ -12222,7 +11913,7 @@ export type PalletAssetConversionCallLike =
    *
    * Once a pool is created, someone may [`Pallet::add_liquidity`] to it.
    **/
-  | { name: 'CreatePool'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } }
+  | { name: 'CreatePool'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } }
   /**
    * Provide liquidity into the pool of `asset1` and `asset2`.
    * NOTE: an optimal amount of asset1 and asset2 will be calculated and
@@ -12242,8 +11933,8 @@ export type PalletAssetConversionCallLike =
   | {
       name: 'AddLiquidity';
       params: {
-        asset1: StagingXcmV4Location;
-        asset2: StagingXcmV4Location;
+        asset1: StagingXcmV5Location;
+        asset2: StagingXcmV5Location;
         amount1Desired: bigint;
         amount2Desired: bigint;
         amount1Min: bigint;
@@ -12259,8 +11950,8 @@ export type PalletAssetConversionCallLike =
   | {
       name: 'RemoveLiquidity';
       params: {
-        asset1: StagingXcmV4Location;
-        asset2: StagingXcmV4Location;
+        asset1: StagingXcmV5Location;
+        asset2: StagingXcmV5Location;
         lpTokenBurn: bigint;
         amount1MinReceive: bigint;
         amount2MinReceive: bigint;
@@ -12278,7 +11969,7 @@ export type PalletAssetConversionCallLike =
   | {
       name: 'SwapExactTokensForTokens';
       params: {
-        path: Array<StagingXcmV4Location>;
+        path: Array<StagingXcmV5Location>;
         amountIn: bigint;
         amountOutMin: bigint;
         sendTo: AccountId32Like;
@@ -12296,7 +11987,7 @@ export type PalletAssetConversionCallLike =
   | {
       name: 'SwapTokensForExactTokens';
       params: {
-        path: Array<StagingXcmV4Location>;
+        path: Array<StagingXcmV5Location>;
         amountOut: bigint;
         amountInMax: bigint;
         sendTo: AccountId32Like;
@@ -12316,7 +12007,7 @@ export type PalletAssetConversionCallLike =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { asset1: StagingXcmV4Location; asset2: StagingXcmV4Location } };
+  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -12369,10 +12060,10 @@ export type PalletReviveCall =
       };
     }
   /**
-   * Instantiates a contract from a previously deployed wasm binary.
+   * Instantiates a contract from a previously deployed vm binary.
    *
    * This function is identical to [`Self::instantiate_with_code`] but without the
-   * code deployment step. Instead, the `code_hash` of an on-chain deployed wasm binary
+   * code deployment step. Instead, the `code_hash` of an on-chain deployed vm binary
    * must be supplied.
    **/
   | {
@@ -12425,6 +12116,27 @@ export type PalletReviveCall =
         data: Bytes;
         salt?: FixedBytes<32> | undefined;
       };
+    }
+  /**
+   * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
+   * by an EVM transaction through the EVM compatibility layer.
+   *
+   * Calling this dispatchable ensures that the origin's nonce is bumped only once,
+   * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
+   * also bumps the nonce after contract instantiation, since it may be invoked multiple
+   * times within a batch call transaction.
+   **/
+  | {
+      name: 'EthInstantiateWithCode';
+      params: { value: U256; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint; code: Bytes; data: Bytes };
+    }
+  /**
+   * Same as [`Self::call`], but intended to be dispatched **only**
+   * by an EVM transaction through the EVM compatibility layer.
+   **/
+  | {
+      name: 'EthCall';
+      params: { dest: H160; value: U256; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint; data: Bytes };
     }
   /**
    * Upload new `code` without instantiating a contract from it.
@@ -12532,10 +12244,10 @@ export type PalletReviveCallLike =
       };
     }
   /**
-   * Instantiates a contract from a previously deployed wasm binary.
+   * Instantiates a contract from a previously deployed vm binary.
    *
    * This function is identical to [`Self::instantiate_with_code`] but without the
-   * code deployment step. Instead, the `code_hash` of an on-chain deployed wasm binary
+   * code deployment step. Instead, the `code_hash` of an on-chain deployed vm binary
    * must be supplied.
    **/
   | {
@@ -12587,6 +12299,39 @@ export type PalletReviveCallLike =
         code: BytesLike;
         data: BytesLike;
         salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
+   * by an EVM transaction through the EVM compatibility layer.
+   *
+   * Calling this dispatchable ensures that the origin's nonce is bumped only once,
+   * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
+   * also bumps the nonce after contract instantiation, since it may be invoked multiple
+   * times within a batch call transaction.
+   **/
+  | {
+      name: 'EthInstantiateWithCode';
+      params: {
+        value: U256;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        code: BytesLike;
+        data: BytesLike;
+      };
+    }
+  /**
+   * Same as [`Self::call`], but intended to be dispatched **only**
+   * by an EVM transaction through the EVM compatibility layer.
+   **/
+  | {
+      name: 'EthCall';
+      params: {
+        dest: H160;
+        value: U256;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        data: BytesLike;
       };
     }
   /**
@@ -12813,23 +12558,685 @@ export type PalletStateTrieMigrationProgress =
   | { type: 'LastKey'; value: Bytes }
   | { type: 'Complete' };
 
-export type AssetHubKusamaRuntimeOriginCaller =
-  | { type: 'System'; value: FrameSupportDispatchRawOrigin }
-  | { type: 'PolkadotXcm'; value: PalletXcmOrigin }
-  | { type: 'CumulusXcm'; value: CumulusPalletXcmOrigin };
+export type SpRuntimeBlakeTwo256 = {};
 
-export type FrameSupportDispatchRawOrigin =
-  | { type: 'Root' }
-  | { type: 'Signed'; value: AccountId32 }
-  | { type: 'None' };
+export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
 
-export type PalletXcmOrigin =
-  | { type: 'Xcm'; value: StagingXcmV5Location }
-  | { type: 'Response'; value: StagingXcmV5Location };
+export type FrameSystemExtensionsCheckNonZeroSender = {};
 
-export type CumulusPalletXcmOrigin =
-  | { type: 'Relay' }
-  | { type: 'SiblingParachain'; value: PolkadotParachainPrimitivesPrimitivesId };
+export type FrameSystemExtensionsCheckSpecVersion = {};
+
+export type FrameSystemExtensionsCheckTxVersion = {};
+
+export type FrameSystemExtensionsCheckGenesis = {};
+
+export type FrameSystemExtensionsCheckMortality = Era;
+
+export type FrameSystemExtensionsCheckNonce = number;
+
+export type FrameSystemExtensionsCheckWeight = {};
+
+export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
+  tip: bigint;
+  assetId?: StagingXcmV5Location | undefined;
+};
+
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
+
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
+
+export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
+  usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
+  paraHeadHash?: H256 | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
+};
+
+export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
+  umpMsgCount: number;
+  umpTotalBytes: number;
+  hrmpOutgoing: Array<
+    [PolkadotParachainPrimitivesPrimitivesId, CumulusPalletParachainSystemUnincludedSegmentHrmpChannelUpdate]
+  >;
+};
+
+export type CumulusPalletParachainSystemUnincludedSegmentHrmpChannelUpdate = { msgCount: number; totalBytes: number };
+
+export type PolkadotPrimitivesV8UpgradeGoAhead = 'Abort' | 'GoAhead';
+
+export type CumulusPalletParachainSystemUnincludedSegmentSegmentTracker = {
+  usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
+  hrmpWatermark?: number | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
+};
+
+export type PolkadotPrimitivesV8UpgradeRestriction = 'Present';
+
+export type CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot = {
+  dmqMqcHead: H256;
+  relayDispatchQueueRemainingCapacity: CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity;
+  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
+  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
+};
+
+export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity = {
+  remainingCount: number;
+  remainingSize: number;
+};
+
+export type PolkadotPrimitivesV8AbridgedHrmpChannel = {
+  maxCapacity: number;
+  maxTotalSize: number;
+  maxMessageSize: number;
+  msgCount: number;
+  totalSize: number;
+  mqcHead?: H256 | undefined;
+};
+
+export type PolkadotPrimitivesV8AbridgedHostConfiguration = {
+  maxCodeSize: number;
+  maxHeadDataSize: number;
+  maxUpwardQueueCount: number;
+  maxUpwardQueueSize: number;
+  maxUpwardMessageSize: number;
+  maxUpwardMessageNumPerCandidate: number;
+  hrmpMaxMessageNumPerCandidate: number;
+  validationUpgradeCooldown: number;
+  validationUpgradeDelay: number;
+  asyncBackingParams: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams;
+};
+
+export type PolkadotPrimitivesV8AsyncBackingAsyncBackingParams = {
+  maxCandidateDepth: number;
+  allowedAncestryLen: number;
+};
+
+export type CumulusPrimitivesParachainInherentMessageQueueChain = H256;
+
+export type CumulusPalletParachainSystemParachainInherentInboundMessageId = { sentAt: number; reverseIdx: number };
+
+export type PolkadotCorePrimitivesOutboundHrmpMessage = {
+  recipient: PolkadotParachainPrimitivesPrimitivesId;
+  data: Bytes;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type CumulusPalletParachainSystemError =
+  /**
+   * Attempt to upgrade validation function while existing upgrade pending.
+   **/
+  | 'OverlappingUpgrades'
+  /**
+   * Polkadot currently prohibits this parachain from upgrading its validation function.
+   **/
+  | 'ProhibitedByPolkadot'
+  /**
+   * The supplied validation function has compiled into a blob larger than Polkadot is
+   * willing to run.
+   **/
+  | 'TooBig'
+  /**
+   * The inherent which supplies the validation data did not run this block.
+   **/
+  | 'ValidationDataNotAvailable'
+  /**
+   * The inherent which supplies the host configuration did not run this block.
+   **/
+  | 'HostConfigurationNotAvailable'
+  /**
+   * No validation function upgrade is currently scheduled.
+   **/
+  | 'NotScheduled';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletMigrationsError =
+  /**
+   * The operation cannot complete since some MBMs are ongoing.
+   **/
+  'Ongoing';
+
+export type PalletBalancesBalanceLock = { id: FixedBytes<8>; amount: bigint; reasons: PalletBalancesReasons };
+
+export type PalletBalancesReasons = 'Fee' | 'Misc' | 'All';
+
+export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
+
+export type FrameSupportTokensMiscIdAmount = { id: AssetHubKusamaRuntimeRuntimeHoldReason; amount: bigint };
+
+export type AssetHubKusamaRuntimeRuntimeHoldReason =
+  | { type: 'Session'; value: PalletSessionHoldReason }
+  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
+  | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
+  | { type: 'Revive'; value: PalletReviveHoldReason }
+  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason };
+
+export type PalletSessionHoldReason = 'Keys';
+
+export type PalletXcmHoldReason = 'AuthorizeAlias';
+
+export type PalletNftFractionalizationHoldReason = 'Fractionalized';
+
+export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
+
+export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
+
+export type FrameSupportTokensMiscIdAmount002 = { id: []; amount: bigint };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletBalancesError =
+  /**
+   * Vesting balance too high to send value.
+   **/
+  | 'VestingBalance'
+  /**
+   * Account liquidity restrictions prevent withdrawal.
+   **/
+  | 'LiquidityRestrictions'
+  /**
+   * Balance too low to send value.
+   **/
+  | 'InsufficientBalance'
+  /**
+   * Value too low to create account due to existential deposit.
+   **/
+  | 'ExistentialDeposit'
+  /**
+   * Transfer/payment would kill account.
+   **/
+  | 'Expendability'
+  /**
+   * A vesting schedule already exists for this account.
+   **/
+  | 'ExistingVestingSchedule'
+  /**
+   * Beneficiary account must pre-exist.
+   **/
+  | 'DeadAccount'
+  /**
+   * Number of named reserves exceed `MaxReserves`.
+   **/
+  | 'TooManyReserves'
+  /**
+   * Number of holds exceed `VariantCountOf<T::RuntimeHoldReason>`.
+   **/
+  | 'TooManyHolds'
+  /**
+   * Number of freezes exceed `MaxFreezes`.
+   **/
+  | 'TooManyFreezes'
+  /**
+   * The issuance cannot be modified since it is already deactivated.
+   **/
+  | 'IssuanceDeactivated'
+  /**
+   * The delta cannot be zero.
+   **/
+  | 'DeltaZero';
+
+export type PalletTransactionPaymentReleases = 'V1Ancient' | 'V2';
+
+export type PalletVestingReleases = 'V0' | 'V1';
+
+/**
+ * Error for the vesting pallet.
+ **/
+export type PalletVestingError =
+  /**
+   * The account given is not vesting.
+   **/
+  | 'NotVesting'
+  /**
+   * The account already has `MaxVestingSchedules` count of schedules and thus
+   * cannot add another one. Consider merging existing schedules in order to add another.
+   **/
+  | 'AtMaxVestingSchedules'
+  /**
+   * Amount being transferred is too low to create a vesting schedule.
+   **/
+  | 'AmountLow'
+  /**
+   * An index was out of bounds of the vesting schedules.
+   **/
+  | 'ScheduleIndexOutOfBounds'
+  /**
+   * Failed to create a new schedule because some parameter was invalid.
+   **/
+  | 'InvalidScheduleParams';
+
+export type PalletCollatorSelectionCandidateInfo = { who: AccountId32; deposit: bigint };
+
+export type FrameSupportPalletId = FixedBytes<8>;
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletCollatorSelectionError =
+  /**
+   * The pallet has too many candidates.
+   **/
+  | 'TooManyCandidates'
+  /**
+   * Leaving would result in too few candidates.
+   **/
+  | 'TooFewEligibleCollators'
+  /**
+   * Account is already a candidate.
+   **/
+  | 'AlreadyCandidate'
+  /**
+   * Account is not a candidate.
+   **/
+  | 'NotCandidate'
+  /**
+   * There are too many Invulnerables.
+   **/
+  | 'TooManyInvulnerables'
+  /**
+   * Account is already an Invulnerable.
+   **/
+  | 'AlreadyInvulnerable'
+  /**
+   * Account is not an Invulnerable.
+   **/
+  | 'NotInvulnerable'
+  /**
+   * Account has no associated validator ID.
+   **/
+  | 'NoAssociatedValidatorId'
+  /**
+   * Validator ID is not yet registered.
+   **/
+  | 'ValidatorNotRegistered'
+  /**
+   * Could not insert in the candidate list.
+   **/
+  | 'InsertToCandidateListFailed'
+  /**
+   * Could not remove from the candidate list.
+   **/
+  | 'RemoveFromCandidateListFailed'
+  /**
+   * New deposit amount would be below the minimum candidacy bond.
+   **/
+  | 'DepositTooLow'
+  /**
+   * Could not update the candidate list.
+   **/
+  | 'UpdateCandidateListFailed'
+  /**
+   * Deposit amount is too low to take the target's slot in the candidate list.
+   **/
+  | 'InsufficientBond'
+  /**
+   * The target account to be replaced in the candidate list is not a candidate.
+   **/
+  | 'TargetIsNotCandidate'
+  /**
+   * The updated deposit amount is equal to the amount already reserved.
+   **/
+  | 'IdenticalDeposit'
+  /**
+   * Cannot lower candidacy bond while occupying a future collator slot in the list.
+   **/
+  | 'InvalidUnreserve';
+
+export type SpStakingOffenceOffenceSeverity = Perbill;
+
+export type SpCoreCryptoKeyTypeId = FixedBytes<4>;
+
+/**
+ * Error for the session pallet.
+ **/
+export type PalletSessionError =
+  /**
+   * Invalid ownership proof.
+   **/
+  | 'InvalidProof'
+  /**
+   * No associated validator ID for account.
+   **/
+  | 'NoAssociatedValidatorId'
+  /**
+   * Registered duplicate key.
+   **/
+  | 'DuplicatedKey'
+  /**
+   * No keys are associated with this account.
+   **/
+  | 'NoKeys'
+  /**
+   * Key setting account is not live, so it's impossible to associate keys.
+   **/
+  | 'NoAccount';
+
+export type SpConsensusSlotsSlot = bigint;
+
+export type CumulusPalletXcmpQueueOutboundChannelDetails = {
+  recipient: PolkadotParachainPrimitivesPrimitivesId;
+  state: CumulusPalletXcmpQueueOutboundState;
+  signalsExist: boolean;
+  firstIndex: number;
+  lastIndex: number;
+};
+
+export type CumulusPalletXcmpQueueOutboundState = 'Ok' | 'Suspended';
+
+export type CumulusPalletXcmpQueueQueueConfigData = {
+  suspendThreshold: number;
+  dropThreshold: number;
+  resumeThreshold: number;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type CumulusPalletXcmpQueueError =
+  /**
+   * Setting the queue config failed since one of its values was invalid.
+   **/
+  | 'BadQueueConfig'
+  /**
+   * The execution is already suspended.
+   **/
+  | 'AlreadySuspended'
+  /**
+   * The execution is already resumed.
+   **/
+  | 'AlreadyResumed'
+  /**
+   * There are too many active outbound channels.
+   **/
+  | 'TooManyActiveOutboundChannels'
+  /**
+   * The message is too big.
+   **/
+  | 'TooBig';
+
+export type PalletXcmQueryStatus =
+  | {
+      type: 'Pending';
+      value: {
+        responder: XcmVersionedLocation;
+        maybeMatchQuerier?: XcmVersionedLocation | undefined;
+        maybeNotify?: [number, number] | undefined;
+        timeout: number;
+      };
+    }
+  | { type: 'VersionNotifier'; value: { origin: XcmVersionedLocation; isActive: boolean } }
+  | { type: 'Ready'; value: { response: XcmVersionedResponse; at: number } };
+
+export type XcmVersionedResponse =
+  | { type: 'V3'; value: XcmV3Response }
+  | { type: 'V4'; value: StagingXcmV4Response }
+  | { type: 'V5'; value: StagingXcmV5Response };
+
+export type PalletXcmVersionMigrationStage =
+  | { type: 'MigrateSupportedVersion' }
+  | { type: 'MigrateVersionNotifiers' }
+  | { type: 'NotifyCurrentTargets'; value?: Bytes | undefined }
+  | { type: 'MigrateAndNotifyOldTargets' };
+
+export type PalletXcmRemoteLockedFungibleRecord = {
+  amount: bigint;
+  owner: XcmVersionedLocation;
+  locker: XcmVersionedLocation;
+  consumers: Array<[[], bigint]>;
+};
+
+export type PalletXcmAuthorizedAliasesEntry = {
+  aliasers: Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>;
+  ticket: FrameSupportTokensFungibleHoldConsideration;
+};
+
+export type FrameSupportTokensFungibleHoldConsideration = bigint;
+
+export type PalletXcmMaxAuthorizedAliases = {};
+
+export type XcmRuntimeApisAuthorizedAliasesOriginAliaser = {
+  location: XcmVersionedLocation;
+  expiry?: bigint | undefined;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletXcmError =
+  /**
+   * The desired destination was unreachable, generally because there is a no way of routing
+   * to it.
+   **/
+  | { name: 'Unreachable' }
+  /**
+   * There was some other issue (i.e. not to do with routing) in sending the message.
+   * Perhaps a lack of space for buffering the message.
+   **/
+  | { name: 'SendFailure' }
+  /**
+   * The message execution fails the filter.
+   **/
+  | { name: 'Filtered' }
+  /**
+   * The message's weight could not be determined.
+   **/
+  | { name: 'UnweighableMessage' }
+  /**
+   * The destination `Location` provided cannot be inverted.
+   **/
+  | { name: 'DestinationNotInvertible' }
+  /**
+   * The assets to be sent are empty.
+   **/
+  | { name: 'Empty' }
+  /**
+   * Could not re-anchor the assets to declare the fees for the destination chain.
+   **/
+  | { name: 'CannotReanchor' }
+  /**
+   * Too many assets have been attempted for transfer.
+   **/
+  | { name: 'TooManyAssets' }
+  /**
+   * Origin is invalid for sending.
+   **/
+  | { name: 'InvalidOrigin' }
+  /**
+   * The version of the `Versioned` value used is not able to be interpreted.
+   **/
+  | { name: 'BadVersion' }
+  /**
+   * The given location could not be used (e.g. because it cannot be expressed in the
+   * desired version of XCM).
+   **/
+  | { name: 'BadLocation' }
+  /**
+   * The referenced subscription could not be found.
+   **/
+  | { name: 'NoSubscription' }
+  /**
+   * The location is invalid since it already has a subscription from us.
+   **/
+  | { name: 'AlreadySubscribed' }
+  /**
+   * Could not check-out the assets for teleportation to the destination chain.
+   **/
+  | { name: 'CannotCheckOutTeleport' }
+  /**
+   * The owner does not own (all) of the asset that they wish to do the operation on.
+   **/
+  | { name: 'LowBalance' }
+  /**
+   * The asset owner has too many locks on the asset.
+   **/
+  | { name: 'TooManyLocks' }
+  /**
+   * The given account is not an identifiable sovereign account for any location.
+   **/
+  | { name: 'AccountNotSovereign' }
+  /**
+   * The operation required fees to be paid which the initiator could not meet.
+   **/
+  | { name: 'FeesNotMet' }
+  /**
+   * A remote lock with the corresponding data could not be found.
+   **/
+  | { name: 'LockNotFound' }
+  /**
+   * The unlock operation cannot succeed because there are still consumers of the lock.
+   **/
+  | { name: 'InUse' }
+  /**
+   * Invalid asset, reserve chain could not be determined for it.
+   **/
+  | { name: 'InvalidAssetUnknownReserve' }
+  /**
+   * Invalid asset, do not support remote asset reserves with different fees reserves.
+   **/
+  | { name: 'InvalidAssetUnsupportedReserve' }
+  /**
+   * Too many assets with different reserve locations have been attempted for transfer.
+   **/
+  | { name: 'TooManyReserves' }
+  /**
+   * Local XCM execution incomplete.
+   **/
+  | { name: 'LocalExecutionIncomplete' }
+  /**
+   * Too many locations authorized to alias origin.
+   **/
+  | { name: 'TooManyAuthorizedAliases' }
+  /**
+   * Expiry block number is in the past.
+   **/
+  | { name: 'ExpiresInPast' }
+  /**
+   * The alias to remove authorization for was not found.
+   **/
+  | { name: 'AliasNotFound' }
+  /**
+   * Local XCM execution incomplete with the actual XCM error and the index of the
+   * instruction that caused the error.
+   **/
+  | { name: 'LocalExecutionIncompleteWithError'; data: { index: number; error: PalletXcmErrorsExecutionError } };
+
+export type PalletXcmErrorsExecutionError =
+  | 'Overflow'
+  | 'Unimplemented'
+  | 'UntrustedReserveLocation'
+  | 'UntrustedTeleportLocation'
+  | 'LocationFull'
+  | 'LocationNotInvertible'
+  | 'BadOrigin'
+  | 'InvalidLocation'
+  | 'AssetNotFound'
+  | 'FailedToTransactAsset'
+  | 'NotWithdrawable'
+  | 'LocationCannotHold'
+  | 'ExceedsMaxMessageSize'
+  | 'DestinationUnsupported'
+  | 'Transport'
+  | 'Unroutable'
+  | 'UnknownClaim'
+  | 'FailedToDecode'
+  | 'MaxWeightInvalid'
+  | 'NotHoldingFees'
+  | 'TooExpensive'
+  | 'Trap'
+  | 'ExpectationFalse'
+  | 'PalletNotFound'
+  | 'NameMismatch'
+  | 'VersionIncompatible'
+  | 'HoldingWouldOverflow'
+  | 'ExportError'
+  | 'ReanchorFailed'
+  | 'NoDeal'
+  | 'FeesNotMet'
+  | 'LockError'
+  | 'NoPermission'
+  | 'Unanchored'
+  | 'NotDepositable'
+  | 'TooManyAssets'
+  | 'UnhandledXcmVersion'
+  | 'WeightLimitReached'
+  | 'Barrier'
+  | 'WeightNotComputable'
+  | 'ExceedsStackLimit';
+
+export type BpXcmBridgeHubRouterBridgeState = { deliveryFeeFactor: FixedU128; isCongested: boolean };
+
+export type PalletMessageQueueBookState = {
+  begin: number;
+  end: number;
+  count: number;
+  readyNeighbours?: PalletMessageQueueNeighbours | undefined;
+  messageCount: bigint;
+  size: bigint;
+};
+
+export type PalletMessageQueueNeighbours = {
+  prev: CumulusPrimitivesCoreAggregateMessageOrigin;
+  next: CumulusPrimitivesCoreAggregateMessageOrigin;
+};
+
+export type PalletMessageQueuePage = {
+  remaining: number;
+  remainingSize: number;
+  firstIndex: number;
+  first: number;
+  last: number;
+  heap: Bytes;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletMessageQueueError =
+  /**
+   * Page is not reapable because it has items remaining to be processed and is not old
+   * enough.
+   **/
+  | 'NotReapable'
+  /**
+   * Page to be reaped does not exist.
+   **/
+  | 'NoPage'
+  /**
+   * The referenced message could not be found.
+   **/
+  | 'NoMessage'
+  /**
+   * The message was already processed and cannot be processed again.
+   **/
+  | 'AlreadyProcessed'
+  /**
+   * The message is queued for future execution.
+   **/
+  | 'Queued'
+  /**
+   * There is temporarily not enough weight to continue servicing messages.
+   **/
+  | 'InsufficientWeight'
+  /**
+   * This message is temporarily unprocessable.
+   *
+   * Such errors are expected, but not guaranteed, to resolve themselves eventually through
+   * retrying.
+   **/
+  | 'TemporarilyUnprocessable'
+  /**
+   * The queue is paused and no message can be executed from it.
+   *
+   * This can change at any time and may resolve in the future by re-trying.
+   **/
+  | 'QueuePaused'
+  /**
+   * Another call is in progress and needs to finish before this call can happen.
+   **/
+  | 'RecursiveDisallowed';
 
 /**
  * The `Error` enum of this pallet.
@@ -13229,7 +13636,23 @@ export type PalletUniquesError =
   /**
    * The provided bid is too low.
    **/
-  | 'BidTooLow';
+  | 'BidTooLow'
+  /**
+   * No metadata is found.
+   **/
+  | 'NoMetadata'
+  /**
+   * Wrong metadata key/value bytes supplied.
+   **/
+  | 'WrongMetadata'
+  /**
+   * An attribute is not found.
+   **/
+  | 'AttributeNotFound'
+  /**
+   * Wrong attribute key/value bytes supplied.
+   **/
+  | 'WrongAttribute';
 
 export type PalletNftsCollectionDetails = {
   owner: AccountId32;
@@ -13586,13 +14009,19 @@ export type PalletAssetConversionError =
    **/
   | 'BelowMinimum';
 
-export type PalletReviveWasmCodeInfo = {
+export type PalletReviveVmCodeInfo = {
   owner: AccountId32;
   deposit: bigint;
   refcount: bigint;
   codeLen: number;
   behaviourVersion: number;
 };
+
+export type PalletReviveStorageAccountInfo = { accountType: PalletReviveStorageAccountType; dust: number };
+
+export type PalletReviveStorageAccountType =
+  | { type: 'Contract'; value: PalletReviveStorageContractInfo }
+  | { type: 'Eoa' };
 
 export type PalletReviveStorageContractInfo = {
   trieId: Bytes;
@@ -13658,7 +14087,7 @@ export type PalletReviveError =
    **/
   | 'ContractTrapped'
   /**
-   * The size defined in `T::MaxValueSize` was exceeded.
+   * Event body or storage item exceeds [`limits::PAYLOAD_BYTES`].
    **/
   | 'ValueTooLarge'
   /**
@@ -13674,16 +14103,6 @@ export type PalletReviveError =
    * The amount of topics passed to `seal_deposit_events` exceeds the limit.
    **/
   | 'TooManyTopics'
-  /**
-   * The chain does not provide a chain extension. Calling the chain extension results
-   * in this error. Note that this usually shouldn't happen as deploying such contracts
-   * is rejected.
-   **/
-  | 'NoChainExtension'
-  /**
-   * Failed to decode the XCM program.
-   **/
-  | 'XcmDecodeFailed'
   /**
    * A contract with the same AccountId already exists.
    **/
@@ -13737,8 +14156,7 @@ export type PalletReviveError =
    **/
   | 'BlobTooLarge'
   /**
-   * The static memory consumption of the blob will be larger than
-   * [`limits::code::STATIC_MEMORY_BYTES`].
+   * The contract declares too much memory (ro + rw + stack).
    **/
   | 'StaticMemoryTooLarge'
   /**
@@ -13786,10 +14204,6 @@ export type PalletReviveError =
    **/
   | 'BalanceConversionFailed'
   /**
-   * Failed to convert an EVM balance to a native balance.
-   **/
-  | 'DecimalPrecisionLoss'
-  /**
    * Immutable data can only be set during deploys and only be read during calls.
    * Additionally, it is only valid to set the data once and it must not be empty.
    **/
@@ -13813,42 +14227,19 @@ export type PalletReviveError =
    **/
   | 'RefcountOverOrUnderflow'
   /**
-   * Unsupported precompile address
+   * Unsupported precompile address.
    **/
   | 'UnsupportedPrecompileAddress'
   /**
-   * Precompile Error
+   * The calldata exceeds [`limits::CALLDATA_BYTES`].
    **/
-  | 'PrecompileFailure';
-
-export type FrameSystemExtensionsCheckNonZeroSender = {};
-
-export type FrameSystemExtensionsCheckSpecVersion = {};
-
-export type FrameSystemExtensionsCheckTxVersion = {};
-
-export type FrameSystemExtensionsCheckGenesis = {};
-
-export type FrameSystemExtensionsCheckMortality = Era;
-
-export type FrameSystemExtensionsCheckNonce = number;
-
-export type FrameSystemExtensionsCheckWeight = {};
-
-export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
-  tip: bigint;
-  assetId?: StagingXcmV4Location | undefined;
-};
-
-export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
-
-export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
-
-export type AssetHubKusamaRuntimeRuntime = {};
+  | 'CallDataTooLarge'
+  /**
+   * The return data exceeds [`limits::CALLDATA_BYTES`].
+   **/
+  | 'ReturnDataTooLarge';
 
 export type SpConsensusSlotsSlotDuration = bigint;
-
-export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
 
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 
@@ -13940,6 +14331,15 @@ export type XcmRuntimeApisDryRunXcmDryRunEffects = {
 
 export type XcmRuntimeApisConversionsError = 'Unsupported' | 'VersionedConversionFailed';
 
+export type XcmVersionedAsset =
+  | { type: 'V3'; value: XcmV3MultiassetMultiAsset }
+  | { type: 'V4'; value: StagingXcmV4Asset }
+  | { type: 'V5'; value: StagingXcmV5Asset };
+
+export type XcmRuntimeApisTrustedQueryError = 'VersionedAssetConversionFailed' | 'VersionedLocationConversionFailed';
+
+export type XcmRuntimeApisAuthorizedAliasesError = 'LocationVersionConversionFailed';
+
 export type AssetsCommonRuntimeApiFungiblesAccessError = 'AssetIdConversionFailed' | 'AmountToBalanceConversionFailed';
 
 export type CumulusPrimitivesCoreCollationInfo = {
@@ -14026,14 +14426,21 @@ export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; depo
 
 export type PalletRevivePrimitivesContractAccessError = 'DoesntExist' | 'KeyDecodingFailed';
 
-export type PalletReviveEvmApiDebugRpcTypesTracerType = {
-  type: 'CallTracer';
-  value?: PalletReviveEvmApiDebugRpcTypesCallTracerConfig | undefined;
-};
+export type PalletReviveEvmApiDebugRpcTypesTracerType =
+  | { type: 'CallTracer'; value?: PalletReviveEvmApiDebugRpcTypesCallTracerConfig | undefined }
+  | { type: 'PrestateTracer'; value?: PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig | undefined };
 
 export type PalletReviveEvmApiDebugRpcTypesCallTracerConfig = { withLogs: boolean; onlyTopCall: boolean };
 
-export type PalletReviveEvmApiDebugRpcTypesTrace = { type: 'Call'; value: PalletReviveEvmApiDebugRpcTypesCallTrace };
+export type PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig = {
+  diffMode: boolean;
+  disableStorage: boolean;
+  disableCode: boolean;
+};
+
+export type PalletReviveEvmApiDebugRpcTypesTrace =
+  | { type: 'Call'; value: PalletReviveEvmApiDebugRpcTypesCallTrace }
+  | { type: 'Prestate'; value: PalletReviveEvmApiDebugRpcTypesPrestateTrace };
 
 export type PalletReviveEvmApiDebugRpcTypesCallTrace = {
   from: H160;
@@ -14057,11 +14464,29 @@ export type PalletReviveEvmApiDebugRpcTypesCallLog = {
   position: number;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesCallType = 'Call' | 'StaticCall' | 'DelegateCall';
+export type PalletReviveEvmApiDebugRpcTypesCallType = 'Call' | 'StaticCall' | 'DelegateCall' | 'Create' | 'Create2';
+
+export type PalletReviveEvmApiDebugRpcTypesPrestateTrace =
+  | { type: 'Prestate'; value: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]> }
+  | {
+      type: 'DiffMode';
+      value: {
+        pre: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]>;
+        post: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]>;
+      };
+    };
+
+export type PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo = {
+  balance?: U256 | undefined;
+  nonce?: number | undefined;
+  code?: PalletReviveEvmApiByteBytes | undefined;
+  storage: Array<[PalletReviveEvmApiByteBytes, PalletReviveEvmApiByteBytes | undefined]>;
+};
 
 export type AssetHubKusamaRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }
   | { pallet: 'ParachainSystem'; palletError: CumulusPalletParachainSystemError }
+  | { pallet: 'MultiBlockMigrations'; palletError: PalletMigrationsError }
   | { pallet: 'Balances'; palletError: PalletBalancesError }
   | { pallet: 'Vesting'; palletError: PalletVestingError }
   | { pallet: 'CollatorSelection'; palletError: PalletCollatorSelectionError }

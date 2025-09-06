@@ -121,6 +121,7 @@ import type {
   PolkadotRuntimeParachainsParasParaLifecycle,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotRuntimeParachainsParasParaPastCodeMeta,
+  PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry,
   PolkadotPrimitivesV8UpgradeGoAhead,
   PolkadotPrimitivesV8UpgradeRestriction,
   PolkadotRuntimeParachainsParasParaGenesisArgs,
@@ -2092,6 +2093,8 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      *
      * @param {H256} arg
      * @param {Callback<PalletPreimageOldRequestStatus | undefined> =} callback
+     *
+     * @deprecated RequestStatusFor
      **/
     statusFor: GenericStorageQuery<Rv, (arg: H256) => PalletPreimageOldRequestStatus | undefined, H256>;
 
@@ -2516,6 +2519,24 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<PalletBagsListListBag | undefined> =} callback
      **/
     listBags: GenericStorageQuery<Rv, (arg: bigint) => PalletBagsListListBag | undefined, bigint>;
+
+    /**
+     * Pointer that remembers the next node that will be auto-rebagged.
+     * When `None`, the next scan will start from the list head again.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    nextNodeAutoRebagged: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
+     * Lock all updates to this pallet.
+     *
+     * If any nodes needs updating, removal or addition due to a temporary lock, the
+     * [`Call::rebag`] can be used.
+     *
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    lock: GenericStorageQuery<Rv, () => [] | undefined>;
 
     /**
      * Generic pallet storage query
@@ -3169,6 +3190,20 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       (
         arg: PolkadotParachainPrimitivesPrimitivesId,
       ) => PolkadotParachainPrimitivesPrimitivesValidationCodeHash | undefined,
+      PolkadotParachainPrimitivesPrimitivesId
+    >;
+
+    /**
+     * The code hash authorizations for a para which will expire `expire_at` `BlockNumberFor<T>`.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} arg
+     * @param {Callback<PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry | undefined> =} callback
+     **/
+    authorizedCodeHash: GenericStorageQuery<
+      Rv,
+      (
+        arg: PolkadotParachainPrimitivesPrimitivesId,
+      ) => PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry | undefined,
       PolkadotParachainPrimitivesPrimitivesId
     >;
 

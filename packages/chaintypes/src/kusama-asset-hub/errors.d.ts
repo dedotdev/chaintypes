@@ -102,6 +102,20 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `MultiBlockMigrations`'s errors
+   **/
+  multiBlockMigrations: {
+    /**
+     * The operation cannot complete since some MBMs are ongoing.
+     **/
+    Ongoing: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `Balances`'s errors
    **/
   balances: {
@@ -496,6 +510,8 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
 
     /**
      * Too many locations authorized to alias origin.
+     *
+     * @deprecated Use `LocalExecutionIncompleteWithError` instead (since 20.0.0)
      **/
     TooManyAuthorizedAliases: GenericPalletError<Rv>;
 
@@ -508,6 +524,12 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The alias to remove authorization for was not found.
      **/
     AliasNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Local XCM execution incomplete with the actual XCM error and the index of the
+     * instruction that caused the error.
+     **/
+    LocalExecutionIncompleteWithError: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -981,6 +1003,26 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The provided bid is too low.
      **/
     BidTooLow: GenericPalletError<Rv>;
+
+    /**
+     * No metadata is found.
+     **/
+    NoMetadata: GenericPalletError<Rv>;
+
+    /**
+     * Wrong metadata key/value bytes supplied.
+     **/
+    WrongMetadata: GenericPalletError<Rv>;
+
+    /**
+     * An attribute is not found.
+     **/
+    AttributeNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Wrong attribute key/value bytes supplied.
+     **/
+    WrongAttribute: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1693,7 +1735,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ContractTrapped: GenericPalletError<Rv>;
 
     /**
-     * The size defined in `T::MaxValueSize` was exceeded.
+     * Event body or storage item exceeds [`limits::PAYLOAD_BYTES`].
      **/
     ValueTooLarge: GenericPalletError<Rv>;
 
@@ -1712,18 +1754,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The amount of topics passed to `seal_deposit_events` exceeds the limit.
      **/
     TooManyTopics: GenericPalletError<Rv>;
-
-    /**
-     * The chain does not provide a chain extension. Calling the chain extension results
-     * in this error. Note that this usually shouldn't happen as deploying such contracts
-     * is rejected.
-     **/
-    NoChainExtension: GenericPalletError<Rv>;
-
-    /**
-     * Failed to decode the XCM program.
-     **/
-    XcmDecodeFailed: GenericPalletError<Rv>;
 
     /**
      * A contract with the same AccountId already exists.
@@ -1789,8 +1819,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     BlobTooLarge: GenericPalletError<Rv>;
 
     /**
-     * The static memory consumption of the blob will be larger than
-     * [`limits::code::STATIC_MEMORY_BYTES`].
+     * The contract declares too much memory (ro + rw + stack).
      **/
     StaticMemoryTooLarge: GenericPalletError<Rv>;
 
@@ -1850,11 +1879,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     BalanceConversionFailed: GenericPalletError<Rv>;
 
     /**
-     * Failed to convert an EVM balance to a native balance.
-     **/
-    DecimalPrecisionLoss: GenericPalletError<Rv>;
-
-    /**
      * Immutable data can only be set during deploys and only be read during calls.
      * Additionally, it is only valid to set the data once and it must not be empty.
      **/
@@ -1883,14 +1907,19 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     RefcountOverOrUnderflow: GenericPalletError<Rv>;
 
     /**
-     * Unsupported precompile address
+     * Unsupported precompile address.
      **/
     UnsupportedPrecompileAddress: GenericPalletError<Rv>;
 
     /**
-     * Precompile Error
+     * The calldata exceeds [`limits::CALLDATA_BYTES`].
      **/
-    PrecompileFailure: GenericPalletError<Rv>;
+    CallDataTooLarge: GenericPalletError<Rv>;
+
+    /**
+     * The return data exceeds [`limits::CALLDATA_BYTES`].
+     **/
+    ReturnDataTooLarge: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

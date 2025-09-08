@@ -11,7 +11,6 @@ export type ChainJsonRpcApis<Rv extends RpcVersion> = Pick<
   | 'archive_unstable_genesisHash'
   | 'archive_unstable_hashByHeight'
   | 'archive_unstable_header'
-  | 'archive_unstable_stopStorage'
   | 'archive_unstable_storage'
   | 'archive_unstable_storageDiff'
   | 'archive_unstable_storageDiff_stopStorageDiff'

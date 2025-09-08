@@ -18,7 +18,7 @@
     "copy": "cp -R ./src/* ./dist && rm ./dist/index.ts"
   },
   "peerDependencies": {
-    "dedot": ">=0.15.0"
+    "dedot": ">=0.16.0"
   },
   "publishConfig": {
     "access": "public",

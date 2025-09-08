@@ -28,7 +28,7 @@
     "lerna": "^7.4.2",
     "prettier": "^3.3.3",
     "prettier-plugin-organize-imports": "^3.2.3",
-    "tsx": "^4.19.3",
+    "tsx": "^4.20.5",
     "typescript": "5.4.5"
   },
   "license": "Apache-2.0"

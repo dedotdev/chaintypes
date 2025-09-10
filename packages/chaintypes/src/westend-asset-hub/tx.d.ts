@@ -18,6 +18,7 @@ import type {
   FixedBytes,
   AccountId32Like,
   H160,
+  U256,
   Percent,
   Perbill,
   FixedU128,
@@ -10640,7 +10641,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * also bumps the nonce after contract instantiation, since it may be invoked multiple
      * times within a batch call transaction.
      *
-     * @param {bigint} value
+     * @param {U256} value
      * @param {SpWeightsWeightV2Weight} gasLimit
      * @param {bigint} storageDepositLimit
      * @param {BytesLike} code
@@ -10649,7 +10650,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     ethInstantiateWithCode: GenericTxCall<
       Rv,
       (
-        value: bigint,
+        value: U256,
         gasLimit: SpWeightsWeightV2Weight,
         storageDepositLimit: bigint,
         code: BytesLike,
@@ -10661,7 +10662,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'EthInstantiateWithCode';
             params: {
-              value: bigint;
+              value: U256;
               gasLimit: SpWeightsWeightV2Weight;
               storageDepositLimit: bigint;
               code: BytesLike;
@@ -10673,11 +10674,46 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Same as [`Self::call`], but intended to be dispatched **only**
+     * by an EVM transaction through the EVM compatibility layer.
+     *
+     * @param {H160} dest
+     * @param {U256} value
+     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {bigint} storageDepositLimit
+     * @param {BytesLike} data
+     **/
+    ethCall: GenericTxCall<
+      Rv,
+      (
+        dest: H160,
+        value: U256,
+        gasLimit: SpWeightsWeightV2Weight,
+        storageDepositLimit: bigint,
+        data: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'EthCall';
+            params: {
+              dest: H160;
+              value: U256;
+              gasLimit: SpWeightsWeightV2Weight;
+              storageDepositLimit: bigint;
+              data: BytesLike;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
      * Upload new `code` without instantiating a contract from it.
      *
      * If the code does not already exist a deposit is reserved from the caller
-     * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
-     * depends on the size of the supplied `code`.
+     * The size of the reserve depends on the size of the supplied `code`.
      *
      * # Note
      *
@@ -10685,6 +10721,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * To avoid this situation a constructor could employ access control so that it can
      * only be instantiated by permissioned entities. The same is true when uploading
      * through [`Self::instantiate_with_code`].
+     *
+     * If the refcount of the code reaches zero after terminating the last contract that
+     * references this code, the code will be removed automatically.
      *
      * @param {BytesLike} code
      * @param {bigint} storageDepositLimit
@@ -11388,10 +11427,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Remove any unlocked chunks from the `unlocking` queue from our management.
+     * Remove any stake that has been fully unbonded and is ready for withdrawal.
      *
-     * This essentially frees up that balance to be used by the stash account to do whatever
-     * it wants.
+     * Stake is considered fully unbonded once [`Config::BondingDuration`] has elapsed since
+     * the unbonding was initiated. In rare cases—such as when offences for the unbonded era
+     * have been reported but not yet processed—withdrawal is restricted to eras for which
+     * all offences have been processed.
+     *
+     * The unlocked stake will be returned as free balance in the stash account.
      *
      * The dispatch origin for this call must be _Signed_ by the controller.
      *
@@ -11401,8 +11444,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * ## Parameters
      *
-     * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
-     * compatibility. It no longer has any effect.
+     * - `num_slashing_spans`: **Deprecated**. Retained only for backward compatibility; this
+     * parameter has no effect.
      *
      * @param {number} numSlashingSpans
      **/
@@ -11734,29 +11777,31 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Cancels scheduled slashes for a given era before they are applied.
      *
-     * This function allows `T::AdminOrigin` to selectively remove pending slashes from
-     * the `UnappliedSlashes` storage, preventing their enactment.
+     * This function allows `T::AdminOrigin` to cancel pending slashes for specified validators
+     * in a given era. The cancelled slashes are stored and will be checked when applying
+     * slashes.
      *
      * ## Parameters
-     * - `era`: The staking era for which slashes were deferred.
-     * - `slash_keys`: A list of slash keys identifying the slashes to remove. This is a tuple
-     * of `(stash, slash_fraction, page_index)`.
+     * - `era`: The staking era for which slashes should be cancelled. This is the era where
+     * the slash would be applied, not the era in which the offence was committed.
+     * - `validator_slashes`: A list of validator stash accounts and their slash fractions to
+     * be cancelled.
      *
      * @param {number} era
-     * @param {Array<[AccountId32Like, Perbill, number]>} slashKeys
+     * @param {Array<[AccountId32Like, Perbill]>} validatorSlashes
      **/
     cancelDeferredSlash: GenericTxCall<
       Rv,
       (
         era: number,
-        slashKeys: Array<[AccountId32Like, Perbill, number]>,
+        validatorSlashes: Array<[AccountId32Like, Perbill]>,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'CancelDeferredSlash';
-            params: { era: number; slashKeys: Array<[AccountId32Like, Perbill, number]> };
+            params: { era: number; validatorSlashes: Array<[AccountId32Like, Perbill]> };
           };
         }
       >
@@ -11822,9 +11867,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Remove all data structures concerning a staker/stash once it is at a state where it can
      * be considered `dust` in the staking system. The requirements are:
      *
-     * 1. the `total_balance` of the stash is below minimum bond.
-     * 2. or, the `ledger.total` of the stash is below minimum bond.
-     * 3. or, existential deposit is zero and either `total_balance` or `ledger.total` is zero.
+     * 1. the `total_balance` of the stash is below `min_chilled_bond` or is zero.
+     * 2. or, the `ledger.total` of the stash is below `min_chilled_bond` or is zero.
      *
      * The former can happen in cases like a slash; the latter when a fully unbonded account
      * is still receiving staking rewards in `RewardDestination::Staked`.
@@ -12190,11 +12234,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Manually applies a deferred slash for a given era.
+     * Manually and permissionlessly applies a deferred slash for a given era.
      *
      * Normally, slashes are automatically applied shortly after the start of the `slash_era`.
-     * This function exists as a **fallback mechanism** in case slashes were not applied due to
-     * unexpected reasons. It allows anyone to manually apply an unapplied slash.
+     * The automatic application of slashes is handled by the pallet's internal logic, and it
+     * tries to apply one slash page per block of the era.
+     * If for some reason, one era is not enough for applying all slash pages, the remaining
+     * slashes need to be manually (permissionlessly) applied.
+     *
+     * For a given era x, if at era x+1, slashes are still unapplied, all withdrawals get
+     * blocked, and these need to be manually applied by calling this function.
+     * This function exists as a **fallback mechanism** for this extreme situation, but we
+     * never expect to encounter this in normal scenarios.
+     *
+     * The parameters for this call can be queried by looking at the `UnappliedSlashes` storage
+     * for eras older than the active era.
      *
      * ## Parameters
      * - `slash_era`: The staking era in which the slash was originally scheduled.
@@ -12205,7 +12259,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * ## Behavior
      * - The function is **permissionless**—anyone can call it.
-     * - The `slash_era` **must be the current era or a past era**. If it is in the future, the
+     * - The `slash_era` **must be the current era or a past era**.
+     * If it is in the future, the
      * call fails with `EraNotStarted`.
      * - The fee is waived if the slash is successfully applied.
      *
@@ -12228,6 +12283,35 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'ApplySlash';
             params: { slashEra: number; slashKey: [AccountId32Like, Perbill, number] };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Perform one step of era pruning to prevent PoV size exhaustion from unbounded deletions.
+     *
+     * This extrinsic enables permissionless lazy pruning of era data by performing
+     * incremental deletion of storage items. Each call processes a limited number
+     * of items based on available block weight to avoid exceeding block limits.
+     *
+     * Returns `Pays::No` when work is performed to incentivize regular maintenance.
+     * Anyone can call this to help maintain the chain's storage health.
+     *
+     * The era must be eligible for pruning (older than HistoryDepth + 1).
+     * Check `EraPruningState` storage to see if an era needs pruning before calling.
+     *
+     * @param {number} era
+     **/
+    pruneEraStep: GenericTxCall<
+      Rv,
+      (era: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'PruneEraStep';
+            params: { era: number };
           };
         }
       >
@@ -13475,7 +13559,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Retract a submission.
      *
-     * A portion of the deposit may be returned, based on the [`Config::BailoutGraceRatio`].
+     * A portion of the deposit may be returned, based on the [`Config::EjectGraceRatio`].
      *
      * This will fully remove the solution from storage.
      *

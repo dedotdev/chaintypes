@@ -92,7 +92,7 @@ import type {
   PalletNftFractionalizationDetails,
   PalletAssetConversionPoolInfo,
   PalletReviveVmCodeInfo,
-  PalletReviveStorageContractInfo,
+  PalletReviveStorageAccountInfo,
   PalletReviveStorageDeletionQueueManager,
   PalletAssetRewardsPoolStakerInfo,
   PalletAssetRewardsPoolInfo,
@@ -111,6 +111,7 @@ import type {
   PalletStakingAsyncSlashingOffenceRecord,
   PalletStakingAsyncUnappliedSlash,
   PalletStakingAsyncSnapshotStatus,
+  PalletStakingAsyncPalletPruningStep,
   PalletNominationPoolsPoolMember,
   PalletNominationPoolsBondedPoolInner,
   PalletNominationPoolsRewardPool,
@@ -2122,6 +2123,8 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
   revive: {
     /**
      * A mapping from a contract's code hash to its code.
+     * The code's size is bounded by [`crate::limits::BLOB_BYTES`] for PVM and
+     * [`revm::primitives::eip170::MAX_CODE_SIZE`] for EVM bytecode.
      *
      * @param {H256} arg
      * @param {Callback<Bytes | undefined> =} callback
@@ -2137,12 +2140,12 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     codeInfoOf: GenericStorageQuery<Rv, (arg: H256) => PalletReviveVmCodeInfo | undefined, H256>;
 
     /**
-     * The code associated with a given account.
+     * The data associated to a contract or externally owned account.
      *
      * @param {H160} arg
-     * @param {Callback<PalletReviveStorageContractInfo | undefined> =} callback
+     * @param {Callback<PalletReviveStorageAccountInfo | undefined> =} callback
      **/
-    contractInfoOf: GenericStorageQuery<Rv, (arg: H160) => PalletReviveStorageContractInfo | undefined, H160>;
+    accountInfoOf: GenericStorageQuery<Rv, (arg: H160) => PalletReviveStorageAccountInfo | undefined, H160>;
 
     /**
      * The immutable data associated with a given account.
@@ -2692,6 +2695,18 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     >;
 
     /**
+     * Cancelled slashes by era and validator with maximum slash fraction to be cancelled.
+     *
+     * When slashes are cancelled by governance, this stores the era and the validators
+     * whose slashes should be cancelled, along with the maximum slash fraction that should
+     * be cancelled for each validator.
+     *
+     * @param {number} arg
+     * @param {Callback<Array<[AccountId32, Perbill]>> =} callback
+     **/
+    cancelledSlashes: GenericStorageQuery<Rv, (arg: number) => Array<[AccountId32, Perbill]>, number>;
+
+    /**
      * All slashing events on validators, mapped by era to the highest slash proportion
      * and slash value of the era.
      *
@@ -2741,6 +2756,14 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<Array<AccountId32>> =} callback
      **/
     electableStashes: GenericStorageQuery<Rv, () => Array<AccountId32>>;
+
+    /**
+     * Tracks the current step of era pruning process for each era being lazily pruned.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletStakingAsyncPalletPruningStep | undefined> =} callback
+     **/
+    eraPruningState: GenericStorageQuery<Rv, (arg: number) => PalletStakingAsyncPalletPruningStep | undefined, number>;
 
     /**
      * Generic pallet storage query

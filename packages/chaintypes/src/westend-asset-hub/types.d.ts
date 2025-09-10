@@ -18,12 +18,12 @@ import type {
   MultiAddress,
   MultiAddressLike,
   AccountId32Like,
+  U256,
   Percent,
   PerU16,
   UncheckedExtrinsic,
   Era,
   FixedI64,
-  U256,
 } from 'dedot/codecs';
 
 export type FrameSystemAccountInfo = {
@@ -487,9 +487,17 @@ export type PalletBalancesEvent =
    **/
   | { name: 'Minted'; data: { who: AccountId32; amount: bigint } }
   /**
+   * Some credit was balanced and added to the TotalIssuance.
+   **/
+  | { name: 'MintedCredit'; data: { amount: bigint } }
+  /**
    * Some amount was burned from an account.
    **/
   | { name: 'Burned'; data: { who: AccountId32; amount: bigint } }
+  /**
+   * Some debt has been dropped from the Total Issuance.
+   **/
+  | { name: 'BurnedDebt'; data: { amount: bigint } }
   /**
    * Some amount was suspended from an account (it can be restored later).
    **/
@@ -529,9 +537,78 @@ export type PalletBalancesEvent =
   /**
    * The `TotalIssuance` was forcefully changed.
    **/
-  | { name: 'TotalIssuanceForced'; data: { old: bigint; new: bigint } };
+  | { name: 'TotalIssuanceForced'; data: { old: bigint; new: bigint } }
+  /**
+   * Some balance was placed on hold.
+   **/
+  | { name: 'Held'; data: { reason: AssetHubWestendRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
+   * Held balance was burned from an account.
+   **/
+  | { name: 'BurnedHeld'; data: { reason: AssetHubWestendRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
+   * A transfer of `amount` on hold from `source` to `dest` was initiated.
+   **/
+  | {
+      name: 'TransferOnHold';
+      data: { reason: AssetHubWestendRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint };
+    }
+  /**
+   * The `transferred` balance is placed on hold at the `dest` account.
+   **/
+  | {
+      name: 'TransferAndHold';
+      data: {
+        reason: AssetHubWestendRuntimeRuntimeHoldReason;
+        source: AccountId32;
+        dest: AccountId32;
+        transferred: bigint;
+      };
+    }
+  /**
+   * Some balance was released from hold.
+   **/
+  | { name: 'Released'; data: { reason: AssetHubWestendRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
+   * An unexpected/defensive event was triggered.
+   **/
+  | { name: 'Unexpected'; data: PalletBalancesUnexpectedKind };
 
 export type FrameSupportTokensMiscBalanceStatus = 'Free' | 'Reserved';
+
+export type AssetHubWestendRuntimeRuntimeHoldReason =
+  | { type: 'Preimage'; value: PalletPreimageHoldReason }
+  | { type: 'Session'; value: PalletSessionHoldReason }
+  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
+  | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
+  | { type: 'Revive'; value: PalletReviveHoldReason }
+  | { type: 'AssetRewards'; value: PalletAssetRewardsHoldReason }
+  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
+  | { type: 'Staking'; value: PalletStakingAsyncPalletHoldReason }
+  | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
+  | { type: 'MultiBlockElectionSigned'; value: PalletElectionProviderMultiBlockSignedPalletHoldReason };
+
+export type PalletPreimageHoldReason = 'Preimage';
+
+export type PalletSessionHoldReason = 'Keys';
+
+export type PalletXcmHoldReason = 'AuthorizeAlias';
+
+export type PalletNftFractionalizationHoldReason = 'Fractionalized';
+
+export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
+
+export type PalletAssetRewardsHoldReason = 'PoolCreation';
+
+export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
+
+export type PalletStakingAsyncPalletHoldReason = 'Staking';
+
+export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
+
+export type PalletElectionProviderMultiBlockSignedPalletHoldReason = 'SignedSubmission';
+
+export type PalletBalancesUnexpectedKind = 'BalanceUpdated' | 'FailedToMutateAccount';
 
 /**
  * The `Event` enum of this pallet
@@ -1607,6 +1684,8 @@ export type PalletProxyEvent =
         who: AccountId32;
         proxyType: AssetHubWestendRuntimeProxyType;
         disambiguationIndex: number;
+        at: number;
+        extrinsicIndex: number;
       };
     }
   /**
@@ -2924,7 +3003,7 @@ export type PalletStakingAsyncPalletEvent =
   /**
    * An unapplied slash has been cancelled.
    **/
-  | { name: 'SlashCancelled'; data: { slashEra: number; slashKey: [AccountId32, Perbill, number]; payout: bigint } }
+  | { name: 'SlashCancelled'; data: { slashEra: number; validator: AccountId32 } }
   /**
    * Session change has been triggered.
    *
@@ -2936,7 +3015,15 @@ export type PalletStakingAsyncPalletEvent =
    * Something occurred that should never happen under normal operation.
    * Logged as an event for fail-safe observability.
    **/
-  | { name: 'Unexpected'; data: PalletStakingAsyncPalletUnexpectedKind };
+  | { name: 'Unexpected'; data: PalletStakingAsyncPalletUnexpectedKind }
+  /**
+   * An offence was reported that was too old to be processed, and thus was dropped.
+   **/
+  | { name: 'OffenceTooOld'; data: { offenceEra: number; validator: AccountId32; fraction: Perbill } }
+  /**
+   * An old era with the given index was pruned.
+   **/
+  | { name: 'EraPruned'; data: { index: number } };
 
 export type PalletStakingAsyncRewardDestination =
   | { type: 'Staked' }
@@ -3328,19 +3415,19 @@ export type PalletConvictionVotingEvent =
   /**
    * An account has delegated their vote to another account. \[who, target\]
    **/
-  | { name: 'Delegated'; data: [AccountId32, AccountId32] }
+  | { name: 'Delegated'; data: [AccountId32, AccountId32, number] }
   /**
    * An \[account\] has cancelled a previous delegation operation.
    **/
-  | { name: 'Undelegated'; data: AccountId32 }
+  | { name: 'Undelegated'; data: [AccountId32, number] }
   /**
    * An account has voted
    **/
-  | { name: 'Voted'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } }
+  | { name: 'Voted'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number } }
   /**
    * A vote has been removed
    **/
-  | { name: 'VoteRemoved'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } }
+  | { name: 'VoteRemoved'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number } }
   /**
    * The lockup period of a conviction vote expired, and the funds have been unlocked.
    **/
@@ -13759,20 +13846,21 @@ export type PalletReviveCall =
    **/
   | {
       name: 'EthInstantiateWithCode';
-      params: {
-        value: bigint;
-        gasLimit: SpWeightsWeightV2Weight;
-        storageDepositLimit: bigint;
-        code: Bytes;
-        data: Bytes;
-      };
+      params: { value: U256; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint; code: Bytes; data: Bytes };
+    }
+  /**
+   * Same as [`Self::call`], but intended to be dispatched **only**
+   * by an EVM transaction through the EVM compatibility layer.
+   **/
+  | {
+      name: 'EthCall';
+      params: { dest: H160; value: U256; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint; data: Bytes };
     }
   /**
    * Upload new `code` without instantiating a contract from it.
    *
    * If the code does not already exist a deposit is reserved from the caller
-   * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
-   * depends on the size of the supplied `code`.
+   * The size of the reserve depends on the size of the supplied `code`.
    *
    * # Note
    *
@@ -13780,6 +13868,9 @@ export type PalletReviveCall =
    * To avoid this situation a constructor could employ access control so that it can
    * only be instantiated by permissioned entities. The same is true when uploading
    * through [`Self::instantiate_with_code`].
+   *
+   * If the refcount of the code reaches zero after terminating the last contract that
+   * references this code, the code will be removed automatically.
    **/
   | { name: 'UploadCode'; params: { code: Bytes; storageDepositLimit: bigint } }
   /**
@@ -13942,7 +14033,7 @@ export type PalletReviveCallLike =
   | {
       name: 'EthInstantiateWithCode';
       params: {
-        value: bigint;
+        value: U256;
         gasLimit: SpWeightsWeightV2Weight;
         storageDepositLimit: bigint;
         code: BytesLike;
@@ -13950,11 +14041,24 @@ export type PalletReviveCallLike =
       };
     }
   /**
+   * Same as [`Self::call`], but intended to be dispatched **only**
+   * by an EVM transaction through the EVM compatibility layer.
+   **/
+  | {
+      name: 'EthCall';
+      params: {
+        dest: H160;
+        value: U256;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        data: BytesLike;
+      };
+    }
+  /**
    * Upload new `code` without instantiating a contract from it.
    *
    * If the code does not already exist a deposit is reserved from the caller
-   * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
-   * depends on the size of the supplied `code`.
+   * The size of the reserve depends on the size of the supplied `code`.
    *
    * # Note
    *
@@ -13962,6 +14066,9 @@ export type PalletReviveCallLike =
    * To avoid this situation a constructor could employ access control so that it can
    * only be instantiated by permissioned entities. The same is true when uploading
    * through [`Self::instantiate_with_code`].
+   *
+   * If the refcount of the code reaches zero after terminating the last contract that
+   * references this code, the code will be removed automatically.
    **/
   | { name: 'UploadCode'; params: { code: BytesLike; storageDepositLimit: bigint } }
   /**
@@ -14417,10 +14524,14 @@ export type PalletStakingAsyncPalletCall =
    **/
   | { name: 'Unbond'; params: { value: bigint } }
   /**
-   * Remove any unlocked chunks from the `unlocking` queue from our management.
+   * Remove any stake that has been fully unbonded and is ready for withdrawal.
    *
-   * This essentially frees up that balance to be used by the stash account to do whatever
-   * it wants.
+   * Stake is considered fully unbonded once [`Config::BondingDuration`] has elapsed since
+   * the unbonding was initiated. In rare cases—such as when offences for the unbonded era
+   * have been reported but not yet processed—withdrawal is restricted to eras for which
+   * all offences have been processed.
+   *
+   * The unlocked stake will be returned as free balance in the stash account.
    *
    * The dispatch origin for this call must be _Signed_ by the controller.
    *
@@ -14430,8 +14541,8 @@ export type PalletStakingAsyncPalletCall =
    *
    * ## Parameters
    *
-   * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
-   * compatibility. It no longer has any effect.
+   * - `num_slashing_spans`: **Deprecated**. Retained only for backward compatibility; this
+   * parameter has no effect.
    **/
   | { name: 'WithdrawUnbonded'; params: { numSlashingSpans: number } }
   /**
@@ -14559,15 +14670,17 @@ export type PalletStakingAsyncPalletCall =
   /**
    * Cancels scheduled slashes for a given era before they are applied.
    *
-   * This function allows `T::AdminOrigin` to selectively remove pending slashes from
-   * the `UnappliedSlashes` storage, preventing their enactment.
+   * This function allows `T::AdminOrigin` to cancel pending slashes for specified validators
+   * in a given era. The cancelled slashes are stored and will be checked when applying
+   * slashes.
    *
    * ## Parameters
-   * - `era`: The staking era for which slashes were deferred.
-   * - `slash_keys`: A list of slash keys identifying the slashes to remove. This is a tuple
-   * of `(stash, slash_fraction, page_index)`.
+   * - `era`: The staking era for which slashes should be cancelled. This is the era where
+   * the slash would be applied, not the era in which the offence was committed.
+   * - `validator_slashes`: A list of validator stash accounts and their slash fractions to
+   * be cancelled.
    **/
-  | { name: 'CancelDeferredSlash'; params: { era: number; slashKeys: Array<[AccountId32, Perbill, number]> } }
+  | { name: 'CancelDeferredSlash'; params: { era: number; validatorSlashes: Array<[AccountId32, Perbill]> } }
   /**
    * Pay out next page of the stakers behind a validator for the given era.
    *
@@ -14594,9 +14707,8 @@ export type PalletStakingAsyncPalletCall =
    * Remove all data structures concerning a staker/stash once it is at a state where it can
    * be considered `dust` in the staking system. The requirements are:
    *
-   * 1. the `total_balance` of the stash is below minimum bond.
-   * 2. or, the `ledger.total` of the stash is below minimum bond.
-   * 3. or, existential deposit is zero and either `total_balance` or `ledger.total` is zero.
+   * 1. the `total_balance` of the stash is below `min_chilled_bond` or is zero.
+   * 2. or, the `ledger.total` of the stash is below `min_chilled_bond` or is zero.
    *
    * The former can happen in cases like a slash; the latter when a fully unbonded account
    * is still receiving staking rewards in `RewardDestination::Staked`.
@@ -14771,11 +14883,21 @@ export type PalletStakingAsyncPalletCall =
    **/
   | { name: 'MigrateCurrency'; params: { stash: AccountId32 } }
   /**
-   * Manually applies a deferred slash for a given era.
+   * Manually and permissionlessly applies a deferred slash for a given era.
    *
    * Normally, slashes are automatically applied shortly after the start of the `slash_era`.
-   * This function exists as a **fallback mechanism** in case slashes were not applied due to
-   * unexpected reasons. It allows anyone to manually apply an unapplied slash.
+   * The automatic application of slashes is handled by the pallet's internal logic, and it
+   * tries to apply one slash page per block of the era.
+   * If for some reason, one era is not enough for applying all slash pages, the remaining
+   * slashes need to be manually (permissionlessly) applied.
+   *
+   * For a given era x, if at era x+1, slashes are still unapplied, all withdrawals get
+   * blocked, and these need to be manually applied by calling this function.
+   * This function exists as a **fallback mechanism** for this extreme situation, but we
+   * never expect to encounter this in normal scenarios.
+   *
+   * The parameters for this call can be queried by looking at the `UnappliedSlashes` storage
+   * for eras older than the active era.
    *
    * ## Parameters
    * - `slash_era`: The staking era in which the slash was originally scheduled.
@@ -14786,7 +14908,8 @@ export type PalletStakingAsyncPalletCall =
    *
    * ## Behavior
    * - The function is **permissionless**—anyone can call it.
-   * - The `slash_era` **must be the current era or a past era**. If it is in the future, the
+   * - The `slash_era` **must be the current era or a past era**.
+   * If it is in the future, the
    * call fails with `EraNotStarted`.
    * - The fee is waived if the slash is successfully applied.
    *
@@ -14794,7 +14917,21 @@ export type PalletStakingAsyncPalletCall =
    * - Implement an **off-chain worker (OCW) task** to automatically apply slashes when there
    * is unused block space, improving efficiency.
    **/
-  | { name: 'ApplySlash'; params: { slashEra: number; slashKey: [AccountId32, Perbill, number] } };
+  | { name: 'ApplySlash'; params: { slashEra: number; slashKey: [AccountId32, Perbill, number] } }
+  /**
+   * Perform one step of era pruning to prevent PoV size exhaustion from unbounded deletions.
+   *
+   * This extrinsic enables permissionless lazy pruning of era data by performing
+   * incremental deletion of storage items. Each call processes a limited number
+   * of items based on available block weight to avoid exceeding block limits.
+   *
+   * Returns `Pays::No` when work is performed to incentivize regular maintenance.
+   * Anyone can call this to help maintain the chain's storage health.
+   *
+   * The era must be eligible for pruning (older than HistoryDepth + 1).
+   * Check `EraPruningState` storage to see if an era needs pruning before calling.
+   **/
+  | { name: 'PruneEraStep'; params: { era: number } };
 
 export type PalletStakingAsyncPalletCallLike =
   /**
@@ -14848,10 +14985,14 @@ export type PalletStakingAsyncPalletCallLike =
    **/
   | { name: 'Unbond'; params: { value: bigint } }
   /**
-   * Remove any unlocked chunks from the `unlocking` queue from our management.
+   * Remove any stake that has been fully unbonded and is ready for withdrawal.
    *
-   * This essentially frees up that balance to be used by the stash account to do whatever
-   * it wants.
+   * Stake is considered fully unbonded once [`Config::BondingDuration`] has elapsed since
+   * the unbonding was initiated. In rare cases—such as when offences for the unbonded era
+   * have been reported but not yet processed—withdrawal is restricted to eras for which
+   * all offences have been processed.
+   *
+   * The unlocked stake will be returned as free balance in the stash account.
    *
    * The dispatch origin for this call must be _Signed_ by the controller.
    *
@@ -14861,8 +15002,8 @@ export type PalletStakingAsyncPalletCallLike =
    *
    * ## Parameters
    *
-   * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
-   * compatibility. It no longer has any effect.
+   * - `num_slashing_spans`: **Deprecated**. Retained only for backward compatibility; this
+   * parameter has no effect.
    **/
   | { name: 'WithdrawUnbonded'; params: { numSlashingSpans: number } }
   /**
@@ -14990,15 +15131,17 @@ export type PalletStakingAsyncPalletCallLike =
   /**
    * Cancels scheduled slashes for a given era before they are applied.
    *
-   * This function allows `T::AdminOrigin` to selectively remove pending slashes from
-   * the `UnappliedSlashes` storage, preventing their enactment.
+   * This function allows `T::AdminOrigin` to cancel pending slashes for specified validators
+   * in a given era. The cancelled slashes are stored and will be checked when applying
+   * slashes.
    *
    * ## Parameters
-   * - `era`: The staking era for which slashes were deferred.
-   * - `slash_keys`: A list of slash keys identifying the slashes to remove. This is a tuple
-   * of `(stash, slash_fraction, page_index)`.
+   * - `era`: The staking era for which slashes should be cancelled. This is the era where
+   * the slash would be applied, not the era in which the offence was committed.
+   * - `validator_slashes`: A list of validator stash accounts and their slash fractions to
+   * be cancelled.
    **/
-  | { name: 'CancelDeferredSlash'; params: { era: number; slashKeys: Array<[AccountId32Like, Perbill, number]> } }
+  | { name: 'CancelDeferredSlash'; params: { era: number; validatorSlashes: Array<[AccountId32Like, Perbill]> } }
   /**
    * Pay out next page of the stakers behind a validator for the given era.
    *
@@ -15025,9 +15168,8 @@ export type PalletStakingAsyncPalletCallLike =
    * Remove all data structures concerning a staker/stash once it is at a state where it can
    * be considered `dust` in the staking system. The requirements are:
    *
-   * 1. the `total_balance` of the stash is below minimum bond.
-   * 2. or, the `ledger.total` of the stash is below minimum bond.
-   * 3. or, existential deposit is zero and either `total_balance` or `ledger.total` is zero.
+   * 1. the `total_balance` of the stash is below `min_chilled_bond` or is zero.
+   * 2. or, the `ledger.total` of the stash is below `min_chilled_bond` or is zero.
    *
    * The former can happen in cases like a slash; the latter when a fully unbonded account
    * is still receiving staking rewards in `RewardDestination::Staked`.
@@ -15202,11 +15344,21 @@ export type PalletStakingAsyncPalletCallLike =
    **/
   | { name: 'MigrateCurrency'; params: { stash: AccountId32Like } }
   /**
-   * Manually applies a deferred slash for a given era.
+   * Manually and permissionlessly applies a deferred slash for a given era.
    *
    * Normally, slashes are automatically applied shortly after the start of the `slash_era`.
-   * This function exists as a **fallback mechanism** in case slashes were not applied due to
-   * unexpected reasons. It allows anyone to manually apply an unapplied slash.
+   * The automatic application of slashes is handled by the pallet's internal logic, and it
+   * tries to apply one slash page per block of the era.
+   * If for some reason, one era is not enough for applying all slash pages, the remaining
+   * slashes need to be manually (permissionlessly) applied.
+   *
+   * For a given era x, if at era x+1, slashes are still unapplied, all withdrawals get
+   * blocked, and these need to be manually applied by calling this function.
+   * This function exists as a **fallback mechanism** for this extreme situation, but we
+   * never expect to encounter this in normal scenarios.
+   *
+   * The parameters for this call can be queried by looking at the `UnappliedSlashes` storage
+   * for eras older than the active era.
    *
    * ## Parameters
    * - `slash_era`: The staking era in which the slash was originally scheduled.
@@ -15217,7 +15369,8 @@ export type PalletStakingAsyncPalletCallLike =
    *
    * ## Behavior
    * - The function is **permissionless**—anyone can call it.
-   * - The `slash_era` **must be the current era or a past era**. If it is in the future, the
+   * - The `slash_era` **must be the current era or a past era**.
+   * If it is in the future, the
    * call fails with `EraNotStarted`.
    * - The fee is waived if the slash is successfully applied.
    *
@@ -15225,7 +15378,21 @@ export type PalletStakingAsyncPalletCallLike =
    * - Implement an **off-chain worker (OCW) task** to automatically apply slashes when there
    * is unused block space, improving efficiency.
    **/
-  | { name: 'ApplySlash'; params: { slashEra: number; slashKey: [AccountId32Like, Perbill, number] } };
+  | { name: 'ApplySlash'; params: { slashEra: number; slashKey: [AccountId32Like, Perbill, number] } }
+  /**
+   * Perform one step of era pruning to prevent PoV size exhaustion from unbounded deletions.
+   *
+   * This extrinsic enables permissionless lazy pruning of era data by performing
+   * incremental deletion of storage items. Each call processes a limited number
+   * of items based on available block weight to avoid exceeding block limits.
+   *
+   * Returns `Pays::No` when work is performed to incentivize regular maintenance.
+   * Anyone can call this to help maintain the chain's storage health.
+   *
+   * The era must be eligible for pruning (older than HistoryDepth + 1).
+   * Check `EraPruningState` storage to see if an era needs pruning before calling.
+   **/
+  | { name: 'PruneEraStep'; params: { era: number } };
 
 export type PalletStakingAsyncPalletConfigOp = { type: 'Noop' } | { type: 'Set'; value: bigint } | { type: 'Remove' };
 
@@ -16394,7 +16561,7 @@ export type PalletElectionProviderMultiBlockSignedPalletCall =
   /**
    * Retract a submission.
    *
-   * A portion of the deposit may be returned, based on the [`Config::BailoutGraceRatio`].
+   * A portion of the deposit may be returned, based on the [`Config::EjectGraceRatio`].
    *
    * This will fully remove the solution from storage.
    **/
@@ -16437,7 +16604,7 @@ export type PalletElectionProviderMultiBlockSignedPalletCallLike =
   /**
    * Retract a submission.
    *
-   * A portion of the deposit may be returned, based on the [`Config::BailoutGraceRatio`].
+   * A portion of the deposit may be returned, based on the [`Config::EjectGraceRatio`].
    *
    * This will fully remove the solution from storage.
    **/
@@ -17457,38 +17624,6 @@ export type PalletAhOpsCallLike =
         reason?: AssetHubWestendRuntimeRuntimeHoldReason | undefined;
       };
     };
-
-export type AssetHubWestendRuntimeRuntimeHoldReason =
-  | { type: 'Preimage'; value: PalletPreimageHoldReason }
-  | { type: 'Session'; value: PalletSessionHoldReason }
-  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
-  | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
-  | { type: 'Revive'; value: PalletReviveHoldReason }
-  | { type: 'AssetRewards'; value: PalletAssetRewardsHoldReason }
-  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
-  | { type: 'Staking'; value: PalletStakingAsyncPalletHoldReason }
-  | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
-  | { type: 'MultiBlockElectionSigned'; value: PalletElectionProviderMultiBlockSignedPalletHoldReason };
-
-export type PalletPreimageHoldReason = 'Preimage';
-
-export type PalletSessionHoldReason = 'Keys';
-
-export type PalletXcmHoldReason = 'AuthorizeAlias';
-
-export type PalletNftFractionalizationHoldReason = 'Fractionalized';
-
-export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
-
-export type PalletAssetRewardsHoldReason = 'PoolCreation';
-
-export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
-
-export type PalletStakingAsyncPalletHoldReason = 'Staking';
-
-export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
-
-export type PalletElectionProviderMultiBlockSignedPalletHoldReason = 'SignedSubmission';
 
 export type SpRuntimeBlakeTwo256 = {};
 
@@ -19373,8 +19508,17 @@ export type PalletReviveVmCodeInfo = {
   deposit: bigint;
   refcount: bigint;
   codeLen: number;
+  codeType: PalletReviveVmBytecodeType;
   behaviourVersion: number;
 };
+
+export type PalletReviveVmBytecodeType = 'Pvm' | 'Evm';
+
+export type PalletReviveStorageAccountInfo = { accountType: PalletReviveStorageAccountType; dust: number };
+
+export type PalletReviveStorageAccountType =
+  | { type: 'Contract'; value: PalletReviveStorageContractInfo }
+  | { type: 'Eoa' };
 
 export type PalletReviveStorageContractInfo = {
   trieId: Bytes;
@@ -19440,7 +19584,7 @@ export type PalletReviveError =
    **/
   | 'ContractTrapped'
   /**
-   * The size defined in `T::MaxValueSize` was exceeded.
+   * Event body or storage item exceeds [`limits::PAYLOAD_BYTES`].
    **/
   | 'ValueTooLarge'
   /**
@@ -19509,8 +19653,7 @@ export type PalletReviveError =
    **/
   | 'BlobTooLarge'
   /**
-   * The static memory consumption of the blob will be larger than
-   * [`limits::code::STATIC_MEMORY_BYTES`].
+   * The contract declares too much memory (ro + rw + stack).
    **/
   | 'StaticMemoryTooLarge'
   /**
@@ -19558,10 +19701,6 @@ export type PalletReviveError =
    **/
   | 'BalanceConversionFailed'
   /**
-   * Failed to convert an EVM balance to a native balance.
-   **/
-  | 'DecimalPrecisionLoss'
-  /**
    * Immutable data can only be set during deploys and only be read during calls.
    * Additionally, it is only valid to set the data once and it must not be empty.
    **/
@@ -19585,9 +19724,17 @@ export type PalletReviveError =
    **/
   | 'RefcountOverOrUnderflow'
   /**
-   * Unsupported precompile address
+   * Unsupported precompile address.
    **/
-  | 'UnsupportedPrecompileAddress';
+  | 'UnsupportedPrecompileAddress'
+  /**
+   * The calldata exceeds [`limits::CALLDATA_BYTES`].
+   **/
+  | 'CallDataTooLarge'
+  /**
+   * The return data exceeds [`limits::CALLDATA_BYTES`].
+   **/
+  | 'ReturnDataTooLarge';
 
 export type PalletAssetRewardsPoolStakerInfo = { amount: bigint; rewards: bigint; rewardPerTokenPaid: bigint };
 
@@ -19689,6 +19836,15 @@ export type PalletStakingAsyncSnapshotStatus =
   | { type: 'Ongoing'; value: AccountId32 }
   | { type: 'Consumed' }
   | { type: 'Waiting' };
+
+export type PalletStakingAsyncPalletPruningStep =
+  | 'ErasStakersPaged'
+  | 'ErasStakersOverview'
+  | 'ErasValidatorPrefs'
+  | 'ClaimedRewards'
+  | 'ErasValidatorReward'
+  | 'ErasRewardPoints'
+  | 'ErasTotalStake';
 
 /**
  * The `Error` enum of this pallet.
@@ -19830,7 +19986,20 @@ export type PalletStakingAsyncPalletError =
    * Account is restricted from participation in staking. This may happen if the account is
    * staking in another way already, such as via pool.
    **/
-  | 'Restricted';
+  | 'Restricted'
+  /**
+   * Unapplied slashes in the recently concluded era is blocking this operation.
+   * See `Call::apply_slash` to apply them.
+   **/
+  | 'UnappliedSlashesInPreviousEra'
+  /**
+   * The era is not eligible for pruning.
+   **/
+  | 'EraNotPrunable'
+  /**
+   * The slash has been cancelled and cannot be applied.
+   **/
+  | 'CancelledSlash';
 
 export type PalletNominationPoolsPoolMember = {
   poolId: number;
@@ -20779,6 +20948,7 @@ export type PalletRevivePrimitivesInstantiateReturnValue = {
 
 export type PalletReviveEvmApiRpcTypesGenGenericTransaction = {
   accessList?: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry> | undefined;
+  authorizationList: Array<PalletReviveEvmApiRpcTypesGenAuthorizationListEntry>;
   blobVersionedHashes: Array<H256>;
   blobs: Array<PalletReviveEvmApiByteBytes>;
   chainId?: U256 | undefined;
@@ -20796,6 +20966,15 @@ export type PalletReviveEvmApiRpcTypesGenGenericTransaction = {
 };
 
 export type PalletReviveEvmApiRpcTypesGenAccessListEntry = { address: H160; storageKeys: Array<H256> };
+
+export type PalletReviveEvmApiRpcTypesGenAuthorizationListEntry = {
+  chainId: U256;
+  address: H160;
+  nonce: U256;
+  yParity: U256;
+  r: U256;
+  s: U256;
+};
 
 export type PalletReviveEvmApiByteBytes = Bytes;
 

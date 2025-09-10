@@ -1939,7 +1939,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ContractTrapped: GenericPalletError<Rv>;
 
     /**
-     * The size defined in `T::MaxValueSize` was exceeded.
+     * Event body or storage item exceeds [`limits::PAYLOAD_BYTES`].
      **/
     ValueTooLarge: GenericPalletError<Rv>;
 
@@ -2023,8 +2023,7 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     BlobTooLarge: GenericPalletError<Rv>;
 
     /**
-     * The static memory consumption of the blob will be larger than
-     * [`limits::code::STATIC_MEMORY_BYTES`].
+     * The contract declares too much memory (ro + rw + stack).
      **/
     StaticMemoryTooLarge: GenericPalletError<Rv>;
 
@@ -2084,11 +2083,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     BalanceConversionFailed: GenericPalletError<Rv>;
 
     /**
-     * Failed to convert an EVM balance to a native balance.
-     **/
-    DecimalPrecisionLoss: GenericPalletError<Rv>;
-
-    /**
      * Immutable data can only be set during deploys and only be read during calls.
      * Additionally, it is only valid to set the data once and it must not be empty.
      **/
@@ -2117,9 +2111,19 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     RefcountOverOrUnderflow: GenericPalletError<Rv>;
 
     /**
-     * Unsupported precompile address
+     * Unsupported precompile address.
      **/
     UnsupportedPrecompileAddress: GenericPalletError<Rv>;
+
+    /**
+     * The calldata exceeds [`limits::CALLDATA_BYTES`].
+     **/
+    CallDataTooLarge: GenericPalletError<Rv>;
+
+    /**
+     * The return data exceeds [`limits::CALLDATA_BYTES`].
+     **/
+    ReturnDataTooLarge: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -2403,6 +2407,22 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * staking in another way already, such as via pool.
      **/
     Restricted: GenericPalletError<Rv>;
+
+    /**
+     * Unapplied slashes in the recently concluded era is blocking this operation.
+     * See `Call::apply_slash` to apply them.
+     **/
+    UnappliedSlashesInPreviousEra: GenericPalletError<Rv>;
+
+    /**
+     * The era is not eligible for pruning.
+     **/
+    EraNotPrunable: GenericPalletError<Rv>;
+
+    /**
+     * The slash has been cancelled and cannot be applied.
+     **/
+    CancelledSlash: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

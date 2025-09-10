@@ -1037,6 +1037,11 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     unsafeUnstableInterface: boolean;
 
     /**
+     * Allow EVM bytecode to be uploaded and instantiated.
+     **/
+    allowEVMBytecode: boolean;
+
+    /**
      * The [EIP-155](https://eips.ethereum.org/EIPS/eip-155) chain ID.
      *
      * This is a unique identifier assigned to each blockchain network,
@@ -1214,6 +1219,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * this can be set to 604,800,000 ms (7 days).
      **/
     maxEraDuration: bigint;
+
+    /**
+     * Maximum number of storage items that can be pruned in a single call.
+     *
+     * This controls how many storage items can be deleted in each call to `prune_era_step`.
+     * This should be set to a conservative value (e.g., 100-500 items) to ensure pruning
+     * doesn't consume too much block space. The actual weight is determined by benchmarks.
+     **/
+    maxPruningItems: number;
 
     /**
      * Generic pallet constant

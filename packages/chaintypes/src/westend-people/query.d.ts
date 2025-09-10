@@ -30,6 +30,7 @@ import type {
   PolkadotPrimitivesV8AbridgedHostConfiguration,
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
+  CumulusPalletParachainSystemParachainInherentInboundMessageId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
@@ -51,6 +52,7 @@ import type {
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
   StagingXcmV5Xcm,
+  PalletXcmAuthorizedAliasesEntry,
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMessageQueuePage,
@@ -407,13 +409,35 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     processedDownwardMessages: GenericStorageQuery<Rv, () => number>;
 
     /**
-     * HRMP watermark that was set in a block.
+     * The last processed downward message.
      *
-     * This will be cleared in `on_initialize` of each new block.
+     * We need to keep track of this to filter the messages that have been already processed.
+     *
+     * @param {Callback<CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined> =} callback
+     **/
+    lastProcessedDownwardMessage: GenericStorageQuery<
+      Rv,
+      () => CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined
+    >;
+
+    /**
+     * HRMP watermark that was set in a block.
      *
      * @param {Callback<number> =} callback
      **/
     hrmpWatermark: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * The last processed HRMP message.
+     *
+     * We need to keep track of this to filter the messages that have been already processed.
+     *
+     * @param {Callback<CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined> =} callback
+     **/
+    lastProcessedHrmpMessage: GenericStorageQuery<
+      Rv,
+      () => CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined
+    >;
 
     /**
      * HRMP messages that were sent in a block.
@@ -1067,6 +1091,20 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<StagingXcmV5Xcm | undefined> =} callback
      **/
     recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV5Xcm | undefined>;
+
+    /**
+     * Map of authorized aliasers of local origins. Each local location can authorize a list of
+     * other locations to alias into it. Each aliaser is only valid until its inner `expiry`
+     * block number.
+     *
+     * @param {XcmVersionedLocation} arg
+     * @param {Callback<PalletXcmAuthorizedAliasesEntry | undefined> =} callback
+     **/
+    authorizedAliases: GenericStorageQuery<
+      Rv,
+      (arg: XcmVersionedLocation) => PalletXcmAuthorizedAliasesEntry | undefined,
+      XcmVersionedLocation
+    >;
 
     /**
      * Generic pallet storage query

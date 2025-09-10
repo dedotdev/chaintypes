@@ -5,6 +5,8 @@ import type { DispatchError, AccountId32, H256, Perbill, FixedBytes, Bytes, Resu
 import type {
   FrameSystemDispatchEventInfo,
   FrameSupportTokensMiscBalanceStatus,
+  WestendRuntimeRuntimeHoldReason,
+  PalletBalancesUnexpectedKind,
   PalletStakingRewardDestination,
   PalletStakingValidatorPrefs,
   PalletStakingForcing,
@@ -219,9 +221,19 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Minted: GenericPalletEvent<Rv, 'Balances', 'Minted', { who: AccountId32; amount: bigint }>;
 
     /**
+     * Some credit was balanced and added to the TotalIssuance.
+     **/
+    MintedCredit: GenericPalletEvent<Rv, 'Balances', 'MintedCredit', { amount: bigint }>;
+
+    /**
      * Some amount was burned from an account.
      **/
     Burned: GenericPalletEvent<Rv, 'Balances', 'Burned', { who: AccountId32; amount: bigint }>;
+
+    /**
+     * Some debt has been dropped from the Total Issuance.
+     **/
+    BurnedDebt: GenericPalletEvent<Rv, 'Balances', 'BurnedDebt', { amount: bigint }>;
 
     /**
      * Some amount was suspended from an account (it can be restored later).
@@ -272,6 +284,61 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * The `TotalIssuance` was forcefully changed.
      **/
     TotalIssuanceForced: GenericPalletEvent<Rv, 'Balances', 'TotalIssuanceForced', { old: bigint; new: bigint }>;
+
+    /**
+     * Some balance was placed on hold.
+     **/
+    Held: GenericPalletEvent<
+      Rv,
+      'Balances',
+      'Held',
+      { reason: WestendRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Held balance was burned from an account.
+     **/
+    BurnedHeld: GenericPalletEvent<
+      Rv,
+      'Balances',
+      'BurnedHeld',
+      { reason: WestendRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * A transfer of `amount` on hold from `source` to `dest` was initiated.
+     **/
+    TransferOnHold: GenericPalletEvent<
+      Rv,
+      'Balances',
+      'TransferOnHold',
+      { reason: WestendRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * The `transferred` balance is placed on hold at the `dest` account.
+     **/
+    TransferAndHold: GenericPalletEvent<
+      Rv,
+      'Balances',
+      'TransferAndHold',
+      { reason: WestendRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; transferred: bigint }
+    >;
+
+    /**
+     * Some balance was released from hold.
+     **/
+    Released: GenericPalletEvent<
+      Rv,
+      'Balances',
+      'Released',
+      { reason: WestendRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * An unexpected/defensive event was triggered.
+     **/
+    Unexpected: GenericPalletEvent<Rv, 'Balances', 'Unexpected', PalletBalancesUnexpectedKind>;
 
     /**
      * Generic pallet event
@@ -1096,7 +1163,14 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'Proxy',
       'PureCreated',
-      { pure: AccountId32; who: AccountId32; proxyType: WestendRuntimeProxyType; disambiguationIndex: number }
+      {
+        pure: AccountId32;
+        who: AccountId32;
+        proxyType: WestendRuntimeProxyType;
+        disambiguationIndex: number;
+        at: number;
+        extrinsicIndex: number;
+      }
     >;
 
     /**
@@ -1600,12 +1674,12 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     /**
      * An account has delegated their vote to another account. \[who, target\]
      **/
-    Delegated: GenericPalletEvent<Rv, 'ConvictionVoting', 'Delegated', [AccountId32, AccountId32]>;
+    Delegated: GenericPalletEvent<Rv, 'ConvictionVoting', 'Delegated', [AccountId32, AccountId32, number]>;
 
     /**
      * An \[account\] has cancelled a previous delegation operation.
      **/
-    Undelegated: GenericPalletEvent<Rv, 'ConvictionVoting', 'Undelegated', AccountId32>;
+    Undelegated: GenericPalletEvent<Rv, 'ConvictionVoting', 'Undelegated', [AccountId32, number]>;
 
     /**
      * An account has voted
@@ -1614,7 +1688,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ConvictionVoting',
       'Voted',
-      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number }
     >;
 
     /**
@@ -1624,7 +1698,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'ConvictionVoting',
       'VoteRemoved',
-      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number }
     >;
 
     /**

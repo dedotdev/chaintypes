@@ -5,6 +5,7 @@ import type { MultiAddress } from 'dedot/codecs';
 import type {
   PeopleWestendRuntimeRuntimeCall,
   SpRuntimeMultiSignature,
+  FrameSystemExtensionsAuthorizeCall,
   FrameSystemExtensionsCheckNonZeroSender,
   FrameSystemExtensionsCheckSpecVersion,
   FrameSystemExtensionsCheckTxVersion,
@@ -30,6 +31,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
   Signature: SpRuntimeMultiSignature;
   RuntimeCall: PeopleWestendRuntimeRuntimeCall;
   Extra: [
+    FrameSystemExtensionsAuthorizeCall,
     FrameSystemExtensionsCheckNonZeroSender,
     FrameSystemExtensionsCheckSpecVersion,
     FrameSystemExtensionsCheckTxVersion,
@@ -57,7 +59,7 @@ export interface VersionedWestendPeopleApi<Rv extends RpcVersion> extends Generi
 
 /**
  * @name: WestendPeopleApi
- * @specVersion: 1018000
+ * @specVersion: 1020000
  **/
 export interface WestendPeopleApi {
   legacy: VersionedWestendPeopleApi<RpcLegacy>;

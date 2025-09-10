@@ -15,7 +15,8 @@ import type {
   PeopleWestendRuntimeRuntimeCallLike,
   SpRuntimeMultiSignature,
   FrameSystemEventRecord,
-  CumulusPrimitivesParachainInherentParachainInherentData,
+  CumulusPalletParachainSystemParachainInherentBasicParachainInherentData,
+  CumulusPalletParachainSystemParachainInherentInboundMessagesData,
   PalletBalancesAdjustmentDirection,
   PeopleWestendRuntimeSessionKeys,
   XcmVersionedLocation,
@@ -310,17 +311,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * As a side effect, this function upgrades the current validation function
      * if the appropriate time has come.
      *
-     * @param {CumulusPrimitivesParachainInherentParachainInherentData} data
+     * @param {CumulusPalletParachainSystemParachainInherentBasicParachainInherentData} data
+     * @param {CumulusPalletParachainSystemParachainInherentInboundMessagesData} inboundMessagesData
      **/
     setValidationData: GenericTxCall<
       Rv,
-      (data: CumulusPrimitivesParachainInherentParachainInherentData) => ChainSubmittableExtrinsic<
+      (
+        data: CumulusPalletParachainSystemParachainInherentBasicParachainInherentData,
+        inboundMessagesData: CumulusPalletParachainSystemParachainInherentInboundMessagesData,
+      ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ParachainSystem';
           palletCall: {
             name: 'SetValidationData';
-            params: { data: CumulusPrimitivesParachainInherentParachainInherentData };
+            params: {
+              data: CumulusPalletParachainSystemParachainInherentBasicParachainInherentData;
+              inboundMessagesData: CumulusPalletParachainSystemParachainInherentInboundMessagesData;
+            };
           };
         }
       >
@@ -1128,6 +1136,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_teleport_assets` or `transfer_assets`
      **/
     teleportAssets: GenericTxCall<
       Rv,
@@ -1189,6 +1199,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_reserve_transfer_assets` or `transfer_assets`
      **/
     reserveTransferAssets: GenericTxCall<
       Rv,
@@ -1657,6 +1669,77 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               customXcmOnDest: XcmVersionedXcm;
               weightLimit: XcmV3WeightLimit;
             };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Authorize another `aliaser` location to alias into the local `origin` making this call.
+     * The `aliaser` is only authorized until the provided `expiry` block number.
+     * The call can also be used for a previously authorized alias in order to update its
+     * `expiry` block number.
+     *
+     * Usually useful to allow your local account to be aliased into from a remote location
+     * also under your control (like your account on another chain).
+     *
+     * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+     * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+     * `origin` in XCM programs executed on the local chain.
+     *
+     * @param {XcmVersionedLocation} aliaser
+     * @param {bigint | undefined} expires
+     **/
+    addAuthorizedAlias: GenericTxCall<
+      Rv,
+      (
+        aliaser: XcmVersionedLocation,
+        expires: bigint | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'AddAuthorizedAlias';
+            params: { aliaser: XcmVersionedLocation; expires: bigint | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a previously authorized `aliaser` from the list of locations that can alias into
+     * the local `origin` making this call.
+     *
+     * @param {XcmVersionedLocation} aliaser
+     **/
+    removeAuthorizedAlias: GenericTxCall<
+      Rv,
+      (aliaser: XcmVersionedLocation) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'RemoveAuthorizedAlias';
+            params: { aliaser: XcmVersionedLocation };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+     * making this call.
+     *
+     **/
+    removeAllAuthorizedAliases: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'RemoveAllAuthorizedAliases';
           };
         }
       >
@@ -2250,6 +2333,43 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Poke the deposit reserved for an existing multisig operation.
+     *
+     * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+     * the multisig operation.
+     *
+     * The transaction fee is waived if the deposit amount has changed.
+     *
+     * - `threshold`: The total number of approvals needed for this multisig.
+     * - `other_signatories`: The accounts (other than the sender) who are part of the
+     * multisig.
+     * - `call_hash`: The hash of the call this deposit is reserved for.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     * @param {number} threshold
+     * @param {Array<AccountId32Like>} otherSignatories
+     * @param {FixedBytes<32>} callHash
+     **/
+    pokeDeposit: GenericTxCall<
+      Rv,
+      (
+        threshold: number,
+        otherSignatories: Array<AccountId32Like>,
+        callHash: FixedBytes<32>,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Multisig';
+          palletCall: {
+            name: 'PokeDeposit';
+            params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -2364,7 +2484,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * The dispatch origin for this call must be _Signed_.
      *
-     * WARNING: This may be called on accounts created by `pure`, however if done, then
+     * WARNING: This may be called on accounts created by `create_pure`, however if done, then
      * the unreserved fees will be inaccessible. **All access to this account will be lost.**
      *
      **/
@@ -2430,16 +2550,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * inaccessible.
      *
      * Requires a `Signed` origin, and the sender account must have been created by a call to
-     * `pure` with corresponding parameters.
+     * `create_pure` with corresponding parameters.
      *
-     * - `spawner`: The account that originally called `pure` to create this account.
-     * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
-     * - `proxy_type`: The proxy type originally passed to `pure`.
-     * - `height`: The height of the chain when the call to `pure` was processed.
-     * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+     * - `spawner`: The account that originally called `create_pure` to create this account.
+     * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
+     * - `proxy_type`: The proxy type originally passed to `create_pure`.
+     * - `height`: The height of the chain when the call to `create_pure` was processed.
+     * - `ext_index`: The extrinsic index in which the call to `create_pure` was processed.
      *
      * Fails with `NoPermission` in case the caller is not a previously created pure
-     * account whose `pure` call has corresponding parameters.
+     * account whose `create_pure` call has corresponding parameters.
      *
      * @param {MultiAddressLike} spawner
      * @param {PeopleWestendRuntimeProxyType} proxyType
@@ -2611,6 +2731,30 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               forceProxyType: PeopleWestendRuntimeProxyType | undefined;
               call: PeopleWestendRuntimeRuntimeCallLike;
             };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Poke / Adjust deposits made for proxies and announcements based on current values.
+     * This can be used by accounts to possibly lower their locked amount.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * The transaction fee is waived if the deposit amount has changed.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     **/
+    pokeDeposit: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'PokeDeposit';
           };
         }
       >

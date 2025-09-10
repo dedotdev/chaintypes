@@ -245,9 +245,17 @@ export type PalletBalancesEvent =
    **/
   | { name: 'Minted'; data: { who: AccountId32; amount: bigint } }
   /**
+   * Some credit was balanced and added to the TotalIssuance.
+   **/
+  | { name: 'MintedCredit'; data: { amount: bigint } }
+  /**
    * Some amount was burned from an account.
    **/
   | { name: 'Burned'; data: { who: AccountId32; amount: bigint } }
+  /**
+   * Some debt has been dropped from the Total Issuance.
+   **/
+  | { name: 'BurnedDebt'; data: { amount: bigint } }
   /**
    * Some amount was suspended from an account (it can be restored later).
    **/
@@ -287,9 +295,58 @@ export type PalletBalancesEvent =
   /**
    * The `TotalIssuance` was forcefully changed.
    **/
-  | { name: 'TotalIssuanceForced'; data: { old: bigint; new: bigint } };
+  | { name: 'TotalIssuanceForced'; data: { old: bigint; new: bigint } }
+  /**
+   * Some balance was placed on hold.
+   **/
+  | { name: 'Held'; data: { reason: WestendRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
+   * Held balance was burned from an account.
+   **/
+  | { name: 'BurnedHeld'; data: { reason: WestendRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
+   * A transfer of `amount` on hold from `source` to `dest` was initiated.
+   **/
+  | {
+      name: 'TransferOnHold';
+      data: { reason: WestendRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint };
+    }
+  /**
+   * The `transferred` balance is placed on hold at the `dest` account.
+   **/
+  | {
+      name: 'TransferAndHold';
+      data: { reason: WestendRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; transferred: bigint };
+    }
+  /**
+   * Some balance was released from hold.
+   **/
+  | { name: 'Released'; data: { reason: WestendRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
+   * An unexpected/defensive event was triggered.
+   **/
+  | { name: 'Unexpected'; data: PalletBalancesUnexpectedKind };
 
 export type FrameSupportTokensMiscBalanceStatus = 'Free' | 'Reserved';
+
+export type WestendRuntimeRuntimeHoldReason =
+  | { type: 'Staking'; value: PalletStakingPalletHoldReason }
+  | { type: 'Session'; value: PalletSessionHoldReason }
+  | { type: 'Preimage'; value: PalletPreimageHoldReason }
+  | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
+  | { type: 'XcmPallet'; value: PalletXcmHoldReason };
+
+export type PalletStakingPalletHoldReason = 'Staking';
+
+export type PalletSessionHoldReason = 'Keys';
+
+export type PalletPreimageHoldReason = 'Preimage';
+
+export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
+
+export type PalletXcmHoldReason = 'AuthorizeAlias';
+
+export type PalletBalancesUnexpectedKind = 'BalanceUpdated' | 'FailedToMutateAccount';
 
 /**
  * The `Event` enum of this pallet
@@ -857,7 +914,14 @@ export type PalletProxyEvent =
    **/
   | {
       name: 'PureCreated';
-      data: { pure: AccountId32; who: AccountId32; proxyType: WestendRuntimeProxyType; disambiguationIndex: number };
+      data: {
+        pure: AccountId32;
+        who: AccountId32;
+        proxyType: WestendRuntimeProxyType;
+        disambiguationIndex: number;
+        at: number;
+        extrinsicIndex: number;
+      };
     }
   /**
    * A pure proxy was killed by its spawner.
@@ -1233,19 +1297,19 @@ export type PalletConvictionVotingEvent =
   /**
    * An account has delegated their vote to another account. \[who, target\]
    **/
-  | { name: 'Delegated'; data: [AccountId32, AccountId32] }
+  | { name: 'Delegated'; data: [AccountId32, AccountId32, number] }
   /**
    * An \[account\] has cancelled a previous delegation operation.
    **/
-  | { name: 'Undelegated'; data: AccountId32 }
+  | { name: 'Undelegated'; data: [AccountId32, number] }
   /**
    * An account has voted
    **/
-  | { name: 'Voted'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } }
+  | { name: 'Voted'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number } }
   /**
    * A vote has been removed
    **/
-  | { name: 'VoteRemoved'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } }
+  | { name: 'VoteRemoved'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number } }
   /**
    * The lockup period of a conviction vote expired, and the funds have been unlocked.
    **/
@@ -13215,23 +13279,6 @@ export type PalletBalancesReasons = 'Fee' | 'Misc' | 'All';
 export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
 export type FrameSupportTokensMiscIdAmount = { id: WestendRuntimeRuntimeHoldReason; amount: bigint };
-
-export type WestendRuntimeRuntimeHoldReason =
-  | { type: 'Staking'; value: PalletStakingPalletHoldReason }
-  | { type: 'Session'; value: PalletSessionHoldReason }
-  | { type: 'Preimage'; value: PalletPreimageHoldReason }
-  | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
-  | { type: 'XcmPallet'; value: PalletXcmHoldReason };
-
-export type PalletStakingPalletHoldReason = 'Staking';
-
-export type PalletSessionHoldReason = 'Keys';
-
-export type PalletPreimageHoldReason = 'Preimage';
-
-export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
-
-export type PalletXcmHoldReason = 'AuthorizeAlias';
 
 export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
   id: WestendRuntimeRuntimeFreezeReason;

@@ -6,18 +6,22 @@ import type {
   FrameSystemDispatchEventInfo,
   SpWeightsWeightV2Weight,
   FrameSupportTokensMiscBalanceStatus,
+  PeopleWestendRuntimeRuntimeHoldReason,
+  PalletBalancesUnexpectedKind,
   StagingXcmV5TraitsOutcome,
   StagingXcmV5Location,
   StagingXcmV5Xcm,
+  XcmV3TraitsSendError,
+  XcmV5TraitsError,
   StagingXcmV5Response,
   XcmVersionedAssets,
   StagingXcmV5AssetAssets,
-  XcmV5TraitsError,
   XcmVersionedLocation,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
   PalletMultisigTimepoint,
   PeopleWestendRuntimeProxyType,
+  PalletProxyDepositKind,
 } from './types.js';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -69,6 +73,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * An upgrade was authorized.
      **/
     UpgradeAuthorized: GenericPalletEvent<Rv, 'System', 'UpgradeAuthorized', { codeHash: H256; checkVersion: boolean }>;
+
+    /**
+     * An invalid authorized upgrade was rejected while trying to apply it.
+     **/
+    RejectedInvalidAuthorizedUpgrade: GenericPalletEvent<
+      Rv,
+      'System',
+      'RejectedInvalidAuthorizedUpgrade',
+      { codeHash: H256; error: DispatchError }
+    >;
 
     /**
      * Generic pallet event
@@ -196,9 +210,19 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Minted: GenericPalletEvent<Rv, 'Balances', 'Minted', { who: AccountId32; amount: bigint }>;
 
     /**
+     * Some credit was balanced and added to the TotalIssuance.
+     **/
+    MintedCredit: GenericPalletEvent<Rv, 'Balances', 'MintedCredit', { amount: bigint }>;
+
+    /**
      * Some amount was burned from an account.
      **/
     Burned: GenericPalletEvent<Rv, 'Balances', 'Burned', { who: AccountId32; amount: bigint }>;
+
+    /**
+     * Some debt has been dropped from the Total Issuance.
+     **/
+    BurnedDebt: GenericPalletEvent<Rv, 'Balances', 'BurnedDebt', { amount: bigint }>;
 
     /**
      * Some amount was suspended from an account (it can be restored later).
@@ -249,6 +273,61 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * The `TotalIssuance` was forcefully changed.
      **/
     TotalIssuanceForced: GenericPalletEvent<Rv, 'Balances', 'TotalIssuanceForced', { old: bigint; new: bigint }>;
+
+    /**
+     * Some balance was placed on hold.
+     **/
+    Held: GenericPalletEvent<
+      Rv,
+      'Balances',
+      'Held',
+      { reason: PeopleWestendRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Held balance was burned from an account.
+     **/
+    BurnedHeld: GenericPalletEvent<
+      Rv,
+      'Balances',
+      'BurnedHeld',
+      { reason: PeopleWestendRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * A transfer of `amount` on hold from `source` to `dest` was initiated.
+     **/
+    TransferOnHold: GenericPalletEvent<
+      Rv,
+      'Balances',
+      'TransferOnHold',
+      { reason: PeopleWestendRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * The `transferred` balance is placed on hold at the `dest` account.
+     **/
+    TransferAndHold: GenericPalletEvent<
+      Rv,
+      'Balances',
+      'TransferAndHold',
+      { reason: PeopleWestendRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; transferred: bigint }
+    >;
+
+    /**
+     * Some balance was released from hold.
+     **/
+    Released: GenericPalletEvent<
+      Rv,
+      'Balances',
+      'Released',
+      { reason: PeopleWestendRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * An unexpected/defensive event was triggered.
+     **/
+    Unexpected: GenericPalletEvent<Rv, 'Balances', 'Unexpected', PalletBalancesUnexpectedKind>;
 
     /**
      * Generic pallet event
@@ -376,6 +455,12 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     NewSession: GenericPalletEvent<Rv, 'Session', 'NewSession', { sessionIndex: number }>;
 
     /**
+     * The `NewSession` event in the current block also implies a new validator set to be
+     * queued.
+     **/
+    NewQueued: GenericPalletEvent<Rv, 'Session', 'NewQueued', null>;
+
+    /**
      * Validator has been disabled.
      **/
     ValidatorDisabled: GenericPalletEvent<Rv, 'Session', 'ValidatorDisabled', { validator: AccountId32 }>;
@@ -414,7 +499,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Attempted: GenericPalletEvent<Rv, 'PolkadotXcm', 'Attempted', { outcome: StagingXcmV5TraitsOutcome }>;
 
     /**
-     * A XCM message was sent.
+     * An XCM message was sent.
      **/
     Sent: GenericPalletEvent<
       Rv,
@@ -426,6 +511,31 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
         message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       }
+    >;
+
+    /**
+     * An XCM message failed to send.
+     **/
+    SendFailed: GenericPalletEvent<
+      Rv,
+      'PolkadotXcm',
+      'SendFailed',
+      {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        error: XcmV3TraitsSendError;
+        messageId: FixedBytes<32>;
+      }
+    >;
+
+    /**
+     * An XCM message failed to process.
+     **/
+    ProcessXcmError: GenericPalletEvent<
+      Rv,
+      'PolkadotXcm',
+      'ProcessXcmError',
+      { origin: StagingXcmV5Location; error: XcmV5TraitsError; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -680,6 +790,37 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * A XCM version migration finished.
      **/
     VersionMigrationFinished: GenericPalletEvent<Rv, 'PolkadotXcm', 'VersionMigrationFinished', { version: number }>;
+
+    /**
+     * An `aliaser` location was authorized by `target` to alias it, authorization valid until
+     * `expiry` block number.
+     **/
+    AliasAuthorized: GenericPalletEvent<
+      Rv,
+      'PolkadotXcm',
+      'AliasAuthorized',
+      { aliaser: StagingXcmV5Location; target: StagingXcmV5Location; expiry?: bigint | undefined }
+    >;
+
+    /**
+     * `target` removed alias authorization for `aliaser`.
+     **/
+    AliasAuthorizationRemoved: GenericPalletEvent<
+      Rv,
+      'PolkadotXcm',
+      'AliasAuthorizationRemoved',
+      { aliaser: StagingXcmV5Location; target: StagingXcmV5Location }
+    >;
+
+    /**
+     * `target` removed all alias authorizations.
+     **/
+    AliasesAuthorizationsRemoved: GenericPalletEvent<
+      Rv,
+      'PolkadotXcm',
+      'AliasesAuthorizationsRemoved',
+      { target: StagingXcmV5Location }
+    >;
 
     /**
      * Generic pallet event
@@ -941,6 +1082,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * The deposit for a multisig operation has been updated/poked.
+     **/
+    DepositPoked: GenericPalletEvent<
+      Rv,
+      'Multisig',
+      'DepositPoked',
+      { who: AccountId32; callHash: FixedBytes<32>; oldDeposit: bigint; newDeposit: bigint }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -962,7 +1113,24 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'Proxy',
       'PureCreated',
-      { pure: AccountId32; who: AccountId32; proxyType: PeopleWestendRuntimeProxyType; disambiguationIndex: number }
+      {
+        pure: AccountId32;
+        who: AccountId32;
+        proxyType: PeopleWestendRuntimeProxyType;
+        disambiguationIndex: number;
+        at: number;
+        extrinsicIndex: number;
+      }
+    >;
+
+    /**
+     * A pure proxy was killed by its spawner.
+     **/
+    PureKilled: GenericPalletEvent<
+      Rv,
+      'Proxy',
+      'PureKilled',
+      { pure: AccountId32; spawner: AccountId32; proxyType: PeopleWestendRuntimeProxyType; disambiguationIndex: number }
     >;
 
     /**
@@ -988,6 +1156,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Proxy',
       'ProxyRemoved',
       { delegator: AccountId32; delegatee: AccountId32; proxyType: PeopleWestendRuntimeProxyType; delay: number }
+    >;
+
+    /**
+     * A deposit stored for proxies or announcements was poked / updated.
+     **/
+    DepositPoked: GenericPalletEvent<
+      Rv,
+      'Proxy',
+      'DepositPoked',
+      { who: AccountId32; kind: PalletProxyDepositKind; oldDeposit: bigint; newDeposit: bigint }
     >;
 
     /**

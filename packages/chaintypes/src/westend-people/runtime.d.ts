@@ -41,11 +41,18 @@ import type {
   PeopleWestendRuntimeOriginCaller,
   XcmRuntimeApisDryRunXcmDryRunEffects,
   XcmRuntimeApisConversionsError,
+  XcmRuntimeApisTrustedQueryError,
+  XcmVersionedAsset,
+  XcmRuntimeApisAuthorizedAliasesOriginAliaser,
+  XcmRuntimeApisAuthorizedAliasesError,
   CumulusPrimitivesCoreCollationInfo,
   PolkadotPrimitivesVstagingCoreSelector,
   PolkadotPrimitivesVstagingClaimQueueOffset,
-  XcmRuntimeApisTrustedQueryError,
-  XcmVersionedAsset,
+  PolkadotParachainPrimitivesPrimitivesId,
+  SpStatementStoreRuntimeApiValidStatement,
+  SpStatementStoreRuntimeApiInvalidStatement,
+  SpStatementStoreRuntimeApiStatementSource,
+  SpStatementStoreStatement,
 } from './types.js';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
@@ -68,6 +75,22 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: AuraApi_authorities
      **/
     authorities: GenericRuntimeApiMethod<Rv, () => Promise<Array<SpConsensusAuraSr25519AppSr25519Public>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: RelayParentOffsetApi - 0x04e70521a0d3d2f8
+   **/
+  relayParentOffsetApi: {
+    /**
+     * Fetch the slot offset that is expected from the relay chain.
+     *
+     * @callname: RelayParentOffsetApi_relay_parent_offset
+     **/
+    relayParentOffset: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
 
     /**
      * Generic runtime api call
@@ -564,6 +587,90 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
+   * @runtimeapi: TrustedQueryApi - 0x2609be83ac4468dc
+   **/
+  trustedQueryApi: {
+    /**
+     * Returns if the location is a trusted reserve for the asset.
+     *
+     * # Arguments
+     * * `asset`: `VersionedAsset`.
+     * * `location`: `VersionedLocation`.
+     *
+     * @callname: TrustedQueryApi_is_trusted_reserve
+     * @param {XcmVersionedAsset} asset
+     * @param {XcmVersionedLocation} location
+     **/
+    isTrustedReserve: GenericRuntimeApiMethod<
+      Rv,
+      (
+        asset: XcmVersionedAsset,
+        location: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
+    >;
+
+    /**
+     * Returns if the asset can be teleported to the location.
+     *
+     * # Arguments
+     * * `asset`: `VersionedAsset`.
+     * * `location`: `VersionedLocation`.
+     *
+     * @callname: TrustedQueryApi_is_trusted_teleporter
+     * @param {XcmVersionedAsset} asset
+     * @param {XcmVersionedLocation} location
+     **/
+    isTrustedTeleporter: GenericRuntimeApiMethod<
+      Rv,
+      (
+        asset: XcmVersionedAsset,
+        location: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: AuthorizedAliasersApi - 0x12c8e3d4d7e06de0
+   **/
+  authorizedAliasersApi: {
+    /**
+     * Returns locations allowed to alias into and act as `target`.
+     *
+     * @callname: AuthorizedAliasersApi_authorized_aliasers
+     * @param {XcmVersionedLocation} target
+     **/
+    authorizedAliasers: GenericRuntimeApiMethod<
+      Rv,
+      (
+        target: XcmVersionedLocation,
+      ) => Promise<Result<Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>, XcmRuntimeApisAuthorizedAliasesError>>
+    >;
+
+    /**
+     * Returns whether `origin` is allowed to alias into and act as `target`.
+     *
+     * @callname: AuthorizedAliasersApi_is_authorized_alias
+     * @param {XcmVersionedLocation} origin
+     * @param {XcmVersionedLocation} target
+     **/
+    isAuthorizedAlias: GenericRuntimeApiMethod<
+      Rv,
+      (
+        origin: XcmVersionedLocation,
+        target: XcmVersionedLocation,
+      ) => Promise<Result<boolean, XcmRuntimeApisAuthorizedAliasesError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
    * @runtimeapi: CollectCollationInfo - 0xea93e3f16f3d6962
    **/
   collectCollationInfo: {
@@ -660,45 +767,38 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
-   * @runtimeapi: TrustedQueryApi - 0x2609be83ac4468dc
+   * @runtimeapi: GetParachainInfo - 0xa2ddb6a58477bf63
    **/
-  trustedQueryApi: {
+  getParachainInfo: {
     /**
-     * Returns if the location is a trusted reserve for the asset.
+     * Retrieve the parachain id used for runtime.
      *
-     * # Arguments
-     * * `asset`: `VersionedAsset`.
-     * * `location`: `VersionedLocation`.
-     *
-     * @callname: TrustedQueryApi_is_trusted_reserve
-     * @param {XcmVersionedAsset} asset
-     * @param {XcmVersionedLocation} location
+     * @callname: GetParachainInfo_parachain_id
      **/
-    isTrustedReserve: GenericRuntimeApiMethod<
-      Rv,
-      (
-        asset: XcmVersionedAsset,
-        location: XcmVersionedLocation,
-      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
-    >;
+    parachainId: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotParachainPrimitivesPrimitivesId>>;
 
     /**
-     * Returns if the asset can be teleported to the location.
-     *
-     * # Arguments
-     * * `asset`: `VersionedAsset`.
-     * * `location`: `VersionedLocation`.
-     *
-     * @callname: TrustedQueryApi_is_trusted_teleporter
-     * @param {XcmVersionedAsset} asset
-     * @param {XcmVersionedLocation} location
+     * Generic runtime api call
      **/
-    isTrustedTeleporter: GenericRuntimeApiMethod<
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: ValidateStatement - 0xbe9fb0c91a8046cf
+   **/
+  validateStatement: {
+    /**
+     * Validate the statement.
+     *
+     * @callname: ValidateStatement_validate_statement
+     * @param {SpStatementStoreRuntimeApiStatementSource} source
+     * @param {SpStatementStoreStatement} statement
+     **/
+    validateStatement: GenericRuntimeApiMethod<
       Rv,
       (
-        asset: XcmVersionedAsset,
-        location: XcmVersionedLocation,
-      ) => Promise<Result<boolean, XcmRuntimeApisTrustedQueryError>>
+        source: SpStatementStoreRuntimeApiStatementSource,
+        statement: SpStatementStoreStatement,
+      ) => Promise<Result<SpStatementStoreRuntimeApiValidStatement, SpStatementStoreRuntimeApiInvalidStatement>>
     >;
 
     /**

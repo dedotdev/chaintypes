@@ -20,6 +20,7 @@ import type {
 import type {
   SpConsensusSlotsSlotDuration,
   SpConsensusAuraSr25519AppSr25519Public,
+  PolkadotParachainPrimitivesPrimitivesId,
   SpConsensusSlotsSlot,
   SpRuntimeBlock,
   SpRuntimeExtrinsicInclusionMode,
@@ -101,6 +102,22 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: RelayParentOffsetApi_relay_parent_offset
      **/
     relayParentOffset: GenericRuntimeApiMethod<Rv, () => Promise<number>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: GetParachainInfo - 0xa2ddb6a58477bf63
+   **/
+  getParachainInfo: {
+    /**
+     * Retrieve the parachain id used for runtime.
+     *
+     * @callname: GetParachainInfo_parachain_id
+     **/
+    parachainId: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotParachainPrimitivesPrimitivesId>>;
 
     /**
      * Generic runtime api call

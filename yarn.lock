@@ -1097,6 +1097,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@polkadot/types-support@npm:^16.4.7":
+  version: 16.4.7
+  resolution: "@polkadot/types-support@npm:16.4.7"
+  dependencies:
+    "@polkadot/util": "npm:^13.5.6"
+    tslib: "npm:^2.8.1"
+  checksum: 10/457f2842f9dca4bd9e6a609f2b0f5485ba9b3375e2fe5051546bf3349921c623a4df212e2bf62b71001a7c184857068803e4fde2ed39929ba00c1c26d7bbcd58
+  languageName: node
+  linkType: hard
+
 "@polkadot/util@npm:^13.5.6":
   version: 13.5.6
   resolution: "@polkadot/util@npm:13.5.6"
@@ -2177,7 +2187,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "dedot.dev@workspace:."
   dependencies:
-    "@polkadot/types-support": "npm:^16.4.6"
+    "@polkadot/types-support": "npm:^16.4.7"
     "@trivago/prettier-plugin-sort-imports": "npm:^4.1.1"
     dedot: "npm:^0.16.0"
     husky: "npm:^8.0.3"

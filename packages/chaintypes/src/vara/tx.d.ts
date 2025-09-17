@@ -6863,8 +6863,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * could be more than remaining block gas limit. Therefore, the message processing will be postponed
      * until the next block.
      *
-     * `ProgramId` is computed as Blake256 hash of concatenated bytes of `code` + `salt`. (todo #512 `code_hash` + `salt`)
-     * Such `ProgramId` must not exist in the Program Storage at the time of this call.
+     * `ActorId` is computed as Blake256 hash of concatenated bytes of `code` + `salt`. (todo #512 `code_hash` + `salt`)
+     * Such `ActorId` must not exist in the Program Storage at the time of this call.
      *
      * There is the same guarantee here as in `upload_code`. That is, future program's
      * `code` and metadata are stored before message was added to the queue and processed.

@@ -12,8 +12,8 @@ import type {
   FixedU128,
   Permill,
   Perquintill,
-  H160,
   Perbill,
+  H160,
 } from 'dedot/codecs';
 import type {
   FrameSupportTokensMiscBalanceStatus,
@@ -2506,7 +2506,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       Rv,
       'Stableswap',
       'PoolMaxPegUpdateUpdated',
-      { poolId: number; maxPegUpdate: Permill }
+      { poolId: number; maxPegUpdate: Perbill }
     >;
 
     /**
@@ -2847,9 +2847,8 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      *
      * Parameters:
      * - `asset_id`: The ID of the asset removed from collaterals
-     * - `amount`: The amount of the asset that was returned (should be zero)
      **/
-    CollateralRemoved: GenericPalletEvent<Rv, 'HSM', 'CollateralRemoved', { assetId: number; amount: bigint }>;
+    CollateralRemoved: GenericPalletEvent<Rv, 'HSM', 'CollateralRemoved', { assetId: number }>;
 
     /**
      * A collateral asset was updated
@@ -2881,7 +2880,12 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * - `asset_id`: The collateral asset used in the arbitrage
      * - `hollar_amount`: Amount of Hollar that was included in the arbitrage operation
      **/
-    ArbitrageExecuted: GenericPalletEvent<Rv, 'HSM', 'ArbitrageExecuted', { assetId: number; hollarAmount: bigint }>;
+    ArbitrageExecuted: GenericPalletEvent<
+      Rv,
+      'HSM',
+      'ArbitrageExecuted',
+      { arbitrage: number; assetId: number; hollarAmount: bigint; profit: bigint }
+    >;
 
     /**
      * Flash minter address set

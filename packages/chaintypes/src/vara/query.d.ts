@@ -90,7 +90,7 @@ import type {
   PalletNominationPoolsClaimPermission,
   GearCoreCodeInstrumentedInstrumentedCode,
   GprimitivesCodeId,
-  GearCommonCodeMetadata,
+  GearCoreCodeMetadataCodeMetadata,
   NumeratedTreeIntervalsTree,
   GprimitivesActorId,
   GearCoreProgram,
@@ -2327,18 +2327,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {GprimitivesCodeId} arg
      * @param {Callback<GearCoreCodeInstrumentedInstrumentedCode | undefined> =} callback
      **/
-    codeStorage: GenericStorageQuery<
+    instrumentedCodeStorage: GenericStorageQuery<
       Rv,
       (arg: GprimitivesCodeId) => GearCoreCodeInstrumentedInstrumentedCode | undefined,
       GprimitivesCodeId
     >;
-
-    /**
-     *
-     * @param {GprimitivesCodeId} arg
-     * @param {Callback<number | undefined> =} callback
-     **/
-    codeLenStorage: GenericStorageQuery<Rv, (arg: GprimitivesCodeId) => number | undefined, GprimitivesCodeId>;
 
     /**
      *
@@ -2350,11 +2343,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      *
      * @param {GprimitivesCodeId} arg
-     * @param {Callback<GearCommonCodeMetadata | undefined> =} callback
+     * @param {Callback<GearCoreCodeMetadataCodeMetadata | undefined> =} callback
      **/
-    metadataStorage: GenericStorageQuery<
+    codeMetadataStorage: GenericStorageQuery<
       Rv,
-      (arg: GprimitivesCodeId) => GearCommonCodeMetadata | undefined,
+      (arg: GprimitivesCodeId) => GearCoreCodeMetadataCodeMetadata | undefined,
       GprimitivesCodeId
     >;
 

@@ -5310,6 +5310,33 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Execute a single EVM call.
+     * This extrinsic will fail if the EVM call returns any other ExitReason than `ExitSucceed(Returned)` or `ExitSucceed(Stopped)`.
+     * Look the [hydradx_runtime::evm::runner::WrapRunner] implementation for details.
+     *
+     * Parameters:
+     * - `origin`: Signed origin.
+     * - `call`: presumably `pallet_evm::Call::call` as boxed `RuntimeCall`.
+     *
+     * Emits `EvmCallFailed` event when failed.
+     *
+     * @param {HydradxRuntimeRuntimeCallLike} call
+     **/
+    dispatchEvmCall: GenericTxCall<
+      Rv,
+      (call: HydradxRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Dispatcher';
+          palletCall: {
+            name: 'DispatchEvmCall';
+            params: { call: HydradxRuntimeRuntimeCallLike };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -7426,7 +7453,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * This function allows setting either fixed or dynamic fee configuration for a specific asset.
      *
      * # Arguments
-     * * `origin` - Root origin required
+     * * `origin` - Authority origin required
      * * `asset_id` - The asset ID to configure
      * * `config` - Fee configuration (Fixed or Dynamic)
      *
@@ -7457,7 +7484,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * After removal, the asset will use the default dynamic fee parameters configured in the runtime.
      *
      * # Arguments
-     * * `origin` - Root origin required
+     * * `origin` - Authority origin required
      * * `asset_id` - The asset ID to remove configuration for
      *
      * @param {number} assetId
@@ -8131,7 +8158,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} amplification
      * @param {Permill} fee
      * @param {Array<PalletStableswapPegSource>} pegSource
-     * @param {Permill} maxPegUpdate
+     * @param {Perbill} maxPegUpdate
      **/
     createPoolWithPegs: GenericTxCall<
       Rv,
@@ -8141,7 +8168,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         amplification: number,
         fee: Permill,
         pegSource: Array<PalletStableswapPegSource>,
-        maxPegUpdate: Permill,
+        maxPegUpdate: Perbill,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
@@ -8154,7 +8181,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               amplification: number;
               fee: Permill;
               pegSource: Array<PalletStableswapPegSource>;
-              maxPegUpdate: Permill;
+              maxPegUpdate: Perbill;
             };
           };
         }
@@ -8265,20 +8292,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      *
      * @param {number} poolId
-     * @param {Permill} maxPegUpdate
+     * @param {Perbill} maxPegUpdate
      **/
     updatePoolMaxPegUpdate: GenericTxCall<
       Rv,
       (
         poolId: number,
-        maxPegUpdate: Permill,
+        maxPegUpdate: Perbill,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Stableswap';
           palletCall: {
             name: 'UpdatePoolMaxPegUpdate';
-            params: { poolId: number; maxPegUpdate: Permill };
+            params: { poolId: number; maxPegUpdate: Perbill };
           };
         }
       >
@@ -9120,6 +9147,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
   liquidation: {
     /**
      * Liquidates an existing money market position.
+     * Can be both signed and unsigned.
      *
      * Performs a flash loan to get funds to pay for the debt.
      * Received collateral is swapped and the profit is transferred to `FeeReceiver`.
@@ -9479,16 +9507,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - Other errors from underlying calls
      *
      * @param {number} collateralAssetId
+     * @param {bigint | undefined} flashAmount
      **/
     executeArbitrage: GenericTxCall<
       Rv,
-      (collateralAssetId: number) => ChainSubmittableExtrinsic<
+      (
+        collateralAssetId: number,
+        flashAmount: bigint | undefined,
+      ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Hsm';
           palletCall: {
             name: 'ExecuteArbitrage';
-            params: { collateralAssetId: number };
+            params: { collateralAssetId: number; flashAmount: bigint | undefined };
           };
         }
       >

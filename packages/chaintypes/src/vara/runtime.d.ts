@@ -26,7 +26,7 @@ import type {
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
   PalletGearStakingRewardsInflationInfo,
-  PalletGearEthBridgeInternalProof,
+  PalletGearEthBridgePrimitivesProof,
   SpRuntimeBlock,
   SpRuntimeExtrinsicInclusionMode,
   SpCoreOpaqueMetadata,
@@ -39,8 +39,8 @@ import type {
   SpConsensusGrandpaAppPublic,
   SpConsensusGrandpaEquivocationProof,
   SpRuntimeOpaqueValue,
-  GearCoreMessageReplyInfo,
-  GearCoreGasGasInfo,
+  GearCoreRpcReplyInfo,
+  GearCoreRpcGasInfo,
   PalletGearManagerHandleKind,
 } from './types.js';
 
@@ -347,7 +347,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
    **/
   gearBuiltinApi: {
     /**
-     * Calculate `ProgramId` (a.k.a. actor id) for a given builtin id.
+     * Calculate `ActorId` (a.k.a. actor id) for a given builtin id.
      *
      * @callname: GearBuiltinApi_query_actor_id
      * @param {bigint} builtin_id
@@ -369,7 +369,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: GearEthBridgeApi_merkle_proof
      * @param {H256} hash
      **/
-    merkleProof: GenericRuntimeApiMethod<Rv, (hash: H256) => Promise<PalletGearEthBridgeInternalProof | undefined>>;
+    merkleProof: GenericRuntimeApiMethod<Rv, (hash: H256) => Promise<PalletGearEthBridgePrimitivesProof | undefined>>;
 
     /**
      * Generic runtime api call
@@ -801,7 +801,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
         gasLimit: bigint,
         value: bigint,
         allowanceMultiplier: bigint,
-      ) => Promise<Result<GearCoreMessageReplyInfo, Bytes>>
+      ) => Promise<Result<GearCoreRpcReplyInfo, Bytes>>
     >;
 
     /**
@@ -825,7 +825,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
         allowOtherPanics: boolean,
         initialGas?: bigint | undefined,
         allowanceMultiplier?: bigint | undefined,
-      ) => Promise<Result<GearCoreGasGasInfo, Bytes>>
+      ) => Promise<Result<GearCoreRpcGasInfo, Bytes>>
     >;
 
     /**

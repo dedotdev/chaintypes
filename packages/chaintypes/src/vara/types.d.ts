@@ -6810,8 +6810,8 @@ export type PalletGearCall =
    * could be more than remaining block gas limit. Therefore, the message processing will be postponed
    * until the next block.
    *
-   * `ProgramId` is computed as Blake256 hash of concatenated bytes of `code` + `salt`. (todo #512 `code_hash` + `salt`)
-   * Such `ProgramId` must not exist in the Program Storage at the time of this call.
+   * `ActorId` is computed as Blake256 hash of concatenated bytes of `code` + `salt`. (todo #512 `code_hash` + `salt`)
+   * Such `ActorId` must not exist in the Program Storage at the time of this call.
    *
    * There is the same guarantee here as in `upload_code`. That is, future program's
    * `code` and metadata are stored before message was added to the queue and processed.
@@ -6998,8 +6998,8 @@ export type PalletGearCallLike =
    * could be more than remaining block gas limit. Therefore, the message processing will be postponed
    * until the next block.
    *
-   * `ProgramId` is computed as Blake256 hash of concatenated bytes of `code` + `salt`. (todo #512 `code_hash` + `salt`)
-   * Such `ProgramId` must not exist in the Program Storage at the time of this call.
+   * `ActorId` is computed as Blake256 hash of concatenated bytes of `code` + `salt`. (todo #512 `code_hash` + `salt`)
+   * Such `ActorId` must not exist in the Program Storage at the time of this call.
    *
    * There is the same guarantee here as in `upload_code`. That is, future program's
    * `code` and metadata are stored before message was added to the queue and processed.
@@ -8487,7 +8487,7 @@ export type GearCoreMessageUserUserMessage = {
 
 export type GearCoreBufferLimitedVec = Bytes;
 
-export type GearCoreMessagePayloadSizeError = {};
+export type GearCoreBufferPayloadSizeError = {};
 
 export type GearCoreMessageCommonReplyDetails = { to: GprimitivesMessageId; code: GearCoreErrorsSimpleReplyCode };
 
@@ -10253,20 +10253,9 @@ export type PalletNominationPoolsDefensiveError =
   | 'SlashNotApplied';
 
 export type GearCoreCodeInstrumentedInstrumentedCode = {
-  code: Bytes;
-  originalCodeLen: number;
-  exports: Array<GearCoreMessageDispatchKind>;
-  staticPages: GearCorePagesPagesAmount;
-  stackEnd?: GearCorePagesPage | undefined;
+  bytes: Bytes;
   instantiatedSectionSizes: GearCoreCodeInstrumentedInstantiatedSectionSizes;
-  version: number;
 };
-
-export type GearCoreMessageDispatchKind = 'Init' | 'Handle' | 'Reply' | 'Signal';
-
-export type GearCorePagesPagesAmount = number;
-
-export type GearCorePagesPage = number;
 
 export type GearCoreCodeInstrumentedInstantiatedSectionSizes = {
   codeSection: number;
@@ -10277,7 +10266,24 @@ export type GearCoreCodeInstrumentedInstantiatedSectionSizes = {
   typeSection: number;
 };
 
-export type GearCommonCodeMetadata = { author: H256; blockNumber: number };
+export type GearCoreCodeMetadataCodeMetadata = {
+  originalCodeLen: number;
+  exports: Array<GearCoreMessageDispatchKind>;
+  staticPages: GearCorePagesPagesAmount;
+  stackEnd?: GearCorePagesPage | undefined;
+  instrumentationStatus: GearCoreCodeMetadataInstrumentationStatus;
+};
+
+export type GearCoreMessageDispatchKind = 'Init' | 'Handle' | 'Reply' | 'Signal';
+
+export type GearCorePagesPagesAmount = number;
+
+export type GearCorePagesPage = number;
+
+export type GearCoreCodeMetadataInstrumentationStatus =
+  | { type: 'NotInstrumented' }
+  | { type: 'Instrumented'; value: { version: number; codeLen: number } }
+  | { type: 'InstrumentationFailed'; value: { version: number } };
 
 export type NumeratedTreeIntervalsTree = { inner: Array<[GearCorePagesPage, GearCorePagesPage]> };
 
@@ -10290,9 +10296,7 @@ export type GearCoreProgramActiveProgram = {
   allocationsTreeLen: number;
   memoryInfix: GearCoreProgramMemoryInfix;
   gasReservationMap: Array<[GprimitivesReservationId, GearCoreReservationGasReservationSlot]>;
-  codeHash: H256;
-  codeExports: Array<GearCoreMessageDispatchKind>;
-  staticPages: GearCorePagesPagesAmount;
+  codeId: GprimitivesCodeId;
   state: GearCoreProgramProgramState;
   expirationBlock: number;
 };
@@ -10587,8 +10591,7 @@ export type PalletGearSchedule = {
   dbWeights: PalletGearScheduleDbWeights;
   taskWeights: PalletGearScheduleTaskWeights;
   instantiationWeights: PalletGearScheduleInstantiationWeights;
-  codeInstrumentationCost: SpWeightsWeightV2Weight;
-  codeInstrumentationByteCost: SpWeightsWeightV2Weight;
+  instrumentationWeights: PalletGearScheduleInstrumentationWeights;
   loadAllocationsWeight: SpWeightsWeightV2Weight;
 };
 
@@ -10818,6 +10821,11 @@ export type PalletGearScheduleInstantiationWeights = {
   tableSectionPerByte: SpWeightsWeightV2Weight;
   elementSectionPerByte: SpWeightsWeightV2Weight;
   typeSectionPerByte: SpWeightsWeightV2Weight;
+};
+
+export type PalletGearScheduleInstrumentationWeights = {
+  base: SpWeightsWeightV2Weight;
+  perByte: SpWeightsWeightV2Weight;
 };
 
 export type GearCorePercent = number;
@@ -11070,7 +11078,7 @@ export type PalletTransactionPaymentInclusionFee = { baseFee: bigint; lenFee: bi
 
 export type PalletGearStakingRewardsInflationInfo = { inflation: Perquintill; roi: Perquintill };
 
-export type PalletGearEthBridgeInternalProof = {
+export type PalletGearEthBridgePrimitivesProof = {
   root: H256;
   proof: Array<H256>;
   numberOfLeaves: bigint;
@@ -11122,7 +11130,7 @@ export type SpRuntimeTransactionValidityValidTransaction = {
 
 export type SpRuntimeOpaqueValue = Bytes;
 
-export type GearCoreMessageReplyInfo = { payload: Bytes; value: bigint; code: GearCoreErrorsSimpleReplyCode };
+export type GearCoreRpcReplyInfo = { payload: Bytes; value: bigint; code: GearCoreErrorsSimpleReplyCode };
 
 export type PalletGearManagerHandleKind =
   | { type: 'Init'; value: Bytes }
@@ -11131,7 +11139,7 @@ export type PalletGearManagerHandleKind =
   | { type: 'Reply'; value: [GprimitivesMessageId, GearCoreErrorsSimpleReplyCode] }
   | { type: 'Signal'; value: [GprimitivesMessageId, GearCoreErrorsSimpleSignalCode] };
 
-export type GearCoreGasGasInfo = {
+export type GearCoreRpcGasInfo = {
   minLimit: bigint;
   reserved: bigint;
   burned: bigint;

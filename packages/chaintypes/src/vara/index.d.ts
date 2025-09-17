@@ -60,7 +60,7 @@ export interface VersionedVaraApi<Rv extends RpcVersion> extends GenericSubstrat
 
 /**
  * @name: VaraApi
- * @specVersion: 1820
+ * @specVersion: 1910
  **/
 export interface VaraApi {
   legacy: VersionedVaraApi<RpcLegacy>;

@@ -6082,7 +6082,19 @@ export type PalletDispatcherCall =
    * This allows executing calls with additional weight (gas) limit.
    * The extra gas is not refunded, even if not used.
    **/
-  | { name: 'DispatchWithExtraGas'; params: { call: HydradxRuntimeRuntimeCall; extraGas: bigint } };
+  | { name: 'DispatchWithExtraGas'; params: { call: HydradxRuntimeRuntimeCall; extraGas: bigint } }
+  /**
+   * Execute a single EVM call.
+   * This extrinsic will fail if the EVM call returns any other ExitReason than `ExitSucceed(Returned)` or `ExitSucceed(Stopped)`.
+   * Look the [hydradx_runtime::evm::runner::WrapRunner] implementation for details.
+   *
+   * Parameters:
+   * - `origin`: Signed origin.
+   * - `call`: presumably `pallet_evm::Call::call` as boxed `RuntimeCall`.
+   *
+   * Emits `EvmCallFailed` event when failed.
+   **/
+  | { name: 'DispatchEvmCall'; params: { call: HydradxRuntimeRuntimeCall } };
 
 export type PalletDispatcherCallLike =
   | { name: 'DispatchAsTreasury'; params: { call: HydradxRuntimeRuntimeCallLike } }
@@ -6102,7 +6114,19 @@ export type PalletDispatcherCallLike =
    * This allows executing calls with additional weight (gas) limit.
    * The extra gas is not refunded, even if not used.
    **/
-  | { name: 'DispatchWithExtraGas'; params: { call: HydradxRuntimeRuntimeCallLike; extraGas: bigint } };
+  | { name: 'DispatchWithExtraGas'; params: { call: HydradxRuntimeRuntimeCallLike; extraGas: bigint } }
+  /**
+   * Execute a single EVM call.
+   * This extrinsic will fail if the EVM call returns any other ExitReason than `ExitSucceed(Returned)` or `ExitSucceed(Stopped)`.
+   * Look the [hydradx_runtime::evm::runner::WrapRunner] implementation for details.
+   *
+   * Parameters:
+   * - `origin`: Signed origin.
+   * - `call`: presumably `pallet_evm::Call::call` as boxed `RuntimeCall`.
+   *
+   * Emits `EvmCallFailed` event when failed.
+   **/
+  | { name: 'DispatchEvmCall'; params: { call: HydradxRuntimeRuntimeCallLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8100,7 +8124,7 @@ export type PalletDynamicFeesCall =
    * This function allows setting either fixed or dynamic fee configuration for a specific asset.
    *
    * # Arguments
-   * * `origin` - Root origin required
+   * * `origin` - Authority origin required
    * * `asset_id` - The asset ID to configure
    * * `config` - Fee configuration (Fixed or Dynamic)
    **/
@@ -8112,7 +8136,7 @@ export type PalletDynamicFeesCall =
    * After removal, the asset will use the default dynamic fee parameters configured in the runtime.
    *
    * # Arguments
-   * * `origin` - Root origin required
+   * * `origin` - Authority origin required
    * * `asset_id` - The asset ID to remove configuration for
    **/
   | { name: 'RemoveAssetFee'; params: { assetId: number } };
@@ -8124,7 +8148,7 @@ export type PalletDynamicFeesCallLike =
    * This function allows setting either fixed or dynamic fee configuration for a specific asset.
    *
    * # Arguments
-   * * `origin` - Root origin required
+   * * `origin` - Authority origin required
    * * `asset_id` - The asset ID to configure
    * * `config` - Fee configuration (Fixed or Dynamic)
    **/
@@ -8136,7 +8160,7 @@ export type PalletDynamicFeesCallLike =
    * After removal, the asset will use the default dynamic fee parameters configured in the runtime.
    *
    * # Arguments
-   * * `origin` - Root origin required
+   * * `origin` - Authority origin required
    * * `asset_id` - The asset ID to remove configuration for
    **/
   | { name: 'RemoveAssetFee'; params: { assetId: number } };
@@ -8577,7 +8601,7 @@ export type PalletStableswapCall =
         amplification: number;
         fee: Permill;
         pegSource: Array<PalletStableswapPegSource>;
-        maxPegUpdate: Permill;
+        maxPegUpdate: Perbill;
       };
     }
   /**
@@ -8644,7 +8668,7 @@ export type PalletStableswapCall =
    * - `NoPegSource`: If the pool does not have pegs configured.
    *
    **/
-  | { name: 'UpdatePoolMaxPegUpdate'; params: { poolId: number; maxPegUpdate: Permill } };
+  | { name: 'UpdatePoolMaxPegUpdate'; params: { poolId: number; maxPegUpdate: Perbill } };
 
 export type PalletStableswapCallLike =
   /**
@@ -8902,7 +8926,7 @@ export type PalletStableswapCallLike =
         amplification: number;
         fee: Permill;
         pegSource: Array<PalletStableswapPegSource>;
-        maxPegUpdate: Permill;
+        maxPegUpdate: Perbill;
       };
     }
   /**
@@ -8969,7 +8993,7 @@ export type PalletStableswapCallLike =
    * - `NoPegSource`: If the pool does not have pegs configured.
    *
    **/
-  | { name: 'UpdatePoolMaxPegUpdate'; params: { poolId: number; maxPegUpdate: Permill } };
+  | { name: 'UpdatePoolMaxPegUpdate'; params: { poolId: number; maxPegUpdate: Perbill } };
 
 export type PalletStableswapTradability = { bits: number };
 
@@ -9695,6 +9719,7 @@ export type PalletReferralsFeeDistribution = { referrer: Permill; trader: Permil
 export type PalletLiquidationCall =
   /**
    * Liquidates an existing money market position.
+   * Can be both signed and unsigned.
    *
    * Performs a flash loan to get funds to pay for the debt.
    * Received collateral is swapped and the profit is transferred to `FeeReceiver`.
@@ -9728,6 +9753,7 @@ export type PalletLiquidationCall =
 export type PalletLiquidationCallLike =
   /**
    * Liquidates an existing money market position.
+   * Can be both signed and unsigned.
    *
    * Performs a flash loan to get funds to pay for the debt.
    * Received collateral is swapped and the profit is transferred to `FeeReceiver`.
@@ -9934,7 +9960,7 @@ export type PalletHsmCall =
    * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
    * - Other errors from underlying calls
    **/
-  | { name: 'ExecuteArbitrage'; params: { collateralAssetId: number } }
+  | { name: 'ExecuteArbitrage'; params: { collateralAssetId: number; flashAmount?: bigint | undefined } }
   | { name: 'SetFlashMinter'; params: { flashMinterAddr: H160 } };
 
 export type PalletHsmCallLike =
@@ -10110,7 +10136,7 @@ export type PalletHsmCallLike =
    * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
    * - Other errors from underlying calls
    **/
-  | { name: 'ExecuteArbitrage'; params: { collateralAssetId: number } }
+  | { name: 'ExecuteArbitrage'; params: { collateralAssetId: number; flashAmount?: bigint | undefined } }
   | { name: 'SetFlashMinter'; params: { flashMinterAddr: H160 } };
 
 /**
@@ -14268,13 +14294,13 @@ export type PalletStableswapEvent =
   /**
    * Pool max peg update has been updated.
    **/
-  | { name: 'PoolMaxPegUpdateUpdated'; data: { poolId: number; maxPegUpdate: Permill } };
+  | { name: 'PoolMaxPegUpdateUpdated'; data: { poolId: number; maxPegUpdate: Perbill } };
 
 export type NonZeroU16 = number;
 
 export type PalletStableswapPoolPegInfo = {
   source: Array<PalletStableswapPegSource>;
-  maxPegUpdate: Permill;
+  maxPegUpdate: Perbill;
   current: Array<[bigint, bigint]>;
 };
 
@@ -14524,9 +14550,8 @@ export type PalletHsmEvent =
    *
    * Parameters:
    * - `asset_id`: The ID of the asset removed from collaterals
-   * - `amount`: The amount of the asset that was returned (should be zero)
    **/
-  | { name: 'CollateralRemoved'; data: { assetId: number; amount: bigint } }
+  | { name: 'CollateralRemoved'; data: { assetId: number } }
   /**
    * A collateral asset was updated
    *
@@ -14554,7 +14579,7 @@ export type PalletHsmEvent =
    * - `asset_id`: The collateral asset used in the arbitrage
    * - `hollar_amount`: Amount of Hollar that was included in the arbitrage operation
    **/
-  | { name: 'ArbitrageExecuted'; data: { assetId: number; hollarAmount: bigint } }
+  | { name: 'ArbitrageExecuted'; data: { arbitrage: number; assetId: number; hollarAmount: bigint; profit: bigint } }
   /**
    * Flash minter address set
    *
@@ -16611,6 +16636,20 @@ export type PalletWhitelistError =
    * The call was already whitelisted; No-Op.
    **/
   | 'CallAlreadyWhitelisted';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletDispatcherError =
+  /**
+   * The EVM call execution failed. This happens when the EVM returns an exit reason
+   * other than `ExitSucceed(Returned)` or `ExitSucceed(Stopped)`.
+   **/
+  | 'EvmCallFailed'
+  /**
+   * The provided call is not an EVM call. This extrinsic only accepts `pallet_evm::Call::call`.
+   **/
+  | 'NotEvmCall';
 
 export type PalletAssetRegistryAssetDetails = {
   name?: Bytes | undefined;
@@ -19246,6 +19285,7 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'ConvictionVoting'; palletError: PalletConvictionVotingError }
   | { pallet: 'Referenda'; palletError: PalletReferendaError }
   | { pallet: 'Whitelist'; palletError: PalletWhitelistError }
+  | { pallet: 'Dispatcher'; palletError: PalletDispatcherError }
   | { pallet: 'AssetRegistry'; palletError: PalletAssetRegistryError }
   | { pallet: 'Claims'; palletError: PalletClaimsError }
   | { pallet: 'CollatorRewards'; palletError: PalletCollatorRewardsError }

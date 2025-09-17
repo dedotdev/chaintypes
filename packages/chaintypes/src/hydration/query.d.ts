@@ -52,6 +52,7 @@ import type {
   PalletStateTrieMigrationMigrationLimits,
   PalletConvictionVotingVoteVoting,
   PalletReferendaReferendumInfo,
+  EvmCoreErrorExitReason,
   PalletAssetRegistryAssetDetails,
   HydradxRuntimeXcmAssetLocation,
   PalletClaimsEthereumAddress,
@@ -1135,6 +1136,12 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<bigint> =} callback
      **/
     extraGas: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     *
+     * @param {Callback<EvmCoreErrorExitReason | undefined> =} callback
+     **/
+    lastEvmCallExitReason: GenericStorageQuery<Rv, () => EvmCoreErrorExitReason | undefined>;
 
     /**
      * Generic pallet storage query

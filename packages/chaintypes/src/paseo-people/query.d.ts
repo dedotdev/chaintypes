@@ -30,6 +30,7 @@ import type {
   PolkadotPrimitivesV8AbridgedHostConfiguration,
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
+  CumulusPalletParachainSystemParachainInherentInboundMessageId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
   PalletMigrationsMigrationCursor,
   PalletBalancesAccountData,
@@ -408,13 +409,35 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     processedDownwardMessages: GenericStorageQuery<Rv, () => number>;
 
     /**
-     * HRMP watermark that was set in a block.
+     * The last processed downward message.
      *
-     * This will be cleared in `on_initialize` of each new block.
+     * We need to keep track of this to filter the messages that have been already processed.
+     *
+     * @param {Callback<CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined> =} callback
+     **/
+    lastProcessedDownwardMessage: GenericStorageQuery<
+      Rv,
+      () => CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined
+    >;
+
+    /**
+     * HRMP watermark that was set in a block.
      *
      * @param {Callback<number> =} callback
      **/
     hrmpWatermark: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * The last processed HRMP message.
+     *
+     * We need to keep track of this to filter the messages that have been already processed.
+     *
+     * @param {Callback<CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined> =} callback
+     **/
+    lastProcessedHrmpMessage: GenericStorageQuery<
+      Rv,
+      () => CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined
+    >;
 
     /**
      * HRMP messages that were sent in a block.

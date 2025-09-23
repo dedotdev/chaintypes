@@ -15,7 +15,8 @@ import type {
   PeoplePaseoRuntimeRuntimeCallLike,
   SpRuntimeMultiSignature,
   FrameSystemEventRecord,
-  CumulusPrimitivesParachainInherentParachainInherentData,
+  CumulusPalletParachainSystemParachainInherentBasicParachainInherentData,
+  CumulusPalletParachainSystemParachainInherentInboundMessagesData,
   PalletMigrationsMigrationCursor,
   PalletMigrationsHistoricCleanupSelector,
   PalletBalancesAdjustmentDirection,
@@ -310,17 +311,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * As a side effect, this function upgrades the current validation function
      * if the appropriate time has come.
      *
-     * @param {CumulusPrimitivesParachainInherentParachainInherentData} data
+     * @param {CumulusPalletParachainSystemParachainInherentBasicParachainInherentData} data
+     * @param {CumulusPalletParachainSystemParachainInherentInboundMessagesData} inboundMessagesData
      **/
     setValidationData: GenericTxCall<
       Rv,
-      (data: CumulusPrimitivesParachainInherentParachainInherentData) => ChainSubmittableExtrinsic<
+      (
+        data: CumulusPalletParachainSystemParachainInherentBasicParachainInherentData,
+        inboundMessagesData: CumulusPalletParachainSystemParachainInherentInboundMessagesData,
+      ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ParachainSystem';
           palletCall: {
             name: 'SetValidationData';
-            params: { data: CumulusPrimitivesParachainInherentParachainInherentData };
+            params: {
+              data: CumulusPalletParachainSystemParachainInherentBasicParachainInherentData;
+              inboundMessagesData: CumulusPalletParachainSystemParachainInherentInboundMessagesData;
+            };
           };
         }
       >
@@ -1233,6 +1241,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_teleport_assets` or `transfer_assets`
      **/
     teleportAssets: GenericTxCall<
       Rv,
@@ -1294,6 +1304,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_reserve_transfer_assets` or `transfer_assets`
      **/
     reserveTransferAssets: GenericTxCall<
       Rv,
@@ -2577,7 +2589,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * The dispatch origin for this call must be _Signed_.
      *
-     * WARNING: This may be called on accounts created by `pure`, however if done, then
+     * WARNING: This may be called on accounts created by `create_pure`, however if done, then
      * the unreserved fees will be inaccessible. **All access to this account will be lost.**
      *
      **/
@@ -2643,16 +2655,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * inaccessible.
      *
      * Requires a `Signed` origin, and the sender account must have been created by a call to
-     * `pure` with corresponding parameters.
+     * `create_pure` with corresponding parameters.
      *
-     * - `spawner`: The account that originally called `pure` to create this account.
-     * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
-     * - `proxy_type`: The proxy type originally passed to `pure`.
-     * - `height`: The height of the chain when the call to `pure` was processed.
-     * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+     * - `spawner`: The account that originally called `create_pure` to create this account.
+     * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
+     * - `proxy_type`: The proxy type originally passed to `create_pure`.
+     * - `height`: The height of the chain when the call to `create_pure` was processed.
+     * - `ext_index`: The extrinsic index in which the call to `create_pure` was processed.
      *
      * Fails with `NoPermission` in case the caller is not a previously created pure
-     * account whose `pure` call has corresponding parameters.
+     * account whose `create_pure` call has corresponding parameters.
      *
      * @param {MultiAddressLike} spawner
      * @param {PeoplePaseoRuntimeProxyType} proxyType

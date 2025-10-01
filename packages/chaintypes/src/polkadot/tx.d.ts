@@ -1440,6 +1440,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * period ends. If this leaves an amount actively bonded less than
      * [`asset::existential_deposit`], then it is increased to the full amount.
      *
+     * The stash may be chilled if the ledger total amount falls to 0 after unbonding.
+     *
      * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
      *
      * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
@@ -1865,6 +1867,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Can be called by the `T::AdminOrigin`.
      *
      * Parameters: era and indices of the slashes for that era to kill.
+     * They **must** be sorted in ascending order, *and* unique.
      *
      * @param {number} era
      * @param {Array<number>} slashIndices
@@ -2695,6 +2698,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Emits [`Event::Paid`] if successful.
      *
      * @param {number} index
+     *
+     * @deprecated The `spend_local` call will be removed by May 2025. Migrate to the new flow and use the `spend` call.
      **/
     payout: GenericTxCall<
       Rv,
@@ -2732,6 +2737,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
      *
      * @param {number} index
+     *
+     * @deprecated The `remove_approval` call will be removed by May 2025. It associated with the deprecated `spend_local` call.
      **/
     checkStatus: GenericTxCall<
       Rv,
@@ -4173,7 +4180,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * The dispatch origin for this call must be _Signed_.
      *
-     * WARNING: This may be called on accounts created by `pure`, however if done, then
+     * WARNING: This may be called on accounts created by `create_pure`, however if done, then
      * the unreserved fees will be inaccessible. **All access to this account will be lost.**
      *
      **/
@@ -4239,16 +4246,16 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * inaccessible.
      *
      * Requires a `Signed` origin, and the sender account must have been created by a call to
-     * `pure` with corresponding parameters.
+     * `create_pure` with corresponding parameters.
      *
-     * - `spawner`: The account that originally called `pure` to create this account.
-     * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
-     * - `proxy_type`: The proxy type originally passed to `pure`.
-     * - `height`: The height of the chain when the call to `pure` was processed.
-     * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+     * - `spawner`: The account that originally called `create_pure` to create this account.
+     * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
+     * - `proxy_type`: The proxy type originally passed to `create_pure`.
+     * - `height`: The height of the chain when the call to `create_pure` was processed.
+     * - `ext_index`: The extrinsic index in which the call to `create_pure` was processed.
      *
      * Fails with `NoPermission` in case the caller is not a previously created pure
-     * account whose `pure` call has corresponding parameters.
+     * account whose `create_pure` call has corresponding parameters.
      *
      * @param {MultiAddressLike} spawner
      * @param {PolkadotRuntimeConstantsProxyProxyType} proxyType
@@ -5028,6 +5035,39 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Poke the deposit reserved for creating a bounty proposal.
+     *
+     * This can be used by accounts to update their reserved amount.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * Parameters:
+     * - `bounty_id`: The bounty id for which to adjust the deposit.
+     *
+     * If the deposit is updated, the difference will be reserved/unreserved from the
+     * proposer's account.
+     *
+     * The transaction is made free if the deposit is updated and paid otherwise.
+     *
+     * Emits `DepositPoked` if the deposit is updated.
+     *
+     * @param {number} bountyId
+     **/
+    pokeDeposit: GenericTxCall<
+      Rv,
+      (bountyId: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Bounties';
+          palletCall: {
+            name: 'PokeDeposit';
+            params: { bountyId: number };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -5470,21 +5510,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
      * calling [`Call::set_emergency_election_result`].
      *
-     * @param {number | undefined} maybeMaxVoters
-     * @param {number | undefined} maybeMaxTargets
      **/
     governanceFallback: GenericTxCall<
       Rv,
-      (
-        maybeMaxVoters: number | undefined,
-        maybeMaxTargets: number | undefined,
-      ) => ChainSubmittableExtrinsic<
+      () => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'ElectionProviderMultiPhase';
           palletCall: {
             name: 'GovernanceFallback';
-            params: { maybeMaxVoters: number | undefined; maybeMaxTargets: number | undefined };
           };
         }
       >
@@ -7723,6 +7757,94 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Remove an upgrade cooldown for a parachain.
+     *
+     * The cost for removing the cooldown earlier depends on the time left for the cooldown
+     * multiplied by [`Config::CooldownRemovalMultiplier`]. The paid tokens are burned.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} para
+     **/
+    removeUpgradeCooldown: GenericTxCall<
+      Rv,
+      (para: PolkadotParachainPrimitivesPrimitivesId) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Paras';
+          palletCall: {
+            name: 'RemoveUpgradeCooldown';
+            params: { para: PolkadotParachainPrimitivesPrimitivesId };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Sets the storage for the authorized current code hash of the parachain.
+     * If not applied, it will be removed at the `System::block_number() + valid_period` block.
+     *
+     * This can be useful, when triggering `Paras::force_set_current_code(para, code)`
+     * from a different chain than the one where the `Paras` pallet is deployed.
+     *
+     * The main purpose is to avoid transferring the entire `code` Wasm blob between chains.
+     * Instead, we authorize `code_hash` with `root`, which can later be applied by
+     * `Paras::apply_authorized_force_set_current_code(para, code)` by anyone.
+     *
+     * Authorizations are stored in an **overwriting manner**.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} para
+     * @param {PolkadotParachainPrimitivesPrimitivesValidationCodeHash} newCodeHash
+     * @param {number} validPeriod
+     **/
+    authorizeForceSetCurrentCodeHash: GenericTxCall<
+      Rv,
+      (
+        para: PolkadotParachainPrimitivesPrimitivesId,
+        newCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
+        validPeriod: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Paras';
+          palletCall: {
+            name: 'AuthorizeForceSetCurrentCodeHash';
+            params: {
+              para: PolkadotParachainPrimitivesPrimitivesId;
+              newCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
+              validPeriod: number;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Applies the already authorized current code for the parachain,
+     * triggering the same functionality as `force_set_current_code`.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} para
+     * @param {PolkadotParachainPrimitivesPrimitivesValidationCode} newCode
+     **/
+    applyAuthorizedForceSetCurrentCode: GenericTxCall<
+      Rv,
+      (
+        para: PolkadotParachainPrimitivesPrimitivesId,
+        newCode: PolkadotParachainPrimitivesPrimitivesValidationCode,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Paras';
+          palletCall: {
+            name: 'ApplyAuthorizedForceSetCurrentCode';
+            params: {
+              para: PolkadotParachainPrimitivesPrimitivesId;
+              newCode: PolkadotParachainPrimitivesPrimitivesValidationCode;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -8172,6 +8294,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * @param {bigint} maxAmount
      * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
+     *
+     * @deprecated This will be removed in favor of using `place_order_with_credits`
      **/
     placeOrderAllowDeath: GenericTxCall<
       Rv,
@@ -8209,6 +8333,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * @param {bigint} maxAmount
      * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
+     *
+     * @deprecated This will be removed in favor of using `place_order_with_credits`
      **/
     placeOrderKeepAlive: GenericTxCall<
       Rv,
@@ -9394,6 +9520,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_teleport_assets` or `transfer_assets`
      **/
     teleportAssets: GenericTxCall<
       Rv,
@@ -9455,6 +9583,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_reserve_transfer_assets` or `transfer_assets`
      **/
     reserveTransferAssets: GenericTxCall<
       Rv,

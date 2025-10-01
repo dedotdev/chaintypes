@@ -8,9 +8,10 @@ import type {
   SpWeightsRuntimeDbWeight,
   PolkadotParachainPrimitivesPrimitivesId,
   FrameSupportPalletId,
+  StagingXcmV5Junctions,
   SpWeightsWeightV2Weight,
   PalletNftsBitFlagsPalletFeature,
-  StagingXcmV4Location,
+  StagingXcmV5Location,
 } from './types.js';
 
 export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<Rv> {
@@ -251,6 +252,11 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   session: {
     /**
+     * The amount to be held when setting keys.
+     **/
+    keyDeposit: bigint;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -325,10 +331,25 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   polkadotXcm: {
     /**
+     * This chain's Universal Location.
+     **/
+    universalLocation: StagingXcmV5Junctions;
+
+    /**
      * The latest supported version that we advertise. Generally just set it to
      * `pallet_xcm::CurrentXcmVersion`.
      **/
     advertisedXcmVersion: number;
+
+    /**
+     * The maximum number of local XCM locks that a single account may have.
+     **/
+    maxLockers: number;
+
+    /**
+     * The maximum number of consumers a single remote lock may have.
+     **/
+    maxRemoteLockConsumers: number;
 
     /**
      * Generic pallet constant
@@ -392,6 +413,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      **/
     idleMaxServiceWeight: SpWeightsWeightV2Weight | undefined;
 
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `SnowbridgeSystemFrontend`'s constants
+   **/
+  snowbridgeSystemFrontend: {
     /**
      * Generic pallet constant
      **/
@@ -785,7 +815,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     /**
      * Asset class from [`Config::Assets`] used to pay the [`Config::PoolSetupFee`].
      **/
-    poolSetupFeeAsset: StagingXcmV4Location;
+    poolSetupFeeAsset: StagingXcmV5Location;
 
     /**
      * A fee to withdraw the liquidity.

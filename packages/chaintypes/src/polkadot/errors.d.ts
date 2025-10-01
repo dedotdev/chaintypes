@@ -1067,6 +1067,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     TooManyQueued: GenericPalletError<Rv>;
 
     /**
+     * User is not the proposer of the bounty.
+     **/
+    NotProposer: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1187,6 +1192,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * A error in the list interface implementation.
      **/
     List: GenericPalletError<Rv>;
+
+    /**
+     * Could not update a node, because the pallet is locked.
+     **/
+    Locked: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1725,6 +1735,21 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Invalid validation code size.
      **/
     InvalidCode: GenericPalletError<Rv>;
+
+    /**
+     * No upgrade authorized.
+     **/
+    NothingAuthorized: GenericPalletError<Rv>;
+
+    /**
+     * The submitted code is not authorized.
+     **/
+    Unauthorized: GenericPalletError<Rv>;
+
+    /**
+     * Invalid block number.
+     **/
+    InvalidBlockNumber: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -2444,6 +2469,8 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
 
     /**
      * Too many locations authorized to alias origin.
+     *
+     * @deprecated Use `LocalExecutionIncompleteWithError` instead (since 20.0.0)
      **/
     TooManyAuthorizedAliases: GenericPalletError<Rv>;
 
@@ -2456,6 +2483,12 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The alias to remove authorization for was not found.
      **/
     AliasNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Local XCM execution incomplete with the actual XCM error and the index of the
+     * instruction that caused the error.
+     **/
+    LocalExecutionIncompleteWithError: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

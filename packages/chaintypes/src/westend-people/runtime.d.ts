@@ -46,8 +46,6 @@ import type {
   XcmRuntimeApisAuthorizedAliasesOriginAliaser,
   XcmRuntimeApisAuthorizedAliasesError,
   CumulusPrimitivesCoreCollationInfo,
-  PolkadotPrimitivesVstagingCoreSelector,
-  PolkadotPrimitivesVstagingClaimQueueOffset,
   PolkadotParachainPrimitivesPrimitivesId,
   SpStatementStoreRuntimeApiValidStatement,
   SpStatementStoreRuntimeApiInvalidStatement,
@@ -684,25 +682,6 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @param {Header} header
      **/
     collectCollationInfo: GenericRuntimeApiMethod<Rv, (header: Header) => Promise<CumulusPrimitivesCoreCollationInfo>>;
-
-    /**
-     * Generic runtime api call
-     **/
-    [method: string]: GenericRuntimeApiMethod<Rv>;
-  };
-  /**
-   * @runtimeapi: GetCoreSelectorApi - 0x695c80446b8b3d4e
-   **/
-  getCoreSelectorApi: {
-    /**
-     * Retrieve core selector and claim queue offset for the next block.
-     *
-     * @callname: GetCoreSelectorApi_core_selector
-     **/
-    coreSelector: GenericRuntimeApiMethod<
-      Rv,
-      () => Promise<[PolkadotPrimitivesVstagingCoreSelector, PolkadotPrimitivesVstagingClaimQueueOffset]>
-    >;
 
     /**
      * Generic runtime api call

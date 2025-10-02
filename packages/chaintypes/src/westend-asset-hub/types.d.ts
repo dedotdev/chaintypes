@@ -3284,7 +3284,9 @@ export type PalletStakingAsyncRcClientUnexpectedKind =
   | 'SessionReportIntegrityFailed'
   | 'ValidatorSetIntegrityFailed'
   | 'SessionSkipped'
-  | 'SessionAlreadyProcessed';
+  | 'SessionAlreadyProcessed'
+  | 'ValidatorSetSendFailed'
+  | 'ValidatorSetDropped';
 
 /**
  * The `Event` enum of this pallet
@@ -16397,20 +16399,14 @@ export type PalletStakingAsyncRcClientCall =
    * Called to indicate the start of a new session on the relay chain.
    **/
   | { name: 'RelaySessionReport'; params: { report: PalletStakingAsyncRcClientSessionReport } }
-  /**
-   * Called to report one or more new offenses on the relay chain.
-   **/
-  | { name: 'RelayNewOffence'; params: { slashSession: number; offences: Array<PalletStakingAsyncRcClientOffence> } };
+  | { name: 'RelayNewOffencePaged'; params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> } };
 
 export type PalletStakingAsyncRcClientCallLike =
   /**
    * Called to indicate the start of a new session on the relay chain.
    **/
   | { name: 'RelaySessionReport'; params: { report: PalletStakingAsyncRcClientSessionReport } }
-  /**
-   * Called to report one or more new offenses on the relay chain.
-   **/
-  | { name: 'RelayNewOffence'; params: { slashSession: number; offences: Array<PalletStakingAsyncRcClientOffence> } };
+  | { name: 'RelayNewOffencePaged'; params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> } };
 
 export type PalletStakingAsyncRcClientSessionReport = {
   endIndex: number;
@@ -20345,6 +20341,13 @@ export type PalletDelegatedStakingError =
    **/
   | 'NotSupported';
 
+export type PalletStakingAsyncRcClientValidatorSetReport = {
+  newValidatorSet: Array<AccountId32>;
+  id: number;
+  pruneUpTo?: number | undefined;
+  leftover: boolean;
+};
+
 /**
  * Error of the pallet that can be returned in response to dispatches.
  **/
@@ -20912,10 +20915,6 @@ export type CumulusPrimitivesCoreCollationInfo = {
 };
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
-
-export type PolkadotPrimitivesVstagingCoreSelector = number;
-
-export type PolkadotPrimitivesVstagingClaimQueueOffset = number;
 
 export type PalletRevivePrimitivesContractResult = {
   gasConsumed: SpWeightsWeightV2Weight;

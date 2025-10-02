@@ -2839,6 +2839,20 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `RootOffences`'s errors
+   **/
+  rootOffences: {
+    /**
+     * Failed to get the active era from the staking pallet.
+     **/
+    FailedToGetActiveEra: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `Beefy`'s errors
    **/
   beefy: {

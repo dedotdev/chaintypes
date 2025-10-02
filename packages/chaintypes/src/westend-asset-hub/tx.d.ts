@@ -13393,23 +13393,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Called to report one or more new offenses on the relay chain.
      *
-     * @param {number} slashSession
-     * @param {Array<PalletStakingAsyncRcClientOffence>} offences
+     * @param {Array<[number, PalletStakingAsyncRcClientOffence]>} offences
      **/
-    relayNewOffence: GenericTxCall<
+    relayNewOffencePaged: GenericTxCall<
       Rv,
-      (
-        slashSession: number,
-        offences: Array<PalletStakingAsyncRcClientOffence>,
-      ) => ChainSubmittableExtrinsic<
+      (offences: Array<[number, PalletStakingAsyncRcClientOffence]>) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'StakingRcClient';
           palletCall: {
-            name: 'RelayNewOffence';
-            params: { slashSession: number; offences: Array<PalletStakingAsyncRcClientOffence> };
+            name: 'RelayNewOffencePaged';
+            params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> };
           };
         }
       >

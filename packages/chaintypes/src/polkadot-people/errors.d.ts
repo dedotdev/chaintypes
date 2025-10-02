@@ -475,6 +475,8 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
 
     /**
      * Too many locations authorized to alias origin.
+     *
+     * @deprecated Use `LocalExecutionIncompleteWithError` instead (since 20.0.0)
      **/
     TooManyAuthorizedAliases: GenericPalletError<Rv>;
 
@@ -487,6 +489,12 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The alias to remove authorization for was not found.
      **/
     AliasNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Local XCM execution incomplete with the actual XCM error and the index of the
+     * instruction that caused the error.
+     **/
+    LocalExecutionIncompleteWithError: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

@@ -52,8 +52,6 @@ import type {
   XcmRuntimeApisAuthorizedAliasesError,
   AssetsCommonRuntimeApiFungiblesAccessError,
   CumulusPrimitivesCoreCollationInfo,
-  PolkadotPrimitivesVstagingCoreSelector,
-  PolkadotPrimitivesVstagingClaimQueueOffset,
   PalletRevivePrimitivesContractResult,
   PalletRevivePrimitivesContractResultInstantiateReturnValue,
   PalletRevivePrimitivesCode,
@@ -886,25 +884,6 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: AssetRewards_pool_creation_cost
      **/
     poolCreationCost: GenericRuntimeApiMethod<Rv, () => Promise<bigint>>;
-
-    /**
-     * Generic runtime api call
-     **/
-    [method: string]: GenericRuntimeApiMethod<Rv>;
-  };
-  /**
-   * @runtimeapi: GetCoreSelectorApi - 0x695c80446b8b3d4e
-   **/
-  getCoreSelectorApi: {
-    /**
-     * Retrieve core selector and claim queue offset for the next block.
-     *
-     * @callname: GetCoreSelectorApi_core_selector
-     **/
-    coreSelector: GenericRuntimeApiMethod<
-      Rv,
-      () => Promise<[PolkadotPrimitivesVstagingCoreSelector, PolkadotPrimitivesVstagingClaimQueueOffset]>
-    >;
 
     /**
      * Generic runtime api call

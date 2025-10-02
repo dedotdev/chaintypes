@@ -3551,6 +3551,25 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
+   * Pallet `RootOffences`'s events
+   **/
+  rootOffences: {
+    /**
+     * An offence was created by root.
+     **/
+    OffenceCreated: GenericPalletEvent<
+      Rv,
+      'RootOffences',
+      'OffenceCreated',
+      { offenders: Array<[AccountId32, Perbill]> }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
    * Pallet `IdentityMigrator`'s events
    **/
   identityMigrator: {

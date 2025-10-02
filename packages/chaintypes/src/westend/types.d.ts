@@ -100,6 +100,7 @@ export type WestendRuntimeRuntimeEvent =
   | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
   | { pallet: 'RootTesting'; palletEvent: PalletRootTestingEvent }
   | { pallet: 'MetaTx'; palletEvent: PalletMetaTxEvent }
+  | { pallet: 'RootOffences'; palletEvent: PalletRootOffencesEvent }
   | { pallet: 'IdentityMigrator'; palletEvent: PolkadotRuntimeCommonIdentityMigratorPalletEvent };
 
 /**
@@ -1664,6 +1665,7 @@ export type WestendRuntimeRuntimeCall =
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
   | { pallet: 'RootTesting'; palletCall: PalletRootTestingCall }
   | { pallet: 'MetaTx'; palletCall: PalletMetaTxCall }
+  | { pallet: 'RootOffences'; palletCall: PalletRootOffencesCall }
   | { pallet: 'Beefy'; palletCall: PalletBeefyCall }
   | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCall };
 
@@ -1718,6 +1720,7 @@ export type WestendRuntimeRuntimeCallLike =
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
   | { pallet: 'RootTesting'; palletCall: PalletRootTestingCallLike }
   | { pallet: 'MetaTx'; palletCall: PalletMetaTxCallLike }
+  | { pallet: 'RootOffences'; palletCall: PalletRootOffencesCallLike }
   | { pallet: 'Beefy'; palletCall: PalletBeefyCallLike }
   | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCallLike };
 
@@ -11812,6 +11815,72 @@ export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletRootOffencesCall =
+  /**
+   * Allows the `root`, for example sudo to create an offence.
+   *
+   * If `identifications` is `Some`, then the given identification is used for offence. Else,
+   * it is fetched live from `session::Historical`.
+   **/
+  | {
+      name: 'CreateOffence';
+      params: {
+        offenders: Array<[AccountId32, Perbill]>;
+        maybeIdentifications?: Array<SpStakingExposure> | undefined;
+        maybeSessionIndex?: number | undefined;
+      };
+    }
+  /**
+   * Same as [`Pallet::create_offence`], but it reports the offence directly to a
+   * [`Config::ReportOffence`], aka pallet-offences first.
+   *
+   * This is useful for more accurate testing of the e2e offence processing pipeline, as it
+   * won't skip the `pallet-offences` step.
+   *
+   * It generates an offence of type [`TestSpamOffence`], with cas a fixed `ID`, but can have
+   * any `time_slot`, `session_index``, and `slash_fraction`. These values are the inputs of
+   * transaction, int the same order, with an `IdentiticationTuple` coming first.
+   **/
+  | { name: 'ReportOffence'; params: { offences: Array<[[AccountId32, SpStakingExposure], number, bigint, number]> } };
+
+export type PalletRootOffencesCallLike =
+  /**
+   * Allows the `root`, for example sudo to create an offence.
+   *
+   * If `identifications` is `Some`, then the given identification is used for offence. Else,
+   * it is fetched live from `session::Historical`.
+   **/
+  | {
+      name: 'CreateOffence';
+      params: {
+        offenders: Array<[AccountId32Like, Perbill]>;
+        maybeIdentifications?: Array<SpStakingExposure> | undefined;
+        maybeSessionIndex?: number | undefined;
+      };
+    }
+  /**
+   * Same as [`Pallet::create_offence`], but it reports the offence directly to a
+   * [`Config::ReportOffence`], aka pallet-offences first.
+   *
+   * This is useful for more accurate testing of the e2e offence processing pipeline, as it
+   * won't skip the `pallet-offences` step.
+   *
+   * It generates an offence of type [`TestSpamOffence`], with cas a fixed `ID`, but can have
+   * any `time_slot`, `session_index``, and `slash_fraction`. These values are the inputs of
+   * transaction, int the same order, with an `IdentiticationTuple` coming first.
+   **/
+  | {
+      name: 'ReportOffence';
+      params: { offences: Array<[[AccountId32Like, SpStakingExposure], number, bigint, number]> };
+    };
+
+export type SpStakingExposure = { total: bigint; own: bigint; others: Array<SpStakingIndividualExposure> };
+
+export type SpStakingIndividualExposure = { who: AccountId32; value: bigint };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletBeefyCall =
   /**
    * Report voter equivocation/misbehavior. This method will verify the
@@ -12611,7 +12680,13 @@ export type PalletStakingAsyncAhClientEvent =
    **/
   | { name: 'Unexpected'; data: PalletStakingAsyncAhClientUnexpectedKind };
 
-export type PalletStakingAsyncAhClientUnexpectedKind = 'ReceivedValidatorSetWhilePassive' | 'UnexpectedModeTransition';
+export type PalletStakingAsyncAhClientUnexpectedKind =
+  | 'ReceivedValidatorSetWhilePassive'
+  | 'UnexpectedModeTransition'
+  | 'SessionReportSendFailed'
+  | 'SessionReportDropped'
+  | 'OffenceSendFailed'
+  | 'ValidatorPointDropped';
 
 /**
  * The `Event` enum of this pallet
@@ -13108,6 +13183,15 @@ export type PalletMetaTxEvent =
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletRootOffencesEvent =
+  /**
+   * An offence was created by root.
+   **/
+  { name: 'OffenceCreated'; data: { offenders: Array<[AccountId32, Perbill]> } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PolkadotRuntimeCommonIdentityMigratorPalletEvent =
   /**
    * The identity and all sub accounts were reaped for `who`.
@@ -13355,10 +13439,6 @@ export type PalletStakingStakingLedger = {
 export type PalletStakingNominations = { targets: Array<AccountId32>; submittedIn: number; suppressed: boolean };
 
 export type PalletStakingActiveEraInfo = { index: number; start?: bigint | undefined };
-
-export type SpStakingExposure = { total: bigint; own: bigint; others: Array<SpStakingIndividualExposure> };
-
-export type SpStakingIndividualExposure = { who: AccountId32; value: bigint };
 
 export type SpStakingPagedExposureMetadata = { total: bigint; own: bigint; nominatorCount: number; pageCount: number };
 
@@ -15729,7 +15809,18 @@ export type PolkadotRuntimeParachainsCoretimePalletError =
    **/
   | 'AssetTransferFailed';
 
-export type PalletStakingAsyncAhClientBufferedOffence = { reporter?: AccountId32 | undefined; slashFraction: Perbill };
+export type PalletStakingAsyncRcClientSessionReport = {
+  endIndex: number;
+  validatorPoints: Array<[AccountId32, number]>;
+  activationTimestamp?: [bigint, number] | undefined;
+  leftover: boolean;
+};
+
+export type PalletStakingAsyncRcClientOffence = {
+  offender: AccountId32;
+  reporters: Array<AccountId32>;
+  slashFraction: Perbill;
+};
 
 /**
  * The `Error` enum of this pallet.
@@ -16073,6 +16164,15 @@ export type PalletMetaTxError =
    * The meta transaction is invalid.
    **/
   | 'Invalid';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletRootOffencesError =
+  /**
+   * Failed to get the active era from the staking pallet.
+   **/
+  'FailedToGetActiveEra';
 
 /**
  * The `Error` enum of this pallet.
@@ -16438,4 +16538,5 @@ export type WestendRuntimeRuntimeError =
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }
   | { pallet: 'AssetRate'; palletError: PalletAssetRateError }
   | { pallet: 'MetaTx'; palletError: PalletMetaTxError }
+  | { pallet: 'RootOffences'; palletError: PalletRootOffencesError }
   | { pallet: 'Beefy'; palletError: PalletBeefyError };

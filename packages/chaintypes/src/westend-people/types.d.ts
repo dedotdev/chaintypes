@@ -6187,10 +6187,6 @@ export type CumulusPrimitivesCoreCollationInfo = {
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
 
-export type PolkadotPrimitivesVstagingCoreSelector = number;
-
-export type PolkadotPrimitivesVstagingClaimQueueOffset = number;
-
 export type SpStatementStoreRuntimeApiStatementSource = 'Chain' | 'Network' | 'Local';
 
 export type SpStatementStoreStatement = {

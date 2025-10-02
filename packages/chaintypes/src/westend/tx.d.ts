@@ -96,6 +96,7 @@ import type {
   XcmVersionedAssetId,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   PalletMetaTxMetaTx,
+  SpStakingExposure,
   SpConsensusBeefyDoubleVotingProof,
   SpConsensusBeefyForkVotingProof,
   SpConsensusBeefyFutureBlockVotingProof,
@@ -10876,6 +10877,74 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'Dispatch';
             params: { metaTx: PalletMetaTxMetaTx };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `RootOffences`'s transaction calls
+   **/
+  rootOffences: {
+    /**
+     * Allows the `root`, for example sudo to create an offence.
+     *
+     * If `identifications` is `Some`, then the given identification is used for offence. Else,
+     * it is fetched live from `session::Historical`.
+     *
+     * @param {Array<[AccountId32Like, Perbill]>} offenders
+     * @param {Array<SpStakingExposure> | undefined} maybeIdentifications
+     * @param {number | undefined} maybeSessionIndex
+     **/
+    createOffence: GenericTxCall<
+      Rv,
+      (
+        offenders: Array<[AccountId32Like, Perbill]>,
+        maybeIdentifications: Array<SpStakingExposure> | undefined,
+        maybeSessionIndex: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RootOffences';
+          palletCall: {
+            name: 'CreateOffence';
+            params: {
+              offenders: Array<[AccountId32Like, Perbill]>;
+              maybeIdentifications: Array<SpStakingExposure> | undefined;
+              maybeSessionIndex: number | undefined;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Same as [`Pallet::create_offence`], but it reports the offence directly to a
+     * [`Config::ReportOffence`], aka pallet-offences first.
+     *
+     * This is useful for more accurate testing of the e2e offence processing pipeline, as it
+     * won't skip the `pallet-offences` step.
+     *
+     * It generates an offence of type [`TestSpamOffence`], with cas a fixed `ID`, but can have
+     * any `time_slot`, `session_index``, and `slash_fraction`. These values are the inputs of
+     * transaction, int the same order, with an `IdentiticationTuple` coming first.
+     *
+     * @param {Array<[[AccountId32Like, SpStakingExposure], number, bigint, number]>} offences
+     **/
+    reportOffence: GenericTxCall<
+      Rv,
+      (offences: Array<[[AccountId32Like, SpStakingExposure], number, bigint, number]>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RootOffences';
+          palletCall: {
+            name: 'ReportOffence';
+            params: { offences: Array<[[AccountId32Like, SpStakingExposure], number, bigint, number]> };
           };
         }
       >

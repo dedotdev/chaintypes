@@ -6,6 +6,7 @@ import type {
   FrameSystemDispatchEventInfo,
   SpWeightsWeightV2Weight,
   FrameSupportTokensMiscBalanceStatus,
+  PalletBalancesUnexpectedKind,
   StagingXcmV5TraitsOutcome,
   StagingXcmV5Location,
   StagingXcmV5Xcm,
@@ -398,6 +399,11 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     TotalIssuanceForced: GenericPalletEvent<Rv, 'Balances', 'TotalIssuanceForced', { old: bigint; new: bigint }>;
 
     /**
+     * An unexpected/defensive event was triggered.
+     **/
+    Unexpected: GenericPalletEvent<Rv, 'Balances', 'Unexpected', PalletBalancesUnexpectedKind>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -521,6 +527,12 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * block number as the type might suggest.
      **/
     NewSession: GenericPalletEvent<Rv, 'Session', 'NewSession', { sessionIndex: number }>;
+
+    /**
+     * The `NewSession` event in the current block also implies a new validator set to be
+     * queued.
+     **/
+    NewQueued: GenericPalletEvent<Rv, 'Session', 'NewQueued', null>;
 
     /**
      * Validator has been disabled.
@@ -1176,6 +1188,21 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Proxy',
       'PureCreated',
       { pure: AccountId32; who: AccountId32; proxyType: PeoplePolkadotRuntimeProxyType; disambiguationIndex: number }
+    >;
+
+    /**
+     * A pure proxy was killed by its spawner.
+     **/
+    PureKilled: GenericPalletEvent<
+      Rv,
+      'Proxy',
+      'PureKilled',
+      {
+        pure: AccountId32;
+        spawner: AccountId32;
+        proxyType: PeoplePolkadotRuntimeProxyType;
+        disambiguationIndex: number;
+      }
     >;
 
     /**

@@ -62,7 +62,7 @@ export interface VersionedWestendApi<Rv extends RpcVersion> extends GenericSubst
 
 /**
  * @name: WestendApi
- * @specVersion: 1020000
+ * @specVersion: 1020001
  **/
 export interface WestendApi {
   legacy: VersionedWestendApi<RpcLegacy>;

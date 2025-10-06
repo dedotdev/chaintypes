@@ -10,7 +10,6 @@ import type {
   Bytes,
   Result,
   EthereumAddress,
-  Perquintill,
   FixedU128,
 } from 'dedot/codecs';
 import type {
@@ -44,6 +43,7 @@ import type {
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
   PalletNominationPoolsClaimPermission,
+  PalletStakingAsyncAhClientUnexpectedKind,
   PolkadotPrimitivesVstagingCandidateReceiptV2,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotPrimitivesV8CoreIndex,
@@ -65,6 +65,9 @@ import type {
   StagingXcmV5AssetAssets,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
+  PalletRcMigratorMigrationStage,
+  XcmV3MaybeErrorCode,
+  PalletRcMigratorQueuePriority,
 } from './types.js';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -2205,251 +2208,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
-   * Pallet `Nis`'s events
-   **/
-  nis: {
-    /**
-     * A bid was successfully placed.
-     **/
-    BidPlaced: GenericPalletEvent<Rv, 'Nis', 'BidPlaced', { who: AccountId32; amount: bigint; duration: number }>;
-
-    /**
-     * A bid was successfully removed (before being accepted).
-     **/
-    BidRetracted: GenericPalletEvent<Rv, 'Nis', 'BidRetracted', { who: AccountId32; amount: bigint; duration: number }>;
-
-    /**
-     * A bid was dropped from a queue because of another, more substantial, bid was present.
-     **/
-    BidDropped: GenericPalletEvent<Rv, 'Nis', 'BidDropped', { who: AccountId32; amount: bigint; duration: number }>;
-
-    /**
-     * A bid was accepted. The balance may not be released until expiry.
-     **/
-    Issued: GenericPalletEvent<
-      Rv,
-      'Nis',
-      'Issued',
-      {
-        /**
-         * The identity of the receipt.
-         **/
-        index: number;
-
-        /**
-         * The block number at which the receipt may be thawed.
-         **/
-        expiry: number;
-
-        /**
-         * The owner of the receipt.
-         **/
-        who: AccountId32;
-
-        /**
-         * The proportion of the effective total issuance which the receipt represents.
-         **/
-        proportion: Perquintill;
-
-        /**
-         * The amount of funds which were debited from the owner.
-         **/
-        amount: bigint;
-      }
-    >;
-
-    /**
-     * An receipt has been (at least partially) thawed.
-     **/
-    Thawed: GenericPalletEvent<
-      Rv,
-      'Nis',
-      'Thawed',
-      {
-        /**
-         * The identity of the receipt.
-         **/
-        index: number;
-
-        /**
-         * The owner.
-         **/
-        who: AccountId32;
-
-        /**
-         * The proportion of the effective total issuance by which the owner was debited.
-         **/
-        proportion: Perquintill;
-
-        /**
-         * The amount by which the owner was credited.
-         **/
-        amount: bigint;
-
-        /**
-         * If `true` then the receipt is done.
-         **/
-        dropped: boolean;
-      }
-    >;
-
-    /**
-     * An automatic funding of the deficit was made.
-     **/
-    Funded: GenericPalletEvent<Rv, 'Nis', 'Funded', { deficit: bigint }>;
-
-    /**
-     * A receipt was transferred.
-     **/
-    Transferred: GenericPalletEvent<Rv, 'Nis', 'Transferred', { from: AccountId32; to: AccountId32; index: number }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
-   * Pallet `NisCounterpartBalances`'s events
-   **/
-  nisCounterpartBalances: {
-    /**
-     * An account was created with some free balance.
-     **/
-    Endowed: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Endowed', { account: AccountId32; freeBalance: bigint }>;
-
-    /**
-     * An account was removed whose balance was non-zero but below ExistentialDeposit,
-     * resulting in an outright loss.
-     **/
-    DustLost: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'DustLost', { account: AccountId32; amount: bigint }>;
-
-    /**
-     * Transfer succeeded.
-     **/
-    Transfer: GenericPalletEvent<
-      Rv,
-      'NisCounterpartBalances',
-      'Transfer',
-      { from: AccountId32; to: AccountId32; amount: bigint }
-    >;
-
-    /**
-     * A balance was set by root.
-     **/
-    BalanceSet: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'BalanceSet', { who: AccountId32; free: bigint }>;
-
-    /**
-     * Some balance was reserved (moved from free to reserved).
-     **/
-    Reserved: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Reserved', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * Some balance was unreserved (moved from reserved to free).
-     **/
-    Unreserved: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Unreserved', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * Some balance was moved from the reserve of the first account to the second account.
-     * Final argument indicates the destination balance type.
-     **/
-    ReserveRepatriated: GenericPalletEvent<
-      Rv,
-      'NisCounterpartBalances',
-      'ReserveRepatriated',
-      { from: AccountId32; to: AccountId32; amount: bigint; destinationStatus: FrameSupportTokensMiscBalanceStatus }
-    >;
-
-    /**
-     * Some amount was deposited (e.g. for transaction fees).
-     **/
-    Deposit: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Deposit', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * Some amount was withdrawn from the account (e.g. for transaction fees).
-     **/
-    Withdraw: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Withdraw', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * Some amount was removed from the account (e.g. for misbehavior).
-     **/
-    Slashed: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Slashed', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * Some amount was minted into an account.
-     **/
-    Minted: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Minted', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * Some amount was burned from an account.
-     **/
-    Burned: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Burned', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * Some amount was suspended from an account (it can be restored later).
-     **/
-    Suspended: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Suspended', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * Some amount was restored into an account.
-     **/
-    Restored: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Restored', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * An account was upgraded.
-     **/
-    Upgraded: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Upgraded', { who: AccountId32 }>;
-
-    /**
-     * Total issuance was increased by `amount`, creating a credit to be balanced.
-     **/
-    Issued: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Issued', { amount: bigint }>;
-
-    /**
-     * Total issuance was decreased by `amount`, creating a debt to be balanced.
-     **/
-    Rescinded: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Rescinded', { amount: bigint }>;
-
-    /**
-     * Some balance was locked.
-     **/
-    Locked: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Locked', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * Some balance was unlocked.
-     **/
-    Unlocked: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Unlocked', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * Some balance was frozen.
-     **/
-    Frozen: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Frozen', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * Some balance was thawed.
-     **/
-    Thawed: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Thawed', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * The `TotalIssuance` was forcefully changed.
-     **/
-    TotalIssuanceForced: GenericPalletEvent<
-      Rv,
-      'NisCounterpartBalances',
-      'TotalIssuanceForced',
-      { old: bigint; new: bigint }
-    >;
-
-    /**
-     * An unexpected/defensive event was triggered.
-     **/
-    Unexpected: GenericPalletEvent<Rv, 'NisCounterpartBalances', 'Unexpected', PalletBalancesUnexpectedKind>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
    * Pallet `VoterList`'s events
    **/
   voterList: {
@@ -2805,6 +2563,45 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'MigratedDelegation',
       { agent: AccountId32; delegator: AccountId32; amount: bigint }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `StakingAhClient`'s events
+   **/
+  stakingAhClient: {
+    /**
+     * A new validator set has been received.
+     **/
+    ValidatorSetReceived: GenericPalletEvent<
+      Rv,
+      'StakingAhClient',
+      'ValidatorSetReceived',
+      { id: number; newValidatorSetCount: number; pruneUpTo?: number | undefined; leftover: boolean }
+    >;
+
+    /**
+     * We could not merge, and therefore dropped a buffered message.
+     *
+     * Note that this event is more resembling an error, but we use an event because in this
+     * pallet we need to mutate storage upon some failures.
+     **/
+    CouldNotMergeAndDropped: GenericPalletEvent<Rv, 'StakingAhClient', 'CouldNotMergeAndDropped', null>;
+
+    /**
+     * The validator set received is way too small, as per
+     * [`Config::MinimumValidatorSetSize`].
+     **/
+    SetTooSmallAndDropped: GenericPalletEvent<Rv, 'StakingAhClient', 'SetTooSmallAndDropped', null>;
+
+    /**
+     * Something occurred that should never happen under normal operation. Logged as an event
+     * for fail-safe observability.
+     **/
+    Unexpected: GenericPalletEvent<Rv, 'StakingAhClient', 'Unexpected', PalletStakingAsyncAhClientUnexpectedKind>;
 
     /**
      * Generic pallet event
@@ -3895,6 +3692,306 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'AssetRateUpdated',
       { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; old: FixedU128; new: FixedU128 }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `RcMigrator`'s events
+   **/
+  rcMigrator: {
+    /**
+     * A stage transition has occurred.
+     **/
+    StageTransition: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'StageTransition',
+      {
+        /**
+         * The old stage before the transition.
+         **/
+        old: PalletRcMigratorMigrationStage;
+
+        /**
+         * The new stage after the transition.
+         **/
+        new: PalletRcMigratorMigrationStage;
+      }
+    >;
+
+    /**
+     * The Asset Hub Migration started and is active until `AssetHubMigrationFinished` is
+     * emitted.
+     *
+     * This event is equivalent to `StageTransition { new: Initializing, .. }` but is easier
+     * to understand. The activation is immediate and affects all events happening
+     * afterwards.
+     **/
+    AssetHubMigrationStarted: GenericPalletEvent<Rv, 'RcMigrator', 'AssetHubMigrationStarted', null>;
+
+    /**
+     * The Asset Hub Migration finished.
+     *
+     * This event is equivalent to `StageTransition { new: MigrationDone, .. }` but is easier
+     * to understand. The finishing is immediate and affects all events happening
+     * afterwards.
+     **/
+    AssetHubMigrationFinished: GenericPalletEvent<Rv, 'RcMigrator', 'AssetHubMigrationFinished', null>;
+
+    /**
+     * A query response has been received.
+     **/
+    QueryResponseReceived: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'QueryResponseReceived',
+      {
+        /**
+         * The query ID.
+         **/
+        queryId: bigint;
+
+        /**
+         * The response.
+         **/
+        response: XcmV3MaybeErrorCode;
+      }
+    >;
+
+    /**
+     * A XCM message has been resent.
+     **/
+    XcmResendAttempt: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'XcmResendAttempt',
+      {
+        /**
+         * The query ID.
+         **/
+        queryId: bigint;
+
+        /**
+         * The error message.
+         **/
+        sendError?: XcmV3TraitsSendError | undefined;
+      }
+    >;
+
+    /**
+     * The unprocessed message buffer size has been set.
+     **/
+    UnprocessedMsgBufferSet: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'UnprocessedMsgBufferSet',
+      {
+        /**
+         * The new size.
+         **/
+        new: number;
+
+        /**
+         * The old size.
+         **/
+        old: number;
+      }
+    >;
+
+    /**
+     * Whether the AH UMP queue was prioritized for the next block.
+     **/
+    AhUmpQueuePrioritySet: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'AhUmpQueuePrioritySet',
+      {
+        /**
+         * Indicates if AH UMP queue was successfully set as priority.
+         * If `false`, it means we're in the round-robin phase of our priority pattern
+         * (see [`Config::AhUmpQueuePriorityPattern`]), where no queue gets priority.
+         **/
+        prioritized: boolean;
+
+        /**
+         * Current block number within the pattern cycle (1 to period).
+         **/
+        cycleBlock: number;
+
+        /**
+         * Total number of blocks in the pattern cycle
+         **/
+        cyclePeriod: number;
+      }
+    >;
+
+    /**
+     * The AH UMP queue priority config was set.
+     **/
+    AhUmpQueuePriorityConfigSet: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'AhUmpQueuePriorityConfigSet',
+      {
+        /**
+         * The old priority pattern.
+         **/
+        old: PalletRcMigratorQueuePriority;
+
+        /**
+         * The new priority pattern.
+         **/
+        new: PalletRcMigratorQueuePriority;
+      }
+    >;
+
+    /**
+     * The total issuance was recorded.
+     **/
+    MigratedBalanceRecordSet: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'MigratedBalanceRecordSet',
+      { kept: bigint; migrated: bigint }
+    >;
+
+    /**
+     * The RC kept balance was consumed.
+     **/
+    MigratedBalanceConsumed: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'MigratedBalanceConsumed',
+      { kept: bigint; migrated: bigint }
+    >;
+
+    /**
+     * The manager account id was set.
+     **/
+    ManagerSet: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'ManagerSet',
+      {
+        /**
+         * The old manager account id.
+         **/
+        old?: AccountId32 | undefined;
+
+        /**
+         * The new manager account id.
+         **/
+        new?: AccountId32 | undefined;
+      }
+    >;
+
+    /**
+     * An XCM message was sent.
+     **/
+    XcmSent: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'XcmSent',
+      {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        message: StagingXcmV5Xcm;
+        messageId: FixedBytes<32>;
+      }
+    >;
+
+    /**
+     * The staking elections were paused.
+     **/
+    StakingElectionsPaused: GenericPalletEvent<Rv, 'RcMigrator', 'StakingElectionsPaused', null>;
+
+    /**
+     * The accounts to be preserved on Relay Chain were set.
+     **/
+    AccountsPreserved: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'AccountsPreserved',
+      {
+        /**
+         * The accounts that will be preserved.
+         **/
+        accounts: Array<AccountId32>;
+      }
+    >;
+
+    /**
+     * The canceller account id was set.
+     **/
+    CancellerSet: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'CancellerSet',
+      {
+        /**
+         * The old canceller account id.
+         **/
+        old?: AccountId32 | undefined;
+
+        /**
+         * The new canceller account id.
+         **/
+        new?: AccountId32 | undefined;
+      }
+    >;
+
+    /**
+     * The migration was paused.
+     **/
+    MigrationPaused: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'MigrationPaused',
+      {
+        /**
+         * The stage at which the migration was paused.
+         **/
+        pauseStage: PalletRcMigratorMigrationStage;
+      }
+    >;
+
+    /**
+     * The migration was cancelled.
+     **/
+    MigrationCancelled: GenericPalletEvent<Rv, 'RcMigrator', 'MigrationCancelled', null>;
+
+    /**
+     * Some pure accounts were indexed for possibly receiving free `Any` proxies.
+     **/
+    PureAccountsIndexed: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'PureAccountsIndexed',
+      {
+        /**
+         * The number of indexed pure accounts.
+         **/
+        numPureAccounts: number;
+      }
+    >;
+
+    /**
+     * The manager multisig dispatched something.
+     **/
+    ManagerMultisigDispatched: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'ManagerMultisigDispatched',
+      { res: Result<[], DispatchError> }
+    >;
+
+    /**
+     * The manager multisig received a vote.
+     **/
+    ManagerMultisigVoted: GenericPalletEvent<Rv, 'RcMigrator', 'ManagerMultisigVoted', { votes: number }>;
 
     /**
      * Generic pallet event

@@ -1591,160 +1591,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
-   * Pallet `Nis`'s errors
-   **/
-  nis: {
-    /**
-     * The duration of the bid is less than one.
-     **/
-    DurationTooSmall: GenericPalletError<Rv>;
-
-    /**
-     * The duration is the bid is greater than the number of queues.
-     **/
-    DurationTooBig: GenericPalletError<Rv>;
-
-    /**
-     * The amount of the bid is less than the minimum allowed.
-     **/
-    AmountTooSmall: GenericPalletError<Rv>;
-
-    /**
-     * The queue for the bid's duration is full and the amount bid is too low to get in
-     * through replacing an existing bid.
-     **/
-    BidTooLow: GenericPalletError<Rv>;
-
-    /**
-     * Receipt index is unknown.
-     **/
-    UnknownReceipt: GenericPalletError<Rv>;
-
-    /**
-     * Not the owner of the receipt.
-     **/
-    NotOwner: GenericPalletError<Rv>;
-
-    /**
-     * Bond not yet at expiry date.
-     **/
-    NotExpired: GenericPalletError<Rv>;
-
-    /**
-     * The given bid for retraction is not found.
-     **/
-    UnknownBid: GenericPalletError<Rv>;
-
-    /**
-     * The portion supplied is beyond the value of the receipt.
-     **/
-    PortionTooBig: GenericPalletError<Rv>;
-
-    /**
-     * Not enough funds are held to pay out.
-     **/
-    Unfunded: GenericPalletError<Rv>;
-
-    /**
-     * There are enough funds for what is required.
-     **/
-    AlreadyFunded: GenericPalletError<Rv>;
-
-    /**
-     * The thaw throttle has been reached for this period.
-     **/
-    Throttled: GenericPalletError<Rv>;
-
-    /**
-     * The operation would result in a receipt worth an insignificant value.
-     **/
-    MakesDust: GenericPalletError<Rv>;
-
-    /**
-     * The receipt is already communal.
-     **/
-    AlreadyCommunal: GenericPalletError<Rv>;
-
-    /**
-     * The receipt is already private.
-     **/
-    AlreadyPrivate: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
-   * Pallet `NisCounterpartBalances`'s errors
-   **/
-  nisCounterpartBalances: {
-    /**
-     * Vesting balance too high to send value.
-     **/
-    VestingBalance: GenericPalletError<Rv>;
-
-    /**
-     * Account liquidity restrictions prevent withdrawal.
-     **/
-    LiquidityRestrictions: GenericPalletError<Rv>;
-
-    /**
-     * Balance too low to send value.
-     **/
-    InsufficientBalance: GenericPalletError<Rv>;
-
-    /**
-     * Value too low to create account due to existential deposit.
-     **/
-    ExistentialDeposit: GenericPalletError<Rv>;
-
-    /**
-     * Transfer/payment would kill account.
-     **/
-    Expendability: GenericPalletError<Rv>;
-
-    /**
-     * A vesting schedule already exists for this account.
-     **/
-    ExistingVestingSchedule: GenericPalletError<Rv>;
-
-    /**
-     * Beneficiary account must pre-exist.
-     **/
-    DeadAccount: GenericPalletError<Rv>;
-
-    /**
-     * Number of named reserves exceed `MaxReserves`.
-     **/
-    TooManyReserves: GenericPalletError<Rv>;
-
-    /**
-     * Number of holds exceed `VariantCountOf<T::RuntimeHoldReason>`.
-     **/
-    TooManyHolds: GenericPalletError<Rv>;
-
-    /**
-     * Number of freezes exceed `MaxFreezes`.
-     **/
-    TooManyFreezes: GenericPalletError<Rv>;
-
-    /**
-     * The issuance cannot be modified since it is already deactivated.
-     **/
-    IssuanceDeactivated: GenericPalletError<Rv>;
-
-    /**
-     * The delta cannot be zero.
-     **/
-    DeltaZero: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
    * Pallet `VoterList`'s errors
    **/
   voterList: {
@@ -2079,6 +1925,20 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Operation not supported by this pallet.
      **/
     NotSupported: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `StakingAhClient`'s errors
+   **/
+  stakingAhClient: {
+    /**
+     * Could not process incoming message because incoming messages are blocked.
+     **/
+    Blocked: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -3132,6 +2992,100 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Submitted configuration is invalid.
      **/
     InvalidConfiguration: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `RcMigrator`'s errors
+   **/
+  rcMigrator: {
+    Unreachable: GenericPalletError<Rv>;
+    OutOfWeight: GenericPalletError<Rv>;
+
+    /**
+     * Failed to send XCM message to AH.
+     **/
+    XcmError: GenericPalletError<Rv>;
+
+    /**
+     * Failed to withdraw account from RC for migration to AH.
+     **/
+    FailedToWithdrawAccount: GenericPalletError<Rv>;
+
+    /**
+     * Indicates that the specified block number is in the past.
+     **/
+    PastBlockNumber: GenericPalletError<Rv>;
+
+    /**
+     * Indicates that there is not enough time for staking to lock.
+     *
+     * Schedule the migration at least two sessions before the current era ends.
+     **/
+    EraEndsTooSoon: GenericPalletError<Rv>;
+
+    /**
+     * Balance accounting overflow.
+     **/
+    BalanceOverflow: GenericPalletError<Rv>;
+
+    /**
+     * Balance accounting underflow.
+     **/
+    BalanceUnderflow: GenericPalletError<Rv>;
+
+    /**
+     * The query response is invalid.
+     **/
+    InvalidQueryResponse: GenericPalletError<Rv>;
+
+    /**
+     * The xcm query was not found.
+     **/
+    QueryNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Failed to send XCM message.
+     **/
+    XcmSendError: GenericPalletError<Rv>;
+
+    /**
+     * The migration stage is not reachable from the current stage.
+     **/
+    UnreachableStage: GenericPalletError<Rv>;
+
+    /**
+     * Invalid parameter.
+     **/
+    InvalidParameter: GenericPalletError<Rv>;
+
+    /**
+     * The AH UMP queue priority configuration is already set.
+     **/
+    AhUmpQueuePriorityAlreadySet: GenericPalletError<Rv>;
+
+    /**
+     * The account is referenced by some other pallet. It might have freezes or holds.
+     **/
+    AccountReferenced: GenericPalletError<Rv>;
+
+    /**
+     * The XCM version is invalid.
+     **/
+    BadXcmVersion: GenericPalletError<Rv>;
+
+    /**
+     * The origin is invalid.
+     **/
+    InvalidOrigin: GenericPalletError<Rv>;
+
+    /**
+     * The stage transition is invalid.
+     **/
+    InvalidStageTransition: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

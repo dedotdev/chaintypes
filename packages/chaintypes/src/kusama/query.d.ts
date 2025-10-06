@@ -93,10 +93,6 @@ import type {
   PalletElectionProviderMultiPhaseSolutionOrSnapshotSize,
   SpNposElectionsElectionScore,
   PalletElectionProviderMultiPhaseSignedSignedSubmission,
-  PalletNisBid,
-  PalletNisSummaryRecord,
-  PalletNisReceiptRecord,
-  FrameSupportTokensMiscIdAmount003,
   PalletBagsListListNode,
   PalletBagsListListBag,
   PalletNominationPoolsPoolMember,
@@ -107,6 +103,9 @@ import type {
   PalletFastUnstakeUnstakeRequest,
   PalletDelegatedStakingDelegation,
   PalletDelegatedStakingAgentLedger,
+  PalletStakingAsyncRcClientValidatorSetReport,
+  PalletStakingAsyncAhClientOperatingMode,
+  PalletStakingAsyncAhClientBufferedOffence,
   PolkadotRuntimeParachainsConfigurationHostConfiguration,
   PolkadotPrimitivesV8ValidatorIndex,
   PolkadotPrimitivesV8ValidatorAppPublic,
@@ -158,6 +157,14 @@ import type {
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   SpConsensusBeefyEcdsaCryptoPublic,
   SpConsensusBeefyMmrBeefyAuthoritySet,
+  PalletRcMigratorMigrationStage,
+  PalletRcMigratorAccountsAccountState,
+  PalletRcMigratorAccountsMigratedBalances,
+  PalletRcMigratorQueuePriority,
+  FrameSupportScheduleDispatchTime,
+  SpRuntimeMultiSigner,
+  StagingKusamaRuntimeRuntimeCall,
+  StagingKusamaRuntimeRuntimeCallLike,
 } from './types.js';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
@@ -1902,6 +1909,20 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     >;
 
     /**
+     * Next intake rotation scheduled with [Config::BlockNumberProvider].
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    nextIntakeAt: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Next challenge rotation scheduled with [Config::BlockNumberProvider].
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    nextChallengeAt: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -2356,140 +2377,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
-   * Pallet `Nis`'s storage queries
-   **/
-  nis: {
-    /**
-     * The totals of items and balances within each queue. Saves a lot of storage reads in the
-     * case of sparsely packed queues.
-     *
-     * The vector is indexed by duration in `Period`s, offset by one, so information on the queue
-     * whose duration is one `Period` would be storage `0`.
-     *
-     * @param {Callback<Array<[number, bigint]>> =} callback
-     **/
-    queueTotals: GenericStorageQuery<Rv, () => Array<[number, bigint]>>;
-
-    /**
-     * The queues of bids. Indexed by duration (in `Period`s).
-     *
-     * @param {number} arg
-     * @param {Callback<Array<PalletNisBid>> =} callback
-     **/
-    queues: GenericStorageQuery<Rv, (arg: number) => Array<PalletNisBid>, number>;
-
-    /**
-     * Summary information over the general state.
-     *
-     * @param {Callback<PalletNisSummaryRecord> =} callback
-     **/
-    summary: GenericStorageQuery<Rv, () => PalletNisSummaryRecord>;
-
-    /**
-     * The currently outstanding receipts, indexed according to the order of creation.
-     *
-     * @param {number} arg
-     * @param {Callback<PalletNisReceiptRecord | undefined> =} callback
-     **/
-    receipts: GenericStorageQuery<Rv, (arg: number) => PalletNisReceiptRecord | undefined, number>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
-   * Pallet `NisCounterpartBalances`'s storage queries
-   **/
-  nisCounterpartBalances: {
-    /**
-     * The total units issued in the system.
-     *
-     * @param {Callback<bigint> =} callback
-     **/
-    totalIssuance: GenericStorageQuery<Rv, () => bigint>;
-
-    /**
-     * The total units of outstanding deactivated balance in the system.
-     *
-     * @param {Callback<bigint> =} callback
-     **/
-    inactiveIssuance: GenericStorageQuery<Rv, () => bigint>;
-
-    /**
-     * The Balances pallet example of storing the balance of an account.
-     *
-     * # Example
-     *
-     * ```nocompile
-     * impl pallet_balances::Config for Runtime {
-     * type AccountStore = StorageMapShim<Self::Account<Runtime>, frame_system::Provider<Runtime>, AccountId, Self::AccountData<Balance>>
-     * }
-     * ```
-     *
-     * You can also store the balance of an account in the `System` pallet.
-     *
-     * # Example
-     *
-     * ```nocompile
-     * impl pallet_balances::Config for Runtime {
-     * type AccountStore = System
-     * }
-     * ```
-     *
-     * But this comes with tradeoffs, storing account balances in the system pallet stores
-     * `frame_system` data alongside the account data contrary to storing account balances in the
-     * `Balances` pallet, which uses a `StorageMap` to store balances data only.
-     * NOTE: This is only used in the case that this pallet is used to store balances.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<PalletBalancesAccountData> =} callback
-     **/
-    account: GenericStorageQuery<Rv, (arg: AccountId32Like) => PalletBalancesAccountData, AccountId32>;
-
-    /**
-     * Any liquidity locks on some account balances.
-     * NOTE: Should only be accessed when setting, changing and freeing a lock.
-     *
-     * Use of locks is deprecated in favour of freezes. See `https://github.com/paritytech/substrate/pull/12951/`
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<Array<PalletBalancesBalanceLock>> =} callback
-     **/
-    locks: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<PalletBalancesBalanceLock>, AccountId32>;
-
-    /**
-     * Named reserves on some account balances.
-     *
-     * Use of reserves is deprecated in favour of holds. See `https://github.com/paritytech/substrate/pull/12951/`
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<Array<PalletBalancesReserveData>> =} callback
-     **/
-    reserves: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<PalletBalancesReserveData>, AccountId32>;
-
-    /**
-     * Holds on account balances.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
-     **/
-    holds: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount>, AccountId32>;
-
-    /**
-     * Freeze locks on account balances.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<Array<FrameSupportTokensMiscIdAmount003>> =} callback
-     **/
-    freezes: GenericStorageQuery<Rv, (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount003>, AccountId32>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
    * Pallet `VoterList`'s storage queries
    **/
   voterList: {
@@ -2829,6 +2716,98 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<number> =} callback
      **/
     counterForAgents: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `StakingAhClient`'s storage queries
+   **/
+  stakingAhClient: {
+    /**
+     * The queued validator sets for a given planning session index.
+     *
+     * This is received via a call from AssetHub.
+     *
+     * @param {Callback<[number, Array<AccountId32>] | undefined> =} callback
+     **/
+    validatorSet: GenericStorageQuery<Rv, () => [number, Array<AccountId32>] | undefined>;
+
+    /**
+     * An incomplete validator set report.
+     *
+     * @param {Callback<PalletStakingAsyncRcClientValidatorSetReport | undefined> =} callback
+     **/
+    incompleteValidatorSetReport: GenericStorageQuery<
+      Rv,
+      () => PalletStakingAsyncRcClientValidatorSetReport | undefined
+    >;
+
+    /**
+     * All of the points of the validators.
+     *
+     * This is populated during a session, and is flushed and sent over via [`SendToAssetHub`]
+     * at each session end.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number> =} callback
+     **/
+    validatorPoints: GenericStorageQuery<Rv, (arg: AccountId32Like) => number, AccountId32>;
+
+    /**
+     * Indicates the current operating mode of the pallet.
+     *
+     * This value determines how the pallet behaves in response to incoming and outgoing messages,
+     * particularly whether it should execute logic directly, defer it, or delegate it entirely.
+     *
+     * @param {Callback<PalletStakingAsyncAhClientOperatingMode> =} callback
+     **/
+    mode: GenericStorageQuery<Rv, () => PalletStakingAsyncAhClientOperatingMode>;
+
+    /**
+     * A storage value that is set when a `new_session` gives a new validator set to the session
+     * pallet, and is cleared on the next call.
+     *
+     * The inner u32 is the id of the said activated validator set. While not relevant here, good
+     * to know this is the planning era index of staking-async on AH.
+     *
+     * Once cleared, we know a validator set has been activated, and therefore we can send a
+     * timestamp to AH.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    nextSessionChangesValidators: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * The session index at which the latest elected validator set was applied.
+     *
+     * This is used to determine if an offence, given a session index, is in the current active era
+     * or not.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    validatorSetAppliedAt: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Offences collected while in [`OperatingMode::Buffered`] mode.
+     *
+     * These are temporarily stored and sent once the pallet switches to [`OperatingMode::Active`].
+     * For each offender, only the highest `slash_fraction` is kept.
+     *
+     * Internally stores as a nested BTreeMap:
+     * `session_index -> (offender -> (reporter, slash_fraction))`.
+     *
+     * Note: While the [`rc_client::Offence`] type includes a list of reporters, in practice there
+     * is only one. In this pallet, we assume this is the case and store only the first reporter.
+     *
+     * @param {Callback<Array<[number, Array<[AccountId32, PalletStakingAsyncAhClientBufferedOffence]>]>> =} callback
+     **/
+    bufferedOffences: GenericStorageQuery<
+      Rv,
+      () => Array<[number, Array<[AccountId32, PalletStakingAsyncAhClientBufferedOffence]>]>
+    >;
 
     /**
      * Generic pallet storage query
@@ -4372,6 +4351,200 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<SpConsensusBeefyMmrBeefyAuthoritySet> =} callback
      **/
     beefyNextAuthorities: GenericStorageQuery<Rv, () => SpConsensusBeefyMmrBeefyAuthoritySet>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `RcMigrator`'s storage queries
+   **/
+  rcMigrator: {
+    /**
+     * The Relay Chain migration state.
+     *
+     * @param {Callback<PalletRcMigratorMigrationStage> =} callback
+     **/
+    rcMigrationStage: GenericStorageQuery<Rv, () => PalletRcMigratorMigrationStage>;
+
+    /**
+     * Helper storage item to obtain and store the known accounts that should be kept partially or
+     * fully on Relay Chain.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletRcMigratorAccountsAccountState | undefined> =} callback
+     **/
+    rcAccounts: GenericStorageQuery<
+      Rv,
+      (arg: AccountId32Like) => PalletRcMigratorAccountsAccountState | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForRcAccounts: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Helper storage item to store the total balance that should be kept on Relay Chain.
+     *
+     * @param {Callback<PalletRcMigratorAccountsMigratedBalances> =} callback
+     **/
+    rcMigratedBalance: GenericStorageQuery<Rv, () => PalletRcMigratorAccountsMigratedBalances>;
+
+    /**
+     * Helper storage item to store the total balance that should be kept on Relay Chain after
+     * it is consumed from the `RcMigratedBalance` storage item and sent to the Asset Hub.
+     *
+     * This let us to take the value from the `RcMigratedBalance` storage item and keep the
+     * `SignalMigrationFinish` stage to be idempotent while preserving these values for tests and
+     * later discoveries.
+     *
+     * @param {Callback<PalletRcMigratorAccountsMigratedBalances> =} callback
+     **/
+    rcMigratedBalanceArchive: GenericStorageQuery<Rv, () => PalletRcMigratorAccountsMigratedBalances>;
+
+    /**
+     * The pending XCM messages.
+     *
+     * Contains data messages that have been sent to the Asset Hub but not yet confirmed.
+     *
+     * Unconfirmed messages can be resent by calling the [`Pallet::resend_xcm`] function.
+     *
+     * @param {H256} arg
+     * @param {Callback<StagingXcmV5Xcm | undefined> =} callback
+     **/
+    pendingXcmMessages: GenericStorageQuery<Rv, (arg: H256) => StagingXcmV5Xcm | undefined, H256>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForPendingXcmMessages: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Accounts that use the proxy pallet to delegate permissions and have no nonce.
+     *
+     * Boolean value is whether they have been migrated to the Asset Hub. Needed for idempotency.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<boolean | undefined> =} callback
+     **/
+    pureProxyCandidatesMigrated: GenericStorageQuery<Rv, (arg: AccountId32Like) => boolean | undefined, AccountId32>;
+
+    /**
+     * The pending XCM response queries and their XCM hash referencing the message in the
+     * [`PendingXcmMessages`] storage.
+     *
+     * The `QueryId` is the identifier from the [`pallet_xcm`] query handler registry. The XCM
+     * pallet will notify about the status of the message by calling the
+     * [`Pallet::receive_query_response`] function with the `QueryId` and the
+     * response.
+     *
+     * @param {bigint} arg
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    pendingXcmQueries: GenericStorageQuery<Rv, (arg: bigint) => H256 | undefined, bigint>;
+
+    /**
+     * Manual override for `type UnprocessedMsgBuffer: Get<u32>`. Look there for docs.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    unprocessedMsgBuffer: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * The priority of the Asset Hub UMP queue during migration.
+     *
+     * Controls how the Asset Hub UMP (Upward Message Passing) queue is processed relative to other
+     * queues during the migration process. This helps ensure timely processing of migration
+     * messages. The default priority pattern is defined in the pallet configuration, but can be
+     * overridden by a storage value of this type.
+     *
+     * @param {Callback<PalletRcMigratorQueuePriority> =} callback
+     **/
+    ahUmpQueuePriorityConfig: GenericStorageQuery<Rv, () => PalletRcMigratorQueuePriority>;
+
+    /**
+     * An optional account id of a manager.
+     *
+     * This account id has similar privileges to [`Config::AdminOrigin`] except that it
+     * can not set the manager account id via `set_manager` call.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    manager: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
+     * An optional account id of a canceller.
+     *
+     * This account id can only stop scheduled migration.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    canceller: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
+     * The block number at which the migration began and the pallet's extrinsics were locked.
+     *
+     * This value is set when entering the `WaitingForAh` stage, i.e., when
+     * `RcMigrationStage::is_ongoing()` becomes `true`.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    migrationStartBlock: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Block number when migration finished and extrinsics were unlocked.
+     *
+     * This is set when entering the `MigrationDone` stage hence when
+     * `RcMigrationStage::is_finished()` becomes `true`.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    migrationEndBlock: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * The duration of the pre migration warm-up period.
+     *
+     * This is the duration of the warm-up period before the data migration starts. During this
+     * period, the migration will be in ongoing state and the concerned extrinsics will be locked.
+     *
+     * @param {Callback<FrameSupportScheduleDispatchTime | undefined> =} callback
+     **/
+    warmUpPeriod: GenericStorageQuery<Rv, () => FrameSupportScheduleDispatchTime | undefined>;
+
+    /**
+     * The duration of the post migration cool-off period.
+     *
+     * This is the duration of the cool-off period after the data migration is finished. During
+     * this period, the migration will be still in ongoing state and the concerned extrinsics will
+     * be locked.
+     *
+     * @param {Callback<FrameSupportScheduleDispatchTime | undefined> =} callback
+     **/
+    coolOffPeriod: GenericStorageQuery<Rv, () => FrameSupportScheduleDispatchTime | undefined>;
+
+    /**
+     *
+     * @param {StagingKusamaRuntimeRuntimeCallLike} arg
+     * @param {Callback<Array<SpRuntimeMultiSigner>> =} callback
+     **/
+    managerMultisigs: GenericStorageQuery<
+      Rv,
+      (arg: StagingKusamaRuntimeRuntimeCallLike) => Array<SpRuntimeMultiSigner>,
+      StagingKusamaRuntimeRuntimeCall
+    >;
+
+    /**
+     *
+     * @param {Callback<number> =} callback
+     **/
+    managerMultisigRound: GenericStorageQuery<Rv, () => number>;
 
     /**
      * Generic pallet storage query

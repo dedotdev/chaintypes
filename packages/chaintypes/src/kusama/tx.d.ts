@@ -20,7 +20,6 @@ import type {
   Perbill,
   EthereumAddressLike,
   FixedBytes,
-  Perquintill,
   FixedU128,
 } from 'dedot/codecs';
 import type {
@@ -67,6 +66,8 @@ import type {
   PalletNominationPoolsClaimPermission,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
+  PalletStakingAsyncRcClientValidatorSetReport,
+  PalletStakingAsyncAhClientOperatingMode,
   PolkadotPrimitivesV8AsyncBackingAsyncBackingParams,
   PolkadotPrimitivesV8ExecutorParams,
   PolkadotPrimitivesV8ApprovalVotingParams,
@@ -93,6 +94,10 @@ import type {
   SpConsensusBeefyDoubleVotingProof,
   SpConsensusBeefyForkVotingProof,
   SpConsensusBeefyFutureBlockVotingProof,
+  PalletRcMigratorMigrationStage,
+  StagingXcmV5Response,
+  PalletRcMigratorQueuePriority,
+  PalletRcMigratorManagerMultisigVote,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -6900,449 +6905,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
-   * Pallet `Nis`'s transaction calls
-   **/
-  nis: {
-    /**
-     * Place a bid.
-     *
-     * Origin must be Signed, and account must have at least `amount` in free balance.
-     *
-     * - `amount`: The amount of the bid; these funds will be reserved, and if/when
-     * consolidated, removed. Must be at least `MinBid`.
-     * - `duration`: The number of periods before which the newly consolidated bid may be
-     * thawed. Must be greater than 1 and no more than `QueueCount`.
-     *
-     * Complexities:
-     * - `Queues[duration].len()` (just take max).
-     *
-     * @param {bigint} amount
-     * @param {number} duration
-     **/
-    placeBid: GenericTxCall<
-      Rv,
-      (
-        amount: bigint,
-        duration: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Nis';
-          palletCall: {
-            name: 'PlaceBid';
-            params: { amount: bigint; duration: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Retract a previously placed bid.
-     *
-     * Origin must be Signed, and the account should have previously issued a still-active bid
-     * of `amount` for `duration`.
-     *
-     * - `amount`: The amount of the previous bid.
-     * - `duration`: The duration of the previous bid.
-     *
-     * @param {bigint} amount
-     * @param {number} duration
-     **/
-    retractBid: GenericTxCall<
-      Rv,
-      (
-        amount: bigint,
-        duration: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Nis';
-          palletCall: {
-            name: 'RetractBid';
-            params: { amount: bigint; duration: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Ensure we have sufficient funding for all potential payouts.
-     *
-     * - `origin`: Must be accepted by `FundOrigin`.
-     *
-     **/
-    fundDeficit: GenericTxCall<
-      Rv,
-      () => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Nis';
-          palletCall: {
-            name: 'FundDeficit';
-          };
-        }
-      >
-    >;
-
-    /**
-     * Reduce or remove an outstanding receipt, placing the according proportion of funds into
-     * the account of the owner.
-     *
-     * - `origin`: Must be Signed and the account must be the owner of the receipt `index` as
-     * well as any fungible counterpart.
-     * - `index`: The index of the receipt.
-     * - `portion`: If `Some`, then only the given portion of the receipt should be thawed. If
-     * `None`, then all of it should be.
-     *
-     * @param {number} index
-     * @param {Perquintill | undefined} maybeProportion
-     **/
-    thawPrivate: GenericTxCall<
-      Rv,
-      (
-        index: number,
-        maybeProportion: Perquintill | undefined,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Nis';
-          palletCall: {
-            name: 'ThawPrivate';
-            params: { index: number; maybeProportion: Perquintill | undefined };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Reduce or remove an outstanding receipt, placing the according proportion of funds into
-     * the account of the owner.
-     *
-     * - `origin`: Must be Signed and the account must be the owner of the fungible counterpart
-     * for receipt `index`.
-     * - `index`: The index of the receipt.
-     *
-     * @param {number} index
-     **/
-    thawCommunal: GenericTxCall<
-      Rv,
-      (index: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Nis';
-          palletCall: {
-            name: 'ThawCommunal';
-            params: { index: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Make a private receipt communal and create fungible counterparts for its owner.
-     *
-     * @param {number} index
-     **/
-    communify: GenericTxCall<
-      Rv,
-      (index: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Nis';
-          palletCall: {
-            name: 'Communify';
-            params: { index: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Make a communal receipt private and burn fungible counterparts from its owner.
-     *
-     * @param {number} index
-     **/
-    privatize: GenericTxCall<
-      Rv,
-      (index: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Nis';
-          palletCall: {
-            name: 'Privatize';
-            params: { index: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
-   * Pallet `NisCounterpartBalances`'s transaction calls
-   **/
-  nisCounterpartBalances: {
-    /**
-     * Transfer some liquid free balance to another account.
-     *
-     * `transfer_allow_death` will set the `FreeBalance` of the sender and receiver.
-     * If the sender's account is below the existential deposit as a result
-     * of the transfer, the account will be reaped.
-     *
-     * The dispatch origin for this call must be `Signed` by the transactor.
-     *
-     * @param {MultiAddressLike} dest
-     * @param {bigint} value
-     **/
-    transferAllowDeath: GenericTxCall<
-      Rv,
-      (
-        dest: MultiAddressLike,
-        value: bigint,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'NisCounterpartBalances';
-          palletCall: {
-            name: 'TransferAllowDeath';
-            params: { dest: MultiAddressLike; value: bigint };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Exactly as `transfer_allow_death`, except the origin must be root and the source account
-     * may be specified.
-     *
-     * @param {MultiAddressLike} source
-     * @param {MultiAddressLike} dest
-     * @param {bigint} value
-     **/
-    forceTransfer: GenericTxCall<
-      Rv,
-      (
-        source: MultiAddressLike,
-        dest: MultiAddressLike,
-        value: bigint,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'NisCounterpartBalances';
-          palletCall: {
-            name: 'ForceTransfer';
-            params: { source: MultiAddressLike; dest: MultiAddressLike; value: bigint };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Same as the [`transfer_allow_death`] call, but with a check that the transfer will not
-     * kill the origin account.
-     *
-     * 99% of the time you want [`transfer_allow_death`] instead.
-     *
-     * [`transfer_allow_death`]: struct.Pallet.html#method.transfer
-     *
-     * @param {MultiAddressLike} dest
-     * @param {bigint} value
-     **/
-    transferKeepAlive: GenericTxCall<
-      Rv,
-      (
-        dest: MultiAddressLike,
-        value: bigint,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'NisCounterpartBalances';
-          palletCall: {
-            name: 'TransferKeepAlive';
-            params: { dest: MultiAddressLike; value: bigint };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Transfer the entire transferable balance from the caller account.
-     *
-     * NOTE: This function only attempts to transfer _transferable_ balances. This means that
-     * any locked, reserved, or existential deposits (when `keep_alive` is `true`), will not be
-     * transferred by this function. To ensure that this function results in a killed account,
-     * you might need to prepare the account by removing any reference counters, storage
-     * deposits, etc...
-     *
-     * The dispatch origin of this call must be Signed.
-     *
-     * - `dest`: The recipient of the transfer.
-     * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
-     * of the funds the account has, causing the sender account to be killed (false), or
-     * transfer everything except at least the existential deposit, which will guarantee to
-     * keep the sender account alive (true).
-     *
-     * @param {MultiAddressLike} dest
-     * @param {boolean} keepAlive
-     **/
-    transferAll: GenericTxCall<
-      Rv,
-      (
-        dest: MultiAddressLike,
-        keepAlive: boolean,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'NisCounterpartBalances';
-          palletCall: {
-            name: 'TransferAll';
-            params: { dest: MultiAddressLike; keepAlive: boolean };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Unreserve some balance from a user by force.
-     *
-     * Can only be called by ROOT.
-     *
-     * @param {MultiAddressLike} who
-     * @param {bigint} amount
-     **/
-    forceUnreserve: GenericTxCall<
-      Rv,
-      (
-        who: MultiAddressLike,
-        amount: bigint,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'NisCounterpartBalances';
-          palletCall: {
-            name: 'ForceUnreserve';
-            params: { who: MultiAddressLike; amount: bigint };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Upgrade a specified account.
-     *
-     * - `origin`: Must be `Signed`.
-     * - `who`: The account to be upgraded.
-     *
-     * This will waive the transaction fee if at least all but 10% of the accounts needed to
-     * be upgraded. (We let some not have to be upgraded just in order to allow for the
-     * possibility of churn).
-     *
-     * @param {Array<AccountId32Like>} who
-     **/
-    upgradeAccounts: GenericTxCall<
-      Rv,
-      (who: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'NisCounterpartBalances';
-          palletCall: {
-            name: 'UpgradeAccounts';
-            params: { who: Array<AccountId32Like> };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Set the regular balance of a given account.
-     *
-     * The dispatch origin for this call is `root`.
-     *
-     * @param {MultiAddressLike} who
-     * @param {bigint} newFree
-     **/
-    forceSetBalance: GenericTxCall<
-      Rv,
-      (
-        who: MultiAddressLike,
-        newFree: bigint,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'NisCounterpartBalances';
-          palletCall: {
-            name: 'ForceSetBalance';
-            params: { who: MultiAddressLike; newFree: bigint };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Adjust the total issuance in a saturating way.
-     *
-     * Can only be called by root and always needs a positive `delta`.
-     *
-     * # Example
-     *
-     * @param {PalletBalancesAdjustmentDirection} direction
-     * @param {bigint} delta
-     **/
-    forceAdjustTotalIssuance: GenericTxCall<
-      Rv,
-      (
-        direction: PalletBalancesAdjustmentDirection,
-        delta: bigint,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'NisCounterpartBalances';
-          palletCall: {
-            name: 'ForceAdjustTotalIssuance';
-            params: { direction: PalletBalancesAdjustmentDirection; delta: bigint };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Burn the specified liquid free balance from the origin account.
-     *
-     * If the origin's account ends up below the existential deposit as a result
-     * of the burn and `keep_alive` is false, the account will be reaped.
-     *
-     * Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,
-     * this `burn` operation will reduce total issuance by the amount _burned_.
-     *
-     * @param {bigint} value
-     * @param {boolean} keepAlive
-     **/
-    burn: GenericTxCall<
-      Rv,
-      (
-        value: bigint,
-        keepAlive: boolean,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'NisCounterpartBalances';
-          palletCall: {
-            name: 'Burn';
-            params: { value: bigint; keepAlive: boolean };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
    * Pallet `VoterList`'s transaction calls
    **/
   voterList: {
@@ -8379,6 +7941,69 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'Control';
             params: { erasToCheck: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `StakingAhClient`'s transaction calls
+   **/
+  stakingAhClient: {
+    /**
+     *
+     * @param {PalletStakingAsyncRcClientValidatorSetReport} report
+     **/
+    validatorSet: GenericTxCall<
+      Rv,
+      (report: PalletStakingAsyncRcClientValidatorSetReport) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'StakingAhClient';
+          palletCall: {
+            name: 'ValidatorSet';
+            params: { report: PalletStakingAsyncRcClientValidatorSetReport };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Allows governance to force set the operating mode of the pallet.
+     *
+     * @param {PalletStakingAsyncAhClientOperatingMode} mode
+     **/
+    setMode: GenericTxCall<
+      Rv,
+      (mode: PalletStakingAsyncAhClientOperatingMode) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'StakingAhClient';
+          palletCall: {
+            name: 'SetMode';
+            params: { mode: PalletStakingAsyncAhClientOperatingMode };
+          };
+        }
+      >
+    >;
+
+    /**
+     * manually do what this pallet was meant to do at the end of the migration.
+     *
+     **/
+    forceOnMigrationEnd: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'StakingAhClient';
+          palletCall: {
+            name: 'ForceOnMigrationEnd';
           };
         }
       >
@@ -12115,6 +11740,349 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               equivocationProof: SpConsensusBeefyFutureBlockVotingProof;
               keyOwnerProof: SpSessionMembershipProof;
             };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `RcMigrator`'s transaction calls
+   **/
+  rcMigrator: {
+    /**
+     * Set the migration stage.
+     *
+     * This call is intended for emergency use only and is guarded by the
+     * [`Config::AdminOrigin`].
+     *
+     * @param {PalletRcMigratorMigrationStage} stage
+     **/
+    forceSetStage: GenericTxCall<
+      Rv,
+      (stage: PalletRcMigratorMigrationStage) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'ForceSetStage';
+            params: { stage: PalletRcMigratorMigrationStage };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Schedule the migration to start at a given moment.
+     *
+     * ### Parameters:
+     * - `start`: The block number at which the migration will start. `DispatchTime` calculated
+     * at the moment of the extrinsic execution.
+     * - `warm_up`: Duration or timepoint that will be used to prepare for the migration. Calls
+     * are filtered during this period. It is intended to give enough time for UMP and DMP
+     * queues to empty. `DispatchTime` calculated at the moment of the transition to the
+     * warm-up stage.
+     * - `cool_off`: The block number at which the post migration cool-off period will end. The
+     * `DispatchTime` calculated at the moment of the transition to the cool-off stage.
+     * - `unsafe_ignore_staking_lock_check`: ONLY FOR TESTING. Ignore the check whether the
+     * scheduled time point is far enough in the future.
+     *
+     * Note: If the staking election for next era is already complete, and the next
+     * validator set is queued in `pallet-session`, we want to avoid starting the data
+     * migration at this point as it can lead to some missed validator rewards. To address
+     * this, we stop staking election at the start of migration and must wait atleast 1
+     * session (set via warm_up) before starting the data migration.
+     *
+     * Read [`MigrationStage::Scheduled`] documentation for more details.
+     *
+     * @param {FrameSupportScheduleDispatchTime} start
+     * @param {FrameSupportScheduleDispatchTime} warmUp
+     * @param {FrameSupportScheduleDispatchTime} coolOff
+     * @param {boolean} unsafeIgnoreStakingLockCheck
+     **/
+    scheduleMigration: GenericTxCall<
+      Rv,
+      (
+        start: FrameSupportScheduleDispatchTime,
+        warmUp: FrameSupportScheduleDispatchTime,
+        coolOff: FrameSupportScheduleDispatchTime,
+        unsafeIgnoreStakingLockCheck: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'ScheduleMigration';
+            params: {
+              start: FrameSupportScheduleDispatchTime;
+              warmUp: FrameSupportScheduleDispatchTime;
+              coolOff: FrameSupportScheduleDispatchTime;
+              unsafeIgnoreStakingLockCheck: boolean;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Start the data migration.
+     *
+     * This is typically called by the Asset Hub to indicate it's readiness to receive the
+     * migration data.
+     *
+     **/
+    startDataMigration: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'StartDataMigration';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Receive a query response from the Asset Hub for a previously sent xcm message.
+     *
+     * @param {bigint} queryId
+     * @param {StagingXcmV5Response} response
+     **/
+    receiveQueryResponse: GenericTxCall<
+      Rv,
+      (
+        queryId: bigint,
+        response: StagingXcmV5Response,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'ReceiveQueryResponse';
+            params: { queryId: bigint; response: StagingXcmV5Response };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Resend a previously sent and unconfirmed XCM message.
+     *
+     * @param {bigint} queryId
+     **/
+    resendXcm: GenericTxCall<
+      Rv,
+      (queryId: bigint) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'ResendXcm';
+            params: { queryId: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the unprocessed message buffer size.
+     *
+     * `None` means to use the configuration value.
+     *
+     * @param {number | undefined} new_
+     **/
+    setUnprocessedMsgBuffer: GenericTxCall<
+      Rv,
+      (new_: number | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'SetUnprocessedMsgBuffer';
+            params: { new: number | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the AH UMP queue priority configuration.
+     *
+     * Can only be called by the `AdminOrigin`.
+     *
+     * @param {PalletRcMigratorQueuePriority} new_
+     **/
+    setAhUmpQueuePriority: GenericTxCall<
+      Rv,
+      (new_: PalletRcMigratorQueuePriority) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'SetAhUmpQueuePriority';
+            params: { new: PalletRcMigratorQueuePriority };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the manager account id.
+     *
+     * The manager has the similar to [`Config::AdminOrigin`] privileges except that it
+     * can not set the manager account id via `set_manager` call.
+     *
+     * @param {AccountId32Like | undefined} new_
+     **/
+    setManager: GenericTxCall<
+      Rv,
+      (new_: AccountId32Like | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'SetManager';
+            params: { new: AccountId32Like | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * XCM send call identical to the [`pallet_xcm::Pallet::send`] call but with the
+     * [Config::SendXcm] router which will be able to send messages to the Asset Hub during
+     * the migration.
+     *
+     * @param {XcmVersionedLocation} dest
+     * @param {XcmVersionedXcm} message
+     **/
+    sendXcmMessage: GenericTxCall<
+      Rv,
+      (
+        dest: XcmVersionedLocation,
+        message: XcmVersionedXcm,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'SendXcmMessage';
+            params: { dest: XcmVersionedLocation; message: XcmVersionedXcm };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the accounts to be preserved on Relay Chain during the migration.
+     *
+     * The accounts must have no consumers references.
+     *
+     * @param {Array<AccountId32Like>} accounts
+     **/
+    preserveAccounts: GenericTxCall<
+      Rv,
+      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'PreserveAccounts';
+            params: { accounts: Array<AccountId32Like> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the canceller account id.
+     *
+     * The canceller can only stop scheduled migration.
+     *
+     * @param {AccountId32Like | undefined} new_
+     **/
+    setCanceller: GenericTxCall<
+      Rv,
+      (new_: AccountId32Like | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'SetCanceller';
+            params: { new: AccountId32Like | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Pause the migration.
+     *
+     **/
+    pauseMigration: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'PauseMigration';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Cancel the migration.
+     *
+     * Migration can only be cancelled if it is in the [`MigrationStage::Scheduled`] state.
+     *
+     **/
+    cancelMigration: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'CancelMigration';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Vote on behalf of any of the members in `MultisigMembers`.
+     *
+     * Unsigned extrinsic, requiring the `payload` to be signed.
+     *
+     * Upon each call, a new entry is created in `ManagerMultisigs` map the `payload.call` to
+     * be dispatched. Once `MultisigThreshold` is reached, the entire map is deleted, and we
+     * move on to the next round.
+     *
+     * The round system ensures that signatures from older round cannot be reused.
+     *
+     * @param {PalletRcMigratorManagerMultisigVote} payload
+     * @param {SpRuntimeMultiSignature} sig
+     **/
+    voteManagerMultisig: GenericTxCall<
+      Rv,
+      (
+        payload: PalletRcMigratorManagerMultisigVote,
+        sig: SpRuntimeMultiSignature,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'VoteManagerMultisig';
+            params: { payload: PalletRcMigratorManagerMultisigVote; sig: SpRuntimeMultiSignature };
           };
         }
       >

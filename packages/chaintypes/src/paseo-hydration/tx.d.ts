@@ -8169,7 +8169,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} amplification
      * @param {Permill} fee
      * @param {Array<PalletStableswapPegSource>} pegSource
-     * @param {Permill} maxPegUpdate
+     * @param {Perbill} maxPegUpdate
      **/
     createPoolWithPegs: GenericTxCall<
       Rv,
@@ -8179,7 +8179,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         amplification: number,
         fee: Permill,
         pegSource: Array<PalletStableswapPegSource>,
-        maxPegUpdate: Permill,
+        maxPegUpdate: Perbill,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
@@ -8192,7 +8192,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               amplification: number;
               fee: Permill;
               pegSource: Array<PalletStableswapPegSource>;
-              maxPegUpdate: Permill;
+              maxPegUpdate: Perbill;
             };
           };
         }
@@ -8303,20 +8303,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      *
      * @param {number} poolId
-     * @param {Permill} maxPegUpdate
+     * @param {Perbill} maxPegUpdate
      **/
     updatePoolMaxPegUpdate: GenericTxCall<
       Rv,
       (
         poolId: number,
-        maxPegUpdate: Permill,
+        maxPegUpdate: Perbill,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Stableswap';
           palletCall: {
             name: 'UpdatePoolMaxPegUpdate';
-            params: { poolId: number; maxPegUpdate: Permill };
+            params: { poolId: number; maxPegUpdate: Perbill };
           };
         }
       >

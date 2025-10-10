@@ -1771,6 +1771,11 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   tokenGateway: {
     /**
+     * The decimals of the native currency
+     **/
+    decimals: number;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;

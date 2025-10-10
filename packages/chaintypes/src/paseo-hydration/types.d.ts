@@ -8611,7 +8611,7 @@ export type PalletStableswapCall =
         amplification: number;
         fee: Permill;
         pegSource: Array<PalletStableswapPegSource>;
-        maxPegUpdate: Permill;
+        maxPegUpdate: Perbill;
       };
     }
   /**
@@ -8678,7 +8678,7 @@ export type PalletStableswapCall =
    * - `NoPegSource`: If the pool does not have pegs configured.
    *
    **/
-  | { name: 'UpdatePoolMaxPegUpdate'; params: { poolId: number; maxPegUpdate: Permill } };
+  | { name: 'UpdatePoolMaxPegUpdate'; params: { poolId: number; maxPegUpdate: Perbill } };
 
 export type PalletStableswapCallLike =
   /**
@@ -8936,7 +8936,7 @@ export type PalletStableswapCallLike =
         amplification: number;
         fee: Permill;
         pegSource: Array<PalletStableswapPegSource>;
-        maxPegUpdate: Permill;
+        maxPegUpdate: Perbill;
       };
     }
   /**
@@ -9003,7 +9003,7 @@ export type PalletStableswapCallLike =
    * - `NoPegSource`: If the pool does not have pegs configured.
    *
    **/
-  | { name: 'UpdatePoolMaxPegUpdate'; params: { poolId: number; maxPegUpdate: Permill } };
+  | { name: 'UpdatePoolMaxPegUpdate'; params: { poolId: number; maxPegUpdate: Perbill } };
 
 export type PalletStableswapTradability = { bits: number };
 
@@ -14621,13 +14621,13 @@ export type PalletStableswapEvent =
   /**
    * Pool max peg update has been updated.
    **/
-  | { name: 'PoolMaxPegUpdateUpdated'; data: { poolId: number; maxPegUpdate: Permill } };
+  | { name: 'PoolMaxPegUpdateUpdated'; data: { poolId: number; maxPegUpdate: Perbill } };
 
 export type NonZeroU16 = number;
 
 export type PalletStableswapPoolPegInfo = {
   source: Array<PalletStableswapPegSource>;
-  maxPegUpdate: Permill;
+  maxPegUpdate: Perbill;
   current: Array<[bigint, bigint]>;
 };
 
@@ -14906,7 +14906,7 @@ export type PalletHsmEvent =
    * - `asset_id`: The collateral asset used in the arbitrage
    * - `hollar_amount`: Amount of Hollar that was included in the arbitrage operation
    **/
-  | { name: 'ArbitrageExecuted'; data: { assetId: number; hollarAmount: bigint } }
+  | { name: 'ArbitrageExecuted'; data: { arbitrage: number; assetId: number; hollarAmount: bigint; profit: bigint } }
   /**
    * Flash minter address set
    *
@@ -17784,6 +17784,10 @@ export type PalletLiquidityMiningError =
    * `incentivized_asset` is not registered in asset registry.
    **/
   | { name: 'IncentivizedAssetNotRegistered' }
+  /**
+   * Provided `amm_pool_id` doesn't match deposit's `amm_pool_id`.
+   **/
+  | { name: 'AmmPoolIdMismatch' }
   /**
    * Action cannot be completed because unexpected error has occurred. This should be reported
    * to protocol maintainers.

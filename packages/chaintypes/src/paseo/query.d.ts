@@ -105,6 +105,7 @@ import type {
   PolkadotRuntimeParachainsParasParaLifecycle,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotRuntimeParachainsParasParaPastCodeMeta,
+  PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry,
   PolkadotPrimitivesV8UpgradeGoAhead,
   PolkadotPrimitivesV8UpgradeRestriction,
   PolkadotRuntimeParachainsParasParaGenesisArgs,
@@ -375,6 +376,8 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      *
      * @param {H256} arg
      * @param {Callback<PalletPreimageOldRequestStatus | undefined> =} callback
+     *
+     * @deprecated RequestStatusFor
      **/
     statusFor: GenericStorageQuery<Rv, (arg: H256) => PalletPreimageOldRequestStatus | undefined, H256>;
 
@@ -2775,6 +2778,20 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     >;
 
     /**
+     * The code hash authorizations for a para which will expire `expire_at` `BlockNumberFor<T>`.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} arg
+     * @param {Callback<PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry | undefined> =} callback
+     **/
+    authorizedCodeHash: GenericStorageQuery<
+      Rv,
+      (
+        arg: PolkadotParachainPrimitivesPrimitivesId,
+      ) => PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry | undefined,
+      PolkadotParachainPrimitivesPrimitivesId
+    >;
+
+    /**
      * This is used by the relay-chain to communicate to a parachain a go-ahead with in the upgrade
      * procedure.
      *
@@ -4037,6 +4054,18 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     rcMigratedBalance: GenericStorageQuery<Rv, () => PalletRcMigratorAccountsMigratedBalances>;
 
     /**
+     * Helper storage item to store the total balance that should be kept on Relay Chain after
+     * it is consumed from the `RcMigratedBalance` storage item and sent to the Asset Hub.
+     *
+     * This let us to take the value from the `RcMigratedBalance` storage item and keep the
+     * `SignalMigrationFinish` stage to be idempotent while preserving these values for tests and
+     * later discoveries.
+     *
+     * @param {Callback<PalletRcMigratorAccountsMigratedBalances> =} callback
+     **/
+    rcMigratedBalanceArchive: GenericStorageQuery<Rv, () => PalletRcMigratorAccountsMigratedBalances>;
+
+    /**
      * The pending XCM messages.
      *
      * Contains data messages that have been sent to the Asset Hub but not yet confirmed.
@@ -4056,6 +4085,16 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     counterForPendingXcmMessages: GenericStorageQuery<Rv, () => number>;
 
     /**
+     * Accounts that use the proxy pallet to delegate permissions and have no nonce.
+     *
+     * Boolean value is whether they have been migrated to the Asset Hub. Needed for idempotency.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<boolean | undefined> =} callback
+     **/
+    pureProxyCandidatesMigrated: GenericStorageQuery<Rv, (arg: AccountId32Like) => boolean | undefined, AccountId32>;
+
+    /**
      * The pending XCM response queries and their XCM hash referencing the message in the
      * [`PendingXcmMessages`] storage.
      *
@@ -4070,7 +4109,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     pendingXcmQueries: GenericStorageQuery<Rv, (arg: bigint) => H256 | undefined, bigint>;
 
     /**
-     * The DMP queue priority.
+     * Manual override for `type UnprocessedMsgBuffer: Get<u32>`. Look there for docs.
      *
      * @param {Callback<number | undefined> =} callback
      **/
@@ -4091,12 +4130,21 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * An optional account id of a manager.
      *
-     * This account id has the similar to [`Config::AdminOrigin`] privileges except that it
+     * This account id has similar privileges to [`Config::AdminOrigin`] except that it
      * can not set the manager account id via `set_manager` call.
      *
      * @param {Callback<AccountId32 | undefined> =} callback
      **/
     manager: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
+     * An optional account id of a canceller.
+     *
+     * This account id can only stop scheduled migration.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    canceller: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
 
     /**
      * The block number at which the migration began and the pallet's extrinsics were locked.

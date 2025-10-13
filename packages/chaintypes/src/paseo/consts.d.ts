@@ -1254,10 +1254,25 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   xcmPallet: {
     /**
+     * This chain's Universal Location.
+     **/
+    universalLocation: StagingXcmV5Junctions;
+
+    /**
      * The latest supported version that we advertise. Generally just set it to
      * `pallet_xcm::CurrentXcmVersion`.
      **/
     advertisedXcmVersion: number;
+
+    /**
+     * The maximum number of local XCM locks that a single account may have.
+     **/
+    maxLockers: number;
+
+    /**
+     * The maximum number of consumers a single remote lock may have.
+     **/
+    maxRemoteLockConsumers: number;
 
     /**
      * Generic pallet constant

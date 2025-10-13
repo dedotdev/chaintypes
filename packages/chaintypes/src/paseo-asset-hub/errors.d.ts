@@ -629,6 +629,8 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
 
     /**
      * Too many locations authorized to alias origin.
+     *
+     * @deprecated Use `LocalExecutionIncompleteWithError` instead (since 20.0.0)
      **/
     TooManyAuthorizedAliases: GenericPalletError<Rv>;
 
@@ -641,6 +643,12 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The alias to remove authorization for was not found.
      **/
     AliasNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Local XCM execution incomplete with the actual XCM error and the index of the
+     * instruction that caused the error.
+     **/
+    LocalExecutionIncompleteWithError: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -701,6 +709,81 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Another call is in progress and needs to finish before this call can happen.
      **/
     RecursiveDisallowed: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `SnowbridgeSystemFrontend`'s errors
+   **/
+  snowbridgeSystemFrontend: {
+    /**
+     * Convert versioned location failure
+     **/
+    UnsupportedLocationVersion: GenericPalletError<Rv>;
+
+    /**
+     * Check location failure, should start from the dispatch origin as owner
+     **/
+    InvalidAssetOwner: GenericPalletError<Rv>;
+
+    /**
+     * Send xcm message failure
+     **/
+    SendFailure: GenericPalletError<Rv>;
+
+    /**
+     * Withdraw fee asset failure
+     **/
+    FeesNotMet: GenericPalletError<Rv>;
+
+    /**
+     * Convert to reanchored location failure
+     **/
+    LocationConversionFailed: GenericPalletError<Rv>;
+
+    /**
+     * Message export is halted
+     **/
+    Halted: GenericPalletError<Rv>;
+
+    /**
+     * The desired destination was unreachable, generally because there is a no way of routing
+     * to it.
+     **/
+    Unreachable: GenericPalletError<Rv>;
+
+    /**
+     * The asset provided for the tip is unsupported.
+     **/
+    UnsupportedAsset: GenericPalletError<Rv>;
+
+    /**
+     * Unable to withdraw asset.
+     **/
+    WithdrawError: GenericPalletError<Rv>;
+
+    /**
+     * Account could not be converted to a location.
+     **/
+    InvalidAccount: GenericPalletError<Rv>;
+
+    /**
+     * Provided tip asset could not be swapped for ether.
+     **/
+    SwapError: GenericPalletError<Rv>;
+
+    /**
+     * Ether could not be burned.
+     **/
+    BurnError: GenericPalletError<Rv>;
+
+    /**
+     * The tip provided is zero.
+     **/
+    TipAmountZero: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1104,6 +1187,26 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The provided bid is too low.
      **/
     BidTooLow: GenericPalletError<Rv>;
+
+    /**
+     * No metadata is found.
+     **/
+    NoMetadata: GenericPalletError<Rv>;
+
+    /**
+     * Wrong metadata key/value bytes supplied.
+     **/
+    WrongMetadata: GenericPalletError<Rv>;
+
+    /**
+     * An attribute is not found.
+     **/
+    AttributeNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Wrong attribute key/value bytes supplied.
+     **/
+    WrongAttribute: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -2034,6 +2137,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     TooManyQueued: GenericPalletError<Rv>;
 
     /**
+     * User is not the proposer of the bounty.
+     **/
+    NotProposer: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -2304,6 +2412,22 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * staking in another way already, such as via pool.
      **/
     Restricted: GenericPalletError<Rv>;
+
+    /**
+     * Unapplied slashes in the recently concluded era is blocking this operation.
+     * See `Call::apply_slash` to apply them.
+     **/
+    UnappliedSlashesInPreviousEra: GenericPalletError<Rv>;
+
+    /**
+     * The era is not eligible for pruning.
+     **/
+    EraNotPrunable: GenericPalletError<Rv>;
+
+    /**
+     * The slash has been cancelled and cannot be applied.
+     **/
+    CancelledSlash: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -2750,6 +2874,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Internal error, please bug report.
      **/
     InternalError: GenericPalletError<Rv>;
+
+    /**
+     * The Asset Hub migration is not completed.
+     **/
+    MigrationNotCompleted: GenericPalletError<Rv>;
+
+    /**
+     * The balance is zero.
+     **/
+    ZeroBalance: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

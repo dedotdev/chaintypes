@@ -33,11 +33,14 @@ import type {
   PolkadotPrimitivesV8AbridgedHostConfiguration,
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
+  CumulusPalletParachainSystemParachainInherentInboundMessageId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
   PalletPreimageOldRequestStatus,
   PalletPreimageRequestStatus,
   PalletSchedulerScheduled,
   PalletSchedulerRetryConfig,
+  AssetHubPaseoRuntimeRuntimeParametersValue,
+  AssetHubPaseoRuntimeRuntimeParametersKey,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
@@ -66,6 +69,7 @@ import type {
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMessageQueuePage,
+  SnowbridgeCoreOperatingModeBasicOperatingMode,
   PalletMultisigMultisig,
   PalletProxyProxyDefinitionProxyType,
   PalletProxyAnnouncement,
@@ -87,7 +91,7 @@ import type {
   PalletNftsPendingSwap,
   PalletNftsCollectionConfig,
   PalletNftsItemConfig,
-  StagingXcmV4Location,
+  StagingXcmV5Location,
   PalletAssetConversionPoolInfo,
   PalletTreasuryProposal,
   PalletTreasurySpendStatus,
@@ -110,6 +114,7 @@ import type {
   PalletStakingAsyncSlashingOffenceRecord,
   PalletStakingAsyncUnappliedSlash,
   PalletStakingAsyncSnapshotStatus,
+  PalletStakingAsyncPalletPruningStep,
   PalletNominationPoolsPoolMember,
   PalletNominationPoolsBondedPoolInner,
   PalletNominationPoolsRewardPool,
@@ -476,13 +481,35 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     processedDownwardMessages: GenericStorageQuery<Rv, () => number>;
 
     /**
-     * HRMP watermark that was set in a block.
+     * The last processed downward message.
      *
-     * This will be cleared in `on_initialize` of each new block.
+     * We need to keep track of this to filter the messages that have been already processed.
+     *
+     * @param {Callback<CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined> =} callback
+     **/
+    lastProcessedDownwardMessage: GenericStorageQuery<
+      Rv,
+      () => CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined
+    >;
+
+    /**
+     * HRMP watermark that was set in a block.
      *
      * @param {Callback<number> =} callback
      **/
     hrmpWatermark: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * The last processed HRMP message.
+     *
+     * We need to keep track of this to filter the messages that have been already processed.
+     *
+     * @param {Callback<CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined> =} callback
+     **/
+    lastProcessedHrmpMessage: GenericStorageQuery<
+      Rv,
+      () => CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined
+    >;
 
     /**
      * HRMP messages that were sent in a block.
@@ -604,6 +631,8 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      *
      * @param {H256} arg
      * @param {Callback<PalletPreimageOldRequestStatus | undefined> =} callback
+     *
+     * @deprecated RequestStatusFor
      **/
     statusFor: GenericStorageQuery<Rv, (arg: H256) => PalletPreimageOldRequestStatus | undefined, H256>;
 
@@ -668,6 +697,27 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<[number, number] | undefined> =} callback
      **/
     lookup: GenericStorageQuery<Rv, (arg: FixedBytes<32>) => [number, number] | undefined, FixedBytes<32>>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Parameters`'s storage queries
+   **/
+  parameters: {
+    /**
+     * Stored parameters.
+     *
+     * @param {AssetHubPaseoRuntimeRuntimeParametersKey} arg
+     * @param {Callback<AssetHubPaseoRuntimeRuntimeParametersValue | undefined> =} callback
+     **/
+    parameters: GenericStorageQuery<
+      Rv,
+      (arg: AssetHubPaseoRuntimeRuntimeParametersKey) => AssetHubPaseoRuntimeRuntimeParametersValue | undefined,
+      AssetHubPaseoRuntimeRuntimeParametersKey
+    >;
 
     /**
      * Generic pallet storage query
@@ -1393,6 +1443,22 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
+   * Pallet `SnowbridgeSystemFrontend`'s storage queries
+   **/
+  snowbridgeSystemFrontend: {
+    /**
+     * The current operating mode for exporting to Ethereum.
+     *
+     * @param {Callback<SnowbridgeCoreOperatingModeBasicOperatingMode> =} callback
+     **/
+    exportOperatingMode: GenericStorageQuery<Rv, () => SnowbridgeCoreOperatingModeBasicOperatingMode>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
    * Pallet `Multisig`'s storage queries
    **/
   multisig: {
@@ -1810,25 +1876,25 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * Details of an asset.
      *
-     * @param {StagingXcmV4Location} arg
+     * @param {StagingXcmV5Location} arg
      * @param {Callback<PalletAssetsAssetDetails | undefined> =} callback
      **/
     asset: GenericStorageQuery<
       Rv,
-      (arg: StagingXcmV4Location) => PalletAssetsAssetDetails | undefined,
-      StagingXcmV4Location
+      (arg: StagingXcmV5Location) => PalletAssetsAssetDetails | undefined,
+      StagingXcmV5Location
     >;
 
     /**
      * The holdings of a specific account for a specific asset.
      *
-     * @param {[StagingXcmV4Location, AccountId32Like]} arg
+     * @param {[StagingXcmV5Location, AccountId32Like]} arg
      * @param {Callback<PalletAssetsAssetAccount | undefined> =} callback
      **/
     account: GenericStorageQuery<
       Rv,
-      (arg: [StagingXcmV4Location, AccountId32Like]) => PalletAssetsAssetAccount | undefined,
-      [StagingXcmV4Location, AccountId32]
+      (arg: [StagingXcmV5Location, AccountId32Like]) => PalletAssetsAssetAccount | undefined,
+      [StagingXcmV5Location, AccountId32]
     >;
 
     /**
@@ -1836,22 +1902,22 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * is the amount of `T::Currency` reserved for storing this.
      * First key is the asset ID, second key is the owner and third key is the delegate.
      *
-     * @param {[StagingXcmV4Location, AccountId32Like, AccountId32Like]} arg
+     * @param {[StagingXcmV5Location, AccountId32Like, AccountId32Like]} arg
      * @param {Callback<PalletAssetsApproval | undefined> =} callback
      **/
     approvals: GenericStorageQuery<
       Rv,
-      (arg: [StagingXcmV4Location, AccountId32Like, AccountId32Like]) => PalletAssetsApproval | undefined,
-      [StagingXcmV4Location, AccountId32, AccountId32]
+      (arg: [StagingXcmV5Location, AccountId32Like, AccountId32Like]) => PalletAssetsApproval | undefined,
+      [StagingXcmV5Location, AccountId32, AccountId32]
     >;
 
     /**
      * Metadata of an asset.
      *
-     * @param {StagingXcmV4Location} arg
+     * @param {StagingXcmV5Location} arg
      * @param {Callback<PalletAssetsAssetMetadata> =} callback
      **/
-    metadata: GenericStorageQuery<Rv, (arg: StagingXcmV4Location) => PalletAssetsAssetMetadata, StagingXcmV4Location>;
+    metadata: GenericStorageQuery<Rv, (arg: StagingXcmV5Location) => PalletAssetsAssetMetadata, StagingXcmV5Location>;
 
     /**
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
@@ -1864,9 +1930,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * The initial next asset ID can be set using the [`GenesisConfig`] or the
      * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
      *
-     * @param {Callback<StagingXcmV4Location | undefined> =} callback
+     * @param {Callback<StagingXcmV5Location | undefined> =} callback
      **/
-    nextAssetId: GenericStorageQuery<Rv, () => StagingXcmV4Location | undefined>;
+    nextAssetId: GenericStorageQuery<Rv, () => StagingXcmV5Location | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1947,13 +2013,13 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Map from `PoolAssetId` to `PoolInfo`. This establishes whether a pool has been officially
      * created rather than people sending tokens directly to a pool's public account.
      *
-     * @param {[StagingXcmV4Location, StagingXcmV4Location]} arg
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
      * @param {Callback<PalletAssetConversionPoolInfo | undefined> =} callback
      **/
     pools: GenericStorageQuery<
       Rv,
-      (arg: [StagingXcmV4Location, StagingXcmV4Location]) => PalletAssetConversionPoolInfo | undefined,
-      [StagingXcmV4Location, StagingXcmV4Location]
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => PalletAssetConversionPoolInfo | undefined,
+      [StagingXcmV5Location, StagingXcmV5Location]
     >;
 
     /**
@@ -2734,6 +2800,18 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     >;
 
     /**
+     * Cancelled slashes by era and validator with maximum slash fraction to be cancelled.
+     *
+     * When slashes are cancelled by governance, this stores the era and the validators
+     * whose slashes should be cancelled, along with the maximum slash fraction that should
+     * be cancelled for each validator.
+     *
+     * @param {number} arg
+     * @param {Callback<Array<[AccountId32, Perbill]>> =} callback
+     **/
+    cancelledSlashes: GenericStorageQuery<Rv, (arg: number) => Array<[AccountId32, Perbill]>, number>;
+
+    /**
      * All slashing events on validators, mapped by era to the highest slash proportion
      * and slash value of the era.
      *
@@ -2783,6 +2861,14 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<Array<AccountId32>> =} callback
      **/
     electableStashes: GenericStorageQuery<Rv, () => Array<AccountId32>>;
+
+    /**
+     * Tracks the current step of era pruning process for each era being lazily pruned.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletStakingAsyncPalletPruningStep | undefined> =} callback
+     **/
+    eraPruningState: GenericStorageQuery<Rv, (arg: number) => PalletStakingAsyncPalletPruningStep | undefined, number>;
 
     /**
      * Generic pallet storage query
@@ -3495,7 +3581,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * An optional account id of a manager.
      *
-     * The manager has the similar to [`Config::AdminOrigin`] privileges except that it
+     * This account id has similar privileges to [`Config::AdminOrigin`] except that it
      * can not set the manager account id via `set_manager` call.
      *
      * @param {Callback<AccountId32 | undefined> =} callback

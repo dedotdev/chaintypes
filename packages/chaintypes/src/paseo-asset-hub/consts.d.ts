@@ -9,8 +9,9 @@ import type {
   PolkadotParachainPrimitivesPrimitivesId,
   SpWeightsWeightV2Weight,
   FrameSupportPalletId,
+  StagingXcmV5Junctions,
   PalletNftsBitFlagsPalletFeature,
-  StagingXcmV4Location,
+  StagingXcmV5Location,
   PalletReferendaTrackDetails,
 } from './types.js';
 
@@ -127,6 +128,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      **/
     maxScheduledPerBlock: number;
 
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `Parameters`'s constants
+   **/
+  parameters: {
     /**
      * Generic pallet constant
      **/
@@ -374,10 +384,25 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    **/
   polkadotXcm: {
     /**
+     * This chain's Universal Location.
+     **/
+    universalLocation: StagingXcmV5Junctions;
+
+    /**
      * The latest supported version that we advertise. Generally just set it to
      * `pallet_xcm::CurrentXcmVersion`.
      **/
     advertisedXcmVersion: number;
+
+    /**
+     * The maximum number of local XCM locks that a single account may have.
+     **/
+    maxLockers: number;
+
+    /**
+     * The maximum number of consumers a single remote lock may have.
+     **/
+    maxRemoteLockConsumers: number;
 
     /**
      * Generic pallet constant
@@ -441,6 +466,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      **/
     idleMaxServiceWeight: SpWeightsWeightV2Weight | undefined;
 
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `SnowbridgeSystemFrontend`'s constants
+   **/
+  snowbridgeSystemFrontend: {
     /**
      * Generic pallet constant
      **/
@@ -848,7 +882,7 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     /**
      * Asset class from [`Config::Assets`] used to pay the [`Config::PoolSetupFee`].
      **/
-    poolSetupFeeAsset: StagingXcmV4Location;
+    poolSetupFeeAsset: StagingXcmV5Location;
 
     /**
      * A fee to withdraw the liquidity.
@@ -1237,6 +1271,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      * this can be set to 604,800,000 ms (7 days).
      **/
     maxEraDuration: bigint;
+
+    /**
+     * Maximum number of storage items that can be pruned in a single call.
+     *
+     * This controls how many storage items can be deleted in each call to `prune_era_step`.
+     * This should be set to a conservative value (e.g., 100-500 items) to ensure pruning
+     * doesn't consume too much block space. The actual weight is determined by benchmarks.
+     **/
+    maxPruningItems: number;
 
     /**
      * Generic pallet constant

@@ -32,13 +32,14 @@ import type {
   SpInherentsInherentData,
   SpInherentsCheckInherentsResult,
   SpCoreCryptoKeyTypeId,
-  EthereumTransactionTransactionV2,
+  EthereumTransactionTransactionV3,
+  EthereumTransactionEip7702AuthorizationListItem,
   MoonbeamRpcPrimitivesTxpoolTxPoolResponse,
   EvmBackendBasic,
   FpEvmExecutionInfoV2,
   FpEvmExecutionInfoV2H160,
   EthereumBlock,
-  EthereumReceiptReceiptV3,
+  EthereumReceiptReceiptV4,
   FpRpcTransactionStatus,
   PalletTransactionPaymentRuntimeDispatchInfo,
   PalletTransactionPaymentFeeDetails,
@@ -411,6 +412,63 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     [method: string]: GenericRuntimeApiMethod<Rv>;
   };
   /**
+   * @runtimeapi: GenesisBuilder - 0xfbc577b9d747efd6
+   **/
+  genesisBuilder: {
+    /**
+     * Build `RuntimeGenesisConfig` from a JSON blob not using any defaults and store it in the
+     * storage.
+     *
+     * In the case of a FRAME-based runtime, this function deserializes the full
+     * `RuntimeGenesisConfig` from the given JSON blob and puts it into the storage. If the
+     * provided JSON blob is incorrect or incomplete or the deserialization fails, an error
+     * is returned.
+     *
+     * Please note that provided JSON blob must contain all `RuntimeGenesisConfig` fields, no
+     * defaults will be used.
+     *
+     * @callname: GenesisBuilder_build_state
+     * @param {BytesLike} json
+     **/
+    buildState: GenericRuntimeApiMethod<Rv, (json: BytesLike) => Promise<Result<[], string>>>;
+
+    /**
+     * Returns a JSON blob representation of the built-in `RuntimeGenesisConfig` identified by
+     * `id`.
+     *
+     * If `id` is `None` the function should return JSON blob representation of the default
+     * `RuntimeGenesisConfig` struct of the runtime. Implementation must provide default
+     * `RuntimeGenesisConfig`.
+     *
+     * Otherwise function returns a JSON representation of the built-in, named
+     * `RuntimeGenesisConfig` preset identified by `id`, or `None` if such preset does not
+     * exist. Returned `Vec<u8>` contains bytes of JSON blob (patch) which comprises a list of
+     * (potentially nested) key-value pairs that are intended for customizing the default
+     * runtime genesis config. The patch shall be merged (rfc7386) with the JSON representation
+     * of the default `RuntimeGenesisConfig` to create a comprehensive genesis config that can
+     * be used in `build_state` method.
+     *
+     * @callname: GenesisBuilder_get_preset
+     * @param {string | undefined} id
+     **/
+    getPreset: GenericRuntimeApiMethod<Rv, (id?: string | undefined) => Promise<Bytes | undefined>>;
+
+    /**
+     * Returns a list of identifiers for available builtin `RuntimeGenesisConfig` presets.
+     *
+     * The presets from the list can be queried with [`GenesisBuilder::get_preset`] method. If
+     * no named presets are provided by the runtime the list is empty.
+     *
+     * @callname: GenesisBuilder_preset_names
+     **/
+    presetNames: GenericRuntimeApiMethod<Rv, () => Promise<Array<string>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
    * @runtimeapi: AccountNonceApi - 0xbc9d89904f5b923f
    **/
   accountNonceApi: {
@@ -435,14 +493,14 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: DebugRuntimeApi_trace_transaction
      * @param {Array<FpSelfContainedUncheckedExtrinsic>} extrinsics
-     * @param {EthereumTransactionTransactionV2} transaction
+     * @param {EthereumTransactionTransactionV3} transaction
      * @param {Header} header
      **/
     traceTransaction: GenericRuntimeApiMethod<
       Rv,
       (
         extrinsics: Array<FpSelfContainedUncheckedExtrinsic>,
-        transaction: EthereumTransactionTransactionV2,
+        transaction: EthereumTransactionTransactionV3,
         header: Header,
       ) => Promise<Result<[], DispatchError>>
     >;
@@ -476,6 +534,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @param {U256 | undefined} max_priority_fee_per_gas
      * @param {U256 | undefined} nonce
      * @param {Array<[H160, Array<H256>]> | undefined} access_list
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem> | undefined} authorization_list
      **/
     traceCall: GenericRuntimeApiMethod<
       Rv,
@@ -490,6 +549,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
         maxPriorityFeePerGas?: U256 | undefined,
         nonce?: U256 | undefined,
         accessList?: Array<[H160, Array<H256>]> | undefined,
+        authorizationList?: Array<EthereumTransactionEip7702AuthorizationListItem> | undefined,
       ) => Promise<Result<[], DispatchError>>
     >;
 
@@ -584,6 +644,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @param {U256 | undefined} nonce
      * @param {boolean} estimate
      * @param {Array<[H160, Array<H256>]> | undefined} access_list
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem> | undefined} authorization_list
      **/
     call: GenericRuntimeApiMethod<
       Rv,
@@ -598,6 +659,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
         nonce: U256 | undefined,
         estimate: boolean,
         accessList?: Array<[H160, Array<H256>]> | undefined,
+        authorizationList?: Array<EthereumTransactionEip7702AuthorizationListItem> | undefined,
       ) => Promise<Result<FpEvmExecutionInfoV2, DispatchError>>
     >;
 
@@ -613,6 +675,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @param {U256 | undefined} nonce
      * @param {boolean} estimate
      * @param {Array<[H160, Array<H256>]> | undefined} access_list
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem> | undefined} authorization_list
      **/
     create: GenericRuntimeApiMethod<
       Rv,
@@ -626,6 +689,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
         nonce: U256 | undefined,
         estimate: boolean,
         accessList?: Array<[H160, Array<H256>]> | undefined,
+        authorizationList?: Array<EthereumTransactionEip7702AuthorizationListItem> | undefined,
       ) => Promise<Result<FpEvmExecutionInfoV2H160, DispatchError>>
     >;
 
@@ -641,7 +705,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      *
      * @callname: EthereumRuntimeRPCApi_current_receipts
      **/
-    currentReceipts: GenericRuntimeApiMethod<Rv, () => Promise<Array<EthereumReceiptReceiptV3> | undefined>>;
+    currentReceipts: GenericRuntimeApiMethod<Rv, () => Promise<Array<EthereumReceiptReceiptV4> | undefined>>;
 
     /**
      * Return the current transaction status.
@@ -659,7 +723,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
       () => Promise<
         [
           EthereumBlock | undefined,
-          Array<EthereumReceiptReceiptV3> | undefined,
+          Array<EthereumReceiptReceiptV4> | undefined,
           Array<FpRpcTransactionStatus> | undefined,
         ]
       >
@@ -673,7 +737,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      **/
     extrinsicFilter: GenericRuntimeApiMethod<
       Rv,
-      (xts: Array<FpSelfContainedUncheckedExtrinsic>) => Promise<Array<EthereumTransactionTransactionV2>>
+      (xts: Array<FpSelfContainedUncheckedExtrinsic>) => Promise<Array<EthereumTransactionTransactionV3>>
     >;
 
     /**
@@ -728,11 +792,11 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     /**
      *
      * @callname: ConvertTransactionRuntimeApi_convert_transaction
-     * @param {EthereumTransactionTransactionV2} transaction
+     * @param {EthereumTransactionTransactionV3} transaction
      **/
     convertTransaction: GenericRuntimeApiMethod<
       Rv,
-      (transaction: EthereumTransactionTransactionV2) => Promise<FpSelfContainedUncheckedExtrinsic>
+      (transaction: EthereumTransactionTransactionV3) => Promise<FpSelfContainedUncheckedExtrinsic>
     >;
 
     /**

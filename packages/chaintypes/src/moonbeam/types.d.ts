@@ -63,7 +63,6 @@ export type MoonbeamRuntimeRuntimeEvent =
   | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
   | { pallet: 'MaintenanceMode'; palletEvent: PalletMaintenanceModeEvent }
   | { pallet: 'Identity'; palletEvent: PalletIdentityEvent }
-  | { pallet: 'Migrations'; palletEvent: PalletMigrationsEvent }
   | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
   | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
   | { pallet: 'Evm'; palletEvent: PalletEvmEvent }
@@ -81,14 +80,13 @@ export type MoonbeamRuntimeRuntimeEvent =
   | { pallet: 'CumulusXcm'; palletEvent: CumulusPalletXcmEvent }
   | { pallet: 'PolkadotXcm'; palletEvent: PalletXcmEvent }
   | { pallet: 'Assets'; palletEvent: PalletAssetsEvent }
-  | { pallet: 'AssetManager'; palletEvent: PalletAssetManagerEvent }
   | { pallet: 'XcmTransactor'; palletEvent: PalletXcmTransactorEvent }
   | { pallet: 'EthereumXcm'; palletEvent: PalletEthereumXcmEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
   | { pallet: 'EvmForeignAssets'; palletEvent: PalletMoonbeamForeignAssetsEvent }
   | { pallet: 'XcmWeightTrader'; palletEvent: PalletXcmWeightTraderEvent }
   | { pallet: 'EmergencyParaXcm'; palletEvent: PalletEmergencyParaXcmEvent }
-  | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent002 }
+  | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent }
   | { pallet: 'Randomness'; palletEvent: PalletRandomnessEvent }
   | { pallet: 'BridgeKusamaGrandpa'; palletEvent: PalletBridgeGrandpaEvent }
   | { pallet: 'BridgeKusamaParachains'; palletEvent: PalletBridgeParachainsEvent }
@@ -126,7 +124,11 @@ export type FrameSystemEvent =
   /**
    * An upgrade was authorized.
    **/
-  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } };
+  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } }
+  /**
+   * An invalid authorized upgrade was rejected while trying to apply it.
+   **/
+  | { name: 'RejectedInvalidAuthorizedUpgrade'; data: { codeHash: H256; error: DispatchError } };
 
 export type FrameSystemDispatchEventInfo = {
   weight: SpWeightsWeightV2Weight;
@@ -639,7 +641,15 @@ export type PalletUtilityEvent =
   /**
    * A call was dispatched.
    **/
-  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } };
+  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } }
+  /**
+   * Main call was dispatched.
+   **/
+  | { name: 'IfElseMainSuccess' }
+  /**
+   * The fallback call was dispatched.
+   **/
+  | { name: 'IfElseFallbackCalled'; data: { mainError: DispatchError } };
 
 /**
  * The `Event` enum of this pallet
@@ -674,6 +684,13 @@ export type PalletProxyEvent =
   | {
       name: 'ProxyRemoved';
       data: { delegator: AccountId20; delegatee: AccountId20; proxyType: MoonbeamRuntimeProxyType; delay: number };
+    }
+  /**
+   * A deposit stored for proxies or announcements was poked / updated.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId20; kind: PalletProxyDepositKind; oldDeposit: bigint; newDeposit: bigint };
     };
 
 export type MoonbeamRuntimeProxyType =
@@ -685,6 +702,8 @@ export type MoonbeamRuntimeProxyType =
   | 'Balances'
   | 'AuthorMapping'
   | 'IdentityJudgement';
+
+export type PalletProxyDepositKind = 'Proxies' | 'Announcements';
 
 /**
  * The `Event` enum of this pallet
@@ -805,35 +824,6 @@ export type PalletIdentityEvent =
 /**
  * The `Event` enum of this pallet
  **/
-export type PalletMigrationsEvent =
-  /**
-   * Runtime upgrade started
-   **/
-  | { name: 'RuntimeUpgradeStarted' }
-  /**
-   * Runtime upgrade completed
-   **/
-  | { name: 'RuntimeUpgradeCompleted'; data: { weight: SpWeightsWeightV2Weight } }
-  /**
-   * Migration started
-   **/
-  | { name: 'MigrationStarted'; data: { migrationName: Bytes } }
-  /**
-   * Migration completed
-   **/
-  | { name: 'MigrationCompleted'; data: { migrationName: Bytes; consumedWeight: SpWeightsWeightV2Weight } }
-  /**
-   * XCM execution suspension failed with inner error
-   **/
-  | { name: 'FailedToSuspendIdleXcmExecution'; data: { error: DispatchError } }
-  /**
-   * XCM execution resume failed with inner error
-   **/
-  | { name: 'FailedToResumeIdleXcmExecution'; data: { error: DispatchError } };
-
-/**
- * The `Event` enum of this pallet
- **/
 export type PalletMultisigEvent =
   /**
    * A new multisig operation has begun.
@@ -875,6 +865,13 @@ export type PalletMultisigEvent =
         multisig: AccountId20;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * The deposit for a multisig operation has been updated/poked.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId20; callHash: FixedBytes<32>; oldDeposit: bigint; newDeposit: bigint };
     };
 
 export type PalletMultisigTimepoint = { height: number; index: number };
@@ -1077,7 +1074,11 @@ export type PalletSchedulerEvent =
   /**
    * The given task can never be executed since it is overweight.
    **/
-  | { name: 'PermanentlyOverweight'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } };
+  | { name: 'PermanentlyOverweight'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } }
+  /**
+   * Agenda is incomplete from `when`.
+   **/
+  | { name: 'AgendaIncomplete'; data: { when: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -1109,13 +1110,17 @@ export type PalletConvictionVotingEvent =
    **/
   | { name: 'Undelegated'; data: AccountId20 }
   /**
-   * An account that has voted
+   * An account has voted
    **/
   | { name: 'Voted'; data: { who: AccountId20; vote: PalletConvictionVotingVoteAccountVote } }
   /**
-   * A vote that been removed
+   * A vote has been removed
    **/
-  | { name: 'VoteRemoved'; data: { who: AccountId20; vote: PalletConvictionVotingVoteAccountVote } };
+  | { name: 'VoteRemoved'; data: { who: AccountId20; vote: PalletConvictionVotingVoteAccountVote } }
+  /**
+   * The lockup period of a conviction vote expired, and the funds have been unlocked.
+   **/
+  | { name: 'VoteUnlocked'; data: { who: AccountId20; class: number } };
 
 export type PalletConvictionVotingVoteAccountVote =
   | { type: 'Standard'; value: { vote: PalletConvictionVotingVote; balance: bigint } }
@@ -1446,7 +1451,6 @@ export type MoonbeamRuntimeRuntimeCall =
   | { pallet: 'CrowdloanRewards'; palletCall: PalletCrowdloanRewardsCall }
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCall }
   | { pallet: 'Assets'; palletCall: PalletAssetsCall }
-  | { pallet: 'AssetManager'; palletCall: PalletAssetManagerCall }
   | { pallet: 'XcmTransactor'; palletCall: PalletXcmTransactorCall }
   | { pallet: 'EthereumXcm'; palletCall: PalletEthereumXcmCall }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
@@ -1491,7 +1495,6 @@ export type MoonbeamRuntimeRuntimeCallLike =
   | { pallet: 'CrowdloanRewards'; palletCall: PalletCrowdloanRewardsCallLike }
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCallLike }
   | { pallet: 'Assets'; palletCall: PalletAssetsCallLike }
-  | { pallet: 'AssetManager'; palletCall: PalletAssetManagerCallLike }
   | { pallet: 'XcmTransactor'; palletCall: PalletXcmTransactorCallLike }
   | { pallet: 'EthereumXcm'; palletCall: PalletEthereumXcmCallLike }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
@@ -1964,18 +1967,6 @@ export type PalletParachainStakingCall =
    **/
   | { name: 'SetInflation'; params: { schedule: { min: Perbill; ideal: Perbill; max: Perbill } } }
   /**
-   * Deprecated: please use `set_inflation_distribution_config` instead.
-   *
-   * Set the account that will hold funds set aside for parachain bond
-   **/
-  | { name: 'SetParachainBondAccount'; params: { new: AccountId20 } }
-  /**
-   * Deprecated: please use `set_inflation_distribution_config` instead.
-   *
-   * Set the percent of inflation set aside for parachain bond
-   **/
-  | { name: 'SetParachainBondReservePercent'; params: { new: Percent } }
-  /**
    * Set the total number of collator candidates selected per round
    * - changes are not applied until the start of the next round
    **/
@@ -2088,10 +2079,6 @@ export type PalletParachainStakingCall =
       };
     }
   /**
-   * Hotfix to remove existing empty entries for candidates that have left.
-   **/
-  | { name: 'HotfixRemoveDelegationRequestsExitedCandidates'; params: { candidates: Array<AccountId20> } }
-  /**
    * Notify a collator is inactive during MaxOfflineRounds
    **/
   | { name: 'NotifyInactiveCollator'; params: { collator: AccountId20 } }
@@ -2119,18 +2106,6 @@ export type PalletParachainStakingCallLike =
    * Set the annual inflation rate to derive per-round inflation
    **/
   | { name: 'SetInflation'; params: { schedule: { min: Perbill; ideal: Perbill; max: Perbill } } }
-  /**
-   * Deprecated: please use `set_inflation_distribution_config` instead.
-   *
-   * Set the account that will hold funds set aside for parachain bond
-   **/
-  | { name: 'SetParachainBondAccount'; params: { new: AccountId20Like } }
-  /**
-   * Deprecated: please use `set_inflation_distribution_config` instead.
-   *
-   * Set the percent of inflation set aside for parachain bond
-   **/
-  | { name: 'SetParachainBondReservePercent'; params: { new: Percent } }
   /**
    * Set the total number of collator candidates selected per round
    * - changes are not applied until the start of the next round
@@ -2243,10 +2218,6 @@ export type PalletParachainStakingCallLike =
         delegationCountHint: number;
       };
     }
-  /**
-   * Hotfix to remove existing empty entries for candidates that have left.
-   **/
-  | { name: 'HotfixRemoveDelegationRequestsExitedCandidates'; params: { candidates: Array<AccountId20Like> } }
   /**
    * Notify a collator is inactive during MaxOfflineRounds
    **/
@@ -2537,7 +2508,41 @@ export type PalletUtilityCall =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: MoonbeamRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } };
+  | { name: 'WithWeight'; params: { call: MoonbeamRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | { name: 'IfElse'; params: { main: MoonbeamRuntimeRuntimeCall; fallback: MoonbeamRuntimeRuntimeCall } }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | { name: 'DispatchAsFallible'; params: { asOrigin: MoonbeamRuntimeOriginCaller; call: MoonbeamRuntimeRuntimeCall } };
 
 export type PalletUtilityCallLike =
   /**
@@ -2626,7 +2631,44 @@ export type PalletUtilityCallLike =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: MoonbeamRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } };
+  | { name: 'WithWeight'; params: { call: MoonbeamRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | { name: 'IfElse'; params: { main: MoonbeamRuntimeRuntimeCallLike; fallback: MoonbeamRuntimeRuntimeCallLike } }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | {
+      name: 'DispatchAsFallible';
+      params: { asOrigin: MoonbeamRuntimeOriginCaller; call: MoonbeamRuntimeRuntimeCallLike };
+    };
 
 export type MoonbeamRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
@@ -2889,7 +2931,18 @@ export type PalletProxyCall =
         forceProxyType?: MoonbeamRuntimeProxyType | undefined;
         call: MoonbeamRuntimeRuntimeCall;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 export type PalletProxyCallLike =
   /**
@@ -3056,7 +3109,18 @@ export type PalletProxyCallLike =
         forceProxyType?: MoonbeamRuntimeProxyType | undefined;
         call: MoonbeamRuntimeRuntimeCallLike;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3772,6 +3836,25 @@ export type PalletMultisigCall =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId20>; callHash: FixedBytes<32> };
     };
 
 export type PalletMultisigCallLike =
@@ -3917,6 +4000,25 @@ export type PalletMultisigCallLike =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId20Like>; callHash: FixedBytes<32> };
     };
 
 /**
@@ -3993,6 +4095,7 @@ export type PalletEvmCall =
         maxPriorityFeePerGas?: U256 | undefined;
         nonce?: U256 | undefined;
         accessList: Array<[H160, Array<H256>]>;
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
       };
     }
   /**
@@ -4010,6 +4113,7 @@ export type PalletEvmCall =
         maxPriorityFeePerGas?: U256 | undefined;
         nonce?: U256 | undefined;
         accessList: Array<[H160, Array<H256>]>;
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
       };
     }
   /**
@@ -4027,6 +4131,7 @@ export type PalletEvmCall =
         maxPriorityFeePerGas?: U256 | undefined;
         nonce?: U256 | undefined;
         accessList: Array<[H160, Array<H256>]>;
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
       };
     };
 
@@ -4050,6 +4155,7 @@ export type PalletEvmCallLike =
         maxPriorityFeePerGas?: U256 | undefined;
         nonce?: U256 | undefined;
         accessList: Array<[H160, Array<H256>]>;
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
       };
     }
   /**
@@ -4067,6 +4173,7 @@ export type PalletEvmCallLike =
         maxPriorityFeePerGas?: U256 | undefined;
         nonce?: U256 | undefined;
         accessList: Array<[H160, Array<H256>]>;
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
       };
     }
   /**
@@ -4084,8 +4191,18 @@ export type PalletEvmCallLike =
         maxPriorityFeePerGas?: U256 | undefined;
         nonce?: U256 | undefined;
         accessList: Array<[H160, Array<H256>]>;
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
       };
     };
+
+export type EthereumTransactionEip7702AuthorizationListItem = {
+  chainId: bigint;
+  address: H160;
+  nonce: U256;
+  signature: EthereumTransactionEip2930MalleableTransactionSignature;
+};
+
+export type EthereumTransactionEip2930MalleableTransactionSignature = { oddYParity: boolean; r: H256; s: H256 };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4094,18 +4211,19 @@ export type PalletEthereumCall =
   /**
    * Transact an Ethereum transaction.
    **/
-  { name: 'Transact'; params: { transaction: EthereumTransactionTransactionV2 } };
+  { name: 'Transact'; params: { transaction: EthereumTransactionTransactionV3 } };
 
 export type PalletEthereumCallLike =
   /**
    * Transact an Ethereum transaction.
    **/
-  { name: 'Transact'; params: { transaction: EthereumTransactionTransactionV2 } };
+  { name: 'Transact'; params: { transaction: EthereumTransactionTransactionV3 } };
 
-export type EthereumTransactionTransactionV2 =
+export type EthereumTransactionTransactionV3 =
   | { type: 'Legacy'; value: EthereumTransactionLegacyLegacyTransaction }
   | { type: 'Eip2930'; value: EthereumTransactionEip2930Eip2930Transaction }
-  | { type: 'Eip1559'; value: EthereumTransactionEip1559Eip1559Transaction };
+  | { type: 'Eip1559'; value: EthereumTransactionEip1559Eip1559Transaction }
+  | { type: 'Eip7702'; value: EthereumTransactionEip7702Eip7702Transaction };
 
 export type EthereumTransactionLegacyLegacyTransaction = {
   nonce: U256;
@@ -4136,12 +4254,12 @@ export type EthereumTransactionEip2930Eip2930Transaction = {
   value: U256;
   input: Bytes;
   accessList: Array<EthereumTransactionEip2930AccessListItem>;
-  oddYParity: boolean;
-  r: H256;
-  s: H256;
+  signature: EthereumTransactionEip2930TransactionSignature;
 };
 
 export type EthereumTransactionEip2930AccessListItem = { address: H160; storageKeys: Array<H256> };
+
+export type EthereumTransactionEip2930TransactionSignature = { oddYParity: boolean; r: H256; s: H256 };
 
 export type EthereumTransactionEip1559Eip1559Transaction = {
   chainId: bigint;
@@ -4153,9 +4271,21 @@ export type EthereumTransactionEip1559Eip1559Transaction = {
   value: U256;
   input: Bytes;
   accessList: Array<EthereumTransactionEip2930AccessListItem>;
-  oddYParity: boolean;
-  r: H256;
-  s: H256;
+  signature: EthereumTransactionEip2930TransactionSignature;
+};
+
+export type EthereumTransactionEip7702Eip7702Transaction = {
+  chainId: bigint;
+  nonce: U256;
+  maxPriorityFeePerGas: U256;
+  maxFeePerGas: U256;
+  gasLimit: U256;
+  destination: EthereumTransactionLegacyTransactionAction;
+  value: U256;
+  data: Bytes;
+  accessList: Array<EthereumTransactionEip2930AccessListItem>;
+  authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
+  signature: EthereumTransactionEip2930TransactionSignature;
 };
 
 /**
@@ -4391,7 +4521,7 @@ export type PalletPreimageCall =
    **/
   | { name: 'UnrequestPreimage'; params: { hash: H256 } }
   /**
-   * Ensure that the a bulk of pre-images is upgraded.
+   * Ensure that the bulk of pre-images is upgraded.
    *
    * The caller pays no fee if at least 90% of pre-images were successfully updated.
    **/
@@ -4428,7 +4558,7 @@ export type PalletPreimageCallLike =
    **/
   | { name: 'UnrequestPreimage'; params: { hash: H256 } }
   /**
-   * Ensure that the a bulk of pre-images is upgraded.
+   * Ensure that the bulk of pre-images is upgraded.
    *
    * The caller pays no fee if at least 90% of pre-images were successfully updated.
    **/
@@ -5911,7 +6041,31 @@ export type PalletXcmCall =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type PalletXcmCallLike =
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
@@ -6223,7 +6377,31 @@ export type PalletXcmCallLike =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type XcmVersionedLocation =
   | { type: 'V3'; value: StagingXcmV3MultilocationMultiLocation }
@@ -6970,6 +7148,9 @@ export type PalletAssetsCall =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
    **/
   | { name: 'StartDestroy'; params: { id: bigint } }
   /**
@@ -7394,6 +7575,9 @@ export type PalletAssetsCall =
    * refunded.
    * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'Refund'; params: { id: bigint; allowBurn: boolean } }
@@ -7434,6 +7618,9 @@ export type PalletAssetsCall =
    *
    * - `id`: The identifier of the asset for the account holding a deposit.
    * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
    *
    * Emits `Refunded` event when successful.
    **/
@@ -7526,6 +7713,9 @@ export type PalletAssetsCallLike =
    *
    * - `id`: The identifier of the asset to be destroyed. This must identify an existing
    * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
    **/
   | { name: 'StartDestroy'; params: { id: bigint } }
   /**
@@ -7956,6 +8146,9 @@ export type PalletAssetsCallLike =
    * refunded.
    * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'Refund'; params: { id: bigint; allowBurn: boolean } }
@@ -7997,6 +8190,9 @@ export type PalletAssetsCallLike =
    * - `id`: The identifier of the asset for the account holding a deposit.
    * - `who`: The account to refund.
    *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
    * Emits `Refunded` event when successful.
    **/
   | { name: 'RefundOther'; params: { id: bigint; who: AccountId20Like } }
@@ -8032,86 +8228,6 @@ export type PalletAssetsCallLike =
    * guarantee to keep the sender asset account alive (true).
    **/
   | { name: 'TransferAll'; params: { id: bigint; dest: AccountId20Like; keepAlive: boolean } };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletAssetManagerCall =
-  /**
-   * Register new asset with the asset manager
-   **/
-  | {
-      name: 'RegisterForeignAsset';
-      params: {
-        asset: MoonbeamRuntimeXcmConfigAssetType;
-        metadata: MoonbeamRuntimeAssetConfigAssetRegistrarMetadata;
-        minAmount: bigint;
-        isSufficient: boolean;
-      };
-    }
-  /**
-   * Change the xcm type mapping for a given assetId
-   * We also change this if the previous units per second where pointing at the old
-   * assetType
-   **/
-  | {
-      name: 'ChangeExistingAssetType';
-      params: { assetId: bigint; newAssetType: MoonbeamRuntimeXcmConfigAssetType; numAssetsWeightHint: number };
-    }
-  /**
-   * Remove a given assetId -> assetType association
-   **/
-  | { name: 'RemoveExistingAssetType'; params: { assetId: bigint; numAssetsWeightHint: number } }
-  /**
-   * Destroy a given foreign assetId
-   * The weight in this case is the one returned by the trait
-   * plus the db writes and reads from removing all the associated
-   * data
-   **/
-  | { name: 'DestroyForeignAsset'; params: { assetId: bigint; numAssetsWeightHint: number } };
-
-export type PalletAssetManagerCallLike =
-  /**
-   * Register new asset with the asset manager
-   **/
-  | {
-      name: 'RegisterForeignAsset';
-      params: {
-        asset: MoonbeamRuntimeXcmConfigAssetType;
-        metadata: MoonbeamRuntimeAssetConfigAssetRegistrarMetadata;
-        minAmount: bigint;
-        isSufficient: boolean;
-      };
-    }
-  /**
-   * Change the xcm type mapping for a given assetId
-   * We also change this if the previous units per second where pointing at the old
-   * assetType
-   **/
-  | {
-      name: 'ChangeExistingAssetType';
-      params: { assetId: bigint; newAssetType: MoonbeamRuntimeXcmConfigAssetType; numAssetsWeightHint: number };
-    }
-  /**
-   * Remove a given assetId -> assetType association
-   **/
-  | { name: 'RemoveExistingAssetType'; params: { assetId: bigint; numAssetsWeightHint: number } }
-  /**
-   * Destroy a given foreign assetId
-   * The weight in this case is the one returned by the trait
-   * plus the db writes and reads from removing all the associated
-   * data
-   **/
-  | { name: 'DestroyForeignAsset'; params: { assetId: bigint; numAssetsWeightHint: number } };
-
-export type MoonbeamRuntimeXcmConfigAssetType = { type: 'Xcm'; value: StagingXcmV3MultilocationMultiLocation };
-
-export type MoonbeamRuntimeAssetConfigAssetRegistrarMetadata = {
-  name: Bytes;
-  symbol: Bytes;
-  decimals: number;
-  isFrozen: boolean;
-};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8451,7 +8567,8 @@ export type PalletEthereumXcmCallLike =
 
 export type XcmPrimitivesEthereumXcmEthereumXcmTransaction =
   | { type: 'V1'; value: XcmPrimitivesEthereumXcmEthereumXcmTransactionV1 }
-  | { type: 'V2'; value: XcmPrimitivesEthereumXcmEthereumXcmTransactionV2 };
+  | { type: 'V2'; value: XcmPrimitivesEthereumXcmEthereumXcmTransactionV2 }
+  | { type: 'V3'; value: XcmPrimitivesEthereumXcmEthereumXcmTransactionV3 };
 
 export type XcmPrimitivesEthereumXcmEthereumXcmTransactionV1 = {
   gasLimit: U256;
@@ -8477,6 +8594,15 @@ export type XcmPrimitivesEthereumXcmEthereumXcmTransactionV2 = {
   value: U256;
   input: Bytes;
   accessList?: Array<[H160, Array<H256>]> | undefined;
+};
+
+export type XcmPrimitivesEthereumXcmEthereumXcmTransactionV3 = {
+  gasLimit: U256;
+  action: EthereumTransactionLegacyTransactionAction;
+  value: U256;
+  input: Bytes;
+  accessList?: Array<[H160, Array<H256>]> | undefined;
+  authorizationList?: Array<EthereumTransactionEip7702AuthorizationListItem> | undefined;
 };
 
 /**
@@ -9558,7 +9684,7 @@ export type PalletXcmEvent =
    **/
   | { name: 'Attempted'; data: { outcome: StagingXcmV5TraitsOutcome } }
   /**
-   * A XCM message was sent.
+   * An XCM message was sent.
    **/
   | {
       name: 'Sent';
@@ -9568,6 +9694,25 @@ export type PalletXcmEvent =
         message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       };
+    }
+  /**
+   * An XCM message failed to send.
+   **/
+  | {
+      name: 'SendFailed';
+      data: {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        error: XcmV3TraitsSendError;
+        messageId: FixedBytes<32>;
+      };
+    }
+  /**
+   * An XCM message failed to process.
+   **/
+  | {
+      name: 'ProcessXcmError';
+      data: { origin: StagingXcmV5Location; error: XcmV5TraitsError; messageId: FixedBytes<32> };
     }
   /**
    * Query response received which does not match a registered query. This may be because a
@@ -9725,7 +9870,32 @@ export type PalletXcmEvent =
   /**
    * A XCM version migration finished.
    **/
-  | { name: 'VersionMigrationFinished'; data: { version: number } };
+  | { name: 'VersionMigrationFinished'; data: { version: number } }
+  /**
+   * An `aliaser` location was authorized by `target` to alias it, authorization valid until
+   * `expiry` block number.
+   **/
+  | {
+      name: 'AliasAuthorized';
+      data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location; expiry?: bigint | undefined };
+    }
+  /**
+   * `target` removed alias authorization for `aliaser`.
+   **/
+  | { name: 'AliasAuthorizationRemoved'; data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location } }
+  /**
+   * `target` removed all alias authorizations.
+   **/
+  | { name: 'AliasesAuthorizationsRemoved'; data: { target: StagingXcmV5Location } };
+
+export type XcmV3TraitsSendError =
+  | 'NotApplicable'
+  | 'Transport'
+  | 'Unroutable'
+  | 'DestinationUnsupported'
+  | 'ExceedsMaxMessageSize'
+  | 'MissingArgument'
+  | 'Fees';
 
 /**
  * The `Event` enum of this pallet
@@ -9839,49 +10009,6 @@ export type PalletAssetsEvent =
    * Some assets were withdrawn from the account (e.g. for transaction fees).
    **/
   | { name: 'Withdrawn'; data: { assetId: bigint; who: AccountId20; amount: bigint } };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletAssetManagerEvent =
-  /**
-   * New asset with the asset manager is registered
-   **/
-  | {
-      name: 'ForeignAssetRegistered';
-      data: {
-        assetId: bigint;
-        asset: MoonbeamRuntimeXcmConfigAssetType;
-        metadata: MoonbeamRuntimeAssetConfigAssetRegistrarMetadata;
-      };
-    }
-  /**
-   * Changed the amount of units we are charging per execution second for a given asset
-   **/
-  | { name: 'UnitsPerSecondChanged' }
-  /**
-   * Changed the xcm type mapping for a given asset id
-   **/
-  | {
-      name: 'ForeignAssetXcmLocationChanged';
-      data: { assetId: bigint; newAssetType: MoonbeamRuntimeXcmConfigAssetType };
-    }
-  /**
-   * Removed all information related to an assetId
-   **/
-  | { name: 'ForeignAssetRemoved'; data: { assetId: bigint; assetType: MoonbeamRuntimeXcmConfigAssetType } }
-  /**
-   * Supported asset type for fee payment removed
-   **/
-  | { name: 'SupportedAssetRemoved'; data: { assetType: MoonbeamRuntimeXcmConfigAssetType } }
-  /**
-   * Removed all information related to an assetId and destroyed asset
-   **/
-  | { name: 'ForeignAssetDestroyed'; data: { assetId: bigint; assetType: MoonbeamRuntimeXcmConfigAssetType } }
-  /**
-   * Removed all information related to an assetId and destroyed asset
-   **/
-  | { name: 'LocalAssetDestroyed'; data: { assetId: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -10133,7 +10260,7 @@ export type PalletEmergencyParaXcmEvent =
 /**
  * The `Event` enum of this pallet
  **/
-export type PalletMigrationsEvent002 =
+export type PalletMigrationsEvent =
   /**
    * A Runtime upgrade started.
    *
@@ -10752,15 +10879,7 @@ export type CumulusPalletParachainSystemError =
   /**
    * No validation function upgrade is currently scheduled.
    **/
-  | 'NotScheduled'
-  /**
-   * No code upgrade has been authorized.
-   **/
-  | 'NothingAuthorized'
-  /**
-   * The given code upgrade has not been authorized.
-   **/
-  | 'Unauthorized';
+  | 'NotScheduled';
 
 export type PalletBalancesBalanceLock = { id: FixedBytes<8>; amount: bigint; reasons: PalletBalancesReasons };
 
@@ -11283,27 +11402,6 @@ export type PalletIdentityError =
    **/
   | 'InsufficientPrivileges';
 
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletMigrationsError =
-  /**
-   * Missing preimage in original democracy storage
-   **/
-  | 'PreimageMissing'
-  /**
-   * Provided upper bound is too low.
-   **/
-  | 'WrongUpperBound'
-  /**
-   * Preimage is larger than the new max size.
-   **/
-  | 'PreimageIsTooBig'
-  /**
-   * Preimage already exists in the new storage.
-   **/
-  | 'PreimageAlreadyExists';
-
 export type PalletMultisigMultisig = {
   when: PalletMultisigTimepoint;
   deposit: bigint;
@@ -11344,11 +11442,12 @@ export type PalletMultisigError =
    **/
   | 'SenderInSignatories'
   /**
-   * Multisig operation not found when attempting to cancel.
+   * Multisig operation not found in storage.
    **/
   | 'NotFound'
   /**
-   * Only the account that originally created the multisig is able to cancel it.
+   * Only the account that originally created the multisig is able to cancel it or update
+   * its deposits.
    **/
   | 'NotOwner'
   /**
@@ -11442,7 +11541,11 @@ export type PalletEvmError =
   /**
    * Undefined error.
    **/
-  | 'Undefined';
+  | 'Undefined'
+  /**
+   * Address not allowed to deploy contracts either via CREATE or CALL(CREATE).
+   **/
+  | 'CreateOriginNotAllowed';
 
 export type FpRpcTransactionStatus = {
   transactionHash: H256;
@@ -11456,10 +11559,11 @@ export type FpRpcTransactionStatus = {
 
 export type EthbloomBloom = FixedBytes<256>;
 
-export type EthereumReceiptReceiptV3 =
+export type EthereumReceiptReceiptV4 =
   | { type: 'Legacy'; value: EthereumReceiptEip658ReceiptData }
   | { type: 'Eip2930'; value: EthereumReceiptEip658ReceiptData }
-  | { type: 'Eip1559'; value: EthereumReceiptEip658ReceiptData };
+  | { type: 'Eip1559'; value: EthereumReceiptEip658ReceiptData }
+  | { type: 'Eip7702'; value: EthereumReceiptEip658ReceiptData };
 
 export type EthereumReceiptEip658ReceiptData = {
   statusCode: number;
@@ -11470,7 +11574,7 @@ export type EthereumReceiptEip658ReceiptData = {
 
 export type EthereumBlock = {
   header: EthereumHeader;
-  transactions: Array<EthereumTransactionTransactionV2>;
+  transactions: Array<EthereumTransactionTransactionV3>;
   ommers: Array<EthereumHeader>;
 };
 
@@ -11701,7 +11805,7 @@ export type PalletReferendaDeposit = { who: AccountId20; amount: bigint };
 
 export type PalletReferendaDecidingStatus = { since: number; confirming?: number | undefined };
 
-export type PalletReferendaTrackInfo = {
+export type PalletReferendaTrackDetails = {
   name: string;
   maxDeciding: number;
   decisionDeposit: bigint;
@@ -12081,6 +12185,20 @@ export type PalletXcmRemoteLockedFungibleRecord = {
   consumers: Array<[[], bigint]>;
 };
 
+export type PalletXcmAuthorizedAliasesEntry = {
+  aliasers: Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>;
+  ticket: FrameSupportStorageDisabled;
+};
+
+export type FrameSupportStorageDisabled = {};
+
+export type PalletXcmMaxAuthorizedAliases = {};
+
+export type XcmRuntimeApisAuthorizedAliasesOriginAliaser = {
+  location: XcmVersionedLocation;
+  expiry?: bigint | undefined;
+};
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -12183,7 +12301,19 @@ export type PalletXcmError =
   /**
    * Local XCM execution incomplete.
    **/
-  | 'LocalExecutionIncomplete';
+  | 'LocalExecutionIncomplete'
+  /**
+   * Too many locations authorized to alias origin.
+   **/
+  | 'TooManyAuthorizedAliases'
+  /**
+   * Expiry block number is in the past.
+   **/
+  | 'ExpiresInPast'
+  /**
+   * The alias to remove authorization for was not found.
+   **/
+  | 'AliasNotFound';
 
 export type PalletAssetsAssetDetails = {
   owner: AccountId20;
@@ -12318,20 +12448,15 @@ export type PalletAssetsError =
   /**
    * The asset ID must be equal to the [`NextAssetId`].
    **/
-  | 'BadAssetId';
-
-/**
- * An error that can occur while executing the mapping pallet's logic.
- **/
-export type PalletAssetManagerError =
-  | 'ErrorCreatingAsset'
-  | 'AssetAlreadyExists'
-  | 'AssetDoesNotExist'
-  | 'TooLowNumAssetsWeightHint'
-  | 'LocalAssetLimitReached'
-  | 'ErrorDestroyingAsset'
-  | 'NotSufficientDeposit'
-  | 'NonExistentLocalAsset';
+  | 'BadAssetId'
+  /**
+   * The asset cannot be destroyed because some accounts for this asset contain freezes.
+   **/
+  | 'ContainsFreezes'
+  /**
+   * The asset cannot be destroyed because some accounts for this asset contain holds.
+   **/
+  | 'ContainsHolds';
 
 export type PalletXcmTransactorRelayIndicesRelayChainIndices = {
   staking: number;
@@ -12546,16 +12671,11 @@ export type PalletEmergencyParaXcmError =
 /**
  * The `Error` enum of this pallet.
  **/
-export type PalletMigrationsError002 =
+export type PalletMigrationsError =
   /**
    * The operation cannot complete since some MBMs are ongoing.
    **/
   'Ongoing';
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletPrecompileBenchmarksError = 'BenchmarkError';
 
 export type PalletRandomnessRequestState = { request: PalletRandomnessRequest; deposit: bigint };
 
@@ -12863,6 +12983,19 @@ export type BpXcmBridgeHubBridgeLocationsError =
   | 'UnsupportedXcmVersion'
   | 'UnsupportedLaneIdType';
 
+export type CumulusPalletWeightReclaimStorageWeightReclaim = [
+  FrameSystemExtensionsCheckNonZeroSender,
+  FrameSystemExtensionsCheckSpecVersion,
+  FrameSystemExtensionsCheckTxVersion,
+  FrameSystemExtensionsCheckGenesis,
+  FrameSystemExtensionsCheckMortality,
+  FrameSystemExtensionsCheckNonce,
+  FrameSystemExtensionsCheckWeight,
+  PalletTransactionPaymentChargeTransactionPayment,
+  MoonbeamRuntimeBridgeRejectObsoleteHeadersAndMessages,
+  FrameMetadataHashExtensionCheckMetadataHash,
+];
+
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
 export type FrameSystemExtensionsCheckSpecVersion = {};
@@ -12884,8 +13017,6 @@ export type MoonbeamRuntimeBridgeRejectObsoleteHeadersAndMessages = {};
 export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
 
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
-
-export type CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim = {};
 
 export type SpRuntimeTransactionValidityTransactionSource = 'InBlock' | 'Local' | 'External';
 
@@ -12940,8 +13071,8 @@ export type SpInherentsCheckInherentsResult = { okay: boolean; fatalError: boole
 export type SpCoreCryptoKeyTypeId = FixedBytes<4>;
 
 export type MoonbeamRpcPrimitivesTxpoolTxPoolResponse = {
-  ready: Array<EthereumTransactionTransactionV2>;
-  future: Array<EthereumTransactionTransactionV2>;
+  ready: Array<EthereumTransactionTransactionV3>;
+  future: Array<EthereumTransactionTransactionV3>;
 };
 
 export type EvmBackendBasic = { balance: U256; nonce: U256 };
@@ -13032,7 +13163,6 @@ export type MoonbeamRuntimeRuntimeError =
   | { pallet: 'Proxy'; palletError: PalletProxyError }
   | { pallet: 'MaintenanceMode'; palletError: PalletMaintenanceModeError }
   | { pallet: 'Identity'; palletError: PalletIdentityError }
-  | { pallet: 'Migrations'; palletError: PalletMigrationsError }
   | { pallet: 'Multisig'; palletError: PalletMultisigError }
   | { pallet: 'MoonbeamLazyMigrations'; palletError: PalletMoonbeamLazyMigrationsError }
   | { pallet: 'Evm'; palletError: PalletEvmError }
@@ -13049,15 +13179,13 @@ export type MoonbeamRuntimeRuntimeError =
   | { pallet: 'XcmpQueue'; palletError: CumulusPalletXcmpQueueError }
   | { pallet: 'PolkadotXcm'; palletError: PalletXcmError }
   | { pallet: 'Assets'; palletError: PalletAssetsError }
-  | { pallet: 'AssetManager'; palletError: PalletAssetManagerError }
   | { pallet: 'XcmTransactor'; palletError: PalletXcmTransactorError }
   | { pallet: 'EthereumXcm'; palletError: PalletEthereumXcmError }
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }
   | { pallet: 'EvmForeignAssets'; palletError: PalletMoonbeamForeignAssetsError }
   | { pallet: 'XcmWeightTrader'; palletError: PalletXcmWeightTraderError }
   | { pallet: 'EmergencyParaXcm'; palletError: PalletEmergencyParaXcmError }
-  | { pallet: 'MultiBlockMigrations'; palletError: PalletMigrationsError002 }
-  | { pallet: 'PrecompileBenchmarks'; palletError: PalletPrecompileBenchmarksError }
+  | { pallet: 'MultiBlockMigrations'; palletError: PalletMigrationsError }
   | { pallet: 'Randomness'; palletError: PalletRandomnessError }
   | { pallet: 'BridgeKusamaGrandpa'; palletError: PalletBridgeGrandpaError }
   | { pallet: 'BridgeKusamaParachains'; palletError: PalletBridgeParachainsError }

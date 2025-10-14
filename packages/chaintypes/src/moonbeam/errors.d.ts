@@ -97,16 +97,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NotScheduled: GenericPalletError<Rv>;
 
     /**
-     * No code upgrade has been authorized.
-     **/
-    NothingAuthorized: GenericPalletError<Rv>;
-
-    /**
-     * The given code upgrade has not been authorized.
-     **/
-    Unauthorized: GenericPalletError<Rv>;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -616,35 +606,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
-   * Pallet `Migrations`'s errors
-   **/
-  migrations: {
-    /**
-     * Missing preimage in original democracy storage
-     **/
-    PreimageMissing: GenericPalletError<Rv>;
-
-    /**
-     * Provided upper bound is too low.
-     **/
-    WrongUpperBound: GenericPalletError<Rv>;
-
-    /**
-     * Preimage is larger than the new max size.
-     **/
-    PreimageIsTooBig: GenericPalletError<Rv>;
-
-    /**
-     * Preimage already exists in the new storage.
-     **/
-    PreimageAlreadyExists: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
    * Pallet `Multisig`'s errors
    **/
   multisig: {
@@ -684,12 +645,13 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     SenderInSignatories: GenericPalletError<Rv>;
 
     /**
-     * Multisig operation not found when attempting to cancel.
+     * Multisig operation not found in storage.
      **/
     NotFound: GenericPalletError<Rv>;
 
     /**
-     * Only the account that originally created the multisig is able to cancel it.
+     * Only the account that originally created the multisig is able to cancel it or update
+     * its deposits.
      **/
     NotOwner: GenericPalletError<Rv>;
 
@@ -810,6 +772,11 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Undefined error.
      **/
     Undefined: GenericPalletError<Rv>;
+
+    /**
+     * Address not allowed to deploy contracts either via CREATE or CALL(CREATE).
+     **/
+    CreateOriginNotAllowed: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1555,6 +1522,21 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     LocalExecutionIncomplete: GenericPalletError<Rv>;
 
     /**
+     * Too many locations authorized to alias origin.
+     **/
+    TooManyAuthorizedAliases: GenericPalletError<Rv>;
+
+    /**
+     * Expiry block number is in the past.
+     **/
+    ExpiresInPast: GenericPalletError<Rv>;
+
+    /**
+     * The alias to remove authorization for was not found.
+     **/
+    AliasNotFound: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;
@@ -1672,22 +1654,14 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     BadAssetId: GenericPalletError<Rv>;
 
     /**
-     * Generic pallet error
+     * The asset cannot be destroyed because some accounts for this asset contain freezes.
      **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
-   * Pallet `AssetManager`'s errors
-   **/
-  assetManager: {
-    ErrorCreatingAsset: GenericPalletError<Rv>;
-    AssetAlreadyExists: GenericPalletError<Rv>;
-    AssetDoesNotExist: GenericPalletError<Rv>;
-    TooLowNumAssetsWeightHint: GenericPalletError<Rv>;
-    LocalAssetLimitReached: GenericPalletError<Rv>;
-    ErrorDestroyingAsset: GenericPalletError<Rv>;
-    NotSufficientDeposit: GenericPalletError<Rv>;
-    NonExistentLocalAsset: GenericPalletError<Rv>;
+    ContainsFreezes: GenericPalletError<Rv>;
+
+    /**
+     * The asset cannot be destroyed because some accounts for this asset contain holds.
+     **/
+    ContainsHolds: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1905,17 +1879,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * The operation cannot complete since some MBMs are ongoing.
      **/
     Ongoing: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
-   * Pallet `PrecompileBenchmarks`'s errors
-   **/
-  precompileBenchmarks: {
-    BenchmarkError: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

@@ -15,7 +15,6 @@ import type {
   PalletTransactionPaymentChargeTransactionPayment,
   MoonbeamRuntimeBridgeRejectObsoleteHeadersAndMessages,
   FrameMetadataHashExtensionCheckMetadataHash,
-  CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim,
 } from './types.js';
 import { ChainConsts } from './consts.js';
 import { ChainStorage } from './query.js';
@@ -43,7 +42,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     PalletTransactionPaymentChargeTransactionPayment,
     MoonbeamRuntimeBridgeRejectObsoleteHeadersAndMessages,
     FrameMetadataHashExtensionCheckMetadataHash,
-    CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim,
+    [],
   ];
 }
 
@@ -62,7 +61,7 @@ export interface VersionedMoonbeamApi<Rv extends RpcVersion> extends GenericSubs
 
 /**
  * @name: MoonbeamApi
- * @specVersion: 3800
+ * @specVersion: 3900
  **/
 export interface MoonbeamApi {
   legacy: VersionedMoonbeamApi<RpcLegacy>;

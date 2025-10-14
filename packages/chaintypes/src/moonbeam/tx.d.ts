@@ -39,7 +39,8 @@ import type {
   PalletIdentityJudgement,
   PalletMultisigTimepoint,
   MoonbeamRuntimeRuntimeParamsRuntimeParameters,
-  EthereumTransactionTransactionV2,
+  EthereumTransactionEip7702AuthorizationListItem,
+  EthereumTransactionTransactionV3,
   PalletConvictionVotingVoteAccountVote,
   PalletConvictionVotingConviction,
   FrameSupportPreimagesBounded,
@@ -53,8 +54,6 @@ import type {
   XcmV3WeightLimit,
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
-  MoonbeamRuntimeXcmConfigAssetType,
-  MoonbeamRuntimeAssetConfigAssetRegistrarMetadata,
   MoonbeamRuntimeXcmConfigTransactors,
   PalletXcmTransactorCurrencyPayment,
   PalletXcmTransactorTransactWeights,
@@ -785,48 +784,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Deprecated: please use `set_inflation_distribution_config` instead.
-     *
-     * Set the account that will hold funds set aside for parachain bond
-     *
-     * @param {AccountId20Like} new_
-     **/
-    setParachainBondAccount: GenericTxCall<
-      Rv,
-      (new_: AccountId20Like) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainStaking';
-          palletCall: {
-            name: 'SetParachainBondAccount';
-            params: { new: AccountId20Like };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Deprecated: please use `set_inflation_distribution_config` instead.
-     *
-     * Set the percent of inflation set aside for parachain bond
-     *
-     * @param {Percent} new_
-     **/
-    setParachainBondReservePercent: GenericTxCall<
-      Rv,
-      (new_: Percent) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainStaking';
-          palletCall: {
-            name: 'SetParachainBondReservePercent';
-            params: { new: Percent };
-          };
-        }
-      >
-    >;
-
-    /**
      * Set the total number of collator candidates selected per round
      * - changes are not applied until the start of the next round
      *
@@ -1261,25 +1218,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               candidateAutoCompoundingDelegationCountHint: number;
               delegationCountHint: number;
             };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Hotfix to remove existing empty entries for candidates that have left.
-     *
-     * @param {Array<AccountId20Like>} candidates
-     **/
-    hotfixRemoveDelegationRequestsExitedCandidates: GenericTxCall<
-      Rv,
-      (candidates: Array<AccountId20Like>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'ParachainStaking';
-          palletCall: {
-            name: 'HotfixRemoveDelegationRequestsExitedCandidates';
-            params: { candidates: Array<AccountId20Like> };
           };
         }
       >
@@ -1886,6 +1824,78 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Dispatch a fallback call in the event the main call fails to execute.
+     * May be called from any origin except `None`.
+     *
+     * This function first attempts to dispatch the `main` call.
+     * If the `main` call fails, the `fallback` is attemted.
+     * if the fallback is successfully dispatched, the weights of both calls
+     * are accumulated and an event containing the main call error is deposited.
+     *
+     * In the event of a fallback failure the whole call fails
+     * with the weights returned.
+     *
+     * - `main`: The main call to be dispatched. This is the primary action to execute.
+     * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+     *
+     * ## Dispatch Logic
+     * - If the origin is `root`, both the main and fallback calls are executed without
+     * applying any origin filters.
+     * - If the origin is not `root`, the origin filter is applied to both the `main` and
+     * `fallback` calls.
+     *
+     * ## Use Case
+     * - Some use cases might involve submitting a `batch` type call in either main, fallback
+     * or both.
+     *
+     * @param {MoonbeamRuntimeRuntimeCallLike} main
+     * @param {MoonbeamRuntimeRuntimeCallLike} fallback
+     **/
+    ifElse: GenericTxCall<
+      Rv,
+      (
+        main: MoonbeamRuntimeRuntimeCallLike,
+        fallback: MoonbeamRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Utility';
+          palletCall: {
+            name: 'IfElse';
+            params: { main: MoonbeamRuntimeRuntimeCallLike; fallback: MoonbeamRuntimeRuntimeCallLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Dispatches a function call with a provided origin.
+     *
+     * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * @param {MoonbeamRuntimeOriginCaller} asOrigin
+     * @param {MoonbeamRuntimeRuntimeCallLike} call
+     **/
+    dispatchAsFallible: GenericTxCall<
+      Rv,
+      (
+        asOrigin: MoonbeamRuntimeOriginCaller,
+        call: MoonbeamRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Utility';
+          palletCall: {
+            name: 'DispatchAsFallible';
+            params: { asOrigin: MoonbeamRuntimeOriginCaller; call: MoonbeamRuntimeRuntimeCallLike };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -2247,6 +2257,30 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               forceProxyType: MoonbeamRuntimeProxyType | undefined;
               call: MoonbeamRuntimeRuntimeCallLike;
             };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Poke / Adjust deposits made for proxies and announcements based on current values.
+     * This can be used by accounts to possibly lower their locked amount.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * The transaction fee is waived if the deposit amount has changed.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     **/
+    pokeDeposit: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'PokeDeposit';
           };
         }
       >
@@ -3192,6 +3226,43 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Poke the deposit reserved for an existing multisig operation.
+     *
+     * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+     * the multisig operation.
+     *
+     * The transaction fee is waived if the deposit amount has changed.
+     *
+     * - `threshold`: The total number of approvals needed for this multisig.
+     * - `other_signatories`: The accounts (other than the sender) who are part of the
+     * multisig.
+     * - `call_hash`: The hash of the call this deposit is reserved for.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     * @param {number} threshold
+     * @param {Array<AccountId20Like>} otherSignatories
+     * @param {FixedBytes<32>} callHash
+     **/
+    pokeDeposit: GenericTxCall<
+      Rv,
+      (
+        threshold: number,
+        otherSignatories: Array<AccountId20Like>,
+        callHash: FixedBytes<32>,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Multisig';
+          palletCall: {
+            name: 'PokeDeposit';
+            params: { threshold: number; otherSignatories: Array<AccountId20Like>; callHash: FixedBytes<32> };
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -3293,6 +3364,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {U256 | undefined} maxPriorityFeePerGas
      * @param {U256 | undefined} nonce
      * @param {Array<[H160, Array<H256>]>} accessList
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem>} authorizationList
      **/
     call: GenericTxCall<
       Rv,
@@ -3306,6 +3378,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         maxPriorityFeePerGas: U256 | undefined,
         nonce: U256 | undefined,
         accessList: Array<[H160, Array<H256>]>,
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
@@ -3322,6 +3395,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               maxPriorityFeePerGas: U256 | undefined;
               nonce: U256 | undefined;
               accessList: Array<[H160, Array<H256>]>;
+              authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
             };
           };
         }
@@ -3340,6 +3414,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {U256 | undefined} maxPriorityFeePerGas
      * @param {U256 | undefined} nonce
      * @param {Array<[H160, Array<H256>]>} accessList
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem>} authorizationList
      **/
     create: GenericTxCall<
       Rv,
@@ -3352,6 +3427,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         maxPriorityFeePerGas: U256 | undefined,
         nonce: U256 | undefined,
         accessList: Array<[H160, Array<H256>]>,
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
@@ -3367,6 +3443,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               maxPriorityFeePerGas: U256 | undefined;
               nonce: U256 | undefined;
               accessList: Array<[H160, Array<H256>]>;
+              authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
             };
           };
         }
@@ -3385,6 +3462,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {U256 | undefined} maxPriorityFeePerGas
      * @param {U256 | undefined} nonce
      * @param {Array<[H160, Array<H256>]>} accessList
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem>} authorizationList
      **/
     create2: GenericTxCall<
       Rv,
@@ -3398,6 +3476,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         maxPriorityFeePerGas: U256 | undefined,
         nonce: U256 | undefined,
         accessList: Array<[H160, Array<H256>]>,
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
@@ -3414,6 +3493,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               maxPriorityFeePerGas: U256 | undefined;
               nonce: U256 | undefined;
               accessList: Array<[H160, Array<H256>]>;
+              authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
             };
           };
         }
@@ -3432,17 +3512,17 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Transact an Ethereum transaction.
      *
-     * @param {EthereumTransactionTransactionV2} transaction
+     * @param {EthereumTransactionTransactionV3} transaction
      **/
     transact: GenericTxCall<
       Rv,
-      (transaction: EthereumTransactionTransactionV2) => ChainSubmittableExtrinsic<
+      (transaction: EthereumTransactionTransactionV3) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Ethereum';
           palletCall: {
             name: 'Transact';
-            params: { transaction: EthereumTransactionTransactionV2 };
+            params: { transaction: EthereumTransactionTransactionV3 };
           };
         }
       >
@@ -3842,7 +3922,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Ensure that the a bulk of pre-images is upgraded.
+     * Ensure that the bulk of pre-images is upgraded.
      *
      * The caller pays no fee if at least 90% of pre-images were successfully updated.
      *
@@ -6025,6 +6105,77 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
+     * Authorize another `aliaser` location to alias into the local `origin` making this call.
+     * The `aliaser` is only authorized until the provided `expiry` block number.
+     * The call can also be used for a previously authorized alias in order to update its
+     * `expiry` block number.
+     *
+     * Usually useful to allow your local account to be aliased into from a remote location
+     * also under your control (like your account on another chain).
+     *
+     * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+     * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+     * `origin` in XCM programs executed on the local chain.
+     *
+     * @param {XcmVersionedLocation} aliaser
+     * @param {bigint | undefined} expires
+     **/
+    addAuthorizedAlias: GenericTxCall<
+      Rv,
+      (
+        aliaser: XcmVersionedLocation,
+        expires: bigint | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'AddAuthorizedAlias';
+            params: { aliaser: XcmVersionedLocation; expires: bigint | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove a previously authorized `aliaser` from the list of locations that can alias into
+     * the local `origin` making this call.
+     *
+     * @param {XcmVersionedLocation} aliaser
+     **/
+    removeAuthorizedAlias: GenericTxCall<
+      Rv,
+      (aliaser: XcmVersionedLocation) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'RemoveAuthorizedAlias';
+            params: { aliaser: XcmVersionedLocation };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+     * making this call.
+     *
+     **/
+    removeAllAuthorizedAliases: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'RemoveAllAuthorizedAliases';
+          };
+        }
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
@@ -6131,6 +6282,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * - `id`: The identifier of the asset to be destroyed. This must identify an existing
      * asset.
+     *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * an account contains holds or freezes in place.
      *
      * @param {bigint} id
      **/
@@ -7034,6 +7188,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * refunded.
      * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
      *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * the asset account contains holds or freezes in place.
+     *
      * Emits `Refunded` event when successful.
      *
      * @param {bigint} id
@@ -7132,6 +7289,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * - `id`: The identifier of the asset for the account holding a deposit.
      * - `who`: The account to refund.
      *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * the asset account contains holds or freezes in place.
+     *
      * Emits `Refunded` event when successful.
      *
      * @param {bigint} id
@@ -7221,123 +7381,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'TransferAll';
             params: { id: bigint; dest: AccountId20Like; keepAlive: boolean };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
-   * Pallet `AssetManager`'s transaction calls
-   **/
-  assetManager: {
-    /**
-     * Register new asset with the asset manager
-     *
-     * @param {MoonbeamRuntimeXcmConfigAssetType} asset
-     * @param {MoonbeamRuntimeAssetConfigAssetRegistrarMetadata} metadata
-     * @param {bigint} minAmount
-     * @param {boolean} isSufficient
-     **/
-    registerForeignAsset: GenericTxCall<
-      Rv,
-      (
-        asset: MoonbeamRuntimeXcmConfigAssetType,
-        metadata: MoonbeamRuntimeAssetConfigAssetRegistrarMetadata,
-        minAmount: bigint,
-        isSufficient: boolean,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AssetManager';
-          palletCall: {
-            name: 'RegisterForeignAsset';
-            params: {
-              asset: MoonbeamRuntimeXcmConfigAssetType;
-              metadata: MoonbeamRuntimeAssetConfigAssetRegistrarMetadata;
-              minAmount: bigint;
-              isSufficient: boolean;
-            };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Change the xcm type mapping for a given assetId
-     * We also change this if the previous units per second where pointing at the old
-     * assetType
-     *
-     * @param {bigint} assetId
-     * @param {MoonbeamRuntimeXcmConfigAssetType} newAssetType
-     * @param {number} numAssetsWeightHint
-     **/
-    changeExistingAssetType: GenericTxCall<
-      Rv,
-      (
-        assetId: bigint,
-        newAssetType: MoonbeamRuntimeXcmConfigAssetType,
-        numAssetsWeightHint: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AssetManager';
-          palletCall: {
-            name: 'ChangeExistingAssetType';
-            params: { assetId: bigint; newAssetType: MoonbeamRuntimeXcmConfigAssetType; numAssetsWeightHint: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Remove a given assetId -> assetType association
-     *
-     * @param {bigint} assetId
-     * @param {number} numAssetsWeightHint
-     **/
-    removeExistingAssetType: GenericTxCall<
-      Rv,
-      (
-        assetId: bigint,
-        numAssetsWeightHint: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AssetManager';
-          palletCall: {
-            name: 'RemoveExistingAssetType';
-            params: { assetId: bigint; numAssetsWeightHint: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Destroy a given foreign assetId
-     * The weight in this case is the one returned by the trait
-     * plus the db writes and reads from removing all the associated
-     * data
-     *
-     * @param {bigint} assetId
-     * @param {number} numAssetsWeightHint
-     **/
-    destroyForeignAsset: GenericTxCall<
-      Rv,
-      (
-        assetId: bigint,
-        numAssetsWeightHint: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'AssetManager';
-          palletCall: {
-            name: 'DestroyForeignAsset';
-            params: { assetId: bigint; numAssetsWeightHint: number };
           };
         }
       >

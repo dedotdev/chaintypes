@@ -23,6 +23,7 @@ import type {
   FrameSystemEventRecord,
   FrameSystemLastRuntimeUpgradeInfo,
   FrameSystemCodeUpgradeAuthorization,
+  SpWeightsWeightV2Weight,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
   PolkadotPrimitivesV8PersistedValidationData,
@@ -34,7 +35,6 @@ import type {
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
-  SpWeightsWeightV2Weight,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
@@ -68,9 +68,9 @@ import type {
   MoonbeamRuntimeRuntimeParamsRuntimeParametersValue,
   MoonbeamRuntimeRuntimeParamsRuntimeParametersKey,
   PalletEvmCodeMetadata,
-  EthereumTransactionTransactionV2,
+  EthereumTransactionTransactionV3,
   FpRpcTransactionStatus,
-  EthereumReceiptReceiptV3,
+  EthereumReceiptReceiptV4,
   EthereumBlock,
   PalletSchedulerScheduled,
   PalletSchedulerRetryConfig,
@@ -91,11 +91,11 @@ import type {
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
   StagingXcmV5Xcm,
+  PalletXcmAuthorizedAliasesEntry,
   PalletAssetsAssetDetails,
   PalletAssetsAssetAccount,
   PalletAssetsApproval,
   PalletAssetsAssetMetadata,
-  MoonbeamRuntimeXcmConfigAssetType,
   PalletXcmTransactorRemoteTransactInfoWithMaxWeight,
   StagingXcmV5Location,
   PalletXcmTransactorRelayIndicesRelayChainIndices,
@@ -275,6 +275,19 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<FrameSystemCodeUpgradeAuthorization | undefined> =} callback
      **/
     authorizedUpgrade: GenericStorageQuery<Rv, () => FrameSystemCodeUpgradeAuthorization | undefined>;
+
+    /**
+     * The weight reclaimed for the extrinsic.
+     *
+     * This information is available until the end of the extrinsic execution.
+     * More precisely this information is removed in `note_applied_extrinsic`.
+     *
+     * Logic doing some post dispatch weight reduction must update this storage to avoid duplicate
+     * reduction.
+     *
+     * @param {Callback<SpWeightsWeightV2Weight> =} callback
+     **/
+    extrinsicWeightReclaimed: GenericStorageQuery<Rv, () => SpWeightsWeightV2Weight>;
 
     /**
      * Generic pallet storage query
@@ -1225,39 +1238,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     [storage: string]: GenericStorageQuery<Rv>;
   };
   /**
-   * Pallet `Migrations`'s storage queries
-   **/
-  migrations: {
-    /**
-     * True if all required migrations have completed
-     *
-     * @param {Callback<boolean> =} callback
-     **/
-    fullyUpgraded: GenericStorageQuery<Rv, () => boolean>;
-
-    /**
-     * MigrationState tracks the progress of a migration.
-     * Maps name (Vec<u8>) -> whether or not migration has been completed (bool)
-     *
-     * @param {BytesLike} arg
-     * @param {Callback<boolean> =} callback
-     **/
-    migrationState: GenericStorageQuery<Rv, (arg: BytesLike) => boolean, Bytes>;
-
-    /**
-     * Temporary value that is set to true at the beginning of the block during which the execution
-     * of xcm messages must be paused.
-     *
-     * @param {Callback<boolean> =} callback
-     **/
-    shouldPauseXcm: GenericStorageQuery<Rv, () => boolean>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
    * Pallet `Multisig`'s storage queries
    **/
   multisig: {
@@ -1364,11 +1344,11 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * Mapping from transaction index to transaction in the current building block.
      *
      * @param {number} arg
-     * @param {Callback<[EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3] | undefined> =} callback
+     * @param {Callback<[EthereumTransactionTransactionV3, FpRpcTransactionStatus, EthereumReceiptReceiptV4] | undefined> =} callback
      **/
     pending: GenericStorageQuery<
       Rv,
-      (arg: number) => [EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3] | undefined,
+      (arg: number) => [EthereumTransactionTransactionV3, FpRpcTransactionStatus, EthereumReceiptReceiptV4] | undefined,
       number
     >;
 
@@ -1389,9 +1369,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     /**
      * The current Ethereum receipts.
      *
-     * @param {Callback<Array<EthereumReceiptReceiptV3> | undefined> =} callback
+     * @param {Callback<Array<EthereumReceiptReceiptV4> | undefined> =} callback
      **/
-    currentReceipts: GenericStorageQuery<Rv, () => Array<EthereumReceiptReceiptV3> | undefined>;
+    currentReceipts: GenericStorageQuery<Rv, () => Array<EthereumReceiptReceiptV4> | undefined>;
 
     /**
      * The current transaction statuses.
@@ -1417,6 +1397,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
    **/
   scheduler: {
     /**
+     * Block number at which the agenda began incomplete execution.
      *
      * @param {Callback<number | undefined> =} callback
      **/
@@ -2097,6 +2078,20 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     recordedXcm: GenericStorageQuery<Rv, () => StagingXcmV5Xcm | undefined>;
 
     /**
+     * Map of authorized aliasers of local origins. Each local location can authorize a list of
+     * other locations to alias into it. Each aliaser is only valid until its inner `expiry`
+     * block number.
+     *
+     * @param {XcmVersionedLocation} arg
+     * @param {Callback<PalletXcmAuthorizedAliasesEntry | undefined> =} callback
+     **/
+    authorizedAliases: GenericStorageQuery<
+      Rv,
+      (arg: XcmVersionedLocation) => PalletXcmAuthorizedAliasesEntry | undefined,
+      XcmVersionedLocation
+    >;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -2161,39 +2156,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<bigint | undefined> =} callback
      **/
     nextAssetId: GenericStorageQuery<Rv, () => bigint | undefined>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery<Rv>;
-  };
-  /**
-   * Pallet `AssetManager`'s storage queries
-   **/
-  assetManager: {
-    /**
-     * Mapping from an asset id to asset type.
-     * This is mostly used when receiving transaction specifying an asset directly,
-     * like transferring an asset from this chain to another.
-     *
-     * @param {bigint} arg
-     * @param {Callback<MoonbeamRuntimeXcmConfigAssetType | undefined> =} callback
-     **/
-    assetIdType: GenericStorageQuery<Rv, (arg: bigint) => MoonbeamRuntimeXcmConfigAssetType | undefined, bigint>;
-
-    /**
-     * Reverse mapping of AssetIdType. Mapping from an asset type to an asset id.
-     * This is mostly used when receiving a multilocation XCM message to retrieve
-     * the corresponding asset in which tokens should me minted.
-     *
-     * @param {MoonbeamRuntimeXcmConfigAssetType} arg
-     * @param {Callback<bigint | undefined> =} callback
-     **/
-    assetTypeId: GenericStorageQuery<
-      Rv,
-      (arg: MoonbeamRuntimeXcmConfigAssetType) => bigint | undefined,
-      MoonbeamRuntimeXcmConfigAssetType
-    >;
 
     /**
      * Generic pallet storage query

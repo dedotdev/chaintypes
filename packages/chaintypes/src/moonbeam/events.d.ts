@@ -24,6 +24,7 @@ import type {
   NimbusPrimitivesNimbusCryptoPublic,
   SessionKeysPrimitivesVrfVrfCryptoPublic,
   MoonbeamRuntimeProxyType,
+  PalletProxyDepositKind,
   PalletMultisigTimepoint,
   MoonbeamRuntimeRuntimeParamsRuntimeParametersKey,
   MoonbeamRuntimeRuntimeParamsRuntimeParametersValue,
@@ -38,13 +39,12 @@ import type {
   StagingXcmV5TraitsOutcome,
   StagingXcmV5Location,
   StagingXcmV5Xcm,
+  XcmV3TraitsSendError,
+  XcmV5TraitsError,
   StagingXcmV5Response,
   XcmVersionedAssets,
   StagingXcmV5AssetAssets,
-  XcmV5TraitsError,
   XcmVersionedLocation,
-  MoonbeamRuntimeXcmConfigAssetType,
-  MoonbeamRuntimeAssetConfigAssetRegistrarMetadata,
   PalletXcmTransactorRemoteTransactInfoWithMaxWeight,
   PalletXcmTransactorHrmpOperation,
   CumulusPrimitivesCoreAggregateMessageOrigin,
@@ -107,6 +107,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * An upgrade was authorized.
      **/
     UpgradeAuthorized: GenericPalletEvent<Rv, 'System', 'UpgradeAuthorized', { codeHash: H256; checkVersion: boolean }>;
+
+    /**
+     * An invalid authorized upgrade was rejected while trying to apply it.
+     **/
+    RejectedInvalidAuthorizedUpgrade: GenericPalletEvent<
+      Rv,
+      'System',
+      'RejectedInvalidAuthorizedUpgrade',
+      { codeHash: H256; error: DispatchError }
+    >;
 
     /**
      * Generic pallet event
@@ -835,6 +845,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     DispatchedAs: GenericPalletEvent<Rv, 'Utility', 'DispatchedAs', { result: Result<[], DispatchError> }>;
 
     /**
+     * Main call was dispatched.
+     **/
+    IfElseMainSuccess: GenericPalletEvent<Rv, 'Utility', 'IfElseMainSuccess', null>;
+
+    /**
+     * The fallback call was dispatched.
+     **/
+    IfElseFallbackCalled: GenericPalletEvent<Rv, 'Utility', 'IfElseFallbackCalled', { mainError: DispatchError }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -882,6 +902,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Proxy',
       'ProxyRemoved',
       { delegator: AccountId20; delegatee: AccountId20; proxyType: MoonbeamRuntimeProxyType; delay: number }
+    >;
+
+    /**
+     * A deposit stored for proxies or announcements was poked / updated.
+     **/
+    DepositPoked: GenericPalletEvent<
+      Rv,
+      'Proxy',
+      'DepositPoked',
+      { who: AccountId20; kind: PalletProxyDepositKind; oldDeposit: bigint; newDeposit: bigint }
     >;
 
     /**
@@ -1100,65 +1130,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
-   * Pallet `Migrations`'s events
-   **/
-  migrations: {
-    /**
-     * Runtime upgrade started
-     **/
-    RuntimeUpgradeStarted: GenericPalletEvent<Rv, 'Migrations', 'RuntimeUpgradeStarted', null>;
-
-    /**
-     * Runtime upgrade completed
-     **/
-    RuntimeUpgradeCompleted: GenericPalletEvent<
-      Rv,
-      'Migrations',
-      'RuntimeUpgradeCompleted',
-      { weight: SpWeightsWeightV2Weight }
-    >;
-
-    /**
-     * Migration started
-     **/
-    MigrationStarted: GenericPalletEvent<Rv, 'Migrations', 'MigrationStarted', { migrationName: Bytes }>;
-
-    /**
-     * Migration completed
-     **/
-    MigrationCompleted: GenericPalletEvent<
-      Rv,
-      'Migrations',
-      'MigrationCompleted',
-      { migrationName: Bytes; consumedWeight: SpWeightsWeightV2Weight }
-    >;
-
-    /**
-     * XCM execution suspension failed with inner error
-     **/
-    FailedToSuspendIdleXcmExecution: GenericPalletEvent<
-      Rv,
-      'Migrations',
-      'FailedToSuspendIdleXcmExecution',
-      { error: DispatchError }
-    >;
-
-    /**
-     * XCM execution resume failed with inner error
-     **/
-    FailedToResumeIdleXcmExecution: GenericPalletEvent<
-      Rv,
-      'Migrations',
-      'FailedToResumeIdleXcmExecution',
-      { error: DispatchError }
-    >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
    * Pallet `Multisig`'s events
    **/
   multisig: {
@@ -1206,6 +1177,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'Multisig',
       'MultisigCancelled',
       { cancelling: AccountId20; timepoint: PalletMultisigTimepoint; multisig: AccountId20; callHash: FixedBytes<32> }
+    >;
+
+    /**
+     * The deposit for a multisig operation has been updated/poked.
+     **/
+    DepositPoked: GenericPalletEvent<
+      Rv,
+      'Multisig',
+      'DepositPoked',
+      { who: AccountId20; callHash: FixedBytes<32>; oldDeposit: bigint; newDeposit: bigint }
     >;
 
     /**
@@ -1388,6 +1369,11 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * Agenda is incomplete from `when`.
+     **/
+    AgendaIncomplete: GenericPalletEvent<Rv, 'Scheduler', 'AgendaIncomplete', { when: number }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -1431,7 +1417,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Undelegated: GenericPalletEvent<Rv, 'ConvictionVoting', 'Undelegated', AccountId20>;
 
     /**
-     * An account that has voted
+     * An account has voted
      **/
     Voted: GenericPalletEvent<
       Rv,
@@ -1441,7 +1427,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
-     * A vote that been removed
+     * A vote has been removed
      **/
     VoteRemoved: GenericPalletEvent<
       Rv,
@@ -1449,6 +1435,11 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'VoteRemoved',
       { who: AccountId20; vote: PalletConvictionVotingVoteAccountVote }
     >;
+
+    /**
+     * The lockup period of a conviction vote expired, and the funds have been unlocked.
+     **/
+    VoteUnlocked: GenericPalletEvent<Rv, 'ConvictionVoting', 'VoteUnlocked', { who: AccountId20; class: number }>;
 
     /**
      * Generic pallet event
@@ -2215,7 +2206,7 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Attempted: GenericPalletEvent<Rv, 'PolkadotXcm', 'Attempted', { outcome: StagingXcmV5TraitsOutcome }>;
 
     /**
-     * A XCM message was sent.
+     * An XCM message was sent.
      **/
     Sent: GenericPalletEvent<
       Rv,
@@ -2227,6 +2218,31 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
         message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       }
+    >;
+
+    /**
+     * An XCM message failed to send.
+     **/
+    SendFailed: GenericPalletEvent<
+      Rv,
+      'PolkadotXcm',
+      'SendFailed',
+      {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        error: XcmV3TraitsSendError;
+        messageId: FixedBytes<32>;
+      }
+    >;
+
+    /**
+     * An XCM message failed to process.
+     **/
+    ProcessXcmError: GenericPalletEvent<
+      Rv,
+      'PolkadotXcm',
+      'ProcessXcmError',
+      { origin: StagingXcmV5Location; error: XcmV5TraitsError; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -2483,6 +2499,37 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     VersionMigrationFinished: GenericPalletEvent<Rv, 'PolkadotXcm', 'VersionMigrationFinished', { version: number }>;
 
     /**
+     * An `aliaser` location was authorized by `target` to alias it, authorization valid until
+     * `expiry` block number.
+     **/
+    AliasAuthorized: GenericPalletEvent<
+      Rv,
+      'PolkadotXcm',
+      'AliasAuthorized',
+      { aliaser: StagingXcmV5Location; target: StagingXcmV5Location; expiry?: bigint | undefined }
+    >;
+
+    /**
+     * `target` removed alias authorization for `aliaser`.
+     **/
+    AliasAuthorizationRemoved: GenericPalletEvent<
+      Rv,
+      'PolkadotXcm',
+      'AliasAuthorizationRemoved',
+      { aliaser: StagingXcmV5Location; target: StagingXcmV5Location }
+    >;
+
+    /**
+     * `target` removed all alias authorizations.
+     **/
+    AliasesAuthorizationsRemoved: GenericPalletEvent<
+      Rv,
+      'PolkadotXcm',
+      'AliasesAuthorizationsRemoved',
+      { target: StagingXcmV5Location }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -2666,79 +2713,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * Some assets were withdrawn from the account (e.g. for transaction fees).
      **/
     Withdrawn: GenericPalletEvent<Rv, 'Assets', 'Withdrawn', { assetId: bigint; who: AccountId20; amount: bigint }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
-   * Pallet `AssetManager`'s events
-   **/
-  assetManager: {
-    /**
-     * New asset with the asset manager is registered
-     **/
-    ForeignAssetRegistered: GenericPalletEvent<
-      Rv,
-      'AssetManager',
-      'ForeignAssetRegistered',
-      {
-        assetId: bigint;
-        asset: MoonbeamRuntimeXcmConfigAssetType;
-        metadata: MoonbeamRuntimeAssetConfigAssetRegistrarMetadata;
-      }
-    >;
-
-    /**
-     * Changed the amount of units we are charging per execution second for a given asset
-     **/
-    UnitsPerSecondChanged: GenericPalletEvent<Rv, 'AssetManager', 'UnitsPerSecondChanged', null>;
-
-    /**
-     * Changed the xcm type mapping for a given asset id
-     **/
-    ForeignAssetXcmLocationChanged: GenericPalletEvent<
-      Rv,
-      'AssetManager',
-      'ForeignAssetXcmLocationChanged',
-      { assetId: bigint; newAssetType: MoonbeamRuntimeXcmConfigAssetType }
-    >;
-
-    /**
-     * Removed all information related to an assetId
-     **/
-    ForeignAssetRemoved: GenericPalletEvent<
-      Rv,
-      'AssetManager',
-      'ForeignAssetRemoved',
-      { assetId: bigint; assetType: MoonbeamRuntimeXcmConfigAssetType }
-    >;
-
-    /**
-     * Supported asset type for fee payment removed
-     **/
-    SupportedAssetRemoved: GenericPalletEvent<
-      Rv,
-      'AssetManager',
-      'SupportedAssetRemoved',
-      { assetType: MoonbeamRuntimeXcmConfigAssetType }
-    >;
-
-    /**
-     * Removed all information related to an assetId and destroyed asset
-     **/
-    ForeignAssetDestroyed: GenericPalletEvent<
-      Rv,
-      'AssetManager',
-      'ForeignAssetDestroyed',
-      { assetId: bigint; assetType: MoonbeamRuntimeXcmConfigAssetType }
-    >;
-
-    /**
-     * Removed all information related to an assetId and destroyed asset
-     **/
-    LocalAssetDestroyed: GenericPalletEvent<Rv, 'AssetManager', 'LocalAssetDestroyed', { assetId: bigint }>;
 
     /**
      * Generic pallet event

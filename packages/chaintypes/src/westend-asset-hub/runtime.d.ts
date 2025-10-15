@@ -21,6 +21,7 @@ import type {
   SpConsensusSlotsSlotDuration,
   SpConsensusAuraSr25519AppSr25519Public,
   PolkadotParachainPrimitivesPrimitivesId,
+  CumulusPrimitivesCoreNextSlotSchedule,
   SpConsensusSlotsSlot,
   SpRuntimeBlock,
   SpRuntimeExtrinsicInclusionMode,
@@ -62,6 +63,7 @@ import type {
   PalletRevivePrimitivesContractAccessError,
   PalletReviveEvmApiDebugRpcTypesTrace,
   PalletReviveEvmApiDebugRpcTypesTracerType,
+  PalletRevivePrimitivesBalanceConversionError,
 } from './types.js';
 
 export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<Rv> {
@@ -116,6 +118,27 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: GetParachainInfo_parachain_id
      **/
     parachainId: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotParachainPrimitivesPrimitivesId>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: SlotSchedule - 0x5bfafc20876faaf0
+   **/
+  slotSchedule: {
+    /**
+     * Get the block production schedule for the next relay chain slot.
+     *
+     * - `num_cores`: The number of cores assigned to this parachain
+     *
+     * Returns a [`NextSlotSchedule`].
+     *
+     * @callname: SlotSchedule_next_slot_schedule
+     * @param {number} num_cores
+     **/
+    nextSlotSchedule: GenericRuntimeApiMethod<Rv, (numCores: number) => Promise<CumulusPrimitivesCoreNextSlotSchedule>>;
 
     /**
      * Generic runtime api call
@@ -1019,7 +1042,7 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     erasStakersPageCount: GenericRuntimeApiMethod<Rv, (era: number, account: AccountId32Like) => Promise<number>>;
 
     /**
-     * Returns true if validator `account` has pages to be claimed for the given era.
+     * Returns true if a validator `account` has pages to be claimed for the given era.
      *
      * @callname: StakingApi_pending_rewards
      * @param {number} era
@@ -1319,6 +1342,14 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     address: GenericRuntimeApiMethod<Rv, (accountId: AccountId32Like) => Promise<H160>>;
 
     /**
+     * Get the account id associated to this H160 address.
+     *
+     * @callname: ReviveApi_account_id
+     * @param {H160} address
+     **/
+    accountId: GenericRuntimeApiMethod<Rv, (address: H160) => Promise<AccountId32>>;
+
+    /**
      * The address used to call the runtime's pallets dispatchables
      *
      * @callname: ReviveApi_runtime_pallets_address
@@ -1332,6 +1363,17 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @param {H160} address
      **/
     code: GenericRuntimeApiMethod<Rv, (address: H160) => Promise<Bytes>>;
+
+    /**
+     * Construct the new balance and dust components of this EVM balance.
+     *
+     * @callname: ReviveApi_new_balance_with_dust
+     * @param {U256} balance
+     **/
+    newBalanceWithDust: GenericRuntimeApiMethod<
+      Rv,
+      (balance: U256) => Promise<Result<[bigint, number], PalletRevivePrimitivesBalanceConversionError>>
+    >;
 
     /**
      * Generic runtime api call

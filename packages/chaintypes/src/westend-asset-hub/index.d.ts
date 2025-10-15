@@ -15,6 +15,7 @@ import type {
   FrameSystemExtensionsCheckWeight,
   PalletAssetConversionTxPaymentChargeAssetTxPayment,
   FrameMetadataHashExtensionCheckMetadataHash,
+  PalletReviveEvmTxExtensionSetOrigin,
 } from './types.js';
 import { ChainConsts } from './consts.js';
 import { ChainStorage } from './query.js';
@@ -42,6 +43,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     FrameSystemExtensionsCheckWeight,
     PalletAssetConversionTxPaymentChargeAssetTxPayment,
     FrameMetadataHashExtensionCheckMetadataHash,
+    PalletReviveEvmTxExtensionSetOrigin,
     [],
   ];
 }
@@ -61,7 +63,7 @@ export interface VersionedWestendAssetHubApi<Rv extends RpcVersion> extends Gene
 
 /**
  * @name: WestendAssetHubApi
- * @specVersion: 1020001
+ * @specVersion: 1020002
  **/
 export interface WestendAssetHubApi {
   legacy: VersionedWestendAssetHubApi<RpcLegacy>;

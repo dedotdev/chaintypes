@@ -1017,6 +1017,19 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     depositPerItem: bigint;
 
     /**
+     * The amount of balance a caller has to pay for each child trie storage item.
+     *
+     * Those are the items created by a contract. In Solidity each value is a single
+     * storage item. This is why we need to set a lower value here than for the main
+     * trie items. Otherwise the storage deposit is too high.
+     *
+     * # Note
+     *
+     * It is safe to change this value on a live chain as all refunds are pro rata.
+     **/
+    depositPerChildTrieItem: bigint;
+
+    /**
      * The percentage of the storage deposit that should be held for using a code hash.
      * Instantiating a contract, protects the code from being removed. In order to prevent
      * abuse these actions are protected with a percentage of the code deposit.

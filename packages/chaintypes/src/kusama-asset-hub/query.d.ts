@@ -120,6 +120,7 @@ import type {
   PalletDelegatedStakingDelegation,
   PalletDelegatedStakingAgentLedger,
   PalletStakingAsyncRcClientSessionReport,
+  PalletStakingAsyncRcClientValidatorSetReport,
   PalletElectionProviderMultiBlockPhase,
   FrameElectionProviderSupportBoundedSupports,
   PalletElectionProviderMultiBlockVerifierImplsValidSolution,
@@ -2764,6 +2765,19 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<number | undefined> =} callback
      **/
     lastSessionReportEndingIndex: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * A validator set that is outgoing, and should be sent.
+     *
+     * This will be attempted to be sent, possibly on every `on_initialize` call, until it is sent,
+     * or the second value reaches zero, at which point we drop it.
+     *
+     * @param {Callback<[PalletStakingAsyncRcClientValidatorSetReport, number] | undefined> =} callback
+     **/
+    outgoingValidatorSet: GenericStorageQuery<
+      Rv,
+      () => [PalletStakingAsyncRcClientValidatorSetReport, number] | undefined
+    >;
 
     /**
      * Generic pallet storage query

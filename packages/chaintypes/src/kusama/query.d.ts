@@ -105,7 +105,8 @@ import type {
   PalletDelegatedStakingAgentLedger,
   PalletStakingAsyncRcClientValidatorSetReport,
   PalletStakingAsyncAhClientOperatingMode,
-  PalletStakingAsyncAhClientBufferedOffence,
+  PalletStakingAsyncRcClientSessionReport,
+  PalletStakingAsyncRcClientOffence,
   PolkadotRuntimeParachainsConfigurationHostConfiguration,
   PolkadotPrimitivesV8ValidatorIndex,
   PolkadotPrimitivesV8ValidatorAppPublic,
@@ -2791,23 +2792,33 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     validatorSetAppliedAt: GenericStorageQuery<Rv, () => number | undefined>;
 
     /**
-     * Offences collected while in [`OperatingMode::Buffered`] mode.
+     * A session report that is outgoing, and should be sent.
      *
-     * These are temporarily stored and sent once the pallet switches to [`OperatingMode::Active`].
-     * For each offender, only the highest `slash_fraction` is kept.
+     * This will be attempted to be sent, possibly on every `on_initialize` call, until it is sent,
+     * or the second value reaches zero, at which point we drop it.
      *
-     * Internally stores as a nested BTreeMap:
-     * `session_index -> (offender -> (reporter, slash_fraction))`.
-     *
-     * Note: While the [`rc_client::Offence`] type includes a list of reporters, in practice there
-     * is only one. In this pallet, we assume this is the case and store only the first reporter.
-     *
-     * @param {Callback<Array<[number, Array<[AccountId32, PalletStakingAsyncAhClientBufferedOffence]>]>> =} callback
+     * @param {Callback<[PalletStakingAsyncRcClientSessionReport, number] | undefined> =} callback
      **/
-    bufferedOffences: GenericStorageQuery<
+    outgoingSessionReport: GenericStorageQuery<Rv, () => [PalletStakingAsyncRcClientSessionReport, number] | undefined>;
+
+    /**
+     * Internal storage item of [`OffenceSendQueue`]. Should not be used manually.
+     *
+     * @param {number} arg
+     * @param {Callback<Array<[number, PalletStakingAsyncRcClientOffence]>> =} callback
+     **/
+    offenceSendQueueOffences: GenericStorageQuery<
       Rv,
-      () => Array<[number, Array<[AccountId32, PalletStakingAsyncAhClientBufferedOffence]>]>
+      (arg: number) => Array<[number, PalletStakingAsyncRcClientOffence]>,
+      number
     >;
+
+    /**
+     * Internal storage item of [`OffenceSendQueue`]. Should not be used manually.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    offenceSendQueueCursor: GenericStorageQuery<Rv, () => number>;
 
     /**
      * Generic pallet storage query

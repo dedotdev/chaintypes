@@ -13120,23 +13120,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Called to report one or more new offenses on the relay chain.
      *
-     * @param {number} slashSession
-     * @param {Array<PalletStakingAsyncRcClientOffence>} offences
+     * @param {Array<[number, PalletStakingAsyncRcClientOffence]>} offences
      **/
-    relayNewOffence: GenericTxCall<
+    relayNewOffencePaged: GenericTxCall<
       Rv,
-      (
-        slashSession: number,
-        offences: Array<PalletStakingAsyncRcClientOffence>,
-      ) => ChainSubmittableExtrinsic<
+      (offences: Array<[number, PalletStakingAsyncRcClientOffence]>) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'StakingRcClient';
           palletCall: {
-            name: 'RelayNewOffence';
-            params: { slashSession: number; offences: Array<PalletStakingAsyncRcClientOffence> };
+            name: 'RelayNewOffencePaged';
+            params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> };
           };
         }
       >
@@ -13902,9 +13897,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Remove all data structures concerning a staker/stash once it is at a state where it can
      * be considered `dust` in the staking system. The requirements are:
      *
-     * 1. the `total_balance` of the stash is below minimum bond.
-     * 2. or, the `ledger.total` of the stash is below minimum bond.
-     * 3. or, existential deposit is zero and either `total_balance` or `ledger.total` is zero.
+     * 1. the `total_balance` of the stash is below `min_chilled_bond` or is zero.
+     * 2. or, the `ledger.total` of the stash is below `min_chilled_bond` or is zero.
      *
      * The former can happen in cases like a slash; the latter when a fully unbonded account
      * is still receiving staking rewards in `RewardDestination::Staked`.

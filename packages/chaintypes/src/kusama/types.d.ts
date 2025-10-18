@@ -13540,7 +13540,13 @@ export type PalletStakingAsyncAhClientEvent =
    **/
   | { name: 'Unexpected'; data: PalletStakingAsyncAhClientUnexpectedKind };
 
-export type PalletStakingAsyncAhClientUnexpectedKind = 'ReceivedValidatorSetWhilePassive' | 'UnexpectedModeTransition';
+export type PalletStakingAsyncAhClientUnexpectedKind =
+  | 'ReceivedValidatorSetWhilePassive'
+  | 'UnexpectedModeTransition'
+  | 'SessionReportSendFailed'
+  | 'SessionReportDropped'
+  | 'OffenceSendFailed'
+  | 'ValidatorPointDropped';
 
 /**
  * The `Event` enum of this pallet
@@ -16472,7 +16478,18 @@ export type PalletDelegatedStakingError =
    **/
   | 'NotSupported';
 
-export type PalletStakingAsyncAhClientBufferedOffence = { reporter?: AccountId32 | undefined; slashFraction: Perbill };
+export type PalletStakingAsyncRcClientSessionReport = {
+  endIndex: number;
+  validatorPoints: Array<[AccountId32, number]>;
+  activationTimestamp?: [bigint, number] | undefined;
+  leftover: boolean;
+};
+
+export type PalletStakingAsyncRcClientOffence = {
+  offender: AccountId32;
+  reporters: Array<AccountId32>;
+  slashFraction: Perbill;
+};
 
 /**
  * The `Error` enum of this pallet.

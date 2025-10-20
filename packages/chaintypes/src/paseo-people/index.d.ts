@@ -58,7 +58,7 @@ export interface VersionedPaseoPeopleApi<Rv extends RpcVersion> extends GenericS
 
 /**
  * @name: PaseoPeopleApi
- * @specVersion: 1009001
+ * @specVersion: 1009002
  **/
 export interface PaseoPeopleApi {
   legacy: VersionedPaseoPeopleApi<RpcLegacy>;

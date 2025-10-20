@@ -195,6 +195,20 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `MultiBlockMigrations`'s errors
+   **/
+  multiBlockMigrations: {
+    /**
+     * The operation cannot complete since some MBMs are ongoing.
+     **/
+    Ongoing: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `Balances`'s errors
    **/
   balances: {
@@ -2240,201 +2254,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
-   * Pallet `Staking`'s errors
-   **/
-  staking: {
-    /**
-     * Not a controller account.
-     **/
-    NotController: GenericPalletError<Rv>;
-
-    /**
-     * Not a stash account.
-     **/
-    NotStash: GenericPalletError<Rv>;
-
-    /**
-     * Stash is already bonded.
-     **/
-    AlreadyBonded: GenericPalletError<Rv>;
-
-    /**
-     * Controller is already paired.
-     **/
-    AlreadyPaired: GenericPalletError<Rv>;
-
-    /**
-     * Targets cannot be empty.
-     **/
-    EmptyTargets: GenericPalletError<Rv>;
-
-    /**
-     * Duplicate index.
-     **/
-    DuplicateIndex: GenericPalletError<Rv>;
-
-    /**
-     * Slash record not found.
-     **/
-    InvalidSlashRecord: GenericPalletError<Rv>;
-
-    /**
-     * Cannot bond, nominate or validate with value less than the minimum defined by
-     * governance (see `MinValidatorBond` and `MinNominatorBond`). If unbonding is the
-     * intention, `chill` first to remove one's role as validator/nominator.
-     **/
-    InsufficientBond: GenericPalletError<Rv>;
-
-    /**
-     * Can not schedule more unlock chunks.
-     **/
-    NoMoreChunks: GenericPalletError<Rv>;
-
-    /**
-     * Can not rebond without unlocking chunks.
-     **/
-    NoUnlockChunk: GenericPalletError<Rv>;
-
-    /**
-     * Attempting to target a stash that still has funds.
-     **/
-    FundedTarget: GenericPalletError<Rv>;
-
-    /**
-     * Invalid era to reward.
-     **/
-    InvalidEraToReward: GenericPalletError<Rv>;
-
-    /**
-     * Invalid number of nominations.
-     **/
-    InvalidNumberOfNominations: GenericPalletError<Rv>;
-
-    /**
-     * Rewards for this era have already been claimed for this validator.
-     **/
-    AlreadyClaimed: GenericPalletError<Rv>;
-
-    /**
-     * No nominators exist on this page.
-     **/
-    InvalidPage: GenericPalletError<Rv>;
-
-    /**
-     * Incorrect previous history depth input provided.
-     **/
-    IncorrectHistoryDepth: GenericPalletError<Rv>;
-
-    /**
-     * Internal state has become somehow corrupted and the operation cannot continue.
-     **/
-    BadState: GenericPalletError<Rv>;
-
-    /**
-     * Too many nomination targets supplied.
-     **/
-    TooManyTargets: GenericPalletError<Rv>;
-
-    /**
-     * A nomination target was supplied that was blocked or otherwise not a validator.
-     **/
-    BadTarget: GenericPalletError<Rv>;
-
-    /**
-     * The user has enough bond and thus cannot be chilled forcefully by an external person.
-     **/
-    CannotChillOther: GenericPalletError<Rv>;
-
-    /**
-     * There are too many nominators in the system. Governance needs to adjust the staking
-     * settings to keep things safe for the runtime.
-     **/
-    TooManyNominators: GenericPalletError<Rv>;
-
-    /**
-     * There are too many validator candidates in the system. Governance needs to adjust the
-     * staking settings to keep things safe for the runtime.
-     **/
-    TooManyValidators: GenericPalletError<Rv>;
-
-    /**
-     * Commission is too low. Must be at least `MinCommission`.
-     **/
-    CommissionTooLow: GenericPalletError<Rv>;
-
-    /**
-     * Some bound is not met.
-     **/
-    BoundNotMet: GenericPalletError<Rv>;
-
-    /**
-     * Used when attempting to use deprecated controller account logic.
-     **/
-    ControllerDeprecated: GenericPalletError<Rv>;
-
-    /**
-     * Cannot reset a ledger.
-     **/
-    CannotRestoreLedger: GenericPalletError<Rv>;
-
-    /**
-     * Provided reward destination is not allowed.
-     **/
-    RewardDestinationRestricted: GenericPalletError<Rv>;
-
-    /**
-     * Not enough funds available to withdraw.
-     **/
-    NotEnoughFunds: GenericPalletError<Rv>;
-
-    /**
-     * Operation not allowed for virtual stakers.
-     **/
-    VirtualStakerNotAllowed: GenericPalletError<Rv>;
-
-    /**
-     * Stash could not be reaped as other pallet might depend on it.
-     **/
-    CannotReapStash: GenericPalletError<Rv>;
-
-    /**
-     * The stake of this account is already migrated to `Fungible` holds.
-     **/
-    AlreadyMigrated: GenericPalletError<Rv>;
-
-    /**
-     * Era not yet started.
-     **/
-    EraNotStarted: GenericPalletError<Rv>;
-
-    /**
-     * Account is restricted from participation in staking. This may happen if the account is
-     * staking in another way already, such as via pool.
-     **/
-    Restricted: GenericPalletError<Rv>;
-
-    /**
-     * Unapplied slashes in the recently concluded era is blocking this operation.
-     * See `Call::apply_slash` to apply them.
-     **/
-    UnappliedSlashesInPreviousEra: GenericPalletError<Rv>;
-
-    /**
-     * The era is not eligible for pruning.
-     **/
-    EraNotPrunable: GenericPalletError<Rv>;
-
-    /**
-     * The slash has been cancelled and cannot be applied.
-     **/
-    CancelledSlash: GenericPalletError<Rv>;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError<Rv>;
-  };
-  /**
    * Pallet `NominationPools`'s errors
    **/
   nominationPools: {
@@ -2806,6 +2625,454 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Too many invulnerable accounts are provided,
      **/
     TooManyInvulnerables: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Staking`'s errors
+   **/
+  staking: {
+    /**
+     * Not a controller account.
+     **/
+    NotController: GenericPalletError<Rv>;
+
+    /**
+     * Not a stash account.
+     **/
+    NotStash: GenericPalletError<Rv>;
+
+    /**
+     * Stash is already bonded.
+     **/
+    AlreadyBonded: GenericPalletError<Rv>;
+
+    /**
+     * Controller is already paired.
+     **/
+    AlreadyPaired: GenericPalletError<Rv>;
+
+    /**
+     * Targets cannot be empty.
+     **/
+    EmptyTargets: GenericPalletError<Rv>;
+
+    /**
+     * Duplicate index.
+     **/
+    DuplicateIndex: GenericPalletError<Rv>;
+
+    /**
+     * Slash record not found.
+     **/
+    InvalidSlashRecord: GenericPalletError<Rv>;
+
+    /**
+     * Cannot bond, nominate or validate with value less than the minimum defined by
+     * governance (see `MinValidatorBond` and `MinNominatorBond`). If unbonding is the
+     * intention, `chill` first to remove one's role as validator/nominator.
+     **/
+    InsufficientBond: GenericPalletError<Rv>;
+
+    /**
+     * Can not schedule more unlock chunks.
+     **/
+    NoMoreChunks: GenericPalletError<Rv>;
+
+    /**
+     * Can not rebond without unlocking chunks.
+     **/
+    NoUnlockChunk: GenericPalletError<Rv>;
+
+    /**
+     * Attempting to target a stash that still has funds.
+     **/
+    FundedTarget: GenericPalletError<Rv>;
+
+    /**
+     * Invalid era to reward.
+     **/
+    InvalidEraToReward: GenericPalletError<Rv>;
+
+    /**
+     * Invalid number of nominations.
+     **/
+    InvalidNumberOfNominations: GenericPalletError<Rv>;
+
+    /**
+     * Rewards for this era have already been claimed for this validator.
+     **/
+    AlreadyClaimed: GenericPalletError<Rv>;
+
+    /**
+     * No nominators exist on this page.
+     **/
+    InvalidPage: GenericPalletError<Rv>;
+
+    /**
+     * Incorrect previous history depth input provided.
+     **/
+    IncorrectHistoryDepth: GenericPalletError<Rv>;
+
+    /**
+     * Internal state has become somehow corrupted and the operation cannot continue.
+     **/
+    BadState: GenericPalletError<Rv>;
+
+    /**
+     * Too many nomination targets supplied.
+     **/
+    TooManyTargets: GenericPalletError<Rv>;
+
+    /**
+     * A nomination target was supplied that was blocked or otherwise not a validator.
+     **/
+    BadTarget: GenericPalletError<Rv>;
+
+    /**
+     * The user has enough bond and thus cannot be chilled forcefully by an external person.
+     **/
+    CannotChillOther: GenericPalletError<Rv>;
+
+    /**
+     * There are too many nominators in the system. Governance needs to adjust the staking
+     * settings to keep things safe for the runtime.
+     **/
+    TooManyNominators: GenericPalletError<Rv>;
+
+    /**
+     * There are too many validator candidates in the system. Governance needs to adjust the
+     * staking settings to keep things safe for the runtime.
+     **/
+    TooManyValidators: GenericPalletError<Rv>;
+
+    /**
+     * Commission is too low. Must be at least `MinCommission`.
+     **/
+    CommissionTooLow: GenericPalletError<Rv>;
+
+    /**
+     * Some bound is not met.
+     **/
+    BoundNotMet: GenericPalletError<Rv>;
+
+    /**
+     * Used when attempting to use deprecated controller account logic.
+     **/
+    ControllerDeprecated: GenericPalletError<Rv>;
+
+    /**
+     * Cannot reset a ledger.
+     **/
+    CannotRestoreLedger: GenericPalletError<Rv>;
+
+    /**
+     * Provided reward destination is not allowed.
+     **/
+    RewardDestinationRestricted: GenericPalletError<Rv>;
+
+    /**
+     * Not enough funds available to withdraw.
+     **/
+    NotEnoughFunds: GenericPalletError<Rv>;
+
+    /**
+     * Operation not allowed for virtual stakers.
+     **/
+    VirtualStakerNotAllowed: GenericPalletError<Rv>;
+
+    /**
+     * Stash could not be reaped as other pallet might depend on it.
+     **/
+    CannotReapStash: GenericPalletError<Rv>;
+
+    /**
+     * The stake of this account is already migrated to `Fungible` holds.
+     **/
+    AlreadyMigrated: GenericPalletError<Rv>;
+
+    /**
+     * Era not yet started.
+     **/
+    EraNotStarted: GenericPalletError<Rv>;
+
+    /**
+     * Account is restricted from participation in staking. This may happen if the account is
+     * staking in another way already, such as via pool.
+     **/
+    Restricted: GenericPalletError<Rv>;
+
+    /**
+     * Unapplied slashes in the recently concluded era is blocking this operation.
+     * See `Call::apply_slash` to apply them.
+     **/
+    UnappliedSlashesInPreviousEra: GenericPalletError<Rv>;
+
+    /**
+     * The era is not eligible for pruning.
+     **/
+    EraNotPrunable: GenericPalletError<Rv>;
+
+    /**
+     * The slash has been cancelled and cannot be applied.
+     **/
+    CancelledSlash: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Revive`'s errors
+   **/
+  revive: {
+    /**
+     * Invalid schedule supplied, e.g. with zero weight of a basic operation.
+     **/
+    InvalidSchedule: GenericPalletError<Rv>;
+
+    /**
+     * Invalid combination of flags supplied to `seal_call` or `seal_delegate_call`.
+     **/
+    InvalidCallFlags: GenericPalletError<Rv>;
+
+    /**
+     * The executed contract exhausted its gas limit.
+     **/
+    OutOfGas: GenericPalletError<Rv>;
+
+    /**
+     * Performing the requested transfer failed. Probably because there isn't enough
+     * free balance in the sender's account.
+     **/
+    TransferFailed: GenericPalletError<Rv>;
+
+    /**
+     * Performing a call was denied because the calling depth reached the limit
+     * of what is specified in the schedule.
+     **/
+    MaxCallDepthReached: GenericPalletError<Rv>;
+
+    /**
+     * No contract was found at the specified address.
+     **/
+    ContractNotFound: GenericPalletError<Rv>;
+
+    /**
+     * No code could be found at the supplied code hash.
+     **/
+    CodeNotFound: GenericPalletError<Rv>;
+
+    /**
+     * No code info could be found at the supplied code hash.
+     **/
+    CodeInfoNotFound: GenericPalletError<Rv>;
+
+    /**
+     * A buffer outside of sandbox memory was passed to a contract API function.
+     **/
+    OutOfBounds: GenericPalletError<Rv>;
+
+    /**
+     * Input passed to a contract API function failed to decode as expected type.
+     **/
+    DecodingFailed: GenericPalletError<Rv>;
+
+    /**
+     * Contract trapped during execution.
+     **/
+    ContractTrapped: GenericPalletError<Rv>;
+
+    /**
+     * Event body or storage item exceeds [`limits::PAYLOAD_BYTES`].
+     **/
+    ValueTooLarge: GenericPalletError<Rv>;
+
+    /**
+     * Termination of a contract is not allowed while the contract is already
+     * on the call stack. Can be triggered by `seal_terminate`.
+     **/
+    TerminatedWhileReentrant: GenericPalletError<Rv>;
+
+    /**
+     * `seal_call` forwarded this contracts input. It therefore is no longer available.
+     **/
+    InputForwarded: GenericPalletError<Rv>;
+
+    /**
+     * The amount of topics passed to `seal_deposit_events` exceeds the limit.
+     **/
+    TooManyTopics: GenericPalletError<Rv>;
+
+    /**
+     * A contract with the same AccountId already exists.
+     **/
+    DuplicateContract: GenericPalletError<Rv>;
+
+    /**
+     * A contract self destructed in its constructor.
+     *
+     * This can be triggered by a call to `seal_terminate`.
+     **/
+    TerminatedInConstructor: GenericPalletError<Rv>;
+
+    /**
+     * A call tried to invoke a contract that is flagged as non-reentrant.
+     **/
+    ReentranceDenied: GenericPalletError<Rv>;
+
+    /**
+     * A contract called into the runtime which then called back into this pallet.
+     **/
+    ReenteredPallet: GenericPalletError<Rv>;
+
+    /**
+     * A contract attempted to invoke a state modifying API while being in read-only mode.
+     **/
+    StateChangeDenied: GenericPalletError<Rv>;
+
+    /**
+     * Origin doesn't have enough balance to pay the required storage deposits.
+     **/
+    StorageDepositNotEnoughFunds: GenericPalletError<Rv>;
+
+    /**
+     * More storage was created than allowed by the storage deposit limit.
+     **/
+    StorageDepositLimitExhausted: GenericPalletError<Rv>;
+
+    /**
+     * Code removal was denied because the code is still in use by at least one contract.
+     **/
+    CodeInUse: GenericPalletError<Rv>;
+
+    /**
+     * The contract ran to completion but decided to revert its storage changes.
+     * Please note that this error is only returned from extrinsics. When called directly
+     * or via RPC an `Ok` will be returned. In this case the caller needs to inspect the flags
+     * to determine whether a reversion has taken place.
+     **/
+    ContractReverted: GenericPalletError<Rv>;
+
+    /**
+     * The contract failed to compile or is missing the correct entry points.
+     *
+     * A more detailed error can be found on the node console if debug messages are enabled
+     * by supplying `-lruntime::revive=debug`.
+     **/
+    CodeRejected: GenericPalletError<Rv>;
+
+    /**
+     * The code blob supplied is larger than [`limits::code::BLOB_BYTES`].
+     **/
+    BlobTooLarge: GenericPalletError<Rv>;
+
+    /**
+     * The contract declares too much memory (ro + rw + stack).
+     **/
+    StaticMemoryTooLarge: GenericPalletError<Rv>;
+
+    /**
+     * The program contains a basic block that is larger than allowed.
+     **/
+    BasicBlockTooLarge: GenericPalletError<Rv>;
+
+    /**
+     * The program contains an invalid instruction.
+     **/
+    InvalidInstruction: GenericPalletError<Rv>;
+
+    /**
+     * The contract has reached its maximum number of delegate dependencies.
+     **/
+    MaxDelegateDependenciesReached: GenericPalletError<Rv>;
+
+    /**
+     * The dependency was not found in the contract's delegate dependencies.
+     **/
+    DelegateDependencyNotFound: GenericPalletError<Rv>;
+
+    /**
+     * The contract already depends on the given delegate dependency.
+     **/
+    DelegateDependencyAlreadyExists: GenericPalletError<Rv>;
+
+    /**
+     * Can not add a delegate dependency to the code hash of the contract itself.
+     **/
+    CannotAddSelfAsDelegateDependency: GenericPalletError<Rv>;
+
+    /**
+     * Can not add more data to transient storage.
+     **/
+    OutOfTransientStorage: GenericPalletError<Rv>;
+
+    /**
+     * The contract tried to call a syscall which does not exist (at its current api level).
+     **/
+    InvalidSyscall: GenericPalletError<Rv>;
+
+    /**
+     * Invalid storage flags were passed to one of the storage syscalls.
+     **/
+    InvalidStorageFlags: GenericPalletError<Rv>;
+
+    /**
+     * PolkaVM failed during code execution. Probably due to a malformed program.
+     **/
+    ExecutionFailed: GenericPalletError<Rv>;
+
+    /**
+     * Failed to convert a U256 to a Balance.
+     **/
+    BalanceConversionFailed: GenericPalletError<Rv>;
+
+    /**
+     * Immutable data can only be set during deploys and only be read during calls.
+     * Additionally, it is only valid to set the data once and it must not be empty.
+     **/
+    InvalidImmutableAccess: GenericPalletError<Rv>;
+
+    /**
+     * An `AccountID32` account tried to interact with the pallet without having a mapping.
+     *
+     * Call [`Pallet::map_account`] in order to create a mapping for the account.
+     **/
+    AccountUnmapped: GenericPalletError<Rv>;
+
+    /**
+     * Tried to map an account that is already mapped.
+     **/
+    AccountAlreadyMapped: GenericPalletError<Rv>;
+
+    /**
+     * The transaction used to dry-run a contract is invalid.
+     **/
+    InvalidGenericTransaction: GenericPalletError<Rv>;
+
+    /**
+     * The refcount of a code either over or underflowed.
+     **/
+    RefcountOverOrUnderflow: GenericPalletError<Rv>;
+
+    /**
+     * Unsupported precompile address.
+     **/
+    UnsupportedPrecompileAddress: GenericPalletError<Rv>;
+
+    /**
+     * The calldata exceeds [`limits::CALLDATA_BYTES`].
+     **/
+    CallDataTooLarge: GenericPalletError<Rv>;
+
+    /**
+     * The return data exceeds [`limits::CALLDATA_BYTES`].
+     **/
+    ReturnDataTooLarge: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

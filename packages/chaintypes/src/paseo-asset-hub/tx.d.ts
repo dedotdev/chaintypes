@@ -19,8 +19,10 @@ import type {
   AccountId32Like,
   EthereumAddressLike,
   FixedU128,
-  Percent,
   Perbill,
+  Percent,
+  H160,
+  U256,
 } from 'dedot/codecs';
 import type {
   AssetHubPaseoRuntimeRuntimeCallLike,
@@ -30,6 +32,8 @@ import type {
   CumulusPalletParachainSystemParachainInherentBasicParachainInherentData,
   CumulusPalletParachainSystemParachainInherentInboundMessagesData,
   AssetHubPaseoRuntimeRuntimeParameters,
+  PalletMigrationsMigrationCursor,
+  PalletMigrationsHistoricCleanupSelector,
   PalletBalancesAdjustmentDirection,
   PalletVestingVestingInfo,
   PolkadotRuntimeCommonClaimsEcdsaSignature,
@@ -73,13 +77,6 @@ import type {
   PalletStateTrieMigrationMigrationLimits,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationProgress,
-  PalletStakingAsyncRewardDestination,
-  PalletStakingAsyncValidatorPrefs,
-  PalletStakingAsyncPalletConfigOp,
-  PalletStakingAsyncPalletConfigOpU32,
-  PalletStakingAsyncPalletConfigOpPercent,
-  PalletStakingAsyncPalletConfigOpPerbill,
-  PalletStakingAsyncLedgerUnlockChunk,
   PalletNominationPoolsBondExtra,
   PalletNominationPoolsPoolState,
   PalletNominationPoolsConfigOp,
@@ -95,6 +92,13 @@ import type {
   PalletElectionProviderMultiBlockPagedRawSolution,
   SpNposElectionsElectionScore,
   AssetHubPaseoRuntimeStakingNposCompactSolution16,
+  PalletStakingAsyncRewardDestination,
+  PalletStakingAsyncValidatorPrefs,
+  PalletStakingAsyncPalletConfigOp,
+  PalletStakingAsyncPalletConfigOpU32,
+  PalletStakingAsyncPalletConfigOpPercent,
+  PalletStakingAsyncPalletConfigOpPerbill,
+  PalletStakingAsyncLedgerUnlockChunk,
   PolkadotParachainPrimitivesPrimitivesId,
   PalletRcMigratorAccountsAccount,
   PalletRcMigratorMultisigRcMultisig,
@@ -952,6 +956,111 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SetParameter';
             params: { keyValue: AssetHubPaseoRuntimeRuntimeParameters };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s transaction calls
+   **/
+  multiBlockMigrations: {
+    /**
+     * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+     *
+     * Should normally not be needed and is only in place as emergency measure. Note that
+     * restarting the migration process in this manner will not call the
+     * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+     *
+     * @param {PalletMigrationsMigrationCursor | undefined} cursor
+     **/
+    forceSetCursor: GenericTxCall<
+      Rv,
+      (cursor: PalletMigrationsMigrationCursor | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceSetCursor';
+            params: { cursor: PalletMigrationsMigrationCursor | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Allows root to set an active cursor to forcefully start/forward the migration process.
+     *
+     * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+     * `started_at` value to the next block number. Otherwise this would not be possible, since
+     * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+     * indicates that the current block number plus one should be used.
+     *
+     * @param {number} index
+     * @param {BytesLike | undefined} innerCursor
+     * @param {number | undefined} startedAt
+     **/
+    forceSetActiveCursor: GenericTxCall<
+      Rv,
+      (
+        index: number,
+        innerCursor: BytesLike | undefined,
+        startedAt: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceSetActiveCursor';
+            params: { index: number; innerCursor: BytesLike | undefined; startedAt: number | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Forces the onboarding of the migrations.
+     *
+     * This process happens automatically on a runtime upgrade. It is in place as an emergency
+     * measurement. The cursor needs to be `None` for this to succeed.
+     *
+     **/
+    forceOnboardMbms: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceOnboardMbms';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Clears the `Historic` set.
+     *
+     * `map_cursor` must be set to the last value that was returned by the
+     * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+     * way that will result in a sensible weight.
+     *
+     * @param {PalletMigrationsHistoricCleanupSelector} selector
+     **/
+    clearHistoric: GenericTxCall<
+      Rv,
+      (selector: PalletMigrationsHistoricCleanupSelector) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ClearHistoric';
+            params: { selector: PalletMigrationsHistoricCleanupSelector };
           };
         }
       >
@@ -12168,1006 +12277,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
-   * Pallet `Staking`'s transaction calls
-   **/
-  staking: {
-    /**
-     * Take the origin account as a stash and lock up `value` of its balance. `controller` will
-     * be the account that controls it.
-     *
-     * `value` must be more than the `minimum_balance` specified by `T::Currency`.
-     *
-     * The dispatch origin for this call must be _Signed_ by the stash account.
-     *
-     * Emits `Bonded`.
-     *
-     * NOTE: Two of the storage writes (`Self::bonded`, `Self::payee`) are _never_ cleaned
-     * unless the `origin` falls below _existential deposit_ (or equal to 0) and gets removed
-     * as dust.
-     *
-     * @param {bigint} value
-     * @param {PalletStakingAsyncRewardDestination} payee
-     **/
-    bond: GenericTxCall<
-      Rv,
-      (
-        value: bigint,
-        payee: PalletStakingAsyncRewardDestination,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'Bond';
-            params: { value: bigint; payee: PalletStakingAsyncRewardDestination };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Add some extra amount that have appeared in the stash `free_balance` into the balance up
-     * for staking.
-     *
-     * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
-     *
-     * Use this if there are additional funds in your stash account that you wish to bond.
-     * Unlike [`bond`](Self::bond) or [`unbond`](Self::unbond) this function does not impose
-     * any limitation on the amount that can be added.
-     *
-     * Emits `Bonded`.
-     *
-     * @param {bigint} maxAdditional
-     **/
-    bondExtra: GenericTxCall<
-      Rv,
-      (maxAdditional: bigint) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'BondExtra';
-            params: { maxAdditional: bigint };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
-     * period ends. If this leaves an amount actively bonded less than
-     * [`asset::existential_deposit`], then it is increased to the full amount.
-     *
-     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-     *
-     * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
-     * the funds out of management ready for transfer.
-     *
-     * No more than a limited number of unlocking chunks (see `MaxUnlockingChunks`)
-     * can co-exists at the same time. If there are no unlocking chunks slots available
-     * [`Call::withdraw_unbonded`] is called to remove some of the chunks (if possible).
-     *
-     * If a user encounters the `InsufficientBond` error when calling this extrinsic,
-     * they should call `chill` first in order to free up their bonded funds.
-     *
-     * Emits `Unbonded`.
-     *
-     * See also [`Call::withdraw_unbonded`].
-     *
-     * @param {bigint} value
-     **/
-    unbond: GenericTxCall<
-      Rv,
-      (value: bigint) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'Unbond';
-            params: { value: bigint };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Remove any stake that has been fully unbonded and is ready for withdrawal.
-     *
-     * Stake is considered fully unbonded once [`Config::BondingDuration`] has elapsed since
-     * the unbonding was initiated. In rare cases—such as when offences for the unbonded era
-     * have been reported but not yet processed—withdrawal is restricted to eras for which
-     * all offences have been processed.
-     *
-     * The unlocked stake will be returned as free balance in the stash account.
-     *
-     * The dispatch origin for this call must be _Signed_ by the controller.
-     *
-     * Emits `Withdrawn`.
-     *
-     * See also [`Call::unbond`].
-     *
-     * ## Parameters
-     *
-     * - `num_slashing_spans`: **Deprecated**. Retained only for backward compatibility; this
-     * parameter has no effect.
-     *
-     * @param {number} numSlashingSpans
-     **/
-    withdrawUnbonded: GenericTxCall<
-      Rv,
-      (numSlashingSpans: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'WithdrawUnbonded';
-            params: { numSlashingSpans: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Declare the desire to validate for the origin controller.
-     *
-     * Effects will be felt at the beginning of the next era.
-     *
-     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-     *
-     * @param {PalletStakingAsyncValidatorPrefs} prefs
-     **/
-    validate: GenericTxCall<
-      Rv,
-      (prefs: PalletStakingAsyncValidatorPrefs) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'Validate';
-            params: { prefs: PalletStakingAsyncValidatorPrefs };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Declare the desire to nominate `targets` for the origin controller.
-     *
-     * Effects will be felt at the beginning of the next era.
-     *
-     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-     *
-     * @param {Array<MultiAddressLike>} targets
-     **/
-    nominate: GenericTxCall<
-      Rv,
-      (targets: Array<MultiAddressLike>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'Nominate';
-            params: { targets: Array<MultiAddressLike> };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Declare no desire to either validate or nominate.
-     *
-     * Effects will be felt at the beginning of the next era.
-     *
-     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-     *
-     * ## Complexity
-     * - Independent of the arguments. Insignificant complexity.
-     * - Contains one read.
-     * - Writes are limited to the `origin` account key.
-     *
-     **/
-    chill: GenericTxCall<
-      Rv,
-      () => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'Chill';
-          };
-        }
-      >
-    >;
-
-    /**
-     * (Re-)set the payment target for a controller.
-     *
-     * Effects will be felt instantly (as soon as this function is completed successfully).
-     *
-     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-     *
-     * @param {PalletStakingAsyncRewardDestination} payee
-     **/
-    setPayee: GenericTxCall<
-      Rv,
-      (payee: PalletStakingAsyncRewardDestination) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'SetPayee';
-            params: { payee: PalletStakingAsyncRewardDestination };
-          };
-        }
-      >
-    >;
-
-    /**
-     * (Re-)sets the controller of a stash to the stash itself. This function previously
-     * accepted a `controller` argument to set the controller to an account other than the
-     * stash itself. This functionality has now been removed, now only setting the controller
-     * to the stash, if it is not already.
-     *
-     * Effects will be felt instantly (as soon as this function is completed successfully).
-     *
-     * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
-     *
-     **/
-    setController: GenericTxCall<
-      Rv,
-      () => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'SetController';
-          };
-        }
-      >
-    >;
-
-    /**
-     * Sets the ideal number of validators.
-     *
-     * The dispatch origin must be Root.
-     *
-     * @param {number} new_
-     **/
-    setValidatorCount: GenericTxCall<
-      Rv,
-      (new_: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'SetValidatorCount';
-            params: { new: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Increments the ideal number of validators up to maximum of
-     * `T::MaxValidatorSet`.
-     *
-     * The dispatch origin must be Root.
-     *
-     * @param {number} additional
-     **/
-    increaseValidatorCount: GenericTxCall<
-      Rv,
-      (additional: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'IncreaseValidatorCount';
-            params: { additional: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Scale up the ideal number of validators by a factor up to maximum of
-     * `T::MaxValidatorSet`.
-     *
-     * The dispatch origin must be Root.
-     *
-     * @param {Percent} factor
-     **/
-    scaleValidatorCount: GenericTxCall<
-      Rv,
-      (factor: Percent) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'ScaleValidatorCount';
-            params: { factor: Percent };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Force there to be no new eras indefinitely.
-     *
-     * The dispatch origin must be Root.
-     *
-     * # Warning
-     *
-     * The election process starts multiple blocks before the end of the era.
-     * Thus the election process may be ongoing when this is called. In this case the
-     * election will continue until the next era is triggered.
-     *
-     **/
-    forceNoEras: GenericTxCall<
-      Rv,
-      () => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'ForceNoEras';
-          };
-        }
-      >
-    >;
-
-    /**
-     * Force there to be a new era at the end of the next session. After this, it will be
-     * reset to normal (non-forced) behaviour.
-     *
-     * The dispatch origin must be Root.
-     *
-     * # Warning
-     *
-     * The election process starts multiple blocks before the end of the era.
-     * If this is called just before a new era is triggered, the election process may not
-     * have enough blocks to get a result.
-     *
-     **/
-    forceNewEra: GenericTxCall<
-      Rv,
-      () => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'ForceNewEra';
-          };
-        }
-      >
-    >;
-
-    /**
-     * Set the validators who cannot be slashed (if any).
-     *
-     * The dispatch origin must be Root.
-     *
-     * @param {Array<AccountId32Like>} invulnerables
-     **/
-    setInvulnerables: GenericTxCall<
-      Rv,
-      (invulnerables: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'SetInvulnerables';
-            params: { invulnerables: Array<AccountId32Like> };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Force a current staker to become completely unstaked, immediately.
-     *
-     * The dispatch origin must be Root.
-     * ## Parameters
-     *
-     * - `stash`: The stash account to be unstaked.
-     * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
-     * compatibility. It no longer has any effect.
-     *
-     * @param {AccountId32Like} stash
-     * @param {number} numSlashingSpans
-     **/
-    forceUnstake: GenericTxCall<
-      Rv,
-      (
-        stash: AccountId32Like,
-        numSlashingSpans: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'ForceUnstake';
-            params: { stash: AccountId32Like; numSlashingSpans: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Force there to be a new era at the end of sessions indefinitely.
-     *
-     * The dispatch origin must be Root.
-     *
-     * # Warning
-     *
-     * The election process starts multiple blocks before the end of the era.
-     * If this is called just before a new era is triggered, the election process may not
-     * have enough blocks to get a result.
-     *
-     **/
-    forceNewEraAlways: GenericTxCall<
-      Rv,
-      () => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'ForceNewEraAlways';
-          };
-        }
-      >
-    >;
-
-    /**
-     * Cancels scheduled slashes for a given era before they are applied.
-     *
-     * This function allows `T::AdminOrigin` to cancel pending slashes for specified validators
-     * in a given era. The cancelled slashes are stored and will be checked when applying
-     * slashes.
-     *
-     * ## Parameters
-     * - `era`: The staking era for which slashes should be cancelled. This is the era where
-     * the slash would be applied, not the era in which the offence was committed.
-     * - `validator_slashes`: A list of validator stash accounts and their slash fractions to
-     * be cancelled.
-     *
-     * @param {number} era
-     * @param {Array<[AccountId32Like, Perbill]>} validatorSlashes
-     **/
-    cancelDeferredSlash: GenericTxCall<
-      Rv,
-      (
-        era: number,
-        validatorSlashes: Array<[AccountId32Like, Perbill]>,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'CancelDeferredSlash';
-            params: { era: number; validatorSlashes: Array<[AccountId32Like, Perbill]> };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Pay out next page of the stakers behind a validator for the given era.
-     *
-     * - `validator_stash` is the stash account of the validator.
-     * - `era` may be any era between `[current_era - history_depth; current_era]`.
-     *
-     * The origin of this call must be _Signed_. Any account can call this function, even if
-     * it is not one of the stakers.
-     *
-     * The reward payout could be paged in case there are too many nominators backing the
-     * `validator_stash`. This call will payout unpaid pages in an ascending order. To claim a
-     * specific page, use `payout_stakers_by_page`.`
-     *
-     * If all pages are claimed, it returns an error `InvalidPage`.
-     *
-     * @param {AccountId32Like} validatorStash
-     * @param {number} era
-     **/
-    payoutStakers: GenericTxCall<
-      Rv,
-      (
-        validatorStash: AccountId32Like,
-        era: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'PayoutStakers';
-            params: { validatorStash: AccountId32Like; era: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Rebond a portion of the stash scheduled to be unlocked.
-     *
-     * The dispatch origin must be signed by the controller.
-     *
-     * @param {bigint} value
-     **/
-    rebond: GenericTxCall<
-      Rv,
-      (value: bigint) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'Rebond';
-            params: { value: bigint };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Remove all data structures concerning a staker/stash once it is at a state where it can
-     * be considered `dust` in the staking system. The requirements are:
-     *
-     * 1. the `total_balance` of the stash is below minimum bond.
-     * 2. or, the `ledger.total` of the stash is below minimum bond.
-     * 3. or, existential deposit is zero and either `total_balance` or `ledger.total` is zero.
-     *
-     * The former can happen in cases like a slash; the latter when a fully unbonded account
-     * is still receiving staking rewards in `RewardDestination::Staked`.
-     *
-     * It can be called by anyone, as long as `stash` meets the above requirements.
-     *
-     * Refunds the transaction fees upon successful execution.
-     *
-     * ## Parameters
-     *
-     * - `stash`: The stash account to be reaped.
-     * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
-     * compatibility. It no longer has any effect.
-     *
-     * @param {AccountId32Like} stash
-     * @param {number} numSlashingSpans
-     **/
-    reapStash: GenericTxCall<
-      Rv,
-      (
-        stash: AccountId32Like,
-        numSlashingSpans: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'ReapStash';
-            params: { stash: AccountId32Like; numSlashingSpans: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Remove the given nominations from the calling validator.
-     *
-     * Effects will be felt at the beginning of the next era.
-     *
-     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-     *
-     * - `who`: A list of nominator stash accounts who are nominating this validator which
-     * should no longer be nominating this validator.
-     *
-     * Note: Making this call only makes sense if you first set the validator preferences to
-     * block any further nominations.
-     *
-     * @param {Array<MultiAddressLike>} who
-     **/
-    kick: GenericTxCall<
-      Rv,
-      (who: Array<MultiAddressLike>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'Kick';
-            params: { who: Array<MultiAddressLike> };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Update the various staking configurations .
-     *
-     * * `min_nominator_bond`: The minimum active bond needed to be a nominator.
-     * * `min_validator_bond`: The minimum active bond needed to be a validator.
-     * * `max_nominator_count`: The max number of users who can be a nominator at once. When
-     * set to `None`, no limit is enforced.
-     * * `max_validator_count`: The max number of users who can be a validator at once. When
-     * set to `None`, no limit is enforced.
-     * * `chill_threshold`: The ratio of `max_nominator_count` or `max_validator_count` which
-     * should be filled in order for the `chill_other` transaction to work.
-     * * `min_commission`: The minimum amount of commission that each validators must maintain.
-     * This is checked only upon calling `validate`. Existing validators are not affected.
-     *
-     * RuntimeOrigin must be Root to call this function.
-     *
-     * NOTE: Existing nominators and validators will not be affected by this update.
-     * to kick people under the new limits, `chill_other` should be called.
-     *
-     * @param {PalletStakingAsyncPalletConfigOp} minNominatorBond
-     * @param {PalletStakingAsyncPalletConfigOp} minValidatorBond
-     * @param {PalletStakingAsyncPalletConfigOpU32} maxNominatorCount
-     * @param {PalletStakingAsyncPalletConfigOpU32} maxValidatorCount
-     * @param {PalletStakingAsyncPalletConfigOpPercent} chillThreshold
-     * @param {PalletStakingAsyncPalletConfigOpPerbill} minCommission
-     * @param {PalletStakingAsyncPalletConfigOpPercent} maxStakedRewards
-     **/
-    setStakingConfigs: GenericTxCall<
-      Rv,
-      (
-        minNominatorBond: PalletStakingAsyncPalletConfigOp,
-        minValidatorBond: PalletStakingAsyncPalletConfigOp,
-        maxNominatorCount: PalletStakingAsyncPalletConfigOpU32,
-        maxValidatorCount: PalletStakingAsyncPalletConfigOpU32,
-        chillThreshold: PalletStakingAsyncPalletConfigOpPercent,
-        minCommission: PalletStakingAsyncPalletConfigOpPerbill,
-        maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'SetStakingConfigs';
-            params: {
-              minNominatorBond: PalletStakingAsyncPalletConfigOp;
-              minValidatorBond: PalletStakingAsyncPalletConfigOp;
-              maxNominatorCount: PalletStakingAsyncPalletConfigOpU32;
-              maxValidatorCount: PalletStakingAsyncPalletConfigOpU32;
-              chillThreshold: PalletStakingAsyncPalletConfigOpPercent;
-              minCommission: PalletStakingAsyncPalletConfigOpPerbill;
-              maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
-            };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Declare a `controller` to stop participating as either a validator or nominator.
-     *
-     * Effects will be felt at the beginning of the next era.
-     *
-     * The dispatch origin for this call must be _Signed_, but can be called by anyone.
-     *
-     * If the caller is the same as the controller being targeted, then no further checks are
-     * enforced, and this function behaves just like `chill`.
-     *
-     * If the caller is different than the controller being targeted, the following conditions
-     * must be met:
-     *
-     * * `controller` must belong to a nominator who has become non-decodable,
-     *
-     * Or:
-     *
-     * * A `ChillThreshold` must be set and checked which defines how close to the max
-     * nominators or validators we must reach before users can start chilling one-another.
-     * * A `MaxNominatorCount` and `MaxValidatorCount` must be set which is used to determine
-     * how close we are to the threshold.
-     * * A `MinNominatorBond` and `MinValidatorBond` must be set and checked, which determines
-     * if this is a person that should be chilled because they have not met the threshold
-     * bond required.
-     *
-     * This can be helpful if bond requirements are updated, and we need to remove old users
-     * who do not satisfy these requirements.
-     *
-     * @param {AccountId32Like} stash
-     **/
-    chillOther: GenericTxCall<
-      Rv,
-      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'ChillOther';
-            params: { stash: AccountId32Like };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Force a validator to have at least the minimum commission. This will not affect a
-     * validator who already has a commission greater than or equal to the minimum. Any account
-     * can call this.
-     *
-     * @param {AccountId32Like} validatorStash
-     **/
-    forceApplyMinCommission: GenericTxCall<
-      Rv,
-      (validatorStash: AccountId32Like) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'ForceApplyMinCommission';
-            params: { validatorStash: AccountId32Like };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Sets the minimum amount of commission that each validators must maintain.
-     *
-     * This call has lower privilege requirements than `set_staking_config` and can be called
-     * by the `T::AdminOrigin`. Root can always call this.
-     *
-     * @param {Perbill} new_
-     **/
-    setMinCommission: GenericTxCall<
-      Rv,
-      (new_: Perbill) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'SetMinCommission';
-            params: { new: Perbill };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Pay out a page of the stakers behind a validator for the given era and page.
-     *
-     * - `validator_stash` is the stash account of the validator.
-     * - `era` may be any era between `[current_era - history_depth; current_era]`.
-     * - `page` is the page index of nominators to pay out with value between 0 and
-     * `num_nominators / T::MaxExposurePageSize`.
-     *
-     * The origin of this call must be _Signed_. Any account can call this function, even if
-     * it is not one of the stakers.
-     *
-     * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
-     * them, then the list of nominators is paged, with each page being capped at
-     * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
-     * the call needs to be made for each page separately in order for all the nominators
-     * backing a validator to receive the reward. The nominators are not sorted across pages
-     * and so it should not be assumed the highest staker would be on the topmost page and vice
-     * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
-     *
-     * @param {AccountId32Like} validatorStash
-     * @param {number} era
-     * @param {number} page
-     **/
-    payoutStakersByPage: GenericTxCall<
-      Rv,
-      (
-        validatorStash: AccountId32Like,
-        era: number,
-        page: number,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'PayoutStakersByPage';
-            params: { validatorStash: AccountId32Like; era: number; page: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Migrates an account's `RewardDestination::Controller` to
-     * `RewardDestination::Account(controller)`.
-     *
-     * Effects will be felt instantly (as soon as this function is completed successfully).
-     *
-     * This will waive the transaction fee if the `payee` is successfully migrated.
-     *
-     * @param {AccountId32Like} controller
-     **/
-    updatePayee: GenericTxCall<
-      Rv,
-      (controller: AccountId32Like) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'UpdatePayee';
-            params: { controller: AccountId32Like };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Updates a batch of controller accounts to their corresponding stash account if they are
-     * not the same. Ignores any controller accounts that do not exist, and does not operate if
-     * the stash and controller are already the same.
-     *
-     * Effects will be felt instantly (as soon as this function is completed successfully).
-     *
-     * The dispatch origin must be `T::AdminOrigin`.
-     *
-     * @param {Array<AccountId32Like>} controllers
-     **/
-    deprecateControllerBatch: GenericTxCall<
-      Rv,
-      (controllers: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'DeprecateControllerBatch';
-            params: { controllers: Array<AccountId32Like> };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Restores the state of a ledger which is in an inconsistent state.
-     *
-     * The requirements to restore a ledger are the following:
-     * * The stash is bonded; or
-     * * The stash is not bonded but it has a staking lock left behind; or
-     * * If the stash has an associated ledger and its state is inconsistent; or
-     * * If the ledger is not corrupted *but* its staking lock is out of sync.
-     *
-     * The `maybe_*` input parameters will overwrite the corresponding data and metadata of the
-     * ledger associated with the stash. If the input parameters are not set, the ledger will
-     * be reset values from on-chain state.
-     *
-     * @param {AccountId32Like} stash
-     * @param {AccountId32Like | undefined} maybeController
-     * @param {bigint | undefined} maybeTotal
-     * @param {Array<PalletStakingAsyncLedgerUnlockChunk> | undefined} maybeUnlocking
-     **/
-    restoreLedger: GenericTxCall<
-      Rv,
-      (
-        stash: AccountId32Like,
-        maybeController: AccountId32Like | undefined,
-        maybeTotal: bigint | undefined,
-        maybeUnlocking: Array<PalletStakingAsyncLedgerUnlockChunk> | undefined,
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'RestoreLedger';
-            params: {
-              stash: AccountId32Like;
-              maybeController: AccountId32Like | undefined;
-              maybeTotal: bigint | undefined;
-              maybeUnlocking: Array<PalletStakingAsyncLedgerUnlockChunk> | undefined;
-            };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Migrates permissionlessly a stash from locks to holds.
-     *
-     * This removes the old lock on the stake and creates a hold on it atomically. If all
-     * stake cannot be held, the best effort is made to hold as much as possible. The remaining
-     * stake is removed from the ledger.
-     *
-     * The fee is waived if the migration is successful.
-     *
-     * @param {AccountId32Like} stash
-     **/
-    migrateCurrency: GenericTxCall<
-      Rv,
-      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'MigrateCurrency';
-            params: { stash: AccountId32Like };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Manually and permissionlessly applies a deferred slash for a given era.
-     *
-     * Normally, slashes are automatically applied shortly after the start of the `slash_era`.
-     * The automatic application of slashes is handled by the pallet's internal logic, and it
-     * tries to apply one slash page per block of the era.
-     * If for some reason, one era is not enough for applying all slash pages, the remaining
-     * slashes need to be manually (permissionlessly) applied.
-     *
-     * For a given era x, if at era x+1, slashes are still unapplied, all withdrawals get
-     * blocked, and these need to be manually applied by calling this function.
-     * This function exists as a **fallback mechanism** for this extreme situation, but we
-     * never expect to encounter this in normal scenarios.
-     *
-     * The parameters for this call can be queried by looking at the `UnappliedSlashes` storage
-     * for eras older than the active era.
-     *
-     * ## Parameters
-     * - `slash_era`: The staking era in which the slash was originally scheduled.
-     * - `slash_key`: A unique identifier for the slash, represented as a tuple:
-     * - `stash`: The stash account of the validator being slashed.
-     * - `slash_fraction`: The fraction of the stake that was slashed.
-     * - `page_index`: The index of the exposure page being processed.
-     *
-     * ## Behavior
-     * - The function is **permissionless**—anyone can call it.
-     * - The `slash_era` **must be the current era or a past era**.
-     * If it is in the future, the
-     * call fails with `EraNotStarted`.
-     * - The fee is waived if the slash is successfully applied.
-     *
-     * ## Future Improvement
-     * - Implement an **off-chain worker (OCW) task** to automatically apply slashes when there
-     * is unused block space, improving efficiency.
-     *
-     * @param {number} slashEra
-     * @param {[AccountId32Like, Perbill, number]} slashKey
-     **/
-    applySlash: GenericTxCall<
-      Rv,
-      (
-        slashEra: number,
-        slashKey: [AccountId32Like, Perbill, number],
-      ) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'ApplySlash';
-            params: { slashEra: number; slashKey: [AccountId32Like, Perbill, number] };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Perform one step of era pruning to prevent PoV size exhaustion from unbounded deletions.
-     *
-     * This extrinsic enables permissionless lazy pruning of era data by performing
-     * incremental deletion of storage items. Each call processes a limited number
-     * of items based on available block weight to avoid exceeding block limits.
-     *
-     * Returns `Pays::No` when work is performed to incentivize regular maintenance.
-     * Anyone can call this to help maintain the chain's storage health.
-     *
-     * The era must be eligible for pruning (older than HistoryDepth + 1).
-     * Check `EraPruningState` storage to see if an era needs pruning before calling.
-     *
-     * @param {number} era
-     **/
-    pruneEraStep: GenericTxCall<
-      Rv,
-      (era: number) => ChainSubmittableExtrinsic<
-        Rv,
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'PruneEraStep';
-            params: { era: number };
-          };
-        }
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
-  };
-  /**
    * Pallet `NominationPools`'s transaction calls
    **/
   nominationPools: {
@@ -14122,23 +13231,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Called to report one or more new offenses on the relay chain.
      *
-     * @param {number} slashSession
-     * @param {Array<PalletStakingAsyncRcClientOffence>} offences
+     * @param {Array<[number, PalletStakingAsyncRcClientOffence]>} offences
      **/
-    relayNewOffence: GenericTxCall<
+    relayNewOffencePaged: GenericTxCall<
       Rv,
-      (
-        slashSession: number,
-        offences: Array<PalletStakingAsyncRcClientOffence>,
-      ) => ChainSubmittableExtrinsic<
+      (offences: Array<[number, PalletStakingAsyncRcClientOffence]>) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'StakingRcClient';
           palletCall: {
-            name: 'RelayNewOffence';
-            params: { slashSession: number; offences: Array<PalletStakingAsyncRcClientOffence> };
+            name: 'RelayNewOffencePaged';
+            params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> };
           };
         }
       >
@@ -14350,6 +13454,1431 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'SetInvulnerables';
             params: { inv: Array<AccountId32Like> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Staking`'s transaction calls
+   **/
+  staking: {
+    /**
+     * Take the origin account as a stash and lock up `value` of its balance. `controller` will
+     * be the account that controls it.
+     *
+     * `value` must be more than the `minimum_balance` specified by `T::Currency`.
+     *
+     * The dispatch origin for this call must be _Signed_ by the stash account.
+     *
+     * Emits `Bonded`.
+     *
+     * NOTE: Two of the storage writes (`Self::bonded`, `Self::payee`) are _never_ cleaned
+     * unless the `origin` falls below _existential deposit_ (or equal to 0) and gets removed
+     * as dust.
+     *
+     * @param {bigint} value
+     * @param {PalletStakingAsyncRewardDestination} payee
+     **/
+    bond: GenericTxCall<
+      Rv,
+      (
+        value: bigint,
+        payee: PalletStakingAsyncRewardDestination,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'Bond';
+            params: { value: bigint; payee: PalletStakingAsyncRewardDestination };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Add some extra amount that have appeared in the stash `free_balance` into the balance up
+     * for staking.
+     *
+     * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
+     *
+     * Use this if there are additional funds in your stash account that you wish to bond.
+     * Unlike [`bond`](Self::bond) or [`unbond`](Self::unbond) this function does not impose
+     * any limitation on the amount that can be added.
+     *
+     * Emits `Bonded`.
+     *
+     * @param {bigint} maxAdditional
+     **/
+    bondExtra: GenericTxCall<
+      Rv,
+      (maxAdditional: bigint) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'BondExtra';
+            params: { maxAdditional: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
+     * period ends. If this leaves an amount actively bonded less than
+     * [`asset::existential_deposit`], then it is increased to the full amount.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
+     * the funds out of management ready for transfer.
+     *
+     * No more than a limited number of unlocking chunks (see `MaxUnlockingChunks`)
+     * can co-exists at the same time. If there are no unlocking chunks slots available
+     * [`Call::withdraw_unbonded`] is called to remove some of the chunks (if possible).
+     *
+     * If a user encounters the `InsufficientBond` error when calling this extrinsic,
+     * they should call `chill` first in order to free up their bonded funds.
+     *
+     * Emits `Unbonded`.
+     *
+     * See also [`Call::withdraw_unbonded`].
+     *
+     * @param {bigint} value
+     **/
+    unbond: GenericTxCall<
+      Rv,
+      (value: bigint) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'Unbond';
+            params: { value: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove any stake that has been fully unbonded and is ready for withdrawal.
+     *
+     * Stake is considered fully unbonded once [`Config::BondingDuration`] has elapsed since
+     * the unbonding was initiated. In rare cases—such as when offences for the unbonded era
+     * have been reported but not yet processed—withdrawal is restricted to eras for which
+     * all offences have been processed.
+     *
+     * The unlocked stake will be returned as free balance in the stash account.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller.
+     *
+     * Emits `Withdrawn`.
+     *
+     * See also [`Call::unbond`].
+     *
+     * ## Parameters
+     *
+     * - `num_slashing_spans`: **Deprecated**. Retained only for backward compatibility; this
+     * parameter has no effect.
+     *
+     * @param {number} numSlashingSpans
+     **/
+    withdrawUnbonded: GenericTxCall<
+      Rv,
+      (numSlashingSpans: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'WithdrawUnbonded';
+            params: { numSlashingSpans: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Declare the desire to validate for the origin controller.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * @param {PalletStakingAsyncValidatorPrefs} prefs
+     **/
+    validate: GenericTxCall<
+      Rv,
+      (prefs: PalletStakingAsyncValidatorPrefs) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'Validate';
+            params: { prefs: PalletStakingAsyncValidatorPrefs };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Declare the desire to nominate `targets` for the origin controller.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * @param {Array<MultiAddressLike>} targets
+     **/
+    nominate: GenericTxCall<
+      Rv,
+      (targets: Array<MultiAddressLike>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'Nominate';
+            params: { targets: Array<MultiAddressLike> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Declare no desire to either validate or nominate.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * ## Complexity
+     * - Independent of the arguments. Insignificant complexity.
+     * - Contains one read.
+     * - Writes are limited to the `origin` account key.
+     *
+     **/
+    chill: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'Chill';
+          };
+        }
+      >
+    >;
+
+    /**
+     * (Re-)set the payment target for a controller.
+     *
+     * Effects will be felt instantly (as soon as this function is completed successfully).
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * @param {PalletStakingAsyncRewardDestination} payee
+     **/
+    setPayee: GenericTxCall<
+      Rv,
+      (payee: PalletStakingAsyncRewardDestination) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetPayee';
+            params: { payee: PalletStakingAsyncRewardDestination };
+          };
+        }
+      >
+    >;
+
+    /**
+     * (Re-)sets the controller of a stash to the stash itself. This function previously
+     * accepted a `controller` argument to set the controller to an account other than the
+     * stash itself. This functionality has now been removed, now only setting the controller
+     * to the stash, if it is not already.
+     *
+     * Effects will be felt instantly (as soon as this function is completed successfully).
+     *
+     * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
+     *
+     **/
+    setController: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetController';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Sets the ideal number of validators.
+     *
+     * The dispatch origin must be Root.
+     *
+     * @param {number} new_
+     **/
+    setValidatorCount: GenericTxCall<
+      Rv,
+      (new_: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetValidatorCount';
+            params: { new: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Increments the ideal number of validators up to maximum of
+     * `T::MaxValidatorSet`.
+     *
+     * The dispatch origin must be Root.
+     *
+     * @param {number} additional
+     **/
+    increaseValidatorCount: GenericTxCall<
+      Rv,
+      (additional: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'IncreaseValidatorCount';
+            params: { additional: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Scale up the ideal number of validators by a factor up to maximum of
+     * `T::MaxValidatorSet`.
+     *
+     * The dispatch origin must be Root.
+     *
+     * @param {Percent} factor
+     **/
+    scaleValidatorCount: GenericTxCall<
+      Rv,
+      (factor: Percent) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ScaleValidatorCount';
+            params: { factor: Percent };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force there to be no new eras indefinitely.
+     *
+     * The dispatch origin must be Root.
+     *
+     * # Warning
+     *
+     * The election process starts multiple blocks before the end of the era.
+     * Thus the election process may be ongoing when this is called. In this case the
+     * election will continue until the next era is triggered.
+     *
+     **/
+    forceNoEras: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ForceNoEras';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force there to be a new era at the end of the next session. After this, it will be
+     * reset to normal (non-forced) behaviour.
+     *
+     * The dispatch origin must be Root.
+     *
+     * # Warning
+     *
+     * The election process starts multiple blocks before the end of the era.
+     * If this is called just before a new era is triggered, the election process may not
+     * have enough blocks to get a result.
+     *
+     **/
+    forceNewEra: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ForceNewEra';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the validators who cannot be slashed (if any).
+     *
+     * The dispatch origin must be Root.
+     *
+     * @param {Array<AccountId32Like>} invulnerables
+     **/
+    setInvulnerables: GenericTxCall<
+      Rv,
+      (invulnerables: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetInvulnerables';
+            params: { invulnerables: Array<AccountId32Like> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force a current staker to become completely unstaked, immediately.
+     *
+     * The dispatch origin must be Root.
+     * ## Parameters
+     *
+     * - `stash`: The stash account to be unstaked.
+     * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
+     * compatibility. It no longer has any effect.
+     *
+     * @param {AccountId32Like} stash
+     * @param {number} numSlashingSpans
+     **/
+    forceUnstake: GenericTxCall<
+      Rv,
+      (
+        stash: AccountId32Like,
+        numSlashingSpans: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ForceUnstake';
+            params: { stash: AccountId32Like; numSlashingSpans: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force there to be a new era at the end of sessions indefinitely.
+     *
+     * The dispatch origin must be Root.
+     *
+     * # Warning
+     *
+     * The election process starts multiple blocks before the end of the era.
+     * If this is called just before a new era is triggered, the election process may not
+     * have enough blocks to get a result.
+     *
+     **/
+    forceNewEraAlways: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ForceNewEraAlways';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Cancels scheduled slashes for a given era before they are applied.
+     *
+     * This function allows `T::AdminOrigin` to cancel pending slashes for specified validators
+     * in a given era. The cancelled slashes are stored and will be checked when applying
+     * slashes.
+     *
+     * ## Parameters
+     * - `era`: The staking era for which slashes should be cancelled. This is the era where
+     * the slash would be applied, not the era in which the offence was committed.
+     * - `validator_slashes`: A list of validator stash accounts and their slash fractions to
+     * be cancelled.
+     *
+     * @param {number} era
+     * @param {Array<[AccountId32Like, Perbill]>} validatorSlashes
+     **/
+    cancelDeferredSlash: GenericTxCall<
+      Rv,
+      (
+        era: number,
+        validatorSlashes: Array<[AccountId32Like, Perbill]>,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'CancelDeferredSlash';
+            params: { era: number; validatorSlashes: Array<[AccountId32Like, Perbill]> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Pay out next page of the stakers behind a validator for the given era.
+     *
+     * - `validator_stash` is the stash account of the validator.
+     * - `era` may be any era between `[current_era - history_depth; current_era]`.
+     *
+     * The origin of this call must be _Signed_. Any account can call this function, even if
+     * it is not one of the stakers.
+     *
+     * The reward payout could be paged in case there are too many nominators backing the
+     * `validator_stash`. This call will payout unpaid pages in an ascending order. To claim a
+     * specific page, use `payout_stakers_by_page`.`
+     *
+     * If all pages are claimed, it returns an error `InvalidPage`.
+     *
+     * @param {AccountId32Like} validatorStash
+     * @param {number} era
+     **/
+    payoutStakers: GenericTxCall<
+      Rv,
+      (
+        validatorStash: AccountId32Like,
+        era: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'PayoutStakers';
+            params: { validatorStash: AccountId32Like; era: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Rebond a portion of the stash scheduled to be unlocked.
+     *
+     * The dispatch origin must be signed by the controller.
+     *
+     * @param {bigint} value
+     **/
+    rebond: GenericTxCall<
+      Rv,
+      (value: bigint) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'Rebond';
+            params: { value: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove all data structures concerning a staker/stash once it is at a state where it can
+     * be considered `dust` in the staking system. The requirements are:
+     *
+     * 1. the `total_balance` of the stash is below `min_chilled_bond` or is zero.
+     * 2. or, the `ledger.total` of the stash is below `min_chilled_bond` or is zero.
+     *
+     * The former can happen in cases like a slash; the latter when a fully unbonded account
+     * is still receiving staking rewards in `RewardDestination::Staked`.
+     *
+     * It can be called by anyone, as long as `stash` meets the above requirements.
+     *
+     * Refunds the transaction fees upon successful execution.
+     *
+     * ## Parameters
+     *
+     * - `stash`: The stash account to be reaped.
+     * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
+     * compatibility. It no longer has any effect.
+     *
+     * @param {AccountId32Like} stash
+     * @param {number} numSlashingSpans
+     **/
+    reapStash: GenericTxCall<
+      Rv,
+      (
+        stash: AccountId32Like,
+        numSlashingSpans: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ReapStash';
+            params: { stash: AccountId32Like; numSlashingSpans: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove the given nominations from the calling validator.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+     *
+     * - `who`: A list of nominator stash accounts who are nominating this validator which
+     * should no longer be nominating this validator.
+     *
+     * Note: Making this call only makes sense if you first set the validator preferences to
+     * block any further nominations.
+     *
+     * @param {Array<MultiAddressLike>} who
+     **/
+    kick: GenericTxCall<
+      Rv,
+      (who: Array<MultiAddressLike>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'Kick';
+            params: { who: Array<MultiAddressLike> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Update the various staking configurations .
+     *
+     * * `min_nominator_bond`: The minimum active bond needed to be a nominator.
+     * * `min_validator_bond`: The minimum active bond needed to be a validator.
+     * * `max_nominator_count`: The max number of users who can be a nominator at once. When
+     * set to `None`, no limit is enforced.
+     * * `max_validator_count`: The max number of users who can be a validator at once. When
+     * set to `None`, no limit is enforced.
+     * * `chill_threshold`: The ratio of `max_nominator_count` or `max_validator_count` which
+     * should be filled in order for the `chill_other` transaction to work.
+     * * `min_commission`: The minimum amount of commission that each validators must maintain.
+     * This is checked only upon calling `validate`. Existing validators are not affected.
+     *
+     * RuntimeOrigin must be Root to call this function.
+     *
+     * NOTE: Existing nominators and validators will not be affected by this update.
+     * to kick people under the new limits, `chill_other` should be called.
+     *
+     * @param {PalletStakingAsyncPalletConfigOp} minNominatorBond
+     * @param {PalletStakingAsyncPalletConfigOp} minValidatorBond
+     * @param {PalletStakingAsyncPalletConfigOpU32} maxNominatorCount
+     * @param {PalletStakingAsyncPalletConfigOpU32} maxValidatorCount
+     * @param {PalletStakingAsyncPalletConfigOpPercent} chillThreshold
+     * @param {PalletStakingAsyncPalletConfigOpPerbill} minCommission
+     * @param {PalletStakingAsyncPalletConfigOpPercent} maxStakedRewards
+     **/
+    setStakingConfigs: GenericTxCall<
+      Rv,
+      (
+        minNominatorBond: PalletStakingAsyncPalletConfigOp,
+        minValidatorBond: PalletStakingAsyncPalletConfigOp,
+        maxNominatorCount: PalletStakingAsyncPalletConfigOpU32,
+        maxValidatorCount: PalletStakingAsyncPalletConfigOpU32,
+        chillThreshold: PalletStakingAsyncPalletConfigOpPercent,
+        minCommission: PalletStakingAsyncPalletConfigOpPerbill,
+        maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetStakingConfigs';
+            params: {
+              minNominatorBond: PalletStakingAsyncPalletConfigOp;
+              minValidatorBond: PalletStakingAsyncPalletConfigOp;
+              maxNominatorCount: PalletStakingAsyncPalletConfigOpU32;
+              maxValidatorCount: PalletStakingAsyncPalletConfigOpU32;
+              chillThreshold: PalletStakingAsyncPalletConfigOpPercent;
+              minCommission: PalletStakingAsyncPalletConfigOpPerbill;
+              maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Declare a `controller` to stop participating as either a validator or nominator.
+     *
+     * Effects will be felt at the beginning of the next era.
+     *
+     * The dispatch origin for this call must be _Signed_, but can be called by anyone.
+     *
+     * If the caller is the same as the controller being targeted, then no further checks are
+     * enforced, and this function behaves just like `chill`.
+     *
+     * If the caller is different than the controller being targeted, the following conditions
+     * must be met:
+     *
+     * * `controller` must belong to a nominator who has become non-decodable,
+     *
+     * Or:
+     *
+     * * A `ChillThreshold` must be set and checked which defines how close to the max
+     * nominators or validators we must reach before users can start chilling one-another.
+     * * A `MaxNominatorCount` and `MaxValidatorCount` must be set which is used to determine
+     * how close we are to the threshold.
+     * * A `MinNominatorBond` and `MinValidatorBond` must be set and checked, which determines
+     * if this is a person that should be chilled because they have not met the threshold
+     * bond required.
+     *
+     * This can be helpful if bond requirements are updated, and we need to remove old users
+     * who do not satisfy these requirements.
+     *
+     * @param {AccountId32Like} stash
+     **/
+    chillOther: GenericTxCall<
+      Rv,
+      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ChillOther';
+            params: { stash: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Force a validator to have at least the minimum commission. This will not affect a
+     * validator who already has a commission greater than or equal to the minimum. Any account
+     * can call this.
+     *
+     * @param {AccountId32Like} validatorStash
+     **/
+    forceApplyMinCommission: GenericTxCall<
+      Rv,
+      (validatorStash: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ForceApplyMinCommission';
+            params: { validatorStash: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Sets the minimum amount of commission that each validators must maintain.
+     *
+     * This call has lower privilege requirements than `set_staking_config` and can be called
+     * by the `T::AdminOrigin`. Root can always call this.
+     *
+     * @param {Perbill} new_
+     **/
+    setMinCommission: GenericTxCall<
+      Rv,
+      (new_: Perbill) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetMinCommission';
+            params: { new: Perbill };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Pay out a page of the stakers behind a validator for the given era and page.
+     *
+     * - `validator_stash` is the stash account of the validator.
+     * - `era` may be any era between `[current_era - history_depth; current_era]`.
+     * - `page` is the page index of nominators to pay out with value between 0 and
+     * `num_nominators / T::MaxExposurePageSize`.
+     *
+     * The origin of this call must be _Signed_. Any account can call this function, even if
+     * it is not one of the stakers.
+     *
+     * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
+     * them, then the list of nominators is paged, with each page being capped at
+     * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+     * the call needs to be made for each page separately in order for all the nominators
+     * backing a validator to receive the reward. The nominators are not sorted across pages
+     * and so it should not be assumed the highest staker would be on the topmost page and vice
+     * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
+     *
+     * @param {AccountId32Like} validatorStash
+     * @param {number} era
+     * @param {number} page
+     **/
+    payoutStakersByPage: GenericTxCall<
+      Rv,
+      (
+        validatorStash: AccountId32Like,
+        era: number,
+        page: number,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'PayoutStakersByPage';
+            params: { validatorStash: AccountId32Like; era: number; page: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Migrates an account's `RewardDestination::Controller` to
+     * `RewardDestination::Account(controller)`.
+     *
+     * Effects will be felt instantly (as soon as this function is completed successfully).
+     *
+     * This will waive the transaction fee if the `payee` is successfully migrated.
+     *
+     * @param {AccountId32Like} controller
+     **/
+    updatePayee: GenericTxCall<
+      Rv,
+      (controller: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'UpdatePayee';
+            params: { controller: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Updates a batch of controller accounts to their corresponding stash account if they are
+     * not the same. Ignores any controller accounts that do not exist, and does not operate if
+     * the stash and controller are already the same.
+     *
+     * Effects will be felt instantly (as soon as this function is completed successfully).
+     *
+     * The dispatch origin must be `T::AdminOrigin`.
+     *
+     * @param {Array<AccountId32Like>} controllers
+     **/
+    deprecateControllerBatch: GenericTxCall<
+      Rv,
+      (controllers: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'DeprecateControllerBatch';
+            params: { controllers: Array<AccountId32Like> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Restores the state of a ledger which is in an inconsistent state.
+     *
+     * The requirements to restore a ledger are the following:
+     * * The stash is bonded; or
+     * * The stash is not bonded but it has a staking lock left behind; or
+     * * If the stash has an associated ledger and its state is inconsistent; or
+     * * If the ledger is not corrupted *but* its staking lock is out of sync.
+     *
+     * The `maybe_*` input parameters will overwrite the corresponding data and metadata of the
+     * ledger associated with the stash. If the input parameters are not set, the ledger will
+     * be reset values from on-chain state.
+     *
+     * @param {AccountId32Like} stash
+     * @param {AccountId32Like | undefined} maybeController
+     * @param {bigint | undefined} maybeTotal
+     * @param {Array<PalletStakingAsyncLedgerUnlockChunk> | undefined} maybeUnlocking
+     **/
+    restoreLedger: GenericTxCall<
+      Rv,
+      (
+        stash: AccountId32Like,
+        maybeController: AccountId32Like | undefined,
+        maybeTotal: bigint | undefined,
+        maybeUnlocking: Array<PalletStakingAsyncLedgerUnlockChunk> | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'RestoreLedger';
+            params: {
+              stash: AccountId32Like;
+              maybeController: AccountId32Like | undefined;
+              maybeTotal: bigint | undefined;
+              maybeUnlocking: Array<PalletStakingAsyncLedgerUnlockChunk> | undefined;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Migrates permissionlessly a stash from locks to holds.
+     *
+     * This removes the old lock on the stake and creates a hold on it atomically. If all
+     * stake cannot be held, the best effort is made to hold as much as possible. The remaining
+     * stake is removed from the ledger.
+     *
+     * The fee is waived if the migration is successful.
+     *
+     * @param {AccountId32Like} stash
+     **/
+    migrateCurrency: GenericTxCall<
+      Rv,
+      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'MigrateCurrency';
+            params: { stash: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Manually and permissionlessly applies a deferred slash for a given era.
+     *
+     * Normally, slashes are automatically applied shortly after the start of the `slash_era`.
+     * The automatic application of slashes is handled by the pallet's internal logic, and it
+     * tries to apply one slash page per block of the era.
+     * If for some reason, one era is not enough for applying all slash pages, the remaining
+     * slashes need to be manually (permissionlessly) applied.
+     *
+     * For a given era x, if at era x+1, slashes are still unapplied, all withdrawals get
+     * blocked, and these need to be manually applied by calling this function.
+     * This function exists as a **fallback mechanism** for this extreme situation, but we
+     * never expect to encounter this in normal scenarios.
+     *
+     * The parameters for this call can be queried by looking at the `UnappliedSlashes` storage
+     * for eras older than the active era.
+     *
+     * ## Parameters
+     * - `slash_era`: The staking era in which the slash was originally scheduled.
+     * - `slash_key`: A unique identifier for the slash, represented as a tuple:
+     * - `stash`: The stash account of the validator being slashed.
+     * - `slash_fraction`: The fraction of the stake that was slashed.
+     * - `page_index`: The index of the exposure page being processed.
+     *
+     * ## Behavior
+     * - The function is **permissionless**—anyone can call it.
+     * - The `slash_era` **must be the current era or a past era**.
+     * If it is in the future, the
+     * call fails with `EraNotStarted`.
+     * - The fee is waived if the slash is successfully applied.
+     *
+     * ## Future Improvement
+     * - Implement an **off-chain worker (OCW) task** to automatically apply slashes when there
+     * is unused block space, improving efficiency.
+     *
+     * @param {number} slashEra
+     * @param {[AccountId32Like, Perbill, number]} slashKey
+     **/
+    applySlash: GenericTxCall<
+      Rv,
+      (
+        slashEra: number,
+        slashKey: [AccountId32Like, Perbill, number],
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ApplySlash';
+            params: { slashEra: number; slashKey: [AccountId32Like, Perbill, number] };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Perform one step of era pruning to prevent PoV size exhaustion from unbounded deletions.
+     *
+     * This extrinsic enables permissionless lazy pruning of era data by performing
+     * incremental deletion of storage items. Each call processes a limited number
+     * of items based on available block weight to avoid exceeding block limits.
+     *
+     * Returns `Pays::No` when work is performed to incentivize regular maintenance.
+     * Anyone can call this to help maintain the chain's storage health.
+     *
+     * The era must be eligible for pruning (older than HistoryDepth + 1).
+     * Check `EraPruningState` storage to see if an era needs pruning before calling.
+     *
+     * @param {number} era
+     **/
+    pruneEraStep: GenericTxCall<
+      Rv,
+      (era: number) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'PruneEraStep';
+            params: { era: number };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Revive`'s transaction calls
+   **/
+  revive: {
+    /**
+     * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
+     *
+     * # Parameters
+     *
+     * * `payload`: The encoded [`crate::evm::TransactionSigned`].
+     * * `gas_limit`: The gas limit enforced during contract execution.
+     * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
+     * storage usage.
+     *
+     * # Note
+     *
+     * This call cannot be dispatched directly; attempting to do so will result in a failed
+     * transaction. It serves as a wrapper for an Ethereum transaction. When submitted, the
+     * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
+     * signer and validating the transaction.
+     *
+     * @param {BytesLike} payload
+     **/
+    ethTransact: GenericTxCall<
+      Rv,
+      (payload: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'EthTransact';
+            params: { payload: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Makes a call to an account, optionally transferring some balance.
+     *
+     * # Parameters
+     *
+     * * `dest`: Address of the contract to call.
+     * * `value`: The balance to transfer from the `origin` to `dest`.
+     * * `gas_limit`: The gas limit enforced when executing the constructor.
+     * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
+     * caller to pay for the storage consumed.
+     * * `data`: The input data to pass to the contract.
+     *
+     * * If the account is a smart-contract account, the associated code will be
+     * executed and any value will be transferred.
+     * * If the account is a regular account, any value will be transferred.
+     * * If no account exists and the call value is not less than `existential_deposit`,
+     * a regular account will be created and any value will be transferred.
+     *
+     * @param {H160} dest
+     * @param {bigint} value
+     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {bigint} storageDepositLimit
+     * @param {BytesLike} data
+     **/
+    call: GenericTxCall<
+      Rv,
+      (
+        dest: H160,
+        value: bigint,
+        gasLimit: SpWeightsWeightV2Weight,
+        storageDepositLimit: bigint,
+        data: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'Call';
+            params: {
+              dest: H160;
+              value: bigint;
+              gasLimit: SpWeightsWeightV2Weight;
+              storageDepositLimit: bigint;
+              data: BytesLike;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Instantiates a contract from a previously deployed vm binary.
+     *
+     * This function is identical to [`Self::instantiate_with_code`] but without the
+     * code deployment step. Instead, the `code_hash` of an on-chain deployed vm binary
+     * must be supplied.
+     *
+     * @param {bigint} value
+     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {bigint} storageDepositLimit
+     * @param {H256} codeHash
+     * @param {BytesLike} data
+     * @param {FixedBytes<32> | undefined} salt
+     **/
+    instantiate: GenericTxCall<
+      Rv,
+      (
+        value: bigint,
+        gasLimit: SpWeightsWeightV2Weight,
+        storageDepositLimit: bigint,
+        codeHash: H256,
+        data: BytesLike,
+        salt: FixedBytes<32> | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'Instantiate';
+            params: {
+              value: bigint;
+              gasLimit: SpWeightsWeightV2Weight;
+              storageDepositLimit: bigint;
+              codeHash: H256;
+              data: BytesLike;
+              salt: FixedBytes<32> | undefined;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Instantiates a new contract from the supplied `code` optionally transferring
+     * some balance.
+     *
+     * This dispatchable has the same effect as calling [`Self::upload_code`] +
+     * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
+     * also check the documentation of [`Self::upload_code`].
+     *
+     * # Parameters
+     *
+     * * `value`: The balance to transfer from the `origin` to the newly created contract.
+     * * `gas_limit`: The gas limit enforced when executing the constructor.
+     * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
+     * from the caller to pay for the storage consumed.
+     * * `code`: The contract code to deploy in raw bytes.
+     * * `data`: The input data to pass to the contract constructor.
+     * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
+     * semantics are used. If `None` then `CRATE1` is used.
+     *
+     *
+     * Instantiation is executed as follows:
+     *
+     * - The supplied `code` is deployed, and a `code_hash` is created for that code.
+     * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
+     * - The destination address is computed based on the sender, code_hash and the salt.
+     * - The smart-contract account is created at the computed address.
+     * - The `value` is transferred to the new account.
+     * - The `deploy` function is executed in the context of the newly-created account.
+     *
+     * @param {bigint} value
+     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {bigint} storageDepositLimit
+     * @param {BytesLike} code
+     * @param {BytesLike} data
+     * @param {FixedBytes<32> | undefined} salt
+     **/
+    instantiateWithCode: GenericTxCall<
+      Rv,
+      (
+        value: bigint,
+        gasLimit: SpWeightsWeightV2Weight,
+        storageDepositLimit: bigint,
+        code: BytesLike,
+        data: BytesLike,
+        salt: FixedBytes<32> | undefined,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'InstantiateWithCode';
+            params: {
+              value: bigint;
+              gasLimit: SpWeightsWeightV2Weight;
+              storageDepositLimit: bigint;
+              code: BytesLike;
+              data: BytesLike;
+              salt: FixedBytes<32> | undefined;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
+     * by an EVM transaction through the EVM compatibility layer.
+     *
+     * Calling this dispatchable ensures that the origin's nonce is bumped only once,
+     * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
+     * also bumps the nonce after contract instantiation, since it may be invoked multiple
+     * times within a batch call transaction.
+     *
+     * @param {U256} value
+     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {bigint} storageDepositLimit
+     * @param {BytesLike} code
+     * @param {BytesLike} data
+     **/
+    ethInstantiateWithCode: GenericTxCall<
+      Rv,
+      (
+        value: U256,
+        gasLimit: SpWeightsWeightV2Weight,
+        storageDepositLimit: bigint,
+        code: BytesLike,
+        data: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'EthInstantiateWithCode';
+            params: {
+              value: U256;
+              gasLimit: SpWeightsWeightV2Weight;
+              storageDepositLimit: bigint;
+              code: BytesLike;
+              data: BytesLike;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Same as [`Self::call`], but intended to be dispatched **only**
+     * by an EVM transaction through the EVM compatibility layer.
+     *
+     * @param {H160} dest
+     * @param {U256} value
+     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {bigint} storageDepositLimit
+     * @param {BytesLike} data
+     **/
+    ethCall: GenericTxCall<
+      Rv,
+      (
+        dest: H160,
+        value: U256,
+        gasLimit: SpWeightsWeightV2Weight,
+        storageDepositLimit: bigint,
+        data: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'EthCall';
+            params: {
+              dest: H160;
+              value: U256;
+              gasLimit: SpWeightsWeightV2Weight;
+              storageDepositLimit: bigint;
+              data: BytesLike;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Upload new `code` without instantiating a contract from it.
+     *
+     * If the code does not already exist a deposit is reserved from the caller
+     * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
+     * depends on the size of the supplied `code`.
+     *
+     * # Note
+     *
+     * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
+     * To avoid this situation a constructor could employ access control so that it can
+     * only be instantiated by permissioned entities. The same is true when uploading
+     * through [`Self::instantiate_with_code`].
+     *
+     * @param {BytesLike} code
+     * @param {bigint} storageDepositLimit
+     **/
+    uploadCode: GenericTxCall<
+      Rv,
+      (
+        code: BytesLike,
+        storageDepositLimit: bigint,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'UploadCode';
+            params: { code: BytesLike; storageDepositLimit: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Remove the code stored under `code_hash` and refund the deposit to its owner.
+     *
+     * A code can only be removed by its original uploader (its owner) and only if it is
+     * not used by any contract.
+     *
+     * @param {H256} codeHash
+     **/
+    removeCode: GenericTxCall<
+      Rv,
+      (codeHash: H256) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'RemoveCode';
+            params: { codeHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Privileged function that changes the code of an existing contract.
+     *
+     * This takes care of updating refcounts and all other necessary operations. Returns
+     * an error if either the `code_hash` or `dest` do not exist.
+     *
+     * # Note
+     *
+     * This does **not** change the address of the contract in question. This means
+     * that the contract address is no longer derived from its code hash after calling
+     * this dispatchable.
+     *
+     * @param {H160} dest
+     * @param {H256} codeHash
+     **/
+    setCode: GenericTxCall<
+      Rv,
+      (
+        dest: H160,
+        codeHash: H256,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'SetCode';
+            params: { dest: H160; codeHash: H256 };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Register the callers account id so that it can be used in contract interactions.
+     *
+     * This will error if the origin is already mapped or is a eth native `Address20`. It will
+     * take a deposit that can be released by calling [`Self::unmap_account`].
+     *
+     **/
+    mapAccount: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'MapAccount';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Unregister the callers account id in order to free the deposit.
+     *
+     * There is no reason to ever call this function other than freeing up the deposit.
+     * This is only useful when the account should no longer be used.
+     *
+     **/
+    unmapAccount: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'UnmapAccount';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Dispatch an `call` with the origin set to the callers fallback address.
+     *
+     * Every `AccountId32` can control its corresponding fallback account. The fallback account
+     * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
+     * recovery function in case an `AccountId20` was used without creating a mapping first.
+     *
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     **/
+    dispatchAsFallbackAccount: GenericTxCall<
+      Rv,
+      (call: AssetHubPaseoRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'DispatchAsFallbackAccount';
+            params: { call: AssetHubPaseoRuntimeRuntimeCallLike };
           };
         }
       >

@@ -3466,6 +3466,21 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * The manager multisig dispatched something.
+     **/
+    ManagerMultisigDispatched: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'ManagerMultisigDispatched',
+      { res: Result<[], DispatchError> }
+    >;
+
+    /**
+     * The manager multisig received a vote.
+     **/
+    ManagerMultisigVoted: GenericPalletEvent<Rv, 'RcMigrator', 'ManagerMultisigVoted', { votes: number }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;

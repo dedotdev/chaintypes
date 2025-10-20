@@ -7,9 +7,9 @@ import type {
   AccountId32,
   FixedBytes,
   Result,
+  Bytes,
   FixedArray,
   EthereumAddress,
-  Bytes,
   FixedU128,
   Permill,
   BytesLike,
@@ -18,9 +18,11 @@ import type {
   MultiAddressLike,
   AccountId32Like,
   EthereumAddressLike,
-  Percent,
   Perbill,
   PerU16,
+  Percent,
+  H160,
+  U256,
   UncheckedExtrinsic,
   Era,
   FixedI64,
@@ -59,6 +61,7 @@ export type AssetHubPaseoRuntimeRuntimeEvent =
   | { pallet: 'Preimage'; palletEvent: PalletPreimageEvent }
   | { pallet: 'Scheduler'; palletEvent: PalletSchedulerEvent }
   | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
+  | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent }
   | { pallet: 'Balances'; palletEvent: PalletBalancesEvent }
   | { pallet: 'TransactionPayment'; palletEvent: PalletTransactionPaymentEvent }
   | { pallet: 'AssetTxPayment'; palletEvent: PalletAssetConversionTxPaymentEvent }
@@ -90,7 +93,6 @@ export type AssetHubPaseoRuntimeRuntimeEvent =
   | { pallet: 'ChildBounties'; palletEvent: PalletChildBountiesEvent }
   | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
   | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent }
-  | { pallet: 'Staking'; palletEvent: PalletStakingAsyncPalletEvent }
   | { pallet: 'NominationPools'; palletEvent: PalletNominationPoolsEvent }
   | { pallet: 'VoterList'; palletEvent: PalletBagsListEvent }
   | { pallet: 'DelegatedStaking'; palletEvent: PalletDelegatedStakingEvent }
@@ -98,6 +100,8 @@ export type AssetHubPaseoRuntimeRuntimeEvent =
   | { pallet: 'MultiBlockElection'; palletEvent: PalletElectionProviderMultiBlockEvent }
   | { pallet: 'MultiBlockElectionVerifier'; palletEvent: PalletElectionProviderMultiBlockVerifierImplsPalletEvent }
   | { pallet: 'MultiBlockElectionSigned'; palletEvent: PalletElectionProviderMultiBlockSignedPalletEvent }
+  | { pallet: 'Staking'; palletEvent: PalletStakingAsyncPalletEvent }
+  | { pallet: 'Revive'; palletEvent: PalletReviveEvent }
   | { pallet: 'Sudo'; palletEvent: PalletSudoEvent }
   | { pallet: 'AhOps'; palletEvent: PalletAhOpsEvent }
   | { pallet: 'AhMigrator'; palletEvent: PalletAhMigratorEvent };
@@ -371,6 +375,117 @@ export type AssetHubPaseoRuntimeDynamicParamsSchedulerParametersValue =
 export type AssetHubPaseoRuntimeDynamicParamsMessageQueueParametersValue =
   | { type: 'MaxOnInitWeight'; value?: SpWeightsWeightV2Weight | undefined }
   | { type: 'MaxOnIdleWeight'; value?: SpWeightsWeightV2Weight | undefined };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletMigrationsEvent =
+  /**
+   * A Runtime upgrade started.
+   *
+   * Its end is indicated by `UpgradeCompleted` or `UpgradeFailed`.
+   **/
+  | {
+      name: 'UpgradeStarted';
+      data: {
+        /**
+         * The number of migrations that this upgrade contains.
+         *
+         * This can be used to design a progress indicator in combination with counting the
+         * `MigrationCompleted` and `MigrationSkipped` events.
+         **/
+        migrations: number;
+      };
+    }
+  /**
+   * The current runtime upgrade completed.
+   *
+   * This implies that all of its migrations completed successfully as well.
+   **/
+  | { name: 'UpgradeCompleted' }
+  /**
+   * Runtime upgrade failed.
+   *
+   * This is very bad and will require governance intervention.
+   **/
+  | { name: 'UpgradeFailed' }
+  /**
+   * A migration was skipped since it was already executed in the past.
+   **/
+  | {
+      name: 'MigrationSkipped';
+      data: {
+        /**
+         * The index of the skipped migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+      };
+    }
+  /**
+   * A migration progressed.
+   **/
+  | {
+      name: 'MigrationAdvanced';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * A Migration completed.
+   **/
+  | {
+      name: 'MigrationCompleted';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * A Migration failed.
+   *
+   * This implies that the whole upgrade failed and governance intervention is required.
+   **/
+  | {
+      name: 'MigrationFailed';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * The set of historical migrations has been cleared.
+   **/
+  | {
+      name: 'HistoricCleared';
+      data: {
+        /**
+         * Should be passed to `clear_historic` in a successive call.
+         **/
+        nextCursor?: Bytes | undefined;
+      };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -2863,6 +2978,7 @@ export type AssetHubPaseoRuntimeRuntimeCall =
   | { pallet: 'Preimage'; palletCall: PalletPreimageCall }
   | { pallet: 'Scheduler'; palletCall: PalletSchedulerCall }
   | { pallet: 'Parameters'; palletCall: PalletParametersCall }
+  | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCall }
   | { pallet: 'Balances'; palletCall: PalletBalancesCall }
   | { pallet: 'Vesting'; palletCall: PalletVestingCall }
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCall }
@@ -2892,7 +3008,6 @@ export type AssetHubPaseoRuntimeRuntimeCall =
   | { pallet: 'ChildBounties'; palletCall: PalletChildBountiesCall }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
   | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall }
-  | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCall }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
   | { pallet: 'VoterList'; palletCall: PalletBagsListCall }
   | { pallet: 'StakingRcClient'; palletCall: PalletStakingAsyncRcClientCall }
@@ -2900,6 +3015,8 @@ export type AssetHubPaseoRuntimeRuntimeCall =
   | { pallet: 'MultiBlockElectionVerifier'; palletCall: PalletElectionProviderMultiBlockVerifierImplsPalletCall }
   | { pallet: 'MultiBlockElectionUnsigned'; palletCall: PalletElectionProviderMultiBlockUnsignedPalletCall }
   | { pallet: 'MultiBlockElectionSigned'; palletCall: PalletElectionProviderMultiBlockSignedPalletCall }
+  | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCall }
+  | { pallet: 'Revive'; palletCall: PalletReviveCall }
   | { pallet: 'Sudo'; palletCall: PalletSudoCall }
   | { pallet: 'AhOps'; palletCall: PalletAhOpsCall }
   | { pallet: 'AhMigrator'; palletCall: PalletAhMigratorCall };
@@ -2912,6 +3029,7 @@ export type AssetHubPaseoRuntimeRuntimeCallLike =
   | { pallet: 'Preimage'; palletCall: PalletPreimageCallLike }
   | { pallet: 'Scheduler'; palletCall: PalletSchedulerCallLike }
   | { pallet: 'Parameters'; palletCall: PalletParametersCallLike }
+  | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCallLike }
   | { pallet: 'Balances'; palletCall: PalletBalancesCallLike }
   | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCallLike }
@@ -2941,7 +3059,6 @@ export type AssetHubPaseoRuntimeRuntimeCallLike =
   | { pallet: 'ChildBounties'; palletCall: PalletChildBountiesCallLike }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
   | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike }
-  | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCallLike }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
   | { pallet: 'VoterList'; palletCall: PalletBagsListCallLike }
   | { pallet: 'StakingRcClient'; palletCall: PalletStakingAsyncRcClientCallLike }
@@ -2949,6 +3066,8 @@ export type AssetHubPaseoRuntimeRuntimeCallLike =
   | { pallet: 'MultiBlockElectionVerifier'; palletCall: PalletElectionProviderMultiBlockVerifierImplsPalletCallLike }
   | { pallet: 'MultiBlockElectionUnsigned'; palletCall: PalletElectionProviderMultiBlockUnsignedPalletCallLike }
   | { pallet: 'MultiBlockElectionSigned'; palletCall: PalletElectionProviderMultiBlockSignedPalletCallLike }
+  | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCallLike }
+  | { pallet: 'Revive'; palletCall: PalletReviveCallLike }
   | { pallet: 'Sudo'; palletCall: PalletSudoCallLike }
   | { pallet: 'AhOps'; palletCall: PalletAhOpsCallLike }
   | { pallet: 'AhMigrator'; palletCall: PalletAhMigratorCallLike };
@@ -3595,6 +3714,93 @@ export type AssetHubPaseoRuntimeDynamicParamsMessageQueueParameters =
         SpWeightsWeightV2Weight | undefined | undefined,
       ];
     };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletMigrationsCall =
+  /**
+   * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+   *
+   * Should normally not be needed and is only in place as emergency measure. Note that
+   * restarting the migration process in this manner will not call the
+   * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+   **/
+  | { name: 'ForceSetCursor'; params: { cursor?: PalletMigrationsMigrationCursor | undefined } }
+  /**
+   * Allows root to set an active cursor to forcefully start/forward the migration process.
+   *
+   * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+   * `started_at` value to the next block number. Otherwise this would not be possible, since
+   * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+   * indicates that the current block number plus one should be used.
+   **/
+  | {
+      name: 'ForceSetActiveCursor';
+      params: { index: number; innerCursor?: Bytes | undefined; startedAt?: number | undefined };
+    }
+  /**
+   * Forces the onboarding of the migrations.
+   *
+   * This process happens automatically on a runtime upgrade. It is in place as an emergency
+   * measurement. The cursor needs to be `None` for this to succeed.
+   **/
+  | { name: 'ForceOnboardMbms' }
+  /**
+   * Clears the `Historic` set.
+   *
+   * `map_cursor` must be set to the last value that was returned by the
+   * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+   * way that will result in a sensible weight.
+   **/
+  | { name: 'ClearHistoric'; params: { selector: PalletMigrationsHistoricCleanupSelector } };
+
+export type PalletMigrationsCallLike =
+  /**
+   * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+   *
+   * Should normally not be needed and is only in place as emergency measure. Note that
+   * restarting the migration process in this manner will not call the
+   * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+   **/
+  | { name: 'ForceSetCursor'; params: { cursor?: PalletMigrationsMigrationCursor | undefined } }
+  /**
+   * Allows root to set an active cursor to forcefully start/forward the migration process.
+   *
+   * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+   * `started_at` value to the next block number. Otherwise this would not be possible, since
+   * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+   * indicates that the current block number plus one should be used.
+   **/
+  | {
+      name: 'ForceSetActiveCursor';
+      params: { index: number; innerCursor?: BytesLike | undefined; startedAt?: number | undefined };
+    }
+  /**
+   * Forces the onboarding of the migrations.
+   *
+   * This process happens automatically on a runtime upgrade. It is in place as an emergency
+   * measurement. The cursor needs to be `None` for this to succeed.
+   **/
+  | { name: 'ForceOnboardMbms' }
+  /**
+   * Clears the `Historic` set.
+   *
+   * `map_cursor` must be set to the last value that was returned by the
+   * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+   * way that will result in a sensible weight.
+   **/
+  | { name: 'ClearHistoric'; params: { selector: PalletMigrationsHistoricCleanupSelector } };
+
+export type PalletMigrationsMigrationCursor =
+  | { type: 'Active'; value: PalletMigrationsActiveCursor }
+  | { type: 'Stuck' };
+
+export type PalletMigrationsActiveCursor = { index: number; innerCursor?: Bytes | undefined; startedAt: number };
+
+export type PalletMigrationsHistoricCleanupSelector =
+  | { type: 'Specific'; value: Array<Bytes> }
+  | { type: 'Wildcard'; value: { limit?: number | undefined; previousCursor?: Bytes | undefined } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -14536,961 +14742,6 @@ export type PalletStateTrieMigrationProgress =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletStakingAsyncPalletCall =
-  /**
-   * Take the origin account as a stash and lock up `value` of its balance. `controller` will
-   * be the account that controls it.
-   *
-   * `value` must be more than the `minimum_balance` specified by `T::Currency`.
-   *
-   * The dispatch origin for this call must be _Signed_ by the stash account.
-   *
-   * Emits `Bonded`.
-   *
-   * NOTE: Two of the storage writes (`Self::bonded`, `Self::payee`) are _never_ cleaned
-   * unless the `origin` falls below _existential deposit_ (or equal to 0) and gets removed
-   * as dust.
-   **/
-  | { name: 'Bond'; params: { value: bigint; payee: PalletStakingAsyncRewardDestination } }
-  /**
-   * Add some extra amount that have appeared in the stash `free_balance` into the balance up
-   * for staking.
-   *
-   * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
-   *
-   * Use this if there are additional funds in your stash account that you wish to bond.
-   * Unlike [`bond`](Self::bond) or [`unbond`](Self::unbond) this function does not impose
-   * any limitation on the amount that can be added.
-   *
-   * Emits `Bonded`.
-   **/
-  | { name: 'BondExtra'; params: { maxAdditional: bigint } }
-  /**
-   * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
-   * period ends. If this leaves an amount actively bonded less than
-   * [`asset::existential_deposit`], then it is increased to the full amount.
-   *
-   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-   *
-   * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
-   * the funds out of management ready for transfer.
-   *
-   * No more than a limited number of unlocking chunks (see `MaxUnlockingChunks`)
-   * can co-exists at the same time. If there are no unlocking chunks slots available
-   * [`Call::withdraw_unbonded`] is called to remove some of the chunks (if possible).
-   *
-   * If a user encounters the `InsufficientBond` error when calling this extrinsic,
-   * they should call `chill` first in order to free up their bonded funds.
-   *
-   * Emits `Unbonded`.
-   *
-   * See also [`Call::withdraw_unbonded`].
-   **/
-  | { name: 'Unbond'; params: { value: bigint } }
-  /**
-   * Remove any stake that has been fully unbonded and is ready for withdrawal.
-   *
-   * Stake is considered fully unbonded once [`Config::BondingDuration`] has elapsed since
-   * the unbonding was initiated. In rare cases—such as when offences for the unbonded era
-   * have been reported but not yet processed—withdrawal is restricted to eras for which
-   * all offences have been processed.
-   *
-   * The unlocked stake will be returned as free balance in the stash account.
-   *
-   * The dispatch origin for this call must be _Signed_ by the controller.
-   *
-   * Emits `Withdrawn`.
-   *
-   * See also [`Call::unbond`].
-   *
-   * ## Parameters
-   *
-   * - `num_slashing_spans`: **Deprecated**. Retained only for backward compatibility; this
-   * parameter has no effect.
-   **/
-  | { name: 'WithdrawUnbonded'; params: { numSlashingSpans: number } }
-  /**
-   * Declare the desire to validate for the origin controller.
-   *
-   * Effects will be felt at the beginning of the next era.
-   *
-   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-   **/
-  | { name: 'Validate'; params: { prefs: PalletStakingAsyncValidatorPrefs } }
-  /**
-   * Declare the desire to nominate `targets` for the origin controller.
-   *
-   * Effects will be felt at the beginning of the next era.
-   *
-   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-   **/
-  | { name: 'Nominate'; params: { targets: Array<MultiAddress> } }
-  /**
-   * Declare no desire to either validate or nominate.
-   *
-   * Effects will be felt at the beginning of the next era.
-   *
-   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-   *
-   * ## Complexity
-   * - Independent of the arguments. Insignificant complexity.
-   * - Contains one read.
-   * - Writes are limited to the `origin` account key.
-   **/
-  | { name: 'Chill' }
-  /**
-   * (Re-)set the payment target for a controller.
-   *
-   * Effects will be felt instantly (as soon as this function is completed successfully).
-   *
-   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-   **/
-  | { name: 'SetPayee'; params: { payee: PalletStakingAsyncRewardDestination } }
-  /**
-   * (Re-)sets the controller of a stash to the stash itself. This function previously
-   * accepted a `controller` argument to set the controller to an account other than the
-   * stash itself. This functionality has now been removed, now only setting the controller
-   * to the stash, if it is not already.
-   *
-   * Effects will be felt instantly (as soon as this function is completed successfully).
-   *
-   * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
-   **/
-  | { name: 'SetController' }
-  /**
-   * Sets the ideal number of validators.
-   *
-   * The dispatch origin must be Root.
-   **/
-  | { name: 'SetValidatorCount'; params: { new: number } }
-  /**
-   * Increments the ideal number of validators up to maximum of
-   * `T::MaxValidatorSet`.
-   *
-   * The dispatch origin must be Root.
-   **/
-  | { name: 'IncreaseValidatorCount'; params: { additional: number } }
-  /**
-   * Scale up the ideal number of validators by a factor up to maximum of
-   * `T::MaxValidatorSet`.
-   *
-   * The dispatch origin must be Root.
-   **/
-  | { name: 'ScaleValidatorCount'; params: { factor: Percent } }
-  /**
-   * Force there to be no new eras indefinitely.
-   *
-   * The dispatch origin must be Root.
-   *
-   * # Warning
-   *
-   * The election process starts multiple blocks before the end of the era.
-   * Thus the election process may be ongoing when this is called. In this case the
-   * election will continue until the next era is triggered.
-   **/
-  | { name: 'ForceNoEras' }
-  /**
-   * Force there to be a new era at the end of the next session. After this, it will be
-   * reset to normal (non-forced) behaviour.
-   *
-   * The dispatch origin must be Root.
-   *
-   * # Warning
-   *
-   * The election process starts multiple blocks before the end of the era.
-   * If this is called just before a new era is triggered, the election process may not
-   * have enough blocks to get a result.
-   **/
-  | { name: 'ForceNewEra' }
-  /**
-   * Set the validators who cannot be slashed (if any).
-   *
-   * The dispatch origin must be Root.
-   **/
-  | { name: 'SetInvulnerables'; params: { invulnerables: Array<AccountId32> } }
-  /**
-   * Force a current staker to become completely unstaked, immediately.
-   *
-   * The dispatch origin must be Root.
-   * ## Parameters
-   *
-   * - `stash`: The stash account to be unstaked.
-   * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
-   * compatibility. It no longer has any effect.
-   **/
-  | { name: 'ForceUnstake'; params: { stash: AccountId32; numSlashingSpans: number } }
-  /**
-   * Force there to be a new era at the end of sessions indefinitely.
-   *
-   * The dispatch origin must be Root.
-   *
-   * # Warning
-   *
-   * The election process starts multiple blocks before the end of the era.
-   * If this is called just before a new era is triggered, the election process may not
-   * have enough blocks to get a result.
-   **/
-  | { name: 'ForceNewEraAlways' }
-  /**
-   * Cancels scheduled slashes for a given era before they are applied.
-   *
-   * This function allows `T::AdminOrigin` to cancel pending slashes for specified validators
-   * in a given era. The cancelled slashes are stored and will be checked when applying
-   * slashes.
-   *
-   * ## Parameters
-   * - `era`: The staking era for which slashes should be cancelled. This is the era where
-   * the slash would be applied, not the era in which the offence was committed.
-   * - `validator_slashes`: A list of validator stash accounts and their slash fractions to
-   * be cancelled.
-   **/
-  | { name: 'CancelDeferredSlash'; params: { era: number; validatorSlashes: Array<[AccountId32, Perbill]> } }
-  /**
-   * Pay out next page of the stakers behind a validator for the given era.
-   *
-   * - `validator_stash` is the stash account of the validator.
-   * - `era` may be any era between `[current_era - history_depth; current_era]`.
-   *
-   * The origin of this call must be _Signed_. Any account can call this function, even if
-   * it is not one of the stakers.
-   *
-   * The reward payout could be paged in case there are too many nominators backing the
-   * `validator_stash`. This call will payout unpaid pages in an ascending order. To claim a
-   * specific page, use `payout_stakers_by_page`.`
-   *
-   * If all pages are claimed, it returns an error `InvalidPage`.
-   **/
-  | { name: 'PayoutStakers'; params: { validatorStash: AccountId32; era: number } }
-  /**
-   * Rebond a portion of the stash scheduled to be unlocked.
-   *
-   * The dispatch origin must be signed by the controller.
-   **/
-  | { name: 'Rebond'; params: { value: bigint } }
-  /**
-   * Remove all data structures concerning a staker/stash once it is at a state where it can
-   * be considered `dust` in the staking system. The requirements are:
-   *
-   * 1. the `total_balance` of the stash is below minimum bond.
-   * 2. or, the `ledger.total` of the stash is below minimum bond.
-   * 3. or, existential deposit is zero and either `total_balance` or `ledger.total` is zero.
-   *
-   * The former can happen in cases like a slash; the latter when a fully unbonded account
-   * is still receiving staking rewards in `RewardDestination::Staked`.
-   *
-   * It can be called by anyone, as long as `stash` meets the above requirements.
-   *
-   * Refunds the transaction fees upon successful execution.
-   *
-   * ## Parameters
-   *
-   * - `stash`: The stash account to be reaped.
-   * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
-   * compatibility. It no longer has any effect.
-   **/
-  | { name: 'ReapStash'; params: { stash: AccountId32; numSlashingSpans: number } }
-  /**
-   * Remove the given nominations from the calling validator.
-   *
-   * Effects will be felt at the beginning of the next era.
-   *
-   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-   *
-   * - `who`: A list of nominator stash accounts who are nominating this validator which
-   * should no longer be nominating this validator.
-   *
-   * Note: Making this call only makes sense if you first set the validator preferences to
-   * block any further nominations.
-   **/
-  | { name: 'Kick'; params: { who: Array<MultiAddress> } }
-  /**
-   * Update the various staking configurations .
-   *
-   * * `min_nominator_bond`: The minimum active bond needed to be a nominator.
-   * * `min_validator_bond`: The minimum active bond needed to be a validator.
-   * * `max_nominator_count`: The max number of users who can be a nominator at once. When
-   * set to `None`, no limit is enforced.
-   * * `max_validator_count`: The max number of users who can be a validator at once. When
-   * set to `None`, no limit is enforced.
-   * * `chill_threshold`: The ratio of `max_nominator_count` or `max_validator_count` which
-   * should be filled in order for the `chill_other` transaction to work.
-   * * `min_commission`: The minimum amount of commission that each validators must maintain.
-   * This is checked only upon calling `validate`. Existing validators are not affected.
-   *
-   * RuntimeOrigin must be Root to call this function.
-   *
-   * NOTE: Existing nominators and validators will not be affected by this update.
-   * to kick people under the new limits, `chill_other` should be called.
-   **/
-  | {
-      name: 'SetStakingConfigs';
-      params: {
-        minNominatorBond: PalletStakingAsyncPalletConfigOp;
-        minValidatorBond: PalletStakingAsyncPalletConfigOp;
-        maxNominatorCount: PalletStakingAsyncPalletConfigOpU32;
-        maxValidatorCount: PalletStakingAsyncPalletConfigOpU32;
-        chillThreshold: PalletStakingAsyncPalletConfigOpPercent;
-        minCommission: PalletStakingAsyncPalletConfigOpPerbill;
-        maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
-      };
-    }
-  /**
-   * Declare a `controller` to stop participating as either a validator or nominator.
-   *
-   * Effects will be felt at the beginning of the next era.
-   *
-   * The dispatch origin for this call must be _Signed_, but can be called by anyone.
-   *
-   * If the caller is the same as the controller being targeted, then no further checks are
-   * enforced, and this function behaves just like `chill`.
-   *
-   * If the caller is different than the controller being targeted, the following conditions
-   * must be met:
-   *
-   * * `controller` must belong to a nominator who has become non-decodable,
-   *
-   * Or:
-   *
-   * * A `ChillThreshold` must be set and checked which defines how close to the max
-   * nominators or validators we must reach before users can start chilling one-another.
-   * * A `MaxNominatorCount` and `MaxValidatorCount` must be set which is used to determine
-   * how close we are to the threshold.
-   * * A `MinNominatorBond` and `MinValidatorBond` must be set and checked, which determines
-   * if this is a person that should be chilled because they have not met the threshold
-   * bond required.
-   *
-   * This can be helpful if bond requirements are updated, and we need to remove old users
-   * who do not satisfy these requirements.
-   **/
-  | { name: 'ChillOther'; params: { stash: AccountId32 } }
-  /**
-   * Force a validator to have at least the minimum commission. This will not affect a
-   * validator who already has a commission greater than or equal to the minimum. Any account
-   * can call this.
-   **/
-  | { name: 'ForceApplyMinCommission'; params: { validatorStash: AccountId32 } }
-  /**
-   * Sets the minimum amount of commission that each validators must maintain.
-   *
-   * This call has lower privilege requirements than `set_staking_config` and can be called
-   * by the `T::AdminOrigin`. Root can always call this.
-   **/
-  | { name: 'SetMinCommission'; params: { new: Perbill } }
-  /**
-   * Pay out a page of the stakers behind a validator for the given era and page.
-   *
-   * - `validator_stash` is the stash account of the validator.
-   * - `era` may be any era between `[current_era - history_depth; current_era]`.
-   * - `page` is the page index of nominators to pay out with value between 0 and
-   * `num_nominators / T::MaxExposurePageSize`.
-   *
-   * The origin of this call must be _Signed_. Any account can call this function, even if
-   * it is not one of the stakers.
-   *
-   * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
-   * them, then the list of nominators is paged, with each page being capped at
-   * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
-   * the call needs to be made for each page separately in order for all the nominators
-   * backing a validator to receive the reward. The nominators are not sorted across pages
-   * and so it should not be assumed the highest staker would be on the topmost page and vice
-   * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
-   **/
-  | { name: 'PayoutStakersByPage'; params: { validatorStash: AccountId32; era: number; page: number } }
-  /**
-   * Migrates an account's `RewardDestination::Controller` to
-   * `RewardDestination::Account(controller)`.
-   *
-   * Effects will be felt instantly (as soon as this function is completed successfully).
-   *
-   * This will waive the transaction fee if the `payee` is successfully migrated.
-   **/
-  | { name: 'UpdatePayee'; params: { controller: AccountId32 } }
-  /**
-   * Updates a batch of controller accounts to their corresponding stash account if they are
-   * not the same. Ignores any controller accounts that do not exist, and does not operate if
-   * the stash and controller are already the same.
-   *
-   * Effects will be felt instantly (as soon as this function is completed successfully).
-   *
-   * The dispatch origin must be `T::AdminOrigin`.
-   **/
-  | { name: 'DeprecateControllerBatch'; params: { controllers: Array<AccountId32> } }
-  /**
-   * Restores the state of a ledger which is in an inconsistent state.
-   *
-   * The requirements to restore a ledger are the following:
-   * * The stash is bonded; or
-   * * The stash is not bonded but it has a staking lock left behind; or
-   * * If the stash has an associated ledger and its state is inconsistent; or
-   * * If the ledger is not corrupted *but* its staking lock is out of sync.
-   *
-   * The `maybe_*` input parameters will overwrite the corresponding data and metadata of the
-   * ledger associated with the stash. If the input parameters are not set, the ledger will
-   * be reset values from on-chain state.
-   **/
-  | {
-      name: 'RestoreLedger';
-      params: {
-        stash: AccountId32;
-        maybeController?: AccountId32 | undefined;
-        maybeTotal?: bigint | undefined;
-        maybeUnlocking?: Array<PalletStakingAsyncLedgerUnlockChunk> | undefined;
-      };
-    }
-  /**
-   * Migrates permissionlessly a stash from locks to holds.
-   *
-   * This removes the old lock on the stake and creates a hold on it atomically. If all
-   * stake cannot be held, the best effort is made to hold as much as possible. The remaining
-   * stake is removed from the ledger.
-   *
-   * The fee is waived if the migration is successful.
-   **/
-  | { name: 'MigrateCurrency'; params: { stash: AccountId32 } }
-  /**
-   * Manually and permissionlessly applies a deferred slash for a given era.
-   *
-   * Normally, slashes are automatically applied shortly after the start of the `slash_era`.
-   * The automatic application of slashes is handled by the pallet's internal logic, and it
-   * tries to apply one slash page per block of the era.
-   * If for some reason, one era is not enough for applying all slash pages, the remaining
-   * slashes need to be manually (permissionlessly) applied.
-   *
-   * For a given era x, if at era x+1, slashes are still unapplied, all withdrawals get
-   * blocked, and these need to be manually applied by calling this function.
-   * This function exists as a **fallback mechanism** for this extreme situation, but we
-   * never expect to encounter this in normal scenarios.
-   *
-   * The parameters for this call can be queried by looking at the `UnappliedSlashes` storage
-   * for eras older than the active era.
-   *
-   * ## Parameters
-   * - `slash_era`: The staking era in which the slash was originally scheduled.
-   * - `slash_key`: A unique identifier for the slash, represented as a tuple:
-   * - `stash`: The stash account of the validator being slashed.
-   * - `slash_fraction`: The fraction of the stake that was slashed.
-   * - `page_index`: The index of the exposure page being processed.
-   *
-   * ## Behavior
-   * - The function is **permissionless**—anyone can call it.
-   * - The `slash_era` **must be the current era or a past era**.
-   * If it is in the future, the
-   * call fails with `EraNotStarted`.
-   * - The fee is waived if the slash is successfully applied.
-   *
-   * ## Future Improvement
-   * - Implement an **off-chain worker (OCW) task** to automatically apply slashes when there
-   * is unused block space, improving efficiency.
-   **/
-  | { name: 'ApplySlash'; params: { slashEra: number; slashKey: [AccountId32, Perbill, number] } }
-  /**
-   * Perform one step of era pruning to prevent PoV size exhaustion from unbounded deletions.
-   *
-   * This extrinsic enables permissionless lazy pruning of era data by performing
-   * incremental deletion of storage items. Each call processes a limited number
-   * of items based on available block weight to avoid exceeding block limits.
-   *
-   * Returns `Pays::No` when work is performed to incentivize regular maintenance.
-   * Anyone can call this to help maintain the chain's storage health.
-   *
-   * The era must be eligible for pruning (older than HistoryDepth + 1).
-   * Check `EraPruningState` storage to see if an era needs pruning before calling.
-   **/
-  | { name: 'PruneEraStep'; params: { era: number } };
-
-export type PalletStakingAsyncPalletCallLike =
-  /**
-   * Take the origin account as a stash and lock up `value` of its balance. `controller` will
-   * be the account that controls it.
-   *
-   * `value` must be more than the `minimum_balance` specified by `T::Currency`.
-   *
-   * The dispatch origin for this call must be _Signed_ by the stash account.
-   *
-   * Emits `Bonded`.
-   *
-   * NOTE: Two of the storage writes (`Self::bonded`, `Self::payee`) are _never_ cleaned
-   * unless the `origin` falls below _existential deposit_ (or equal to 0) and gets removed
-   * as dust.
-   **/
-  | { name: 'Bond'; params: { value: bigint; payee: PalletStakingAsyncRewardDestination } }
-  /**
-   * Add some extra amount that have appeared in the stash `free_balance` into the balance up
-   * for staking.
-   *
-   * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
-   *
-   * Use this if there are additional funds in your stash account that you wish to bond.
-   * Unlike [`bond`](Self::bond) or [`unbond`](Self::unbond) this function does not impose
-   * any limitation on the amount that can be added.
-   *
-   * Emits `Bonded`.
-   **/
-  | { name: 'BondExtra'; params: { maxAdditional: bigint } }
-  /**
-   * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
-   * period ends. If this leaves an amount actively bonded less than
-   * [`asset::existential_deposit`], then it is increased to the full amount.
-   *
-   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-   *
-   * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
-   * the funds out of management ready for transfer.
-   *
-   * No more than a limited number of unlocking chunks (see `MaxUnlockingChunks`)
-   * can co-exists at the same time. If there are no unlocking chunks slots available
-   * [`Call::withdraw_unbonded`] is called to remove some of the chunks (if possible).
-   *
-   * If a user encounters the `InsufficientBond` error when calling this extrinsic,
-   * they should call `chill` first in order to free up their bonded funds.
-   *
-   * Emits `Unbonded`.
-   *
-   * See also [`Call::withdraw_unbonded`].
-   **/
-  | { name: 'Unbond'; params: { value: bigint } }
-  /**
-   * Remove any stake that has been fully unbonded and is ready for withdrawal.
-   *
-   * Stake is considered fully unbonded once [`Config::BondingDuration`] has elapsed since
-   * the unbonding was initiated. In rare cases—such as when offences for the unbonded era
-   * have been reported but not yet processed—withdrawal is restricted to eras for which
-   * all offences have been processed.
-   *
-   * The unlocked stake will be returned as free balance in the stash account.
-   *
-   * The dispatch origin for this call must be _Signed_ by the controller.
-   *
-   * Emits `Withdrawn`.
-   *
-   * See also [`Call::unbond`].
-   *
-   * ## Parameters
-   *
-   * - `num_slashing_spans`: **Deprecated**. Retained only for backward compatibility; this
-   * parameter has no effect.
-   **/
-  | { name: 'WithdrawUnbonded'; params: { numSlashingSpans: number } }
-  /**
-   * Declare the desire to validate for the origin controller.
-   *
-   * Effects will be felt at the beginning of the next era.
-   *
-   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-   **/
-  | { name: 'Validate'; params: { prefs: PalletStakingAsyncValidatorPrefs } }
-  /**
-   * Declare the desire to nominate `targets` for the origin controller.
-   *
-   * Effects will be felt at the beginning of the next era.
-   *
-   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-   **/
-  | { name: 'Nominate'; params: { targets: Array<MultiAddressLike> } }
-  /**
-   * Declare no desire to either validate or nominate.
-   *
-   * Effects will be felt at the beginning of the next era.
-   *
-   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-   *
-   * ## Complexity
-   * - Independent of the arguments. Insignificant complexity.
-   * - Contains one read.
-   * - Writes are limited to the `origin` account key.
-   **/
-  | { name: 'Chill' }
-  /**
-   * (Re-)set the payment target for a controller.
-   *
-   * Effects will be felt instantly (as soon as this function is completed successfully).
-   *
-   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-   **/
-  | { name: 'SetPayee'; params: { payee: PalletStakingAsyncRewardDestination } }
-  /**
-   * (Re-)sets the controller of a stash to the stash itself. This function previously
-   * accepted a `controller` argument to set the controller to an account other than the
-   * stash itself. This functionality has now been removed, now only setting the controller
-   * to the stash, if it is not already.
-   *
-   * Effects will be felt instantly (as soon as this function is completed successfully).
-   *
-   * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
-   **/
-  | { name: 'SetController' }
-  /**
-   * Sets the ideal number of validators.
-   *
-   * The dispatch origin must be Root.
-   **/
-  | { name: 'SetValidatorCount'; params: { new: number } }
-  /**
-   * Increments the ideal number of validators up to maximum of
-   * `T::MaxValidatorSet`.
-   *
-   * The dispatch origin must be Root.
-   **/
-  | { name: 'IncreaseValidatorCount'; params: { additional: number } }
-  /**
-   * Scale up the ideal number of validators by a factor up to maximum of
-   * `T::MaxValidatorSet`.
-   *
-   * The dispatch origin must be Root.
-   **/
-  | { name: 'ScaleValidatorCount'; params: { factor: Percent } }
-  /**
-   * Force there to be no new eras indefinitely.
-   *
-   * The dispatch origin must be Root.
-   *
-   * # Warning
-   *
-   * The election process starts multiple blocks before the end of the era.
-   * Thus the election process may be ongoing when this is called. In this case the
-   * election will continue until the next era is triggered.
-   **/
-  | { name: 'ForceNoEras' }
-  /**
-   * Force there to be a new era at the end of the next session. After this, it will be
-   * reset to normal (non-forced) behaviour.
-   *
-   * The dispatch origin must be Root.
-   *
-   * # Warning
-   *
-   * The election process starts multiple blocks before the end of the era.
-   * If this is called just before a new era is triggered, the election process may not
-   * have enough blocks to get a result.
-   **/
-  | { name: 'ForceNewEra' }
-  /**
-   * Set the validators who cannot be slashed (if any).
-   *
-   * The dispatch origin must be Root.
-   **/
-  | { name: 'SetInvulnerables'; params: { invulnerables: Array<AccountId32Like> } }
-  /**
-   * Force a current staker to become completely unstaked, immediately.
-   *
-   * The dispatch origin must be Root.
-   * ## Parameters
-   *
-   * - `stash`: The stash account to be unstaked.
-   * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
-   * compatibility. It no longer has any effect.
-   **/
-  | { name: 'ForceUnstake'; params: { stash: AccountId32Like; numSlashingSpans: number } }
-  /**
-   * Force there to be a new era at the end of sessions indefinitely.
-   *
-   * The dispatch origin must be Root.
-   *
-   * # Warning
-   *
-   * The election process starts multiple blocks before the end of the era.
-   * If this is called just before a new era is triggered, the election process may not
-   * have enough blocks to get a result.
-   **/
-  | { name: 'ForceNewEraAlways' }
-  /**
-   * Cancels scheduled slashes for a given era before they are applied.
-   *
-   * This function allows `T::AdminOrigin` to cancel pending slashes for specified validators
-   * in a given era. The cancelled slashes are stored and will be checked when applying
-   * slashes.
-   *
-   * ## Parameters
-   * - `era`: The staking era for which slashes should be cancelled. This is the era where
-   * the slash would be applied, not the era in which the offence was committed.
-   * - `validator_slashes`: A list of validator stash accounts and their slash fractions to
-   * be cancelled.
-   **/
-  | { name: 'CancelDeferredSlash'; params: { era: number; validatorSlashes: Array<[AccountId32Like, Perbill]> } }
-  /**
-   * Pay out next page of the stakers behind a validator for the given era.
-   *
-   * - `validator_stash` is the stash account of the validator.
-   * - `era` may be any era between `[current_era - history_depth; current_era]`.
-   *
-   * The origin of this call must be _Signed_. Any account can call this function, even if
-   * it is not one of the stakers.
-   *
-   * The reward payout could be paged in case there are too many nominators backing the
-   * `validator_stash`. This call will payout unpaid pages in an ascending order. To claim a
-   * specific page, use `payout_stakers_by_page`.`
-   *
-   * If all pages are claimed, it returns an error `InvalidPage`.
-   **/
-  | { name: 'PayoutStakers'; params: { validatorStash: AccountId32Like; era: number } }
-  /**
-   * Rebond a portion of the stash scheduled to be unlocked.
-   *
-   * The dispatch origin must be signed by the controller.
-   **/
-  | { name: 'Rebond'; params: { value: bigint } }
-  /**
-   * Remove all data structures concerning a staker/stash once it is at a state where it can
-   * be considered `dust` in the staking system. The requirements are:
-   *
-   * 1. the `total_balance` of the stash is below minimum bond.
-   * 2. or, the `ledger.total` of the stash is below minimum bond.
-   * 3. or, existential deposit is zero and either `total_balance` or `ledger.total` is zero.
-   *
-   * The former can happen in cases like a slash; the latter when a fully unbonded account
-   * is still receiving staking rewards in `RewardDestination::Staked`.
-   *
-   * It can be called by anyone, as long as `stash` meets the above requirements.
-   *
-   * Refunds the transaction fees upon successful execution.
-   *
-   * ## Parameters
-   *
-   * - `stash`: The stash account to be reaped.
-   * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
-   * compatibility. It no longer has any effect.
-   **/
-  | { name: 'ReapStash'; params: { stash: AccountId32Like; numSlashingSpans: number } }
-  /**
-   * Remove the given nominations from the calling validator.
-   *
-   * Effects will be felt at the beginning of the next era.
-   *
-   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-   *
-   * - `who`: A list of nominator stash accounts who are nominating this validator which
-   * should no longer be nominating this validator.
-   *
-   * Note: Making this call only makes sense if you first set the validator preferences to
-   * block any further nominations.
-   **/
-  | { name: 'Kick'; params: { who: Array<MultiAddressLike> } }
-  /**
-   * Update the various staking configurations .
-   *
-   * * `min_nominator_bond`: The minimum active bond needed to be a nominator.
-   * * `min_validator_bond`: The minimum active bond needed to be a validator.
-   * * `max_nominator_count`: The max number of users who can be a nominator at once. When
-   * set to `None`, no limit is enforced.
-   * * `max_validator_count`: The max number of users who can be a validator at once. When
-   * set to `None`, no limit is enforced.
-   * * `chill_threshold`: The ratio of `max_nominator_count` or `max_validator_count` which
-   * should be filled in order for the `chill_other` transaction to work.
-   * * `min_commission`: The minimum amount of commission that each validators must maintain.
-   * This is checked only upon calling `validate`. Existing validators are not affected.
-   *
-   * RuntimeOrigin must be Root to call this function.
-   *
-   * NOTE: Existing nominators and validators will not be affected by this update.
-   * to kick people under the new limits, `chill_other` should be called.
-   **/
-  | {
-      name: 'SetStakingConfigs';
-      params: {
-        minNominatorBond: PalletStakingAsyncPalletConfigOp;
-        minValidatorBond: PalletStakingAsyncPalletConfigOp;
-        maxNominatorCount: PalletStakingAsyncPalletConfigOpU32;
-        maxValidatorCount: PalletStakingAsyncPalletConfigOpU32;
-        chillThreshold: PalletStakingAsyncPalletConfigOpPercent;
-        minCommission: PalletStakingAsyncPalletConfigOpPerbill;
-        maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
-      };
-    }
-  /**
-   * Declare a `controller` to stop participating as either a validator or nominator.
-   *
-   * Effects will be felt at the beginning of the next era.
-   *
-   * The dispatch origin for this call must be _Signed_, but can be called by anyone.
-   *
-   * If the caller is the same as the controller being targeted, then no further checks are
-   * enforced, and this function behaves just like `chill`.
-   *
-   * If the caller is different than the controller being targeted, the following conditions
-   * must be met:
-   *
-   * * `controller` must belong to a nominator who has become non-decodable,
-   *
-   * Or:
-   *
-   * * A `ChillThreshold` must be set and checked which defines how close to the max
-   * nominators or validators we must reach before users can start chilling one-another.
-   * * A `MaxNominatorCount` and `MaxValidatorCount` must be set which is used to determine
-   * how close we are to the threshold.
-   * * A `MinNominatorBond` and `MinValidatorBond` must be set and checked, which determines
-   * if this is a person that should be chilled because they have not met the threshold
-   * bond required.
-   *
-   * This can be helpful if bond requirements are updated, and we need to remove old users
-   * who do not satisfy these requirements.
-   **/
-  | { name: 'ChillOther'; params: { stash: AccountId32Like } }
-  /**
-   * Force a validator to have at least the minimum commission. This will not affect a
-   * validator who already has a commission greater than or equal to the minimum. Any account
-   * can call this.
-   **/
-  | { name: 'ForceApplyMinCommission'; params: { validatorStash: AccountId32Like } }
-  /**
-   * Sets the minimum amount of commission that each validators must maintain.
-   *
-   * This call has lower privilege requirements than `set_staking_config` and can be called
-   * by the `T::AdminOrigin`. Root can always call this.
-   **/
-  | { name: 'SetMinCommission'; params: { new: Perbill } }
-  /**
-   * Pay out a page of the stakers behind a validator for the given era and page.
-   *
-   * - `validator_stash` is the stash account of the validator.
-   * - `era` may be any era between `[current_era - history_depth; current_era]`.
-   * - `page` is the page index of nominators to pay out with value between 0 and
-   * `num_nominators / T::MaxExposurePageSize`.
-   *
-   * The origin of this call must be _Signed_. Any account can call this function, even if
-   * it is not one of the stakers.
-   *
-   * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
-   * them, then the list of nominators is paged, with each page being capped at
-   * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
-   * the call needs to be made for each page separately in order for all the nominators
-   * backing a validator to receive the reward. The nominators are not sorted across pages
-   * and so it should not be assumed the highest staker would be on the topmost page and vice
-   * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
-   **/
-  | { name: 'PayoutStakersByPage'; params: { validatorStash: AccountId32Like; era: number; page: number } }
-  /**
-   * Migrates an account's `RewardDestination::Controller` to
-   * `RewardDestination::Account(controller)`.
-   *
-   * Effects will be felt instantly (as soon as this function is completed successfully).
-   *
-   * This will waive the transaction fee if the `payee` is successfully migrated.
-   **/
-  | { name: 'UpdatePayee'; params: { controller: AccountId32Like } }
-  /**
-   * Updates a batch of controller accounts to their corresponding stash account if they are
-   * not the same. Ignores any controller accounts that do not exist, and does not operate if
-   * the stash and controller are already the same.
-   *
-   * Effects will be felt instantly (as soon as this function is completed successfully).
-   *
-   * The dispatch origin must be `T::AdminOrigin`.
-   **/
-  | { name: 'DeprecateControllerBatch'; params: { controllers: Array<AccountId32Like> } }
-  /**
-   * Restores the state of a ledger which is in an inconsistent state.
-   *
-   * The requirements to restore a ledger are the following:
-   * * The stash is bonded; or
-   * * The stash is not bonded but it has a staking lock left behind; or
-   * * If the stash has an associated ledger and its state is inconsistent; or
-   * * If the ledger is not corrupted *but* its staking lock is out of sync.
-   *
-   * The `maybe_*` input parameters will overwrite the corresponding data and metadata of the
-   * ledger associated with the stash. If the input parameters are not set, the ledger will
-   * be reset values from on-chain state.
-   **/
-  | {
-      name: 'RestoreLedger';
-      params: {
-        stash: AccountId32Like;
-        maybeController?: AccountId32Like | undefined;
-        maybeTotal?: bigint | undefined;
-        maybeUnlocking?: Array<PalletStakingAsyncLedgerUnlockChunk> | undefined;
-      };
-    }
-  /**
-   * Migrates permissionlessly a stash from locks to holds.
-   *
-   * This removes the old lock on the stake and creates a hold on it atomically. If all
-   * stake cannot be held, the best effort is made to hold as much as possible. The remaining
-   * stake is removed from the ledger.
-   *
-   * The fee is waived if the migration is successful.
-   **/
-  | { name: 'MigrateCurrency'; params: { stash: AccountId32Like } }
-  /**
-   * Manually and permissionlessly applies a deferred slash for a given era.
-   *
-   * Normally, slashes are automatically applied shortly after the start of the `slash_era`.
-   * The automatic application of slashes is handled by the pallet's internal logic, and it
-   * tries to apply one slash page per block of the era.
-   * If for some reason, one era is not enough for applying all slash pages, the remaining
-   * slashes need to be manually (permissionlessly) applied.
-   *
-   * For a given era x, if at era x+1, slashes are still unapplied, all withdrawals get
-   * blocked, and these need to be manually applied by calling this function.
-   * This function exists as a **fallback mechanism** for this extreme situation, but we
-   * never expect to encounter this in normal scenarios.
-   *
-   * The parameters for this call can be queried by looking at the `UnappliedSlashes` storage
-   * for eras older than the active era.
-   *
-   * ## Parameters
-   * - `slash_era`: The staking era in which the slash was originally scheduled.
-   * - `slash_key`: A unique identifier for the slash, represented as a tuple:
-   * - `stash`: The stash account of the validator being slashed.
-   * - `slash_fraction`: The fraction of the stake that was slashed.
-   * - `page_index`: The index of the exposure page being processed.
-   *
-   * ## Behavior
-   * - The function is **permissionless**—anyone can call it.
-   * - The `slash_era` **must be the current era or a past era**.
-   * If it is in the future, the
-   * call fails with `EraNotStarted`.
-   * - The fee is waived if the slash is successfully applied.
-   *
-   * ## Future Improvement
-   * - Implement an **off-chain worker (OCW) task** to automatically apply slashes when there
-   * is unused block space, improving efficiency.
-   **/
-  | { name: 'ApplySlash'; params: { slashEra: number; slashKey: [AccountId32Like, Perbill, number] } }
-  /**
-   * Perform one step of era pruning to prevent PoV size exhaustion from unbounded deletions.
-   *
-   * This extrinsic enables permissionless lazy pruning of era data by performing
-   * incremental deletion of storage items. Each call processes a limited number
-   * of items based on available block weight to avoid exceeding block limits.
-   *
-   * Returns `Pays::No` when work is performed to incentivize regular maintenance.
-   * Anyone can call this to help maintain the chain's storage health.
-   *
-   * The era must be eligible for pruning (older than HistoryDepth + 1).
-   * Check `EraPruningState` storage to see if an era needs pruning before calling.
-   **/
-  | { name: 'PruneEraStep'; params: { era: number } };
-
-export type PalletStakingAsyncRewardDestination =
-  | { type: 'Staked' }
-  | { type: 'Stash' }
-  | { type: 'Controller' }
-  | { type: 'Account'; value: AccountId32 }
-  | { type: 'None' };
-
-export type PalletStakingAsyncValidatorPrefs = { commission: Perbill; blocked: boolean };
-
-export type PalletStakingAsyncPalletConfigOp = { type: 'Noop' } | { type: 'Set'; value: bigint } | { type: 'Remove' };
-
-export type PalletStakingAsyncPalletConfigOpU32 =
-  | { type: 'Noop' }
-  | { type: 'Set'; value: number }
-  | { type: 'Remove' };
-
-export type PalletStakingAsyncPalletConfigOpPercent =
-  | { type: 'Noop' }
-  | { type: 'Set'; value: Percent }
-  | { type: 'Remove' };
-
-export type PalletStakingAsyncPalletConfigOpPerbill =
-  | { type: 'Noop' }
-  | { type: 'Set'; value: Perbill }
-  | { type: 'Remove' };
-
-export type PalletStakingAsyncLedgerUnlockChunk = { value: bigint; era: number };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
 export type PalletNominationPoolsCall =
   /**
    * Stake funds with a pool. The amount to bond is delegated (or transferred based on
@@ -16347,20 +15598,14 @@ export type PalletStakingAsyncRcClientCall =
    * Called to indicate the start of a new session on the relay chain.
    **/
   | { name: 'RelaySessionReport'; params: { report: PalletStakingAsyncRcClientSessionReport } }
-  /**
-   * Called to report one or more new offenses on the relay chain.
-   **/
-  | { name: 'RelayNewOffence'; params: { slashSession: number; offences: Array<PalletStakingAsyncRcClientOffence> } };
+  | { name: 'RelayNewOffencePaged'; params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> } };
 
 export type PalletStakingAsyncRcClientCallLike =
   /**
    * Called to indicate the start of a new session on the relay chain.
    **/
   | { name: 'RelaySessionReport'; params: { report: PalletStakingAsyncRcClientSessionReport } }
-  /**
-   * Called to report one or more new offenses on the relay chain.
-   **/
-  | { name: 'RelayNewOffence'; params: { slashSession: number; offences: Array<PalletStakingAsyncRcClientOffence> } };
+  | { name: 'RelayNewOffencePaged'; params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> } };
 
 export type PalletStakingAsyncRcClientSessionReport = {
   endIndex: number;
@@ -16586,6 +15831,1342 @@ export type PalletElectionProviderMultiBlockSignedPalletCallLike =
    * Dispatch origin must the the same as [`crate::Config::AdminOrigin`].
    **/
   | { name: 'SetInvulnerables'; params: { inv: Array<AccountId32Like> } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletStakingAsyncPalletCall =
+  /**
+   * Take the origin account as a stash and lock up `value` of its balance. `controller` will
+   * be the account that controls it.
+   *
+   * `value` must be more than the `minimum_balance` specified by `T::Currency`.
+   *
+   * The dispatch origin for this call must be _Signed_ by the stash account.
+   *
+   * Emits `Bonded`.
+   *
+   * NOTE: Two of the storage writes (`Self::bonded`, `Self::payee`) are _never_ cleaned
+   * unless the `origin` falls below _existential deposit_ (or equal to 0) and gets removed
+   * as dust.
+   **/
+  | { name: 'Bond'; params: { value: bigint; payee: PalletStakingAsyncRewardDestination } }
+  /**
+   * Add some extra amount that have appeared in the stash `free_balance` into the balance up
+   * for staking.
+   *
+   * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
+   *
+   * Use this if there are additional funds in your stash account that you wish to bond.
+   * Unlike [`bond`](Self::bond) or [`unbond`](Self::unbond) this function does not impose
+   * any limitation on the amount that can be added.
+   *
+   * Emits `Bonded`.
+   **/
+  | { name: 'BondExtra'; params: { maxAdditional: bigint } }
+  /**
+   * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
+   * period ends. If this leaves an amount actively bonded less than
+   * [`asset::existential_deposit`], then it is increased to the full amount.
+   *
+   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+   *
+   * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
+   * the funds out of management ready for transfer.
+   *
+   * No more than a limited number of unlocking chunks (see `MaxUnlockingChunks`)
+   * can co-exists at the same time. If there are no unlocking chunks slots available
+   * [`Call::withdraw_unbonded`] is called to remove some of the chunks (if possible).
+   *
+   * If a user encounters the `InsufficientBond` error when calling this extrinsic,
+   * they should call `chill` first in order to free up their bonded funds.
+   *
+   * Emits `Unbonded`.
+   *
+   * See also [`Call::withdraw_unbonded`].
+   **/
+  | { name: 'Unbond'; params: { value: bigint } }
+  /**
+   * Remove any stake that has been fully unbonded and is ready for withdrawal.
+   *
+   * Stake is considered fully unbonded once [`Config::BondingDuration`] has elapsed since
+   * the unbonding was initiated. In rare cases—such as when offences for the unbonded era
+   * have been reported but not yet processed—withdrawal is restricted to eras for which
+   * all offences have been processed.
+   *
+   * The unlocked stake will be returned as free balance in the stash account.
+   *
+   * The dispatch origin for this call must be _Signed_ by the controller.
+   *
+   * Emits `Withdrawn`.
+   *
+   * See also [`Call::unbond`].
+   *
+   * ## Parameters
+   *
+   * - `num_slashing_spans`: **Deprecated**. Retained only for backward compatibility; this
+   * parameter has no effect.
+   **/
+  | { name: 'WithdrawUnbonded'; params: { numSlashingSpans: number } }
+  /**
+   * Declare the desire to validate for the origin controller.
+   *
+   * Effects will be felt at the beginning of the next era.
+   *
+   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+   **/
+  | { name: 'Validate'; params: { prefs: PalletStakingAsyncValidatorPrefs } }
+  /**
+   * Declare the desire to nominate `targets` for the origin controller.
+   *
+   * Effects will be felt at the beginning of the next era.
+   *
+   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+   **/
+  | { name: 'Nominate'; params: { targets: Array<MultiAddress> } }
+  /**
+   * Declare no desire to either validate or nominate.
+   *
+   * Effects will be felt at the beginning of the next era.
+   *
+   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+   *
+   * ## Complexity
+   * - Independent of the arguments. Insignificant complexity.
+   * - Contains one read.
+   * - Writes are limited to the `origin` account key.
+   **/
+  | { name: 'Chill' }
+  /**
+   * (Re-)set the payment target for a controller.
+   *
+   * Effects will be felt instantly (as soon as this function is completed successfully).
+   *
+   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+   **/
+  | { name: 'SetPayee'; params: { payee: PalletStakingAsyncRewardDestination } }
+  /**
+   * (Re-)sets the controller of a stash to the stash itself. This function previously
+   * accepted a `controller` argument to set the controller to an account other than the
+   * stash itself. This functionality has now been removed, now only setting the controller
+   * to the stash, if it is not already.
+   *
+   * Effects will be felt instantly (as soon as this function is completed successfully).
+   *
+   * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
+   **/
+  | { name: 'SetController' }
+  /**
+   * Sets the ideal number of validators.
+   *
+   * The dispatch origin must be Root.
+   **/
+  | { name: 'SetValidatorCount'; params: { new: number } }
+  /**
+   * Increments the ideal number of validators up to maximum of
+   * `T::MaxValidatorSet`.
+   *
+   * The dispatch origin must be Root.
+   **/
+  | { name: 'IncreaseValidatorCount'; params: { additional: number } }
+  /**
+   * Scale up the ideal number of validators by a factor up to maximum of
+   * `T::MaxValidatorSet`.
+   *
+   * The dispatch origin must be Root.
+   **/
+  | { name: 'ScaleValidatorCount'; params: { factor: Percent } }
+  /**
+   * Force there to be no new eras indefinitely.
+   *
+   * The dispatch origin must be Root.
+   *
+   * # Warning
+   *
+   * The election process starts multiple blocks before the end of the era.
+   * Thus the election process may be ongoing when this is called. In this case the
+   * election will continue until the next era is triggered.
+   **/
+  | { name: 'ForceNoEras' }
+  /**
+   * Force there to be a new era at the end of the next session. After this, it will be
+   * reset to normal (non-forced) behaviour.
+   *
+   * The dispatch origin must be Root.
+   *
+   * # Warning
+   *
+   * The election process starts multiple blocks before the end of the era.
+   * If this is called just before a new era is triggered, the election process may not
+   * have enough blocks to get a result.
+   **/
+  | { name: 'ForceNewEra' }
+  /**
+   * Set the validators who cannot be slashed (if any).
+   *
+   * The dispatch origin must be Root.
+   **/
+  | { name: 'SetInvulnerables'; params: { invulnerables: Array<AccountId32> } }
+  /**
+   * Force a current staker to become completely unstaked, immediately.
+   *
+   * The dispatch origin must be Root.
+   * ## Parameters
+   *
+   * - `stash`: The stash account to be unstaked.
+   * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
+   * compatibility. It no longer has any effect.
+   **/
+  | { name: 'ForceUnstake'; params: { stash: AccountId32; numSlashingSpans: number } }
+  /**
+   * Force there to be a new era at the end of sessions indefinitely.
+   *
+   * The dispatch origin must be Root.
+   *
+   * # Warning
+   *
+   * The election process starts multiple blocks before the end of the era.
+   * If this is called just before a new era is triggered, the election process may not
+   * have enough blocks to get a result.
+   **/
+  | { name: 'ForceNewEraAlways' }
+  /**
+   * Cancels scheduled slashes for a given era before they are applied.
+   *
+   * This function allows `T::AdminOrigin` to cancel pending slashes for specified validators
+   * in a given era. The cancelled slashes are stored and will be checked when applying
+   * slashes.
+   *
+   * ## Parameters
+   * - `era`: The staking era for which slashes should be cancelled. This is the era where
+   * the slash would be applied, not the era in which the offence was committed.
+   * - `validator_slashes`: A list of validator stash accounts and their slash fractions to
+   * be cancelled.
+   **/
+  | { name: 'CancelDeferredSlash'; params: { era: number; validatorSlashes: Array<[AccountId32, Perbill]> } }
+  /**
+   * Pay out next page of the stakers behind a validator for the given era.
+   *
+   * - `validator_stash` is the stash account of the validator.
+   * - `era` may be any era between `[current_era - history_depth; current_era]`.
+   *
+   * The origin of this call must be _Signed_. Any account can call this function, even if
+   * it is not one of the stakers.
+   *
+   * The reward payout could be paged in case there are too many nominators backing the
+   * `validator_stash`. This call will payout unpaid pages in an ascending order. To claim a
+   * specific page, use `payout_stakers_by_page`.`
+   *
+   * If all pages are claimed, it returns an error `InvalidPage`.
+   **/
+  | { name: 'PayoutStakers'; params: { validatorStash: AccountId32; era: number } }
+  /**
+   * Rebond a portion of the stash scheduled to be unlocked.
+   *
+   * The dispatch origin must be signed by the controller.
+   **/
+  | { name: 'Rebond'; params: { value: bigint } }
+  /**
+   * Remove all data structures concerning a staker/stash once it is at a state where it can
+   * be considered `dust` in the staking system. The requirements are:
+   *
+   * 1. the `total_balance` of the stash is below `min_chilled_bond` or is zero.
+   * 2. or, the `ledger.total` of the stash is below `min_chilled_bond` or is zero.
+   *
+   * The former can happen in cases like a slash; the latter when a fully unbonded account
+   * is still receiving staking rewards in `RewardDestination::Staked`.
+   *
+   * It can be called by anyone, as long as `stash` meets the above requirements.
+   *
+   * Refunds the transaction fees upon successful execution.
+   *
+   * ## Parameters
+   *
+   * - `stash`: The stash account to be reaped.
+   * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
+   * compatibility. It no longer has any effect.
+   **/
+  | { name: 'ReapStash'; params: { stash: AccountId32; numSlashingSpans: number } }
+  /**
+   * Remove the given nominations from the calling validator.
+   *
+   * Effects will be felt at the beginning of the next era.
+   *
+   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+   *
+   * - `who`: A list of nominator stash accounts who are nominating this validator which
+   * should no longer be nominating this validator.
+   *
+   * Note: Making this call only makes sense if you first set the validator preferences to
+   * block any further nominations.
+   **/
+  | { name: 'Kick'; params: { who: Array<MultiAddress> } }
+  /**
+   * Update the various staking configurations .
+   *
+   * * `min_nominator_bond`: The minimum active bond needed to be a nominator.
+   * * `min_validator_bond`: The minimum active bond needed to be a validator.
+   * * `max_nominator_count`: The max number of users who can be a nominator at once. When
+   * set to `None`, no limit is enforced.
+   * * `max_validator_count`: The max number of users who can be a validator at once. When
+   * set to `None`, no limit is enforced.
+   * * `chill_threshold`: The ratio of `max_nominator_count` or `max_validator_count` which
+   * should be filled in order for the `chill_other` transaction to work.
+   * * `min_commission`: The minimum amount of commission that each validators must maintain.
+   * This is checked only upon calling `validate`. Existing validators are not affected.
+   *
+   * RuntimeOrigin must be Root to call this function.
+   *
+   * NOTE: Existing nominators and validators will not be affected by this update.
+   * to kick people under the new limits, `chill_other` should be called.
+   **/
+  | {
+      name: 'SetStakingConfigs';
+      params: {
+        minNominatorBond: PalletStakingAsyncPalletConfigOp;
+        minValidatorBond: PalletStakingAsyncPalletConfigOp;
+        maxNominatorCount: PalletStakingAsyncPalletConfigOpU32;
+        maxValidatorCount: PalletStakingAsyncPalletConfigOpU32;
+        chillThreshold: PalletStakingAsyncPalletConfigOpPercent;
+        minCommission: PalletStakingAsyncPalletConfigOpPerbill;
+        maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
+      };
+    }
+  /**
+   * Declare a `controller` to stop participating as either a validator or nominator.
+   *
+   * Effects will be felt at the beginning of the next era.
+   *
+   * The dispatch origin for this call must be _Signed_, but can be called by anyone.
+   *
+   * If the caller is the same as the controller being targeted, then no further checks are
+   * enforced, and this function behaves just like `chill`.
+   *
+   * If the caller is different than the controller being targeted, the following conditions
+   * must be met:
+   *
+   * * `controller` must belong to a nominator who has become non-decodable,
+   *
+   * Or:
+   *
+   * * A `ChillThreshold` must be set and checked which defines how close to the max
+   * nominators or validators we must reach before users can start chilling one-another.
+   * * A `MaxNominatorCount` and `MaxValidatorCount` must be set which is used to determine
+   * how close we are to the threshold.
+   * * A `MinNominatorBond` and `MinValidatorBond` must be set and checked, which determines
+   * if this is a person that should be chilled because they have not met the threshold
+   * bond required.
+   *
+   * This can be helpful if bond requirements are updated, and we need to remove old users
+   * who do not satisfy these requirements.
+   **/
+  | { name: 'ChillOther'; params: { stash: AccountId32 } }
+  /**
+   * Force a validator to have at least the minimum commission. This will not affect a
+   * validator who already has a commission greater than or equal to the minimum. Any account
+   * can call this.
+   **/
+  | { name: 'ForceApplyMinCommission'; params: { validatorStash: AccountId32 } }
+  /**
+   * Sets the minimum amount of commission that each validators must maintain.
+   *
+   * This call has lower privilege requirements than `set_staking_config` and can be called
+   * by the `T::AdminOrigin`. Root can always call this.
+   **/
+  | { name: 'SetMinCommission'; params: { new: Perbill } }
+  /**
+   * Pay out a page of the stakers behind a validator for the given era and page.
+   *
+   * - `validator_stash` is the stash account of the validator.
+   * - `era` may be any era between `[current_era - history_depth; current_era]`.
+   * - `page` is the page index of nominators to pay out with value between 0 and
+   * `num_nominators / T::MaxExposurePageSize`.
+   *
+   * The origin of this call must be _Signed_. Any account can call this function, even if
+   * it is not one of the stakers.
+   *
+   * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
+   * them, then the list of nominators is paged, with each page being capped at
+   * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+   * the call needs to be made for each page separately in order for all the nominators
+   * backing a validator to receive the reward. The nominators are not sorted across pages
+   * and so it should not be assumed the highest staker would be on the topmost page and vice
+   * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
+   **/
+  | { name: 'PayoutStakersByPage'; params: { validatorStash: AccountId32; era: number; page: number } }
+  /**
+   * Migrates an account's `RewardDestination::Controller` to
+   * `RewardDestination::Account(controller)`.
+   *
+   * Effects will be felt instantly (as soon as this function is completed successfully).
+   *
+   * This will waive the transaction fee if the `payee` is successfully migrated.
+   **/
+  | { name: 'UpdatePayee'; params: { controller: AccountId32 } }
+  /**
+   * Updates a batch of controller accounts to their corresponding stash account if they are
+   * not the same. Ignores any controller accounts that do not exist, and does not operate if
+   * the stash and controller are already the same.
+   *
+   * Effects will be felt instantly (as soon as this function is completed successfully).
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   **/
+  | { name: 'DeprecateControllerBatch'; params: { controllers: Array<AccountId32> } }
+  /**
+   * Restores the state of a ledger which is in an inconsistent state.
+   *
+   * The requirements to restore a ledger are the following:
+   * * The stash is bonded; or
+   * * The stash is not bonded but it has a staking lock left behind; or
+   * * If the stash has an associated ledger and its state is inconsistent; or
+   * * If the ledger is not corrupted *but* its staking lock is out of sync.
+   *
+   * The `maybe_*` input parameters will overwrite the corresponding data and metadata of the
+   * ledger associated with the stash. If the input parameters are not set, the ledger will
+   * be reset values from on-chain state.
+   **/
+  | {
+      name: 'RestoreLedger';
+      params: {
+        stash: AccountId32;
+        maybeController?: AccountId32 | undefined;
+        maybeTotal?: bigint | undefined;
+        maybeUnlocking?: Array<PalletStakingAsyncLedgerUnlockChunk> | undefined;
+      };
+    }
+  /**
+   * Migrates permissionlessly a stash from locks to holds.
+   *
+   * This removes the old lock on the stake and creates a hold on it atomically. If all
+   * stake cannot be held, the best effort is made to hold as much as possible. The remaining
+   * stake is removed from the ledger.
+   *
+   * The fee is waived if the migration is successful.
+   **/
+  | { name: 'MigrateCurrency'; params: { stash: AccountId32 } }
+  /**
+   * Manually and permissionlessly applies a deferred slash for a given era.
+   *
+   * Normally, slashes are automatically applied shortly after the start of the `slash_era`.
+   * The automatic application of slashes is handled by the pallet's internal logic, and it
+   * tries to apply one slash page per block of the era.
+   * If for some reason, one era is not enough for applying all slash pages, the remaining
+   * slashes need to be manually (permissionlessly) applied.
+   *
+   * For a given era x, if at era x+1, slashes are still unapplied, all withdrawals get
+   * blocked, and these need to be manually applied by calling this function.
+   * This function exists as a **fallback mechanism** for this extreme situation, but we
+   * never expect to encounter this in normal scenarios.
+   *
+   * The parameters for this call can be queried by looking at the `UnappliedSlashes` storage
+   * for eras older than the active era.
+   *
+   * ## Parameters
+   * - `slash_era`: The staking era in which the slash was originally scheduled.
+   * - `slash_key`: A unique identifier for the slash, represented as a tuple:
+   * - `stash`: The stash account of the validator being slashed.
+   * - `slash_fraction`: The fraction of the stake that was slashed.
+   * - `page_index`: The index of the exposure page being processed.
+   *
+   * ## Behavior
+   * - The function is **permissionless**—anyone can call it.
+   * - The `slash_era` **must be the current era or a past era**.
+   * If it is in the future, the
+   * call fails with `EraNotStarted`.
+   * - The fee is waived if the slash is successfully applied.
+   *
+   * ## Future Improvement
+   * - Implement an **off-chain worker (OCW) task** to automatically apply slashes when there
+   * is unused block space, improving efficiency.
+   **/
+  | { name: 'ApplySlash'; params: { slashEra: number; slashKey: [AccountId32, Perbill, number] } }
+  /**
+   * Perform one step of era pruning to prevent PoV size exhaustion from unbounded deletions.
+   *
+   * This extrinsic enables permissionless lazy pruning of era data by performing
+   * incremental deletion of storage items. Each call processes a limited number
+   * of items based on available block weight to avoid exceeding block limits.
+   *
+   * Returns `Pays::No` when work is performed to incentivize regular maintenance.
+   * Anyone can call this to help maintain the chain's storage health.
+   *
+   * The era must be eligible for pruning (older than HistoryDepth + 1).
+   * Check `EraPruningState` storage to see if an era needs pruning before calling.
+   **/
+  | { name: 'PruneEraStep'; params: { era: number } };
+
+export type PalletStakingAsyncPalletCallLike =
+  /**
+   * Take the origin account as a stash and lock up `value` of its balance. `controller` will
+   * be the account that controls it.
+   *
+   * `value` must be more than the `minimum_balance` specified by `T::Currency`.
+   *
+   * The dispatch origin for this call must be _Signed_ by the stash account.
+   *
+   * Emits `Bonded`.
+   *
+   * NOTE: Two of the storage writes (`Self::bonded`, `Self::payee`) are _never_ cleaned
+   * unless the `origin` falls below _existential deposit_ (or equal to 0) and gets removed
+   * as dust.
+   **/
+  | { name: 'Bond'; params: { value: bigint; payee: PalletStakingAsyncRewardDestination } }
+  /**
+   * Add some extra amount that have appeared in the stash `free_balance` into the balance up
+   * for staking.
+   *
+   * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
+   *
+   * Use this if there are additional funds in your stash account that you wish to bond.
+   * Unlike [`bond`](Self::bond) or [`unbond`](Self::unbond) this function does not impose
+   * any limitation on the amount that can be added.
+   *
+   * Emits `Bonded`.
+   **/
+  | { name: 'BondExtra'; params: { maxAdditional: bigint } }
+  /**
+   * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
+   * period ends. If this leaves an amount actively bonded less than
+   * [`asset::existential_deposit`], then it is increased to the full amount.
+   *
+   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+   *
+   * Once the unlock period is done, you can call `withdraw_unbonded` to actually move
+   * the funds out of management ready for transfer.
+   *
+   * No more than a limited number of unlocking chunks (see `MaxUnlockingChunks`)
+   * can co-exists at the same time. If there are no unlocking chunks slots available
+   * [`Call::withdraw_unbonded`] is called to remove some of the chunks (if possible).
+   *
+   * If a user encounters the `InsufficientBond` error when calling this extrinsic,
+   * they should call `chill` first in order to free up their bonded funds.
+   *
+   * Emits `Unbonded`.
+   *
+   * See also [`Call::withdraw_unbonded`].
+   **/
+  | { name: 'Unbond'; params: { value: bigint } }
+  /**
+   * Remove any stake that has been fully unbonded and is ready for withdrawal.
+   *
+   * Stake is considered fully unbonded once [`Config::BondingDuration`] has elapsed since
+   * the unbonding was initiated. In rare cases—such as when offences for the unbonded era
+   * have been reported but not yet processed—withdrawal is restricted to eras for which
+   * all offences have been processed.
+   *
+   * The unlocked stake will be returned as free balance in the stash account.
+   *
+   * The dispatch origin for this call must be _Signed_ by the controller.
+   *
+   * Emits `Withdrawn`.
+   *
+   * See also [`Call::unbond`].
+   *
+   * ## Parameters
+   *
+   * - `num_slashing_spans`: **Deprecated**. Retained only for backward compatibility; this
+   * parameter has no effect.
+   **/
+  | { name: 'WithdrawUnbonded'; params: { numSlashingSpans: number } }
+  /**
+   * Declare the desire to validate for the origin controller.
+   *
+   * Effects will be felt at the beginning of the next era.
+   *
+   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+   **/
+  | { name: 'Validate'; params: { prefs: PalletStakingAsyncValidatorPrefs } }
+  /**
+   * Declare the desire to nominate `targets` for the origin controller.
+   *
+   * Effects will be felt at the beginning of the next era.
+   *
+   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+   **/
+  | { name: 'Nominate'; params: { targets: Array<MultiAddressLike> } }
+  /**
+   * Declare no desire to either validate or nominate.
+   *
+   * Effects will be felt at the beginning of the next era.
+   *
+   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+   *
+   * ## Complexity
+   * - Independent of the arguments. Insignificant complexity.
+   * - Contains one read.
+   * - Writes are limited to the `origin` account key.
+   **/
+  | { name: 'Chill' }
+  /**
+   * (Re-)set the payment target for a controller.
+   *
+   * Effects will be felt instantly (as soon as this function is completed successfully).
+   *
+   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+   **/
+  | { name: 'SetPayee'; params: { payee: PalletStakingAsyncRewardDestination } }
+  /**
+   * (Re-)sets the controller of a stash to the stash itself. This function previously
+   * accepted a `controller` argument to set the controller to an account other than the
+   * stash itself. This functionality has now been removed, now only setting the controller
+   * to the stash, if it is not already.
+   *
+   * Effects will be felt instantly (as soon as this function is completed successfully).
+   *
+   * The dispatch origin for this call must be _Signed_ by the stash, not the controller.
+   **/
+  | { name: 'SetController' }
+  /**
+   * Sets the ideal number of validators.
+   *
+   * The dispatch origin must be Root.
+   **/
+  | { name: 'SetValidatorCount'; params: { new: number } }
+  /**
+   * Increments the ideal number of validators up to maximum of
+   * `T::MaxValidatorSet`.
+   *
+   * The dispatch origin must be Root.
+   **/
+  | { name: 'IncreaseValidatorCount'; params: { additional: number } }
+  /**
+   * Scale up the ideal number of validators by a factor up to maximum of
+   * `T::MaxValidatorSet`.
+   *
+   * The dispatch origin must be Root.
+   **/
+  | { name: 'ScaleValidatorCount'; params: { factor: Percent } }
+  /**
+   * Force there to be no new eras indefinitely.
+   *
+   * The dispatch origin must be Root.
+   *
+   * # Warning
+   *
+   * The election process starts multiple blocks before the end of the era.
+   * Thus the election process may be ongoing when this is called. In this case the
+   * election will continue until the next era is triggered.
+   **/
+  | { name: 'ForceNoEras' }
+  /**
+   * Force there to be a new era at the end of the next session. After this, it will be
+   * reset to normal (non-forced) behaviour.
+   *
+   * The dispatch origin must be Root.
+   *
+   * # Warning
+   *
+   * The election process starts multiple blocks before the end of the era.
+   * If this is called just before a new era is triggered, the election process may not
+   * have enough blocks to get a result.
+   **/
+  | { name: 'ForceNewEra' }
+  /**
+   * Set the validators who cannot be slashed (if any).
+   *
+   * The dispatch origin must be Root.
+   **/
+  | { name: 'SetInvulnerables'; params: { invulnerables: Array<AccountId32Like> } }
+  /**
+   * Force a current staker to become completely unstaked, immediately.
+   *
+   * The dispatch origin must be Root.
+   * ## Parameters
+   *
+   * - `stash`: The stash account to be unstaked.
+   * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
+   * compatibility. It no longer has any effect.
+   **/
+  | { name: 'ForceUnstake'; params: { stash: AccountId32Like; numSlashingSpans: number } }
+  /**
+   * Force there to be a new era at the end of sessions indefinitely.
+   *
+   * The dispatch origin must be Root.
+   *
+   * # Warning
+   *
+   * The election process starts multiple blocks before the end of the era.
+   * If this is called just before a new era is triggered, the election process may not
+   * have enough blocks to get a result.
+   **/
+  | { name: 'ForceNewEraAlways' }
+  /**
+   * Cancels scheduled slashes for a given era before they are applied.
+   *
+   * This function allows `T::AdminOrigin` to cancel pending slashes for specified validators
+   * in a given era. The cancelled slashes are stored and will be checked when applying
+   * slashes.
+   *
+   * ## Parameters
+   * - `era`: The staking era for which slashes should be cancelled. This is the era where
+   * the slash would be applied, not the era in which the offence was committed.
+   * - `validator_slashes`: A list of validator stash accounts and their slash fractions to
+   * be cancelled.
+   **/
+  | { name: 'CancelDeferredSlash'; params: { era: number; validatorSlashes: Array<[AccountId32Like, Perbill]> } }
+  /**
+   * Pay out next page of the stakers behind a validator for the given era.
+   *
+   * - `validator_stash` is the stash account of the validator.
+   * - `era` may be any era between `[current_era - history_depth; current_era]`.
+   *
+   * The origin of this call must be _Signed_. Any account can call this function, even if
+   * it is not one of the stakers.
+   *
+   * The reward payout could be paged in case there are too many nominators backing the
+   * `validator_stash`. This call will payout unpaid pages in an ascending order. To claim a
+   * specific page, use `payout_stakers_by_page`.`
+   *
+   * If all pages are claimed, it returns an error `InvalidPage`.
+   **/
+  | { name: 'PayoutStakers'; params: { validatorStash: AccountId32Like; era: number } }
+  /**
+   * Rebond a portion of the stash scheduled to be unlocked.
+   *
+   * The dispatch origin must be signed by the controller.
+   **/
+  | { name: 'Rebond'; params: { value: bigint } }
+  /**
+   * Remove all data structures concerning a staker/stash once it is at a state where it can
+   * be considered `dust` in the staking system. The requirements are:
+   *
+   * 1. the `total_balance` of the stash is below `min_chilled_bond` or is zero.
+   * 2. or, the `ledger.total` of the stash is below `min_chilled_bond` or is zero.
+   *
+   * The former can happen in cases like a slash; the latter when a fully unbonded account
+   * is still receiving staking rewards in `RewardDestination::Staked`.
+   *
+   * It can be called by anyone, as long as `stash` meets the above requirements.
+   *
+   * Refunds the transaction fees upon successful execution.
+   *
+   * ## Parameters
+   *
+   * - `stash`: The stash account to be reaped.
+   * - `num_slashing_spans`: **Deprecated**. This parameter is retained for backward
+   * compatibility. It no longer has any effect.
+   **/
+  | { name: 'ReapStash'; params: { stash: AccountId32Like; numSlashingSpans: number } }
+  /**
+   * Remove the given nominations from the calling validator.
+   *
+   * Effects will be felt at the beginning of the next era.
+   *
+   * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+   *
+   * - `who`: A list of nominator stash accounts who are nominating this validator which
+   * should no longer be nominating this validator.
+   *
+   * Note: Making this call only makes sense if you first set the validator preferences to
+   * block any further nominations.
+   **/
+  | { name: 'Kick'; params: { who: Array<MultiAddressLike> } }
+  /**
+   * Update the various staking configurations .
+   *
+   * * `min_nominator_bond`: The minimum active bond needed to be a nominator.
+   * * `min_validator_bond`: The minimum active bond needed to be a validator.
+   * * `max_nominator_count`: The max number of users who can be a nominator at once. When
+   * set to `None`, no limit is enforced.
+   * * `max_validator_count`: The max number of users who can be a validator at once. When
+   * set to `None`, no limit is enforced.
+   * * `chill_threshold`: The ratio of `max_nominator_count` or `max_validator_count` which
+   * should be filled in order for the `chill_other` transaction to work.
+   * * `min_commission`: The minimum amount of commission that each validators must maintain.
+   * This is checked only upon calling `validate`. Existing validators are not affected.
+   *
+   * RuntimeOrigin must be Root to call this function.
+   *
+   * NOTE: Existing nominators and validators will not be affected by this update.
+   * to kick people under the new limits, `chill_other` should be called.
+   **/
+  | {
+      name: 'SetStakingConfigs';
+      params: {
+        minNominatorBond: PalletStakingAsyncPalletConfigOp;
+        minValidatorBond: PalletStakingAsyncPalletConfigOp;
+        maxNominatorCount: PalletStakingAsyncPalletConfigOpU32;
+        maxValidatorCount: PalletStakingAsyncPalletConfigOpU32;
+        chillThreshold: PalletStakingAsyncPalletConfigOpPercent;
+        minCommission: PalletStakingAsyncPalletConfigOpPerbill;
+        maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
+      };
+    }
+  /**
+   * Declare a `controller` to stop participating as either a validator or nominator.
+   *
+   * Effects will be felt at the beginning of the next era.
+   *
+   * The dispatch origin for this call must be _Signed_, but can be called by anyone.
+   *
+   * If the caller is the same as the controller being targeted, then no further checks are
+   * enforced, and this function behaves just like `chill`.
+   *
+   * If the caller is different than the controller being targeted, the following conditions
+   * must be met:
+   *
+   * * `controller` must belong to a nominator who has become non-decodable,
+   *
+   * Or:
+   *
+   * * A `ChillThreshold` must be set and checked which defines how close to the max
+   * nominators or validators we must reach before users can start chilling one-another.
+   * * A `MaxNominatorCount` and `MaxValidatorCount` must be set which is used to determine
+   * how close we are to the threshold.
+   * * A `MinNominatorBond` and `MinValidatorBond` must be set and checked, which determines
+   * if this is a person that should be chilled because they have not met the threshold
+   * bond required.
+   *
+   * This can be helpful if bond requirements are updated, and we need to remove old users
+   * who do not satisfy these requirements.
+   **/
+  | { name: 'ChillOther'; params: { stash: AccountId32Like } }
+  /**
+   * Force a validator to have at least the minimum commission. This will not affect a
+   * validator who already has a commission greater than or equal to the minimum. Any account
+   * can call this.
+   **/
+  | { name: 'ForceApplyMinCommission'; params: { validatorStash: AccountId32Like } }
+  /**
+   * Sets the minimum amount of commission that each validators must maintain.
+   *
+   * This call has lower privilege requirements than `set_staking_config` and can be called
+   * by the `T::AdminOrigin`. Root can always call this.
+   **/
+  | { name: 'SetMinCommission'; params: { new: Perbill } }
+  /**
+   * Pay out a page of the stakers behind a validator for the given era and page.
+   *
+   * - `validator_stash` is the stash account of the validator.
+   * - `era` may be any era between `[current_era - history_depth; current_era]`.
+   * - `page` is the page index of nominators to pay out with value between 0 and
+   * `num_nominators / T::MaxExposurePageSize`.
+   *
+   * The origin of this call must be _Signed_. Any account can call this function, even if
+   * it is not one of the stakers.
+   *
+   * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
+   * them, then the list of nominators is paged, with each page being capped at
+   * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+   * the call needs to be made for each page separately in order for all the nominators
+   * backing a validator to receive the reward. The nominators are not sorted across pages
+   * and so it should not be assumed the highest staker would be on the topmost page and vice
+   * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
+   **/
+  | { name: 'PayoutStakersByPage'; params: { validatorStash: AccountId32Like; era: number; page: number } }
+  /**
+   * Migrates an account's `RewardDestination::Controller` to
+   * `RewardDestination::Account(controller)`.
+   *
+   * Effects will be felt instantly (as soon as this function is completed successfully).
+   *
+   * This will waive the transaction fee if the `payee` is successfully migrated.
+   **/
+  | { name: 'UpdatePayee'; params: { controller: AccountId32Like } }
+  /**
+   * Updates a batch of controller accounts to their corresponding stash account if they are
+   * not the same. Ignores any controller accounts that do not exist, and does not operate if
+   * the stash and controller are already the same.
+   *
+   * Effects will be felt instantly (as soon as this function is completed successfully).
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   **/
+  | { name: 'DeprecateControllerBatch'; params: { controllers: Array<AccountId32Like> } }
+  /**
+   * Restores the state of a ledger which is in an inconsistent state.
+   *
+   * The requirements to restore a ledger are the following:
+   * * The stash is bonded; or
+   * * The stash is not bonded but it has a staking lock left behind; or
+   * * If the stash has an associated ledger and its state is inconsistent; or
+   * * If the ledger is not corrupted *but* its staking lock is out of sync.
+   *
+   * The `maybe_*` input parameters will overwrite the corresponding data and metadata of the
+   * ledger associated with the stash. If the input parameters are not set, the ledger will
+   * be reset values from on-chain state.
+   **/
+  | {
+      name: 'RestoreLedger';
+      params: {
+        stash: AccountId32Like;
+        maybeController?: AccountId32Like | undefined;
+        maybeTotal?: bigint | undefined;
+        maybeUnlocking?: Array<PalletStakingAsyncLedgerUnlockChunk> | undefined;
+      };
+    }
+  /**
+   * Migrates permissionlessly a stash from locks to holds.
+   *
+   * This removes the old lock on the stake and creates a hold on it atomically. If all
+   * stake cannot be held, the best effort is made to hold as much as possible. The remaining
+   * stake is removed from the ledger.
+   *
+   * The fee is waived if the migration is successful.
+   **/
+  | { name: 'MigrateCurrency'; params: { stash: AccountId32Like } }
+  /**
+   * Manually and permissionlessly applies a deferred slash for a given era.
+   *
+   * Normally, slashes are automatically applied shortly after the start of the `slash_era`.
+   * The automatic application of slashes is handled by the pallet's internal logic, and it
+   * tries to apply one slash page per block of the era.
+   * If for some reason, one era is not enough for applying all slash pages, the remaining
+   * slashes need to be manually (permissionlessly) applied.
+   *
+   * For a given era x, if at era x+1, slashes are still unapplied, all withdrawals get
+   * blocked, and these need to be manually applied by calling this function.
+   * This function exists as a **fallback mechanism** for this extreme situation, but we
+   * never expect to encounter this in normal scenarios.
+   *
+   * The parameters for this call can be queried by looking at the `UnappliedSlashes` storage
+   * for eras older than the active era.
+   *
+   * ## Parameters
+   * - `slash_era`: The staking era in which the slash was originally scheduled.
+   * - `slash_key`: A unique identifier for the slash, represented as a tuple:
+   * - `stash`: The stash account of the validator being slashed.
+   * - `slash_fraction`: The fraction of the stake that was slashed.
+   * - `page_index`: The index of the exposure page being processed.
+   *
+   * ## Behavior
+   * - The function is **permissionless**—anyone can call it.
+   * - The `slash_era` **must be the current era or a past era**.
+   * If it is in the future, the
+   * call fails with `EraNotStarted`.
+   * - The fee is waived if the slash is successfully applied.
+   *
+   * ## Future Improvement
+   * - Implement an **off-chain worker (OCW) task** to automatically apply slashes when there
+   * is unused block space, improving efficiency.
+   **/
+  | { name: 'ApplySlash'; params: { slashEra: number; slashKey: [AccountId32Like, Perbill, number] } }
+  /**
+   * Perform one step of era pruning to prevent PoV size exhaustion from unbounded deletions.
+   *
+   * This extrinsic enables permissionless lazy pruning of era data by performing
+   * incremental deletion of storage items. Each call processes a limited number
+   * of items based on available block weight to avoid exceeding block limits.
+   *
+   * Returns `Pays::No` when work is performed to incentivize regular maintenance.
+   * Anyone can call this to help maintain the chain's storage health.
+   *
+   * The era must be eligible for pruning (older than HistoryDepth + 1).
+   * Check `EraPruningState` storage to see if an era needs pruning before calling.
+   **/
+  | { name: 'PruneEraStep'; params: { era: number } };
+
+export type PalletStakingAsyncRewardDestination =
+  | { type: 'Staked' }
+  | { type: 'Stash' }
+  | { type: 'Controller' }
+  | { type: 'Account'; value: AccountId32 }
+  | { type: 'None' };
+
+export type PalletStakingAsyncValidatorPrefs = { commission: Perbill; blocked: boolean };
+
+export type PalletStakingAsyncPalletConfigOp = { type: 'Noop' } | { type: 'Set'; value: bigint } | { type: 'Remove' };
+
+export type PalletStakingAsyncPalletConfigOpU32 =
+  | { type: 'Noop' }
+  | { type: 'Set'; value: number }
+  | { type: 'Remove' };
+
+export type PalletStakingAsyncPalletConfigOpPercent =
+  | { type: 'Noop' }
+  | { type: 'Set'; value: Percent }
+  | { type: 'Remove' };
+
+export type PalletStakingAsyncPalletConfigOpPerbill =
+  | { type: 'Noop' }
+  | { type: 'Set'; value: Perbill }
+  | { type: 'Remove' };
+
+export type PalletStakingAsyncLedgerUnlockChunk = { value: bigint; era: number };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletReviveCall =
+  /**
+   * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
+   *
+   * # Parameters
+   *
+   * * `payload`: The encoded [`crate::evm::TransactionSigned`].
+   * * `gas_limit`: The gas limit enforced during contract execution.
+   * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
+   * storage usage.
+   *
+   * # Note
+   *
+   * This call cannot be dispatched directly; attempting to do so will result in a failed
+   * transaction. It serves as a wrapper for an Ethereum transaction. When submitted, the
+   * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
+   * signer and validating the transaction.
+   **/
+  | { name: 'EthTransact'; params: { payload: Bytes } }
+  /**
+   * Makes a call to an account, optionally transferring some balance.
+   *
+   * # Parameters
+   *
+   * * `dest`: Address of the contract to call.
+   * * `value`: The balance to transfer from the `origin` to `dest`.
+   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
+   * caller to pay for the storage consumed.
+   * * `data`: The input data to pass to the contract.
+   *
+   * * If the account is a smart-contract account, the associated code will be
+   * executed and any value will be transferred.
+   * * If the account is a regular account, any value will be transferred.
+   * * If no account exists and the call value is not less than `existential_deposit`,
+   * a regular account will be created and any value will be transferred.
+   **/
+  | {
+      name: 'Call';
+      params: {
+        dest: H160;
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        data: Bytes;
+      };
+    }
+  /**
+   * Instantiates a contract from a previously deployed vm binary.
+   *
+   * This function is identical to [`Self::instantiate_with_code`] but without the
+   * code deployment step. Instead, the `code_hash` of an on-chain deployed vm binary
+   * must be supplied.
+   **/
+  | {
+      name: 'Instantiate';
+      params: {
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        codeHash: H256;
+        data: Bytes;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Instantiates a new contract from the supplied `code` optionally transferring
+   * some balance.
+   *
+   * This dispatchable has the same effect as calling [`Self::upload_code`] +
+   * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
+   * also check the documentation of [`Self::upload_code`].
+   *
+   * # Parameters
+   *
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
+   * from the caller to pay for the storage consumed.
+   * * `code`: The contract code to deploy in raw bytes.
+   * * `data`: The input data to pass to the contract constructor.
+   * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
+   * semantics are used. If `None` then `CRATE1` is used.
+   *
+   *
+   * Instantiation is executed as follows:
+   *
+   * - The supplied `code` is deployed, and a `code_hash` is created for that code.
+   * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
+   * - The destination address is computed based on the sender, code_hash and the salt.
+   * - The smart-contract account is created at the computed address.
+   * - The `value` is transferred to the new account.
+   * - The `deploy` function is executed in the context of the newly-created account.
+   **/
+  | {
+      name: 'InstantiateWithCode';
+      params: {
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        code: Bytes;
+        data: Bytes;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
+   * by an EVM transaction through the EVM compatibility layer.
+   *
+   * Calling this dispatchable ensures that the origin's nonce is bumped only once,
+   * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
+   * also bumps the nonce after contract instantiation, since it may be invoked multiple
+   * times within a batch call transaction.
+   **/
+  | {
+      name: 'EthInstantiateWithCode';
+      params: { value: U256; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint; code: Bytes; data: Bytes };
+    }
+  /**
+   * Same as [`Self::call`], but intended to be dispatched **only**
+   * by an EVM transaction through the EVM compatibility layer.
+   **/
+  | {
+      name: 'EthCall';
+      params: { dest: H160; value: U256; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint; data: Bytes };
+    }
+  /**
+   * Upload new `code` without instantiating a contract from it.
+   *
+   * If the code does not already exist a deposit is reserved from the caller
+   * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
+   * depends on the size of the supplied `code`.
+   *
+   * # Note
+   *
+   * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
+   * To avoid this situation a constructor could employ access control so that it can
+   * only be instantiated by permissioned entities. The same is true when uploading
+   * through [`Self::instantiate_with_code`].
+   **/
+  | { name: 'UploadCode'; params: { code: Bytes; storageDepositLimit: bigint } }
+  /**
+   * Remove the code stored under `code_hash` and refund the deposit to its owner.
+   *
+   * A code can only be removed by its original uploader (its owner) and only if it is
+   * not used by any contract.
+   **/
+  | { name: 'RemoveCode'; params: { codeHash: H256 } }
+  /**
+   * Privileged function that changes the code of an existing contract.
+   *
+   * This takes care of updating refcounts and all other necessary operations. Returns
+   * an error if either the `code_hash` or `dest` do not exist.
+   *
+   * # Note
+   *
+   * This does **not** change the address of the contract in question. This means
+   * that the contract address is no longer derived from its code hash after calling
+   * this dispatchable.
+   **/
+  | { name: 'SetCode'; params: { dest: H160; codeHash: H256 } }
+  /**
+   * Register the callers account id so that it can be used in contract interactions.
+   *
+   * This will error if the origin is already mapped or is a eth native `Address20`. It will
+   * take a deposit that can be released by calling [`Self::unmap_account`].
+   **/
+  | { name: 'MapAccount' }
+  /**
+   * Unregister the callers account id in order to free the deposit.
+   *
+   * There is no reason to ever call this function other than freeing up the deposit.
+   * This is only useful when the account should no longer be used.
+   **/
+  | { name: 'UnmapAccount' }
+  /**
+   * Dispatch an `call` with the origin set to the callers fallback address.
+   *
+   * Every `AccountId32` can control its corresponding fallback account. The fallback account
+   * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
+   * recovery function in case an `AccountId20` was used without creating a mapping first.
+   **/
+  | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubPaseoRuntimeRuntimeCall } };
+
+export type PalletReviveCallLike =
+  /**
+   * A raw EVM transaction, typically dispatched by an Ethereum JSON-RPC server.
+   *
+   * # Parameters
+   *
+   * * `payload`: The encoded [`crate::evm::TransactionSigned`].
+   * * `gas_limit`: The gas limit enforced during contract execution.
+   * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
+   * storage usage.
+   *
+   * # Note
+   *
+   * This call cannot be dispatched directly; attempting to do so will result in a failed
+   * transaction. It serves as a wrapper for an Ethereum transaction. When submitted, the
+   * runtime converts it into a [`sp_runtime::generic::CheckedExtrinsic`] by recovering the
+   * signer and validating the transaction.
+   **/
+  | { name: 'EthTransact'; params: { payload: BytesLike } }
+  /**
+   * Makes a call to an account, optionally transferring some balance.
+   *
+   * # Parameters
+   *
+   * * `dest`: Address of the contract to call.
+   * * `value`: The balance to transfer from the `origin` to `dest`.
+   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
+   * caller to pay for the storage consumed.
+   * * `data`: The input data to pass to the contract.
+   *
+   * * If the account is a smart-contract account, the associated code will be
+   * executed and any value will be transferred.
+   * * If the account is a regular account, any value will be transferred.
+   * * If no account exists and the call value is not less than `existential_deposit`,
+   * a regular account will be created and any value will be transferred.
+   **/
+  | {
+      name: 'Call';
+      params: {
+        dest: H160;
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        data: BytesLike;
+      };
+    }
+  /**
+   * Instantiates a contract from a previously deployed vm binary.
+   *
+   * This function is identical to [`Self::instantiate_with_code`] but without the
+   * code deployment step. Instead, the `code_hash` of an on-chain deployed vm binary
+   * must be supplied.
+   **/
+  | {
+      name: 'Instantiate';
+      params: {
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        codeHash: H256;
+        data: BytesLike;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Instantiates a new contract from the supplied `code` optionally transferring
+   * some balance.
+   *
+   * This dispatchable has the same effect as calling [`Self::upload_code`] +
+   * [`Self::instantiate`]. Bundling them together provides efficiency gains. Please
+   * also check the documentation of [`Self::upload_code`].
+   *
+   * # Parameters
+   *
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
+   * from the caller to pay for the storage consumed.
+   * * `code`: The contract code to deploy in raw bytes.
+   * * `data`: The input data to pass to the contract constructor.
+   * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
+   * semantics are used. If `None` then `CRATE1` is used.
+   *
+   *
+   * Instantiation is executed as follows:
+   *
+   * - The supplied `code` is deployed, and a `code_hash` is created for that code.
+   * - If the `code_hash` already exists on the chain the underlying `code` will be shared.
+   * - The destination address is computed based on the sender, code_hash and the salt.
+   * - The smart-contract account is created at the computed address.
+   * - The `value` is transferred to the new account.
+   * - The `deploy` function is executed in the context of the newly-created account.
+   **/
+  | {
+      name: 'InstantiateWithCode';
+      params: {
+        value: bigint;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        code: BytesLike;
+        data: BytesLike;
+        salt?: FixedBytes<32> | undefined;
+      };
+    }
+  /**
+   * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
+   * by an EVM transaction through the EVM compatibility layer.
+   *
+   * Calling this dispatchable ensures that the origin's nonce is bumped only once,
+   * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
+   * also bumps the nonce after contract instantiation, since it may be invoked multiple
+   * times within a batch call transaction.
+   **/
+  | {
+      name: 'EthInstantiateWithCode';
+      params: {
+        value: U256;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        code: BytesLike;
+        data: BytesLike;
+      };
+    }
+  /**
+   * Same as [`Self::call`], but intended to be dispatched **only**
+   * by an EVM transaction through the EVM compatibility layer.
+   **/
+  | {
+      name: 'EthCall';
+      params: {
+        dest: H160;
+        value: U256;
+        gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
+        data: BytesLike;
+      };
+    }
+  /**
+   * Upload new `code` without instantiating a contract from it.
+   *
+   * If the code does not already exist a deposit is reserved from the caller
+   * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
+   * depends on the size of the supplied `code`.
+   *
+   * # Note
+   *
+   * Anyone can instantiate a contract from any uploaded code and thus prevent its removal.
+   * To avoid this situation a constructor could employ access control so that it can
+   * only be instantiated by permissioned entities. The same is true when uploading
+   * through [`Self::instantiate_with_code`].
+   **/
+  | { name: 'UploadCode'; params: { code: BytesLike; storageDepositLimit: bigint } }
+  /**
+   * Remove the code stored under `code_hash` and refund the deposit to its owner.
+   *
+   * A code can only be removed by its original uploader (its owner) and only if it is
+   * not used by any contract.
+   **/
+  | { name: 'RemoveCode'; params: { codeHash: H256 } }
+  /**
+   * Privileged function that changes the code of an existing contract.
+   *
+   * This takes care of updating refcounts and all other necessary operations. Returns
+   * an error if either the `code_hash` or `dest` do not exist.
+   *
+   * # Note
+   *
+   * This does **not** change the address of the contract in question. This means
+   * that the contract address is no longer derived from its code hash after calling
+   * this dispatchable.
+   **/
+  | { name: 'SetCode'; params: { dest: H160; codeHash: H256 } }
+  /**
+   * Register the callers account id so that it can be used in contract interactions.
+   *
+   * This will error if the origin is already mapped or is a eth native `Address20`. It will
+   * take a deposit that can be released by calling [`Self::unmap_account`].
+   **/
+  | { name: 'MapAccount' }
+  /**
+   * Unregister the callers account id in order to free the deposit.
+   *
+   * There is no reason to ever call this function other than freeing up the deposit.
+   * This is only useful when the account should no longer be used.
+   **/
+  | { name: 'UnmapAccount' }
+  /**
+   * Dispatch an `call` with the origin set to the callers fallback address.
+   *
+   * Every `AccountId32` can control its corresponding fallback account. The fallback account
+   * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
+   * recovery function in case an `AccountId20` was used without creating a mapping first.
+   **/
+  | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubPaseoRuntimeRuntimeCallLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -17722,136 +18303,6 @@ export type PalletStateTrieMigrationError =
   | 'BadChildRoot';
 
 /**
- * The `Event` enum of this pallet
- **/
-export type PalletStakingAsyncPalletEvent =
-  /**
-   * The era payout has been set; the first balance is the validator-payout; the second is
-   * the remainder from the maximum amount of reward.
-   **/
-  | { name: 'EraPaid'; data: { eraIndex: number; validatorPayout: bigint; remainder: bigint } }
-  /**
-   * The nominator has been rewarded by this amount to this destination.
-   **/
-  | { name: 'Rewarded'; data: { stash: AccountId32; dest: PalletStakingAsyncRewardDestination; amount: bigint } }
-  /**
-   * A staker (validator or nominator) has been slashed by the given amount.
-   **/
-  | { name: 'Slashed'; data: { staker: AccountId32; amount: bigint } }
-  /**
-   * An old slashing report from a prior era was discarded because it could
-   * not be processed.
-   **/
-  | { name: 'OldSlashingReportDiscarded'; data: { sessionIndex: number } }
-  /**
-   * An account has bonded this amount. \[stash, amount\]
-   *
-   * NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,
-   * it will not be emitted for staking rewards when they are added to stake.
-   **/
-  | { name: 'Bonded'; data: { stash: AccountId32; amount: bigint } }
-  /**
-   * An account has unbonded this amount.
-   **/
-  | { name: 'Unbonded'; data: { stash: AccountId32; amount: bigint } }
-  /**
-   * An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
-   * from the unlocking queue.
-   **/
-  | { name: 'Withdrawn'; data: { stash: AccountId32; amount: bigint } }
-  /**
-   * A subsequent event of `Withdrawn`, indicating that `stash` was fully removed from the
-   * system.
-   **/
-  | { name: 'StakerRemoved'; data: { stash: AccountId32 } }
-  /**
-   * A nominator has been kicked from a validator.
-   **/
-  | { name: 'Kicked'; data: { nominator: AccountId32; stash: AccountId32 } }
-  /**
-   * An account has stopped participating as either a validator or nominator.
-   **/
-  | { name: 'Chilled'; data: { stash: AccountId32 } }
-  /**
-   * A Page of stakers rewards are getting paid. `next` is `None` if all pages are claimed.
-   **/
-  | {
-      name: 'PayoutStarted';
-      data: { eraIndex: number; validatorStash: AccountId32; page: number; next?: number | undefined };
-    }
-  /**
-   * A validator has set their preferences.
-   **/
-  | { name: 'ValidatorPrefsSet'; data: { stash: AccountId32; prefs: PalletStakingAsyncValidatorPrefs } }
-  /**
-   * Voters size limit reached.
-   **/
-  | { name: 'SnapshotVotersSizeExceeded'; data: { size: number } }
-  /**
-   * Targets size limit reached.
-   **/
-  | { name: 'SnapshotTargetsSizeExceeded'; data: { size: number } }
-  | { name: 'ForceEra'; data: { mode: PalletStakingAsyncForcing } }
-  /**
-   * Report of a controller batch deprecation.
-   **/
-  | { name: 'ControllerBatchDeprecated'; data: { failures: number } }
-  /**
-   * Staking balance migrated from locks to holds, with any balance that could not be held
-   * is force withdrawn.
-   **/
-  | { name: 'CurrencyMigrated'; data: { stash: AccountId32; forceWithdraw: bigint } }
-  /**
-   * A page from a multi-page election was fetched. A number of these are followed by
-   * `StakersElected`.
-   *
-   * `Ok(count)` indicates the give number of stashes were added.
-   * `Err(index)` indicates that the stashes after index were dropped.
-   * `Err(0)` indicates that an error happened but no stashes were dropped nor added.
-   *
-   * The error indicates that a number of validators were dropped due to excess size, but
-   * the overall election will continue.
-   **/
-  | { name: 'PagedElectionProceeded'; data: { page: number; result: Result<number, number> } }
-  /**
-   * An offence for the given validator, for the given percentage of their stake, at the
-   * given era as been reported.
-   **/
-  | { name: 'OffenceReported'; data: { offenceEra: number; validator: AccountId32; fraction: Perbill } }
-  /**
-   * An offence has been processed and the corresponding slash has been computed.
-   **/
-  | { name: 'SlashComputed'; data: { offenceEra: number; slashEra: number; offender: AccountId32; page: number } }
-  /**
-   * An unapplied slash has been cancelled.
-   **/
-  | { name: 'SlashCancelled'; data: { slashEra: number; validator: AccountId32 } }
-  /**
-   * Session change has been triggered.
-   *
-   * If planned_era is one era ahead of active_era, it implies new era is being planned and
-   * election is ongoing.
-   **/
-  | { name: 'SessionRotated'; data: { startingSession: number; activeEra: number; plannedEra: number } }
-  /**
-   * Something occurred that should never happen under normal operation.
-   * Logged as an event for fail-safe observability.
-   **/
-  | { name: 'Unexpected'; data: PalletStakingAsyncPalletUnexpectedKind }
-  /**
-   * An offence was reported that was too old to be processed, and thus was dropped.
-   **/
-  | { name: 'OffenceTooOld'; data: { offenceEra: number; validator: AccountId32; fraction: Perbill } }
-  /**
-   * An old era with the given index was pruned.
-   **/
-  | { name: 'EraPruned'; data: { index: number } };
-
-export type PalletStakingAsyncForcing = 'NotForcing' | 'ForceNew' | 'ForceNone' | 'ForceAlways';
-
-export type PalletStakingAsyncPalletUnexpectedKind = 'EraDurationBoundExceeded' | 'UnknownValidatorActivation';
-
-/**
  * Events of this pallet.
  **/
 export type PalletNominationPoolsEvent =
@@ -18055,7 +18506,9 @@ export type PalletStakingAsyncRcClientUnexpectedKind =
   | 'SessionReportIntegrityFailed'
   | 'ValidatorSetIntegrityFailed'
   | 'SessionSkipped'
-  | 'SessionAlreadyProcessed';
+  | 'SessionAlreadyProcessed'
+  | 'ValidatorSetSendFailed'
+  | 'ValidatorSetDropped';
 
 /**
  * The `Event` enum of this pallet
@@ -18166,6 +18619,169 @@ export type PalletElectionProviderMultiBlockSignedPalletEvent =
    * The given account has bailed.
    **/
   | { name: 'Bailed'; data: [number, AccountId32] };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletStakingAsyncPalletEvent =
+  /**
+   * The era payout has been set; the first balance is the validator-payout; the second is
+   * the remainder from the maximum amount of reward.
+   **/
+  | { name: 'EraPaid'; data: { eraIndex: number; validatorPayout: bigint; remainder: bigint } }
+  /**
+   * The nominator has been rewarded by this amount to this destination.
+   **/
+  | { name: 'Rewarded'; data: { stash: AccountId32; dest: PalletStakingAsyncRewardDestination; amount: bigint } }
+  /**
+   * A staker (validator or nominator) has been slashed by the given amount.
+   **/
+  | { name: 'Slashed'; data: { staker: AccountId32; amount: bigint } }
+  /**
+   * An old slashing report from a prior era was discarded because it could
+   * not be processed.
+   **/
+  | { name: 'OldSlashingReportDiscarded'; data: { sessionIndex: number } }
+  /**
+   * An account has bonded this amount. \[stash, amount\]
+   *
+   * NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,
+   * it will not be emitted for staking rewards when they are added to stake.
+   **/
+  | { name: 'Bonded'; data: { stash: AccountId32; amount: bigint } }
+  /**
+   * An account has unbonded this amount.
+   **/
+  | { name: 'Unbonded'; data: { stash: AccountId32; amount: bigint } }
+  /**
+   * An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
+   * from the unlocking queue.
+   **/
+  | { name: 'Withdrawn'; data: { stash: AccountId32; amount: bigint } }
+  /**
+   * A subsequent event of `Withdrawn`, indicating that `stash` was fully removed from the
+   * system.
+   **/
+  | { name: 'StakerRemoved'; data: { stash: AccountId32 } }
+  /**
+   * A nominator has been kicked from a validator.
+   **/
+  | { name: 'Kicked'; data: { nominator: AccountId32; stash: AccountId32 } }
+  /**
+   * An account has stopped participating as either a validator or nominator.
+   **/
+  | { name: 'Chilled'; data: { stash: AccountId32 } }
+  /**
+   * A Page of stakers rewards are getting paid. `next` is `None` if all pages are claimed.
+   **/
+  | {
+      name: 'PayoutStarted';
+      data: { eraIndex: number; validatorStash: AccountId32; page: number; next?: number | undefined };
+    }
+  /**
+   * A validator has set their preferences.
+   **/
+  | { name: 'ValidatorPrefsSet'; data: { stash: AccountId32; prefs: PalletStakingAsyncValidatorPrefs } }
+  /**
+   * Voters size limit reached.
+   **/
+  | { name: 'SnapshotVotersSizeExceeded'; data: { size: number } }
+  /**
+   * Targets size limit reached.
+   **/
+  | { name: 'SnapshotTargetsSizeExceeded'; data: { size: number } }
+  | { name: 'ForceEra'; data: { mode: PalletStakingAsyncForcing } }
+  /**
+   * Report of a controller batch deprecation.
+   **/
+  | { name: 'ControllerBatchDeprecated'; data: { failures: number } }
+  /**
+   * Staking balance migrated from locks to holds, with any balance that could not be held
+   * is force withdrawn.
+   **/
+  | { name: 'CurrencyMigrated'; data: { stash: AccountId32; forceWithdraw: bigint } }
+  /**
+   * A page from a multi-page election was fetched. A number of these are followed by
+   * `StakersElected`.
+   *
+   * `Ok(count)` indicates the give number of stashes were added.
+   * `Err(index)` indicates that the stashes after index were dropped.
+   * `Err(0)` indicates that an error happened but no stashes were dropped nor added.
+   *
+   * The error indicates that a number of validators were dropped due to excess size, but
+   * the overall election will continue.
+   **/
+  | { name: 'PagedElectionProceeded'; data: { page: number; result: Result<number, number> } }
+  /**
+   * An offence for the given validator, for the given percentage of their stake, at the
+   * given era as been reported.
+   **/
+  | { name: 'OffenceReported'; data: { offenceEra: number; validator: AccountId32; fraction: Perbill } }
+  /**
+   * An offence has been processed and the corresponding slash has been computed.
+   **/
+  | { name: 'SlashComputed'; data: { offenceEra: number; slashEra: number; offender: AccountId32; page: number } }
+  /**
+   * An unapplied slash has been cancelled.
+   **/
+  | { name: 'SlashCancelled'; data: { slashEra: number; validator: AccountId32 } }
+  /**
+   * Session change has been triggered.
+   *
+   * If planned_era is one era ahead of active_era, it implies new era is being planned and
+   * election is ongoing.
+   **/
+  | { name: 'SessionRotated'; data: { startingSession: number; activeEra: number; plannedEra: number } }
+  /**
+   * Something occurred that should never happen under normal operation.
+   * Logged as an event for fail-safe observability.
+   **/
+  | { name: 'Unexpected'; data: PalletStakingAsyncPalletUnexpectedKind }
+  /**
+   * An offence was reported that was too old to be processed, and thus was dropped.
+   **/
+  | { name: 'OffenceTooOld'; data: { offenceEra: number; validator: AccountId32; fraction: Perbill } }
+  /**
+   * An old era with the given index was pruned.
+   **/
+  | { name: 'EraPruned'; data: { index: number } };
+
+export type PalletStakingAsyncForcing = 'NotForcing' | 'ForceNew' | 'ForceNone' | 'ForceAlways';
+
+export type PalletStakingAsyncPalletUnexpectedKind = 'EraDurationBoundExceeded' | 'UnknownValidatorActivation';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletReviveEvent =
+  /**
+   * A custom event emitted by the contract.
+   **/
+  | {
+      name: 'ContractEmitted';
+      data: {
+        /**
+         * The contract that emitted the event.
+         **/
+        contract: H160;
+
+        /**
+         * Data supplied by the contract. Metadata generated during contract compilation
+         * is needed to decode it.
+         **/
+        data: Bytes;
+
+        /**
+         * A list of topics used to index the event.
+         * Number of topics is capped by [`limits::NUM_EVENT_TOPICS`].
+         **/
+        topics: Array<H256>;
+      };
+    }
+  /**
+   * Contract deployed by deployer at the specified address.
+   **/
+  | { name: 'Instantiated'; data: { deployer: H160; contract: H160 } };
 
 /**
  * The `Event` enum of this pallet
@@ -18728,6 +19344,15 @@ export type PalletSchedulerError =
    **/
   | 'Named';
 
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletMigrationsError =
+  /**
+   * The operation cannot complete since some MBMs are ongoing.
+   **/
+  'Ongoing';
+
 export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
 export type FrameSupportTokensMiscIdAmountRuntimeHoldReason = {
@@ -18740,13 +19365,16 @@ export type AssetHubPaseoRuntimeRuntimeHoldReason =
   | { type: 'Session'; value: PalletSessionHoldReason }
   | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
   | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
-  | { type: 'Staking'; value: PalletStakingAsyncPalletHoldReason }
   | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
-  | { type: 'MultiBlockElectionSigned'; value: PalletElectionProviderMultiBlockSignedPalletHoldReason };
+  | { type: 'MultiBlockElectionSigned'; value: PalletElectionProviderMultiBlockSignedPalletHoldReason }
+  | { type: 'Staking'; value: PalletStakingAsyncPalletHoldReason }
+  | { type: 'Revive'; value: PalletReviveHoldReason };
+
+export type PalletElectionProviderMultiBlockSignedPalletHoldReason = 'SignedSubmission';
 
 export type PalletStakingAsyncPalletHoldReason = 'Staking';
 
-export type PalletElectionProviderMultiBlockSignedPalletHoldReason = 'SignedSubmission';
+export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
 
 export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
   id: AssetHubPaseoRuntimeRuntimeFreezeReason;
@@ -20446,212 +21074,6 @@ export type PalletAssetRateError =
    **/
   | 'Overflow';
 
-export type PalletStakingAsyncLedgerStakingLedger = {
-  stash: AccountId32;
-  total: bigint;
-  active: bigint;
-  unlocking: Array<PalletStakingAsyncLedgerUnlockChunk>;
-};
-
-export type PalletStakingAsyncNominations = { targets: Array<AccountId32>; submittedIn: number; suppressed: boolean };
-
-export type PalletStakingAsyncActiveEraInfo = { index: number; start?: bigint | undefined };
-
-export type SpStakingPagedExposureMetadata = { total: bigint; own: bigint; nominatorCount: number; pageCount: number };
-
-export type PalletStakingAsyncPalletBoundedExposurePage = SpStakingExposurePage;
-
-export type SpStakingExposurePage = { pageTotal: bigint; others: Array<SpStakingIndividualExposure> };
-
-export type SpStakingIndividualExposure = { who: AccountId32; value: bigint };
-
-export type PalletStakingAsyncEraRewardPoints = { total: number; individual: Array<[AccountId32, number]> };
-
-export type PalletStakingAsyncSlashingOffenceRecord = {
-  reporter?: AccountId32 | undefined;
-  reportedEra: number;
-  exposurePage: number;
-  slashFraction: Perbill;
-  priorSlashFraction: Perbill;
-};
-
-export type PalletStakingAsyncUnappliedSlash = {
-  validator: AccountId32;
-  own: bigint;
-  others: Array<[AccountId32, bigint]>;
-  reporter?: AccountId32 | undefined;
-  payout: bigint;
-};
-
-export type PalletStakingAsyncSnapshotStatus =
-  | { type: 'Ongoing'; value: AccountId32 }
-  | { type: 'Consumed' }
-  | { type: 'Waiting' };
-
-export type PalletStakingAsyncPalletPruningStep =
-  | 'ErasStakersPaged'
-  | 'ErasStakersOverview'
-  | 'ErasValidatorPrefs'
-  | 'ClaimedRewards'
-  | 'ErasValidatorReward'
-  | 'ErasRewardPoints'
-  | 'ErasTotalStake';
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletStakingAsyncPalletError =
-  /**
-   * Not a controller account.
-   **/
-  | 'NotController'
-  /**
-   * Not a stash account.
-   **/
-  | 'NotStash'
-  /**
-   * Stash is already bonded.
-   **/
-  | 'AlreadyBonded'
-  /**
-   * Controller is already paired.
-   **/
-  | 'AlreadyPaired'
-  /**
-   * Targets cannot be empty.
-   **/
-  | 'EmptyTargets'
-  /**
-   * Duplicate index.
-   **/
-  | 'DuplicateIndex'
-  /**
-   * Slash record not found.
-   **/
-  | 'InvalidSlashRecord'
-  /**
-   * Cannot bond, nominate or validate with value less than the minimum defined by
-   * governance (see `MinValidatorBond` and `MinNominatorBond`). If unbonding is the
-   * intention, `chill` first to remove one's role as validator/nominator.
-   **/
-  | 'InsufficientBond'
-  /**
-   * Can not schedule more unlock chunks.
-   **/
-  | 'NoMoreChunks'
-  /**
-   * Can not rebond without unlocking chunks.
-   **/
-  | 'NoUnlockChunk'
-  /**
-   * Attempting to target a stash that still has funds.
-   **/
-  | 'FundedTarget'
-  /**
-   * Invalid era to reward.
-   **/
-  | 'InvalidEraToReward'
-  /**
-   * Invalid number of nominations.
-   **/
-  | 'InvalidNumberOfNominations'
-  /**
-   * Rewards for this era have already been claimed for this validator.
-   **/
-  | 'AlreadyClaimed'
-  /**
-   * No nominators exist on this page.
-   **/
-  | 'InvalidPage'
-  /**
-   * Incorrect previous history depth input provided.
-   **/
-  | 'IncorrectHistoryDepth'
-  /**
-   * Internal state has become somehow corrupted and the operation cannot continue.
-   **/
-  | 'BadState'
-  /**
-   * Too many nomination targets supplied.
-   **/
-  | 'TooManyTargets'
-  /**
-   * A nomination target was supplied that was blocked or otherwise not a validator.
-   **/
-  | 'BadTarget'
-  /**
-   * The user has enough bond and thus cannot be chilled forcefully by an external person.
-   **/
-  | 'CannotChillOther'
-  /**
-   * There are too many nominators in the system. Governance needs to adjust the staking
-   * settings to keep things safe for the runtime.
-   **/
-  | 'TooManyNominators'
-  /**
-   * There are too many validator candidates in the system. Governance needs to adjust the
-   * staking settings to keep things safe for the runtime.
-   **/
-  | 'TooManyValidators'
-  /**
-   * Commission is too low. Must be at least `MinCommission`.
-   **/
-  | 'CommissionTooLow'
-  /**
-   * Some bound is not met.
-   **/
-  | 'BoundNotMet'
-  /**
-   * Used when attempting to use deprecated controller account logic.
-   **/
-  | 'ControllerDeprecated'
-  /**
-   * Cannot reset a ledger.
-   **/
-  | 'CannotRestoreLedger'
-  /**
-   * Provided reward destination is not allowed.
-   **/
-  | 'RewardDestinationRestricted'
-  /**
-   * Not enough funds available to withdraw.
-   **/
-  | 'NotEnoughFunds'
-  /**
-   * Operation not allowed for virtual stakers.
-   **/
-  | 'VirtualStakerNotAllowed'
-  /**
-   * Stash could not be reaped as other pallet might depend on it.
-   **/
-  | 'CannotReapStash'
-  /**
-   * The stake of this account is already migrated to `Fungible` holds.
-   **/
-  | 'AlreadyMigrated'
-  /**
-   * Era not yet started.
-   **/
-  | 'EraNotStarted'
-  /**
-   * Account is restricted from participation in staking. This may happen if the account is
-   * staking in another way already, such as via pool.
-   **/
-  | 'Restricted'
-  /**
-   * Unapplied slashes in the recently concluded era is blocking this operation.
-   * See `Call::apply_slash` to apply them.
-   **/
-  | 'UnappliedSlashesInPreviousEra'
-  /**
-   * The era is not eligible for pruning.
-   **/
-  | 'EraNotPrunable'
-  /**
-   * The slash has been cancelled and cannot be applied.
-   **/
-  | 'CancelledSlash';
-
 export type PalletNominationPoolsRewardPool = {
   lastRecordedRewardCounter: FixedU128;
   lastRecordedTotalPayouts: bigint;
@@ -20933,6 +21355,13 @@ export type PalletDelegatedStakingError =
    **/
   | 'NotSupported';
 
+export type PalletStakingAsyncRcClientValidatorSetReport = {
+  newValidatorSet: Array<AccountId32>;
+  id: number;
+  pruneUpTo?: number | undefined;
+  leftover: boolean;
+};
+
 /**
  * Error of the pallet that can be returned in response to dispatches.
  **/
@@ -21006,6 +21435,442 @@ export type PalletElectionProviderMultiBlockSignedPalletError =
    * Too many invulnerable accounts are provided,
    **/
   | 'TooManyInvulnerables';
+
+export type PalletStakingAsyncLedgerStakingLedger = {
+  stash: AccountId32;
+  total: bigint;
+  active: bigint;
+  unlocking: Array<PalletStakingAsyncLedgerUnlockChunk>;
+};
+
+export type PalletStakingAsyncNominations = { targets: Array<AccountId32>; submittedIn: number; suppressed: boolean };
+
+export type PalletStakingAsyncActiveEraInfo = { index: number; start?: bigint | undefined };
+
+export type SpStakingPagedExposureMetadata = { total: bigint; own: bigint; nominatorCount: number; pageCount: number };
+
+export type PalletStakingAsyncPalletBoundedExposurePage = SpStakingExposurePage;
+
+export type SpStakingExposurePage = { pageTotal: bigint; others: Array<SpStakingIndividualExposure> };
+
+export type SpStakingIndividualExposure = { who: AccountId32; value: bigint };
+
+export type PalletStakingAsyncEraRewardPoints = { total: number; individual: Array<[AccountId32, number]> };
+
+export type PalletStakingAsyncSlashingOffenceRecord = {
+  reporter?: AccountId32 | undefined;
+  reportedEra: number;
+  exposurePage: number;
+  slashFraction: Perbill;
+  priorSlashFraction: Perbill;
+};
+
+export type PalletStakingAsyncUnappliedSlash = {
+  validator: AccountId32;
+  own: bigint;
+  others: Array<[AccountId32, bigint]>;
+  reporter?: AccountId32 | undefined;
+  payout: bigint;
+};
+
+export type PalletStakingAsyncSnapshotStatus =
+  | { type: 'Ongoing'; value: AccountId32 }
+  | { type: 'Consumed' }
+  | { type: 'Waiting' };
+
+export type PalletStakingAsyncPalletPruningStep =
+  | 'ErasStakersPaged'
+  | 'ErasStakersOverview'
+  | 'ErasValidatorPrefs'
+  | 'ClaimedRewards'
+  | 'ErasValidatorReward'
+  | 'ErasRewardPoints'
+  | 'ErasTotalStake';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletStakingAsyncPalletError =
+  /**
+   * Not a controller account.
+   **/
+  | 'NotController'
+  /**
+   * Not a stash account.
+   **/
+  | 'NotStash'
+  /**
+   * Stash is already bonded.
+   **/
+  | 'AlreadyBonded'
+  /**
+   * Controller is already paired.
+   **/
+  | 'AlreadyPaired'
+  /**
+   * Targets cannot be empty.
+   **/
+  | 'EmptyTargets'
+  /**
+   * Duplicate index.
+   **/
+  | 'DuplicateIndex'
+  /**
+   * Slash record not found.
+   **/
+  | 'InvalidSlashRecord'
+  /**
+   * Cannot bond, nominate or validate with value less than the minimum defined by
+   * governance (see `MinValidatorBond` and `MinNominatorBond`). If unbonding is the
+   * intention, `chill` first to remove one's role as validator/nominator.
+   **/
+  | 'InsufficientBond'
+  /**
+   * Can not schedule more unlock chunks.
+   **/
+  | 'NoMoreChunks'
+  /**
+   * Can not rebond without unlocking chunks.
+   **/
+  | 'NoUnlockChunk'
+  /**
+   * Attempting to target a stash that still has funds.
+   **/
+  | 'FundedTarget'
+  /**
+   * Invalid era to reward.
+   **/
+  | 'InvalidEraToReward'
+  /**
+   * Invalid number of nominations.
+   **/
+  | 'InvalidNumberOfNominations'
+  /**
+   * Rewards for this era have already been claimed for this validator.
+   **/
+  | 'AlreadyClaimed'
+  /**
+   * No nominators exist on this page.
+   **/
+  | 'InvalidPage'
+  /**
+   * Incorrect previous history depth input provided.
+   **/
+  | 'IncorrectHistoryDepth'
+  /**
+   * Internal state has become somehow corrupted and the operation cannot continue.
+   **/
+  | 'BadState'
+  /**
+   * Too many nomination targets supplied.
+   **/
+  | 'TooManyTargets'
+  /**
+   * A nomination target was supplied that was blocked or otherwise not a validator.
+   **/
+  | 'BadTarget'
+  /**
+   * The user has enough bond and thus cannot be chilled forcefully by an external person.
+   **/
+  | 'CannotChillOther'
+  /**
+   * There are too many nominators in the system. Governance needs to adjust the staking
+   * settings to keep things safe for the runtime.
+   **/
+  | 'TooManyNominators'
+  /**
+   * There are too many validator candidates in the system. Governance needs to adjust the
+   * staking settings to keep things safe for the runtime.
+   **/
+  | 'TooManyValidators'
+  /**
+   * Commission is too low. Must be at least `MinCommission`.
+   **/
+  | 'CommissionTooLow'
+  /**
+   * Some bound is not met.
+   **/
+  | 'BoundNotMet'
+  /**
+   * Used when attempting to use deprecated controller account logic.
+   **/
+  | 'ControllerDeprecated'
+  /**
+   * Cannot reset a ledger.
+   **/
+  | 'CannotRestoreLedger'
+  /**
+   * Provided reward destination is not allowed.
+   **/
+  | 'RewardDestinationRestricted'
+  /**
+   * Not enough funds available to withdraw.
+   **/
+  | 'NotEnoughFunds'
+  /**
+   * Operation not allowed for virtual stakers.
+   **/
+  | 'VirtualStakerNotAllowed'
+  /**
+   * Stash could not be reaped as other pallet might depend on it.
+   **/
+  | 'CannotReapStash'
+  /**
+   * The stake of this account is already migrated to `Fungible` holds.
+   **/
+  | 'AlreadyMigrated'
+  /**
+   * Era not yet started.
+   **/
+  | 'EraNotStarted'
+  /**
+   * Account is restricted from participation in staking. This may happen if the account is
+   * staking in another way already, such as via pool.
+   **/
+  | 'Restricted'
+  /**
+   * Unapplied slashes in the recently concluded era is blocking this operation.
+   * See `Call::apply_slash` to apply them.
+   **/
+  | 'UnappliedSlashesInPreviousEra'
+  /**
+   * The era is not eligible for pruning.
+   **/
+  | 'EraNotPrunable'
+  /**
+   * The slash has been cancelled and cannot be applied.
+   **/
+  | 'CancelledSlash';
+
+export type PalletReviveVmCodeInfo = {
+  owner: AccountId32;
+  deposit: bigint;
+  refcount: bigint;
+  codeLen: number;
+  behaviourVersion: number;
+};
+
+export type PalletReviveStorageAccountInfo = { accountType: PalletReviveStorageAccountType; dust: number };
+
+export type PalletReviveStorageAccountType =
+  | { type: 'Contract'; value: PalletReviveStorageContractInfo }
+  | { type: 'Eoa' };
+
+export type PalletReviveStorageContractInfo = {
+  trieId: Bytes;
+  codeHash: H256;
+  storageBytes: number;
+  storageItems: number;
+  storageByteDeposit: bigint;
+  storageItemDeposit: bigint;
+  storageBaseDeposit: bigint;
+  immutableDataLen: number;
+};
+
+export type PalletReviveStorageDeletionQueueManager = { insertCounter: number; deleteCounter: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletReviveError =
+  /**
+   * Invalid schedule supplied, e.g. with zero weight of a basic operation.
+   **/
+  | 'InvalidSchedule'
+  /**
+   * Invalid combination of flags supplied to `seal_call` or `seal_delegate_call`.
+   **/
+  | 'InvalidCallFlags'
+  /**
+   * The executed contract exhausted its gas limit.
+   **/
+  | 'OutOfGas'
+  /**
+   * Performing the requested transfer failed. Probably because there isn't enough
+   * free balance in the sender's account.
+   **/
+  | 'TransferFailed'
+  /**
+   * Performing a call was denied because the calling depth reached the limit
+   * of what is specified in the schedule.
+   **/
+  | 'MaxCallDepthReached'
+  /**
+   * No contract was found at the specified address.
+   **/
+  | 'ContractNotFound'
+  /**
+   * No code could be found at the supplied code hash.
+   **/
+  | 'CodeNotFound'
+  /**
+   * No code info could be found at the supplied code hash.
+   **/
+  | 'CodeInfoNotFound'
+  /**
+   * A buffer outside of sandbox memory was passed to a contract API function.
+   **/
+  | 'OutOfBounds'
+  /**
+   * Input passed to a contract API function failed to decode as expected type.
+   **/
+  | 'DecodingFailed'
+  /**
+   * Contract trapped during execution.
+   **/
+  | 'ContractTrapped'
+  /**
+   * Event body or storage item exceeds [`limits::PAYLOAD_BYTES`].
+   **/
+  | 'ValueTooLarge'
+  /**
+   * Termination of a contract is not allowed while the contract is already
+   * on the call stack. Can be triggered by `seal_terminate`.
+   **/
+  | 'TerminatedWhileReentrant'
+  /**
+   * `seal_call` forwarded this contracts input. It therefore is no longer available.
+   **/
+  | 'InputForwarded'
+  /**
+   * The amount of topics passed to `seal_deposit_events` exceeds the limit.
+   **/
+  | 'TooManyTopics'
+  /**
+   * A contract with the same AccountId already exists.
+   **/
+  | 'DuplicateContract'
+  /**
+   * A contract self destructed in its constructor.
+   *
+   * This can be triggered by a call to `seal_terminate`.
+   **/
+  | 'TerminatedInConstructor'
+  /**
+   * A call tried to invoke a contract that is flagged as non-reentrant.
+   **/
+  | 'ReentranceDenied'
+  /**
+   * A contract called into the runtime which then called back into this pallet.
+   **/
+  | 'ReenteredPallet'
+  /**
+   * A contract attempted to invoke a state modifying API while being in read-only mode.
+   **/
+  | 'StateChangeDenied'
+  /**
+   * Origin doesn't have enough balance to pay the required storage deposits.
+   **/
+  | 'StorageDepositNotEnoughFunds'
+  /**
+   * More storage was created than allowed by the storage deposit limit.
+   **/
+  | 'StorageDepositLimitExhausted'
+  /**
+   * Code removal was denied because the code is still in use by at least one contract.
+   **/
+  | 'CodeInUse'
+  /**
+   * The contract ran to completion but decided to revert its storage changes.
+   * Please note that this error is only returned from extrinsics. When called directly
+   * or via RPC an `Ok` will be returned. In this case the caller needs to inspect the flags
+   * to determine whether a reversion has taken place.
+   **/
+  | 'ContractReverted'
+  /**
+   * The contract failed to compile or is missing the correct entry points.
+   *
+   * A more detailed error can be found on the node console if debug messages are enabled
+   * by supplying `-lruntime::revive=debug`.
+   **/
+  | 'CodeRejected'
+  /**
+   * The code blob supplied is larger than [`limits::code::BLOB_BYTES`].
+   **/
+  | 'BlobTooLarge'
+  /**
+   * The contract declares too much memory (ro + rw + stack).
+   **/
+  | 'StaticMemoryTooLarge'
+  /**
+   * The program contains a basic block that is larger than allowed.
+   **/
+  | 'BasicBlockTooLarge'
+  /**
+   * The program contains an invalid instruction.
+   **/
+  | 'InvalidInstruction'
+  /**
+   * The contract has reached its maximum number of delegate dependencies.
+   **/
+  | 'MaxDelegateDependenciesReached'
+  /**
+   * The dependency was not found in the contract's delegate dependencies.
+   **/
+  | 'DelegateDependencyNotFound'
+  /**
+   * The contract already depends on the given delegate dependency.
+   **/
+  | 'DelegateDependencyAlreadyExists'
+  /**
+   * Can not add a delegate dependency to the code hash of the contract itself.
+   **/
+  | 'CannotAddSelfAsDelegateDependency'
+  /**
+   * Can not add more data to transient storage.
+   **/
+  | 'OutOfTransientStorage'
+  /**
+   * The contract tried to call a syscall which does not exist (at its current api level).
+   **/
+  | 'InvalidSyscall'
+  /**
+   * Invalid storage flags were passed to one of the storage syscalls.
+   **/
+  | 'InvalidStorageFlags'
+  /**
+   * PolkaVM failed during code execution. Probably due to a malformed program.
+   **/
+  | 'ExecutionFailed'
+  /**
+   * Failed to convert a U256 to a Balance.
+   **/
+  | 'BalanceConversionFailed'
+  /**
+   * Immutable data can only be set during deploys and only be read during calls.
+   * Additionally, it is only valid to set the data once and it must not be empty.
+   **/
+  | 'InvalidImmutableAccess'
+  /**
+   * An `AccountID32` account tried to interact with the pallet without having a mapping.
+   *
+   * Call [`Pallet::map_account`] in order to create a mapping for the account.
+   **/
+  | 'AccountUnmapped'
+  /**
+   * Tried to map an account that is already mapped.
+   **/
+  | 'AccountAlreadyMapped'
+  /**
+   * The transaction used to dry-run a contract is invalid.
+   **/
+  | 'InvalidGenericTransaction'
+  /**
+   * The refcount of a code either over or underflowed.
+   **/
+  | 'RefcountOverOrUnderflow'
+  /**
+   * Unsupported precompile address.
+   **/
+  | 'UnsupportedPrecompileAddress'
+  /**
+   * The calldata exceeds [`limits::CALLDATA_BYTES`].
+   **/
+  | 'CallDataTooLarge'
+  /**
+   * The return data exceeds [`limits::CALLDATA_BYTES`].
+   **/
+  | 'ReturnDataTooLarge';
 
 /**
  * Error for the Sudo pallet.
@@ -21252,11 +22117,142 @@ export type CumulusPrimitivesCoreCollationInfo = {
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
 
+export type PalletRevivePrimitivesContractResult = {
+  gasConsumed: SpWeightsWeightV2Weight;
+  gasRequired: SpWeightsWeightV2Weight;
+  storageDeposit: PalletRevivePrimitivesStorageDeposit;
+  result: Result<PalletRevivePrimitivesExecReturnValue, DispatchError>;
+};
+
+export type PalletRevivePrimitivesExecReturnValue = { flags: PalletReviveUapiFlagsReturnFlags; data: Bytes };
+
+export type PalletReviveUapiFlagsReturnFlags = { bits: number };
+
+export type PalletRevivePrimitivesStorageDeposit =
+  | { type: 'Refund'; value: bigint }
+  | { type: 'Charge'; value: bigint };
+
+export type PalletRevivePrimitivesCode = { type: 'Upload'; value: Bytes } | { type: 'Existing'; value: H256 };
+
+export type PalletRevivePrimitivesContractResultInstantiateReturnValue = {
+  gasConsumed: SpWeightsWeightV2Weight;
+  gasRequired: SpWeightsWeightV2Weight;
+  storageDeposit: PalletRevivePrimitivesStorageDeposit;
+  result: Result<PalletRevivePrimitivesInstantiateReturnValue, DispatchError>;
+};
+
+export type PalletRevivePrimitivesInstantiateReturnValue = {
+  result: PalletRevivePrimitivesExecReturnValue;
+  addr: H160;
+};
+
+export type PalletReviveEvmApiRpcTypesGenGenericTransaction = {
+  accessList?: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry> | undefined;
+  blobVersionedHashes: Array<H256>;
+  blobs: Array<PalletReviveEvmApiByteBytes>;
+  chainId?: U256 | undefined;
+  from?: H160 | undefined;
+  gas?: U256 | undefined;
+  gasPrice?: U256 | undefined;
+  input: PalletReviveEvmApiRpcTypesGenInputOrData;
+  maxFeePerBlobGas?: U256 | undefined;
+  maxFeePerGas?: U256 | undefined;
+  maxPriorityFeePerGas?: U256 | undefined;
+  nonce?: U256 | undefined;
+  to?: H160 | undefined;
+  rType?: PalletReviveEvmApiByte | undefined;
+  value?: U256 | undefined;
+};
+
+export type PalletReviveEvmApiRpcTypesGenAccessListEntry = { address: H160; storageKeys: Array<H256> };
+
+export type PalletReviveEvmApiByteBytes = Bytes;
+
+export type PalletReviveEvmApiRpcTypesGenInputOrData = {
+  input?: PalletReviveEvmApiByteBytes | undefined;
+  data?: PalletReviveEvmApiByteBytes | undefined;
+};
+
+export type PalletReviveEvmApiByte = number;
+
+export type PalletRevivePrimitivesEthTransactInfo = {
+  gasRequired: SpWeightsWeightV2Weight;
+  storageDeposit: bigint;
+  ethGas: U256;
+  data: Bytes;
+};
+
+export type PalletRevivePrimitivesEthTransactError =
+  | { type: 'Data'; value: Bytes }
+  | { type: 'Message'; value: string };
+
+export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
+
+export type PalletRevivePrimitivesContractAccessError = 'DoesntExist' | 'KeyDecodingFailed';
+
+export type PalletReviveEvmApiDebugRpcTypesTracerType =
+  | { type: 'CallTracer'; value?: PalletReviveEvmApiDebugRpcTypesCallTracerConfig | undefined }
+  | { type: 'PrestateTracer'; value?: PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig | undefined };
+
+export type PalletReviveEvmApiDebugRpcTypesCallTracerConfig = { withLogs: boolean; onlyTopCall: boolean };
+
+export type PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig = {
+  diffMode: boolean;
+  disableStorage: boolean;
+  disableCode: boolean;
+};
+
+export type PalletReviveEvmApiDebugRpcTypesTrace =
+  | { type: 'Call'; value: PalletReviveEvmApiDebugRpcTypesCallTrace }
+  | { type: 'Prestate'; value: PalletReviveEvmApiDebugRpcTypesPrestateTrace };
+
+export type PalletReviveEvmApiDebugRpcTypesCallTrace = {
+  from: H160;
+  gas: U256;
+  gasUsed: U256;
+  to: H160;
+  input: PalletReviveEvmApiByteBytes;
+  output: PalletReviveEvmApiByteBytes;
+  error?: string | undefined;
+  revertReason?: string | undefined;
+  calls: Array<PalletReviveEvmApiDebugRpcTypesCallTrace>;
+  logs: Array<PalletReviveEvmApiDebugRpcTypesCallLog>;
+  value?: U256 | undefined;
+  callType: PalletReviveEvmApiDebugRpcTypesCallType;
+};
+
+export type PalletReviveEvmApiDebugRpcTypesCallLog = {
+  address: H160;
+  topics: Array<H256>;
+  data: PalletReviveEvmApiByteBytes;
+  position: number;
+};
+
+export type PalletReviveEvmApiDebugRpcTypesCallType = 'Call' | 'StaticCall' | 'DelegateCall' | 'Create' | 'Create2';
+
+export type PalletReviveEvmApiDebugRpcTypesPrestateTrace =
+  | { type: 'Prestate'; value: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]> }
+  | {
+      type: 'DiffMode';
+      value: {
+        pre: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]>;
+        post: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]>;
+      };
+    };
+
+export type PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo = {
+  balance?: U256 | undefined;
+  nonce?: number | undefined;
+  code?: PalletReviveEvmApiByteBytes | undefined;
+  storage: Array<[PalletReviveEvmApiByteBytes, PalletReviveEvmApiByteBytes | undefined]>;
+};
+
 export type AssetHubPaseoRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }
   | { pallet: 'ParachainSystem'; palletError: CumulusPalletParachainSystemError }
   | { pallet: 'Preimage'; palletError: PalletPreimageError }
   | { pallet: 'Scheduler'; palletError: PalletSchedulerError }
+  | { pallet: 'MultiBlockMigrations'; palletError: PalletMigrationsError }
   | { pallet: 'Balances'; palletError: PalletBalancesError }
   | { pallet: 'Vesting'; palletError: PalletVestingError }
   | { pallet: 'Claims'; palletError: PolkadotRuntimeCommonClaimsPalletError }
@@ -21284,12 +22280,13 @@ export type AssetHubPaseoRuntimeRuntimeError =
   | { pallet: 'ChildBounties'; palletError: PalletChildBountiesError }
   | { pallet: 'AssetRate'; palletError: PalletAssetRateError }
   | { pallet: 'StateTrieMigration'; palletError: PalletStateTrieMigrationError }
-  | { pallet: 'Staking'; palletError: PalletStakingAsyncPalletError }
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }
   | { pallet: 'VoterList'; palletError: PalletBagsListError }
   | { pallet: 'DelegatedStaking'; palletError: PalletDelegatedStakingError }
   | { pallet: 'MultiBlockElection'; palletError: PalletElectionProviderMultiBlockError }
   | { pallet: 'MultiBlockElectionSigned'; palletError: PalletElectionProviderMultiBlockSignedPalletError }
+  | { pallet: 'Staking'; palletError: PalletStakingAsyncPalletError }
+  | { pallet: 'Revive'; palletError: PalletReviveError }
   | { pallet: 'Sudo'; palletError: PalletSudoError }
   | { pallet: 'AhOps'; palletError: PalletAhOpsError }
   | { pallet: 'AhMigrator'; palletError: PalletAhMigratorError };

@@ -11401,7 +11401,22 @@ export type PalletRcMigratorCall =
    *
    * Migration can only be cancelled if it is in the [`MigrationStage::Scheduled`] state.
    **/
-  | { name: 'CancelMigration' };
+  | { name: 'CancelMigration' }
+  /**
+   * Vote on behalf of any of the members in `MultisigMembers`.
+   *
+   * Unsigned extrinsic, requiring the `payload` to be signed.
+   *
+   * Upon each call, a new entry is created in `ManagerMultisigs` map the `payload.call` to
+   * be dispatched. Once `MultisigThreshold` is reached, the entire map is deleted, and we
+   * move on to the next round.
+   *
+   * The round system ensures that signatures from older round cannot be reused.
+   **/
+  | {
+      name: 'VoteManagerMultisig';
+      params: { payload: PalletRcMigratorManagerMultisigVote; sig: SpRuntimeMultiSignature };
+    };
 
 export type PalletRcMigratorCallLike =
   /**
@@ -11504,7 +11519,22 @@ export type PalletRcMigratorCallLike =
    *
    * Migration can only be cancelled if it is in the [`MigrationStage::Scheduled`] state.
    **/
-  | { name: 'CancelMigration' };
+  | { name: 'CancelMigration' }
+  /**
+   * Vote on behalf of any of the members in `MultisigMembers`.
+   *
+   * Unsigned extrinsic, requiring the `payload` to be signed.
+   *
+   * Upon each call, a new entry is created in `ManagerMultisigs` map the `payload.call` to
+   * be dispatched. Once `MultisigThreshold` is reached, the entire map is deleted, and we
+   * move on to the next round.
+   *
+   * The round system ensures that signatures from older round cannot be reused.
+   **/
+  | {
+      name: 'VoteManagerMultisig';
+      params: { payload: PalletRcMigratorManagerMultisigVote; sig: SpRuntimeMultiSignature };
+    };
 
 export type PalletRcMigratorMigrationStage =
   | { type: 'Pending' }
@@ -11702,6 +11732,12 @@ export type PalletRcMigratorQueuePriority =
   | { type: 'Config' }
   | { type: 'OverrideConfig'; value: [number, number] }
   | { type: 'Disabled' };
+
+export type PalletRcMigratorManagerMultisigVote = {
+  who: SpRuntimeMultiSigner;
+  call: PaseoRuntimeRuntimeCall;
+  round: number;
+};
 
 export type SpRuntimeBlakeTwo256 = {};
 
@@ -12288,7 +12324,13 @@ export type PalletStakingAsyncAhClientEvent =
    **/
   | { name: 'Unexpected'; data: PalletStakingAsyncAhClientUnexpectedKind };
 
-export type PalletStakingAsyncAhClientUnexpectedKind = 'ReceivedValidatorSetWhilePassive' | 'UnexpectedModeTransition';
+export type PalletStakingAsyncAhClientUnexpectedKind =
+  | 'ReceivedValidatorSetWhilePassive'
+  | 'UnexpectedModeTransition'
+  | 'SessionReportSendFailed'
+  | 'SessionReportDropped'
+  | 'OffenceSendFailed'
+  | 'ValidatorPointDropped';
 
 /**
  * The `Event` enum of this pallet
@@ -13396,7 +13438,15 @@ export type PalletRcMigratorEvent =
          **/
         numPureAccounts: number;
       };
-    };
+    }
+  /**
+   * The manager multisig dispatched something.
+   **/
+  | { name: 'ManagerMultisigDispatched'; data: { res: Result<[], DispatchError> } }
+  /**
+   * The manager multisig received a vote.
+   **/
+  | { name: 'ManagerMultisigVoted'; data: { votes: number } };
 
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
@@ -15003,7 +15053,18 @@ export type PalletDelegatedStakingError =
    **/
   | 'NotSupported';
 
-export type PalletStakingAsyncAhClientBufferedOffence = { reporter?: AccountId32 | undefined; slashFraction: Perbill };
+export type PalletStakingAsyncRcClientSessionReport = {
+  endIndex: number;
+  validatorPoints: Array<[AccountId32, number]>;
+  activationTimestamp?: [bigint, number] | undefined;
+  leftover: boolean;
+};
+
+export type PalletStakingAsyncRcClientOffence = {
+  offender: AccountId32;
+  reporters: Array<AccountId32>;
+  slashFraction: Perbill;
+};
 
 /**
  * The `Error` enum of this pallet.

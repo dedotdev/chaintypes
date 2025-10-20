@@ -143,6 +143,31 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
+   * Pallet `MultiBlockMigrations`'s constants
+   **/
+  multiBlockMigrations: {
+    /**
+     * The maximal length of an encoded cursor.
+     *
+     * A good default needs to selected such that no migration will ever have a cursor with MEL
+     * above this limit. This is statically checked in `integrity_test`.
+     **/
+    cursorMaxLen: number;
+
+    /**
+     * The maximal length of an encoded identifier.
+     *
+     * A good default needs to selected such that no migration will ever have an identifier
+     * with MEL above this limit. This is statically checked in `integrity_test`.
+     **/
+    identifierMaxLen: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Balances`'s constants
    **/
   balances: {
@@ -1162,131 +1187,6 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
-   * Pallet `Staking`'s constants
-   **/
-  staking: {
-    /**
-     * Number of eras to keep in history.
-     *
-     * Following information is kept for eras in `[current_era -
-     * HistoryDepth, current_era]`: `ErasValidatorPrefs`, `ErasValidatorReward`,
-     * `ErasRewardPoints`, `ErasTotalStake`, `ClaimedRewards`,
-     * `ErasStakersPaged`, `ErasStakersOverview`.
-     *
-     * Must be more than the number of eras delayed by session.
-     * I.e. active era must always be in history. I.e. `active_era >
-     * current_era - history_depth` must be guaranteed.
-     *
-     * If migrating an existing pallet from storage value to config value,
-     * this should be set to same value or greater as in storage.
-     **/
-    historyDepth: number;
-
-    /**
-     * Number of sessions per era, as per the preferences of the **relay chain**.
-     **/
-    sessionsPerEra: number;
-
-    /**
-     * Number of sessions before the end of an era when the election for the next era will
-     * start.
-     *
-     * - This determines how many sessions **before** the last session of the era the staking
-     * election process should begin.
-     * - The value is bounded between **1** (election starts at the beginning of the last
-     * session) and `SessionsPerEra` (election starts at the beginning of the first session
-     * of the era).
-     *
-     * ### Example:
-     * - If `SessionsPerEra = 6` and `PlanningEraOffset = 1`, the election starts at the
-     * beginning of session `6 - 1 = 5`.
-     * - If `PlanningEraOffset = 6`, the election starts at the beginning of session `6 - 6 =
-     * 0`, meaning it starts at the very beginning of the era.
-     **/
-    planningEraOffset: number;
-
-    /**
-     * Number of eras that staked funds must remain bonded for.
-     **/
-    bondingDuration: number;
-
-    /**
-     * Number of eras that slashes are deferred by, after computation.
-     *
-     * This should be less than the bonding duration. Set to 0 if slashes
-     * should be applied immediately, without opportunity for intervention.
-     **/
-    slashDeferDuration: number;
-
-    /**
-     * The maximum size of each `T::ExposurePage`.
-     *
-     * An `ExposurePage` is weakly bounded to a maximum of `MaxExposurePageSize`
-     * nominators.
-     *
-     * For older non-paged exposure, a reward payout was restricted to the top
-     * `MaxExposurePageSize` nominators. This is to limit the i/o cost for the
-     * nominator payout.
-     *
-     * Note: `MaxExposurePageSize` is used to bound `ClaimedRewards` and is unsafe to
-     * reduce without handling it in a migration.
-     **/
-    maxExposurePageSize: number;
-
-    /**
-     * The absolute maximum of winner validators this pallet should return.
-     *
-     * As this pallet supports multi-block election, the set of winner validators *per
-     * election* is bounded by this type.
-     **/
-    maxValidatorSet: number;
-
-    /**
-     * The maximum number of `unlocking` chunks a [`StakingLedger`] can
-     * have. Effectively determines how many unique eras a staker may be
-     * unbonding in.
-     *
-     * Note: `MaxUnlockingChunks` is used as the upper bound for the
-     * `BoundedVec` item `StakingLedger.unlocking`. Setting this value
-     * lower than the existing value can lead to inconsistencies in the
-     * `StakingLedger` and will need to be handled properly in a runtime
-     * migration. The test `reducing_max_unlocking_chunks_abrupt` shows
-     * this effect.
-     **/
-    maxUnlockingChunks: number;
-
-    /**
-     * Maximum number of invulnerable validators.
-     **/
-    maxInvulnerables: number;
-
-    /**
-     * Maximum allowed era duration in milliseconds.
-     *
-     * This provides a defensive upper bound to cap the effective era duration, preventing
-     * excessively long eras from causing runaway inflation (e.g., due to bugs). If the actual
-     * era duration exceeds this value, it will be clamped to this maximum.
-     *
-     * Example: For an ideal era duration of 24 hours (86,400,000 ms),
-     * this can be set to 604,800,000 ms (7 days).
-     **/
-    maxEraDuration: bigint;
-
-    /**
-     * Maximum number of storage items that can be pruned in a single call.
-     *
-     * This controls how many storage items can be deleted in each call to `prune_era_step`.
-     * This should be set to a conservative value (e.g., 100-500 items) to ensure pruning
-     * doesn't consume too much block space. The actual weight is determined by benchmarks.
-     **/
-    maxPruningItems: number;
-
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
    * Pallet `NominationPools`'s constants
    **/
   nominationPools: {
@@ -1509,6 +1409,191 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    * Pallet `MultiBlockElectionSigned`'s constants
    **/
   multiBlockElectionSigned: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `Staking`'s constants
+   **/
+  staking: {
+    /**
+     * Number of eras to keep in history.
+     *
+     * Following information is kept for eras in `[current_era -
+     * HistoryDepth, current_era]`: `ErasValidatorPrefs`, `ErasValidatorReward`,
+     * `ErasRewardPoints`, `ErasTotalStake`, `ClaimedRewards`,
+     * `ErasStakersPaged`, `ErasStakersOverview`.
+     *
+     * Must be more than the number of eras delayed by session.
+     * I.e. active era must always be in history. I.e. `active_era >
+     * current_era - history_depth` must be guaranteed.
+     *
+     * If migrating an existing pallet from storage value to config value,
+     * this should be set to same value or greater as in storage.
+     **/
+    historyDepth: number;
+
+    /**
+     * Number of sessions per era, as per the preferences of the **relay chain**.
+     **/
+    sessionsPerEra: number;
+
+    /**
+     * Number of sessions before the end of an era when the election for the next era will
+     * start.
+     *
+     * - This determines how many sessions **before** the last session of the era the staking
+     * election process should begin.
+     * - The value is bounded between **1** (election starts at the beginning of the last
+     * session) and `SessionsPerEra` (election starts at the beginning of the first session
+     * of the era).
+     *
+     * ### Example:
+     * - If `SessionsPerEra = 6` and `PlanningEraOffset = 1`, the election starts at the
+     * beginning of session `6 - 1 = 5`.
+     * - If `PlanningEraOffset = 6`, the election starts at the beginning of session `6 - 6 =
+     * 0`, meaning it starts at the very beginning of the era.
+     **/
+    planningEraOffset: number;
+
+    /**
+     * Number of eras that staked funds must remain bonded for.
+     **/
+    bondingDuration: number;
+
+    /**
+     * Number of eras that slashes are deferred by, after computation.
+     *
+     * This should be less than the bonding duration. Set to 0 if slashes
+     * should be applied immediately, without opportunity for intervention.
+     **/
+    slashDeferDuration: number;
+
+    /**
+     * The maximum size of each `T::ExposurePage`.
+     *
+     * An `ExposurePage` is weakly bounded to a maximum of `MaxExposurePageSize`
+     * nominators.
+     *
+     * For older non-paged exposure, a reward payout was restricted to the top
+     * `MaxExposurePageSize` nominators. This is to limit the i/o cost for the
+     * nominator payout.
+     *
+     * Note: `MaxExposurePageSize` is used to bound `ClaimedRewards` and is unsafe to
+     * reduce without handling it in a migration.
+     **/
+    maxExposurePageSize: number;
+
+    /**
+     * The absolute maximum of winner validators this pallet should return.
+     *
+     * As this pallet supports multi-block election, the set of winner validators *per
+     * election* is bounded by this type.
+     **/
+    maxValidatorSet: number;
+
+    /**
+     * The maximum number of `unlocking` chunks a [`StakingLedger`] can
+     * have. Effectively determines how many unique eras a staker may be
+     * unbonding in.
+     *
+     * Note: `MaxUnlockingChunks` is used as the upper bound for the
+     * `BoundedVec` item `StakingLedger.unlocking`. Setting this value
+     * lower than the existing value can lead to inconsistencies in the
+     * `StakingLedger` and will need to be handled properly in a runtime
+     * migration. The test `reducing_max_unlocking_chunks_abrupt` shows
+     * this effect.
+     **/
+    maxUnlockingChunks: number;
+
+    /**
+     * Maximum number of invulnerable validators.
+     **/
+    maxInvulnerables: number;
+
+    /**
+     * Maximum allowed era duration in milliseconds.
+     *
+     * This provides a defensive upper bound to cap the effective era duration, preventing
+     * excessively long eras from causing runaway inflation (e.g., due to bugs). If the actual
+     * era duration exceeds this value, it will be clamped to this maximum.
+     *
+     * Example: For an ideal era duration of 24 hours (86,400,000 ms),
+     * this can be set to 604,800,000 ms (7 days).
+     **/
+    maxEraDuration: bigint;
+
+    /**
+     * Maximum number of storage items that can be pruned in a single call.
+     *
+     * This controls how many storage items can be deleted in each call to `prune_era_step`.
+     * This should be set to a conservative value (e.g., 100-500 items) to ensure pruning
+     * doesn't consume too much block space. The actual weight is determined by benchmarks.
+     **/
+    maxPruningItems: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `Revive`'s constants
+   **/
+  revive: {
+    /**
+     * The amount of balance a caller has to pay for each byte of storage.
+     *
+     * # Note
+     *
+     * It is safe to change this value on a live chain as all refunds are pro rata.
+     **/
+    depositPerByte: bigint;
+
+    /**
+     * The amount of balance a caller has to pay for each storage item.
+     *
+     * # Note
+     *
+     * It is safe to change this value on a live chain as all refunds are pro rata.
+     **/
+    depositPerItem: bigint;
+
+    /**
+     * The percentage of the storage deposit that should be held for using a code hash.
+     * Instantiating a contract, protects the code from being removed. In order to prevent
+     * abuse these actions are protected with a percentage of the code deposit.
+     **/
+    codeHashLockupDepositPercent: Perbill;
+
+    /**
+     * Make contract callable functions marked as `#[unstable]` available.
+     *
+     * Contracts that use `#[unstable]` functions won't be able to be uploaded unless
+     * this is set to `true`. This is only meant for testnets and dev nodes in order to
+     * experiment with new features.
+     *
+     * # Warning
+     *
+     * Do **not** set to `true` on productions chains.
+     **/
+    unsafeUnstableInterface: boolean;
+
+    /**
+     * The [EIP-155](https://eips.ethereum.org/EIPS/eip-155) chain ID.
+     *
+     * This is a unique identifier assigned to each blockchain network,
+     * preventing replay attacks.
+     **/
+    chainId: bigint;
+
+    /**
+     * The ratio between the decimal representation of the native token and the ETH token.
+     **/
+    nativeToEthRatio: number;
+
     /**
      * Generic pallet constant
      **/

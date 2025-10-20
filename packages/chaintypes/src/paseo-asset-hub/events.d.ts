@@ -7,11 +7,12 @@ import type {
   H256,
   FixedBytes,
   Result,
+  Bytes,
   EthereumAddress,
   FixedU128,
-  Bytes,
   Permill,
   Perbill,
+  H160,
 } from 'dedot/codecs';
 import type {
   FrameSystemDispatchEventInfo,
@@ -48,10 +49,6 @@ import type {
   SpRuntimeDispatchErrorWithPostInfo,
   PalletStateTrieMigrationMigrationCompute,
   PalletStateTrieMigrationError,
-  PalletStakingAsyncRewardDestination,
-  PalletStakingAsyncValidatorPrefs,
-  PalletStakingAsyncForcing,
-  PalletStakingAsyncPalletUnexpectedKind,
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
@@ -60,6 +57,10 @@ import type {
   PalletElectionProviderMultiBlockPhase,
   PalletElectionProviderMultiBlockVerifierFeasibilityError,
   SpNposElectionsElectionScore,
+  PalletStakingAsyncRewardDestination,
+  PalletStakingAsyncValidatorPrefs,
+  PalletStakingAsyncForcing,
+  PalletStakingAsyncPalletUnexpectedKind,
   PolkadotParachainPrimitivesPrimitivesId,
   PalletAhMigratorMigrationStage,
   PalletAhMigratorPalletEventName,
@@ -352,6 +353,141 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
          * The new value after this call.
          **/
         newValue?: AssetHubPaseoRuntimeRuntimeParametersValue | undefined;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s events
+   **/
+  multiBlockMigrations: {
+    /**
+     * A Runtime upgrade started.
+     *
+     * Its end is indicated by `UpgradeCompleted` or `UpgradeFailed`.
+     **/
+    UpgradeStarted: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'UpgradeStarted',
+      {
+        /**
+         * The number of migrations that this upgrade contains.
+         *
+         * This can be used to design a progress indicator in combination with counting the
+         * `MigrationCompleted` and `MigrationSkipped` events.
+         **/
+        migrations: number;
+      }
+    >;
+
+    /**
+     * The current runtime upgrade completed.
+     *
+     * This implies that all of its migrations completed successfully as well.
+     **/
+    UpgradeCompleted: GenericPalletEvent<Rv, 'MultiBlockMigrations', 'UpgradeCompleted', null>;
+
+    /**
+     * Runtime upgrade failed.
+     *
+     * This is very bad and will require governance intervention.
+     **/
+    UpgradeFailed: GenericPalletEvent<Rv, 'MultiBlockMigrations', 'UpgradeFailed', null>;
+
+    /**
+     * A migration was skipped since it was already executed in the past.
+     **/
+    MigrationSkipped: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'MigrationSkipped',
+      {
+        /**
+         * The index of the skipped migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+      }
+    >;
+
+    /**
+     * A migration progressed.
+     **/
+    MigrationAdvanced: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'MigrationAdvanced',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * A Migration completed.
+     **/
+    MigrationCompleted: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'MigrationCompleted',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * A Migration failed.
+     *
+     * This implies that the whole upgrade failed and governance intervention is required.
+     **/
+    MigrationFailed: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'MigrationFailed',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * The set of historical migrations has been cleared.
+     **/
+    HistoricCleared: GenericPalletEvent<
+      Rv,
+      'MultiBlockMigrations',
+      'HistoricCleared',
+      {
+        /**
+         * Should be passed to `clear_historic` in a successive call.
+         **/
+        nextCursor?: Bytes | undefined;
       }
     >;
 
@@ -3593,212 +3729,6 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
-   * Pallet `Staking`'s events
-   **/
-  staking: {
-    /**
-     * The era payout has been set; the first balance is the validator-payout; the second is
-     * the remainder from the maximum amount of reward.
-     **/
-    EraPaid: GenericPalletEvent<
-      Rv,
-      'Staking',
-      'EraPaid',
-      { eraIndex: number; validatorPayout: bigint; remainder: bigint }
-    >;
-
-    /**
-     * The nominator has been rewarded by this amount to this destination.
-     **/
-    Rewarded: GenericPalletEvent<
-      Rv,
-      'Staking',
-      'Rewarded',
-      { stash: AccountId32; dest: PalletStakingAsyncRewardDestination; amount: bigint }
-    >;
-
-    /**
-     * A staker (validator or nominator) has been slashed by the given amount.
-     **/
-    Slashed: GenericPalletEvent<Rv, 'Staking', 'Slashed', { staker: AccountId32; amount: bigint }>;
-
-    /**
-     * An old slashing report from a prior era was discarded because it could
-     * not be processed.
-     **/
-    OldSlashingReportDiscarded: GenericPalletEvent<
-      Rv,
-      'Staking',
-      'OldSlashingReportDiscarded',
-      { sessionIndex: number }
-    >;
-
-    /**
-     * An account has bonded this amount. \[stash, amount\]
-     *
-     * NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,
-     * it will not be emitted for staking rewards when they are added to stake.
-     **/
-    Bonded: GenericPalletEvent<Rv, 'Staking', 'Bonded', { stash: AccountId32; amount: bigint }>;
-
-    /**
-     * An account has unbonded this amount.
-     **/
-    Unbonded: GenericPalletEvent<Rv, 'Staking', 'Unbonded', { stash: AccountId32; amount: bigint }>;
-
-    /**
-     * An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
-     * from the unlocking queue.
-     **/
-    Withdrawn: GenericPalletEvent<Rv, 'Staking', 'Withdrawn', { stash: AccountId32; amount: bigint }>;
-
-    /**
-     * A subsequent event of `Withdrawn`, indicating that `stash` was fully removed from the
-     * system.
-     **/
-    StakerRemoved: GenericPalletEvent<Rv, 'Staking', 'StakerRemoved', { stash: AccountId32 }>;
-
-    /**
-     * A nominator has been kicked from a validator.
-     **/
-    Kicked: GenericPalletEvent<Rv, 'Staking', 'Kicked', { nominator: AccountId32; stash: AccountId32 }>;
-
-    /**
-     * An account has stopped participating as either a validator or nominator.
-     **/
-    Chilled: GenericPalletEvent<Rv, 'Staking', 'Chilled', { stash: AccountId32 }>;
-
-    /**
-     * A Page of stakers rewards are getting paid. `next` is `None` if all pages are claimed.
-     **/
-    PayoutStarted: GenericPalletEvent<
-      Rv,
-      'Staking',
-      'PayoutStarted',
-      { eraIndex: number; validatorStash: AccountId32; page: number; next?: number | undefined }
-    >;
-
-    /**
-     * A validator has set their preferences.
-     **/
-    ValidatorPrefsSet: GenericPalletEvent<
-      Rv,
-      'Staking',
-      'ValidatorPrefsSet',
-      { stash: AccountId32; prefs: PalletStakingAsyncValidatorPrefs }
-    >;
-
-    /**
-     * Voters size limit reached.
-     **/
-    SnapshotVotersSizeExceeded: GenericPalletEvent<Rv, 'Staking', 'SnapshotVotersSizeExceeded', { size: number }>;
-
-    /**
-     * Targets size limit reached.
-     **/
-    SnapshotTargetsSizeExceeded: GenericPalletEvent<Rv, 'Staking', 'SnapshotTargetsSizeExceeded', { size: number }>;
-    ForceEra: GenericPalletEvent<Rv, 'Staking', 'ForceEra', { mode: PalletStakingAsyncForcing }>;
-
-    /**
-     * Report of a controller batch deprecation.
-     **/
-    ControllerBatchDeprecated: GenericPalletEvent<Rv, 'Staking', 'ControllerBatchDeprecated', { failures: number }>;
-
-    /**
-     * Staking balance migrated from locks to holds, with any balance that could not be held
-     * is force withdrawn.
-     **/
-    CurrencyMigrated: GenericPalletEvent<
-      Rv,
-      'Staking',
-      'CurrencyMigrated',
-      { stash: AccountId32; forceWithdraw: bigint }
-    >;
-
-    /**
-     * A page from a multi-page election was fetched. A number of these are followed by
-     * `StakersElected`.
-     *
-     * `Ok(count)` indicates the give number of stashes were added.
-     * `Err(index)` indicates that the stashes after index were dropped.
-     * `Err(0)` indicates that an error happened but no stashes were dropped nor added.
-     *
-     * The error indicates that a number of validators were dropped due to excess size, but
-     * the overall election will continue.
-     **/
-    PagedElectionProceeded: GenericPalletEvent<
-      Rv,
-      'Staking',
-      'PagedElectionProceeded',
-      { page: number; result: Result<number, number> }
-    >;
-
-    /**
-     * An offence for the given validator, for the given percentage of their stake, at the
-     * given era as been reported.
-     **/
-    OffenceReported: GenericPalletEvent<
-      Rv,
-      'Staking',
-      'OffenceReported',
-      { offenceEra: number; validator: AccountId32; fraction: Perbill }
-    >;
-
-    /**
-     * An offence has been processed and the corresponding slash has been computed.
-     **/
-    SlashComputed: GenericPalletEvent<
-      Rv,
-      'Staking',
-      'SlashComputed',
-      { offenceEra: number; slashEra: number; offender: AccountId32; page: number }
-    >;
-
-    /**
-     * An unapplied slash has been cancelled.
-     **/
-    SlashCancelled: GenericPalletEvent<Rv, 'Staking', 'SlashCancelled', { slashEra: number; validator: AccountId32 }>;
-
-    /**
-     * Session change has been triggered.
-     *
-     * If planned_era is one era ahead of active_era, it implies new era is being planned and
-     * election is ongoing.
-     **/
-    SessionRotated: GenericPalletEvent<
-      Rv,
-      'Staking',
-      'SessionRotated',
-      { startingSession: number; activeEra: number; plannedEra: number }
-    >;
-
-    /**
-     * Something occurred that should never happen under normal operation.
-     * Logged as an event for fail-safe observability.
-     **/
-    Unexpected: GenericPalletEvent<Rv, 'Staking', 'Unexpected', PalletStakingAsyncPalletUnexpectedKind>;
-
-    /**
-     * An offence was reported that was too old to be processed, and thus was dropped.
-     **/
-    OffenceTooOld: GenericPalletEvent<
-      Rv,
-      'Staking',
-      'OffenceTooOld',
-      { offenceEra: number; validator: AccountId32; fraction: Perbill }
-    >;
-
-    /**
-     * An old era with the given index was pruned.
-     **/
-    EraPruned: GenericPalletEvent<Rv, 'Staking', 'EraPruned', { index: number }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent<Rv>;
-  };
-  /**
    * Pallet `NominationPools`'s events
    **/
   nominationPools: {
@@ -4284,6 +4214,253 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
      * The given account has bailed.
      **/
     Bailed: GenericPalletEvent<Rv, 'MultiBlockElectionSigned', 'Bailed', [number, AccountId32]>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Staking`'s events
+   **/
+  staking: {
+    /**
+     * The era payout has been set; the first balance is the validator-payout; the second is
+     * the remainder from the maximum amount of reward.
+     **/
+    EraPaid: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'EraPaid',
+      { eraIndex: number; validatorPayout: bigint; remainder: bigint }
+    >;
+
+    /**
+     * The nominator has been rewarded by this amount to this destination.
+     **/
+    Rewarded: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'Rewarded',
+      { stash: AccountId32; dest: PalletStakingAsyncRewardDestination; amount: bigint }
+    >;
+
+    /**
+     * A staker (validator or nominator) has been slashed by the given amount.
+     **/
+    Slashed: GenericPalletEvent<Rv, 'Staking', 'Slashed', { staker: AccountId32; amount: bigint }>;
+
+    /**
+     * An old slashing report from a prior era was discarded because it could
+     * not be processed.
+     **/
+    OldSlashingReportDiscarded: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'OldSlashingReportDiscarded',
+      { sessionIndex: number }
+    >;
+
+    /**
+     * An account has bonded this amount. \[stash, amount\]
+     *
+     * NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,
+     * it will not be emitted for staking rewards when they are added to stake.
+     **/
+    Bonded: GenericPalletEvent<Rv, 'Staking', 'Bonded', { stash: AccountId32; amount: bigint }>;
+
+    /**
+     * An account has unbonded this amount.
+     **/
+    Unbonded: GenericPalletEvent<Rv, 'Staking', 'Unbonded', { stash: AccountId32; amount: bigint }>;
+
+    /**
+     * An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
+     * from the unlocking queue.
+     **/
+    Withdrawn: GenericPalletEvent<Rv, 'Staking', 'Withdrawn', { stash: AccountId32; amount: bigint }>;
+
+    /**
+     * A subsequent event of `Withdrawn`, indicating that `stash` was fully removed from the
+     * system.
+     **/
+    StakerRemoved: GenericPalletEvent<Rv, 'Staking', 'StakerRemoved', { stash: AccountId32 }>;
+
+    /**
+     * A nominator has been kicked from a validator.
+     **/
+    Kicked: GenericPalletEvent<Rv, 'Staking', 'Kicked', { nominator: AccountId32; stash: AccountId32 }>;
+
+    /**
+     * An account has stopped participating as either a validator or nominator.
+     **/
+    Chilled: GenericPalletEvent<Rv, 'Staking', 'Chilled', { stash: AccountId32 }>;
+
+    /**
+     * A Page of stakers rewards are getting paid. `next` is `None` if all pages are claimed.
+     **/
+    PayoutStarted: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'PayoutStarted',
+      { eraIndex: number; validatorStash: AccountId32; page: number; next?: number | undefined }
+    >;
+
+    /**
+     * A validator has set their preferences.
+     **/
+    ValidatorPrefsSet: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'ValidatorPrefsSet',
+      { stash: AccountId32; prefs: PalletStakingAsyncValidatorPrefs }
+    >;
+
+    /**
+     * Voters size limit reached.
+     **/
+    SnapshotVotersSizeExceeded: GenericPalletEvent<Rv, 'Staking', 'SnapshotVotersSizeExceeded', { size: number }>;
+
+    /**
+     * Targets size limit reached.
+     **/
+    SnapshotTargetsSizeExceeded: GenericPalletEvent<Rv, 'Staking', 'SnapshotTargetsSizeExceeded', { size: number }>;
+    ForceEra: GenericPalletEvent<Rv, 'Staking', 'ForceEra', { mode: PalletStakingAsyncForcing }>;
+
+    /**
+     * Report of a controller batch deprecation.
+     **/
+    ControllerBatchDeprecated: GenericPalletEvent<Rv, 'Staking', 'ControllerBatchDeprecated', { failures: number }>;
+
+    /**
+     * Staking balance migrated from locks to holds, with any balance that could not be held
+     * is force withdrawn.
+     **/
+    CurrencyMigrated: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'CurrencyMigrated',
+      { stash: AccountId32; forceWithdraw: bigint }
+    >;
+
+    /**
+     * A page from a multi-page election was fetched. A number of these are followed by
+     * `StakersElected`.
+     *
+     * `Ok(count)` indicates the give number of stashes were added.
+     * `Err(index)` indicates that the stashes after index were dropped.
+     * `Err(0)` indicates that an error happened but no stashes were dropped nor added.
+     *
+     * The error indicates that a number of validators were dropped due to excess size, but
+     * the overall election will continue.
+     **/
+    PagedElectionProceeded: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'PagedElectionProceeded',
+      { page: number; result: Result<number, number> }
+    >;
+
+    /**
+     * An offence for the given validator, for the given percentage of their stake, at the
+     * given era as been reported.
+     **/
+    OffenceReported: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'OffenceReported',
+      { offenceEra: number; validator: AccountId32; fraction: Perbill }
+    >;
+
+    /**
+     * An offence has been processed and the corresponding slash has been computed.
+     **/
+    SlashComputed: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'SlashComputed',
+      { offenceEra: number; slashEra: number; offender: AccountId32; page: number }
+    >;
+
+    /**
+     * An unapplied slash has been cancelled.
+     **/
+    SlashCancelled: GenericPalletEvent<Rv, 'Staking', 'SlashCancelled', { slashEra: number; validator: AccountId32 }>;
+
+    /**
+     * Session change has been triggered.
+     *
+     * If planned_era is one era ahead of active_era, it implies new era is being planned and
+     * election is ongoing.
+     **/
+    SessionRotated: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'SessionRotated',
+      { startingSession: number; activeEra: number; plannedEra: number }
+    >;
+
+    /**
+     * Something occurred that should never happen under normal operation.
+     * Logged as an event for fail-safe observability.
+     **/
+    Unexpected: GenericPalletEvent<Rv, 'Staking', 'Unexpected', PalletStakingAsyncPalletUnexpectedKind>;
+
+    /**
+     * An offence was reported that was too old to be processed, and thus was dropped.
+     **/
+    OffenceTooOld: GenericPalletEvent<
+      Rv,
+      'Staking',
+      'OffenceTooOld',
+      { offenceEra: number; validator: AccountId32; fraction: Perbill }
+    >;
+
+    /**
+     * An old era with the given index was pruned.
+     **/
+    EraPruned: GenericPalletEvent<Rv, 'Staking', 'EraPruned', { index: number }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `Revive`'s events
+   **/
+  revive: {
+    /**
+     * A custom event emitted by the contract.
+     **/
+    ContractEmitted: GenericPalletEvent<
+      Rv,
+      'Revive',
+      'ContractEmitted',
+      {
+        /**
+         * The contract that emitted the event.
+         **/
+        contract: H160;
+
+        /**
+         * Data supplied by the contract. Metadata generated during contract compilation
+         * is needed to decode it.
+         **/
+        data: Bytes;
+
+        /**
+         * A list of topics used to index the event.
+         * Number of topics is capped by [`limits::NUM_EVENT_TOPICS`].
+         **/
+        topics: Array<H256>;
+      }
+    >;
+
+    /**
+     * Contract deployed by deployer at the specified address.
+     **/
+    Instantiated: GenericPalletEvent<Rv, 'Revive', 'Instantiated', { deployer: H160; contract: H160 }>;
 
     /**
      * Generic pallet event

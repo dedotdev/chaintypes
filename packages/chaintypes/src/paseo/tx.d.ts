@@ -100,6 +100,7 @@ import type {
   PalletRcMigratorMigrationStage,
   StagingXcmV5Response,
   PalletRcMigratorQueuePriority,
+  PalletRcMigratorManagerMultisigVote,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -11145,6 +11146,37 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'RcMigrator';
           palletCall: {
             name: 'CancelMigration';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Vote on behalf of any of the members in `MultisigMembers`.
+     *
+     * Unsigned extrinsic, requiring the `payload` to be signed.
+     *
+     * Upon each call, a new entry is created in `ManagerMultisigs` map the `payload.call` to
+     * be dispatched. Once `MultisigThreshold` is reached, the entire map is deleted, and we
+     * move on to the next round.
+     *
+     * The round system ensures that signatures from older round cannot be reused.
+     *
+     * @param {PalletRcMigratorManagerMultisigVote} payload
+     * @param {SpRuntimeMultiSignature} sig
+     **/
+    voteManagerMultisig: GenericTxCall<
+      Rv,
+      (
+        payload: PalletRcMigratorManagerMultisigVote,
+        sig: SpRuntimeMultiSignature,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'VoteManagerMultisig';
+            params: { payload: PalletRcMigratorManagerMultisigVote; sig: SpRuntimeMultiSignature };
           };
         }
       >

@@ -2126,28 +2126,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ReturnDataTooLarge: GenericPalletError<Rv>;
 
     /**
-     * Invalid jump destination. Dynamic jumps points to invalid not jumpdest opcode.
-     **/
-    InvalidJump: GenericPalletError<Rv>;
-
-    /**
-     * Attempting to pop a value from an empty stack.
-     **/
-    StackUnderflow: GenericPalletError<Rv>;
-
-    /**
-     * Attempting to push a value onto a full stack.
-     **/
-    StackOverflow: GenericPalletError<Rv>;
-
-    /**
-     * Too much deposit was drawn from the shared txfee and deposit credit.
-     *
-     * This happens if the passed `gas` inside the ethereum transaction is too low.
-     **/
-    TxFeeOverdraw: GenericPalletError<Rv>;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;

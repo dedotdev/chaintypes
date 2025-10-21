@@ -24,12 +24,12 @@ import type {
   SpWeightsWeightV2Weight,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
-  PolkadotPrimitivesV9PersistedValidationData,
-  PolkadotPrimitivesV9UpgradeRestriction,
-  PolkadotPrimitivesV9UpgradeGoAhead,
+  PolkadotPrimitivesV8PersistedValidationData,
+  PolkadotPrimitivesV8UpgradeRestriction,
+  PolkadotPrimitivesV8UpgradeGoAhead,
   SpTrieStorageProof,
   CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot,
-  PolkadotPrimitivesV9AbridgedHostConfiguration,
+  PolkadotPrimitivesV8AbridgedHostConfiguration,
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   CumulusPalletParachainSystemParachainInherentInboundMessageId,
@@ -45,7 +45,6 @@ import type {
   FrameSupportTokensMiscIdAmount,
   FrameSupportTokensMiscIdAmountRuntimeFreezeReason,
   PalletTransactionPaymentReleases,
-  FrameSupportStorageNoDrop,
   PalletVestingVestingInfo,
   PalletVestingReleases,
   PalletCollatorSelectionCandidateInfo,
@@ -95,7 +94,6 @@ import type {
   PalletReviveVmCodeInfo,
   PalletReviveStorageAccountInfo,
   PalletReviveStorageDeletionQueueManager,
-  PalletReviveDebugDebugSettings,
   PalletAssetRewardsPoolStakerInfo,
   PalletAssetRewardsPoolInfo,
   FrameSupportTokensFungibleHoldConsideration,
@@ -363,12 +361,12 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
 
     /**
      * The [`PersistedValidationData`] set for this block.
+     * This value is expected to be set only once per block and it's never stored
+     * in the trie.
      *
-     * This value is expected to be set only once by the [`Pallet::set_validation_data`] inherent.
-     *
-     * @param {Callback<PolkadotPrimitivesV9PersistedValidationData | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8PersistedValidationData | undefined> =} callback
      **/
-    validationData: GenericStorageQuery<Rv, () => PolkadotPrimitivesV9PersistedValidationData | undefined>;
+    validationData: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8PersistedValidationData | undefined>;
 
     /**
      * Were the validation data set to notify the relay chain?
@@ -395,9 +393,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV9UpgradeRestriction | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8UpgradeRestriction | undefined> =} callback
      **/
-    upgradeRestrictionSignal: GenericStorageQuery<Rv, () => PolkadotPrimitivesV9UpgradeRestriction | undefined>;
+    upgradeRestrictionSignal: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8UpgradeRestriction | undefined>;
 
     /**
      * Optional upgrade go-ahead signal from the relay-chain.
@@ -406,9 +404,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV9UpgradeGoAhead | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8UpgradeGoAhead | undefined> =} callback
      **/
-    upgradeGoAhead: GenericStorageQuery<Rv, () => PolkadotPrimitivesV9UpgradeGoAhead | undefined>;
+    upgradeGoAhead: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8UpgradeGoAhead | undefined>;
 
     /**
      * The state proof for the last relay parent block.
@@ -446,9 +444,9 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      *
      * This data is also absent from the genesis.
      *
-     * @param {Callback<PolkadotPrimitivesV9AbridgedHostConfiguration | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV8AbridgedHostConfiguration | undefined> =} callback
      **/
-    hostConfiguration: GenericStorageQuery<Rv, () => PolkadotPrimitivesV9AbridgedHostConfiguration | undefined>;
+    hostConfiguration: GenericStorageQuery<Rv, () => PolkadotPrimitivesV8AbridgedHostConfiguration | undefined>;
 
     /**
      * The last downward message queue chain head we have observed.
@@ -860,15 +858,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<PalletTransactionPaymentReleases> =} callback
      **/
     storageVersion: GenericStorageQuery<Rv, () => PalletTransactionPaymentReleases>;
-
-    /**
-     * The `OnChargeTransaction` stores the withdrawn tx fee here.
-     *
-     * Use `withdraw_txfee` and `remaining_txfee` to access from outside the crate.
-     *
-     * @param {Callback<FrameSupportStorageNoDrop | undefined> =} callback
-     **/
-    txPaymentCredit: GenericStorageQuery<Rv, () => FrameSupportStorageNoDrop | undefined>;
 
     /**
      * Generic pallet storage query
@@ -2200,13 +2189,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     originalAccount: GenericStorageQuery<Rv, (arg: H160) => AccountId32 | undefined, H160>;
 
     /**
-     * Debugging settings that can be configured when DebugEnabled config is true.
-     *
-     * @param {Callback<PalletReviveDebugDebugSettings> =} callback
-     **/
-    debugSettingsOf: GenericStorageQuery<Rv, () => PalletReviveDebugDebugSettings>;
-
-    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery<Rv>;
@@ -3079,34 +3061,6 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<[] | undefined> =} callback
      **/
     lock: GenericStorageQuery<Rv, () => [] | undefined>;
-
-    /**
-     * Accounts that failed to be inserted into the bags-list due to locking.
-     * These accounts will be processed with priority in `on_idle` or via `rebag` extrinsic.
-     *
-     * Note: This storage is intentionally unbounded. The following factors make bounding
-     * unnecessary:
-     * 1. The storage usage is temporary - accounts are processed and removed in `on_idle`
-     * 2. The pallet is only locked during snapshot generation, which is weight-limited
-     * 3. Processing happens at multiple accounts per block, clearing even large backlogs quickly
-     * 4. An artificial limit could be exhausted by an attacker, preventing legitimate
-     * auto-rebagging from putting accounts in the correct position
-     *
-     * We don't store the score here - it's always fetched from `ScoreProvider` when processing,
-     * ensuring we use the most up-to-date score (accounts may have been slashed, rewarded, etc.
-     * while waiting in the queue).
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<[] | undefined> =} callback
-     **/
-    pendingRebag: GenericStorageQuery<Rv, (arg: AccountId32Like) => [] | undefined, AccountId32>;
-
-    /**
-     * Counter for the related counted storage map
-     *
-     * @param {Callback<number> =} callback
-     **/
-    counterForPendingRebag: GenericStorageQuery<Rv, () => number>;
 
     /**
      * Generic pallet storage query

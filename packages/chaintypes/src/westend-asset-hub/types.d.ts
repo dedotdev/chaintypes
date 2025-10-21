@@ -4026,13 +4026,13 @@ export type CumulusPalletParachainSystemCallLike =
   | { name: 'SudoSendUpwardMessage'; params: { message: BytesLike } };
 
 export type CumulusPalletParachainSystemParachainInherentBasicParachainInherentData = {
-  validationData: PolkadotPrimitivesV9PersistedValidationData;
+  validationData: PolkadotPrimitivesV8PersistedValidationData;
   relayChainState: SpTrieStorageProof;
   relayParentDescendants: Array<Header>;
   collatorPeerId?: Bytes | undefined;
 };
 
-export type PolkadotPrimitivesV9PersistedValidationData = {
+export type PolkadotPrimitivesV8PersistedValidationData = {
   parentHead: PolkadotParachainPrimitivesPrimitivesHeadData;
   relayParentNumber: number;
   relayParentStorageRoot: H256;
@@ -6660,7 +6660,6 @@ export type AssetHubWestendRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
   | { type: 'PolkadotXcm'; value: PalletXcmOrigin }
   | { type: 'CumulusXcm'; value: CumulusPalletXcmOrigin }
-  | { type: 'Revive'; value: PalletReviveOrigin }
   | { type: 'Origins'; value: AssetHubWestendRuntimeGovernanceOriginsPalletCustomOriginsOrigin };
 
 export type FrameSupportDispatchRawOrigin =
@@ -6676,10 +6675,6 @@ export type PalletXcmOrigin =
 export type CumulusPalletXcmOrigin =
   | { type: 'Relay' }
   | { type: 'SiblingParachain'; value: PolkadotParachainPrimitivesPrimitivesId };
-
-export type PalletReviveOrigin = { type: 'EthTransaction'; value: AccountId32 };
-
-export type AssetHubWestendRuntimeRuntime = {};
 
 export type AssetHubWestendRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
   | 'StakingAdmin'
@@ -11111,8 +11106,7 @@ export type PalletNftsPreSignedMint = {
 export type SpRuntimeMultiSignature =
   | { type: 'Ed25519'; value: FixedBytes<64> }
   | { type: 'Sr25519'; value: FixedBytes<64> }
-  | { type: 'Ecdsa'; value: FixedBytes<65> }
-  | { type: 'Eth'; value: FixedBytes<65> };
+  | { type: 'Ecdsa'; value: FixedBytes<65> };
 
 export type PalletNftsPreSignedAttributes = {
   collection: number;
@@ -13854,14 +13848,7 @@ export type PalletReviveCall =
    **/
   | {
       name: 'EthInstantiateWithCode';
-      params: {
-        value: U256;
-        gasLimit: SpWeightsWeightV2Weight;
-        code: Bytes;
-        data: Bytes;
-        effectiveGasPrice: U256;
-        encodedLen: number;
-      };
+      params: { value: U256; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint; code: Bytes; data: Bytes };
     }
   /**
    * Same as [`Self::call`], but intended to be dispatched **only**
@@ -13869,14 +13856,7 @@ export type PalletReviveCall =
    **/
   | {
       name: 'EthCall';
-      params: {
-        dest: H160;
-        value: U256;
-        gasLimit: SpWeightsWeightV2Weight;
-        data: Bytes;
-        effectiveGasPrice: U256;
-        encodedLen: number;
-      };
+      params: { dest: H160; value: U256; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint; data: Bytes };
     }
   /**
    * Upload new `code` without instantiating a contract from it.
@@ -14057,10 +14037,9 @@ export type PalletReviveCallLike =
       params: {
         value: U256;
         gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
         code: BytesLike;
         data: BytesLike;
-        effectiveGasPrice: U256;
-        encodedLen: number;
       };
     }
   /**
@@ -14073,9 +14052,8 @@ export type PalletReviveCallLike =
         dest: H160;
         value: U256;
         gasLimit: SpWeightsWeightV2Weight;
+        storageDepositLimit: bigint;
         data: BytesLike;
-        effectiveGasPrice: U256;
-        encodedLen: number;
       };
     }
   /**
@@ -17918,7 +17896,6 @@ export type CumulusPalletWeightReclaimStorageWeightReclaim = [
   FrameSystemExtensionsCheckWeight,
   PalletAssetConversionTxPaymentChargeAssetTxPayment,
   FrameMetadataHashExtensionCheckMetadataHash,
-  PalletReviveEvmTxExtensionSetOrigin,
 ];
 
 export type FrameSystemExtensionsAuthorizeCall = {};
@@ -17946,12 +17923,10 @@ export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataH
 
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
-export type PalletReviveEvmTxExtensionSetOrigin = {};
-
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV9UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
 };
 
 export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
@@ -17964,21 +17939,21 @@ export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
 
 export type CumulusPalletParachainSystemUnincludedSegmentHrmpChannelUpdate = { msgCount: number; totalBytes: number };
 
-export type PolkadotPrimitivesV9UpgradeGoAhead = 'Abort' | 'GoAhead';
+export type PolkadotPrimitivesV8UpgradeGoAhead = 'Abort' | 'GoAhead';
 
 export type CumulusPalletParachainSystemUnincludedSegmentSegmentTracker = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   hrmpWatermark?: number | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV9UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
 };
 
-export type PolkadotPrimitivesV9UpgradeRestriction = 'Present';
+export type PolkadotPrimitivesV8UpgradeRestriction = 'Present';
 
 export type CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot = {
   dmqMqcHead: H256;
   relayDispatchQueueRemainingCapacity: CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity;
-  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV9AbridgedHrmpChannel]>;
-  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV9AbridgedHrmpChannel]>;
+  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
+  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
 };
 
 export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity = {
@@ -17986,7 +17961,7 @@ export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRema
   remainingSize: number;
 };
 
-export type PolkadotPrimitivesV9AbridgedHrmpChannel = {
+export type PolkadotPrimitivesV8AbridgedHrmpChannel = {
   maxCapacity: number;
   maxTotalSize: number;
   maxMessageSize: number;
@@ -17995,7 +17970,7 @@ export type PolkadotPrimitivesV9AbridgedHrmpChannel = {
   mqcHead?: H256 | undefined;
 };
 
-export type PolkadotPrimitivesV9AbridgedHostConfiguration = {
+export type PolkadotPrimitivesV8AbridgedHostConfiguration = {
   maxCodeSize: number;
   maxHeadDataSize: number;
   maxUpwardQueueCount: number;
@@ -18005,10 +17980,10 @@ export type PolkadotPrimitivesV9AbridgedHostConfiguration = {
   hrmpMaxMessageNumPerCandidate: number;
   validationUpgradeCooldown: number;
   validationUpgradeDelay: number;
-  asyncBackingParams: PolkadotPrimitivesV9AsyncBackingAsyncBackingParams;
+  asyncBackingParams: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams;
 };
 
-export type PolkadotPrimitivesV9AsyncBackingAsyncBackingParams = {
+export type PolkadotPrimitivesV8AsyncBackingAsyncBackingParams = {
   maxCandidateDepth: number;
   allowedAncestryLen: number;
 };
@@ -18237,10 +18212,6 @@ export type PalletBalancesError =
   | 'DeltaZero';
 
 export type PalletTransactionPaymentReleases = 'V1Ancient' | 'V2';
-
-export type FrameSupportStorageNoDrop = FrameSupportTokensFungibleImbalance;
-
-export type FrameSupportTokensFungibleImbalance = { amount: bigint };
 
 export type PalletVestingReleases = 'V0' | 'V1';
 
@@ -19558,8 +19529,6 @@ export type PalletReviveStorageContractInfo = {
 
 export type PalletReviveStorageDeletionQueueManager = { insertCounter: number; deleteCounter: number };
 
-export type PalletReviveDebugDebugSettings = { allowUnlimitedContractSize: boolean };
-
 /**
  * The `Error` enum of this pallet.
  **/
@@ -19761,25 +19730,7 @@ export type PalletReviveError =
   /**
    * The return data exceeds [`limits::CALLDATA_BYTES`].
    **/
-  | 'ReturnDataTooLarge'
-  /**
-   * Invalid jump destination. Dynamic jumps points to invalid not jumpdest opcode.
-   **/
-  | 'InvalidJump'
-  /**
-   * Attempting to pop a value from an empty stack.
-   **/
-  | 'StackUnderflow'
-  /**
-   * Attempting to push a value onto a full stack.
-   **/
-  | 'StackOverflow'
-  /**
-   * Too much deposit was drawn from the shared txfee and deposit credit.
-   *
-   * This happens if the passed `gas` inside the ethereum transaction is too low.
-   **/
-  | 'TxFeeOverdraw';
+  | 'ReturnDataTooLarge';
 
 export type PalletAssetRewardsPoolStakerInfo = { amount: bigint; rewards: bigint; rewardPerTokenPaid: bigint };
 
@@ -20863,10 +20814,6 @@ export type PalletAhOpsError =
 
 export type SpConsensusSlotsSlotDuration = bigint;
 
-export type CumulusPrimitivesCoreNextSlotSchedule = { numberOfBlocks: number; blockTime: Duration };
-
-export type Duration = [bigint, number];
-
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 
 export type SpCoreOpaqueMetadata = Bytes;
@@ -21050,10 +20997,7 @@ export type PalletRevivePrimitivesEthTransactError =
 
 export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
 
-export type PalletRevivePrimitivesContractAccessError =
-  | { type: 'DoesntExist' }
-  | { type: 'KeyDecodingFailed' }
-  | { type: 'StorageWriteFailed'; value: DispatchError };
+export type PalletRevivePrimitivesContractAccessError = 'DoesntExist' | 'KeyDecodingFailed';
 
 export type PalletReviveEvmApiDebugRpcTypesTracerType =
   | { type: 'CallTracer'; value?: PalletReviveEvmApiDebugRpcTypesCallTracerConfig | undefined }
@@ -21084,7 +21028,6 @@ export type PalletReviveEvmApiDebugRpcTypesCallTrace = {
   logs: Array<PalletReviveEvmApiDebugRpcTypesCallLog>;
   value?: U256 | undefined;
   callType: PalletReviveEvmApiDebugRpcTypesCallType;
-  childCallCount: number;
 };
 
 export type PalletReviveEvmApiDebugRpcTypesCallLog = {
@@ -21112,8 +21055,6 @@ export type PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo = {
   code?: PalletReviveEvmApiByteBytes | undefined;
   storage: Array<[PalletReviveEvmApiByteBytes, PalletReviveEvmApiByteBytes | undefined]>;
 };
-
-export type PalletRevivePrimitivesBalanceConversionError = 'Value' | 'Dust';
 
 export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }

@@ -10643,20 +10643,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * @param {U256} value
      * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {bigint} storageDepositLimit
      * @param {BytesLike} code
      * @param {BytesLike} data
-     * @param {U256} effectiveGasPrice
-     * @param {number} encodedLen
      **/
     ethInstantiateWithCode: GenericTxCall<
       Rv,
       (
         value: U256,
         gasLimit: SpWeightsWeightV2Weight,
+        storageDepositLimit: bigint,
         code: BytesLike,
         data: BytesLike,
-        effectiveGasPrice: U256,
-        encodedLen: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
@@ -10666,10 +10664,9 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
             params: {
               value: U256;
               gasLimit: SpWeightsWeightV2Weight;
+              storageDepositLimit: bigint;
               code: BytesLike;
               data: BytesLike;
-              effectiveGasPrice: U256;
-              encodedLen: number;
             };
           };
         }
@@ -10683,9 +10680,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H160} dest
      * @param {U256} value
      * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {bigint} storageDepositLimit
      * @param {BytesLike} data
-     * @param {U256} effectiveGasPrice
-     * @param {number} encodedLen
      **/
     ethCall: GenericTxCall<
       Rv,
@@ -10693,9 +10689,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         dest: H160,
         value: U256,
         gasLimit: SpWeightsWeightV2Weight,
+        storageDepositLimit: bigint,
         data: BytesLike,
-        effectiveGasPrice: U256,
-        encodedLen: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
@@ -10706,9 +10701,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               dest: H160;
               value: U256;
               gasLimit: SpWeightsWeightV2Weight;
+              storageDepositLimit: bigint;
               data: BytesLike;
-              effectiveGasPrice: U256;
-              encodedLen: number;
             };
           };
         }

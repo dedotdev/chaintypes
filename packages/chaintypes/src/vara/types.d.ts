@@ -19,7 +19,9 @@ import type {
   Data,
   PerU16,
   FixedArray,
+  H160,
   Perquintill,
+  U256,
   FixedI64,
   FixedU128,
   Era,
@@ -82,7 +84,8 @@ export type VaraRuntimeRuntimeEvent =
   | { pallet: 'NominationPools'; palletEvent: PalletNominationPoolsEvent }
   | { pallet: 'Gear'; palletEvent: PalletGearEvent }
   | { pallet: 'StakingRewards'; palletEvent: PalletGearStakingRewardsEvent }
-  | { pallet: 'GearVoucher'; palletEvent: PalletGearVoucherEvent };
+  | { pallet: 'GearVoucher'; palletEvent: PalletGearVoucherEvent }
+  | { pallet: 'GearEthBridge'; palletEvent: PalletGearEthBridgeEvent };
 
 /**
  * Event for the System pallet.
@@ -852,7 +855,8 @@ export type VaraRuntimeRuntimeCall =
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
   | { pallet: 'Gear'; palletCall: PalletGearCall }
   | { pallet: 'StakingRewards'; palletCall: PalletGearStakingRewardsCall }
-  | { pallet: 'GearVoucher'; palletCall: PalletGearVoucherCall };
+  | { pallet: 'GearVoucher'; palletCall: PalletGearVoucherCall }
+  | { pallet: 'GearEthBridge'; palletCall: PalletGearEthBridgeCall };
 
 export type VaraRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -883,7 +887,8 @@ export type VaraRuntimeRuntimeCallLike =
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
   | { pallet: 'Gear'; palletCall: PalletGearCallLike }
   | { pallet: 'StakingRewards'; palletCall: PalletGearStakingRewardsCallLike }
-  | { pallet: 'GearVoucher'; palletCall: PalletGearVoucherCallLike };
+  | { pallet: 'GearVoucher'; palletCall: PalletGearVoucherCallLike }
+  | { pallet: 'GearEthBridge'; palletCall: PalletGearEthBridgeCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -7445,6 +7450,61 @@ export type PalletGearVoucherInternalPrepaidCall =
   | { type: 'UploadCode'; value: { code: Bytes } }
   | { type: 'DeclineVoucher' };
 
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletGearEthBridgeCall =
+  /**
+   * Root extrinsic that pauses pallet.
+   * When paused, no new messages could be queued.
+   **/
+  | { name: 'Pause' }
+  /**
+   * Root extrinsic that unpauses pallet.
+   * When paused, no new messages could be queued.
+   **/
+  | { name: 'Unpause' }
+  /**
+   * Extrinsic that inserts message in a bridging queue,
+   * updating queue merkle root at the end of the block.
+   **/
+  | { name: 'SendEthMessage'; params: { destination: H160; payload: Bytes } }
+  /**
+   * Root extrinsic that sets fee for the transport of messages.
+   **/
+  | { name: 'SetFee'; params: { fee: bigint } }
+  /**
+   * Extrinsic that verifies some block finality that resets
+   * overflowed within the current era queue.
+   **/
+  | { name: 'ResetOverflowedQueue'; params: { encodedFinalityProof: Bytes } };
+
+export type PalletGearEthBridgeCallLike =
+  /**
+   * Root extrinsic that pauses pallet.
+   * When paused, no new messages could be queued.
+   **/
+  | { name: 'Pause' }
+  /**
+   * Root extrinsic that unpauses pallet.
+   * When paused, no new messages could be queued.
+   **/
+  | { name: 'Unpause' }
+  /**
+   * Extrinsic that inserts message in a bridging queue,
+   * updating queue merkle root at the end of the block.
+   **/
+  | { name: 'SendEthMessage'; params: { destination: H160; payload: BytesLike } }
+  /**
+   * Root extrinsic that sets fee for the transport of messages.
+   **/
+  | { name: 'SetFee'; params: { fee: bigint } }
+  /**
+   * Extrinsic that verifies some block finality that resets
+   * overflowed within the current era queue.
+   **/
+  | { name: 'ResetOverflowedQueue'; params: { encodedFinalityProof: BytesLike } };
+
 export type SpRuntimeBlakeTwo256 = {};
 
 export type PalletConvictionVotingTally = { ayes: bigint; nays: bigint; support: bigint };
@@ -8683,6 +8743,82 @@ export type PalletGearVoucherEvent =
         voucherId: PalletGearVoucherInternalVoucherId;
       };
     };
+
+/**
+ * Pallet Gear Eth Bridge's event.
+ **/
+export type PalletGearEthBridgeEvent =
+  /**
+   * Grandpa validator's keys set was hashed and set in storage at
+   * first block of the last session in the era.
+   **/
+  | { name: 'AuthoritySetHashChanged'; data: H256 }
+  /**
+   * Authority set hash was reset.
+   *
+   * Related to bridge clearing on initialization of the second block in a new era.
+   **/
+  | { name: 'AuthoritySetReset' }
+  /**
+   * Optimistically, single-time called event defining that pallet
+   * got initialized and started processing session changes,
+   * as well as putting initial zeroed queue merkle root.
+   **/
+  | { name: 'BridgeInitialized' }
+  /**
+   * Bridge was paused and temporary doesn't process any incoming requests.
+   **/
+  | { name: 'BridgePaused' }
+  /**
+   * Bridge was unpaused and from now on processes any incoming requests.
+   **/
+  | { name: 'BridgeUnpaused' }
+  /**
+   * A new message was queued for bridging.
+   **/
+  | {
+      name: 'MessageQueued';
+      data: {
+        /**
+         * Enqueued message.
+         **/
+        message: PalletGearEthBridgePrimitivesEthMessage;
+
+        /**
+         * Hash of the enqueued message.
+         **/
+        hash: H256;
+      };
+    }
+  /**
+   * Merkle root of the queue changed: new messages queued within the block.
+   **/
+  | {
+      name: 'QueueMerkleRootChanged';
+      data: {
+        /**
+         * Queue identifier.
+         **/
+        queueId: bigint;
+
+        /**
+         * Merkle root of the queue.
+         **/
+        root: H256;
+      };
+    }
+  /**
+   * Queue has been overflowed and now requires reset.
+   **/
+  | { name: 'QueueOverflowed' }
+  /**
+   * Queue was reset.
+   *
+   * Related to bridge clearing on initialization of the second block in a new era.
+   **/
+  | { name: 'QueueReset' };
+
+export type PalletGearEthBridgePrimitivesEthMessage = { nonce: U256; source: H256; destination: H160; payload: Bytes };
 
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
@@ -11017,6 +11153,43 @@ export type PalletGearBankError =
    **/
   | 'Overflow';
 
+export type PalletGearEthBridgeInternalQueueInfo =
+  | { type: 'Empty' }
+  | { type: 'NonEmpty'; value: { highestRoot: H256; latestNonceUsed: U256 } };
+
+/**
+ * Pallet Gear Eth Bridge's error.
+ **/
+export type PalletGearEthBridgeError =
+  /**
+   * The error happens when bridge queue is temporarily overflowed
+   * and needs cleanup to proceed.
+   **/
+  | 'BridgeCleanupRequired'
+  /**
+   * The error happens when bridge got called before
+   * proper initialization after deployment.
+   **/
+  | 'BridgeIsNotYetInitialized'
+  /**
+   * The error happens when bridge got called when paused.
+   **/
+  | 'BridgeIsPaused'
+  /**
+   * The error happens when bridging message sent with too big payload.
+   **/
+  | 'MaxPayloadSizeExceeded'
+  /**
+   * The error happens when bridging thorough builtin and message value
+   * is inapplicable to operation or insufficient.
+   **/
+  | 'InsufficientValueApplied'
+  /**
+   * The error happens when attempted to reset overflowed queue, but
+   * queue isn't overflowed or incorrect finality proof provided.
+   **/
+  | 'InvalidQueueReset';
+
 export type PalletGearStakingRewardsExtensionStakingBlackList = {};
 
 export type FrameSystemExtensionsCheckNonZeroSender = {};
@@ -11180,4 +11353,5 @@ export type VaraRuntimeRuntimeError =
   | { pallet: 'Gear'; palletError: PalletGearError }
   | { pallet: 'StakingRewards'; palletError: PalletGearStakingRewardsError }
   | { pallet: 'GearVoucher'; palletError: PalletGearVoucherError }
-  | { pallet: 'GearBank'; palletError: PalletGearBankError };
+  | { pallet: 'GearBank'; palletError: PalletGearBankError }
+  | { pallet: 'GearEthBridge'; palletError: PalletGearEthBridgeError };

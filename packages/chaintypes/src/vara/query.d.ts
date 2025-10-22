@@ -15,6 +15,7 @@ import type {
   Percent,
   Data,
   Perquintill,
+  U256,
 } from 'dedot/codecs';
 import type {
   FrameSystemAccountInfo,
@@ -109,6 +110,7 @@ import type {
   PalletGearVoucherInternalVoucherInfo,
   PalletGearVoucherInternalVoucherId,
   PalletGearBankBankAccount,
+  PalletGearEthBridgeInternalQueueInfo,
 } from './types.js';
 
 export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage<Rv> {
@@ -2690,6 +2692,151 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<bigint> =} callback
      **/
     onFinalizeValue: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `GearEthBridge`'s storage queries
+   **/
+  gearEthBridge: {
+    /**
+     * Lifecycle storage.
+     *
+     * Defines if pallet got initialized and focused on common session changes.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    initialized: GenericStorageQuery<Rv, () => boolean>;
+
+    /**
+     * Lifecycle storage.
+     *
+     * Defines if pallet is accepting any mutable requests. Governance-ruled.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    paused: GenericStorageQuery<Rv, () => boolean>;
+
+    /**
+     * Primary storage.
+     *
+     * Keeps hash of queued validator keys for the next era.
+     *
+     * **Invariant**: Key exists in storage since first block of some era's last
+     * session, until initialization of the second block of the next era.
+     *
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    authoritySetHash: GenericStorageQuery<Rv, () => H256 | undefined>;
+
+    /**
+     * Primary storage.
+     *
+     * Keeps merkle root of the bridge's queued messages.
+     *
+     * **Invariant**: Key exists since pallet initialization. If queue is empty,
+     * zeroed hash set in storage.
+     *
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    queueMerkleRoot: GenericStorageQuery<Rv, () => H256 | undefined>;
+
+    /**
+     * Primary storage.
+     *
+     * Keeps bridge's queued messages keccak hashes.
+     *
+     * @param {Callback<Array<H256>> =} callback
+     **/
+    queue: GenericStorageQuery<Rv, () => Array<H256>>;
+
+    /**
+     * Primary storage.
+     *
+     * Keeps the monotonic identifier of a bridge message queue.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    queueId: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     * Helper storage.
+     *
+     * Keeps queue infos to their ids. For details on info, see [`QueueInfo`].
+     *
+     * @param {bigint} arg
+     * @param {Callback<PalletGearEthBridgeInternalQueueInfo | undefined> =} callback
+     **/
+    queuesInfo: GenericStorageQuery<Rv, (arg: bigint) => PalletGearEthBridgeInternalQueueInfo | undefined, bigint>;
+
+    /**
+     * Operational storage.
+     *
+     * Declares timer of the session changes (`on_new_session` calls),
+     * when `queued_validators` must be stored within the pallet.
+     *
+     * **Invariant**: reducing each time on new session, it equals 0 only
+     * since storing grandpa keys hash until next session change,
+     * when it becomes `SessionPerEra - 1`.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    sessionsTimer: GenericStorageQuery<Rv, () => number>;
+
+    /**
+     * Operational storage.
+     *
+     * Defines in how many on_initialize hooks queue, queue merkle root and
+     * grandpa keys hash should be cleared.
+     *
+     * **Invariant**: set to 2 on_init hooks when new session with authorities
+     * set change, then decreasing to zero on each new block hook. When equals
+     * to zero, reset is performed.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    clearTimer: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Operational storage.
+     *
+     * Keeps next message's nonce for bridging. Must be increased on each use.
+     *
+     * @param {Callback<U256> =} callback
+     **/
+    messageNonce: GenericStorageQuery<Rv, () => U256>;
+
+    /**
+     * Operational storage.
+     *
+     * Defines if queue was changed within the block, it's necessary to
+     * update queue merkle root by the end of the block.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    queueChanged: GenericStorageQuery<Rv, () => boolean>;
+
+    /**
+     * Operational storage.
+     *
+     * Defines since when queue was last pushed to that caused overflow.
+     * Intended to support unlimited queue capacity.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    queueOverflowedSince: GenericStorageQuery<Rv, () => number | undefined>;
+
+    /**
+     * Operational storage.
+     *
+     * Defines the amount of fee to be paid for the transport of messages.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    transportFee: GenericStorageQuery<Rv, () => bigint>;
 
     /**
      * Generic pallet storage query

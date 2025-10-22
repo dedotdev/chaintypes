@@ -20,6 +20,7 @@ import type {
   Perbill,
   FixedBytes,
   Data,
+  H160,
 } from 'dedot/codecs';
 import type {
   VaraRuntimeRuntimeCallLike,
@@ -7525,6 +7526,114 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'Decline';
             params: { voucherId: PalletGearVoucherInternalVoucherId };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `GearEthBridge`'s transaction calls
+   **/
+  gearEthBridge: {
+    /**
+     * Root extrinsic that pauses pallet.
+     * When paused, no new messages could be queued.
+     *
+     **/
+    pause: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'GearEthBridge';
+          palletCall: {
+            name: 'Pause';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Root extrinsic that unpauses pallet.
+     * When paused, no new messages could be queued.
+     *
+     **/
+    unpause: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'GearEthBridge';
+          palletCall: {
+            name: 'Unpause';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Extrinsic that inserts message in a bridging queue,
+     * updating queue merkle root at the end of the block.
+     *
+     * @param {H160} destination
+     * @param {BytesLike} payload
+     **/
+    sendEthMessage: GenericTxCall<
+      Rv,
+      (
+        destination: H160,
+        payload: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'GearEthBridge';
+          palletCall: {
+            name: 'SendEthMessage';
+            params: { destination: H160; payload: BytesLike };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Root extrinsic that sets fee for the transport of messages.
+     *
+     * @param {bigint} fee
+     **/
+    setFee: GenericTxCall<
+      Rv,
+      (fee: bigint) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'GearEthBridge';
+          palletCall: {
+            name: 'SetFee';
+            params: { fee: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Extrinsic that verifies some block finality that resets
+     * overflowed within the current era queue.
+     *
+     * @param {BytesLike} encodedFinalityProof
+     **/
+    resetOverflowedQueue: GenericTxCall<
+      Rv,
+      (encodedFinalityProof: BytesLike) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'GearEthBridge';
+          palletCall: {
+            name: 'ResetOverflowedQueue';
+            params: { encodedFinalityProof: BytesLike };
           };
         }
       >

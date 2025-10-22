@@ -1215,4 +1215,50 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
      **/
     [name: string]: any;
   };
+  /**
+   * Pallet `GearEthBridge`'s constants
+   **/
+  gearEthBridge: {
+    /**
+     * The bridge' pallet id, used for deriving its sovereign account ID.
+     **/
+    palletId: FrameSupportPalletId;
+
+    /**
+     * Account ID of the bridge builtin.
+     **/
+    builtinAddress: AccountId32;
+
+    /**
+     * The AccountId of the bridge admin.
+     **/
+    bridgeAdmin: AccountId32;
+
+    /**
+     * The AccountId of the bridge pauser.
+     **/
+    bridgePauser: AccountId32;
+
+    /**
+     * Constant defining maximal payload size in bytes of message for bridging.
+     **/
+    maxPayloadSize: number;
+
+    /**
+     * Constant defining maximal amount of messages that are able to be
+     * bridged within the single staking era.
+     **/
+    queueCapacity: number;
+
+    /**
+     * Constant defining amount of sessions in manager for keys rotation.
+     * Similar to `pallet_staking::SessionsPerEra`.
+     **/
+    sessionsPerEra: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
 }

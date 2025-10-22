@@ -48,6 +48,7 @@ import type {
   GearCommonEventCodeChangeKind,
   GearCommonEventProgramChangeKind,
   PalletGearVoucherInternalVoucherId,
+  PalletGearEthBridgePrimitivesEthMessage,
 } from './types.js';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -2512,6 +2513,97 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
         voucherId: PalletGearVoucherInternalVoucherId;
       }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `GearEthBridge`'s events
+   **/
+  gearEthBridge: {
+    /**
+     * Grandpa validator's keys set was hashed and set in storage at
+     * first block of the last session in the era.
+     **/
+    AuthoritySetHashChanged: GenericPalletEvent<Rv, 'GearEthBridge', 'AuthoritySetHashChanged', H256>;
+
+    /**
+     * Authority set hash was reset.
+     *
+     * Related to bridge clearing on initialization of the second block in a new era.
+     **/
+    AuthoritySetReset: GenericPalletEvent<Rv, 'GearEthBridge', 'AuthoritySetReset', null>;
+
+    /**
+     * Optimistically, single-time called event defining that pallet
+     * got initialized and started processing session changes,
+     * as well as putting initial zeroed queue merkle root.
+     **/
+    BridgeInitialized: GenericPalletEvent<Rv, 'GearEthBridge', 'BridgeInitialized', null>;
+
+    /**
+     * Bridge was paused and temporary doesn't process any incoming requests.
+     **/
+    BridgePaused: GenericPalletEvent<Rv, 'GearEthBridge', 'BridgePaused', null>;
+
+    /**
+     * Bridge was unpaused and from now on processes any incoming requests.
+     **/
+    BridgeUnpaused: GenericPalletEvent<Rv, 'GearEthBridge', 'BridgeUnpaused', null>;
+
+    /**
+     * A new message was queued for bridging.
+     **/
+    MessageQueued: GenericPalletEvent<
+      Rv,
+      'GearEthBridge',
+      'MessageQueued',
+      {
+        /**
+         * Enqueued message.
+         **/
+        message: PalletGearEthBridgePrimitivesEthMessage;
+
+        /**
+         * Hash of the enqueued message.
+         **/
+        hash: H256;
+      }
+    >;
+
+    /**
+     * Merkle root of the queue changed: new messages queued within the block.
+     **/
+    QueueMerkleRootChanged: GenericPalletEvent<
+      Rv,
+      'GearEthBridge',
+      'QueueMerkleRootChanged',
+      {
+        /**
+         * Queue identifier.
+         **/
+        queueId: bigint;
+
+        /**
+         * Merkle root of the queue.
+         **/
+        root: H256;
+      }
+    >;
+
+    /**
+     * Queue has been overflowed and now requires reset.
+     **/
+    QueueOverflowed: GenericPalletEvent<Rv, 'GearEthBridge', 'QueueOverflowed', null>;
+
+    /**
+     * Queue was reset.
+     *
+     * Related to bridge clearing on initialization of the second block in a new era.
+     **/
+    QueueReset: GenericPalletEvent<Rv, 'GearEthBridge', 'QueueReset', null>;
 
     /**
      * Generic pallet event

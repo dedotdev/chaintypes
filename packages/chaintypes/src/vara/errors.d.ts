@@ -2010,4 +2010,47 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      **/
     [error: string]: GenericPalletError<Rv>;
   };
+  /**
+   * Pallet `GearEthBridge`'s errors
+   **/
+  gearEthBridge: {
+    /**
+     * The error happens when bridge queue is temporarily overflowed
+     * and needs cleanup to proceed.
+     **/
+    BridgeCleanupRequired: GenericPalletError<Rv>;
+
+    /**
+     * The error happens when bridge got called before
+     * proper initialization after deployment.
+     **/
+    BridgeIsNotYetInitialized: GenericPalletError<Rv>;
+
+    /**
+     * The error happens when bridge got called when paused.
+     **/
+    BridgeIsPaused: GenericPalletError<Rv>;
+
+    /**
+     * The error happens when bridging message sent with too big payload.
+     **/
+    MaxPayloadSizeExceeded: GenericPalletError<Rv>;
+
+    /**
+     * The error happens when bridging thorough builtin and message value
+     * is inapplicable to operation or insufficient.
+     **/
+    InsufficientValueApplied: GenericPalletError<Rv>;
+
+    /**
+     * The error happens when attempted to reset overflowed queue, but
+     * queue isn't overflowed or incorrect finality proof provided.
+     **/
+    InvalidQueueReset: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
 }

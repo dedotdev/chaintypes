@@ -88,6 +88,7 @@ import type {
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
   StagingXcmV5Xcm,
+  PalletXcAssetConfigMigrationStep,
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMessageQueuePage,
@@ -1277,7 +1278,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
     invulnerables: GenericStorageQuery<Rv, () => Array<AccountId32>>;
 
     /**
-     * The (community, limited) collation candidates.
+     * The (community approved, limited) collation candidates.
      *
      * @param {Callback<Array<PalletCollatorSelectionCandidateInfo>> =} callback
      **/
@@ -1323,6 +1324,14 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<AccountId32 | undefined> =} callback
      **/
     slashDestination: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+
+    /**
+     * Pending applications to become a collator.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    pendingApplications: GenericStorageQuery<Rv, (arg: AccountId32Like) => bigint | undefined, AccountId32>;
 
     /**
      * Generic pallet storage query
@@ -1728,6 +1737,12 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
       (arg: XcmVersionedLocation) => bigint | undefined,
       XcmVersionedLocation
     >;
+
+    /**
+     *
+     * @param {Callback<PalletXcAssetConfigMigrationStep> =} callback
+     **/
+    assetHubMigrationStep: GenericStorageQuery<Rv, () => PalletXcAssetConfigMigrationStep>;
 
     /**
      * Generic pallet storage query

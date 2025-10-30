@@ -48,6 +48,7 @@ import type {
   XcmV3WeightLimit,
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
+  PalletXcAssetConfigMigrationStep,
   XcmVersionedAsset,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   EthereumTransactionTransactionV2,
@@ -4739,6 +4740,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Register this account as a collator candidate. The account must (a) already have
      * registered session keys and (b) be able to reserve the `CandidacyBond`.
      *
+     * **DEPRECATED**: This extrinsic is deprecated and will be removed in a future version.
+     * Applications are now automatically processed when approved via `accept_application`.
+     * This function now always fails to enforce the new permissioned workflow.
+     *
      * This call is not available to `Invulnerable` collators.
      *
      **/
@@ -4847,6 +4852,95 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'CollatorSelection';
           palletCall: {
             name: 'RemoveInvulnerable';
+            params: { who: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Submit an application to become a collator candidate. The account must already have
+     * registered session keys.
+     *
+     * This call is not available to `Invulnerable` collators or exisiting candidates.
+     *
+     **/
+    applyForCandidacy: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CollatorSelection';
+          palletCall: {
+            name: 'ApplyForCandidacy';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Close a pending candidacy application and unreserve the bond.
+     *
+     * Can only be called by the account that submitted the application or
+     * by governance origin.
+     *
+     * @param {AccountId32Like} who
+     **/
+    closeApplication: GenericTxCall<
+      Rv,
+      (who: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CollatorSelection';
+          palletCall: {
+            name: 'CloseApplication';
+            params: { who: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Approve a pending candidacy application.
+     *
+     * This will remove the application from pending status and immediately add the account
+     * to the candidates list, making them eligible for collator selection.
+     *
+     * @param {AccountId32Like} who
+     **/
+    approveApplication: GenericTxCall<
+      Rv,
+      (who: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CollatorSelection';
+          palletCall: {
+            name: 'ApproveApplication';
+            params: { who: AccountId32Like };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Forcibly remove a candidate from the active set.
+     *
+     * This will immediately remove the candidate from the candidates list and
+     * unbond their deposit after slashing it accordigly to `SlashRatio`.
+     *
+     * This call will fail if removing the candidate would bring the total
+     * number of candidates below the minimum threshold.
+     *
+     * @param {AccountId32Like} who
+     **/
+    kickCandidate: GenericTxCall<
+      Rv,
+      (who: AccountId32Like) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'CollatorSelection';
+          palletCall: {
+            name: 'KickCandidate';
             params: { who: AccountId32Like };
           };
         }
@@ -5754,6 +5848,24 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           palletCall: {
             name: 'RemoveAsset';
             params: { assetId: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     *
+     * @param {PalletXcAssetConfigMigrationStep} migrationStep
+     **/
+    updateMigrationStep: GenericTxCall<
+      Rv,
+      (migrationStep: PalletXcAssetConfigMigrationStep) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'XcAssetConfig';
+          palletCall: {
+            name: 'UpdateMigrationStep';
+            params: { migrationStep: PalletXcAssetConfigMigrationStep };
           };
         }
       >

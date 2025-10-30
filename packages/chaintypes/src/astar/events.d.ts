@@ -22,6 +22,7 @@ import type {
   StagingXcmV5AssetAssets,
   XcmV5TraitsError,
   XcmVersionedLocation,
+  PalletXcAssetConfigMigrationStep,
   StagingXcmV5Asset,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
@@ -1232,6 +1233,36 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     CandidateSlashed: GenericPalletEvent<Rv, 'CollatorSelection', 'CandidateSlashed', AccountId32>;
 
     /**
+     * A new candidacy application was submitted.
+     **/
+    CandidacyApplicationSubmitted: GenericPalletEvent<
+      Rv,
+      'CollatorSelection',
+      'CandidacyApplicationSubmitted',
+      [AccountId32, bigint]
+    >;
+
+    /**
+     * A candidacy application was approved.
+     **/
+    CandidacyApplicationApproved: GenericPalletEvent<
+      Rv,
+      'CollatorSelection',
+      'CandidacyApplicationApproved',
+      [AccountId32, bigint]
+    >;
+
+    /**
+     * A candidacy application was closed.
+     **/
+    CandidacyApplicationClosed: GenericPalletEvent<Rv, 'CollatorSelection', 'CandidacyApplicationClosed', AccountId32>;
+
+    /**
+     * A candidate was kicked.
+     **/
+    CandidateKicked: GenericPalletEvent<Rv, 'CollatorSelection', 'CandidateKicked', AccountId32>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;
@@ -1631,6 +1662,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'XcAssetConfig',
       'AssetRemoved',
       { assetLocation: XcmVersionedLocation; assetId: bigint }
+    >;
+
+    /**
+     * Notify when the migration step is updated.
+     **/
+    MigrationStepUpdated: GenericPalletEvent<
+      Rv,
+      'XcAssetConfig',
+      'MigrationStepUpdated',
+      { newMigrationStep: PalletXcAssetConfigMigrationStep }
     >;
 
     /**

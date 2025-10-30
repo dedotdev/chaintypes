@@ -608,6 +608,8 @@ export type PalletInflationInflationConfiguration = {
   adjustableStakerRewardPoolPerEra: bigint;
   bonusRewardPoolPerPeriod: bigint;
   idealStakingRate: Perquintill;
+  decayRate: Perquintill;
+  decayFactor: Perquintill;
 };
 
 /**
@@ -954,7 +956,23 @@ export type PalletCollatorSelectionEvent =
   /**
    * A candidate was slashed.
    **/
-  | { name: 'CandidateSlashed'; data: AccountId32 };
+  | { name: 'CandidateSlashed'; data: AccountId32 }
+  /**
+   * A new candidacy application was submitted.
+   **/
+  | { name: 'CandidacyApplicationSubmitted'; data: [AccountId32, bigint] }
+  /**
+   * A candidacy application was approved.
+   **/
+  | { name: 'CandidacyApplicationApproved'; data: [AccountId32, bigint] }
+  /**
+   * A candidacy application was closed.
+   **/
+  | { name: 'CandidacyApplicationClosed'; data: AccountId32 }
+  /**
+   * A candidate was kicked.
+   **/
+  | { name: 'CandidateKicked'; data: AccountId32 };
 
 /**
  * The `Event` enum of this pallet
@@ -1621,7 +1639,13 @@ export type PalletXcAssetConfigEvent =
   /**
    * Removed all information related to an asset Id
    **/
-  | { name: 'AssetRemoved'; data: { assetLocation: XcmVersionedLocation; assetId: bigint } };
+  | { name: 'AssetRemoved'; data: { assetLocation: XcmVersionedLocation; assetId: bigint } }
+  /**
+   * Notify when the migration step is updated.
+   **/
+  | { name: 'MigrationStepUpdated'; data: { newMigrationStep: PalletXcAssetConfigMigrationStep } };
+
+export type PalletXcAssetConfigMigrationStep = 'NotStarted' | 'Ongoing' | 'Finished';
 
 /**
  * The `Event` enum of this pallet
@@ -4856,6 +4880,7 @@ export type PalletInflationInflationParameters = {
   adjustableStakersPart: Perquintill;
   bonusPart: Perquintill;
   idealStakingRate: Perquintill;
+  decayRate: Perquintill;
 };
 
 /**
@@ -6461,6 +6486,10 @@ export type PalletCollatorSelectionCall =
    * Register this account as a collator candidate. The account must (a) already have
    * registered session keys and (b) be able to reserve the `CandidacyBond`.
    *
+   * **DEPRECATED**: This extrinsic is deprecated and will be removed in a future version.
+   * Applications are now automatically processed when approved via `accept_application`.
+   * This function now always fails to enforce the new permissioned workflow.
+   *
    * This call is not available to `Invulnerable` collators.
    **/
   | { name: 'RegisterAsCandidate' }
@@ -6490,7 +6519,38 @@ export type PalletCollatorSelectionCall =
   /**
    * Remove an invulnerable collator.
    **/
-  | { name: 'RemoveInvulnerable'; params: { who: AccountId32 } };
+  | { name: 'RemoveInvulnerable'; params: { who: AccountId32 } }
+  /**
+   * Submit an application to become a collator candidate. The account must already have
+   * registered session keys.
+   *
+   * This call is not available to `Invulnerable` collators or exisiting candidates.
+   **/
+  | { name: 'ApplyForCandidacy' }
+  /**
+   * Close a pending candidacy application and unreserve the bond.
+   *
+   * Can only be called by the account that submitted the application or
+   * by governance origin.
+   **/
+  | { name: 'CloseApplication'; params: { who: AccountId32 } }
+  /**
+   * Approve a pending candidacy application.
+   *
+   * This will remove the application from pending status and immediately add the account
+   * to the candidates list, making them eligible for collator selection.
+   **/
+  | { name: 'ApproveApplication'; params: { who: AccountId32 } }
+  /**
+   * Forcibly remove a candidate from the active set.
+   *
+   * This will immediately remove the candidate from the candidates list and
+   * unbond their deposit after slashing it accordigly to `SlashRatio`.
+   *
+   * This call will fail if removing the candidate would bring the total
+   * number of candidates below the minimum threshold.
+   **/
+  | { name: 'KickCandidate'; params: { who: AccountId32 } };
 
 export type PalletCollatorSelectionCallLike =
   /**
@@ -6510,6 +6570,10 @@ export type PalletCollatorSelectionCallLike =
   /**
    * Register this account as a collator candidate. The account must (a) already have
    * registered session keys and (b) be able to reserve the `CandidacyBond`.
+   *
+   * **DEPRECATED**: This extrinsic is deprecated and will be removed in a future version.
+   * Applications are now automatically processed when approved via `accept_application`.
+   * This function now always fails to enforce the new permissioned workflow.
    *
    * This call is not available to `Invulnerable` collators.
    **/
@@ -6540,7 +6604,38 @@ export type PalletCollatorSelectionCallLike =
   /**
    * Remove an invulnerable collator.
    **/
-  | { name: 'RemoveInvulnerable'; params: { who: AccountId32Like } };
+  | { name: 'RemoveInvulnerable'; params: { who: AccountId32Like } }
+  /**
+   * Submit an application to become a collator candidate. The account must already have
+   * registered session keys.
+   *
+   * This call is not available to `Invulnerable` collators or exisiting candidates.
+   **/
+  | { name: 'ApplyForCandidacy' }
+  /**
+   * Close a pending candidacy application and unreserve the bond.
+   *
+   * Can only be called by the account that submitted the application or
+   * by governance origin.
+   **/
+  | { name: 'CloseApplication'; params: { who: AccountId32Like } }
+  /**
+   * Approve a pending candidacy application.
+   *
+   * This will remove the application from pending status and immediately add the account
+   * to the candidates list, making them eligible for collator selection.
+   **/
+  | { name: 'ApproveApplication'; params: { who: AccountId32Like } }
+  /**
+   * Forcibly remove a candidate from the active set.
+   *
+   * This will immediately remove the candidate from the candidates list and
+   * unbond their deposit after slashing it accordigly to `SlashRatio`.
+   *
+   * This call will fail if removing the candidate would bring the total
+   * number of candidates below the minimum threshold.
+   **/
+  | { name: 'KickCandidate'; params: { who: AccountId32Like } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -7677,7 +7772,8 @@ export type PalletXcAssetConfigCall =
   /**
    * Removes all information related to asset, removing it from XCM support.
    **/
-  | { name: 'RemoveAsset'; params: { assetId: bigint } };
+  | { name: 'RemoveAsset'; params: { assetId: bigint } }
+  | { name: 'UpdateMigrationStep'; params: { migrationStep: PalletXcAssetConfigMigrationStep } };
 
 export type PalletXcAssetConfigCallLike =
   /**
@@ -7705,7 +7801,8 @@ export type PalletXcAssetConfigCallLike =
   /**
    * Removes all information related to asset, removing it from XCM support.
    **/
-  | { name: 'RemoveAsset'; params: { assetId: bigint } };
+  | { name: 'RemoveAsset'; params: { assetId: bigint } }
+  | { name: 'UpdateMigrationStep'; params: { migrationStep: PalletXcAssetConfigMigrationStep } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11129,7 +11226,15 @@ export type PalletCollatorSelectionError =
   /**
    * No candidacy bond available for withdrawal.
    **/
-  | 'NoCandidacyBond';
+  | 'NoCandidacyBond'
+  /**
+   * User has already submitted an application
+   **/
+  | 'PendingApplicationExists'
+  /**
+   * No candidacy application found
+   **/
+  | 'NoApplicationFound';
 
 export type SpCoreCryptoKeyTypeId = FixedBytes<4>;
 

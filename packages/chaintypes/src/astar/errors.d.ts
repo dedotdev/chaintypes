@@ -991,6 +991,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     NoCandidacyBond: GenericPalletError<Rv>;
 
     /**
+     * User has already submitted an application
+     **/
+    PendingApplicationExists: GenericPalletError<Rv>;
+
+    /**
+     * No candidacy application found
+     **/
+    NoApplicationFound: GenericPalletError<Rv>;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError<Rv>;

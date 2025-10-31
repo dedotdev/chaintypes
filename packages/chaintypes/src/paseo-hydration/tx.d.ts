@@ -60,6 +60,7 @@ import type {
   PalletLbpWeightCurveType,
   PalletReferralsLevel,
   PalletReferralsFeeDistribution,
+  PalletHsmArbitrage,
   OrmlVestingVestingSchedule,
   EthereumTransactionTransactionV2,
   PalletXykAssetPair,
@@ -75,6 +76,17 @@ import type {
   CumulusPrimitivesCoreAggregateMessageOrigin,
   XcmVersionedAsset,
   HydradxRuntimeOpaqueSessionKeys,
+  IsmpMessagingMessage,
+  IsmpMessagingCreateConsensusState,
+  PalletIsmpUtilsUpdateConsensusState,
+  PalletIsmpUtilsFundMessageParams,
+  IsmpMessagingConsensusMessage,
+  IsmpParachainParachainData,
+  PalletTokenGatewayTeleportParams,
+  IsmpHostStateMachine,
+  PalletTokenGatewayAssetRegistration,
+  TokenGatewayPrimitivesGatewayAssetUpdate,
+  PalletTokenGatewayPrecisionUpdate,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -6116,9 +6128,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Dust specified account.
      * IF account balance is < min. existential deposit of given currency, and account is allowed to
-     * be dusted, the remaining balance is transferred to selected account (usually treasury).
+     * be dusted, the remaining balance is transferred to treasury account.
      *
-     * Caller is rewarded with chosen reward in native currency.
+     * In case of AToken, we perform an erc20 dust, which does a wihtdraw all then supply atoken on behalf of the dust receiver
+     *
+     * The transaction fee is returned back in case of successful dusting.
+     *
+     * Treasury account can never be dusted.
+     *
+     * Emits `Dusted` event when successful.
      *
      * @param {AccountId32Like} account
      * @param {number} currencyId
@@ -6141,20 +6159,23 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Add account to list of non-dustable account. Account whihc are excluded from udsting.
-     * If such account should be dusted - `AccountBlacklisted` error is returned.
+     * Add account to list of whitelist accounts. Account which are excluded from dusting.
+     * If such account should be dusted - `AccountWhitelisted` error is returned.
      * Only root can perform this action.
+     *
+     * Emits `Added` event when successful.
+     *
      *
      * @param {AccountId32Like} account
      **/
-    addNondustableAccount: GenericTxCall<
+    whitelistAccount: GenericTxCall<
       Rv,
       (account: AccountId32Like) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Duster';
           palletCall: {
-            name: 'AddNondustableAccount';
+            name: 'WhitelistAccount';
             params: { account: AccountId32Like };
           };
         }
@@ -6162,18 +6183,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Remove account from list of non-dustable accounts. That means account can be dusted again.
+     * Remove account from list of whitelist accounts. That means account can be dusted again.
+     *
+     * Emits `Removed` event when successful.
+     *
      *
      * @param {AccountId32Like} account
      **/
-    removeNondustableAccount: GenericTxCall<
+    removeFromWhitelist: GenericTxCall<
       Rv,
       (account: AccountId32Like) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Duster';
           palletCall: {
-            name: 'RemoveNondustableAccount';
+            name: 'RemoveFromWhitelist';
             params: { account: AccountId32Like };
           };
         }
@@ -9481,52 +9505,77 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     >;
 
     /**
-     * Execute arbitrage opportunity between HSM and collateral stable pool
+     * Execute arbitrage opportunity between HSM and collateral stable pool using flash loans
      *
-     * This call is designed to be triggered automatically by offchain workers. It:
-     * 1. Detects price imbalances between HSM and a stable pool for a collateral
-     * 2. If an opportunity exists, mints Hollar, swaps it for collateral on HSM
-     * 3. Swaps that collateral for Hollar on the stable pool
-     * 4. Burns the Hollar received from the arbitrage
+     * This call is designed to be triggered automatically by offchain workers. It executes
+     * arbitrage by taking a flash loan from the GHO contract and performing trades to profit
+     * from price imbalances between HSM and the StableSwap pool.
+     *
+     * The arbitrage execution flow:
+     * 1. Takes a flash loan of Hollar from the GHO contract
+     * 2. Executes trades between HSM and StableSwap pool based on arbitrage direction:
+     * - For HollarIn (buy direction): Sell Hollar to HSM for collateral, then sell collateral back for Hollar in pool
+     * - For HollarOut (sell direction): Sell Hollar for collateral in pool, then buy Hollar back from HSM
+     * 3. Repays the flash loan
+     * 4. Any remaining profit (in collateral) is transferred to the ArbitrageProfitReceiver
      *
      * This helps maintain the peg of Hollar by profiting from and correcting price imbalances.
      * The call is unsigned and should only be executed by offchain workers.
      *
      * Parameters:
      * - `origin`: Must be None (unsigned)
-     * - `collateral_asset_id`: The ID of the collateral asset to check for arbitrage
+     * - `collateral_asset_id`: The ID of the collateral asset to use for arbitrage
+     * - `arbitrage`: Optional arbitrage parameters (direction and amount). If None, the function
+     * will automatically find and calculate the optimal arbitrage opportunity.
      *
      * Emits:
      * - `ArbitrageExecuted` when the arbitrage is successful
      *
      * Errors:
+     * - `FlashMinterNotSet` if the flash minter contract address has not been configured
      * - `AssetNotApproved` if the asset is not a registered collateral
      * - `NoArbitrageOpportunity` if there's no profitable arbitrage opportunity
      * - `MaxBuyPriceExceeded` if the arbitrage would exceed the maximum buy price
+     * - `MaxBuyBackExceeded` if the arbitrage would exceed the buyback limit
      * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
      * - Other errors from underlying calls
      *
      * @param {number} collateralAssetId
-     * @param {bigint | undefined} flashAmount
+     * @param {PalletHsmArbitrage | undefined} arbitrage
      **/
     executeArbitrage: GenericTxCall<
       Rv,
       (
         collateralAssetId: number,
-        flashAmount: bigint | undefined,
+        arbitrage: PalletHsmArbitrage | undefined,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'Hsm';
           palletCall: {
             name: 'ExecuteArbitrage';
-            params: { collateralAssetId: number; flashAmount: bigint | undefined };
+            params: { collateralAssetId: number; arbitrage: PalletHsmArbitrage | undefined };
           };
         }
       >
     >;
 
     /**
+     * Set the flash minter contract address
+     *
+     * Configures the EVM address of the flash loan contract that will be used for arbitrage
+     * operations. This contract must support the ERC-3156 flash loan standard and be trusted
+     * to handle flash loans of Hollar tokens.
+     *
+     * Parameters:
+     * - `origin`: Must be authorized (governance/root)
+     * - `flash_minter_addr`: The EVM address of the flash minter contract
+     *
+     * Emits:
+     * - `FlashMinterSet` when the address is successfully configured
+     *
+     * Errors:
+     * - Authorization errors if origin is not authorized
      *
      * @param {H160} flashMinterAddr
      **/
@@ -12695,6 +12744,291 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
           pallet: 'Session';
           palletCall: {
             name: 'PurgeKeys';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `Ismp`'s transaction calls
+   **/
+  ismp: {
+    /**
+     * Execute the provided batch of ISMP messages, this will short-circuit and revert if any
+     * of the provided messages are invalid. This is an unsigned extrinsic that permits anyone
+     * execute ISMP messages for free, provided they have valid proofs and the messages have
+     * not been previously processed.
+     *
+     * The dispatch origin for this call must be an unsigned one.
+     *
+     * - `messages`: the messages to handle or process.
+     *
+     * Emits different message events based on the Message received if successful.
+     *
+     * @param {Array<IsmpMessagingMessage>} messages
+     **/
+    handleUnsigned: GenericTxCall<
+      Rv,
+      (messages: Array<IsmpMessagingMessage>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Ismp';
+          palletCall: {
+            name: 'HandleUnsigned';
+            params: { messages: Array<IsmpMessagingMessage> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Create a consensus client, using a subjectively chosen consensus state. This can also
+     * be used to overwrite an existing consensus state. The dispatch origin for this
+     * call must be `T::AdminOrigin`.
+     *
+     * - `message`: [`CreateConsensusState`] struct.
+     *
+     * Emits [`Event::ConsensusClientCreated`] if successful.
+     *
+     * @param {IsmpMessagingCreateConsensusState} message
+     **/
+    createConsensusClient: GenericTxCall<
+      Rv,
+      (message: IsmpMessagingCreateConsensusState) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Ismp';
+          palletCall: {
+            name: 'CreateConsensusClient';
+            params: { message: IsmpMessagingCreateConsensusState };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Modify the unbonding period and challenge period for a consensus state.
+     * The dispatch origin for this call must be `T::AdminOrigin`.
+     *
+     * - `message`: `UpdateConsensusState` struct.
+     *
+     * @param {PalletIsmpUtilsUpdateConsensusState} message
+     **/
+    updateConsensusState: GenericTxCall<
+      Rv,
+      (message: PalletIsmpUtilsUpdateConsensusState) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Ismp';
+          palletCall: {
+            name: 'UpdateConsensusState';
+            params: { message: PalletIsmpUtilsUpdateConsensusState };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Add more funds to a message (request or response) to be used for delivery and execution.
+     *
+     * Should not be called on a message that has been completed (delivered or timed-out) as
+     * those funds will be lost forever.
+     *
+     * @param {PalletIsmpUtilsFundMessageParams} message
+     **/
+    fundMessage: GenericTxCall<
+      Rv,
+      (message: PalletIsmpUtilsFundMessageParams) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'Ismp';
+          palletCall: {
+            name: 'FundMessage';
+            params: { message: PalletIsmpUtilsFundMessageParams };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `IsmpParachain`'s transaction calls
+   **/
+  ismpParachain: {
+    /**
+     * This allows block builders submit parachain consensus proofs as inherents. If the
+     * provided [`ConsensusMessage`] is not for a parachain, this call will fail.
+     *
+     * @param {IsmpMessagingConsensusMessage} data
+     **/
+    updateParachainConsensus: GenericTxCall<
+      Rv,
+      (data: IsmpMessagingConsensusMessage) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'IsmpParachain';
+          palletCall: {
+            name: 'UpdateParachainConsensus';
+            params: { data: IsmpMessagingConsensusMessage };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Add some new parachains to the parachains whitelist
+     *
+     * @param {Array<IsmpParachainParachainData>} paraIds
+     **/
+    addParachain: GenericTxCall<
+      Rv,
+      (paraIds: Array<IsmpParachainParachainData>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'IsmpParachain';
+          palletCall: {
+            name: 'AddParachain';
+            params: { paraIds: Array<IsmpParachainParachainData> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Removes some parachains from the parachains whitelist
+     *
+     * @param {Array<number>} paraIds
+     **/
+    removeParachain: GenericTxCall<
+      Rv,
+      (paraIds: Array<number>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'IsmpParachain';
+          palletCall: {
+            name: 'RemoveParachain';
+            params: { paraIds: Array<number> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `TokenGateway`'s transaction calls
+   **/
+  tokenGateway: {
+    /**
+     * Teleports a registered asset
+     * locks the asset and dispatches a request to token gateway on the destination
+     *
+     * @param {PalletTokenGatewayTeleportParams} params
+     **/
+    teleport: GenericTxCall<
+      Rv,
+      (params: PalletTokenGatewayTeleportParams) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TokenGateway';
+          palletCall: {
+            name: 'Teleport';
+            params: { params: PalletTokenGatewayTeleportParams };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the token gateway address for specified chains
+     *
+     * @param {Array<[IsmpHostStateMachine, BytesLike]>} addresses
+     **/
+    setTokenGatewayAddresses: GenericTxCall<
+      Rv,
+      (addresses: Array<[IsmpHostStateMachine, BytesLike]>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TokenGateway';
+          palletCall: {
+            name: 'SetTokenGatewayAddresses';
+            params: { addresses: Array<[IsmpHostStateMachine, BytesLike]> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Registers a multi-chain ERC6160 asset. The asset should not already exist.
+     *
+     * This works by dispatching a request to the TokenGateway module on each requested chain
+     * to create the asset.
+     * `native` should be true if this asset originates from this chain
+     *
+     * @param {PalletTokenGatewayAssetRegistration} asset
+     **/
+    createErc6160Asset: GenericTxCall<
+      Rv,
+      (asset: PalletTokenGatewayAssetRegistration) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TokenGateway';
+          palletCall: {
+            name: 'CreateErc6160Asset';
+            params: { asset: PalletTokenGatewayAssetRegistration };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Registers a multi-chain ERC6160 asset. The asset should not already exist.
+     *
+     * This works by dispatching a request to the TokenGateway module on each requested chain
+     * to create the asset.
+     *
+     * @param {TokenGatewayPrimitivesGatewayAssetUpdate} asset
+     **/
+    updateErc6160Asset: GenericTxCall<
+      Rv,
+      (asset: TokenGatewayPrimitivesGatewayAssetUpdate) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TokenGateway';
+          palletCall: {
+            name: 'UpdateErc6160Asset';
+            params: { asset: TokenGatewayPrimitivesGatewayAssetUpdate };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Update the precision for an existing asset
+     *
+     * @param {PalletTokenGatewayPrecisionUpdate} update
+     **/
+    updateAssetPrecision: GenericTxCall<
+      Rv,
+      (update: PalletTokenGatewayPrecisionUpdate) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'TokenGateway';
+          palletCall: {
+            name: 'UpdateAssetPrecision';
+            params: { update: PalletTokenGatewayPrecisionUpdate };
           };
         }
       >

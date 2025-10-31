@@ -1452,12 +1452,12 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     /**
      * Account is excluded from dusting.
      **/
-    AccountBlacklisted: GenericPalletError<Rv>;
+    AccountWhitelisted: GenericPalletError<Rv>;
 
     /**
      * Account is not present in the non-dustable list.
      **/
-    AccountNotBlacklisted: GenericPalletError<Rv>;
+    AccountNotWhitelisted: GenericPalletError<Rv>;
 
     /**
      * The balance is zero.
@@ -1465,14 +1465,14 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     ZeroBalance: GenericPalletError<Rv>;
 
     /**
+     * The balance was not fully dusted, there is some leftover on the account. Normally, it should never happen.
+     **/
+    NonZeroBalance: GenericPalletError<Rv>;
+
+    /**
      * The balance is sufficient to keep account open.
      **/
     BalanceSufficient: GenericPalletError<Rv>;
-
-    /**
-     * Dust account is not set.
-     **/
-    DustAccountNotSet: GenericPalletError<Rv>;
 
     /**
      * Reserve account is not set.
@@ -2640,13 +2640,6 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * There is no profitable arbitrage opportunity for the specified collateral.
      **/
     NoArbitrageOpportunity: GenericPalletError<Rv>;
-
-    /**
-     * Offchain lock error
-     *
-     * Failed to acquire the lock for offchain workers, likely because another operation is in progress.
-     **/
-    OffchainLockError: GenericPalletError<Rv>;
 
     /**
      * Asset not in the pool
@@ -3895,6 +3888,103 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Key setting account is not live, so it's impossible to associate keys.
      **/
     NoAccount: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Ismp`'s errors
+   **/
+  ismp: {
+    /**
+     * Invalid ISMP message
+     **/
+    InvalidMessage: GenericPalletError<Rv>;
+
+    /**
+     * Requested message was not found
+     **/
+    MessageNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Encountered an error while creating the consensus client.
+     **/
+    ConsensusClientCreationFailed: GenericPalletError<Rv>;
+
+    /**
+     * Couldn't update unbonding period
+     **/
+    UnbondingPeriodUpdateFailed: GenericPalletError<Rv>;
+
+    /**
+     * Couldn't update challenge period
+     **/
+    ChallengePeriodUpdateFailed: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Hyperbridge`'s errors
+   **/
+  hyperbridge: {
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `TokenGateway`'s errors
+   **/
+  tokenGateway: {
+    /**
+     * A asset that has not been registered
+     **/
+    UnregisteredAsset: GenericPalletError<Rv>;
+
+    /**
+     * Error while teleporting asset
+     **/
+    AssetTeleportError: GenericPalletError<Rv>;
+
+    /**
+     * Coprocessor was not configured in the runtime
+     **/
+    CoprocessorNotConfigured: GenericPalletError<Rv>;
+
+    /**
+     * Asset or update Dispatch Error
+     **/
+    DispatchError: GenericPalletError<Rv>;
+
+    /**
+     * Asset Id creation failed
+     **/
+    AssetCreationError: GenericPalletError<Rv>;
+
+    /**
+     * Asset decimals not found
+     **/
+    AssetDecimalsNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Protocol Params have not been initialized
+     **/
+    NotInitialized: GenericPalletError<Rv>;
+
+    /**
+     * Unknown Asset
+     **/
+    UnknownAsset: GenericPalletError<Rv>;
+
+    /**
+     * Only root or asset owner can update asset
+     **/
+    NotAssetOwner: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

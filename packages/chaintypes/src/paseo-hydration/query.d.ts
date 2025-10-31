@@ -125,6 +125,11 @@ import type {
   SpCoreCryptoKeyTypeId,
   SpConsensusAuraSr25519AppSr25519Public,
   SpConsensusSlotsSlot,
+  IsmpConsensusStateCommitment,
+  IsmpConsensusStateMachineHeight,
+  IsmpConsensusStateMachineId,
+  PalletHyperbridgeVersionedHostParams,
+  IsmpHostStateMachine,
   PalletEmaOracleOracleEntry,
   HydradxTraitsOracleOraclePeriod,
   PalletBroadcastExecutionType,
@@ -1333,21 +1338,7 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {AccountId32Like} arg
      * @param {Callback<[] | undefined> =} callback
      **/
-    accountBlacklist: GenericStorageQuery<Rv, (arg: AccountId32Like) => [] | undefined, AccountId32>;
-
-    /**
-     * Account to take reward from.
-     *
-     * @param {Callback<AccountId32 | undefined> =} callback
-     **/
-    rewardAccount: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
-
-    /**
-     * Account to send dust to.
-     *
-     * @param {Callback<AccountId32 | undefined> =} callback
-     **/
-    dustAccount: GenericStorageQuery<Rv, () => AccountId32 | undefined>;
+    accountWhitelist: GenericStorageQuery<Rv, (arg: AccountId32Like) => [] | undefined, AccountId32>;
 
     /**
      * Generic pallet storage query
@@ -3143,6 +3134,239 @@ export interface ChainStorage<Rv extends RpcVersion> extends GenericChainStorage
      * @param {Callback<[SpConsensusSlotsSlot, number] | undefined> =} callback
      **/
     slotInfo: GenericStorageQuery<Rv, () => [SpConsensusSlotsSlot, number] | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Ismp`'s storage queries
+   **/
+  ismp: {
+    /**
+     * Holds a map of state machine heights to their verified state commitments. These state
+     * commitments end up here after they are successfully verified by a `ConsensusClient`
+     *
+     * @param {IsmpConsensusStateMachineHeight} arg
+     * @param {Callback<IsmpConsensusStateCommitment | undefined> =} callback
+     **/
+    stateCommitments: GenericStorageQuery<
+      Rv,
+      (arg: IsmpConsensusStateMachineHeight) => IsmpConsensusStateCommitment | undefined,
+      IsmpConsensusStateMachineHeight
+    >;
+
+    /**
+     * Holds a map of consensus state identifiers to their consensus state.
+     *
+     * @param {FixedBytes<4>} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    consensusStates: GenericStorageQuery<Rv, (arg: FixedBytes<4>) => Bytes | undefined, FixedBytes<4>>;
+
+    /**
+     * A mapping of consensus state identifier to it's associated consensus client identifier
+     *
+     * @param {FixedBytes<4>} arg
+     * @param {Callback<FixedBytes<4> | undefined> =} callback
+     **/
+    consensusStateClient: GenericStorageQuery<Rv, (arg: FixedBytes<4>) => FixedBytes<4> | undefined, FixedBytes<4>>;
+
+    /**
+     * A mapping of consensus state identifiers to their unbonding periods
+     *
+     * @param {FixedBytes<4>} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    unbondingPeriod: GenericStorageQuery<Rv, (arg: FixedBytes<4>) => bigint | undefined, FixedBytes<4>>;
+
+    /**
+     * A mapping of state machine Ids to their challenge periods
+     *
+     * @param {IsmpConsensusStateMachineId} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    challengePeriod: GenericStorageQuery<
+      Rv,
+      (arg: IsmpConsensusStateMachineId) => bigint | undefined,
+      IsmpConsensusStateMachineId
+    >;
+
+    /**
+     * Holds a map of consensus clients frozen due to byzantine
+     * behaviour
+     *
+     * @param {FixedBytes<4>} arg
+     * @param {Callback<boolean> =} callback
+     **/
+    frozenConsensusClients: GenericStorageQuery<Rv, (arg: FixedBytes<4>) => boolean, FixedBytes<4>>;
+
+    /**
+     * The latest verified height for a state machine
+     *
+     * @param {IsmpConsensusStateMachineId} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    latestStateMachineHeight: GenericStorageQuery<
+      Rv,
+      (arg: IsmpConsensusStateMachineId) => bigint | undefined,
+      IsmpConsensusStateMachineId
+    >;
+
+    /**
+     * Holds the timestamp at which a consensus client was recently updated.
+     * Used in ensuring that the configured challenge period elapses.
+     *
+     * @param {FixedBytes<4>} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    consensusClientUpdateTime: GenericStorageQuery<Rv, (arg: FixedBytes<4>) => bigint | undefined, FixedBytes<4>>;
+
+    /**
+     * Holds the timestamp at which a state machine height was updated.
+     * Used in ensuring that the configured challenge period elapses.
+     *
+     * @param {IsmpConsensusStateMachineHeight} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    stateMachineUpdateTime: GenericStorageQuery<
+      Rv,
+      (arg: IsmpConsensusStateMachineHeight) => bigint | undefined,
+      IsmpConsensusStateMachineHeight
+    >;
+
+    /**
+     * Tracks requests that have been responded to
+     * The key is the request commitment
+     *
+     * @param {H256} arg
+     * @param {Callback<boolean> =} callback
+     **/
+    responded: GenericStorageQuery<Rv, (arg: H256) => boolean, H256>;
+
+    /**
+     * Latest nonce for messages sent from this chain
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    nonce: GenericStorageQuery<Rv, () => bigint>;
+
+    /**
+     * The child trie root of messages
+     *
+     * @param {Callback<H256> =} callback
+     **/
+    childTrieRoot: GenericStorageQuery<Rv, () => H256>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `IsmpParachain`'s storage queries
+   **/
+  ismpParachain: {
+    /**
+     * Mapping of relay chain heights to it's state commitment. The state commitment of the parent
+     * relay block is inserted at every block in `on_finalize`. This commitment is gotten from
+     * parachain-system.
+     *
+     * @param {number} arg
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    relayChainStateCommitments: GenericStorageQuery<Rv, (arg: number) => H256 | undefined, number>;
+
+    /**
+     * Tracks whether we've already seen the `update_parachain_consensus` inherent
+     *
+     * @param {Callback<boolean | undefined> =} callback
+     **/
+    consensusUpdated: GenericStorageQuery<Rv, () => boolean | undefined>;
+
+    /**
+     * List of parachains that this state machine is interested in.
+     *
+     * @param {number} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    parachains: GenericStorageQuery<Rv, (arg: number) => bigint | undefined, number>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `Hyperbridge`'s storage queries
+   **/
+  hyperbridge: {
+    /**
+     * The host parameters of the pallet-hyperbridge.
+     *
+     * @param {Callback<PalletHyperbridgeVersionedHostParams> =} callback
+     **/
+    hostParams: GenericStorageQuery<Rv, () => PalletHyperbridgeVersionedHostParams>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery<Rv>;
+  };
+  /**
+   * Pallet `TokenGateway`'s storage queries
+   **/
+  tokenGateway: {
+    /**
+     * Assets supported by this instance of token gateway
+     * A map of the local asset id to the token gateway asset id
+     *
+     * @param {number} arg
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    supportedAssets: GenericStorageQuery<Rv, (arg: number) => H256 | undefined, number>;
+
+    /**
+     * Assets that originate from this chain
+     *
+     * @param {number} arg
+     * @param {Callback<boolean> =} callback
+     **/
+    nativeAssets: GenericStorageQuery<Rv, (arg: number) => boolean, number>;
+
+    /**
+     * Assets supported by this instance of token gateway
+     * A map of the token gateway asset id to the local asset id
+     *
+     * @param {H256} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    localAssets: GenericStorageQuery<Rv, (arg: H256) => number | undefined, H256>;
+
+    /**
+     * The decimals used by the EVM counterpart of this asset
+     *
+     * @param {[number, IsmpHostStateMachine]} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    precisions: GenericStorageQuery<
+      Rv,
+      (arg: [number, IsmpHostStateMachine]) => number | undefined,
+      [number, IsmpHostStateMachine]
+    >;
+
+    /**
+     * The token gateway adresses on different chains
+     *
+     * @param {IsmpHostStateMachine} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    tokenGatewayAddresses: GenericStorageQuery<
+      Rv,
+      (arg: IsmpHostStateMachine) => Bytes | undefined,
+      IsmpHostStateMachine
+    >;
 
     /**
      * Generic pallet storage query

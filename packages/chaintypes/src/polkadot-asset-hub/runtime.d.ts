@@ -27,6 +27,8 @@ import type {
   SpRuntimeTransactionValidityValidTransaction,
   SpRuntimeTransactionValidityTransactionSource,
   SpCoreCryptoKeyTypeId,
+  FrameSupportViewFunctionsViewFunctionDispatchError,
+  FrameSupportViewFunctionsViewFunctionId,
   PalletTransactionPaymentRuntimeDispatchInfo,
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
@@ -325,6 +327,30 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     decodeSessionKeys: GenericRuntimeApiMethod<
       Rv,
       (encoded: BytesLike) => Promise<Array<[Bytes, SpCoreCryptoKeyTypeId]> | undefined>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: RuntimeViewFunction - 0xccd9de6396c899ca
+   **/
+  runtimeViewFunction: {
+    /**
+     * Execute a view function query.
+     *
+     * @callname: RuntimeViewFunction_execute_view_function
+     * @param {FrameSupportViewFunctionsViewFunctionId} query_id
+     * @param {BytesLike} input
+     **/
+    executeViewFunction: GenericRuntimeApiMethod<
+      Rv,
+      (
+        queryId: FrameSupportViewFunctionsViewFunctionId,
+        input: BytesLike,
+      ) => Promise<Result<Bytes, FrameSupportViewFunctionsViewFunctionDispatchError>>
     >;
 
     /**
@@ -841,6 +867,148 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @callname: GetParachainInfo_parachain_id
      **/
     parachainId: GenericRuntimeApiMethod<Rv, () => Promise<PolkadotParachainPrimitivesPrimitivesId>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: NominationPoolsApi - 0x17a6bc0d0062aeb3
+   **/
+  nominationPoolsApi: {
+    /**
+     * Returns the pending rewards for the member that the AccountId was given for.
+     *
+     * @callname: NominationPoolsApi_pending_rewards
+     * @param {AccountId32Like} who
+     **/
+    pendingRewards: GenericRuntimeApiMethod<Rv, (who: AccountId32Like) => Promise<bigint>>;
+
+    /**
+     * Returns the equivalent balance of `points` for a given pool.
+     *
+     * @callname: NominationPoolsApi_points_to_balance
+     * @param {number} pool_id
+     * @param {bigint} points
+     **/
+    pointsToBalance: GenericRuntimeApiMethod<Rv, (poolId: number, points: bigint) => Promise<bigint>>;
+
+    /**
+     * Returns the equivalent points of `new_funds` for a given pool.
+     *
+     * @callname: NominationPoolsApi_balance_to_points
+     * @param {number} pool_id
+     * @param {bigint} new_funds
+     **/
+    balanceToPoints: GenericRuntimeApiMethod<Rv, (poolId: number, newFunds: bigint) => Promise<bigint>>;
+
+    /**
+     * Returns the pending slash for a given pool.
+     *
+     * @callname: NominationPoolsApi_pool_pending_slash
+     * @param {number} pool_id
+     **/
+    poolPendingSlash: GenericRuntimeApiMethod<Rv, (poolId: number) => Promise<bigint>>;
+
+    /**
+     * Returns the pending slash for a given pool member.
+     *
+     * If pending slash of the member exceeds `ExistentialDeposit`, it can be reported on
+     * chain.
+     *
+     * @callname: NominationPoolsApi_member_pending_slash
+     * @param {AccountId32Like} member
+     **/
+    memberPendingSlash: GenericRuntimeApiMethod<Rv, (member: AccountId32Like) => Promise<bigint>>;
+
+    /**
+     * Returns true if the pool with `pool_id` needs migration.
+     *
+     * This can happen when the `pallet-nomination-pools` has switched to using strategy
+     * [`DelegateStake`](pallet_nomination_pools::adapter::DelegateStake) but the pool
+     * still has funds that were staked using the older strategy
+     * [TransferStake](pallet_nomination_pools::adapter::TransferStake). Use
+     * [`migrate_pool_to_delegate_stake`](pallet_nomination_pools::Call::migrate_pool_to_delegate_stake)
+     * to migrate the pool.
+     *
+     * @callname: NominationPoolsApi_pool_needs_delegate_migration
+     * @param {number} pool_id
+     **/
+    poolNeedsDelegateMigration: GenericRuntimeApiMethod<Rv, (poolId: number) => Promise<boolean>>;
+
+    /**
+     * Returns true if the delegated funds of the pool `member` needs migration.
+     *
+     * Once a pool has successfully migrated to the strategy
+     * [`DelegateStake`](pallet_nomination_pools::adapter::DelegateStake), the funds of the
+     * member can be migrated from pool account to the member's account. Use
+     * [`migrate_delegation`](pallet_nomination_pools::Call::migrate_delegation)
+     * to migrate the funds of the pool member.
+     *
+     * @callname: NominationPoolsApi_member_needs_delegate_migration
+     * @param {AccountId32Like} member
+     **/
+    memberNeedsDelegateMigration: GenericRuntimeApiMethod<Rv, (member: AccountId32Like) => Promise<boolean>>;
+
+    /**
+     * Returns the total contribution of a pool member including any balance that is unbonding.
+     *
+     * @callname: NominationPoolsApi_member_total_balance
+     * @param {AccountId32Like} who
+     **/
+    memberTotalBalance: GenericRuntimeApiMethod<Rv, (who: AccountId32Like) => Promise<bigint>>;
+
+    /**
+     * Total balance contributed to the pool.
+     *
+     * @callname: NominationPoolsApi_pool_balance
+     * @param {number} pool_id
+     **/
+    poolBalance: GenericRuntimeApiMethod<Rv, (poolId: number) => Promise<bigint>>;
+
+    /**
+     * Returns the bonded account and reward account associated with the pool_id.
+     *
+     * @callname: NominationPoolsApi_pool_accounts
+     * @param {number} pool_id
+     **/
+    poolAccounts: GenericRuntimeApiMethod<Rv, (poolId: number) => Promise<[AccountId32, AccountId32]>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: StakingApi - 0x18ef58a3b67ba770
+   **/
+  stakingApi: {
+    /**
+     * Returns the nominations quota for a nominator with a given balance.
+     *
+     * @callname: StakingApi_nominations_quota
+     * @param {bigint} balance
+     **/
+    nominationsQuota: GenericRuntimeApiMethod<Rv, (balance: bigint) => Promise<number>>;
+
+    /**
+     * Returns the page count of exposures for a validator `account` in a given era.
+     *
+     * @callname: StakingApi_eras_stakers_page_count
+     * @param {number} era
+     * @param {AccountId32Like} account
+     **/
+    erasStakersPageCount: GenericRuntimeApiMethod<Rv, (era: number, account: AccountId32Like) => Promise<number>>;
+
+    /**
+     * Returns true if validator `account` has pages to be claimed for the given era.
+     *
+     * @callname: StakingApi_pending_rewards
+     * @param {number} era
+     * @param {AccountId32Like} account
+     **/
+    pendingRewards: GenericRuntimeApiMethod<Rv, (era: number, account: AccountId32Like) => Promise<boolean>>;
 
     /**
      * Generic runtime api call

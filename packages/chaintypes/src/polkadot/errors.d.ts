@@ -1526,6 +1526,20 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `StakingAhClient`'s errors
+   **/
+  stakingAhClient: {
+    /**
+     * Could not process incoming message because incoming messages are blocked.
+     **/
+    Blocked: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `Configuration`'s errors
    **/
   configuration: {
@@ -2617,6 +2631,105 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Submitted configuration is invalid.
      **/
     InvalidConfiguration: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `RcMigrator`'s errors
+   **/
+  rcMigrator: {
+    Unreachable: GenericPalletError<Rv>;
+    OutOfWeight: GenericPalletError<Rv>;
+
+    /**
+     * Failed to send XCM message to AH.
+     **/
+    XcmError: GenericPalletError<Rv>;
+
+    /**
+     * Failed to withdraw account from RC for migration to AH.
+     **/
+    FailedToWithdrawAccount: GenericPalletError<Rv>;
+
+    /**
+     * Indicates that the specified block number is in the past.
+     **/
+    PastBlockNumber: GenericPalletError<Rv>;
+
+    /**
+     * Indicates that there is not enough time for staking to lock.
+     *
+     * Schedule the migration at least two sessions before the current era ends.
+     **/
+    EraEndsTooSoon: GenericPalletError<Rv>;
+
+    /**
+     * Balance accounting overflow.
+     **/
+    BalanceOverflow: GenericPalletError<Rv>;
+
+    /**
+     * Balance accounting underflow.
+     **/
+    BalanceUnderflow: GenericPalletError<Rv>;
+
+    /**
+     * The query response is invalid.
+     **/
+    InvalidQueryResponse: GenericPalletError<Rv>;
+
+    /**
+     * The xcm query was not found.
+     **/
+    QueryNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Failed to send XCM message.
+     **/
+    XcmSendError: GenericPalletError<Rv>;
+
+    /**
+     * The migration stage is not reachable from the current stage.
+     **/
+    UnreachableStage: GenericPalletError<Rv>;
+
+    /**
+     * Invalid parameter.
+     **/
+    InvalidParameter: GenericPalletError<Rv>;
+
+    /**
+     * The AH UMP queue priority configuration is already set.
+     **/
+    AhUmpQueuePriorityAlreadySet: GenericPalletError<Rv>;
+
+    /**
+     * The account is referenced by some other pallet. It might have freezes or holds.
+     **/
+    AccountReferenced: GenericPalletError<Rv>;
+
+    /**
+     * The XCM version is invalid.
+     **/
+    BadXcmVersion: GenericPalletError<Rv>;
+
+    /**
+     * The origin is invalid.
+     **/
+    InvalidOrigin: GenericPalletError<Rv>;
+
+    /**
+     * The stage transition is invalid.
+     **/
+    InvalidStageTransition: GenericPalletError<Rv>;
+
+    /**
+     * Unsigned validation failed.
+     **/
+    UnsignedValidationFailed: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

@@ -47,6 +47,16 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     MultiBlockMigrationsOngoing: GenericPalletError<Rv>;
 
     /**
+     * The specified [`Task`] is not valid.
+     **/
+    InvalidTask: GenericPalletError<Rv>;
+
+    /**
+     * The specified [`Task`] failed during execution.
+     **/
+    FailedTask: GenericPalletError<Rv>;
+
+    /**
      * No upgrade authorized.
      **/
     NothingAuthorized: GenericPalletError<Rv>;
@@ -95,6 +105,89 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * No validation function upgrade is currently scheduled.
      **/
     NotScheduled: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Preimage`'s errors
+   **/
+  preimage: {
+    /**
+     * Preimage is too large to store on-chain.
+     **/
+    TooBig: GenericPalletError<Rv>;
+
+    /**
+     * Preimage has already been noted on-chain.
+     **/
+    AlreadyNoted: GenericPalletError<Rv>;
+
+    /**
+     * The user is not authorized to perform this action.
+     **/
+    NotAuthorized: GenericPalletError<Rv>;
+
+    /**
+     * The preimage cannot be removed since it has not yet been noted.
+     **/
+    NotNoted: GenericPalletError<Rv>;
+
+    /**
+     * A preimage may not be removed when there are outstanding requests.
+     **/
+    Requested: GenericPalletError<Rv>;
+
+    /**
+     * The preimage request cannot be removed since no outstanding requests exist.
+     **/
+    NotRequested: GenericPalletError<Rv>;
+
+    /**
+     * More than `MAX_HASH_UPGRADE_BULK_COUNT` hashes were requested to be upgraded at once.
+     **/
+    TooMany: GenericPalletError<Rv>;
+
+    /**
+     * Too few hashes were requested to be upgraded (i.e. zero).
+     **/
+    TooFew: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Scheduler`'s errors
+   **/
+  scheduler: {
+    /**
+     * Failed to schedule a call
+     **/
+    FailedToSchedule: GenericPalletError<Rv>;
+
+    /**
+     * Cannot find the scheduled call.
+     **/
+    NotFound: GenericPalletError<Rv>;
+
+    /**
+     * Given target block number is in the past.
+     **/
+    TargetBlockNumberInPast: GenericPalletError<Rv>;
+
+    /**
+     * Reschedule failed because it does not change scheduled time.
+     **/
+    RescheduleNoChange: GenericPalletError<Rv>;
+
+    /**
+     * Attempt to use a non-named function on a named task.
+     **/
+    Named: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -199,6 +292,46 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Failed to create a new schedule because some parameter was invalid.
      **/
     InvalidScheduleParams: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Claims`'s errors
+   **/
+  claims: {
+    /**
+     * Invalid Ethereum signature.
+     **/
+    InvalidEthereumSignature: GenericPalletError<Rv>;
+
+    /**
+     * Ethereum address has no claim.
+     **/
+    SignerHasNoClaim: GenericPalletError<Rv>;
+
+    /**
+     * Account ID sending transaction has no claim.
+     **/
+    SenderHasNoClaim: GenericPalletError<Rv>;
+
+    /**
+     * There's not enough in the pot to pay out some unvested amount. Generally implies a
+     * logic error.
+     **/
+    PotUnderflow: GenericPalletError<Rv>;
+
+    /**
+     * A needed statement was not included.
+     **/
+    InvalidStatement: GenericPalletError<Rv>;
+
+    /**
+     * The account already has a vested balance.
+     **/
+    VestedBalanceExists: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -794,6 +927,40 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Cannot add self as proxy.
      **/
     NoSelfProxy: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Indices`'s errors
+   **/
+  indices: {
+    /**
+     * The index was not already assigned.
+     **/
+    NotAssigned: GenericPalletError<Rv>;
+
+    /**
+     * The index is assigned to another account.
+     **/
+    NotOwner: GenericPalletError<Rv>;
+
+    /**
+     * The index was not available.
+     **/
+    InUse: GenericPalletError<Rv>;
+
+    /**
+     * The source and destination accounts are identical.
+     **/
+    NotTransfer: GenericPalletError<Rv>;
+
+    /**
+     * The index is permanent and may not be freed/changed.
+     **/
+    Permanent: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error
@@ -1662,6 +1829,372 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
     [error: string]: GenericPalletError<Rv>;
   };
   /**
+   * Pallet `Treasury`'s errors
+   **/
+  treasury: {
+    /**
+     * No proposal, bounty or spend at that index.
+     **/
+    InvalidIndex: GenericPalletError<Rv>;
+
+    /**
+     * Too many approvals in the queue.
+     **/
+    TooManyApprovals: GenericPalletError<Rv>;
+
+    /**
+     * The spend origin is valid but the amount it is allowed to spend is lower than the
+     * amount to be spent.
+     **/
+    InsufficientPermission: GenericPalletError<Rv>;
+
+    /**
+     * Proposal has not been approved.
+     **/
+    ProposalNotApproved: GenericPalletError<Rv>;
+
+    /**
+     * The balance of the asset kind is not convertible to the balance of the native asset.
+     **/
+    FailedToConvertBalance: GenericPalletError<Rv>;
+
+    /**
+     * The spend has expired and cannot be claimed.
+     **/
+    SpendExpired: GenericPalletError<Rv>;
+
+    /**
+     * The spend is not yet eligible for payout.
+     **/
+    EarlyPayout: GenericPalletError<Rv>;
+
+    /**
+     * The payment has already been attempted.
+     **/
+    AlreadyAttempted: GenericPalletError<Rv>;
+
+    /**
+     * There was some issue with the mechanism of payment.
+     **/
+    PayoutError: GenericPalletError<Rv>;
+
+    /**
+     * The payout was not yet attempted/claimed.
+     **/
+    NotAttempted: GenericPalletError<Rv>;
+
+    /**
+     * The payment has neither failed nor succeeded yet.
+     **/
+    Inconclusive: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `ConvictionVoting`'s errors
+   **/
+  convictionVoting: {
+    /**
+     * Poll is not ongoing.
+     **/
+    NotOngoing: GenericPalletError<Rv>;
+
+    /**
+     * The given account did not vote on the poll.
+     **/
+    NotVoter: GenericPalletError<Rv>;
+
+    /**
+     * The actor has no permission to conduct the action.
+     **/
+    NoPermission: GenericPalletError<Rv>;
+
+    /**
+     * The actor has no permission to conduct the action right now but will do in the future.
+     **/
+    NoPermissionYet: GenericPalletError<Rv>;
+
+    /**
+     * The account is already delegating.
+     **/
+    AlreadyDelegating: GenericPalletError<Rv>;
+
+    /**
+     * The account currently has votes attached to it and the operation cannot succeed until
+     * these are removed through `remove_vote`.
+     **/
+    AlreadyVoting: GenericPalletError<Rv>;
+
+    /**
+     * Too high a balance was provided that the account cannot afford.
+     **/
+    InsufficientFunds: GenericPalletError<Rv>;
+
+    /**
+     * The account is not currently delegating.
+     **/
+    NotDelegating: GenericPalletError<Rv>;
+
+    /**
+     * Delegation to oneself makes no sense.
+     **/
+    Nonsense: GenericPalletError<Rv>;
+
+    /**
+     * Maximum number of votes reached.
+     **/
+    MaxVotesReached: GenericPalletError<Rv>;
+
+    /**
+     * The class must be supplied since it is not easily determinable from the state.
+     **/
+    ClassNeeded: GenericPalletError<Rv>;
+
+    /**
+     * The class ID supplied is invalid.
+     **/
+    BadClass: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Referenda`'s errors
+   **/
+  referenda: {
+    /**
+     * Referendum is not ongoing.
+     **/
+    NotOngoing: GenericPalletError<Rv>;
+
+    /**
+     * Referendum's decision deposit is already paid.
+     **/
+    HasDeposit: GenericPalletError<Rv>;
+
+    /**
+     * The track identifier given was invalid.
+     **/
+    BadTrack: GenericPalletError<Rv>;
+
+    /**
+     * There are already a full complement of referenda in progress for this track.
+     **/
+    Full: GenericPalletError<Rv>;
+
+    /**
+     * The queue of the track is empty.
+     **/
+    QueueEmpty: GenericPalletError<Rv>;
+
+    /**
+     * The referendum index provided is invalid in this context.
+     **/
+    BadReferendum: GenericPalletError<Rv>;
+
+    /**
+     * There was nothing to do in the advancement.
+     **/
+    NothingToDo: GenericPalletError<Rv>;
+
+    /**
+     * No track exists for the proposal origin.
+     **/
+    NoTrack: GenericPalletError<Rv>;
+
+    /**
+     * Any deposit cannot be refunded until after the decision is over.
+     **/
+    Unfinished: GenericPalletError<Rv>;
+
+    /**
+     * The deposit refunder is not the depositor.
+     **/
+    NoPermission: GenericPalletError<Rv>;
+
+    /**
+     * The deposit cannot be refunded since none was made.
+     **/
+    NoDeposit: GenericPalletError<Rv>;
+
+    /**
+     * The referendum status is invalid for this operation.
+     **/
+    BadStatus: GenericPalletError<Rv>;
+
+    /**
+     * The preimage does not exist.
+     **/
+    PreimageNotExist: GenericPalletError<Rv>;
+
+    /**
+     * The preimage is stored with a different length than the one provided.
+     **/
+    PreimageStoredWithDifferentLength: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Whitelist`'s errors
+   **/
+  whitelist: {
+    /**
+     * The preimage of the call hash could not be loaded.
+     **/
+    UnavailablePreImage: GenericPalletError<Rv>;
+
+    /**
+     * The call could not be decoded.
+     **/
+    UndecodableCall: GenericPalletError<Rv>;
+
+    /**
+     * The weight of the decoded call was higher than the witness.
+     **/
+    InvalidCallWeightWitness: GenericPalletError<Rv>;
+
+    /**
+     * The call was not whitelisted.
+     **/
+    CallIsNotWhitelisted: GenericPalletError<Rv>;
+
+    /**
+     * The call was already whitelisted; No-Op.
+     **/
+    CallAlreadyWhitelisted: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Bounties`'s errors
+   **/
+  bounties: {
+    /**
+     * Proposer's balance is too low.
+     **/
+    InsufficientProposersBalance: GenericPalletError<Rv>;
+
+    /**
+     * No proposal or bounty at that index.
+     **/
+    InvalidIndex: GenericPalletError<Rv>;
+
+    /**
+     * The reason given is just too big.
+     **/
+    ReasonTooBig: GenericPalletError<Rv>;
+
+    /**
+     * The bounty status is unexpected.
+     **/
+    UnexpectedStatus: GenericPalletError<Rv>;
+
+    /**
+     * Require bounty curator.
+     **/
+    RequireCurator: GenericPalletError<Rv>;
+
+    /**
+     * Invalid bounty value.
+     **/
+    InvalidValue: GenericPalletError<Rv>;
+
+    /**
+     * Invalid bounty fee.
+     **/
+    InvalidFee: GenericPalletError<Rv>;
+
+    /**
+     * A bounty payout is pending.
+     * To cancel the bounty, you must unassign and slash the curator.
+     **/
+    PendingPayout: GenericPalletError<Rv>;
+
+    /**
+     * The bounties cannot be claimed/closed because it's still in the countdown period.
+     **/
+    Premature: GenericPalletError<Rv>;
+
+    /**
+     * The bounty cannot be closed because it has active child bounties.
+     **/
+    HasActiveChildBounty: GenericPalletError<Rv>;
+
+    /**
+     * Too many approvals are already queued.
+     **/
+    TooManyQueued: GenericPalletError<Rv>;
+
+    /**
+     * User is not the proposer of the bounty.
+     **/
+    NotProposer: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `ChildBounties`'s errors
+   **/
+  childBounties: {
+    /**
+     * The parent bounty is not in active state.
+     **/
+    ParentBountyNotActive: GenericPalletError<Rv>;
+
+    /**
+     * The bounty balance is not enough to add new child-bounty.
+     **/
+    InsufficientBountyBalance: GenericPalletError<Rv>;
+
+    /**
+     * Number of child bounties exceeds limit `MaxActiveChildBountyCount`.
+     **/
+    TooManyChildBounties: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `AssetRate`'s errors
+   **/
+  assetRate: {
+    /**
+     * The given asset ID is unknown.
+     **/
+    UnknownAssetKind: GenericPalletError<Rv>;
+
+    /**
+     * The given asset ID already has an assigned conversion rate and cannot be re-created.
+     **/
+    AlreadyExists: GenericPalletError<Rv>;
+
+    /**
+     * Overflow ocurred when calculating the inverse rate.
+     **/
+    Overflow: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
    * Pallet `StateTrieMigration`'s errors
    **/
   stateTrieMigration: {
@@ -1700,6 +2233,747 @@ export interface ChainErrors<Rv extends RpcVersion> extends GenericChainErrors<R
      * Bad child root provided.
      **/
     BadChildRoot: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `NominationPools`'s errors
+   **/
+  nominationPools: {
+    /**
+     * A (bonded) pool id does not exist.
+     **/
+    PoolNotFound: GenericPalletError<Rv>;
+
+    /**
+     * An account is not a member.
+     **/
+    PoolMemberNotFound: GenericPalletError<Rv>;
+
+    /**
+     * A reward pool does not exist. In all cases this is a system logic error.
+     **/
+    RewardPoolNotFound: GenericPalletError<Rv>;
+
+    /**
+     * A sub pool does not exist.
+     **/
+    SubPoolsNotFound: GenericPalletError<Rv>;
+
+    /**
+     * An account is already delegating in another pool. An account may only belong to one
+     * pool at a time.
+     **/
+    AccountBelongsToOtherPool: GenericPalletError<Rv>;
+
+    /**
+     * The member is fully unbonded (and thus cannot access the bonded and reward pool
+     * anymore to, for example, collect rewards).
+     **/
+    FullyUnbonding: GenericPalletError<Rv>;
+
+    /**
+     * The member cannot unbond further chunks due to reaching the limit.
+     **/
+    MaxUnbondingLimit: GenericPalletError<Rv>;
+
+    /**
+     * None of the funds can be withdrawn yet because the bonding duration has not passed.
+     **/
+    CannotWithdrawAny: GenericPalletError<Rv>;
+
+    /**
+     * The amount does not meet the minimum bond to either join or create a pool.
+     *
+     * The depositor can never unbond to a value less than `Pallet::depositor_min_bond`. The
+     * caller does not have nominating permissions for the pool. Members can never unbond to a
+     * value below `MinJoinBond`.
+     **/
+    MinimumBondNotMet: GenericPalletError<Rv>;
+
+    /**
+     * The transaction could not be executed due to overflow risk for the pool.
+     **/
+    OverflowRisk: GenericPalletError<Rv>;
+
+    /**
+     * A pool must be in [`PoolState::Destroying`] in order for the depositor to unbond or for
+     * other members to be permissionlessly unbonded.
+     **/
+    NotDestroying: GenericPalletError<Rv>;
+
+    /**
+     * The caller does not have nominating permissions for the pool.
+     **/
+    NotNominator: GenericPalletError<Rv>;
+
+    /**
+     * Either a) the caller cannot make a valid kick or b) the pool is not destroying.
+     **/
+    NotKickerOrDestroying: GenericPalletError<Rv>;
+
+    /**
+     * The pool is not open to join
+     **/
+    NotOpen: GenericPalletError<Rv>;
+
+    /**
+     * The system is maxed out on pools.
+     **/
+    MaxPools: GenericPalletError<Rv>;
+
+    /**
+     * Too many members in the pool or system.
+     **/
+    MaxPoolMembers: GenericPalletError<Rv>;
+
+    /**
+     * The pools state cannot be changed.
+     **/
+    CanNotChangeState: GenericPalletError<Rv>;
+
+    /**
+     * The caller does not have adequate permissions.
+     **/
+    DoesNotHavePermission: GenericPalletError<Rv>;
+
+    /**
+     * Metadata exceeds [`Config::MaxMetadataLen`]
+     **/
+    MetadataExceedsMaxLen: GenericPalletError<Rv>;
+
+    /**
+     * Some error occurred that should never happen. This should be reported to the
+     * maintainers.
+     **/
+    Defensive: GenericPalletError<Rv>;
+
+    /**
+     * Partial unbonding now allowed permissionlessly.
+     **/
+    PartialUnbondNotAllowedPermissionlessly: GenericPalletError<Rv>;
+
+    /**
+     * The pool's max commission cannot be set higher than the existing value.
+     **/
+    MaxCommissionRestricted: GenericPalletError<Rv>;
+
+    /**
+     * The supplied commission exceeds the max allowed commission.
+     **/
+    CommissionExceedsMaximum: GenericPalletError<Rv>;
+
+    /**
+     * The supplied commission exceeds global maximum commission.
+     **/
+    CommissionExceedsGlobalMaximum: GenericPalletError<Rv>;
+
+    /**
+     * Not enough blocks have surpassed since the last commission update.
+     **/
+    CommissionChangeThrottled: GenericPalletError<Rv>;
+
+    /**
+     * The submitted changes to commission change rate are not allowed.
+     **/
+    CommissionChangeRateNotAllowed: GenericPalletError<Rv>;
+
+    /**
+     * There is no pending commission to claim.
+     **/
+    NoPendingCommission: GenericPalletError<Rv>;
+
+    /**
+     * No commission current has been set.
+     **/
+    NoCommissionCurrentSet: GenericPalletError<Rv>;
+
+    /**
+     * Pool id currently in use.
+     **/
+    PoolIdInUse: GenericPalletError<Rv>;
+
+    /**
+     * Pool id provided is not correct/usable.
+     **/
+    InvalidPoolId: GenericPalletError<Rv>;
+
+    /**
+     * Bonding extra is restricted to the exact pending reward amount.
+     **/
+    BondExtraRestricted: GenericPalletError<Rv>;
+
+    /**
+     * No imbalance in the ED deposit for the pool.
+     **/
+    NothingToAdjust: GenericPalletError<Rv>;
+
+    /**
+     * No slash pending that can be applied to the member.
+     **/
+    NothingToSlash: GenericPalletError<Rv>;
+
+    /**
+     * The slash amount is too low to be applied.
+     **/
+    SlashTooLow: GenericPalletError<Rv>;
+
+    /**
+     * The pool or member delegation has already migrated to delegate stake.
+     **/
+    AlreadyMigrated: GenericPalletError<Rv>;
+
+    /**
+     * The pool or member delegation has not migrated yet to delegate stake.
+     **/
+    NotMigrated: GenericPalletError<Rv>;
+
+    /**
+     * This call is not allowed in the current state of the pallet.
+     **/
+    NotSupported: GenericPalletError<Rv>;
+
+    /**
+     * Account is restricted from participation in pools. This may happen if the account is
+     * staking in another way already.
+     **/
+    Restricted: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `VoterList`'s errors
+   **/
+  voterList: {
+    /**
+     * A error in the list interface implementation.
+     **/
+    List: GenericPalletError<Rv>;
+
+    /**
+     * Could not update a node, because the pallet is locked.
+     **/
+    Locked: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `DelegatedStaking`'s errors
+   **/
+  delegatedStaking: {
+    /**
+     * The account cannot perform this operation.
+     **/
+    NotAllowed: GenericPalletError<Rv>;
+
+    /**
+     * An existing staker cannot perform this action.
+     **/
+    AlreadyStaking: GenericPalletError<Rv>;
+
+    /**
+     * Reward Destination cannot be same as `Agent` account.
+     **/
+    InvalidRewardDestination: GenericPalletError<Rv>;
+
+    /**
+     * Delegation conditions are not met.
+     *
+     * Possible issues are
+     * 1) Cannot delegate to self,
+     * 2) Cannot delegate to multiple delegates.
+     **/
+    InvalidDelegation: GenericPalletError<Rv>;
+
+    /**
+     * The account does not have enough funds to perform the operation.
+     **/
+    NotEnoughFunds: GenericPalletError<Rv>;
+
+    /**
+     * Not an existing `Agent` account.
+     **/
+    NotAgent: GenericPalletError<Rv>;
+
+    /**
+     * Not a Delegator account.
+     **/
+    NotDelegator: GenericPalletError<Rv>;
+
+    /**
+     * Some corruption in internal state.
+     **/
+    BadState: GenericPalletError<Rv>;
+
+    /**
+     * Unapplied pending slash restricts operation on `Agent`.
+     **/
+    UnappliedSlash: GenericPalletError<Rv>;
+
+    /**
+     * `Agent` has no pending slash to be applied.
+     **/
+    NothingToSlash: GenericPalletError<Rv>;
+
+    /**
+     * Failed to withdraw amount from Core Staking.
+     **/
+    WithdrawFailed: GenericPalletError<Rv>;
+
+    /**
+     * Operation not supported by this pallet.
+     **/
+    NotSupported: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `MultiBlockElection`'s errors
+   **/
+  multiBlockElection: {
+    /**
+     * Triggering the `Fallback` failed.
+     **/
+    Fallback: GenericPalletError<Rv>;
+
+    /**
+     * Unexpected phase
+     **/
+    UnexpectedPhase: GenericPalletError<Rv>;
+
+    /**
+     * Snapshot was unavailable.
+     **/
+    Snapshot: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `MultiBlockElectionSigned`'s errors
+   **/
+  multiBlockElectionSigned: {
+    /**
+     * The phase is not signed.
+     **/
+    PhaseNotSigned: GenericPalletError<Rv>;
+
+    /**
+     * The submission is a duplicate.
+     **/
+    Duplicate: GenericPalletError<Rv>;
+
+    /**
+     * The queue is full.
+     **/
+    QueueFull: GenericPalletError<Rv>;
+
+    /**
+     * The page index is out of bounds.
+     **/
+    BadPageIndex: GenericPalletError<Rv>;
+
+    /**
+     * The account is not registered.
+     **/
+    NotRegistered: GenericPalletError<Rv>;
+
+    /**
+     * No submission found.
+     **/
+    NoSubmission: GenericPalletError<Rv>;
+
+    /**
+     * Round is not yet over.
+     **/
+    RoundNotOver: GenericPalletError<Rv>;
+
+    /**
+     * Bad witness data provided.
+     **/
+    BadWitnessData: GenericPalletError<Rv>;
+
+    /**
+     * Too many invulnerable accounts are provided,
+     **/
+    TooManyInvulnerables: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `Staking`'s errors
+   **/
+  staking: {
+    /**
+     * Not a controller account.
+     **/
+    NotController: GenericPalletError<Rv>;
+
+    /**
+     * Not a stash account.
+     **/
+    NotStash: GenericPalletError<Rv>;
+
+    /**
+     * Stash is already bonded.
+     **/
+    AlreadyBonded: GenericPalletError<Rv>;
+
+    /**
+     * Controller is already paired.
+     **/
+    AlreadyPaired: GenericPalletError<Rv>;
+
+    /**
+     * Targets cannot be empty.
+     **/
+    EmptyTargets: GenericPalletError<Rv>;
+
+    /**
+     * Duplicate index.
+     **/
+    DuplicateIndex: GenericPalletError<Rv>;
+
+    /**
+     * Slash record not found.
+     **/
+    InvalidSlashRecord: GenericPalletError<Rv>;
+
+    /**
+     * Cannot bond, nominate or validate with value less than the minimum defined by
+     * governance (see `MinValidatorBond` and `MinNominatorBond`). If unbonding is the
+     * intention, `chill` first to remove one's role as validator/nominator.
+     **/
+    InsufficientBond: GenericPalletError<Rv>;
+
+    /**
+     * Can not schedule more unlock chunks.
+     **/
+    NoMoreChunks: GenericPalletError<Rv>;
+
+    /**
+     * Can not rebond without unlocking chunks.
+     **/
+    NoUnlockChunk: GenericPalletError<Rv>;
+
+    /**
+     * Attempting to target a stash that still has funds.
+     **/
+    FundedTarget: GenericPalletError<Rv>;
+
+    /**
+     * Invalid era to reward.
+     **/
+    InvalidEraToReward: GenericPalletError<Rv>;
+
+    /**
+     * Invalid number of nominations.
+     **/
+    InvalidNumberOfNominations: GenericPalletError<Rv>;
+
+    /**
+     * Rewards for this era have already been claimed for this validator.
+     **/
+    AlreadyClaimed: GenericPalletError<Rv>;
+
+    /**
+     * No nominators exist on this page.
+     **/
+    InvalidPage: GenericPalletError<Rv>;
+
+    /**
+     * Incorrect previous history depth input provided.
+     **/
+    IncorrectHistoryDepth: GenericPalletError<Rv>;
+
+    /**
+     * Internal state has become somehow corrupted and the operation cannot continue.
+     **/
+    BadState: GenericPalletError<Rv>;
+
+    /**
+     * Too many nomination targets supplied.
+     **/
+    TooManyTargets: GenericPalletError<Rv>;
+
+    /**
+     * A nomination target was supplied that was blocked or otherwise not a validator.
+     **/
+    BadTarget: GenericPalletError<Rv>;
+
+    /**
+     * The user has enough bond and thus cannot be chilled forcefully by an external person.
+     **/
+    CannotChillOther: GenericPalletError<Rv>;
+
+    /**
+     * There are too many nominators in the system. Governance needs to adjust the staking
+     * settings to keep things safe for the runtime.
+     **/
+    TooManyNominators: GenericPalletError<Rv>;
+
+    /**
+     * There are too many validator candidates in the system. Governance needs to adjust the
+     * staking settings to keep things safe for the runtime.
+     **/
+    TooManyValidators: GenericPalletError<Rv>;
+
+    /**
+     * Commission is too low. Must be at least `MinCommission`.
+     **/
+    CommissionTooLow: GenericPalletError<Rv>;
+
+    /**
+     * Some bound is not met.
+     **/
+    BoundNotMet: GenericPalletError<Rv>;
+
+    /**
+     * Used when attempting to use deprecated controller account logic.
+     **/
+    ControllerDeprecated: GenericPalletError<Rv>;
+
+    /**
+     * Cannot reset a ledger.
+     **/
+    CannotRestoreLedger: GenericPalletError<Rv>;
+
+    /**
+     * Provided reward destination is not allowed.
+     **/
+    RewardDestinationRestricted: GenericPalletError<Rv>;
+
+    /**
+     * Not enough funds available to withdraw.
+     **/
+    NotEnoughFunds: GenericPalletError<Rv>;
+
+    /**
+     * Operation not allowed for virtual stakers.
+     **/
+    VirtualStakerNotAllowed: GenericPalletError<Rv>;
+
+    /**
+     * Stash could not be reaped as other pallet might depend on it.
+     **/
+    CannotReapStash: GenericPalletError<Rv>;
+
+    /**
+     * The stake of this account is already migrated to `Fungible` holds.
+     **/
+    AlreadyMigrated: GenericPalletError<Rv>;
+
+    /**
+     * Era not yet started.
+     **/
+    EraNotStarted: GenericPalletError<Rv>;
+
+    /**
+     * Account is restricted from participation in staking. This may happen if the account is
+     * staking in another way already, such as via pool.
+     **/
+    Restricted: GenericPalletError<Rv>;
+
+    /**
+     * Unapplied slashes in the recently concluded era is blocking this operation.
+     * See `Call::apply_slash` to apply them.
+     **/
+    UnappliedSlashesInPreviousEra: GenericPalletError<Rv>;
+
+    /**
+     * The era is not eligible for pruning.
+     **/
+    EraNotPrunable: GenericPalletError<Rv>;
+
+    /**
+     * The slash has been cancelled and cannot be applied.
+     **/
+    CancelledSlash: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `AhOps`'s errors
+   **/
+  ahOps: {
+    /**
+     * Either no lease deposit or already unreserved.
+     **/
+    NoLeaseReserve: GenericPalletError<Rv>;
+
+    /**
+     * Either no crowdloan contribution or already withdrawn.
+     **/
+    NoCrowdloanContribution: GenericPalletError<Rv>;
+
+    /**
+     * Either no crowdloan reserve or already unreserved.
+     **/
+    NoCrowdloanReserve: GenericPalletError<Rv>;
+
+    /**
+     * Failed to withdraw crowdloan contribution.
+     **/
+    FailedToWithdrawCrowdloanContribution: GenericPalletError<Rv>;
+
+    /**
+     * Block number is not yet reached.
+     **/
+    NotYet: GenericPalletError<Rv>;
+
+    /**
+     * Not all contributions are withdrawn.
+     **/
+    ContributionsRemaining: GenericPalletError<Rv>;
+
+    /**
+     * The account is not a derived account.
+     **/
+    WrongDerivedTranslation: GenericPalletError<Rv>;
+
+    /**
+     * Account cannot be migrated since it is not a sovereign parachain account.
+     **/
+    NotSovereign: GenericPalletError<Rv>;
+
+    /**
+     * Internal error, please bug report.
+     **/
+    InternalError: GenericPalletError<Rv>;
+
+    /**
+     * The Asset Hub migration is not completed.
+     **/
+    MigrationNotCompleted: GenericPalletError<Rv>;
+
+    /**
+     * The balance is zero.
+     **/
+    ZeroBalance: GenericPalletError<Rv>;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError<Rv>;
+  };
+  /**
+   * Pallet `AhMigrator`'s errors
+   **/
+  ahMigrator: {
+    /**
+     * Failed to unreserve deposit.
+     **/
+    FailedToUnreserveDeposit: GenericPalletError<Rv>;
+
+    /**
+     * Failed to process an account data from RC.
+     **/
+    FailedToProcessAccount: GenericPalletError<Rv>;
+
+    /**
+     * Some item could not be inserted because it already exists.
+     **/
+    InsertConflict: GenericPalletError<Rv>;
+
+    /**
+     * Failed to convert RC type to AH type.
+     **/
+    FailedToConvertType: GenericPalletError<Rv>;
+
+    /**
+     * Failed to fetch preimage.
+     **/
+    PreimageNotFound: GenericPalletError<Rv>;
+
+    /**
+     * Failed to convert RC call to AH call.
+     **/
+    FailedToConvertCall: GenericPalletError<Rv>;
+
+    /**
+     * Failed to bound a call.
+     **/
+    FailedToBoundCall: GenericPalletError<Rv>;
+
+    /**
+     * Failed to send XCM message.
+     **/
+    XcmError: GenericPalletError<Rv>;
+
+    /**
+     * Failed to integrate a vesting schedule.
+     **/
+    FailedToIntegrateVestingSchedule: GenericPalletError<Rv>;
+
+    /**
+     * Checking account overflow or underflow.
+     **/
+    FailedToCalculateCheckingAccount: GenericPalletError<Rv>;
+
+    /**
+     * Vector did not fit into its compile-time bound.
+     **/
+    FailedToBoundVector: GenericPalletError<Rv>;
+
+    /**
+     * The DMP queue priority is already set to the same value.
+     **/
+    DmpQueuePriorityAlreadySet: GenericPalletError<Rv>;
+
+    /**
+     * Invalid parameter.
+     **/
+    InvalidParameter: GenericPalletError<Rv>;
+
+    /**
+     * Preimage missing.
+     **/
+    PreimageMissing: GenericPalletError<Rv>;
+
+    /**
+     * Preimage too big.
+     **/
+    PreimageTooBig: GenericPalletError<Rv>;
+
+    /**
+     * Preimage chunk missing.
+     **/
+    PreimageChunkMissing: GenericPalletError<Rv>;
+
+    /**
+     * Preimage status invalid.
+     **/
+    PreimageStatusInvalid: GenericPalletError<Rv>;
+
+    /**
+     * The XCM version is invalid.
+     **/
+    BadXcmVersion: GenericPalletError<Rv>;
+
+    /**
+     * The origin is invalid.
+     **/
+    InvalidOrigin: GenericPalletError<Rv>;
 
     /**
      * Generic pallet error

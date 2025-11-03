@@ -65,6 +65,8 @@ import type {
   PalletNominationPoolsClaimPermission,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
+  PalletStakingAsyncRcClientValidatorSetReport,
+  PalletStakingAsyncAhClientOperatingMode,
   PolkadotPrimitivesV8AsyncBackingAsyncBackingParams,
   PolkadotPrimitivesV8ExecutorParams,
   PolkadotPrimitivesV8ApprovalVotingParams,
@@ -94,6 +96,11 @@ import type {
   SpConsensusBeefyDoubleVotingProof,
   SpConsensusBeefyForkVotingProof,
   SpConsensusBeefyFutureBlockVotingProof,
+  PalletRcMigratorMigrationStage,
+  StagingXcmV5Response,
+  PalletRcMigratorQueuePriority,
+  PalletRcMigratorManagerMultisigVote,
+  PalletRcMigratorMigrationSettings,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -6577,6 +6584,69 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
   };
   /**
+   * Pallet `StakingAhClient`'s transaction calls
+   **/
+  stakingAhClient: {
+    /**
+     *
+     * @param {PalletStakingAsyncRcClientValidatorSetReport} report
+     **/
+    validatorSet: GenericTxCall<
+      Rv,
+      (report: PalletStakingAsyncRcClientValidatorSetReport) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'StakingAhClient';
+          palletCall: {
+            name: 'ValidatorSet';
+            params: { report: PalletStakingAsyncRcClientValidatorSetReport };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Allows governance to force set the operating mode of the pallet.
+     *
+     * @param {PalletStakingAsyncAhClientOperatingMode} mode
+     **/
+    setMode: GenericTxCall<
+      Rv,
+      (mode: PalletStakingAsyncAhClientOperatingMode) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'StakingAhClient';
+          palletCall: {
+            name: 'SetMode';
+            params: { mode: PalletStakingAsyncAhClientOperatingMode };
+          };
+        }
+      >
+    >;
+
+    /**
+     * manually do what this pallet was meant to do at the end of the migration.
+     *
+     **/
+    forceOnMigrationEnd: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'StakingAhClient';
+          palletCall: {
+            name: 'ForceOnMigrationEnd';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
    * Pallet `Configuration`'s transaction calls
    **/
   configuration: {
@@ -10487,6 +10557,368 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               equivocationProof: SpConsensusBeefyFutureBlockVotingProof;
               keyOwnerProof: SpSessionMembershipProof;
             };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+  };
+  /**
+   * Pallet `RcMigrator`'s transaction calls
+   **/
+  rcMigrator: {
+    /**
+     * Set the migration stage.
+     *
+     * This call is intended for emergency use only and is guarded by the
+     * [`Config::AdminOrigin`].
+     *
+     * @param {PalletRcMigratorMigrationStage} stage
+     **/
+    forceSetStage: GenericTxCall<
+      Rv,
+      (stage: PalletRcMigratorMigrationStage) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'ForceSetStage';
+            params: { stage: PalletRcMigratorMigrationStage };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Schedule the migration to start at a given moment.
+     *
+     * ### Parameters:
+     * - `start`: The block number at which the migration will start. `DispatchTime` calculated
+     * at the moment of the extrinsic execution.
+     * - `warm_up`: Duration or timepoint that will be used to prepare for the migration. Calls
+     * are filtered during this period. It is intended to give enough time for UMP and DMP
+     * queues to empty. `DispatchTime` calculated at the moment of the transition to the
+     * warm-up stage.
+     * - `cool_off`: The block number at which the post migration cool-off period will end. The
+     * `DispatchTime` calculated at the moment of the transition to the cool-off stage.
+     * - `unsafe_ignore_staking_lock_check`: ONLY FOR TESTING. Ignore the check whether the
+     * scheduled time point is far enough in the future.
+     *
+     * Note: If the staking election for next era is already complete, and the next
+     * validator set is queued in `pallet-session`, we want to avoid starting the data
+     * migration at this point as it can lead to some missed validator rewards. To address
+     * this, we stop staking election at the start of migration and must wait atleast 1
+     * session (set via warm_up) before starting the data migration.
+     *
+     * Read [`MigrationStage::Scheduled`] documentation for more details.
+     *
+     * @param {FrameSupportScheduleDispatchTime} start
+     * @param {FrameSupportScheduleDispatchTime} warmUp
+     * @param {FrameSupportScheduleDispatchTime} coolOff
+     * @param {boolean} unsafeIgnoreStakingLockCheck
+     **/
+    scheduleMigration: GenericTxCall<
+      Rv,
+      (
+        start: FrameSupportScheduleDispatchTime,
+        warmUp: FrameSupportScheduleDispatchTime,
+        coolOff: FrameSupportScheduleDispatchTime,
+        unsafeIgnoreStakingLockCheck: boolean,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'ScheduleMigration';
+            params: {
+              start: FrameSupportScheduleDispatchTime;
+              warmUp: FrameSupportScheduleDispatchTime;
+              coolOff: FrameSupportScheduleDispatchTime;
+              unsafeIgnoreStakingLockCheck: boolean;
+            };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Start the data migration.
+     *
+     * This is typically called by the Asset Hub to indicate it's readiness to receive the
+     * migration data.
+     *
+     **/
+    startDataMigration: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'StartDataMigration';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Receive a query response from the Asset Hub for a previously sent xcm message.
+     *
+     * @param {bigint} queryId
+     * @param {StagingXcmV5Response} response
+     **/
+    receiveQueryResponse: GenericTxCall<
+      Rv,
+      (
+        queryId: bigint,
+        response: StagingXcmV5Response,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'ReceiveQueryResponse';
+            params: { queryId: bigint; response: StagingXcmV5Response };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Resend a previously sent and unconfirmed XCM message.
+     *
+     * @param {bigint} queryId
+     **/
+    resendXcm: GenericTxCall<
+      Rv,
+      (queryId: bigint) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'ResendXcm';
+            params: { queryId: bigint };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the unprocessed message buffer size.
+     *
+     * `None` means to use the configuration value.
+     *
+     * @param {number | undefined} new_
+     **/
+    setUnprocessedMsgBuffer: GenericTxCall<
+      Rv,
+      (new_: number | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'SetUnprocessedMsgBuffer';
+            params: { new: number | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the AH UMP queue priority configuration.
+     *
+     * Can only be called by the `AdminOrigin`.
+     *
+     * @param {PalletRcMigratorQueuePriority} new_
+     **/
+    setAhUmpQueuePriority: GenericTxCall<
+      Rv,
+      (new_: PalletRcMigratorQueuePriority) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'SetAhUmpQueuePriority';
+            params: { new: PalletRcMigratorQueuePriority };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the manager account id.
+     *
+     * The manager has the similar to [`Config::AdminOrigin`] privileges except that it
+     * can not set the manager account id via `set_manager` call.
+     *
+     * @param {AccountId32Like | undefined} new_
+     **/
+    setManager: GenericTxCall<
+      Rv,
+      (new_: AccountId32Like | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'SetManager';
+            params: { new: AccountId32Like | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * XCM send call identical to the [`pallet_xcm::Pallet::send`] call but with the
+     * [Config::SendXcm] router which will be able to send messages to the Asset Hub during
+     * the migration.
+     *
+     * @param {XcmVersionedLocation} dest
+     * @param {XcmVersionedXcm} message
+     **/
+    sendXcmMessage: GenericTxCall<
+      Rv,
+      (
+        dest: XcmVersionedLocation,
+        message: XcmVersionedXcm,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'SendXcmMessage';
+            params: { dest: XcmVersionedLocation; message: XcmVersionedXcm };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the accounts to be preserved on Relay Chain during the migration.
+     *
+     * The accounts must have no consumers references.
+     *
+     * @param {Array<AccountId32Like>} accounts
+     **/
+    preserveAccounts: GenericTxCall<
+      Rv,
+      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'PreserveAccounts';
+            params: { accounts: Array<AccountId32Like> };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the canceller account id.
+     *
+     * The canceller can only stop scheduled migration.
+     *
+     * @param {AccountId32Like | undefined} new_
+     **/
+    setCanceller: GenericTxCall<
+      Rv,
+      (new_: AccountId32Like | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'SetCanceller';
+            params: { new: AccountId32Like | undefined };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Pause the migration.
+     *
+     **/
+    pauseMigration: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'PauseMigration';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Cancel the migration.
+     *
+     * Migration can only be cancelled if it is in the [`MigrationStage::Scheduled`] state.
+     *
+     **/
+    cancelMigration: GenericTxCall<
+      Rv,
+      () => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'CancelMigration';
+          };
+        }
+      >
+    >;
+
+    /**
+     * Vote on behalf of any of the members in `MultisigMembers`.
+     *
+     * Unsigned extrinsic, requiring the `payload` to be signed.
+     *
+     * Upon each call, a new entry is created in `ManagerMultisigs` map the `payload.call` to
+     * be dispatched. Once `MultisigThreshold` is reached, the entire map is deleted, and we
+     * move on to the next round.
+     *
+     * The round system ensures that signatures from older round cannot be reused.
+     *
+     * @param {PalletRcMigratorManagerMultisigVote} payload
+     * @param {SpRuntimeMultiSignature} sig
+     **/
+    voteManagerMultisig: GenericTxCall<
+      Rv,
+      (
+        payload: PalletRcMigratorManagerMultisigVote,
+        sig: SpRuntimeMultiSignature,
+      ) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'VoteManagerMultisig';
+            params: { payload: PalletRcMigratorManagerMultisigVote; sig: SpRuntimeMultiSignature };
+          };
+        }
+      >
+    >;
+
+    /**
+     * Set the migration settings. Can only be done by admin or manager.
+     *
+     * @param {PalletRcMigratorMigrationSettings | undefined} settings
+     **/
+    setSettings: GenericTxCall<
+      Rv,
+      (settings: PalletRcMigratorMigrationSettings | undefined) => ChainSubmittableExtrinsic<
+        Rv,
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'SetSettings';
+            params: { settings: PalletRcMigratorMigrationSettings | undefined };
           };
         }
       >

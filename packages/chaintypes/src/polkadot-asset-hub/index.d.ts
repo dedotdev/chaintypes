@@ -58,7 +58,7 @@ export interface VersionedPolkadotAssetHubApi<Rv extends RpcVersion> extends Gen
 
 /**
  * @name: PolkadotAssetHubApi
- * @specVersion: 1007001
+ * @specVersion: 2000000
  **/
 export interface PolkadotAssetHubApi {
   legacy: VersionedPolkadotAssetHubApi<RpcLegacy>;

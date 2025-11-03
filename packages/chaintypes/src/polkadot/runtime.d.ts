@@ -74,6 +74,8 @@ import type {
   SpConsensusSlotsEquivocationProof,
   SpAuthorityDiscoveryAppPublic,
   SpCoreCryptoKeyTypeId,
+  FrameSupportViewFunctionsViewFunctionDispatchError,
+  FrameSupportViewFunctionsViewFunctionId,
   PalletTransactionPaymentRuntimeDispatchInfo,
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
@@ -1260,6 +1262,30 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
     decodeSessionKeys: GenericRuntimeApiMethod<
       Rv,
       (encoded: BytesLike) => Promise<Array<[Bytes, SpCoreCryptoKeyTypeId]> | undefined>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: RuntimeViewFunction - 0xccd9de6396c899ca
+   **/
+  runtimeViewFunction: {
+    /**
+     * Execute a view function query.
+     *
+     * @callname: RuntimeViewFunction_execute_view_function
+     * @param {FrameSupportViewFunctionsViewFunctionId} query_id
+     * @param {BytesLike} input
+     **/
+    executeViewFunction: GenericRuntimeApiMethod<
+      Rv,
+      (
+        queryId: FrameSupportViewFunctionsViewFunctionId,
+        input: BytesLike,
+      ) => Promise<Result<Bytes, FrameSupportViewFunctionsViewFunctionDispatchError>>
     >;
 
     /**

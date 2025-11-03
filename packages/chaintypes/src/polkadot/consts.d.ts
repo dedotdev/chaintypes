@@ -947,6 +947,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
     [name: string]: any;
   };
   /**
+   * Pallet `StakingAhClient`'s constants
+   **/
+  stakingAhClient: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `ParachainsOrigin`'s constants
    **/
   parachainsOrigin: {
@@ -1365,6 +1374,15 @@ export interface ChainConsts<Rv extends RpcVersion> extends GenericChainConsts<R
    * Pallet `BeefyMmrLeaf`'s constants
    **/
   beefyMmrLeaf: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `RcMigrator`'s constants
+   **/
+  rcMigrator: {
     /**
      * Generic pallet constant
      **/

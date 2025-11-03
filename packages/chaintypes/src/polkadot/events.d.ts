@@ -37,6 +37,7 @@ import type {
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
   PalletNominationPoolsClaimPermission,
+  PalletStakingAsyncAhClientUnexpectedKind,
   PolkadotPrimitivesVstagingCandidateReceiptV2,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotPrimitivesV8CoreIndex,
@@ -60,6 +61,10 @@ import type {
   StagingXcmV5AssetAssets,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
+  PalletRcMigratorMigrationStage,
+  XcmV3MaybeErrorCode,
+  PalletRcMigratorQueuePriority,
+  PalletRcMigratorMigrationSettings,
 } from './types.js';
 
 export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<Rv> {
@@ -1969,6 +1974,45 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     [prop: string]: GenericPalletEvent<Rv>;
   };
   /**
+   * Pallet `StakingAhClient`'s events
+   **/
+  stakingAhClient: {
+    /**
+     * A new validator set has been received.
+     **/
+    ValidatorSetReceived: GenericPalletEvent<
+      Rv,
+      'StakingAhClient',
+      'ValidatorSetReceived',
+      { id: number; newValidatorSetCount: number; pruneUpTo?: number | undefined; leftover: boolean }
+    >;
+
+    /**
+     * We could not merge, and therefore dropped a buffered message.
+     *
+     * Note that this event is more resembling an error, but we use an event because in this
+     * pallet we need to mutate storage upon some failures.
+     **/
+    CouldNotMergeAndDropped: GenericPalletEvent<Rv, 'StakingAhClient', 'CouldNotMergeAndDropped', null>;
+
+    /**
+     * The validator set received is way too small, as per
+     * [`Config::MinimumValidatorSetSize`].
+     **/
+    SetTooSmallAndDropped: GenericPalletEvent<Rv, 'StakingAhClient', 'SetTooSmallAndDropped', null>;
+
+    /**
+     * Something occurred that should never happen under normal operation. Logged as an event
+     * for fail-safe observability.
+     **/
+    Unexpected: GenericPalletEvent<Rv, 'StakingAhClient', 'Unexpected', PalletStakingAsyncAhClientUnexpectedKind>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
    * Pallet `ParaInclusion`'s events
    **/
   paraInclusion: {
@@ -3081,6 +3125,326 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
       'AssetRate',
       'AssetRateUpdated',
       { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; old: FixedU128; new: FixedU128 }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent<Rv>;
+  };
+  /**
+   * Pallet `RcMigrator`'s events
+   **/
+  rcMigrator: {
+    /**
+     * A stage transition has occurred.
+     **/
+    StageTransition: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'StageTransition',
+      {
+        /**
+         * The old stage before the transition.
+         **/
+        old: PalletRcMigratorMigrationStage;
+
+        /**
+         * The new stage after the transition.
+         **/
+        new: PalletRcMigratorMigrationStage;
+      }
+    >;
+
+    /**
+     * The Asset Hub Migration started and is active until `AssetHubMigrationFinished` is
+     * emitted.
+     *
+     * This event is equivalent to `StageTransition { new: Initializing, .. }` but is easier
+     * to understand. The activation is immediate and affects all events happening
+     * afterwards.
+     **/
+    AssetHubMigrationStarted: GenericPalletEvent<Rv, 'RcMigrator', 'AssetHubMigrationStarted', null>;
+
+    /**
+     * The Asset Hub Migration finished.
+     *
+     * This event is equivalent to `StageTransition { new: MigrationDone, .. }` but is easier
+     * to understand. The finishing is immediate and affects all events happening
+     * afterwards.
+     **/
+    AssetHubMigrationFinished: GenericPalletEvent<Rv, 'RcMigrator', 'AssetHubMigrationFinished', null>;
+
+    /**
+     * A query response has been received.
+     **/
+    QueryResponseReceived: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'QueryResponseReceived',
+      {
+        /**
+         * The query ID.
+         **/
+        queryId: bigint;
+
+        /**
+         * The response.
+         **/
+        response: XcmV3MaybeErrorCode;
+      }
+    >;
+
+    /**
+     * A XCM message has been resent.
+     **/
+    XcmResendAttempt: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'XcmResendAttempt',
+      {
+        /**
+         * The query ID.
+         **/
+        queryId: bigint;
+
+        /**
+         * The error message.
+         **/
+        sendError?: XcmV3TraitsSendError | undefined;
+      }
+    >;
+
+    /**
+     * The unprocessed message buffer size has been set.
+     **/
+    UnprocessedMsgBufferSet: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'UnprocessedMsgBufferSet',
+      {
+        /**
+         * The new size.
+         **/
+        new: number;
+
+        /**
+         * The old size.
+         **/
+        old: number;
+      }
+    >;
+
+    /**
+     * Whether the AH UMP queue was prioritized for the next block.
+     **/
+    AhUmpQueuePrioritySet: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'AhUmpQueuePrioritySet',
+      {
+        /**
+         * Indicates if AH UMP queue was successfully set as priority.
+         * If `false`, it means we're in the round-robin phase of our priority pattern
+         * (see [`Config::AhUmpQueuePriorityPattern`]), where no queue gets priority.
+         **/
+        prioritized: boolean;
+
+        /**
+         * Current block number within the pattern cycle (1 to period).
+         **/
+        cycleBlock: number;
+
+        /**
+         * Total number of blocks in the pattern cycle
+         **/
+        cyclePeriod: number;
+      }
+    >;
+
+    /**
+     * The AH UMP queue priority config was set.
+     **/
+    AhUmpQueuePriorityConfigSet: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'AhUmpQueuePriorityConfigSet',
+      {
+        /**
+         * The old priority pattern.
+         **/
+        old: PalletRcMigratorQueuePriority;
+
+        /**
+         * The new priority pattern.
+         **/
+        new: PalletRcMigratorQueuePriority;
+      }
+    >;
+
+    /**
+     * The total issuance was recorded.
+     **/
+    MigratedBalanceRecordSet: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'MigratedBalanceRecordSet',
+      { kept: bigint; migrated: bigint }
+    >;
+
+    /**
+     * The RC kept balance was consumed.
+     **/
+    MigratedBalanceConsumed: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'MigratedBalanceConsumed',
+      { kept: bigint; migrated: bigint }
+    >;
+
+    /**
+     * The manager account id was set.
+     **/
+    ManagerSet: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'ManagerSet',
+      {
+        /**
+         * The old manager account id.
+         **/
+        old?: AccountId32 | undefined;
+
+        /**
+         * The new manager account id.
+         **/
+        new?: AccountId32 | undefined;
+      }
+    >;
+
+    /**
+     * An XCM message was sent.
+     **/
+    XcmSent: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'XcmSent',
+      {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        message: StagingXcmV5Xcm;
+        messageId: FixedBytes<32>;
+      }
+    >;
+
+    /**
+     * The staking elections were paused.
+     **/
+    StakingElectionsPaused: GenericPalletEvent<Rv, 'RcMigrator', 'StakingElectionsPaused', null>;
+
+    /**
+     * The accounts to be preserved on Relay Chain were set.
+     **/
+    AccountsPreserved: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'AccountsPreserved',
+      {
+        /**
+         * The accounts that will be preserved.
+         **/
+        accounts: Array<AccountId32>;
+      }
+    >;
+
+    /**
+     * The canceller account id was set.
+     **/
+    CancellerSet: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'CancellerSet',
+      {
+        /**
+         * The old canceller account id.
+         **/
+        old?: AccountId32 | undefined;
+
+        /**
+         * The new canceller account id.
+         **/
+        new?: AccountId32 | undefined;
+      }
+    >;
+
+    /**
+     * The migration was paused.
+     **/
+    MigrationPaused: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'MigrationPaused',
+      {
+        /**
+         * The stage at which the migration was paused.
+         **/
+        pauseStage: PalletRcMigratorMigrationStage;
+      }
+    >;
+
+    /**
+     * The migration was cancelled.
+     **/
+    MigrationCancelled: GenericPalletEvent<Rv, 'RcMigrator', 'MigrationCancelled', null>;
+
+    /**
+     * Some pure accounts were indexed for possibly receiving free `Any` proxies.
+     **/
+    PureAccountsIndexed: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'PureAccountsIndexed',
+      {
+        /**
+         * The number of indexed pure accounts.
+         **/
+        numPureAccounts: number;
+      }
+    >;
+
+    /**
+     * The manager multisig dispatched something.
+     **/
+    ManagerMultisigDispatched: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'ManagerMultisigDispatched',
+      { res: Result<[], DispatchError> }
+    >;
+
+    /**
+     * The manager multisig received a vote.
+     **/
+    ManagerMultisigVoted: GenericPalletEvent<Rv, 'RcMigrator', 'ManagerMultisigVoted', { votes: number }>;
+
+    /**
+     * The migration settings were set.
+     **/
+    MigrationSettingsSet: GenericPalletEvent<
+      Rv,
+      'RcMigrator',
+      'MigrationSettingsSet',
+      {
+        /**
+         * The old migration settings.
+         **/
+        old?: PalletRcMigratorMigrationSettings | undefined;
+
+        /**
+         * The new migration settings.
+         **/
+        new?: PalletRcMigratorMigrationSettings | undefined;
+      }
     >;
 
     /**

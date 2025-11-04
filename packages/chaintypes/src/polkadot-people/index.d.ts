@@ -58,7 +58,7 @@ export interface VersionedPolkadotPeopleApi<Rv extends RpcVersion> extends Gener
 
 /**
  * @name: PolkadotPeopleApi
- * @specVersion: 1007001
+ * @specVersion: 2000000
  **/
 export interface PolkadotPeopleApi {
   legacy: VersionedPolkadotPeopleApi<RpcLegacy>;

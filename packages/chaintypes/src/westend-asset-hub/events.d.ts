@@ -3228,6 +3228,16 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     Instantiated: GenericPalletEvent<Rv, 'Revive', 'Instantiated', { deployer: H160; contract: H160 }>;
 
     /**
+     * Emitted when an Ethereum transaction reverts.
+     *
+     * Ethereum transactions always complete successfully at the extrinsic level,
+     * as even reverted calls must store their `ReceiptInfo`.
+     * To distinguish reverted calls from successful ones, this event is emitted
+     * for failed Ethereum transactions.
+     **/
+    EthExtrinsicRevert: GenericPalletEvent<Rv, 'Revive', 'EthExtrinsicRevert', { dispatchError: DispatchError }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;

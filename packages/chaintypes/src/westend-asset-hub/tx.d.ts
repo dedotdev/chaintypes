@@ -5060,9 +5060,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * A deposit will be taken from the signer account.
      *
-     * - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-     * must have sufficient funds for a deposit to be taken.
-     * - `id`: The identifier of the asset for the account to be created.
+     * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+     * to be taken.
+     * - `id`: The identifier of the asset for the account to be created, the asset status must
+     * be live.
      * - `who`: The account to be created.
      *
      * Emits `Touched` event when successful.
@@ -8745,9 +8746,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * A deposit will be taken from the signer account.
      *
-     * - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-     * must have sufficient funds for a deposit to be taken.
-     * - `id`: The identifier of the asset for the account to be created.
+     * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+     * to be taken.
+     * - `id`: The identifier of the asset for the account to be created, the asset status must
+     * be live.
      * - `who`: The account to be created.
      *
      * Emits `Touched` event when successful.
@@ -10058,9 +10060,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * A deposit will be taken from the signer account.
      *
-     * - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-     * must have sufficient funds for a deposit to be taken.
-     * - `id`: The identifier of the asset for the account to be created.
+     * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+     * to be taken.
+     * - `id`: The identifier of the asset for the account to be created, the asset status must
+     * be live.
      * - `who`: The account to be created.
      *
      * Emits `Touched` event when successful.
@@ -10449,9 +10452,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * # Parameters
      *
      * * `payload`: The encoded [`crate::evm::TransactionSigned`].
-     * * `gas_limit`: The gas limit enforced during contract execution.
-     * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
-     * storage usage.
      *
      * # Note
      *
@@ -10636,6 +10636,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
      * by an EVM transaction through the EVM compatibility layer.
      *
+     * # Parameters
+     *
+     * * `value`: The balance to transfer from the `origin` to the newly created contract.
+     * * `gas_limit`: The gas limit enforced when executing the constructor.
+     * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
+     * from the caller to pay for the storage consumed.
+     * * `code`: The contract code to deploy in raw bytes.
+     * * `data`: The input data to pass to the contract constructor.
+     * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
+     * semantics are used. If `None` then `CRATE1` is used.
+     * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
+     * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
+     * is used for building the Ethereum transaction root.
+     *
      * Calling this dispatchable ensures that the origin's nonce is bumped only once,
      * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
      * also bumps the nonce after contract instantiation, since it may be invoked multiple
@@ -10643,18 +10657,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      * @param {U256} value
      * @param {SpWeightsWeightV2Weight} gasLimit
-     * @param {bigint} storageDepositLimit
      * @param {BytesLike} code
      * @param {BytesLike} data
+     * @param {BytesLike} transactionEncoded
+     * @param {U256} effectiveGasPrice
+     * @param {number} encodedLen
      **/
     ethInstantiateWithCode: GenericTxCall<
       Rv,
       (
         value: U256,
         gasLimit: SpWeightsWeightV2Weight,
-        storageDepositLimit: bigint,
         code: BytesLike,
         data: BytesLike,
+        transactionEncoded: BytesLike,
+        effectiveGasPrice: U256,
+        encodedLen: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
@@ -10664,9 +10682,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
             params: {
               value: U256;
               gasLimit: SpWeightsWeightV2Weight;
-              storageDepositLimit: bigint;
               code: BytesLike;
               data: BytesLike;
+              transactionEncoded: BytesLike;
+              effectiveGasPrice: U256;
+              encodedLen: number;
             };
           };
         }
@@ -10680,8 +10700,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H160} dest
      * @param {U256} value
      * @param {SpWeightsWeightV2Weight} gasLimit
-     * @param {bigint} storageDepositLimit
      * @param {BytesLike} data
+     * @param {BytesLike} transactionEncoded
+     * @param {U256} effectiveGasPrice
+     * @param {number} encodedLen
      **/
     ethCall: GenericTxCall<
       Rv,
@@ -10689,8 +10711,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         dest: H160,
         value: U256,
         gasLimit: SpWeightsWeightV2Weight,
-        storageDepositLimit: bigint,
         data: BytesLike,
+        transactionEncoded: BytesLike,
+        effectiveGasPrice: U256,
+        encodedLen: number,
       ) => ChainSubmittableExtrinsic<
         Rv,
         {
@@ -10701,8 +10725,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               dest: H160;
               value: U256;
               gasLimit: SpWeightsWeightV2Weight;
-              storageDepositLimit: bigint;
               data: BytesLike;
+              transactionEncoded: BytesLike;
+              effectiveGasPrice: U256;
+              encodedLen: number;
             };
           };
         }

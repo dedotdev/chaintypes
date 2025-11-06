@@ -4897,6 +4897,56 @@ export interface ChainEvents<Rv extends RpcVersion> extends GenericChainEvents<R
     >;
 
     /**
+     * Failed to unreserve a multisig deposit.
+     **/
+    FailedToUnreserveMultisigDeposit: GenericPalletEvent<
+      Rv,
+      'AhMigrator',
+      'FailedToUnreserveMultisigDeposit',
+      {
+        /**
+         * The expected amount of the deposit that was expected to be unreserved.
+         **/
+        expectedAmount: bigint;
+
+        /**
+         * The missing amount of the deposit.
+         **/
+        missingAmount: bigint;
+
+        /**
+         * The account that the deposit was unreserved from.
+         **/
+        account: AccountId32;
+      }
+    >;
+
+    /**
+     * Failed to unreserve a legacy status preimage deposit.
+     **/
+    FailedToUnreservePreimageDeposit: GenericPalletEvent<
+      Rv,
+      'AhMigrator',
+      'FailedToUnreservePreimageDeposit',
+      {
+        /**
+         * The expected amount of the deposit that was expected to be unreserved.
+         **/
+        expectedAmount: bigint;
+
+        /**
+         * The missing amount of the deposit.
+         **/
+        missingAmount: bigint;
+
+        /**
+         * The account that the deposit was unreserved from.
+         **/
+        account: AccountId32;
+      }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent<Rv>;

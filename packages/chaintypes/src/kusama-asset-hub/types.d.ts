@@ -19117,7 +19117,10 @@ export type PalletAhMigratorCall =
    * for some pallets and have already performed the checking account balance correction,
    * so we do not need to do it this time.
    **/
-  | { name: 'FinishMigration'; params: { data?: PalletRcMigratorMigrationFinishedData | undefined } }
+  | {
+      name: 'FinishMigration';
+      params: { data?: PalletRcMigratorMigrationFinishedData | undefined; coolOffEndAt: number };
+    }
   /**
    * XCM send call identical to the [`pallet_xcm::Pallet::send`] call but with the
    * [Config::SendXcm] router which will be able to send messages to the Relay Chain during
@@ -19240,7 +19243,10 @@ export type PalletAhMigratorCallLike =
    * for some pallets and have already performed the checking account balance correction,
    * so we do not need to do it this time.
    **/
-  | { name: 'FinishMigration'; params: { data?: PalletRcMigratorMigrationFinishedData | undefined } }
+  | {
+      name: 'FinishMigration';
+      params: { data?: PalletRcMigratorMigrationFinishedData | undefined; coolOffEndAt: number };
+    }
   /**
    * XCM send call identical to the [`pallet_xcm::Pallet::send`] call but with the
    * [Config::SendXcm] router which will be able to send messages to the Relay Chain during
@@ -19862,7 +19868,11 @@ export type PalletRcMigratorSocietyPortableCandidacy = {
 
 export type PalletRcMigratorSocietyPortableVote = { approve: boolean; weight: number };
 
-export type PalletAhMigratorMigrationStage = 'Pending' | 'DataMigrationOngoing' | 'MigrationDone';
+export type PalletAhMigratorMigrationStage =
+  | { type: 'Pending' }
+  | { type: 'DataMigrationOngoing' }
+  | { type: 'MigrationDone' }
+  | { type: 'CoolOff'; value: { endAt: number } };
 
 export type PalletRcMigratorQueuePriority =
   | { type: 'Config' }
@@ -20163,6 +20173,50 @@ export type PalletAhMigratorEvent =
         destination: StagingXcmV5Location;
         message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
+      };
+    }
+  /**
+   * Failed to unreserve a multisig deposit.
+   **/
+  | {
+      name: 'FailedToUnreserveMultisigDeposit';
+      data: {
+        /**
+         * The expected amount of the deposit that was expected to be unreserved.
+         **/
+        expectedAmount: bigint;
+
+        /**
+         * The missing amount of the deposit.
+         **/
+        missingAmount: bigint;
+
+        /**
+         * The account that the deposit was unreserved from.
+         **/
+        account: AccountId32;
+      };
+    }
+  /**
+   * Failed to unreserve a legacy status preimage deposit.
+   **/
+  | {
+      name: 'FailedToUnreservePreimageDeposit';
+      data: {
+        /**
+         * The expected amount of the deposit that was expected to be unreserved.
+         **/
+        expectedAmount: bigint;
+
+        /**
+         * The missing amount of the deposit.
+         **/
+        missingAmount: bigint;
+
+        /**
+         * The account that the deposit was unreserved from.
+         **/
+        account: AccountId32;
       };
     };
 

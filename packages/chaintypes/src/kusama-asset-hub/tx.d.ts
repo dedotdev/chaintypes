@@ -16668,16 +16668,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * so we do not need to do it this time.
      *
      * @param {PalletRcMigratorMigrationFinishedData | undefined} data
+     * @param {number} coolOffEndAt
      **/
     finishMigration: GenericTxCall<
       Rv,
-      (data: PalletRcMigratorMigrationFinishedData | undefined) => ChainSubmittableExtrinsic<
+      (
+        data: PalletRcMigratorMigrationFinishedData | undefined,
+        coolOffEndAt: number,
+      ) => ChainSubmittableExtrinsic<
         Rv,
         {
           pallet: 'AhMigrator';
           palletCall: {
             name: 'FinishMigration';
-            params: { data: PalletRcMigratorMigrationFinishedData | undefined };
+            params: { data: PalletRcMigratorMigrationFinishedData | undefined; coolOffEndAt: number };
           };
         }
       >

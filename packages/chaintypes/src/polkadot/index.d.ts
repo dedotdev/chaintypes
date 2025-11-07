@@ -60,7 +60,7 @@ export interface VersionedPolkadotApi<Rv extends RpcVersion> extends GenericSubs
 
 /**
  * @name: PolkadotApi
- * @specVersion: 2000000
+ * @specVersion: 2000001
  **/
 export interface PolkadotApi {
   legacy: VersionedPolkadotApi<RpcLegacy>;

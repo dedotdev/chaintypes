@@ -54,6 +54,7 @@ import type {
   AssetsCommonRuntimeApiFungiblesAccessError,
   CumulusPrimitivesCoreCollationInfo,
   PolkadotParachainPrimitivesPrimitivesId,
+  SystemParachainsCommonApisInflationInfo,
   PalletRevivePrimitivesContractResult,
   PalletRevivePrimitivesContractResultInstantiateReturnValue,
   PalletRevivePrimitivesCode,
@@ -1019,6 +1020,28 @@ export interface RuntimeApis<Rv extends RpcVersion> extends GenericRuntimeApis<R
      * @param {AccountId32Like} account
      **/
     pendingRewards: GenericRuntimeApiMethod<Rv, (era: number, account: AccountId32Like) => Promise<boolean>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod<Rv>;
+  };
+  /**
+   * @runtimeapi: Inflation - 0xc51ff1fa3f5d0cca
+   **/
+  inflation: {
+    /**
+     * Return the current estimates of the issuance amount.
+     *
+     * This is marked as experimental in light of RFC#89. Nonetheless, its usage is highly
+     * recommended over trying to read-storage, or re-create the onchain logic.
+     *
+     * @callname: Inflation_experimental_issuance_prediction_info
+     **/
+    experimentalIssuancePredictionInfo: GenericRuntimeApiMethod<
+      Rv,
+      () => Promise<SystemParachainsCommonApisInflationInfo>
+    >;
 
     /**
      * Generic runtime api call

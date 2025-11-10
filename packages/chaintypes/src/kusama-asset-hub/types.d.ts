@@ -23571,6 +23571,8 @@ export type CumulusPrimitivesCoreCollationInfo = {
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
 
+export type SystemParachainsCommonApisInflationInfo = { issuance: Perquintill; nextMint: [bigint, bigint] };
+
 export type PalletRevivePrimitivesContractResult = {
   gasConsumed: SpWeightsWeightV2Weight;
   gasRequired: SpWeightsWeightV2Weight;

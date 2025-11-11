@@ -24,6 +24,7 @@ import type {
   UncheckedExtrinsic,
   Era,
   FixedI64,
+  Perquintill,
 } from 'dedot/codecs';
 
 export type FrameSystemAccountInfo = {
@@ -21197,6 +21198,8 @@ export type CumulusPrimitivesCoreCollationInfo = {
 };
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
+
+export type SystemParachainsCommonApisInflationInfo = { issuance: Perquintill; nextMint: [bigint, bigint] };
 
 export type AssetHubPolkadotRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }

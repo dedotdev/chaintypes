@@ -8444,7 +8444,7 @@ export type PalletXcmTransactorCallLike =
       };
     };
 
-export type MoonbeamRuntimeXcmConfigTransactors = 'Relay';
+export type MoonbeamRuntimeXcmConfigTransactors = 'Relay' | 'AssetHub';
 
 export type PalletXcmTransactorCurrencyPayment = {
   currency: PalletXcmTransactorCurrency;

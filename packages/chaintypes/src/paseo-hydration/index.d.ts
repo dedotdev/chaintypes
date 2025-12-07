@@ -3,6 +3,7 @@
 import type { GenericSubstrateApi, GenericChainKnownTypes } from 'dedot/types';
 import type { AccountId32 } from 'dedot/codecs';
 import type {
+  FrameSystemEventRecord,
   HydradxRuntimeRuntimeCall,
   SpRuntimeMultiSignature,
   FrameSystemExtensionsCheckNonZeroSender,
@@ -46,6 +47,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim,
   ];
   AssetId: undefined;
+  EventRecord: FrameSystemEventRecord;
 }
 
 /**

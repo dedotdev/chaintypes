@@ -3,6 +3,7 @@
 import type { GenericSubstrateApi, GenericChainKnownTypes } from 'dedot/types';
 import type { AccountId20 } from 'dedot/codecs';
 import type {
+  FrameSystemEventRecord,
   MoonbeamRuntimeRuntimeCall,
   AccountEthereumSignature,
   FrameSystemExtensionsCheckNonZeroSender,
@@ -45,6 +46,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     [],
   ];
   AssetId: undefined;
+  EventRecord: FrameSystemEventRecord;
 }
 
 /**

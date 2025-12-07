@@ -3,6 +3,7 @@
 import type { GenericSubstrateApi, GenericChainKnownTypes } from 'dedot/types';
 import type { MultiAddress } from 'dedot/codecs';
 import type {
+  FrameSystemEventRecord,
   AlephRuntimeRuntimeCall,
   SpRuntimeMultiSignature,
   FrameSystemExtensionsCheckNonZeroSender,
@@ -40,6 +41,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     PalletTransactionPaymentChargeTransactionPayment,
   ];
   AssetId: undefined;
+  EventRecord: FrameSystemEventRecord;
 }
 
 /**

@@ -3,6 +3,7 @@
 import type { GenericSubstrateApi, GenericChainKnownTypes } from 'dedot/types';
 import type { MultiAddress } from 'dedot/codecs';
 import type {
+  FrameSystemEventRecord,
   PeopleWestendRuntimeRuntimeCall,
   SpRuntimeMultiSignature,
   FrameSystemExtensionsAuthorizeCall,
@@ -43,6 +44,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     [],
   ];
   AssetId: undefined;
+  EventRecord: FrameSystemEventRecord;
 }
 
 /**

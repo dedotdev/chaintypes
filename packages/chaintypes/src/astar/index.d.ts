@@ -3,6 +3,7 @@
 import type { GenericSubstrateApi, GenericChainKnownTypes } from 'dedot/types';
 import type { MultiAddress } from 'dedot/codecs';
 import type {
+  FrameSystemEventRecord,
   AstarRuntimeRuntimeCall,
   SpRuntimeMultiSignature,
   FrameSystemExtensionsCheckSpecVersion,
@@ -40,6 +41,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     FrameMetadataHashExtensionCheckMetadataHash,
   ];
   AssetId: undefined;
+  EventRecord: FrameSystemEventRecord;
 }
 
 /**

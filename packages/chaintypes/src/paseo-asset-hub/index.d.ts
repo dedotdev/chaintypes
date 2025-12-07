@@ -3,6 +3,7 @@
 import type { GenericSubstrateApi, GenericChainKnownTypes } from 'dedot/types';
 import type { MultiAddress } from 'dedot/codecs';
 import type {
+  FrameSystemEventRecord,
   AssetHubPaseoRuntimeRuntimeCall,
   SpRuntimeMultiSignature,
   FrameSystemExtensionsCheckNonZeroSender,
@@ -43,6 +44,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     FrameMetadataHashExtensionCheckMetadataHash,
   ];
   AssetId: StagingXcmV5Location;
+  EventRecord: FrameSystemEventRecord;
 }
 
 /**

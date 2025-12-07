@@ -3,6 +3,7 @@
 import type { GenericSubstrateApi, GenericChainKnownTypes } from 'dedot/types';
 import type { AccountId32 } from 'dedot/codecs';
 import type {
+  FrameSystemEventRecord,
   BasiliskRuntimeRuntimeCall,
   SpRuntimeMultiSignature,
   FrameSystemExtensionsCheckSpecVersion,
@@ -38,6 +39,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     PalletTransactionPaymentChargeTransactionPayment,
   ];
   AssetId: undefined;
+  EventRecord: FrameSystemEventRecord;
 }
 
 /**

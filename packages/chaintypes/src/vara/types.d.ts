@@ -85,7 +85,8 @@ export type VaraRuntimeRuntimeEvent =
   | { pallet: 'Gear'; palletEvent: PalletGearEvent }
   | { pallet: 'StakingRewards'; palletEvent: PalletGearStakingRewardsEvent }
   | { pallet: 'GearVoucher'; palletEvent: PalletGearVoucherEvent }
-  | { pallet: 'GearEthBridge'; palletEvent: PalletGearEthBridgeEvent };
+  | { pallet: 'GearEthBridge'; palletEvent: PalletGearEthBridgeEvent }
+  | { pallet: 'GrandpaSigner'; palletEvent: PalletGrandpaSignerEvent };
 
 /**
  * Event for the System pallet.
@@ -856,7 +857,8 @@ export type VaraRuntimeRuntimeCall =
   | { pallet: 'Gear'; palletCall: PalletGearCall }
   | { pallet: 'StakingRewards'; palletCall: PalletGearStakingRewardsCall }
   | { pallet: 'GearVoucher'; palletCall: PalletGearVoucherCall }
-  | { pallet: 'GearEthBridge'; palletCall: PalletGearEthBridgeCall };
+  | { pallet: 'GearEthBridge'; palletCall: PalletGearEthBridgeCall }
+  | { pallet: 'GrandpaSigner'; palletCall: PalletGrandpaSignerCall };
 
 export type VaraRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -888,7 +890,8 @@ export type VaraRuntimeRuntimeCallLike =
   | { pallet: 'Gear'; palletCall: PalletGearCallLike }
   | { pallet: 'StakingRewards'; palletCall: PalletGearStakingRewardsCallLike }
   | { pallet: 'GearVoucher'; palletCall: PalletGearVoucherCallLike }
-  | { pallet: 'GearEthBridge'; palletCall: PalletGearEthBridgeCallLike };
+  | { pallet: 'GearEthBridge'; palletCall: PalletGearEthBridgeCallLike }
+  | { pallet: 'GrandpaSigner'; palletCall: PalletGrandpaSignerCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -7505,6 +7508,32 @@ export type PalletGearEthBridgeCallLike =
    **/
   | { name: 'ResetOverflowedQueue'; params: { encodedFinalityProof: BytesLike } };
 
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletGrandpaSignerCall =
+  /**
+   * Schedule a signing request for the current GRANDPA set.
+   **/
+  | { name: 'ScheduleRequest'; params: { payload: Bytes; setId?: bigint | undefined; expiresAt?: number | undefined } }
+  /**
+   * Submit a GRANDPA signature for a scheduled request (unsigned).
+   **/
+  | { name: 'SubmitSignature'; params: { requestId: number; authority: FixedBytes<32>; signature: FixedBytes<64> } };
+
+export type PalletGrandpaSignerCallLike =
+  /**
+   * Schedule a signing request for the current GRANDPA set.
+   **/
+  | {
+      name: 'ScheduleRequest';
+      params: { payload: BytesLike; setId?: bigint | undefined; expiresAt?: number | undefined };
+    }
+  /**
+   * Submit a GRANDPA signature for a scheduled request (unsigned).
+   **/
+  | { name: 'SubmitSignature'; params: { requestId: number; authority: FixedBytes<32>; signature: FixedBytes<64> } };
+
 export type SpRuntimeBlakeTwo256 = {};
 
 export type PalletConvictionVotingTally = { ayes: bigint; nays: bigint; support: bigint };
@@ -8540,14 +8569,12 @@ export type GearCoreMessageUserUserMessage = {
   id: GprimitivesMessageId;
   source: GprimitivesActorId;
   destination: GprimitivesActorId;
-  payload: GearCoreBufferLimitedVec;
+  payload: GearCoreLimitedVecLimitedVec;
   value: bigint;
   details?: GearCoreMessageCommonReplyDetails | undefined;
 };
 
-export type GearCoreBufferLimitedVec = Bytes;
-
-export type GearCoreBufferPayloadSizeError = {};
+export type GearCoreLimitedVecLimitedVec = Bytes;
 
 export type GearCoreMessageCommonReplyDetails = { to: GprimitivesMessageId; code: GearCoreErrorsSimpleReplyCode };
 
@@ -8754,12 +8781,6 @@ export type PalletGearEthBridgeEvent =
    **/
   | { name: 'AuthoritySetHashChanged'; data: H256 }
   /**
-   * Authority set hash was reset.
-   *
-   * Related to bridge clearing on initialization of the second block in a new era.
-   **/
-  | { name: 'AuthoritySetReset' }
-  /**
    * Optimistically, single-time called event defining that pallet
    * got initialized and started processing session changes,
    * as well as putting initial zeroed queue merkle root.
@@ -8819,6 +8840,13 @@ export type PalletGearEthBridgeEvent =
   | { name: 'QueueReset' };
 
 export type PalletGearEthBridgePrimitivesEthMessage = { nonce: U256; source: H256; destination: H160; payload: Bytes };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletGrandpaSignerEvent =
+  | { name: 'RequestScheduled'; data: { requestId: number; setId: bigint } }
+  | { name: 'SignatureAdded'; data: { requestId: number; authority: FixedBytes<32>; count: number } };
 
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
@@ -10445,11 +10473,7 @@ export type GearCoreProgramProgramState =
   | { type: 'Uninitialized'; value: { messageId: GprimitivesMessageId } }
   | { type: 'Initialized' };
 
-export type GearCoreMemoryPageBuf = GearCoreBufferLimitedVecIntoPageBufError;
-
-export type GearCoreBufferLimitedVecIntoPageBufError = Bytes;
-
-export type GearCoreMemoryIntoPageBufError = {};
+export type GearCoreMemoryPageBuf = FixedArray<bigint, 2048>;
 
 /**
  * The `Error` enum of this pallet.
@@ -10476,7 +10500,7 @@ export type GearCoreMessageStoredStoredMessage = {
   id: GprimitivesMessageId;
   source: GprimitivesActorId;
   destination: GprimitivesActorId;
-  payload: GearCoreBufferLimitedVec;
+  payload: GearCoreLimitedVecLimitedVec;
   value: bigint;
   details?: GearCoreMessageCommonMessageDetails | undefined;
 };
@@ -10504,7 +10528,7 @@ export type GearCoreMessageUserUserStoredMessage = {
   id: GprimitivesMessageId;
   source: GprimitivesActorId;
   destination: GprimitivesActorId;
-  payload: GearCoreBufferLimitedVec;
+  payload: GearCoreLimitedVecLimitedVec;
   value: bigint;
 };
 
@@ -10575,16 +10599,12 @@ export type PalletGearMessengerError =
   | 'WaitlistElementNotFound';
 
 export type GearCoreTasksScheduledTask =
-  | { type: 'PauseProgram'; value: GprimitivesActorId }
-  | { type: 'RemoveCode'; value: GprimitivesCodeId }
   | { type: 'RemoveFromMailbox'; value: [AccountId32, GprimitivesMessageId] }
   | { type: 'RemoveFromWaitlist'; value: [GprimitivesActorId, GprimitivesMessageId] }
-  | { type: 'RemovePausedProgram'; value: GprimitivesActorId }
   | { type: 'WakeMessage'; value: [GprimitivesActorId, GprimitivesMessageId] }
   | { type: 'SendDispatch'; value: GprimitivesMessageId }
   | { type: 'SendUserMessage'; value: { messageId: GprimitivesMessageId; toMailbox: boolean } }
-  | { type: 'RemoveGasReservation'; value: [GprimitivesActorId, GprimitivesReservationId] }
-  | { type: 'RemoveResumeSession'; value: number };
+  | { type: 'RemoveGasReservation'; value: [GprimitivesActorId, GprimitivesReservationId] };
 
 /**
  * The `Error` enum of this pallet.
@@ -10744,6 +10764,7 @@ export type PalletGearScheduleLimits = {
   payloadLen: number;
   codeLen: number;
   dataSegmentsAmount: number;
+  typeSectionLen: number;
 };
 
 export type PalletGearScheduleInstructionWeights = {
@@ -11190,6 +11211,29 @@ export type PalletGearEthBridgeError =
    **/
   | 'InvalidQueueReset';
 
+export type PalletGrandpaSignerSigningRequest = {
+  id: number;
+  payload: Bytes;
+  setId: bigint;
+  createdAt: number;
+  expiresAt?: number | undefined;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletGrandpaSignerError =
+  | 'TooManyRequests'
+  | 'RequestIdExhausted'
+  | 'UnknownRequest'
+  | 'RequestExpired'
+  | 'AuthorityNotInSet'
+  | 'AlreadySigned'
+  | 'BadSignature'
+  | 'UnsupportedSet'
+  | 'PayloadTooLong'
+  | 'MaxSignaturesReached';
+
 export type PalletGearStakingRewardsExtensionStakingBlackList = {};
 
 export type FrameSystemExtensionsCheckNonZeroSender = {};
@@ -11354,4 +11398,5 @@ export type VaraRuntimeRuntimeError =
   | { pallet: 'StakingRewards'; palletError: PalletGearStakingRewardsError }
   | { pallet: 'GearVoucher'; palletError: PalletGearVoucherError }
   | { pallet: 'GearBank'; palletError: PalletGearBankError }
-  | { pallet: 'GearEthBridge'; palletError: PalletGearEthBridgeError };
+  | { pallet: 'GearEthBridge'; palletError: PalletGearEthBridgeError }
+  | { pallet: 'GrandpaSigner'; palletError: PalletGrandpaSignerError };

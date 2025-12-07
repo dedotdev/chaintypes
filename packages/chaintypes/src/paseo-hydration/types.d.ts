@@ -117,6 +117,7 @@ export type HydradxRuntimeRuntimeEvent =
   | { pallet: 'IsmpParachain'; palletEvent: IsmpParachainEvent }
   | { pallet: 'Hyperbridge'; palletEvent: PalletHyperbridgeEvent }
   | { pallet: 'TokenGateway'; palletEvent: PalletTokenGatewayEvent }
+  | { pallet: 'IsmpOracle'; palletEvent: PalletIsmpOracleTestEvent }
   | { pallet: 'EmaOracle'; palletEvent: PalletEmaOracleEvent }
   | { pallet: 'Broadcast'; palletEvent: PalletBroadcastEvent };
 
@@ -1315,6 +1316,7 @@ export type HydradxRuntimeRuntimeCall =
   | { pallet: 'Ismp'; palletCall: PalletIsmpCall }
   | { pallet: 'IsmpParachain'; palletCall: IsmpParachainCall }
   | { pallet: 'TokenGateway'; palletCall: PalletTokenGatewayCall }
+  | { pallet: 'IsmpOracle'; palletCall: PalletIsmpOracleTestCall }
   | { pallet: 'EmaOracle'; palletCall: PalletEmaOracleCall }
   | { pallet: 'Broadcast'; palletCall: PalletBroadcastCall };
 
@@ -1381,6 +1383,7 @@ export type HydradxRuntimeRuntimeCallLike =
   | { pallet: 'Ismp'; palletCall: PalletIsmpCallLike }
   | { pallet: 'IsmpParachain'; palletCall: IsmpParachainCallLike }
   | { pallet: 'TokenGateway'; palletCall: PalletTokenGatewayCallLike }
+  | { pallet: 'IsmpOracle'; palletCall: PalletIsmpOracleTestCallLike }
   | { pallet: 'EmaOracle'; palletCall: PalletEmaOracleCallLike }
   | { pallet: 'Broadcast'; palletCall: PalletBroadcastCallLike };
 
@@ -6463,6 +6466,29 @@ export type PalletOmnipoolCall =
    **/
   | { name: 'RemoveLiquidityWithLimit'; params: { positionId: bigint; amount: bigint; minLimit: bigint } }
   /**
+   * Remove all liquidity from position
+   *
+   * Limit protection is applied.
+   *
+   * `remove_all_liquidity` removes all shares amount from given PositionId (NFT instance).
+   *
+   * Asset's tradable state must contain REMOVE_LIQUIDITY flag, otherwise `NotAllowed` error is returned.
+   *
+   * if all shares from given position are removed, position is destroyed and NFT is burned.
+   *
+   * Remove all liquidity fails if price difference between spot price and oracle price is higher than allowed by `PriceBarrier`.
+   *
+   * Dynamic withdrawal fee is applied if withdrawal is not safe. It is calculated using spot price and external price oracle.
+   * Withdrawal is considered safe when trading is disabled.
+   *
+   * Parameters:
+   * - `position_id`: The identifier of position which liquidity is entirely removed from.
+   *
+   * Emits `LiquidityRemoved` event when successful.
+   *
+   **/
+  | { name: 'RemoveAllLiquidity'; params: { positionId: bigint; minLimit: bigint } }
+  /**
    * Sacrifice LP position in favor of pool.
    *
    * A position is destroyed and liquidity owned by LP becomes pool owned liquidity.
@@ -6697,6 +6723,29 @@ export type PalletOmnipoolCallLike =
    *
    **/
   | { name: 'RemoveLiquidityWithLimit'; params: { positionId: bigint; amount: bigint; minLimit: bigint } }
+  /**
+   * Remove all liquidity from position
+   *
+   * Limit protection is applied.
+   *
+   * `remove_all_liquidity` removes all shares amount from given PositionId (NFT instance).
+   *
+   * Asset's tradable state must contain REMOVE_LIQUIDITY flag, otherwise `NotAllowed` error is returned.
+   *
+   * if all shares from given position are removed, position is destroyed and NFT is burned.
+   *
+   * Remove all liquidity fails if price difference between spot price and oracle price is higher than allowed by `PriceBarrier`.
+   *
+   * Dynamic withdrawal fee is applied if withdrawal is not safe. It is calculated using spot price and external price oracle.
+   * Withdrawal is considered safe when trading is disabled.
+   *
+   * Parameters:
+   * - `position_id`: The identifier of position which liquidity is entirely removed from.
+   *
+   * Emits `LiquidityRemoved` event when successful.
+   *
+   **/
+  | { name: 'RemoveAllLiquidity'; params: { positionId: bigint; minLimit: bigint } }
   /**
    * Sacrifice LP position in favor of pool.
    *
@@ -8427,29 +8476,6 @@ export type PalletStableswapCall =
       params: { poolId: number; finalAmplification: number; startBlock: number; endBlock: number };
     }
   /**
-   * Add liquidity to selected pool.
-   *
-   * Use `add_assets_liquidity` instead.
-   * This extrinsics will be removed in the future.
-   *
-   * First call of `add_liquidity` must provide "initial liquidity" of all assets.
-   *
-   * If there is liquidity already in the pool, LP can provide liquidity of any number of pool assets.
-   *
-   * LP must have sufficient amount of each asset.
-   *
-   * Origin is given corresponding amount of shares.
-   *
-   * Parameters:
-   * - `origin`: liquidity provider
-   * - `pool_id`: Pool Id
-   * - `assets`: asset id and liquidity amount provided
-   *
-   * Emits `LiquidityAdded` event when successful.
-   * Emits `pallet_broadcast::Swapped` event when successful.
-   **/
-  | { name: 'AddLiquidity'; params: { poolId: number; assets: Array<HydradxTraitsStableswapAssetAmount> } }
-  /**
    * Add liquidity to selected pool given exact amount of shares to receive.
    *
    * Similar to `add_liquidity` but LP specifies exact amount of shares to receive.
@@ -8751,29 +8777,6 @@ export type PalletStableswapCallLike =
       name: 'UpdateAmplification';
       params: { poolId: number; finalAmplification: number; startBlock: number; endBlock: number };
     }
-  /**
-   * Add liquidity to selected pool.
-   *
-   * Use `add_assets_liquidity` instead.
-   * This extrinsics will be removed in the future.
-   *
-   * First call of `add_liquidity` must provide "initial liquidity" of all assets.
-   *
-   * If there is liquidity already in the pool, LP can provide liquidity of any number of pool assets.
-   *
-   * LP must have sufficient amount of each asset.
-   *
-   * Origin is given corresponding amount of shares.
-   *
-   * Parameters:
-   * - `origin`: liquidity provider
-   * - `pool_id`: Pool Id
-   * - `assets`: asset id and liquidity amount provided
-   *
-   * Emits `LiquidityAdded` event when successful.
-   * Emits `pallet_broadcast::Swapped` event when successful.
-   **/
-  | { name: 'AddLiquidity'; params: { poolId: number; assets: Array<HydradxTraitsStableswapAssetAmount> } }
   /**
    * Add liquidity to selected pool given exact amount of shares to receive.
    *
@@ -14038,11 +14041,30 @@ export type PalletTokenGatewayPrecisionUpdate = { assetId: number; precisions: A
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletIsmpOracleTestCall =
+  | { name: 'RequestGet'; params: { params: PalletIsmpOracleTestGetParams } }
+  | { name: 'RequestPost'; params: { params: PalletIsmpOracleTestPostParams } };
+
+export type PalletIsmpOracleTestCallLike =
+  | { name: 'RequestGet'; params: { params: PalletIsmpOracleTestGetParams } }
+  | { name: 'RequestPost'; params: { params: PalletIsmpOracleTestPostParams } };
+
+export type PalletIsmpOracleTestGetParams = { dest: IsmpHostStateMachine; height: bigint };
+
+export type PalletIsmpOracleTestPostParams = { dest: IsmpHostStateMachine; to: Bytes; body: Bytes };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletEmaOracleCall =
   | { name: 'AddOracle'; params: { source: FixedBytes<8>; assets: [number, number] } }
   | { name: 'RemoveOracle'; params: { source: FixedBytes<8>; assets: [number, number] } }
   | {
       name: 'UpdateBifrostOracle';
+      params: { assetA: XcmVersionedLocation; assetB: XcmVersionedLocation; price: [bigint, bigint] };
+    }
+  | {
+      name: 'UpdateIsmpOracle';
       params: { assetA: XcmVersionedLocation; assetB: XcmVersionedLocation; price: [bigint, bigint] };
     };
 
@@ -14051,6 +14073,10 @@ export type PalletEmaOracleCallLike =
   | { name: 'RemoveOracle'; params: { source: FixedBytes<8>; assets: [number, number] } }
   | {
       name: 'UpdateBifrostOracle';
+      params: { assetA: XcmVersionedLocation; assetB: XcmVersionedLocation; price: [bigint, bigint] };
+    }
+  | {
+      name: 'UpdateIsmpOracle';
       params: { assetA: XcmVersionedLocation; assetB: XcmVersionedLocation; price: [bigint, bigint] };
     };
 
@@ -14921,10 +14947,7 @@ export type PalletLiquidationEvent =
   /**
    * Money market position has been liquidated
    **/
-  {
-    name: 'Liquidated';
-    data: { user: H160; collateralAsset: number; debtAsset: number; debtToCover: bigint; profit: bigint };
-  };
+  { name: 'Liquidated'; data: { user: H160; collateralAsset: number; debtAsset: number; profit: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -16260,6 +16283,18 @@ export type PalletTokenGatewayEvent =
         commitment: H256;
       };
     };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletIsmpOracleTestEvent =
+  | { name: 'GetRequestSent'; data: { commitment: H256 } }
+  | { name: 'PostRequestSent'; data: { commitment: H256 } }
+  | { name: 'GetRequestResponded'; data: { commitment: H256; storageValues: Array<IsmpRouterStorageValue> } }
+  | { name: 'WstEthPriceReceived'; data: { commitment: H256; ethPerWsteth: U256 } }
+  | { name: 'PostRequestResponded'; data: { commitment: H256 } }
+  | { name: 'GetRequestTimedOut'; data: { commitment: H256 } }
+  | { name: 'PostResponseTimedOut'; data: { commitment: H256 } };
 
 /**
  * The `Event` enum of this pallet
@@ -19892,6 +19927,11 @@ export type PalletTokenGatewayError =
    **/
   | 'NotAssetOwner';
 
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletIsmpOracleTestError = 'GetRequestFailed';
+
 export type PalletEmaOracleOracleEntry = {
   price: HydraDxMathRatio;
   volume: HydradxTraitsOracleVolume;
@@ -20174,5 +20214,6 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'Ismp'; palletError: PalletIsmpError }
   | { pallet: 'Hyperbridge'; palletError: PalletHyperbridgeError }
   | { pallet: 'TokenGateway'; palletError: PalletTokenGatewayError }
+  | { pallet: 'IsmpOracle'; palletError: PalletIsmpOracleTestError }
   | { pallet: 'EmaOracle'; palletError: PalletEmaOracleError }
   | { pallet: 'Broadcast'; palletError: PalletBroadcastError };

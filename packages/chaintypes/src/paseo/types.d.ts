@@ -16624,6 +16624,13 @@ export type SpConsensusBabeEpoch = {
 
 export type SpConsensusBabeOpaqueKeyOwnershipProof = Bytes;
 
+export type FrameSupportViewFunctionsViewFunctionId = { prefix: FixedBytes<16>; suffix: FixedBytes<16> };
+
+export type FrameSupportViewFunctionsViewFunctionDispatchError =
+  | { type: 'NotImplemented' }
+  | { type: 'NotFound'; value: FrameSupportViewFunctionsViewFunctionId }
+  | { type: 'Codec' };
+
 export type PalletTransactionPaymentRuntimeDispatchInfo = {
   weight: SpWeightsWeightV2Weight;
   class: FrameSupportDispatchDispatchClass;

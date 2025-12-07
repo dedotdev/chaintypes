@@ -113,6 +113,10 @@ export type HydradxRuntimeRuntimeEvent =
   | { pallet: 'UnknownTokens'; palletEvent: OrmlUnknownTokensModuleEvent }
   | { pallet: 'CollatorSelection'; palletEvent: PalletCollatorSelectionEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
+  | { pallet: 'Ismp'; palletEvent: PalletIsmpEvent }
+  | { pallet: 'IsmpParachain'; palletEvent: IsmpParachainEvent }
+  | { pallet: 'Hyperbridge'; palletEvent: PalletHyperbridgeEvent }
+  | { pallet: 'TokenGateway'; palletEvent: PalletTokenGatewayEvent }
   | { pallet: 'EmaOracle'; palletEvent: PalletEmaOracleEvent }
   | { pallet: 'Broadcast'; palletEvent: PalletBroadcastEvent };
 
@@ -1308,6 +1312,9 @@ export type HydradxRuntimeRuntimeCall =
   | { pallet: 'XTokens'; palletCall: OrmlXtokensModuleCall }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCall }
   | { pallet: 'Session'; palletCall: PalletSessionCall }
+  | { pallet: 'Ismp'; palletCall: PalletIsmpCall }
+  | { pallet: 'IsmpParachain'; palletCall: IsmpParachainCall }
+  | { pallet: 'TokenGateway'; palletCall: PalletTokenGatewayCall }
   | { pallet: 'EmaOracle'; palletCall: PalletEmaOracleCall }
   | { pallet: 'Broadcast'; palletCall: PalletBroadcastCall };
 
@@ -1371,6 +1378,9 @@ export type HydradxRuntimeRuntimeCallLike =
   | { pallet: 'XTokens'; palletCall: OrmlXtokensModuleCallLike }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCallLike }
   | { pallet: 'Session'; palletCall: PalletSessionCallLike }
+  | { pallet: 'Ismp'; palletCall: PalletIsmpCallLike }
+  | { pallet: 'IsmpParachain'; palletCall: IsmpParachainCallLike }
+  | { pallet: 'TokenGateway'; palletCall: PalletTokenGatewayCallLike }
   | { pallet: 'EmaOracle'; palletCall: PalletEmaOracleCallLike }
   | { pallet: 'Broadcast'; palletCall: PalletBroadcastCallLike };
 
@@ -6823,41 +6833,65 @@ export type PalletDusterCall =
   /**
    * Dust specified account.
    * IF account balance is < min. existential deposit of given currency, and account is allowed to
-   * be dusted, the remaining balance is transferred to selected account (usually treasury).
+   * be dusted, the remaining balance is transferred to treasury account.
    *
-   * Caller is rewarded with chosen reward in native currency.
+   * In case of AToken, we perform an erc20 dust, which does a wihtdraw all then supply atoken on behalf of the dust receiver
+   *
+   * The transaction fee is returned back in case of successful dusting.
+   *
+   * Treasury account can never be dusted.
+   *
+   * Emits `Dusted` event when successful.
    **/
   | { name: 'DustAccount'; params: { account: AccountId32; currencyId: number } }
   /**
-   * Add account to list of non-dustable account. Account whihc are excluded from udsting.
-   * If such account should be dusted - `AccountBlacklisted` error is returned.
+   * Add account to list of whitelist accounts. Account which are excluded from dusting.
+   * If such account should be dusted - `AccountWhitelisted` error is returned.
    * Only root can perform this action.
+   *
+   * Emits `Added` event when successful.
+   *
    **/
-  | { name: 'AddNondustableAccount'; params: { account: AccountId32 } }
+  | { name: 'WhitelistAccount'; params: { account: AccountId32 } }
   /**
-   * Remove account from list of non-dustable accounts. That means account can be dusted again.
+   * Remove account from list of whitelist accounts. That means account can be dusted again.
+   *
+   * Emits `Removed` event when successful.
+   *
    **/
-  | { name: 'RemoveNondustableAccount'; params: { account: AccountId32 } };
+  | { name: 'RemoveFromWhitelist'; params: { account: AccountId32 } };
 
 export type PalletDusterCallLike =
   /**
    * Dust specified account.
    * IF account balance is < min. existential deposit of given currency, and account is allowed to
-   * be dusted, the remaining balance is transferred to selected account (usually treasury).
+   * be dusted, the remaining balance is transferred to treasury account.
    *
-   * Caller is rewarded with chosen reward in native currency.
+   * In case of AToken, we perform an erc20 dust, which does a wihtdraw all then supply atoken on behalf of the dust receiver
+   *
+   * The transaction fee is returned back in case of successful dusting.
+   *
+   * Treasury account can never be dusted.
+   *
+   * Emits `Dusted` event when successful.
    **/
   | { name: 'DustAccount'; params: { account: AccountId32Like; currencyId: number } }
   /**
-   * Add account to list of non-dustable account. Account whihc are excluded from udsting.
-   * If such account should be dusted - `AccountBlacklisted` error is returned.
+   * Add account to list of whitelist accounts. Account which are excluded from dusting.
+   * If such account should be dusted - `AccountWhitelisted` error is returned.
    * Only root can perform this action.
+   *
+   * Emits `Added` event when successful.
+   *
    **/
-  | { name: 'AddNondustableAccount'; params: { account: AccountId32Like } }
+  | { name: 'WhitelistAccount'; params: { account: AccountId32Like } }
   /**
-   * Remove account from list of non-dustable accounts. That means account can be dusted again.
+   * Remove account from list of whitelist accounts. That means account can be dusted again.
+   *
+   * Emits `Removed` event when successful.
+   *
    **/
-  | { name: 'RemoveNondustableAccount'; params: { account: AccountId32Like } };
+  | { name: 'RemoveFromWhitelist'; params: { account: AccountId32Like } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -9935,32 +9969,59 @@ export type PalletHsmCall =
    **/
   | { name: 'Buy'; params: { assetIn: number; assetOut: number; amountOut: bigint; slippageLimit: bigint } }
   /**
-   * Execute arbitrage opportunity between HSM and collateral stable pool
+   * Execute arbitrage opportunity between HSM and collateral stable pool using flash loans
    *
-   * This call is designed to be triggered automatically by offchain workers. It:
-   * 1. Detects price imbalances between HSM and a stable pool for a collateral
-   * 2. If an opportunity exists, mints Hollar, swaps it for collateral on HSM
-   * 3. Swaps that collateral for Hollar on the stable pool
-   * 4. Burns the Hollar received from the arbitrage
+   * This call is designed to be triggered automatically by offchain workers. It executes
+   * arbitrage by taking a flash loan from the GHO contract and performing trades to profit
+   * from price imbalances between HSM and the StableSwap pool.
+   *
+   * The arbitrage execution flow:
+   * 1. Takes a flash loan of Hollar from the GHO contract
+   * 2. Executes trades between HSM and StableSwap pool based on arbitrage direction:
+   * - For HollarIn (buy direction): Sell Hollar to HSM for collateral, then sell collateral back for Hollar in pool
+   * - For HollarOut (sell direction): Sell Hollar for collateral in pool, then buy Hollar back from HSM
+   * 3. Repays the flash loan
+   * 4. Any remaining profit (in collateral) is transferred to the ArbitrageProfitReceiver
    *
    * This helps maintain the peg of Hollar by profiting from and correcting price imbalances.
    * The call is unsigned and should only be executed by offchain workers.
    *
    * Parameters:
    * - `origin`: Must be None (unsigned)
-   * - `collateral_asset_id`: The ID of the collateral asset to check for arbitrage
+   * - `collateral_asset_id`: The ID of the collateral asset to use for arbitrage
+   * - `arbitrage`: Optional arbitrage parameters (direction and amount). If None, the function
+   * will automatically find and calculate the optimal arbitrage opportunity.
    *
    * Emits:
    * - `ArbitrageExecuted` when the arbitrage is successful
    *
    * Errors:
+   * - `FlashMinterNotSet` if the flash minter contract address has not been configured
    * - `AssetNotApproved` if the asset is not a registered collateral
    * - `NoArbitrageOpportunity` if there's no profitable arbitrage opportunity
    * - `MaxBuyPriceExceeded` if the arbitrage would exceed the maximum buy price
+   * - `MaxBuyBackExceeded` if the arbitrage would exceed the buyback limit
    * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
    * - Other errors from underlying calls
    **/
-  | { name: 'ExecuteArbitrage'; params: { collateralAssetId: number; flashAmount?: bigint | undefined } }
+  | { name: 'ExecuteArbitrage'; params: { collateralAssetId: number; arbitrage?: PalletHsmArbitrage | undefined } }
+  /**
+   * Set the flash minter contract address
+   *
+   * Configures the EVM address of the flash loan contract that will be used for arbitrage
+   * operations. This contract must support the ERC-3156 flash loan standard and be trusted
+   * to handle flash loans of Hollar tokens.
+   *
+   * Parameters:
+   * - `origin`: Must be authorized (governance/root)
+   * - `flash_minter_addr`: The EVM address of the flash minter contract
+   *
+   * Emits:
+   * - `FlashMinterSet` when the address is successfully configured
+   *
+   * Errors:
+   * - Authorization errors if origin is not authorized
+   **/
   | { name: 'SetFlashMinter'; params: { flashMinterAddr: H160 } };
 
 export type PalletHsmCallLike =
@@ -10111,33 +10172,62 @@ export type PalletHsmCallLike =
    **/
   | { name: 'Buy'; params: { assetIn: number; assetOut: number; amountOut: bigint; slippageLimit: bigint } }
   /**
-   * Execute arbitrage opportunity between HSM and collateral stable pool
+   * Execute arbitrage opportunity between HSM and collateral stable pool using flash loans
    *
-   * This call is designed to be triggered automatically by offchain workers. It:
-   * 1. Detects price imbalances between HSM and a stable pool for a collateral
-   * 2. If an opportunity exists, mints Hollar, swaps it for collateral on HSM
-   * 3. Swaps that collateral for Hollar on the stable pool
-   * 4. Burns the Hollar received from the arbitrage
+   * This call is designed to be triggered automatically by offchain workers. It executes
+   * arbitrage by taking a flash loan from the GHO contract and performing trades to profit
+   * from price imbalances between HSM and the StableSwap pool.
+   *
+   * The arbitrage execution flow:
+   * 1. Takes a flash loan of Hollar from the GHO contract
+   * 2. Executes trades between HSM and StableSwap pool based on arbitrage direction:
+   * - For HollarIn (buy direction): Sell Hollar to HSM for collateral, then sell collateral back for Hollar in pool
+   * - For HollarOut (sell direction): Sell Hollar for collateral in pool, then buy Hollar back from HSM
+   * 3. Repays the flash loan
+   * 4. Any remaining profit (in collateral) is transferred to the ArbitrageProfitReceiver
    *
    * This helps maintain the peg of Hollar by profiting from and correcting price imbalances.
    * The call is unsigned and should only be executed by offchain workers.
    *
    * Parameters:
    * - `origin`: Must be None (unsigned)
-   * - `collateral_asset_id`: The ID of the collateral asset to check for arbitrage
+   * - `collateral_asset_id`: The ID of the collateral asset to use for arbitrage
+   * - `arbitrage`: Optional arbitrage parameters (direction and amount). If None, the function
+   * will automatically find and calculate the optimal arbitrage opportunity.
    *
    * Emits:
    * - `ArbitrageExecuted` when the arbitrage is successful
    *
    * Errors:
+   * - `FlashMinterNotSet` if the flash minter contract address has not been configured
    * - `AssetNotApproved` if the asset is not a registered collateral
    * - `NoArbitrageOpportunity` if there's no profitable arbitrage opportunity
    * - `MaxBuyPriceExceeded` if the arbitrage would exceed the maximum buy price
+   * - `MaxBuyBackExceeded` if the arbitrage would exceed the buyback limit
    * - `InvalidEVMInteraction` if there's an error interacting with the Hollar ERC20 contract
    * - Other errors from underlying calls
    **/
-  | { name: 'ExecuteArbitrage'; params: { collateralAssetId: number; flashAmount?: bigint | undefined } }
+  | { name: 'ExecuteArbitrage'; params: { collateralAssetId: number; arbitrage?: PalletHsmArbitrage | undefined } }
+  /**
+   * Set the flash minter contract address
+   *
+   * Configures the EVM address of the flash loan contract that will be used for arbitrage
+   * operations. This contract must support the ERC-3156 flash loan standard and be trusted
+   * to handle flash loans of Hollar tokens.
+   *
+   * Parameters:
+   * - `origin`: Must be authorized (governance/root)
+   * - `flash_minter_addr`: The EVM address of the flash minter contract
+   *
+   * Emits:
+   * - `FlashMinterSet` when the address is successfully configured
+   *
+   * Errors:
+   * - Authorization errors if origin is not authorized
+   **/
   | { name: 'SetFlashMinter'; params: { flashMinterAddr: H160 } };
+
+export type PalletHsmArbitrage = { type: 'HollarOut'; value: bigint } | { type: 'HollarIn'; value: bigint };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -13631,6 +13721,323 @@ export type SpConsensusAuraSr25519AppSr25519Public = FixedBytes<32>;
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletIsmpCall =
+  /**
+   * Execute the provided batch of ISMP messages, this will short-circuit and revert if any
+   * of the provided messages are invalid. This is an unsigned extrinsic that permits anyone
+   * execute ISMP messages for free, provided they have valid proofs and the messages have
+   * not been previously processed.
+   *
+   * The dispatch origin for this call must be an unsigned one.
+   *
+   * - `messages`: the messages to handle or process.
+   *
+   * Emits different message events based on the Message received if successful.
+   **/
+  | { name: 'HandleUnsigned'; params: { messages: Array<IsmpMessagingMessage> } }
+  /**
+   * Create a consensus client, using a subjectively chosen consensus state. This can also
+   * be used to overwrite an existing consensus state. The dispatch origin for this
+   * call must be `T::AdminOrigin`.
+   *
+   * - `message`: [`CreateConsensusState`] struct.
+   *
+   * Emits [`Event::ConsensusClientCreated`] if successful.
+   **/
+  | { name: 'CreateConsensusClient'; params: { message: IsmpMessagingCreateConsensusState } }
+  /**
+   * Modify the unbonding period and challenge period for a consensus state.
+   * The dispatch origin for this call must be `T::AdminOrigin`.
+   *
+   * - `message`: `UpdateConsensusState` struct.
+   **/
+  | { name: 'UpdateConsensusState'; params: { message: PalletIsmpUtilsUpdateConsensusState } }
+  /**
+   * Add more funds to a message (request or response) to be used for delivery and execution.
+   *
+   * Should not be called on a message that has been completed (delivered or timed-out) as
+   * those funds will be lost forever.
+   **/
+  | { name: 'FundMessage'; params: { message: PalletIsmpUtilsFundMessageParams } };
+
+export type PalletIsmpCallLike =
+  /**
+   * Execute the provided batch of ISMP messages, this will short-circuit and revert if any
+   * of the provided messages are invalid. This is an unsigned extrinsic that permits anyone
+   * execute ISMP messages for free, provided they have valid proofs and the messages have
+   * not been previously processed.
+   *
+   * The dispatch origin for this call must be an unsigned one.
+   *
+   * - `messages`: the messages to handle or process.
+   *
+   * Emits different message events based on the Message received if successful.
+   **/
+  | { name: 'HandleUnsigned'; params: { messages: Array<IsmpMessagingMessage> } }
+  /**
+   * Create a consensus client, using a subjectively chosen consensus state. This can also
+   * be used to overwrite an existing consensus state. The dispatch origin for this
+   * call must be `T::AdminOrigin`.
+   *
+   * - `message`: [`CreateConsensusState`] struct.
+   *
+   * Emits [`Event::ConsensusClientCreated`] if successful.
+   **/
+  | { name: 'CreateConsensusClient'; params: { message: IsmpMessagingCreateConsensusState } }
+  /**
+   * Modify the unbonding period and challenge period for a consensus state.
+   * The dispatch origin for this call must be `T::AdminOrigin`.
+   *
+   * - `message`: `UpdateConsensusState` struct.
+   **/
+  | { name: 'UpdateConsensusState'; params: { message: PalletIsmpUtilsUpdateConsensusState } }
+  /**
+   * Add more funds to a message (request or response) to be used for delivery and execution.
+   *
+   * Should not be called on a message that has been completed (delivered or timed-out) as
+   * those funds will be lost forever.
+   **/
+  | { name: 'FundMessage'; params: { message: PalletIsmpUtilsFundMessageParams } };
+
+export type IsmpMessagingMessage =
+  | { type: 'Consensus'; value: IsmpMessagingConsensusMessage }
+  | { type: 'FraudProof'; value: IsmpMessagingFraudProofMessage }
+  | { type: 'Request'; value: IsmpMessagingRequestMessage }
+  | { type: 'Response'; value: IsmpMessagingResponseMessage }
+  | { type: 'Timeout'; value: IsmpMessagingTimeoutMessage };
+
+export type IsmpMessagingConsensusMessage = { consensusProof: Bytes; consensusStateId: FixedBytes<4>; signer: Bytes };
+
+export type IsmpMessagingFraudProofMessage = { proof1: Bytes; proof2: Bytes; consensusStateId: FixedBytes<4> };
+
+export type IsmpMessagingRequestMessage = {
+  requests: Array<IsmpRouterPostRequest>;
+  proof: IsmpMessagingProof;
+  signer: Bytes;
+};
+
+export type IsmpRouterPostRequest = {
+  source: IsmpHostStateMachine;
+  dest: IsmpHostStateMachine;
+  nonce: bigint;
+  from: Bytes;
+  to: Bytes;
+  timeoutTimestamp: bigint;
+  body: Bytes;
+};
+
+export type IsmpHostStateMachine =
+  | { type: 'Evm'; value: number }
+  | { type: 'Polkadot'; value: number }
+  | { type: 'Kusama'; value: number }
+  | { type: 'Substrate'; value: FixedBytes<4> }
+  | { type: 'Tendermint'; value: FixedBytes<4> };
+
+export type IsmpMessagingProof = { height: IsmpConsensusStateMachineHeight; proof: Bytes };
+
+export type IsmpConsensusStateMachineHeight = { id: IsmpConsensusStateMachineId; height: bigint };
+
+export type IsmpConsensusStateMachineId = { stateId: IsmpHostStateMachine; consensusStateId: FixedBytes<4> };
+
+export type IsmpMessagingResponseMessage = {
+  datagram: IsmpRouterRequestResponse;
+  proof: IsmpMessagingProof;
+  signer: Bytes;
+};
+
+export type IsmpRouterRequestResponse =
+  | { type: 'Request'; value: Array<IsmpRouterRequest> }
+  | { type: 'Response'; value: Array<IsmpRouterResponse> };
+
+export type IsmpRouterRequest =
+  | { type: 'Post'; value: IsmpRouterPostRequest }
+  | { type: 'Get'; value: IsmpRouterGetRequest };
+
+export type IsmpRouterGetRequest = {
+  source: IsmpHostStateMachine;
+  dest: IsmpHostStateMachine;
+  nonce: bigint;
+  from: Bytes;
+  keys: Array<Bytes>;
+  height: bigint;
+  context: Bytes;
+  timeoutTimestamp: bigint;
+};
+
+export type IsmpRouterResponse =
+  | { type: 'Post'; value: IsmpRouterPostResponse }
+  | { type: 'Get'; value: IsmpRouterGetResponse };
+
+export type IsmpRouterPostResponse = { post: IsmpRouterPostRequest; response: Bytes; timeoutTimestamp: bigint };
+
+export type IsmpRouterGetResponse = { get: IsmpRouterGetRequest; values: Array<IsmpRouterStorageValue> };
+
+export type IsmpRouterStorageValue = { key: Bytes; value?: Bytes | undefined };
+
+export type IsmpMessagingTimeoutMessage =
+  | { type: 'Post'; value: { requests: Array<IsmpRouterRequest>; timeoutProof: IsmpMessagingProof } }
+  | { type: 'PostResponse'; value: { responses: Array<IsmpRouterPostResponse>; timeoutProof: IsmpMessagingProof } }
+  | { type: 'Get'; value: { requests: Array<IsmpRouterRequest> } };
+
+export type IsmpMessagingCreateConsensusState = {
+  consensusState: Bytes;
+  consensusClientId: FixedBytes<4>;
+  consensusStateId: FixedBytes<4>;
+  unbondingPeriod: bigint;
+  challengePeriods: Array<[IsmpHostStateMachine, bigint]>;
+  stateMachineCommitments: Array<[IsmpConsensusStateMachineId, IsmpMessagingStateCommitmentHeight]>;
+};
+
+export type IsmpMessagingStateCommitmentHeight = { commitment: IsmpConsensusStateCommitment; height: bigint };
+
+export type IsmpConsensusStateCommitment = { timestamp: bigint; overlayRoot?: H256 | undefined; stateRoot: H256 };
+
+export type PalletIsmpUtilsUpdateConsensusState = {
+  consensusStateId: FixedBytes<4>;
+  unbondingPeriod?: bigint | undefined;
+  challengePeriods: Array<[IsmpHostStateMachine, bigint]>;
+};
+
+export type PalletIsmpUtilsFundMessageParams = { commitment: PalletIsmpUtilsMessageCommitment; amount: bigint };
+
+export type PalletIsmpUtilsMessageCommitment = { type: 'Request'; value: H256 } | { type: 'Response'; value: H256 };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IsmpParachainCall =
+  /**
+   * This allows block builders submit parachain consensus proofs as inherents. If the
+   * provided [`ConsensusMessage`] is not for a parachain, this call will fail.
+   **/
+  | { name: 'UpdateParachainConsensus'; params: { data: IsmpMessagingConsensusMessage } }
+  /**
+   * Add some new parachains to the parachains whitelist
+   **/
+  | { name: 'AddParachain'; params: { paraIds: Array<IsmpParachainParachainData> } }
+  /**
+   * Removes some parachains from the parachains whitelist
+   **/
+  | { name: 'RemoveParachain'; params: { paraIds: Array<number> } };
+
+export type IsmpParachainCallLike =
+  /**
+   * This allows block builders submit parachain consensus proofs as inherents. If the
+   * provided [`ConsensusMessage`] is not for a parachain, this call will fail.
+   **/
+  | { name: 'UpdateParachainConsensus'; params: { data: IsmpMessagingConsensusMessage } }
+  /**
+   * Add some new parachains to the parachains whitelist
+   **/
+  | { name: 'AddParachain'; params: { paraIds: Array<IsmpParachainParachainData> } }
+  /**
+   * Removes some parachains from the parachains whitelist
+   **/
+  | { name: 'RemoveParachain'; params: { paraIds: Array<number> } };
+
+export type IsmpParachainParachainData = { id: number; slotDuration: bigint };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletTokenGatewayCall =
+  /**
+   * Teleports a registered asset
+   * locks the asset and dispatches a request to token gateway on the destination
+   **/
+  | { name: 'Teleport'; params: { params: PalletTokenGatewayTeleportParams } }
+  /**
+   * Set the token gateway address for specified chains
+   **/
+  | { name: 'SetTokenGatewayAddresses'; params: { addresses: Array<[IsmpHostStateMachine, Bytes]> } }
+  /**
+   * Registers a multi-chain ERC6160 asset. The asset should not already exist.
+   *
+   * This works by dispatching a request to the TokenGateway module on each requested chain
+   * to create the asset.
+   * `native` should be true if this asset originates from this chain
+   **/
+  | { name: 'CreateErc6160Asset'; params: { asset: PalletTokenGatewayAssetRegistration } }
+  /**
+   * Registers a multi-chain ERC6160 asset. The asset should not already exist.
+   *
+   * This works by dispatching a request to the TokenGateway module on each requested chain
+   * to create the asset.
+   **/
+  | { name: 'UpdateErc6160Asset'; params: { asset: TokenGatewayPrimitivesGatewayAssetUpdate } }
+  /**
+   * Update the precision for an existing asset
+   **/
+  | { name: 'UpdateAssetPrecision'; params: { update: PalletTokenGatewayPrecisionUpdate } };
+
+export type PalletTokenGatewayCallLike =
+  /**
+   * Teleports a registered asset
+   * locks the asset and dispatches a request to token gateway on the destination
+   **/
+  | { name: 'Teleport'; params: { params: PalletTokenGatewayTeleportParams } }
+  /**
+   * Set the token gateway address for specified chains
+   **/
+  | { name: 'SetTokenGatewayAddresses'; params: { addresses: Array<[IsmpHostStateMachine, BytesLike]> } }
+  /**
+   * Registers a multi-chain ERC6160 asset. The asset should not already exist.
+   *
+   * This works by dispatching a request to the TokenGateway module on each requested chain
+   * to create the asset.
+   * `native` should be true if this asset originates from this chain
+   **/
+  | { name: 'CreateErc6160Asset'; params: { asset: PalletTokenGatewayAssetRegistration } }
+  /**
+   * Registers a multi-chain ERC6160 asset. The asset should not already exist.
+   *
+   * This works by dispatching a request to the TokenGateway module on each requested chain
+   * to create the asset.
+   **/
+  | { name: 'UpdateErc6160Asset'; params: { asset: TokenGatewayPrimitivesGatewayAssetUpdate } }
+  /**
+   * Update the precision for an existing asset
+   **/
+  | { name: 'UpdateAssetPrecision'; params: { update: PalletTokenGatewayPrecisionUpdate } };
+
+export type PalletTokenGatewayTeleportParams = {
+  assetId: number;
+  destination: IsmpHostStateMachine;
+  recepient: H256;
+  amount: bigint;
+  timeout: bigint;
+  tokenGateway: Bytes;
+  relayerFee: bigint;
+  callData?: Bytes | undefined;
+  redeem: boolean;
+};
+
+export type PalletTokenGatewayAssetRegistration = {
+  localId: number;
+  reg: TokenGatewayPrimitivesGatewayAssetRegistration;
+  native: boolean;
+  precision: Array<[IsmpHostStateMachine, number]>;
+};
+
+export type TokenGatewayPrimitivesGatewayAssetRegistration = {
+  name: Bytes;
+  symbol: Bytes;
+  chains: Array<IsmpHostStateMachine>;
+  minimumBalance?: bigint | undefined;
+};
+
+export type TokenGatewayPrimitivesGatewayAssetUpdate = {
+  assetId: H256;
+  addChains: Array<IsmpHostStateMachine>;
+  removeChains: Array<IsmpHostStateMachine>;
+  newAdmins: Array<[IsmpHostStateMachine, H160]>;
+};
+
+export type PalletTokenGatewayPrecisionUpdate = { assetId: number; precisions: Array<[IsmpHostStateMachine, number]> };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletEmaOracleCall =
   | { name: 'AddOracle'; params: { source: FixedBytes<8>; assets: [number, number] } }
   | { name: 'RemoveOracle'; params: { source: FixedBytes<8>; assets: [number, number] } }
@@ -14561,6 +14968,7 @@ export type PalletHsmEvent =
    * - `max_buy_price_coefficient`: New max buy price coefficient if updated (None if not changed)
    * - `buy_back_fee`: New buy back fee if updated (None if not changed)
    * - `buyback_rate`: New buyback rate if updated (None if not changed)
+   * - `max_in_holding`: New max collateral holding if updated (None if not changed)
    **/
   | {
       name: 'CollateralUpdated';
@@ -14570,6 +14978,7 @@ export type PalletHsmEvent =
         maxBuyPriceCoefficient?: FixedU128 | undefined;
         buyBackFee?: Permill | undefined;
         buybackRate?: Perbill | undefined;
+        maxInHolding?: bigint | undefined | undefined;
       };
     }
   /**
@@ -15501,6 +15910,356 @@ export type PalletSessionEvent =
    * block number as the type might suggest.
    **/
   { name: 'NewSession'; data: { sessionIndex: number } };
+
+/**
+ * Pallet Events
+ **/
+export type PalletIsmpEvent =
+  /**
+   * Emitted when a state machine is successfully updated to a new height
+   **/
+  | {
+      name: 'StateMachineUpdated';
+      data: {
+        /**
+         * State machine identifier
+         **/
+        stateMachineId: IsmpConsensusStateMachineId;
+
+        /**
+         * State machine latest height
+         **/
+        latestHeight: bigint;
+      };
+    }
+  /**
+   * Emitted when a state commitment is vetoed by a fisherman
+   **/
+  | {
+      name: 'StateCommitmentVetoed';
+      data: {
+        /**
+         * State machine height
+         **/
+        height: IsmpConsensusStateMachineHeight;
+
+        /**
+         * responsible fisherman
+         **/
+        fisherman: Bytes;
+      };
+    }
+  /**
+   * Indicates that a consensus client has been created
+   **/
+  | {
+      name: 'ConsensusClientCreated';
+      data: {
+        /**
+         * Consensus client id
+         **/
+        consensusClientId: FixedBytes<4>;
+      };
+    }
+  /**
+   * Indicates that a consensus client has been created
+   **/
+  | {
+      name: 'ConsensusClientFrozen';
+      data: {
+        /**
+         * Consensus client id
+         **/
+        consensusClientId: FixedBytes<4>;
+      };
+    }
+  /**
+   * An Outgoing Response has been deposited
+   **/
+  | {
+      name: 'Response';
+      data: {
+        /**
+         * Chain that this response will be routed to
+         **/
+        destChain: IsmpHostStateMachine;
+
+        /**
+         * Source Chain for this response
+         **/
+        sourceChain: IsmpHostStateMachine;
+
+        /**
+         * Nonce for the request which this response is for
+         **/
+        requestNonce: bigint;
+
+        /**
+         * Response Commitment
+         **/
+        commitment: H256;
+
+        /**
+         * Request commitment
+         **/
+        reqCommitment: H256;
+      };
+    }
+  /**
+   * An Outgoing Request has been deposited
+   **/
+  | {
+      name: 'Request';
+      data: {
+        /**
+         * Chain that this request will be routed to
+         **/
+        destChain: IsmpHostStateMachine;
+
+        /**
+         * Source Chain for request
+         **/
+        sourceChain: IsmpHostStateMachine;
+
+        /**
+         * Request nonce
+         **/
+        requestNonce: bigint;
+
+        /**
+         * Commitment
+         **/
+        commitment: H256;
+      };
+    }
+  /**
+   * Some errors handling some ismp messages
+   **/
+  | {
+      name: 'Errors';
+      data: {
+        /**
+         * Message handling errors
+         **/
+        errors: Array<PalletIsmpErrorsHandlingError>;
+      };
+    }
+  /**
+   * Post Request Handled
+   **/
+  | { name: 'PostRequestHandled'; data: IsmpEventsRequestResponseHandled }
+  /**
+   * Post Response Handled
+   **/
+  | { name: 'PostResponseHandled'; data: IsmpEventsRequestResponseHandled }
+  /**
+   * Get Response Handled
+   **/
+  | { name: 'GetRequestHandled'; data: IsmpEventsRequestResponseHandled }
+  /**
+   * Post request timeout handled
+   **/
+  | { name: 'PostRequestTimeoutHandled'; data: IsmpEventsTimeoutHandled }
+  /**
+   * Post response timeout handled
+   **/
+  | { name: 'PostResponseTimeoutHandled'; data: IsmpEventsTimeoutHandled }
+  /**
+   * Get request timeout handled
+   **/
+  | { name: 'GetRequestTimeoutHandled'; data: IsmpEventsTimeoutHandled };
+
+export type PalletIsmpErrorsHandlingError = { message: Bytes };
+
+export type IsmpEventsRequestResponseHandled = { commitment: H256; relayer: Bytes };
+
+export type IsmpEventsTimeoutHandled = { commitment: H256; source: IsmpHostStateMachine; dest: IsmpHostStateMachine };
+
+/**
+ * Events emitted by this pallet
+ **/
+export type IsmpParachainEvent =
+  /**
+   * Parachains with the `para_ids` have been added to the whitelist
+   **/
+  | {
+      name: 'ParachainsAdded';
+      data: {
+        /**
+         * The parachains in question
+         **/
+        paraIds: Array<IsmpParachainParachainData>;
+      };
+    }
+  /**
+   * Parachains with the `para_ids` have been removed from the whitelist
+   **/
+  | {
+      name: 'ParachainsRemoved';
+      data: {
+        /**
+         * The parachains in question
+         **/
+        paraIds: Array<number>;
+      };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletHyperbridgeEvent =
+  /**
+   * Hyperbridge governance has now updated it's host params on this chain.
+   **/
+  | {
+      name: 'HostParamsUpdated';
+      data: {
+        /**
+         * The old host params
+         **/
+        old: PalletHyperbridgeVersionedHostParams;
+
+        /**
+         * The new host params
+         **/
+        new: PalletHyperbridgeVersionedHostParams;
+      };
+    }
+  /**
+   * A relayer has withdrawn some fees
+   **/
+  | {
+      name: 'RelayerFeeWithdrawn';
+      data: {
+        /**
+         * The amount that was withdrawn
+         **/
+        amount: bigint;
+
+        /**
+         * The withdrawal beneficiary
+         **/
+        account: AccountId32;
+      };
+    }
+  /**
+   * Hyperbridge has withdrawn it's protocol revenue
+   **/
+  | {
+      name: 'ProtocolRevenueWithdrawn';
+      data: {
+        /**
+         * The amount that was withdrawn
+         **/
+        amount: bigint;
+
+        /**
+         * The withdrawal beneficiary
+         **/
+        account: AccountId32;
+      };
+    };
+
+export type PalletHyperbridgeVersionedHostParams = { type: 'V1'; value: PalletHyperbridgeSubstrateHostParams };
+
+export type PalletHyperbridgeSubstrateHostParams = {
+  defaultPerByteFee: bigint;
+  perByteFees: Array<[IsmpHostStateMachine, bigint]>;
+  assetRegistrationFee: bigint;
+};
+
+/**
+ * Pallet events that functions in this pallet can emit.
+ **/
+export type PalletTokenGatewayEvent =
+  /**
+   * An asset has been teleported
+   **/
+  | {
+      name: 'AssetTeleported';
+      data: {
+        /**
+         * Source account
+         **/
+        from: AccountId32;
+
+        /**
+         * beneficiary account on destination
+         **/
+        to: H256;
+
+        /**
+         * Amount transferred
+         **/
+        amount: bigint;
+
+        /**
+         * Destination chain
+         **/
+        dest: IsmpHostStateMachine;
+
+        /**
+         * Request commitment
+         **/
+        commitment: H256;
+      };
+    }
+  /**
+   * An asset has been received and transferred to the beneficiary's account
+   **/
+  | {
+      name: 'AssetReceived';
+      data: {
+        /**
+         * beneficiary account on relaychain
+         **/
+        beneficiary: AccountId32;
+
+        /**
+         * Amount transferred
+         **/
+        amount: bigint;
+
+        /**
+         * Destination chain
+         **/
+        source: IsmpHostStateMachine;
+      };
+    }
+  /**
+   * An asset has been refunded and transferred to the beneficiary's account
+   **/
+  | {
+      name: 'AssetRefunded';
+      data: {
+        /**
+         * beneficiary account on relaychain
+         **/
+        beneficiary: AccountId32;
+
+        /**
+         * Amount transferred
+         **/
+        amount: bigint;
+
+        /**
+         * Destination chain
+         **/
+        source: IsmpHostStateMachine;
+      };
+    }
+  /**
+   * ERC6160 asset creation request dispatched to hyperbridge
+   **/
+  | {
+      name: 'Erc6160AssetRegistrationDispatched';
+      data: {
+        /**
+         * Request commitment
+         **/
+        commitment: H256;
+      };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -16917,23 +17676,23 @@ export type PalletDusterError =
   /**
    * Account is excluded from dusting.
    **/
-  | 'AccountBlacklisted'
+  | 'AccountWhitelisted'
   /**
    * Account is not present in the non-dustable list.
    **/
-  | 'AccountNotBlacklisted'
+  | 'AccountNotWhitelisted'
   /**
    * The balance is zero.
    **/
   | 'ZeroBalance'
   /**
+   * The balance was not fully dusted, there is some leftover on the account. Normally, it should never happen.
+   **/
+  | 'NonZeroBalance'
+  /**
    * The balance is sufficient to keep account open.
    **/
   | 'BalanceSufficient'
-  /**
-   * Dust account is not set.
-   **/
-  | 'DustAccountNotSet'
   /**
    * Reserve account is not set.
    **/
@@ -18002,12 +18761,6 @@ export type PalletHsmError =
    **/
   | 'NoArbitrageOpportunity'
   /**
-   * Offchain lock error
-   *
-   * Failed to acquire the lock for offchain workers, likely because another operation is in progress.
-   **/
-  | 'OffchainLockError'
-  /**
    * Asset not in the pool
    *
    * The specified asset was not found in the pool.
@@ -19068,6 +19821,77 @@ export type PalletSessionError =
 
 export type SpConsensusSlotsSlot = bigint;
 
+/**
+ * Pallet errors
+ **/
+export type PalletIsmpError =
+  /**
+   * Invalid ISMP message
+   **/
+  | 'InvalidMessage'
+  /**
+   * Requested message was not found
+   **/
+  | 'MessageNotFound'
+  /**
+   * Encountered an error while creating the consensus client.
+   **/
+  | 'ConsensusClientCreationFailed'
+  /**
+   * Couldn't update unbonding period
+   **/
+  | 'UnbondingPeriodUpdateFailed'
+  /**
+   * Couldn't update challenge period
+   **/
+  | 'ChallengePeriodUpdateFailed';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletHyperbridgeError = null;
+
+/**
+ * Errors that can be returned by this pallet.
+ **/
+export type PalletTokenGatewayError =
+  /**
+   * A asset that has not been registered
+   **/
+  | 'UnregisteredAsset'
+  /**
+   * Error while teleporting asset
+   **/
+  | 'AssetTeleportError'
+  /**
+   * Coprocessor was not configured in the runtime
+   **/
+  | 'CoprocessorNotConfigured'
+  /**
+   * Asset or update Dispatch Error
+   **/
+  | 'DispatchError'
+  /**
+   * Asset Id creation failed
+   **/
+  | 'AssetCreationError'
+  /**
+   * Asset decimals not found
+   **/
+  | 'AssetDecimalsNotFound'
+  /**
+   * Protocol Params have not been initialized
+   **/
+  | 'NotInitialized'
+  /**
+   * Unknown Asset
+   **/
+  | 'UnknownAsset'
+  /**
+   * Only root or asset owner can update asset
+   **/
+  | 'NotAssetOwner';
+
 export type PalletEmaOracleOracleEntry = {
   price: HydraDxMathRatio;
   volume: HydradxTraitsOracleVolume;
@@ -19268,6 +20092,26 @@ export type HydradxRuntimeEvmAaveTradeExecutorPoolData = {
   liqudityOut: bigint;
 };
 
+export type IsmpEventsEvent =
+  | { type: 'StateMachineUpdated'; value: IsmpEventsStateMachineUpdated }
+  | { type: 'StateCommitmentVetoed'; value: IsmpEventsStateCommitmentVetoed }
+  | { type: 'PostRequest'; value: IsmpRouterPostRequest }
+  | { type: 'PostResponse'; value: IsmpRouterPostResponse }
+  | { type: 'GetResponse'; value: IsmpRouterGetResponse }
+  | { type: 'GetRequest'; value: IsmpRouterGetRequest }
+  | { type: 'PostRequestHandled'; value: IsmpEventsRequestResponseHandled }
+  | { type: 'PostResponseHandled'; value: IsmpEventsRequestResponseHandled }
+  | { type: 'PostRequestTimeoutHandled'; value: IsmpEventsTimeoutHandled }
+  | { type: 'PostResponseTimeoutHandled'; value: IsmpEventsTimeoutHandled }
+  | { type: 'GetRequestHandled'; value: IsmpEventsRequestResponseHandled }
+  | { type: 'GetRequestTimeoutHandled'; value: IsmpEventsTimeoutHandled };
+
+export type IsmpEventsStateMachineUpdated = { stateMachineId: IsmpConsensusStateMachineId; latestHeight: bigint };
+
+export type IsmpEventsStateCommitmentVetoed = { height: IsmpConsensusStateMachineHeight; fisherman: Bytes };
+
+export type CumulusPalletParachainSystemRelayChainState = { number: number; stateRoot: H256 };
+
 export type HydradxRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }
   | { pallet: 'Balances'; palletError: PalletBalancesError }
@@ -19327,5 +20171,8 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'UnknownTokens'; palletError: OrmlUnknownTokensModuleError }
   | { pallet: 'CollatorSelection'; palletError: PalletCollatorSelectionError }
   | { pallet: 'Session'; palletError: PalletSessionError }
+  | { pallet: 'Ismp'; palletError: PalletIsmpError }
+  | { pallet: 'Hyperbridge'; palletError: PalletHyperbridgeError }
+  | { pallet: 'TokenGateway'; palletError: PalletTokenGatewayError }
   | { pallet: 'EmaOracle'; palletError: PalletEmaOracleError }
   | { pallet: 'Broadcast'; palletError: PalletBroadcastError };

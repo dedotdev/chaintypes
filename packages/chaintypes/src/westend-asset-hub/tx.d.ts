@@ -3,12 +3,10 @@
 import type {
   GenericChainTx,
   GenericTxCall,
+  GenericChainKnownTypes,
   ISubmittableExtrinsic,
   ISubmittableResult,
   IRuntimeTxCall,
-  RpcVersion,
-  RpcV2,
-  ISubmittableExtrinsicLegacy,
 } from 'dedot/types';
 import type {
   MultiAddressLike,
@@ -98,16 +96,18 @@ import type {
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
-  Rv extends RpcVersion,
   T extends IRuntimeTxCall = AssetHubWestendRuntimeRuntimeCallLike,
-> = Extrinsic<MultiAddressLike, T, SpRuntimeMultiSignature, any[]> &
-  (Rv extends RpcV2
-    ? ISubmittableExtrinsic<ISubmittableResult<FrameSystemEventRecord>>
-    : ISubmittableExtrinsicLegacy<ISubmittableResult<FrameSystemEventRecord>>);
+  ChainKnownTypes extends GenericChainKnownTypes = GenericChainKnownTypes,
+> = Extrinsic<MultiAddressLike, T, SpRuntimeMultiSignature, ChainKnownTypes['Extra']> &
+  ISubmittableExtrinsic<ISubmittableResult<FrameSystemEventRecord>, ChainKnownTypes['AssetId']>;
 
-export type TxCall<Rv extends RpcVersion> = (...args: any[]) => ChainSubmittableExtrinsic<Rv>;
+export type TxCall<ChainKnownTypes extends GenericChainKnownTypes = GenericChainKnownTypes> = (
+  ...args: any[]
+) => ChainSubmittableExtrinsic<AssetHubWestendRuntimeRuntimeCallLike, ChainKnownTypes>;
 
-export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCall<Rv>> {
+export interface ChainTx<
+  ChainKnownTypes extends GenericChainKnownTypes = GenericChainKnownTypes,
+> extends GenericChainTx<TxCall<ChainKnownTypes>> {
   /**
    * Pallet `System`'s transaction calls
    **/
@@ -120,16 +120,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} remark
      **/
     remark: GenericTxCall<
-      Rv,
       (remark: BytesLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'System';
           palletCall: {
             name: 'Remark';
             params: { remark: BytesLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -139,16 +138,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} pages
      **/
     setHeapPages: GenericTxCall<
-      Rv,
       (pages: bigint) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'System';
           palletCall: {
             name: 'SetHeapPages';
             params: { pages: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -158,16 +156,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} code
      **/
     setCode: GenericTxCall<
-      Rv,
       (code: BytesLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'System';
           palletCall: {
             name: 'SetCode';
             params: { code: BytesLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -180,16 +177,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} code
      **/
     setCodeWithoutChecks: GenericTxCall<
-      Rv,
       (code: BytesLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'System';
           palletCall: {
             name: 'SetCodeWithoutChecks';
             params: { code: BytesLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -199,16 +195,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<[BytesLike, BytesLike]>} items
      **/
     setStorage: GenericTxCall<
-      Rv,
       (items: Array<[BytesLike, BytesLike]>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'System';
           palletCall: {
             name: 'SetStorage';
             params: { items: Array<[BytesLike, BytesLike]> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -218,16 +213,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<BytesLike>} keys
      **/
     killStorage: GenericTxCall<
-      Rv,
       (keys: Array<BytesLike>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'System';
           palletCall: {
             name: 'KillStorage';
             params: { keys: Array<BytesLike> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -241,19 +235,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} subkeys
      **/
     killPrefix: GenericTxCall<
-      Rv,
       (
         prefix: BytesLike,
         subkeys: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'System';
           palletCall: {
             name: 'KillPrefix';
             params: { prefix: BytesLike; subkeys: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -263,16 +256,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} remark
      **/
     remarkWithEvent: GenericTxCall<
-      Rv,
       (remark: BytesLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'System';
           palletCall: {
             name: 'RemarkWithEvent';
             params: { remark: BytesLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -285,16 +277,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H256} codeHash
      **/
     authorizeUpgrade: GenericTxCall<
-      Rv,
       (codeHash: H256) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'System';
           palletCall: {
             name: 'AuthorizeUpgrade';
             params: { codeHash: H256 };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -311,16 +302,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H256} codeHash
      **/
     authorizeUpgradeWithoutChecks: GenericTxCall<
-      Rv,
       (codeHash: H256) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'System';
           palletCall: {
             name: 'AuthorizeUpgradeWithoutChecks';
             params: { codeHash: H256 };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -338,23 +328,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} code
      **/
     applyAuthorizedUpgrade: GenericTxCall<
-      Rv,
       (code: BytesLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'System';
           palletCall: {
             name: 'ApplyAuthorizedUpgrade';
             params: { code: BytesLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `ParachainSystem`'s transaction calls
@@ -375,12 +364,10 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {CumulusPalletParachainSystemParachainInherentInboundMessagesData} inboundMessagesData
      **/
     setValidationData: GenericTxCall<
-      Rv,
       (
         data: CumulusPalletParachainSystemParachainInherentBasicParachainInherentData,
         inboundMessagesData: CumulusPalletParachainSystemParachainInherentInboundMessagesData,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ParachainSystem';
           palletCall: {
@@ -390,7 +377,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               inboundMessagesData: CumulusPalletParachainSystemParachainInherentInboundMessagesData;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -399,23 +387,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} message
      **/
     sudoSendUpwardMessage: GenericTxCall<
-      Rv,
       (message: BytesLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ParachainSystem';
           palletCall: {
             name: 'SudoSendUpwardMessage';
             params: { message: BytesLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Timestamp`'s transaction calls
@@ -445,23 +432,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} now
      **/
     set: GenericTxCall<
-      Rv,
       (now: bigint) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Timestamp';
           palletCall: {
             name: 'Set';
             params: { now: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `ParachainInfo`'s transaction calls
@@ -470,7 +456,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `MultiBlockMigrations`'s transaction calls
@@ -486,16 +472,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletMigrationsMigrationCursor | undefined} cursor
      **/
     forceSetCursor: GenericTxCall<
-      Rv,
       (cursor: PalletMigrationsMigrationCursor | undefined) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'MultiBlockMigrations';
           palletCall: {
             name: 'ForceSetCursor';
             params: { cursor: PalletMigrationsMigrationCursor | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -512,20 +497,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number | undefined} startedAt
      **/
     forceSetActiveCursor: GenericTxCall<
-      Rv,
       (
         index: number,
         innerCursor: BytesLike | undefined,
         startedAt: number | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'MultiBlockMigrations';
           palletCall: {
             name: 'ForceSetActiveCursor';
             params: { index: number; innerCursor: BytesLike | undefined; startedAt: number | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -537,15 +521,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     forceOnboardMbms: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'MultiBlockMigrations';
           palletCall: {
             name: 'ForceOnboardMbms';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -559,23 +542,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletMigrationsHistoricCleanupSelector} selector
      **/
     clearHistoric: GenericTxCall<
-      Rv,
       (selector: PalletMigrationsHistoricCleanupSelector) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'MultiBlockMigrations';
           palletCall: {
             name: 'ClearHistoric';
             params: { selector: PalletMigrationsHistoricCleanupSelector };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Preimage`'s transaction calls
@@ -590,16 +572,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} bytes
      **/
     notePreimage: GenericTxCall<
-      Rv,
       (bytes: BytesLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Preimage';
           palletCall: {
             name: 'NotePreimage';
             params: { bytes: BytesLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -614,16 +595,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H256} hash
      **/
     unnotePreimage: GenericTxCall<
-      Rv,
       (hash: H256) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Preimage';
           palletCall: {
             name: 'UnnotePreimage';
             params: { hash: H256 };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -636,16 +616,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H256} hash
      **/
     requestPreimage: GenericTxCall<
-      Rv,
       (hash: H256) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Preimage';
           palletCall: {
             name: 'RequestPreimage';
             params: { hash: H256 };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -657,16 +636,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H256} hash
      **/
     unrequestPreimage: GenericTxCall<
-      Rv,
       (hash: H256) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Preimage';
           palletCall: {
             name: 'UnrequestPreimage';
             params: { hash: H256 };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -678,23 +656,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<H256>} hashes
      **/
     ensureUpdated: GenericTxCall<
-      Rv,
       (hashes: Array<H256>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Preimage';
           palletCall: {
             name: 'EnsureUpdated';
             params: { hashes: Array<H256> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Scheduler`'s transaction calls
@@ -709,14 +686,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} call
      **/
     schedule: GenericTxCall<
-      Rv,
       (
         when: number,
         maybePeriodic: [number, number] | undefined,
         priority: number,
         call: AssetHubWestendRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Scheduler';
           palletCall: {
@@ -728,7 +703,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               call: AssetHubWestendRuntimeRuntimeCallLike;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -739,19 +715,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     cancel: GenericTxCall<
-      Rv,
       (
         when: number,
         index: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Scheduler';
           palletCall: {
             name: 'Cancel';
             params: { when: number; index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -765,7 +740,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} call
      **/
     scheduleNamed: GenericTxCall<
-      Rv,
       (
         id: FixedBytes<32>,
         when: number,
@@ -773,7 +747,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         priority: number,
         call: AssetHubWestendRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Scheduler';
           palletCall: {
@@ -786,7 +759,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               call: AssetHubWestendRuntimeRuntimeCallLike;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -796,16 +770,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {FixedBytes<32>} id
      **/
     cancelNamed: GenericTxCall<
-      Rv,
       (id: FixedBytes<32>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Scheduler';
           palletCall: {
             name: 'CancelNamed';
             params: { id: FixedBytes<32> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -818,14 +791,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} call
      **/
     scheduleAfter: GenericTxCall<
-      Rv,
       (
         after: number,
         maybePeriodic: [number, number] | undefined,
         priority: number,
         call: AssetHubWestendRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Scheduler';
           palletCall: {
@@ -837,7 +808,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               call: AssetHubWestendRuntimeRuntimeCallLike;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -851,7 +823,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} call
      **/
     scheduleNamedAfter: GenericTxCall<
-      Rv,
       (
         id: FixedBytes<32>,
         after: number,
@@ -859,7 +830,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         priority: number,
         call: AssetHubWestendRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Scheduler';
           palletCall: {
@@ -872,7 +842,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               call: AssetHubWestendRuntimeRuntimeCallLike;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -895,20 +866,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} period
      **/
     setRetry: GenericTxCall<
-      Rv,
       (
         task: [number, number],
         retries: number,
         period: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Scheduler';
           palletCall: {
             name: 'SetRetry';
             params: { task: [number, number]; retries: number; period: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -931,20 +901,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} period
      **/
     setRetryNamed: GenericTxCall<
-      Rv,
       (
         id: FixedBytes<32>,
         retries: number,
         period: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Scheduler';
           palletCall: {
             name: 'SetRetryNamed';
             params: { id: FixedBytes<32>; retries: number; period: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -954,16 +923,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {[number, number]} task
      **/
     cancelRetry: GenericTxCall<
-      Rv,
       (task: [number, number]) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Scheduler';
           palletCall: {
             name: 'CancelRetry';
             params: { task: [number, number] };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -973,23 +941,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {FixedBytes<32>} id
      **/
     cancelRetryNamed: GenericTxCall<
-      Rv,
       (id: FixedBytes<32>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Scheduler';
           palletCall: {
             name: 'CancelRetryNamed';
             params: { id: FixedBytes<32> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Sudo`'s transaction calls
@@ -1001,16 +968,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} call
      **/
     sudo: GenericTxCall<
-      Rv,
       (call: AssetHubWestendRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Sudo';
           palletCall: {
             name: 'Sudo';
             params: { call: AssetHubWestendRuntimeRuntimeCallLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1025,19 +991,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {SpWeightsWeightV2Weight} weight
      **/
     sudoUncheckedWeight: GenericTxCall<
-      Rv,
       (
         call: AssetHubWestendRuntimeRuntimeCallLike,
         weight: SpWeightsWeightV2Weight,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Sudo';
           palletCall: {
             name: 'SudoUncheckedWeight';
             params: { call: AssetHubWestendRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1048,16 +1013,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} new_
      **/
     setKey: GenericTxCall<
-      Rv,
       (new_: MultiAddressLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Sudo';
           palletCall: {
             name: 'SetKey';
             params: { new: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1071,19 +1035,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} call
      **/
     sudoAs: GenericTxCall<
-      Rv,
       (
         who: MultiAddressLike,
         call: AssetHubWestendRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Sudo';
           palletCall: {
             name: 'SudoAs';
             params: { who: MultiAddressLike; call: AssetHubWestendRuntimeRuntimeCallLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1094,22 +1057,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     removeKey: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Sudo';
           palletCall: {
             name: 'RemoveKey';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Balances`'s transaction calls
@@ -1128,19 +1090,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} value
      **/
     transferAllowDeath: GenericTxCall<
-      Rv,
       (
         dest: MultiAddressLike,
         value: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Balances';
           palletCall: {
             name: 'TransferAllowDeath';
             params: { dest: MultiAddressLike; value: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1153,20 +1114,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} value
      **/
     forceTransfer: GenericTxCall<
-      Rv,
       (
         source: MultiAddressLike,
         dest: MultiAddressLike,
         value: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Balances';
           palletCall: {
             name: 'ForceTransfer';
             params: { source: MultiAddressLike; dest: MultiAddressLike; value: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1182,19 +1142,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} value
      **/
     transferKeepAlive: GenericTxCall<
-      Rv,
       (
         dest: MultiAddressLike,
         value: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Balances';
           palletCall: {
             name: 'TransferKeepAlive';
             params: { dest: MultiAddressLike; value: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1219,19 +1178,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} keepAlive
      **/
     transferAll: GenericTxCall<
-      Rv,
       (
         dest: MultiAddressLike,
         keepAlive: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Balances';
           palletCall: {
             name: 'TransferAll';
             params: { dest: MultiAddressLike; keepAlive: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1244,19 +1202,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     forceUnreserve: GenericTxCall<
-      Rv,
       (
         who: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Balances';
           palletCall: {
             name: 'ForceUnreserve';
             params: { who: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1273,16 +1230,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<AccountId32Like>} who
      **/
     upgradeAccounts: GenericTxCall<
-      Rv,
       (who: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Balances';
           palletCall: {
             name: 'UpgradeAccounts';
             params: { who: Array<AccountId32Like> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1295,19 +1251,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} newFree
      **/
     forceSetBalance: GenericTxCall<
-      Rv,
       (
         who: MultiAddressLike,
         newFree: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Balances';
           palletCall: {
             name: 'ForceSetBalance';
             params: { who: MultiAddressLike; newFree: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1322,19 +1277,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} delta
      **/
     forceAdjustTotalIssuance: GenericTxCall<
-      Rv,
       (
         direction: PalletBalancesAdjustmentDirection,
         delta: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Balances';
           palletCall: {
             name: 'ForceAdjustTotalIssuance';
             params: { direction: PalletBalancesAdjustmentDirection; delta: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1351,26 +1305,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} keepAlive
      **/
     burn: GenericTxCall<
-      Rv,
       (
         value: bigint,
         keepAlive: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Balances';
           palletCall: {
             name: 'Burn';
             params: { value: bigint; keepAlive: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Vesting`'s transaction calls
@@ -1389,15 +1342,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     vest: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Vesting';
           palletCall: {
             name: 'Vest';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1417,16 +1369,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} target
      **/
     vestOther: GenericTxCall<
-      Rv,
       (target: MultiAddressLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Vesting';
           palletCall: {
             name: 'VestOther';
             params: { target: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1449,19 +1400,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletVestingVestingInfo} schedule
      **/
     vestedTransfer: GenericTxCall<
-      Rv,
       (
         target: MultiAddressLike,
         schedule: PalletVestingVestingInfo,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Vesting';
           palletCall: {
             name: 'VestedTransfer';
             params: { target: MultiAddressLike; schedule: PalletVestingVestingInfo };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1486,20 +1436,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletVestingVestingInfo} schedule
      **/
     forceVestedTransfer: GenericTxCall<
-      Rv,
       (
         source: MultiAddressLike,
         target: MultiAddressLike,
         schedule: PalletVestingVestingInfo,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Vesting';
           palletCall: {
             name: 'ForceVestedTransfer';
             params: { source: MultiAddressLike; target: MultiAddressLike; schedule: PalletVestingVestingInfo };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1530,19 +1479,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} schedule2Index
      **/
     mergeSchedules: GenericTxCall<
-      Rv,
       (
         schedule1Index: number,
         schedule2Index: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Vesting';
           palletCall: {
             name: 'MergeSchedules';
             params: { schedule1Index: number; schedule2Index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1558,26 +1506,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} scheduleIndex
      **/
     forceRemoveVestingSchedule: GenericTxCall<
-      Rv,
       (
         target: MultiAddressLike,
         scheduleIndex: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Vesting';
           palletCall: {
             name: 'ForceRemoveVestingSchedule';
             params: { target: MultiAddressLike; scheduleIndex: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `CollatorSelection`'s transaction calls
@@ -1601,16 +1548,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<AccountId32Like>} new_
      **/
     setInvulnerables: GenericTxCall<
-      Rv,
       (new_: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'CollatorSelection';
           palletCall: {
             name: 'SetInvulnerables';
             params: { new: Array<AccountId32Like> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1624,16 +1570,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} max
      **/
     setDesiredCandidates: GenericTxCall<
-      Rv,
       (max: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'CollatorSelection';
           palletCall: {
             name: 'SetDesiredCandidates';
             params: { max: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1649,16 +1594,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} bond
      **/
     setCandidacyBond: GenericTxCall<
-      Rv,
       (bond: bigint) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'CollatorSelection';
           palletCall: {
             name: 'SetCandidacyBond';
             params: { bond: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1670,15 +1614,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     registerAsCandidate: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'CollatorSelection';
           palletCall: {
             name: 'RegisterAsCandidate';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1691,15 +1634,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     leaveIntent: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'CollatorSelection';
           palletCall: {
             name: 'LeaveIntent';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1712,16 +1654,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like} who
      **/
     addInvulnerable: GenericTxCall<
-      Rv,
       (who: AccountId32Like) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'CollatorSelection';
           palletCall: {
             name: 'AddInvulnerable';
             params: { who: AccountId32Like };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1734,16 +1675,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like} who
      **/
     removeInvulnerable: GenericTxCall<
-      Rv,
       (who: AccountId32Like) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'CollatorSelection';
           palletCall: {
             name: 'RemoveInvulnerable';
             params: { who: AccountId32Like };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1759,16 +1699,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} newDeposit
      **/
     updateBond: GenericTxCall<
-      Rv,
       (newDeposit: bigint) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'CollatorSelection';
           palletCall: {
             name: 'UpdateBond';
             params: { newDeposit: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1785,26 +1724,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like} target
      **/
     takeCandidateSlot: GenericTxCall<
-      Rv,
       (
         deposit: bigint,
         target: AccountId32Like,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'CollatorSelection';
           palletCall: {
             name: 'TakeCandidateSlot';
             params: { deposit: bigint; target: AccountId32Like };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Session`'s transaction calls
@@ -1825,19 +1763,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} proof
      **/
     setKeys: GenericTxCall<
-      Rv,
       (
         keys: AssetHubWestendRuntimeSessionKeys,
         proof: BytesLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Session';
           palletCall: {
             name: 'SetKeys';
             params: { keys: AssetHubWestendRuntimeSessionKeys; proof: BytesLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1857,22 +1794,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     purgeKeys: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Session';
           palletCall: {
             name: 'PurgeKeys';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `XcmpQueue`'s transaction calls
@@ -1885,15 +1821,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     suspendXcmExecution: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'XcmpQueue';
           palletCall: {
             name: 'SuspendXcmExecution';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1906,15 +1841,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     resumeXcmExecution: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'XcmpQueue';
           palletCall: {
             name: 'ResumeXcmExecution';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1928,16 +1862,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} new_
      **/
     updateSuspendThreshold: GenericTxCall<
-      Rv,
       (new_: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'XcmpQueue';
           palletCall: {
             name: 'UpdateSuspendThreshold';
             params: { new: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1951,16 +1884,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} new_
      **/
     updateDropThreshold: GenericTxCall<
-      Rv,
       (new_: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'XcmpQueue';
           palletCall: {
             name: 'UpdateDropThreshold';
             params: { new: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -1974,23 +1906,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} new_
      **/
     updateResumeThreshold: GenericTxCall<
-      Rv,
       (new_: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'XcmpQueue';
           palletCall: {
             name: 'UpdateResumeThreshold';
             params: { new: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `PolkadotXcm`'s transaction calls
@@ -2002,19 +1933,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmVersionedXcm} message
      **/
     send: GenericTxCall<
-      Rv,
       (
         dest: XcmVersionedLocation,
         message: XcmVersionedXcm,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'Send';
             params: { dest: XcmVersionedLocation; message: XcmVersionedXcm };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2046,14 +1976,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_teleport_assets` or `transfer_assets`
      **/
     teleportAssets: GenericTxCall<
-      Rv,
       (
         dest: XcmVersionedLocation,
         beneficiary: XcmVersionedLocation,
         assets: XcmVersionedAssets,
         feeAssetItem: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
@@ -2065,7 +1993,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               feeAssetItem: number;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2109,14 +2038,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_reserve_transfer_assets` or `transfer_assets`
      **/
     reserveTransferAssets: GenericTxCall<
-      Rv,
       (
         dest: XcmVersionedLocation,
         beneficiary: XcmVersionedLocation,
         assets: XcmVersionedAssets,
         feeAssetItem: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
@@ -2128,7 +2055,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               feeAssetItem: number;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2146,19 +2074,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {SpWeightsWeightV2Weight} maxWeight
      **/
     execute: GenericTxCall<
-      Rv,
       (
         message: XcmVersionedXcm,
         maxWeight: SpWeightsWeightV2Weight,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'Execute';
             params: { message: XcmVersionedXcm; maxWeight: SpWeightsWeightV2Weight };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2174,19 +2101,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} version
      **/
     forceXcmVersion: GenericTxCall<
-      Rv,
       (
         location: StagingXcmV5Location,
         version: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'ForceXcmVersion';
             params: { location: StagingXcmV5Location; version: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2200,16 +2126,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number | undefined} maybeXcmVersion
      **/
     forceDefaultXcmVersion: GenericTxCall<
-      Rv,
       (maybeXcmVersion: number | undefined) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'ForceDefaultXcmVersion';
             params: { maybeXcmVersion: number | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2222,16 +2147,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmVersionedLocation} location
      **/
     forceSubscribeVersionNotify: GenericTxCall<
-      Rv,
       (location: XcmVersionedLocation) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'ForceSubscribeVersionNotify';
             params: { location: XcmVersionedLocation };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2246,16 +2170,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmVersionedLocation} location
      **/
     forceUnsubscribeVersionNotify: GenericTxCall<
-      Rv,
       (location: XcmVersionedLocation) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'ForceUnsubscribeVersionNotify';
             params: { location: XcmVersionedLocation };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2298,7 +2221,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmV3WeightLimit} weightLimit
      **/
     limitedReserveTransferAssets: GenericTxCall<
-      Rv,
       (
         dest: XcmVersionedLocation,
         beneficiary: XcmVersionedLocation,
@@ -2306,7 +2228,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         feeAssetItem: number,
         weightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
@@ -2319,7 +2240,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               weightLimit: XcmV3WeightLimit;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2350,7 +2272,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmV3WeightLimit} weightLimit
      **/
     limitedTeleportAssets: GenericTxCall<
-      Rv,
       (
         dest: XcmVersionedLocation,
         beneficiary: XcmVersionedLocation,
@@ -2358,7 +2279,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         feeAssetItem: number,
         weightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
@@ -2371,7 +2291,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               weightLimit: XcmV3WeightLimit;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2384,16 +2305,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} suspended
      **/
     forceSuspension: GenericTxCall<
-      Rv,
       (suspended: boolean) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'ForceSuspension';
             params: { suspended: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2439,7 +2359,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmV3WeightLimit} weightLimit
      **/
     transferAssets: GenericTxCall<
-      Rv,
       (
         dest: XcmVersionedLocation,
         beneficiary: XcmVersionedLocation,
@@ -2447,7 +2366,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         feeAssetItem: number,
         weightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
@@ -2460,7 +2378,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               weightLimit: XcmV3WeightLimit;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2476,19 +2395,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmVersionedLocation} beneficiary
      **/
     claimAssets: GenericTxCall<
-      Rv,
       (
         assets: XcmVersionedAssets,
         beneficiary: XcmVersionedLocation,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'ClaimAssets';
             params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2551,7 +2469,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmV3WeightLimit} weightLimit
      **/
     transferAssetsUsingTypeAndThen: GenericTxCall<
-      Rv,
       (
         dest: XcmVersionedLocation,
         assets: XcmVersionedAssets,
@@ -2561,7 +2478,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         customXcmOnDest: XcmVersionedXcm,
         weightLimit: XcmV3WeightLimit,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
@@ -2576,7 +2492,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               weightLimit: XcmV3WeightLimit;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2597,19 +2514,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint | undefined} expires
      **/
     addAuthorizedAlias: GenericTxCall<
-      Rv,
       (
         aliaser: XcmVersionedLocation,
         expires: bigint | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'AddAuthorizedAlias';
             params: { aliaser: XcmVersionedLocation; expires: bigint | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2620,16 +2536,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {XcmVersionedLocation} aliaser
      **/
     removeAuthorizedAlias: GenericTxCall<
-      Rv,
       (aliaser: XcmVersionedLocation) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'RemoveAuthorizedAlias';
             params: { aliaser: XcmVersionedLocation };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2639,22 +2554,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     removeAllAuthorizedAliases: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'RemoveAllAuthorizedAliases';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `CumulusXcm`'s transaction calls
@@ -2663,7 +2577,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `ToRococoXcmRouter`'s transaction calls
@@ -2676,26 +2590,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} isCongested
      **/
     reportBridgeStatus: GenericTxCall<
-      Rv,
       (
         bridgeId: H256,
         isCongested: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ToRococoXcmRouter';
           palletCall: {
             name: 'ReportBridgeStatus';
             params: { bridgeId: H256; isCongested: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `MessageQueue`'s transaction calls
@@ -2708,19 +2621,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} pageIndex
      **/
     reapPage: GenericTxCall<
-      Rv,
       (
         messageOrigin: CumulusPrimitivesCoreAggregateMessageOrigin,
         pageIndex: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'MessageQueue';
           palletCall: {
             name: 'ReapPage';
             params: { messageOrigin: CumulusPrimitivesCoreAggregateMessageOrigin; pageIndex: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2745,14 +2657,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {SpWeightsWeightV2Weight} weightLimit
      **/
     executeOverweight: GenericTxCall<
-      Rv,
       (
         messageOrigin: CumulusPrimitivesCoreAggregateMessageOrigin,
         page: number,
         index: number,
         weightLimit: SpWeightsWeightV2Weight,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'MessageQueue';
           palletCall: {
@@ -2764,14 +2674,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               weightLimit: SpWeightsWeightV2Weight;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `SnowbridgeSystemFrontend`'s transaction calls
@@ -2783,16 +2694,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {SnowbridgeCoreOperatingModeBasicOperatingMode} mode
      **/
     setOperatingMode: GenericTxCall<
-      Rv,
       (mode: SnowbridgeCoreOperatingModeBasicOperatingMode) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'SnowbridgeSystemFrontend';
           palletCall: {
             name: 'SetOperatingMode';
             params: { mode: SnowbridgeCoreOperatingModeBasicOperatingMode };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2810,13 +2720,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {StagingXcmV5Asset} feeAsset
      **/
     registerToken: GenericTxCall<
-      Rv,
       (
         assetId: XcmVersionedLocation,
         metadata: SnowbridgeCoreAssetMetadata,
         feeAsset: StagingXcmV5Asset,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'SnowbridgeSystemFrontend';
           palletCall: {
@@ -2827,7 +2735,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               feeAsset: StagingXcmV5Asset;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2839,26 +2748,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {StagingXcmV5Asset} asset
      **/
     addTip: GenericTxCall<
-      Rv,
       (
         messageId: SnowbridgeCoreRewardMessageId,
         asset: StagingXcmV5Asset,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'SnowbridgeSystemFrontend';
           palletCall: {
             name: 'AddTip';
             params: { messageId: SnowbridgeCoreRewardMessageId; asset: StagingXcmV5Asset };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Utility`'s transaction calls
@@ -2887,16 +2795,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<AssetHubWestendRuntimeRuntimeCallLike>} calls
      **/
     batch: GenericTxCall<
-      Rv,
       (calls: Array<AssetHubWestendRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Utility';
           palletCall: {
             name: 'Batch';
             params: { calls: Array<AssetHubWestendRuntimeRuntimeCallLike> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2919,19 +2826,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} call
      **/
     asDerivative: GenericTxCall<
-      Rv,
       (
         index: number,
         call: AssetHubWestendRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Utility';
           palletCall: {
             name: 'AsDerivative';
             params: { index: number; call: AssetHubWestendRuntimeRuntimeCallLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2953,16 +2859,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<AssetHubWestendRuntimeRuntimeCallLike>} calls
      **/
     batchAll: GenericTxCall<
-      Rv,
       (calls: Array<AssetHubWestendRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Utility';
           palletCall: {
             name: 'BatchAll';
             params: { calls: Array<AssetHubWestendRuntimeRuntimeCallLike> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -2978,19 +2883,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} call
      **/
     dispatchAs: GenericTxCall<
-      Rv,
       (
         asOrigin: AssetHubWestendRuntimeOriginCaller,
         call: AssetHubWestendRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Utility';
           palletCall: {
             name: 'DispatchAs';
             params: { asOrigin: AssetHubWestendRuntimeOriginCaller; call: AssetHubWestendRuntimeRuntimeCallLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3012,16 +2916,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<AssetHubWestendRuntimeRuntimeCallLike>} calls
      **/
     forceBatch: GenericTxCall<
-      Rv,
       (calls: Array<AssetHubWestendRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Utility';
           palletCall: {
             name: 'ForceBatch';
             params: { calls: Array<AssetHubWestendRuntimeRuntimeCallLike> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3037,19 +2940,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {SpWeightsWeightV2Weight} weight
      **/
     withWeight: GenericTxCall<
-      Rv,
       (
         call: AssetHubWestendRuntimeRuntimeCallLike,
         weight: SpWeightsWeightV2Weight,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Utility';
           palletCall: {
             name: 'WithWeight';
             params: { call: AssetHubWestendRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3082,19 +2984,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} fallback
      **/
     ifElse: GenericTxCall<
-      Rv,
       (
         main: AssetHubWestendRuntimeRuntimeCallLike,
         fallback: AssetHubWestendRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Utility';
           palletCall: {
             name: 'IfElse';
             params: { main: AssetHubWestendRuntimeRuntimeCallLike; fallback: AssetHubWestendRuntimeRuntimeCallLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3109,26 +3010,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} call
      **/
     dispatchAsFallible: GenericTxCall<
-      Rv,
       (
         asOrigin: AssetHubWestendRuntimeOriginCaller,
         call: AssetHubWestendRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Utility';
           palletCall: {
             name: 'DispatchAsFallible';
             params: { asOrigin: AssetHubWestendRuntimeOriginCaller; call: AssetHubWestendRuntimeRuntimeCallLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Multisig`'s transaction calls
@@ -3152,19 +3052,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} call
      **/
     asMultiThreshold1: GenericTxCall<
-      Rv,
       (
         otherSignatories: Array<AccountId32Like>,
         call: AssetHubWestendRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Multisig';
           palletCall: {
             name: 'AsMultiThreshold1';
             params: { otherSignatories: Array<AccountId32Like>; call: AssetHubWestendRuntimeRuntimeCallLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3216,7 +3115,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {SpWeightsWeightV2Weight} maxWeight
      **/
     asMulti: GenericTxCall<
-      Rv,
       (
         threshold: number,
         otherSignatories: Array<AccountId32Like>,
@@ -3224,7 +3122,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         call: AssetHubWestendRuntimeRuntimeCallLike,
         maxWeight: SpWeightsWeightV2Weight,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Multisig';
           palletCall: {
@@ -3237,7 +3134,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               maxWeight: SpWeightsWeightV2Weight;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3280,7 +3178,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {SpWeightsWeightV2Weight} maxWeight
      **/
     approveAsMulti: GenericTxCall<
-      Rv,
       (
         threshold: number,
         otherSignatories: Array<AccountId32Like>,
@@ -3288,7 +3185,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         callHash: FixedBytes<32>,
         maxWeight: SpWeightsWeightV2Weight,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Multisig';
           palletCall: {
@@ -3301,7 +3197,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               maxWeight: SpWeightsWeightV2Weight;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3334,14 +3231,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {FixedBytes<32>} callHash
      **/
     cancelAsMulti: GenericTxCall<
-      Rv,
       (
         threshold: number,
         otherSignatories: Array<AccountId32Like>,
         timepoint: PalletMultisigTimepoint,
         callHash: FixedBytes<32>,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Multisig';
           palletCall: {
@@ -3353,7 +3248,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               callHash: FixedBytes<32>;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3377,27 +3273,26 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {FixedBytes<32>} callHash
      **/
     pokeDeposit: GenericTxCall<
-      Rv,
       (
         threshold: number,
         otherSignatories: Array<AccountId32Like>,
         callHash: FixedBytes<32>,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Multisig';
           palletCall: {
             name: 'PokeDeposit';
             params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Proxy`'s transaction calls
@@ -3419,13 +3314,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} call
      **/
     proxy: GenericTxCall<
-      Rv,
       (
         real: MultiAddressLike,
         forceProxyType: AssetHubWestendRuntimeProxyType | undefined,
         call: AssetHubWestendRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Proxy';
           palletCall: {
@@ -3436,7 +3329,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               call: AssetHubWestendRuntimeRuntimeCallLike;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3456,20 +3350,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} delay
      **/
     addProxy: GenericTxCall<
-      Rv,
       (
         delegate: MultiAddressLike,
         proxyType: AssetHubWestendRuntimeProxyType,
         delay: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Proxy';
           palletCall: {
             name: 'AddProxy';
             params: { delegate: MultiAddressLike; proxyType: AssetHubWestendRuntimeProxyType; delay: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3487,20 +3380,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} delay
      **/
     removeProxy: GenericTxCall<
-      Rv,
       (
         delegate: MultiAddressLike,
         proxyType: AssetHubWestendRuntimeProxyType,
         delay: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Proxy';
           palletCall: {
             name: 'RemoveProxy';
             params: { delegate: MultiAddressLike; proxyType: AssetHubWestendRuntimeProxyType; delay: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3514,15 +3406,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     removeProxies: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Proxy';
           palletCall: {
             name: 'RemoveProxies';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3551,20 +3442,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     createPure: GenericTxCall<
-      Rv,
       (
         proxyType: AssetHubWestendRuntimeProxyType,
         delay: number,
         index: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Proxy';
           palletCall: {
             name: 'CreatePure';
             params: { proxyType: AssetHubWestendRuntimeProxyType; delay: number; index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3593,7 +3483,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} extIndex
      **/
     killPure: GenericTxCall<
-      Rv,
       (
         spawner: MultiAddressLike,
         proxyType: AssetHubWestendRuntimeProxyType,
@@ -3601,7 +3490,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         height: number,
         extIndex: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Proxy';
           palletCall: {
@@ -3614,7 +3502,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               extIndex: number;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3639,19 +3528,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H256} callHash
      **/
     announce: GenericTxCall<
-      Rv,
       (
         real: MultiAddressLike,
         callHash: H256,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Proxy';
           palletCall: {
             name: 'Announce';
             params: { real: MultiAddressLike; callHash: H256 };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3671,19 +3559,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H256} callHash
      **/
     removeAnnouncement: GenericTxCall<
-      Rv,
       (
         real: MultiAddressLike,
         callHash: H256,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Proxy';
           palletCall: {
             name: 'RemoveAnnouncement';
             params: { real: MultiAddressLike; callHash: H256 };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3703,19 +3590,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H256} callHash
      **/
     rejectAnnouncement: GenericTxCall<
-      Rv,
       (
         delegate: MultiAddressLike,
         callHash: H256,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Proxy';
           palletCall: {
             name: 'RejectAnnouncement';
             params: { delegate: MultiAddressLike; callHash: H256 };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3738,14 +3624,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} call
      **/
     proxyAnnounced: GenericTxCall<
-      Rv,
       (
         delegate: MultiAddressLike,
         real: MultiAddressLike,
         forceProxyType: AssetHubWestendRuntimeProxyType | undefined,
         call: AssetHubWestendRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Proxy';
           palletCall: {
@@ -3757,7 +3641,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               call: AssetHubWestendRuntimeRuntimeCallLike;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3773,22 +3658,21 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     pokeDeposit: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Proxy';
           palletCall: {
             name: 'PokeDeposit';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Indices`'s transaction calls
@@ -3811,16 +3695,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     claim: GenericTxCall<
-      Rv,
       (index: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Indices';
           palletCall: {
             name: 'Claim';
             params: { index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3842,19 +3725,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     transfer: GenericTxCall<
-      Rv,
       (
         new_: MultiAddressLike,
         index: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Indices';
           palletCall: {
             name: 'Transfer';
             params: { new: MultiAddressLike; index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3875,16 +3757,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     free: GenericTxCall<
-      Rv,
       (index: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Indices';
           palletCall: {
             name: 'Free';
             params: { index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3908,20 +3789,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} freeze
      **/
     forceTransfer: GenericTxCall<
-      Rv,
       (
         new_: MultiAddressLike,
         index: number,
         freeze: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Indices';
           palletCall: {
             name: 'ForceTransfer';
             params: { new: MultiAddressLike; index: number; freeze: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3942,16 +3822,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     freeze: GenericTxCall<
-      Rv,
       (index: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Indices';
           palletCall: {
             name: 'Freeze';
             params: { index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -3970,23 +3849,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     pokeDeposit: GenericTxCall<
-      Rv,
       (index: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Indices';
           palletCall: {
             name: 'PokeDeposit';
             params: { index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Assets`'s transaction calls
@@ -4018,20 +3896,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} minBalance
      **/
     create: GenericTxCall<
-      Rv,
       (
         id: number,
         admin: MultiAddressLike,
         minBalance: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'Create';
             params: { id: number; admin: MultiAddressLike; minBalance: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4062,21 +3939,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} minBalance
      **/
     forceCreate: GenericTxCall<
-      Rv,
       (
         id: number,
         owner: MultiAddressLike,
         isSufficient: boolean,
         minBalance: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'ForceCreate';
             params: { id: number; owner: MultiAddressLike; isSufficient: boolean; minBalance: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4097,16 +3973,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     startDestroy: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'StartDestroy';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4127,16 +4002,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     destroyAccounts: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'DestroyAccounts';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4157,16 +4031,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     destroyApprovals: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'DestroyApprovals';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4185,16 +4058,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     finishDestroy: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'FinishDestroy';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4217,20 +4089,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     mint: GenericTxCall<
-      Rv,
       (
         id: number,
         beneficiary: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'Mint';
             params: { id: number; beneficiary: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4256,20 +4127,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     burn: GenericTxCall<
-      Rv,
       (
         id: number,
         who: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'Burn';
             params: { id: number; who: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4298,20 +4168,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     transfer: GenericTxCall<
-      Rv,
       (
         id: number,
         target: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'Transfer';
             params: { id: number; target: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4340,20 +4209,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     transferKeepAlive: GenericTxCall<
-      Rv,
       (
         id: number,
         target: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'TransferKeepAlive';
             params: { id: number; target: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4384,21 +4252,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     forceTransfer: GenericTxCall<
-      Rv,
       (
         id: number,
         source: MultiAddressLike,
         dest: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'ForceTransfer';
             params: { id: number; source: MultiAddressLike; dest: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4420,19 +4287,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     freeze: GenericTxCall<
-      Rv,
       (
         id: number,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'Freeze';
             params: { id: number; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4452,19 +4318,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     thaw: GenericTxCall<
-      Rv,
       (
         id: number,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'Thaw';
             params: { id: number; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4482,16 +4347,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     freezeAsset: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'FreezeAsset';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4509,16 +4373,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     thawAsset: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'ThawAsset';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4538,19 +4401,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} owner
      **/
     transferOwnership: GenericTxCall<
-      Rv,
       (
         id: number,
         owner: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'TransferOwnership';
             params: { id: number; owner: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4574,21 +4436,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} freezer
      **/
     setTeam: GenericTxCall<
-      Rv,
       (
         id: number,
         issuer: MultiAddressLike,
         admin: MultiAddressLike,
         freezer: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'SetTeam';
             params: { id: number; issuer: MultiAddressLike; admin: MultiAddressLike; freezer: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4616,21 +4477,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} decimals
      **/
     setMetadata: GenericTxCall<
-      Rv,
       (
         id: number,
         name: BytesLike,
         symbol: BytesLike,
         decimals: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'SetMetadata';
             params: { id: number; name: BytesLike; symbol: BytesLike; decimals: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4650,16 +4510,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     clearMetadata: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'ClearMetadata';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4686,7 +4545,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} isFrozen
      **/
     forceSetMetadata: GenericTxCall<
-      Rv,
       (
         id: number,
         name: BytesLike,
@@ -4694,14 +4552,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         decimals: number,
         isFrozen: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'ForceSetMetadata';
             params: { id: number; name: BytesLike; symbol: BytesLike; decimals: number; isFrozen: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4721,16 +4579,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     forceClearMetadata: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'ForceClearMetadata';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4768,7 +4625,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} isFrozen
      **/
     forceAssetStatus: GenericTxCall<
-      Rv,
       (
         id: number,
         owner: MultiAddressLike,
@@ -4779,7 +4635,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         isSufficient: boolean,
         isFrozen: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
@@ -4795,7 +4650,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               isFrozen: boolean;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4826,20 +4682,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     approveTransfer: GenericTxCall<
-      Rv,
       (
         id: number,
         delegate: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'ApproveTransfer';
             params: { id: number; delegate: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4862,19 +4717,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} delegate
      **/
     cancelApproval: GenericTxCall<
-      Rv,
       (
         id: number,
         delegate: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'CancelApproval';
             params: { id: number; delegate: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4898,20 +4752,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} delegate
      **/
     forceCancelApproval: GenericTxCall<
-      Rv,
       (
         id: number,
         owner: MultiAddressLike,
         delegate: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'ForceCancelApproval';
             params: { id: number; owner: MultiAddressLike; delegate: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4941,21 +4794,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     transferApproved: GenericTxCall<
-      Rv,
       (
         id: number,
         owner: MultiAddressLike,
         destination: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'TransferApproved';
             params: { id: number; owner: MultiAddressLike; destination: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -4973,16 +4825,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     touch: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'Touch';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5005,19 +4856,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} allowBurn
      **/
     refund: GenericTxCall<
-      Rv,
       (
         id: number,
         allowBurn: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'Refund';
             params: { id: number; allowBurn: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5039,19 +4889,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} minBalance
      **/
     setMinBalance: GenericTxCall<
-      Rv,
       (
         id: number,
         minBalance: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'SetMinBalance';
             params: { id: number; minBalance: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5072,19 +4921,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     touchOther: GenericTxCall<
-      Rv,
       (
         id: number,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'TouchOther';
             params: { id: number; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5107,19 +4955,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     refundOther: GenericTxCall<
-      Rv,
       (
         id: number,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'RefundOther';
             params: { id: number; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5139,19 +4986,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     block: GenericTxCall<
-      Rv,
       (
         id: number,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'Block';
             params: { id: number; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5178,27 +5024,26 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} keepAlive
      **/
     transferAll: GenericTxCall<
-      Rv,
       (
         id: number,
         dest: MultiAddressLike,
         keepAlive: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Assets';
           palletCall: {
             name: 'TransferAll';
             params: { id: number; dest: MultiAddressLike; keepAlive: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Uniques`'s transaction calls
@@ -5226,19 +5071,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} admin
      **/
     create: GenericTxCall<
-      Rv,
       (
         collection: number,
         admin: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'Create';
             params: { collection: number; admin: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5266,20 +5110,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} freeHolding
      **/
     forceCreate: GenericTxCall<
-      Rv,
       (
         collection: number,
         owner: MultiAddressLike,
         freeHolding: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'ForceCreate';
             params: { collection: number; owner: MultiAddressLike; freeHolding: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5304,19 +5147,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletUniquesDestroyWitness} witness
      **/
     destroy: GenericTxCall<
-      Rv,
       (
         collection: number,
         witness: PalletUniquesDestroyWitness,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'Destroy';
             params: { collection: number; witness: PalletUniquesDestroyWitness };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5338,20 +5180,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} owner
      **/
     mint: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         owner: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'Mint';
             params: { collection: number; item: number; owner: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5377,20 +5218,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike | undefined} checkOwner
      **/
     burn: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         checkOwner: MultiAddressLike | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'Burn';
             params: { collection: number; item: number; checkOwner: MultiAddressLike | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5418,20 +5258,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} dest
      **/
     transfer: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         dest: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'Transfer';
             params: { collection: number; item: number; dest: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5458,19 +5297,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<number>} items
      **/
     redeposit: GenericTxCall<
-      Rv,
       (
         collection: number,
         items: Array<number>,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'Redeposit';
             params: { collection: number; items: Array<number> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5490,19 +5328,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} item
      **/
     freeze: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'Freeze';
             params: { collection: number; item: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5522,19 +5359,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} item
      **/
     thaw: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'Thaw';
             params: { collection: number; item: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5552,16 +5388,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} collection
      **/
     freezeCollection: GenericTxCall<
-      Rv,
       (collection: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'FreezeCollection';
             params: { collection: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5579,16 +5414,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} collection
      **/
     thawCollection: GenericTxCall<
-      Rv,
       (collection: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'ThawCollection';
             params: { collection: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5609,19 +5443,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} newOwner
      **/
     transferOwnership: GenericTxCall<
-      Rv,
       (
         collection: number,
         newOwner: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'TransferOwnership';
             params: { collection: number; newOwner: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5645,14 +5478,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} freezer
      **/
     setTeam: GenericTxCall<
-      Rv,
       (
         collection: number,
         issuer: MultiAddressLike,
         admin: MultiAddressLike,
         freezer: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
@@ -5664,7 +5495,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               freezer: MultiAddressLike;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5689,20 +5521,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} delegate
      **/
     approveTransfer: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         delegate: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'ApproveTransfer';
             params: { collection: number; item: number; delegate: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5729,20 +5560,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike | undefined} maybeCheckDelegate
      **/
     cancelApproval: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         maybeCheckDelegate: MultiAddressLike | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'CancelApproval';
             params: { collection: number; item: number; maybeCheckDelegate: MultiAddressLike | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5773,7 +5603,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} isFrozen
      **/
     forceItemStatus: GenericTxCall<
-      Rv,
       (
         collection: number,
         owner: MultiAddressLike,
@@ -5783,7 +5612,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         freeHolding: boolean,
         isFrozen: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
@@ -5798,7 +5626,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               isFrozen: boolean;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5827,21 +5656,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} value
      **/
     setAttribute: GenericTxCall<
-      Rv,
       (
         collection: number,
         maybeItem: number | undefined,
         key: BytesLike,
         value: BytesLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'SetAttribute';
             params: { collection: number; maybeItem: number | undefined; key: BytesLike; value: BytesLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5866,20 +5694,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} key
      **/
     clearAttribute: GenericTxCall<
-      Rv,
       (
         collection: number,
         maybeItem: number | undefined,
         key: BytesLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'ClearAttribute';
             params: { collection: number; maybeItem: number | undefined; key: BytesLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5908,21 +5735,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} isFrozen
      **/
     setMetadata: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         data: BytesLike,
         isFrozen: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'SetMetadata';
             params: { collection: number; item: number; data: BytesLike; isFrozen: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5945,19 +5771,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} item
      **/
     clearMetadata: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'ClearMetadata';
             params: { collection: number; item: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -5984,20 +5809,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} isFrozen
      **/
     setCollectionMetadata: GenericTxCall<
-      Rv,
       (
         collection: number,
         data: BytesLike,
         isFrozen: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'SetCollectionMetadata';
             params: { collection: number; data: BytesLike; isFrozen: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6018,16 +5842,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} collection
      **/
     clearCollectionMetadata: GenericTxCall<
-      Rv,
       (collection: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'ClearCollectionMetadata';
             params: { collection: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6046,16 +5869,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number | undefined} maybeCollection
      **/
     setAcceptOwnership: GenericTxCall<
-      Rv,
       (maybeCollection: number | undefined) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'SetAcceptOwnership';
             params: { maybeCollection: number | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6076,19 +5898,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} maxSupply
      **/
     setCollectionMaxSupply: GenericTxCall<
-      Rv,
       (
         collection: number,
         maxSupply: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'SetCollectionMaxSupply';
             params: { collection: number; maxSupply: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6111,14 +5932,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike | undefined} whitelistedBuyer
      **/
     setPrice: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         price: bigint | undefined,
         whitelistedBuyer: MultiAddressLike | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
@@ -6130,7 +5949,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               whitelistedBuyer: MultiAddressLike | undefined;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6150,27 +5970,26 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} bidPrice
      **/
     buyItem: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         bidPrice: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Uniques';
           palletCall: {
             name: 'BuyItem';
             params: { collection: number; item: number; bidPrice: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Nfts`'s transaction calls
@@ -6197,19 +6016,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNftsCollectionConfig} config
      **/
     create: GenericTxCall<
-      Rv,
       (
         admin: MultiAddressLike,
         config: PalletNftsCollectionConfig,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'Create';
             params: { admin: MultiAddressLike; config: PalletNftsCollectionConfig };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6234,19 +6052,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNftsCollectionConfig} config
      **/
     forceCreate: GenericTxCall<
-      Rv,
       (
         owner: MultiAddressLike,
         config: PalletNftsCollectionConfig,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'ForceCreate';
             params: { owner: MultiAddressLike; config: PalletNftsCollectionConfig };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6273,19 +6090,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNftsDestroyWitness} witness
      **/
     destroy: GenericTxCall<
-      Rv,
       (
         collection: number,
         witness: PalletNftsDestroyWitness,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'Destroy';
             params: { collection: number; witness: PalletNftsDestroyWitness };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6313,14 +6129,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNftsMintWitness | undefined} witnessData
      **/
     mint: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         mintTo: MultiAddressLike,
         witnessData: PalletNftsMintWitness | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
@@ -6332,7 +6146,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               witnessData: PalletNftsMintWitness | undefined;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6357,21 +6172,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNftsItemConfig} itemConfig
      **/
     forceMint: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         mintTo: MultiAddressLike,
         itemConfig: PalletNftsItemConfig,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'ForceMint';
             params: { collection: number; item: number; mintTo: MultiAddressLike; itemConfig: PalletNftsItemConfig };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6392,19 +6206,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} item
      **/
     burn: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'Burn';
             params: { collection: number; item: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6429,20 +6242,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} dest
      **/
     transfer: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         dest: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'Transfer';
             params: { collection: number; item: number; dest: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6469,19 +6281,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<number>} items
      **/
     redeposit: GenericTxCall<
-      Rv,
       (
         collection: number,
         items: Array<number>,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'Redeposit';
             params: { collection: number; items: Array<number> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6501,19 +6312,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} item
      **/
     lockItemTransfer: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'LockItemTransfer';
             params: { collection: number; item: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6533,19 +6343,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} item
      **/
     unlockItemTransfer: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'UnlockItemTransfer';
             params: { collection: number; item: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6567,19 +6376,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNftsBitFlags} lockSettings
      **/
     lockCollection: GenericTxCall<
-      Rv,
       (
         collection: number,
         lockSettings: PalletNftsBitFlags,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'LockCollection';
             params: { collection: number; lockSettings: PalletNftsBitFlags };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6600,19 +6408,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} newOwner
      **/
     transferOwnership: GenericTxCall<
-      Rv,
       (
         collection: number,
         newOwner: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'TransferOwnership';
             params: { collection: number; newOwner: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6640,14 +6447,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike | undefined} freezer
      **/
     setTeam: GenericTxCall<
-      Rv,
       (
         collection: number,
         issuer: MultiAddressLike | undefined,
         admin: MultiAddressLike | undefined,
         freezer: MultiAddressLike | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
@@ -6659,7 +6464,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               freezer: MultiAddressLike | undefined;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6679,19 +6485,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} owner
      **/
     forceCollectionOwner: GenericTxCall<
-      Rv,
       (
         collection: number,
         owner: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'ForceCollectionOwner';
             params: { collection: number; owner: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6711,19 +6516,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNftsCollectionConfig} config
      **/
     forceCollectionConfig: GenericTxCall<
-      Rv,
       (
         collection: number,
         config: PalletNftsCollectionConfig,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'ForceCollectionConfig';
             params: { collection: number; config: PalletNftsCollectionConfig };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6749,21 +6553,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number | undefined} maybeDeadline
      **/
     approveTransfer: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         delegate: MultiAddressLike,
         maybeDeadline: number | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'ApproveTransfer';
             params: { collection: number; item: number; delegate: MultiAddressLike; maybeDeadline: number | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6788,20 +6591,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} delegate
      **/
     cancelApproval: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         delegate: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'CancelApproval';
             params: { collection: number; item: number; delegate: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6824,19 +6626,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} item
      **/
     clearAllTransferApprovals: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'ClearAllTransferApprovals';
             params: { collection: number; item: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6865,21 +6666,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} lockAttributes
      **/
     lockItemProperties: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         lockMetadata: boolean,
         lockAttributes: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'LockItemProperties';
             params: { collection: number; item: number; lockMetadata: boolean; lockAttributes: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6914,7 +6714,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} value
      **/
     setAttribute: GenericTxCall<
-      Rv,
       (
         collection: number,
         maybeItem: number | undefined,
@@ -6922,7 +6721,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         key: BytesLike,
         value: BytesLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
@@ -6935,7 +6733,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               value: BytesLike;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -6966,7 +6765,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} value
      **/
     forceSetAttribute: GenericTxCall<
-      Rv,
       (
         setAs: AccountId32Like | undefined,
         collection: number,
@@ -6975,7 +6773,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         key: BytesLike,
         value: BytesLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
@@ -6989,7 +6786,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               value: BytesLike;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7016,14 +6814,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} key
      **/
     clearAttribute: GenericTxCall<
-      Rv,
       (
         collection: number,
         maybeItem: number | undefined,
         namespace: PalletNftsAttributeNamespace,
         key: BytesLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
@@ -7035,7 +6831,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               key: BytesLike;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7055,20 +6852,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} delegate
      **/
     approveItemAttributes: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         delegate: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'ApproveItemAttributes';
             params: { collection: number; item: number; delegate: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7090,14 +6886,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNftsCancelAttributesApprovalWitness} witness
      **/
     cancelItemAttributesApproval: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         delegate: MultiAddressLike,
         witness: PalletNftsCancelAttributesApprovalWitness,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
@@ -7109,7 +6903,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               witness: PalletNftsCancelAttributesApprovalWitness;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7136,20 +6931,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} data
      **/
     setMetadata: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         data: BytesLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'SetMetadata';
             params: { collection: number; item: number; data: BytesLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7172,19 +6966,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} item
      **/
     clearMetadata: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'ClearMetadata';
             params: { collection: number; item: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7209,19 +7002,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} data
      **/
     setCollectionMetadata: GenericTxCall<
-      Rv,
       (
         collection: number,
         data: BytesLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'SetCollectionMetadata';
             params: { collection: number; data: BytesLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7242,16 +7034,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} collection
      **/
     clearCollectionMetadata: GenericTxCall<
-      Rv,
       (collection: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'ClearCollectionMetadata';
             params: { collection: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7270,16 +7061,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number | undefined} maybeCollection
      **/
     setAcceptOwnership: GenericTxCall<
-      Rv,
       (maybeCollection: number | undefined) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'SetAcceptOwnership';
             params: { maybeCollection: number | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7298,19 +7088,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} maxSupply
      **/
     setCollectionMaxSupply: GenericTxCall<
-      Rv,
       (
         collection: number,
         maxSupply: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'SetCollectionMaxSupply';
             params: { collection: number; maxSupply: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7329,19 +7118,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNftsMintSettings} mintSettings
      **/
     updateMintSettings: GenericTxCall<
-      Rv,
       (
         collection: number,
         mintSettings: PalletNftsMintSettings,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'UpdateMintSettings';
             params: { collection: number; mintSettings: PalletNftsMintSettings };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7364,14 +7152,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike | undefined} whitelistedBuyer
      **/
     setPrice: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         price: bigint | undefined,
         whitelistedBuyer: MultiAddressLike | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
@@ -7383,7 +7169,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               whitelistedBuyer: MultiAddressLike | undefined;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7403,20 +7190,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} bidPrice
      **/
     buyItem: GenericTxCall<
-      Rv,
       (
         collection: number,
         item: number,
         bidPrice: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'BuyItem';
             params: { collection: number; item: number; bidPrice: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7432,16 +7218,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<PalletNftsItemTip>} tips
      **/
     payTips: GenericTxCall<
-      Rv,
       (tips: Array<PalletNftsItemTip>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'PayTips';
             params: { tips: Array<PalletNftsItemTip> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7471,7 +7256,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} duration
      **/
     createSwap: GenericTxCall<
-      Rv,
       (
         offeredCollection: number,
         offeredItem: number,
@@ -7480,7 +7264,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         maybePrice: PalletNftsPriceWithDirection | undefined,
         duration: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
@@ -7494,7 +7277,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               duration: number;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7513,19 +7297,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} offeredItem
      **/
     cancelSwap: GenericTxCall<
-      Rv,
       (
         offeredCollection: number,
         offeredItem: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'CancelSwap';
             params: { offeredCollection: number; offeredItem: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7550,7 +7333,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNftsPriceWithDirection | undefined} witnessPrice
      **/
     claimSwap: GenericTxCall<
-      Rv,
       (
         sendCollection: number,
         sendItem: number,
@@ -7558,7 +7340,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         receiveItem: number,
         witnessPrice: PalletNftsPriceWithDirection | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
@@ -7571,7 +7352,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               witnessPrice: PalletNftsPriceWithDirection | undefined;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7595,20 +7377,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like} signer
      **/
     mintPreSigned: GenericTxCall<
-      Rv,
       (
         mintData: PalletNftsPreSignedMint,
         signature: SpRuntimeMultiSignature,
         signer: AccountId32Like,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
             name: 'MintPreSigned';
             params: { mintData: PalletNftsPreSignedMint; signature: SpRuntimeMultiSignature; signer: AccountId32Like };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7632,13 +7413,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like} signer
      **/
     setAttributesPreSigned: GenericTxCall<
-      Rv,
       (
         data: PalletNftsPreSignedAttributes,
         signature: SpRuntimeMultiSignature,
         signer: AccountId32Like,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Nfts';
           palletCall: {
@@ -7649,14 +7428,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               signer: AccountId32Like;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `ForeignAssets`'s transaction calls
@@ -7688,20 +7468,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} minBalance
      **/
     create: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         admin: MultiAddressLike,
         minBalance: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Create';
             params: { id: StagingXcmV5Location; admin: MultiAddressLike; minBalance: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7732,21 +7511,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} minBalance
      **/
     forceCreate: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         owner: MultiAddressLike,
         isSufficient: boolean,
         minBalance: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'ForceCreate';
             params: { id: StagingXcmV5Location; owner: MultiAddressLike; isSufficient: boolean; minBalance: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7767,16 +7545,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {StagingXcmV5Location} id
      **/
     startDestroy: GenericTxCall<
-      Rv,
       (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'StartDestroy';
             params: { id: StagingXcmV5Location };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7797,16 +7574,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {StagingXcmV5Location} id
      **/
     destroyAccounts: GenericTxCall<
-      Rv,
       (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'DestroyAccounts';
             params: { id: StagingXcmV5Location };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7827,16 +7603,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {StagingXcmV5Location} id
      **/
     destroyApprovals: GenericTxCall<
-      Rv,
       (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'DestroyApprovals';
             params: { id: StagingXcmV5Location };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7855,16 +7630,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {StagingXcmV5Location} id
      **/
     finishDestroy: GenericTxCall<
-      Rv,
       (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'FinishDestroy';
             params: { id: StagingXcmV5Location };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7887,20 +7661,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     mint: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         beneficiary: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Mint';
             params: { id: StagingXcmV5Location; beneficiary: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7926,20 +7699,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     burn: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         who: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Burn';
             params: { id: StagingXcmV5Location; who: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -7968,20 +7740,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     transfer: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         target: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Transfer';
             params: { id: StagingXcmV5Location; target: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8010,20 +7781,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     transferKeepAlive: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         target: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'TransferKeepAlive';
             params: { id: StagingXcmV5Location; target: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8054,21 +7824,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     forceTransfer: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         source: MultiAddressLike,
         dest: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'ForceTransfer';
             params: { id: StagingXcmV5Location; source: MultiAddressLike; dest: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8090,19 +7859,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     freeze: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Freeze';
             params: { id: StagingXcmV5Location; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8122,19 +7890,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     thaw: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Thaw';
             params: { id: StagingXcmV5Location; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8152,16 +7919,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {StagingXcmV5Location} id
      **/
     freezeAsset: GenericTxCall<
-      Rv,
       (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'FreezeAsset';
             params: { id: StagingXcmV5Location };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8179,16 +7945,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {StagingXcmV5Location} id
      **/
     thawAsset: GenericTxCall<
-      Rv,
       (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'ThawAsset';
             params: { id: StagingXcmV5Location };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8208,19 +7973,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} owner
      **/
     transferOwnership: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         owner: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'TransferOwnership';
             params: { id: StagingXcmV5Location; owner: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8244,14 +8008,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} freezer
      **/
     setTeam: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         issuer: MultiAddressLike,
         admin: MultiAddressLike,
         freezer: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
@@ -8263,7 +8025,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               freezer: MultiAddressLike;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8291,21 +8054,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} decimals
      **/
     setMetadata: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         name: BytesLike,
         symbol: BytesLike,
         decimals: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'SetMetadata';
             params: { id: StagingXcmV5Location; name: BytesLike; symbol: BytesLike; decimals: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8325,16 +8087,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {StagingXcmV5Location} id
      **/
     clearMetadata: GenericTxCall<
-      Rv,
       (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'ClearMetadata';
             params: { id: StagingXcmV5Location };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8361,7 +8122,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} isFrozen
      **/
     forceSetMetadata: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         name: BytesLike,
@@ -8369,7 +8129,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         decimals: number,
         isFrozen: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
@@ -8382,7 +8141,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               isFrozen: boolean;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8402,16 +8162,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {StagingXcmV5Location} id
      **/
     forceClearMetadata: GenericTxCall<
-      Rv,
       (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'ForceClearMetadata';
             params: { id: StagingXcmV5Location };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8449,7 +8208,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} isFrozen
      **/
     forceAssetStatus: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         owner: MultiAddressLike,
@@ -8460,7 +8218,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         isSufficient: boolean,
         isFrozen: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
@@ -8476,7 +8233,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               isFrozen: boolean;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8507,20 +8265,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     approveTransfer: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         delegate: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'ApproveTransfer';
             params: { id: StagingXcmV5Location; delegate: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8543,19 +8300,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} delegate
      **/
     cancelApproval: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         delegate: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'CancelApproval';
             params: { id: StagingXcmV5Location; delegate: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8579,20 +8335,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} delegate
      **/
     forceCancelApproval: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         owner: MultiAddressLike,
         delegate: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'ForceCancelApproval';
             params: { id: StagingXcmV5Location; owner: MultiAddressLike; delegate: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8622,14 +8377,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     transferApproved: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         owner: MultiAddressLike,
         destination: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
@@ -8641,7 +8394,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               amount: bigint;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8659,16 +8413,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {StagingXcmV5Location} id
      **/
     touch: GenericTxCall<
-      Rv,
       (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Touch';
             params: { id: StagingXcmV5Location };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8691,19 +8444,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} allowBurn
      **/
     refund: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         allowBurn: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Refund';
             params: { id: StagingXcmV5Location; allowBurn: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8725,19 +8477,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} minBalance
      **/
     setMinBalance: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         minBalance: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'SetMinBalance';
             params: { id: StagingXcmV5Location; minBalance: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8758,19 +8509,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     touchOther: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'TouchOther';
             params: { id: StagingXcmV5Location; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8793,19 +8543,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     refundOther: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'RefundOther';
             params: { id: StagingXcmV5Location; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8825,19 +8574,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     block: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'Block';
             params: { id: StagingXcmV5Location; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8864,27 +8612,26 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} keepAlive
      **/
     transferAll: GenericTxCall<
-      Rv,
       (
         id: StagingXcmV5Location,
         dest: MultiAddressLike,
         keepAlive: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ForeignAssets';
           palletCall: {
             name: 'TransferAll';
             params: { id: StagingXcmV5Location; dest: MultiAddressLike; keepAlive: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `NftFractionalization`'s transaction calls
@@ -8916,7 +8663,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} fractions
      **/
     fractionalize: GenericTxCall<
-      Rv,
       (
         nftCollectionId: number,
         nftId: number,
@@ -8924,7 +8670,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         beneficiary: MultiAddressLike,
         fractions: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NftFractionalization';
           palletCall: {
@@ -8937,7 +8682,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               fractions: bigint;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -8965,28 +8711,27 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} beneficiary
      **/
     unify: GenericTxCall<
-      Rv,
       (
         nftCollectionId: number,
         nftId: number,
         assetId: number,
         beneficiary: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NftFractionalization';
           palletCall: {
             name: 'Unify';
             params: { nftCollectionId: number; nftId: number; assetId: number; beneficiary: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `PoolAssets`'s transaction calls
@@ -9018,20 +8763,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} minBalance
      **/
     create: GenericTxCall<
-      Rv,
       (
         id: number,
         admin: MultiAddressLike,
         minBalance: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'Create';
             params: { id: number; admin: MultiAddressLike; minBalance: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9062,21 +8806,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} minBalance
      **/
     forceCreate: GenericTxCall<
-      Rv,
       (
         id: number,
         owner: MultiAddressLike,
         isSufficient: boolean,
         minBalance: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'ForceCreate';
             params: { id: number; owner: MultiAddressLike; isSufficient: boolean; minBalance: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9097,16 +8840,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     startDestroy: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'StartDestroy';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9127,16 +8869,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     destroyAccounts: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'DestroyAccounts';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9157,16 +8898,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     destroyApprovals: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'DestroyApprovals';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9185,16 +8925,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     finishDestroy: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'FinishDestroy';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9217,20 +8956,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     mint: GenericTxCall<
-      Rv,
       (
         id: number,
         beneficiary: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'Mint';
             params: { id: number; beneficiary: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9256,20 +8994,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     burn: GenericTxCall<
-      Rv,
       (
         id: number,
         who: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'Burn';
             params: { id: number; who: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9298,20 +9035,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     transfer: GenericTxCall<
-      Rv,
       (
         id: number,
         target: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'Transfer';
             params: { id: number; target: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9340,20 +9076,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     transferKeepAlive: GenericTxCall<
-      Rv,
       (
         id: number,
         target: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'TransferKeepAlive';
             params: { id: number; target: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9384,21 +9119,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     forceTransfer: GenericTxCall<
-      Rv,
       (
         id: number,
         source: MultiAddressLike,
         dest: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'ForceTransfer';
             params: { id: number; source: MultiAddressLike; dest: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9420,19 +9154,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     freeze: GenericTxCall<
-      Rv,
       (
         id: number,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'Freeze';
             params: { id: number; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9452,19 +9185,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     thaw: GenericTxCall<
-      Rv,
       (
         id: number,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'Thaw';
             params: { id: number; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9482,16 +9214,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     freezeAsset: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'FreezeAsset';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9509,16 +9240,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     thawAsset: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'ThawAsset';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9538,19 +9268,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} owner
      **/
     transferOwnership: GenericTxCall<
-      Rv,
       (
         id: number,
         owner: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'TransferOwnership';
             params: { id: number; owner: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9574,21 +9303,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} freezer
      **/
     setTeam: GenericTxCall<
-      Rv,
       (
         id: number,
         issuer: MultiAddressLike,
         admin: MultiAddressLike,
         freezer: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'SetTeam';
             params: { id: number; issuer: MultiAddressLike; admin: MultiAddressLike; freezer: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9616,21 +9344,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} decimals
      **/
     setMetadata: GenericTxCall<
-      Rv,
       (
         id: number,
         name: BytesLike,
         symbol: BytesLike,
         decimals: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'SetMetadata';
             params: { id: number; name: BytesLike; symbol: BytesLike; decimals: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9650,16 +9377,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     clearMetadata: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'ClearMetadata';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9686,7 +9412,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} isFrozen
      **/
     forceSetMetadata: GenericTxCall<
-      Rv,
       (
         id: number,
         name: BytesLike,
@@ -9694,14 +9419,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         decimals: number,
         isFrozen: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'ForceSetMetadata';
             params: { id: number; name: BytesLike; symbol: BytesLike; decimals: number; isFrozen: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9721,16 +9446,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     forceClearMetadata: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'ForceClearMetadata';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9768,7 +9492,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} isFrozen
      **/
     forceAssetStatus: GenericTxCall<
-      Rv,
       (
         id: number,
         owner: MultiAddressLike,
@@ -9779,7 +9502,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         isSufficient: boolean,
         isFrozen: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
@@ -9795,7 +9517,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               isFrozen: boolean;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9826,20 +9549,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     approveTransfer: GenericTxCall<
-      Rv,
       (
         id: number,
         delegate: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'ApproveTransfer';
             params: { id: number; delegate: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9862,19 +9584,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} delegate
      **/
     cancelApproval: GenericTxCall<
-      Rv,
       (
         id: number,
         delegate: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'CancelApproval';
             params: { id: number; delegate: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9898,20 +9619,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} delegate
      **/
     forceCancelApproval: GenericTxCall<
-      Rv,
       (
         id: number,
         owner: MultiAddressLike,
         delegate: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'ForceCancelApproval';
             params: { id: number; owner: MultiAddressLike; delegate: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9941,21 +9661,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     transferApproved: GenericTxCall<
-      Rv,
       (
         id: number,
         owner: MultiAddressLike,
         destination: MultiAddressLike,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'TransferApproved';
             params: { id: number; owner: MultiAddressLike; destination: MultiAddressLike; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -9973,16 +9692,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} id
      **/
     touch: GenericTxCall<
-      Rv,
       (id: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'Touch';
             params: { id: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10005,19 +9723,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} allowBurn
      **/
     refund: GenericTxCall<
-      Rv,
       (
         id: number,
         allowBurn: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'Refund';
             params: { id: number; allowBurn: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10039,19 +9756,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} minBalance
      **/
     setMinBalance: GenericTxCall<
-      Rv,
       (
         id: number,
         minBalance: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'SetMinBalance';
             params: { id: number; minBalance: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10072,19 +9788,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     touchOther: GenericTxCall<
-      Rv,
       (
         id: number,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'TouchOther';
             params: { id: number; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10107,19 +9822,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     refundOther: GenericTxCall<
-      Rv,
       (
         id: number,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'RefundOther';
             params: { id: number; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10139,19 +9853,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} who
      **/
     block: GenericTxCall<
-      Rv,
       (
         id: number,
         who: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'Block';
             params: { id: number; who: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10178,27 +9891,26 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} keepAlive
      **/
     transferAll: GenericTxCall<
-      Rv,
       (
         id: number,
         dest: MultiAddressLike,
         keepAlive: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'PoolAssets';
           palletCall: {
             name: 'TransferAll';
             params: { id: number; dest: MultiAddressLike; keepAlive: boolean };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `AssetConversion`'s transaction calls
@@ -10214,19 +9926,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {StagingXcmV5Location} asset2
      **/
     createPool: GenericTxCall<
-      Rv,
       (
         asset1: StagingXcmV5Location,
         asset2: StagingXcmV5Location,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetConversion';
           palletCall: {
             name: 'CreatePool';
             params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10255,7 +9966,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like} mintTo
      **/
     addLiquidity: GenericTxCall<
-      Rv,
       (
         asset1: StagingXcmV5Location,
         asset2: StagingXcmV5Location,
@@ -10265,7 +9975,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         amount2Min: bigint,
         mintTo: AccountId32Like,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetConversion';
           palletCall: {
@@ -10280,7 +9989,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               mintTo: AccountId32Like;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10297,7 +10007,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like} withdrawTo
      **/
     removeLiquidity: GenericTxCall<
-      Rv,
       (
         asset1: StagingXcmV5Location,
         asset2: StagingXcmV5Location,
@@ -10306,7 +10015,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         amount2MinReceive: bigint,
         withdrawTo: AccountId32Like,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetConversion';
           palletCall: {
@@ -10320,7 +10028,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               withdrawTo: AccountId32Like;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10339,7 +10048,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} keepAlive
      **/
     swapExactTokensForTokens: GenericTxCall<
-      Rv,
       (
         path: Array<StagingXcmV5Location>,
         amountIn: bigint,
@@ -10347,7 +10055,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         sendTo: AccountId32Like,
         keepAlive: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetConversion';
           palletCall: {
@@ -10360,7 +10067,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               keepAlive: boolean;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10379,7 +10087,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {boolean} keepAlive
      **/
     swapTokensForExactTokens: GenericTxCall<
-      Rv,
       (
         path: Array<StagingXcmV5Location>,
         amountOut: bigint,
@@ -10387,7 +10094,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         sendTo: AccountId32Like,
         keepAlive: boolean,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetConversion';
           palletCall: {
@@ -10400,7 +10106,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               keepAlive: boolean;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10421,26 +10128,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {StagingXcmV5Location} asset2
      **/
     touch: GenericTxCall<
-      Rv,
       (
         asset1: StagingXcmV5Location,
         asset2: StagingXcmV5Location,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetConversion';
           palletCall: {
             name: 'Touch';
             params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Revive`'s transaction calls
@@ -10463,16 +10169,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} payload
      **/
     ethTransact: GenericTxCall<
-      Rv,
       (payload: BytesLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Revive';
           palletCall: {
             name: 'EthTransact';
             params: { payload: BytesLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10501,7 +10206,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} data
      **/
     call: GenericTxCall<
-      Rv,
       (
         dest: H160,
         value: bigint,
@@ -10509,7 +10213,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         storageDepositLimit: bigint,
         data: BytesLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Revive';
           palletCall: {
@@ -10522,7 +10225,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               data: BytesLike;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10541,7 +10245,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {FixedBytes<32> | undefined} salt
      **/
     instantiate: GenericTxCall<
-      Rv,
       (
         value: bigint,
         gasLimit: SpWeightsWeightV2Weight,
@@ -10550,7 +10253,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         data: BytesLike,
         salt: FixedBytes<32> | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Revive';
           palletCall: {
@@ -10564,7 +10266,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               salt: FixedBytes<32> | undefined;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10605,7 +10308,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {FixedBytes<32> | undefined} salt
      **/
     instantiateWithCode: GenericTxCall<
-      Rv,
       (
         value: bigint,
         gasLimit: SpWeightsWeightV2Weight,
@@ -10614,7 +10316,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         data: BytesLike,
         salt: FixedBytes<32> | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Revive';
           palletCall: {
@@ -10628,7 +10329,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               salt: FixedBytes<32> | undefined;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10664,7 +10366,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} encodedLen
      **/
     ethInstantiateWithCode: GenericTxCall<
-      Rv,
       (
         value: U256,
         gasLimit: SpWeightsWeightV2Weight,
@@ -10674,7 +10375,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         effectiveGasPrice: U256,
         encodedLen: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Revive';
           palletCall: {
@@ -10689,7 +10389,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               encodedLen: number;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10706,7 +10407,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} encodedLen
      **/
     ethCall: GenericTxCall<
-      Rv,
       (
         dest: H160,
         value: U256,
@@ -10716,7 +10416,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         effectiveGasPrice: U256,
         encodedLen: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Revive';
           palletCall: {
@@ -10731,7 +10430,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               encodedLen: number;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10755,19 +10455,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} storageDepositLimit
      **/
     uploadCode: GenericTxCall<
-      Rv,
       (
         code: BytesLike,
         storageDepositLimit: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Revive';
           palletCall: {
             name: 'UploadCode';
             params: { code: BytesLike; storageDepositLimit: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10780,16 +10479,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H256} codeHash
      **/
     removeCode: GenericTxCall<
-      Rv,
       (codeHash: H256) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Revive';
           palletCall: {
             name: 'RemoveCode';
             params: { codeHash: H256 };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10809,19 +10507,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H256} codeHash
      **/
     setCode: GenericTxCall<
-      Rv,
       (
         dest: H160,
         codeHash: H256,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Revive';
           palletCall: {
             name: 'SetCode';
             params: { dest: H160; codeHash: H256 };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10833,15 +10530,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     mapAccount: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Revive';
           palletCall: {
             name: 'MapAccount';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10853,15 +10549,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     unmapAccount: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Revive';
           palletCall: {
             name: 'UnmapAccount';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10875,23 +10570,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} call
      **/
     dispatchAsFallbackAccount: GenericTxCall<
-      Rv,
       (call: AssetHubWestendRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Revive';
           palletCall: {
             name: 'DispatchAsFallbackAccount';
             params: { call: AssetHubWestendRuntimeRuntimeCallLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `AssetRewards`'s transaction calls
@@ -10918,7 +10612,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like | undefined} admin
      **/
     createPool: GenericTxCall<
-      Rv,
       (
         stakedAssetId: StagingXcmV5Location,
         rewardAssetId: StagingXcmV5Location,
@@ -10926,7 +10619,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         expiry: FrameSupportScheduleDispatchTime,
         admin: AccountId32Like | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetRewards';
           palletCall: {
@@ -10939,7 +10631,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               admin: AccountId32Like | undefined;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10952,19 +10645,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     stake: GenericTxCall<
-      Rv,
       (
         poolId: number,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetRewards';
           palletCall: {
             name: 'Stake';
             params: { poolId: number; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -10984,20 +10676,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like | undefined} staker
      **/
     unstake: GenericTxCall<
-      Rv,
       (
         poolId: number,
         amount: bigint,
         staker: AccountId32Like | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetRewards';
           palletCall: {
             name: 'Unstake';
             params: { poolId: number; amount: bigint; staker: AccountId32Like | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11013,19 +10704,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like | undefined} staker
      **/
     harvestRewards: GenericTxCall<
-      Rv,
       (
         poolId: number,
         staker: AccountId32Like | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetRewards';
           palletCall: {
             name: 'HarvestRewards';
             params: { poolId: number; staker: AccountId32Like | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11040,19 +10730,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} newRewardRatePerBlock
      **/
     setPoolRewardRatePerBlock: GenericTxCall<
-      Rv,
       (
         poolId: number,
         newRewardRatePerBlock: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetRewards';
           palletCall: {
             name: 'SetPoolRewardRatePerBlock';
             params: { poolId: number; newRewardRatePerBlock: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11065,19 +10754,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like} newAdmin
      **/
     setPoolAdmin: GenericTxCall<
-      Rv,
       (
         poolId: number,
         newAdmin: AccountId32Like,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetRewards';
           palletCall: {
             name: 'SetPoolAdmin';
             params: { poolId: number; newAdmin: AccountId32Like };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11092,19 +10780,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {FrameSupportScheduleDispatchTime} newExpiry
      **/
     setPoolExpiryBlock: GenericTxCall<
-      Rv,
       (
         poolId: number,
         newExpiry: FrameSupportScheduleDispatchTime,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetRewards';
           palletCall: {
             name: 'SetPoolExpiryBlock';
             params: { poolId: number; newExpiry: FrameSupportScheduleDispatchTime };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11119,19 +10806,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} amount
      **/
     depositRewardTokens: GenericTxCall<
-      Rv,
       (
         poolId: number,
         amount: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetRewards';
           palletCall: {
             name: 'DepositRewardTokens';
             params: { poolId: number; amount: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11146,23 +10832,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} poolId
      **/
     cleanupPool: GenericTxCall<
-      Rv,
       (poolId: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetRewards';
           palletCall: {
             name: 'CleanupPool';
             params: { poolId: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `StateTrieMigration`'s transaction calls
@@ -11176,16 +10861,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletStateTrieMigrationMigrationLimits | undefined} maybeConfig
      **/
     controlAutoMigration: GenericTxCall<
-      Rv,
       (maybeConfig: PalletStateTrieMigrationMigrationLimits | undefined) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'StateTrieMigration';
           palletCall: {
             name: 'ControlAutoMigration';
             params: { maybeConfig: PalletStateTrieMigrationMigrationLimits | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11217,13 +10901,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletStateTrieMigrationMigrationTask} witnessTask
      **/
     continueMigrate: GenericTxCall<
-      Rv,
       (
         limits: PalletStateTrieMigrationMigrationLimits,
         realSizeUpper: number,
         witnessTask: PalletStateTrieMigrationMigrationTask,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'StateTrieMigration';
           palletCall: {
@@ -11234,7 +10916,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               witnessTask: PalletStateTrieMigrationMigrationTask;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11248,19 +10931,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} witnessSize
      **/
     migrateCustomTop: GenericTxCall<
-      Rv,
       (
         keys: Array<BytesLike>,
         witnessSize: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'StateTrieMigration';
           palletCall: {
             name: 'MigrateCustomTop';
             params: { keys: Array<BytesLike>; witnessSize: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11277,20 +10959,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} totalSize
      **/
     migrateCustomChild: GenericTxCall<
-      Rv,
       (
         root: BytesLike,
         childKeys: Array<BytesLike>,
         totalSize: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'StateTrieMigration';
           palletCall: {
             name: 'MigrateCustomChild';
             params: { root: BytesLike; childKeys: Array<BytesLike>; totalSize: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11300,16 +10981,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletStateTrieMigrationMigrationLimits} limits
      **/
     setSignedMaxLimits: GenericTxCall<
-      Rv,
       (limits: PalletStateTrieMigrationMigrationLimits) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'StateTrieMigration';
           palletCall: {
             name: 'SetSignedMaxLimits';
             params: { limits: PalletStateTrieMigrationMigrationLimits };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11328,26 +11008,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletStateTrieMigrationProgress} progressChild
      **/
     forceSetProgress: GenericTxCall<
-      Rv,
       (
         progressTop: PalletStateTrieMigrationProgress,
         progressChild: PalletStateTrieMigrationProgress,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'StateTrieMigration';
           palletCall: {
             name: 'ForceSetProgress';
             params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Staking`'s transaction calls
@@ -11371,19 +11050,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletStakingAsyncRewardDestination} payee
      **/
     bond: GenericTxCall<
-      Rv,
       (
         value: bigint,
         payee: PalletStakingAsyncRewardDestination,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'Bond';
             params: { value: bigint; payee: PalletStakingAsyncRewardDestination };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11402,16 +11080,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} maxAdditional
      **/
     bondExtra: GenericTxCall<
-      Rv,
       (maxAdditional: bigint) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'BondExtra';
             params: { maxAdditional: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11439,16 +11116,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} value
      **/
     unbond: GenericTxCall<
-      Rv,
       (value: bigint) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'Unbond';
             params: { value: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11476,16 +11152,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} numSlashingSpans
      **/
     withdrawUnbonded: GenericTxCall<
-      Rv,
       (numSlashingSpans: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'WithdrawUnbonded';
             params: { numSlashingSpans: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11499,16 +11174,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletStakingAsyncValidatorPrefs} prefs
      **/
     validate: GenericTxCall<
-      Rv,
       (prefs: PalletStakingAsyncValidatorPrefs) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'Validate';
             params: { prefs: PalletStakingAsyncValidatorPrefs };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11522,16 +11196,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<MultiAddressLike>} targets
      **/
     nominate: GenericTxCall<
-      Rv,
       (targets: Array<MultiAddressLike>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'Nominate';
             params: { targets: Array<MultiAddressLike> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11549,15 +11222,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     chill: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'Chill';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11571,16 +11243,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletStakingAsyncRewardDestination} payee
      **/
     setPayee: GenericTxCall<
-      Rv,
       (payee: PalletStakingAsyncRewardDestination) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'SetPayee';
             params: { payee: PalletStakingAsyncRewardDestination };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11596,15 +11267,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     setController: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'SetController';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11616,16 +11286,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} new_
      **/
     setValidatorCount: GenericTxCall<
-      Rv,
       (new_: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'SetValidatorCount';
             params: { new: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11638,16 +11307,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} additional
      **/
     increaseValidatorCount: GenericTxCall<
-      Rv,
       (additional: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'IncreaseValidatorCount';
             params: { additional: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11660,16 +11328,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Percent} factor
      **/
     scaleValidatorCount: GenericTxCall<
-      Rv,
       (factor: Percent) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'ScaleValidatorCount';
             params: { factor: Percent };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11686,15 +11353,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     forceNoEras: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'ForceNoEras';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11712,15 +11378,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     forceNewEra: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'ForceNewEra';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11732,16 +11397,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<AccountId32Like>} invulnerables
      **/
     setInvulnerables: GenericTxCall<
-      Rv,
       (invulnerables: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'SetInvulnerables';
             params: { invulnerables: Array<AccountId32Like> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11759,19 +11423,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} numSlashingSpans
      **/
     forceUnstake: GenericTxCall<
-      Rv,
       (
         stash: AccountId32Like,
         numSlashingSpans: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'ForceUnstake';
             params: { stash: AccountId32Like; numSlashingSpans: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11788,15 +11451,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     forceNewEraAlways: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'ForceNewEraAlways';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11817,19 +11479,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<[AccountId32Like, Perbill]>} validatorSlashes
      **/
     cancelDeferredSlash: GenericTxCall<
-      Rv,
       (
         era: number,
         validatorSlashes: Array<[AccountId32Like, Perbill]>,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'CancelDeferredSlash';
             params: { era: number; validatorSlashes: Array<[AccountId32Like, Perbill]> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11852,19 +11513,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} era
      **/
     payoutStakers: GenericTxCall<
-      Rv,
       (
         validatorStash: AccountId32Like,
         era: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'PayoutStakers';
             params: { validatorStash: AccountId32Like; era: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11876,16 +11536,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} value
      **/
     rebond: GenericTxCall<
-      Rv,
       (value: bigint) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'Rebond';
             params: { value: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11913,19 +11572,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} numSlashingSpans
      **/
     reapStash: GenericTxCall<
-      Rv,
       (
         stash: AccountId32Like,
         numSlashingSpans: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'ReapStash';
             params: { stash: AccountId32Like; numSlashingSpans: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11945,16 +11603,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<MultiAddressLike>} who
      **/
     kick: GenericTxCall<
-      Rv,
       (who: Array<MultiAddressLike>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'Kick';
             params: { who: Array<MultiAddressLike> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -11986,7 +11643,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletStakingAsyncPalletConfigOpPercent} maxStakedRewards
      **/
     setStakingConfigs: GenericTxCall<
-      Rv,
       (
         minNominatorBond: PalletStakingAsyncPalletConfigOp,
         minValidatorBond: PalletStakingAsyncPalletConfigOp,
@@ -11996,7 +11652,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         minCommission: PalletStakingAsyncPalletConfigOpPerbill,
         maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
@@ -12011,7 +11666,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12046,16 +11702,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like} stash
      **/
     chillOther: GenericTxCall<
-      Rv,
       (stash: AccountId32Like) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'ChillOther';
             params: { stash: AccountId32Like };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12067,16 +11722,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like} validatorStash
      **/
     forceApplyMinCommission: GenericTxCall<
-      Rv,
       (validatorStash: AccountId32Like) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'ForceApplyMinCommission';
             params: { validatorStash: AccountId32Like };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12089,16 +11743,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Perbill} new_
      **/
     setMinCommission: GenericTxCall<
-      Rv,
       (new_: Perbill) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'SetMinCommission';
             params: { new: Perbill };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12126,20 +11779,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} page
      **/
     payoutStakersByPage: GenericTxCall<
-      Rv,
       (
         validatorStash: AccountId32Like,
         era: number,
         page: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'PayoutStakersByPage';
             params: { validatorStash: AccountId32Like; era: number; page: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12154,16 +11806,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like} controller
      **/
     updatePayee: GenericTxCall<
-      Rv,
       (controller: AccountId32Like) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'UpdatePayee';
             params: { controller: AccountId32Like };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12179,16 +11830,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<AccountId32Like>} controllers
      **/
     deprecateControllerBatch: GenericTxCall<
-      Rv,
       (controllers: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'DeprecateControllerBatch';
             params: { controllers: Array<AccountId32Like> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12211,14 +11861,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<PalletStakingAsyncLedgerUnlockChunk> | undefined} maybeUnlocking
      **/
     restoreLedger: GenericTxCall<
-      Rv,
       (
         stash: AccountId32Like,
         maybeController: AccountId32Like | undefined,
         maybeTotal: bigint | undefined,
         maybeUnlocking: Array<PalletStakingAsyncLedgerUnlockChunk> | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
@@ -12230,7 +11878,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               maybeUnlocking: Array<PalletStakingAsyncLedgerUnlockChunk> | undefined;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12246,16 +11895,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like} stash
      **/
     migrateCurrency: GenericTxCall<
-      Rv,
       (stash: AccountId32Like) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'MigrateCurrency';
             params: { stash: AccountId32Like };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12298,19 +11946,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {[AccountId32Like, Perbill, number]} slashKey
      **/
     applySlash: GenericTxCall<
-      Rv,
       (
         slashEra: number,
         slashKey: [AccountId32Like, Perbill, number],
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'ApplySlash';
             params: { slashEra: number; slashKey: [AccountId32Like, Perbill, number] };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12330,23 +11977,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} era
      **/
     pruneEraStep: GenericTxCall<
-      Rv,
       (era: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Staking';
           palletCall: {
             name: 'PruneEraStep';
             params: { era: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `NominationPools`'s transaction calls
@@ -12374,19 +12020,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} poolId
      **/
     join: GenericTxCall<
-      Rv,
       (
         amount: bigint,
         poolId: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'Join';
             params: { amount: bigint; poolId: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12402,16 +12047,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNominationPoolsBondExtra} extra
      **/
     bondExtra: GenericTxCall<
-      Rv,
       (extra: PalletNominationPoolsBondExtra) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'BondExtra';
             params: { extra: PalletNominationPoolsBondExtra };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12427,15 +12071,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     claimPayout: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'ClaimPayout';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12476,19 +12119,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} unbondingPoints
      **/
     unbond: GenericTxCall<
-      Rv,
       (
         memberAccount: MultiAddressLike,
         unbondingPoints: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'Unbond';
             params: { memberAccount: MultiAddressLike; unbondingPoints: bigint };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12504,19 +12146,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} numSlashingSpans
      **/
     poolWithdrawUnbonded: GenericTxCall<
-      Rv,
       (
         poolId: number,
         numSlashingSpans: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'PoolWithdrawUnbonded';
             params: { poolId: number; numSlashingSpans: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12548,19 +12189,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} numSlashingSpans
      **/
     withdrawUnbonded: GenericTxCall<
-      Rv,
       (
         memberAccount: MultiAddressLike,
         numSlashingSpans: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'WithdrawUnbonded';
             params: { memberAccount: MultiAddressLike; numSlashingSpans: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12589,21 +12229,20 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} bouncer
      **/
     create: GenericTxCall<
-      Rv,
       (
         amount: bigint,
         root: MultiAddressLike,
         nominator: MultiAddressLike,
         bouncer: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'Create';
             params: { amount: bigint; root: MultiAddressLike; nominator: MultiAddressLike; bouncer: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12622,7 +12261,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} poolId
      **/
     createWithPoolId: GenericTxCall<
-      Rv,
       (
         amount: bigint,
         root: MultiAddressLike,
@@ -12630,7 +12268,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         bouncer: MultiAddressLike,
         poolId: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
@@ -12643,7 +12280,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               poolId: number;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12665,19 +12303,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<AccountId32Like>} validators
      **/
     nominate: GenericTxCall<
-      Rv,
       (
         poolId: number,
         validators: Array<AccountId32Like>,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'Nominate';
             params: { poolId: number; validators: Array<AccountId32Like> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12697,19 +12334,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNominationPoolsPoolState} state
      **/
     setState: GenericTxCall<
-      Rv,
       (
         poolId: number,
         state: PalletNominationPoolsPoolState,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'SetState';
             params: { poolId: number; state: PalletNominationPoolsPoolState };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12723,19 +12359,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {BytesLike} metadata
      **/
     setMetadata: GenericTxCall<
-      Rv,
       (
         poolId: number,
         metadata: BytesLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'SetMetadata';
             params: { poolId: number; metadata: BytesLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12760,7 +12395,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNominationPoolsConfigOpPerbill} globalMaxCommission
      **/
     setConfigs: GenericTxCall<
-      Rv,
       (
         minJoinBond: PalletNominationPoolsConfigOp,
         minCreateBond: PalletNominationPoolsConfigOp,
@@ -12769,7 +12403,6 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
         maxMembersPerPool: PalletNominationPoolsConfigOpU32,
         globalMaxCommission: PalletNominationPoolsConfigOpPerbill,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
@@ -12783,7 +12416,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               globalMaxCommission: PalletNominationPoolsConfigOpPerbill;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12802,14 +12436,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNominationPoolsConfigOp004} newBouncer
      **/
     updateRoles: GenericTxCall<
-      Rv,
       (
         poolId: number,
         newRoot: PalletNominationPoolsConfigOp004,
         newNominator: PalletNominationPoolsConfigOp004,
         newBouncer: PalletNominationPoolsConfigOp004,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
@@ -12821,7 +12453,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               newBouncer: PalletNominationPoolsConfigOp004;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12847,16 +12480,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} poolId
      **/
     chill: GenericTxCall<
-      Rv,
       (poolId: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'Chill';
             params: { poolId: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12875,19 +12507,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNominationPoolsBondExtra} extra
      **/
     bondExtraOther: GenericTxCall<
-      Rv,
       (
         member: MultiAddressLike,
         extra: PalletNominationPoolsBondExtra,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'BondExtraOther';
             params: { member: MultiAddressLike; extra: PalletNominationPoolsBondExtra };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12903,16 +12534,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNominationPoolsClaimPermission} permission
      **/
     setClaimPermission: GenericTxCall<
-      Rv,
       (permission: PalletNominationPoolsClaimPermission) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'SetClaimPermission';
             params: { permission: PalletNominationPoolsClaimPermission };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12925,16 +12555,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like} other
      **/
     claimPayoutOther: GenericTxCall<
-      Rv,
       (other: AccountId32Like) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'ClaimPayoutOther';
             params: { other: AccountId32Like };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12949,19 +12578,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {[Perbill, AccountId32Like] | undefined} newCommission
      **/
     setCommission: GenericTxCall<
-      Rv,
       (
         poolId: number,
         newCommission: [Perbill, AccountId32Like] | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'SetCommission';
             params: { poolId: number; newCommission: [Perbill, AccountId32Like] | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -12976,19 +12604,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Perbill} maxCommission
      **/
     setCommissionMax: GenericTxCall<
-      Rv,
       (
         poolId: number,
         maxCommission: Perbill,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'SetCommissionMax';
             params: { poolId: number; maxCommission: Perbill };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13002,19 +12629,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNominationPoolsCommissionChangeRate} changeRate
      **/
     setCommissionChangeRate: GenericTxCall<
-      Rv,
       (
         poolId: number,
         changeRate: PalletNominationPoolsCommissionChangeRate,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'SetCommissionChangeRate';
             params: { poolId: number; changeRate: PalletNominationPoolsCommissionChangeRate };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13039,16 +12665,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} poolId
      **/
     claimCommission: GenericTxCall<
-      Rv,
       (poolId: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'ClaimCommission';
             params: { poolId: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13064,16 +12689,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} poolId
      **/
     adjustPoolDeposit: GenericTxCall<
-      Rv,
       (poolId: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'AdjustPoolDeposit';
             params: { poolId: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13087,19 +12711,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletNominationPoolsCommissionClaimPermission | undefined} permission
      **/
     setCommissionClaimPermission: GenericTxCall<
-      Rv,
       (
         poolId: number,
         permission: PalletNominationPoolsCommissionClaimPermission | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'SetCommissionClaimPermission';
             params: { poolId: number; permission: PalletNominationPoolsCommissionClaimPermission | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13117,16 +12740,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} memberAccount
      **/
     applySlash: GenericTxCall<
-      Rv,
       (memberAccount: MultiAddressLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'ApplySlash';
             params: { memberAccount: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13144,16 +12766,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} memberAccount
      **/
     migrateDelegation: GenericTxCall<
-      Rv,
       (memberAccount: MultiAddressLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'MigrateDelegation';
             params: { memberAccount: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13171,23 +12792,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} poolId
      **/
     migratePoolToDelegateStake: GenericTxCall<
-      Rv,
       (poolId: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'NominationPools';
           palletCall: {
             name: 'MigratePoolToDelegateStake';
             params: { poolId: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `FastUnstake`'s transaction calls
@@ -13223,15 +12843,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     registerFastUnstake: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'FastUnstake';
           palletCall: {
             name: 'RegisterFastUnstake';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13257,15 +12876,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     deregister: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'FastUnstake';
           palletCall: {
             name: 'Deregister';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13287,23 +12905,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} erasToCheck
      **/
     control: GenericTxCall<
-      Rv,
       (erasToCheck: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'FastUnstake';
           palletCall: {
             name: 'Control';
             params: { erasToCheck: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `VoterList`'s transaction calls
@@ -13324,16 +12941,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} dislocated
      **/
     rebag: GenericTxCall<
-      Rv,
       (dislocated: MultiAddressLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'VoterList';
           palletCall: {
             name: 'Rebag';
             params: { dislocated: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13352,16 +12968,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} lighter
      **/
     putInFrontOf: GenericTxCall<
-      Rv,
       (lighter: MultiAddressLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'VoterList';
           palletCall: {
             name: 'PutInFrontOf';
             params: { lighter: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13374,26 +12989,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} lighter
      **/
     putInFrontOfOther: GenericTxCall<
-      Rv,
       (
         heavier: MultiAddressLike,
         lighter: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'VoterList';
           palletCall: {
             name: 'PutInFrontOfOther';
             params: { heavier: MultiAddressLike; lighter: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `StakingRcClient`'s transaction calls
@@ -13405,16 +13019,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletStakingAsyncRcClientSessionReport} report
      **/
     relaySessionReport: GenericTxCall<
-      Rv,
       (report: PalletStakingAsyncRcClientSessionReport) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'StakingRcClient';
           palletCall: {
             name: 'RelaySessionReport';
             params: { report: PalletStakingAsyncRcClientSessionReport };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13423,23 +13036,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<[number, PalletStakingAsyncRcClientOffence]>} offences
      **/
     relayNewOffencePaged: GenericTxCall<
-      Rv,
       (offences: Array<[number, PalletStakingAsyncRcClientOffence]>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'StakingRcClient';
           palletCall: {
             name: 'RelayNewOffencePaged';
             params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `MultiBlockElection`'s transaction calls
@@ -13455,23 +13067,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletElectionProviderMultiBlockAdminOperation} op
      **/
     manage: GenericTxCall<
-      Rv,
       (op: PalletElectionProviderMultiBlockAdminOperation) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'MultiBlockElection';
           palletCall: {
             name: 'Manage';
             params: { op: PalletElectionProviderMultiBlockAdminOperation };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `MultiBlockElectionVerifier`'s transaction calls
@@ -13480,7 +13091,7 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `MultiBlockElectionUnsigned`'s transaction calls
@@ -13506,23 +13117,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletElectionProviderMultiBlockPagedRawSolution} pagedSolution
      **/
     submitUnsigned: GenericTxCall<
-      Rv,
       (pagedSolution: PalletElectionProviderMultiBlockPagedRawSolution) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'MultiBlockElectionUnsigned';
           palletCall: {
             name: 'SubmitUnsigned';
             params: { pagedSolution: PalletElectionProviderMultiBlockPagedRawSolution };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `MultiBlockElectionSigned`'s transaction calls
@@ -13534,16 +13144,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {SpNposElectionsElectionScore} claimedScore
      **/
     register: GenericTxCall<
-      Rv,
       (claimedScore: SpNposElectionsElectionScore) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'MultiBlockElectionSigned';
           palletCall: {
             name: 'Register';
             params: { claimedScore: SpNposElectionsElectionScore };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13561,19 +13170,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeStakingNposCompactSolution16 | undefined} maybeSolution
      **/
     submitPage: GenericTxCall<
-      Rv,
       (
         page: number,
         maybeSolution: AssetHubWestendRuntimeStakingNposCompactSolution16 | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'MultiBlockElectionSigned';
           palletCall: {
             name: 'SubmitPage';
             params: { page: number; maybeSolution: AssetHubWestendRuntimeStakingNposCompactSolution16 | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13586,15 +13194,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      *
      **/
     bail: GenericTxCall<
-      Rv,
       () => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'MultiBlockElectionSigned';
           palletCall: {
             name: 'Bail';
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13610,19 +13217,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} witnessPages
      **/
     clearOldRoundData: GenericTxCall<
-      Rv,
       (
         round: number,
         witnessPages: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'MultiBlockElectionSigned';
           palletCall: {
             name: 'ClearOldRoundData';
             params: { round: number; witnessPages: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13634,23 +13240,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {Array<AccountId32Like>} inv
      **/
     setInvulnerables: GenericTxCall<
-      Rv,
       (inv: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'MultiBlockElectionSigned';
           palletCall: {
             name: 'SetInvulnerables';
             params: { inv: Array<AccountId32Like> };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `ConvictionVoting`'s transaction calls
@@ -13671,19 +13276,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PalletConvictionVotingVoteAccountVote} vote
      **/
     vote: GenericTxCall<
-      Rv,
       (
         pollIndex: number,
         vote: PalletConvictionVotingVoteAccountVote,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ConvictionVoting';
           palletCall: {
             name: 'Vote';
             params: { pollIndex: number; vote: PalletConvictionVotingVoteAccountVote };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13718,14 +13322,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {bigint} balance
      **/
     delegate: GenericTxCall<
-      Rv,
       (
         class_: number,
         to: MultiAddressLike,
         conviction: PalletConvictionVotingConviction,
         balance: bigint,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ConvictionVoting';
           palletCall: {
@@ -13737,7 +13339,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               balance: bigint;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13760,16 +13363,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} class_
      **/
     undelegate: GenericTxCall<
-      Rv,
       (class_: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ConvictionVoting';
           palletCall: {
             name: 'Undelegate';
             params: { class: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13788,19 +13390,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} target
      **/
     unlock: GenericTxCall<
-      Rv,
       (
         class_: number,
         target: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ConvictionVoting';
           palletCall: {
             name: 'Unlock';
             params: { class: number; target: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13839,19 +13440,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     removeVote: GenericTxCall<
-      Rv,
       (
         class_: number | undefined,
         index: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ConvictionVoting';
           palletCall: {
             name: 'RemoveVote';
             params: { class: number | undefined; index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13878,27 +13478,26 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     removeOtherVote: GenericTxCall<
-      Rv,
       (
         target: MultiAddressLike,
         class_: number,
         index: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'ConvictionVoting';
           palletCall: {
             name: 'RemoveOtherVote';
             params: { target: MultiAddressLike; class: number; index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Referenda`'s transaction calls
@@ -13920,13 +13519,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {FrameSupportScheduleDispatchTime} enactmentMoment
      **/
     submit: GenericTxCall<
-      Rv,
       (
         proposalOrigin: AssetHubWestendRuntimeOriginCaller,
         proposal: FrameSupportPreimagesBounded,
         enactmentMoment: FrameSupportScheduleDispatchTime,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Referenda';
           palletCall: {
@@ -13937,7 +13534,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               enactmentMoment: FrameSupportScheduleDispatchTime;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13954,16 +13552,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     placeDecisionDeposit: GenericTxCall<
-      Rv,
       (index: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Referenda';
           palletCall: {
             name: 'PlaceDecisionDeposit';
             params: { index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -13979,16 +13576,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     refundDecisionDeposit: GenericTxCall<
-      Rv,
       (index: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Referenda';
           palletCall: {
             name: 'RefundDecisionDeposit';
             params: { index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14003,16 +13599,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     cancel: GenericTxCall<
-      Rv,
       (index: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Referenda';
           palletCall: {
             name: 'Cancel';
             params: { index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14027,16 +13622,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     kill: GenericTxCall<
-      Rv,
       (index: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Referenda';
           palletCall: {
             name: 'Kill';
             params: { index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14049,16 +13643,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     nudgeReferendum: GenericTxCall<
-      Rv,
       (index: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Referenda';
           palletCall: {
             name: 'NudgeReferendum';
             params: { index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14076,16 +13669,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} track
      **/
     oneFewerDeciding: GenericTxCall<
-      Rv,
       (track: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Referenda';
           palletCall: {
             name: 'OneFewerDeciding';
             params: { track: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14101,16 +13693,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     refundSubmissionDeposit: GenericTxCall<
-      Rv,
       (index: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Referenda';
           palletCall: {
             name: 'RefundSubmissionDeposit';
             params: { index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14127,26 +13718,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H256 | undefined} maybeHash
      **/
     setMetadata: GenericTxCall<
-      Rv,
       (
         index: number,
         maybeHash: H256 | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Referenda';
           palletCall: {
             name: 'SetMetadata';
             params: { index: number; maybeHash: H256 | undefined };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Whitelist`'s transaction calls
@@ -14157,16 +13747,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H256} callHash
      **/
     whitelistCall: GenericTxCall<
-      Rv,
       (callHash: H256) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Whitelist';
           palletCall: {
             name: 'WhitelistCall';
             params: { callHash: H256 };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14175,16 +13764,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {H256} callHash
      **/
     removeWhitelistedCall: GenericTxCall<
-      Rv,
       (callHash: H256) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Whitelist';
           palletCall: {
             name: 'RemoveWhitelistedCall';
             params: { callHash: H256 };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14195,20 +13783,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {SpWeightsWeightV2Weight} callWeightWitness
      **/
     dispatchWhitelistedCall: GenericTxCall<
-      Rv,
       (
         callHash: H256,
         callEncodedLen: number,
         callWeightWitness: SpWeightsWeightV2Weight,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Whitelist';
           palletCall: {
             name: 'DispatchWhitelistedCall';
             params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14217,23 +13804,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeCallLike} call
      **/
     dispatchWhitelistedCallWithPreimage: GenericTxCall<
-      Rv,
       (call: AssetHubWestendRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Whitelist';
           palletCall: {
             name: 'DispatchWhitelistedCallWithPreimage';
             params: { call: AssetHubWestendRuntimeRuntimeCallLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `Treasury`'s transaction calls
@@ -14262,19 +13848,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {MultiAddressLike} beneficiary
      **/
     spendLocal: GenericTxCall<
-      Rv,
       (
         amount: bigint,
         beneficiary: MultiAddressLike,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Treasury';
           palletCall: {
             name: 'SpendLocal';
             params: { amount: bigint; beneficiary: MultiAddressLike };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14304,16 +13889,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} proposalId
      **/
     removeApproval: GenericTxCall<
-      Rv,
       (proposalId: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Treasury';
           palletCall: {
             name: 'RemoveApproval';
             params: { proposalId: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14351,14 +13935,12 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number | undefined} validFrom
      **/
     spend: GenericTxCall<
-      Rv,
       (
         assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset,
         amount: bigint,
         beneficiary: ParachainsCommonPayVersionedLocatableAccount,
         validFrom: number | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Treasury';
           palletCall: {
@@ -14370,7 +13952,8 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               validFrom: number | undefined;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14400,16 +13983,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @deprecated The `spend_local` call will be removed by May 2025. Migrate to the new flow and use the `spend` call.
      **/
     payout: GenericTxCall<
-      Rv,
       (index: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Treasury';
           palletCall: {
             name: 'Payout';
             params: { index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14439,16 +14021,15 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @deprecated The `remove_approval` call will be removed by May 2025. It associated with the deprecated `spend_local` call.
      **/
     checkStatus: GenericTxCall<
-      Rv,
       (index: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Treasury';
           palletCall: {
             name: 'CheckStatus';
             params: { index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14473,23 +14054,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} index
      **/
     voidSpend: GenericTxCall<
-      Rv,
       (index: number) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'Treasury';
           palletCall: {
             name: 'VoidSpend';
             params: { index: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `AssetRate`'s transaction calls
@@ -14505,19 +14085,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {FixedU128} rate
      **/
     create: GenericTxCall<
-      Rv,
       (
         assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset,
         rate: FixedU128,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetRate';
           palletCall: {
             name: 'Create';
             params: { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; rate: FixedU128 };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14531,19 +14110,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {FixedU128} rate
      **/
     update: GenericTxCall<
-      Rv,
       (
         assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset,
         rate: FixedU128,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetRate';
           palletCall: {
             name: 'Update';
             params: { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; rate: FixedU128 };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14556,23 +14134,22 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {PolkadotRuntimeCommonImplsVersionedLocatableAsset} assetKind
      **/
     remove: GenericTxCall<
-      Rv,
       (assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetRate';
           palletCall: {
             name: 'Remove';
             params: { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `AssetConversionMigration`'s transaction calls
@@ -14588,26 +14165,25 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {StagingXcmV5Location} asset2
      **/
     migrateToNewAccount: GenericTxCall<
-      Rv,
       (
         asset1: StagingXcmV5Location,
         asset2: StagingXcmV5Location,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AssetConversionMigration';
           palletCall: {
             name: 'MigrateToNewAccount';
             params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
    * Pallet `AhOps`'s transaction calls
@@ -14628,20 +14204,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} paraId
      **/
     unreserveLeaseDeposit: GenericTxCall<
-      Rv,
       (
         block: number,
         depositor: AccountId32Like | undefined,
         paraId: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AhOps';
           palletCall: {
             name: 'UnreserveLeaseDeposit';
             params: { block: number; depositor: AccountId32Like | undefined; paraId: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14659,20 +14234,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} paraId
      **/
     withdrawCrowdloanContribution: GenericTxCall<
-      Rv,
       (
         block: number,
         depositor: AccountId32Like | undefined,
         paraId: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AhOps';
           palletCall: {
             name: 'WithdrawCrowdloanContribution';
             params: { block: number; depositor: AccountId32Like | undefined; paraId: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14691,20 +14265,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {number} paraId
      **/
     unreserveCrowdloanReserve: GenericTxCall<
-      Rv,
       (
         block: number,
         depositor: AccountId32Like | undefined,
         paraId: number,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AhOps';
           palletCall: {
             name: 'UnreserveCrowdloanReserve';
             params: { block: number; depositor: AccountId32Like | undefined; paraId: number };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14720,19 +14293,18 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AccountId32Like} to
      **/
     migrateParachainSovereignAcc: GenericTxCall<
-      Rv,
       (
         from: AccountId32Like,
         to: AccountId32Like,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AhOps';
           palletCall: {
             name: 'MigrateParachainSovereignAcc';
             params: { from: AccountId32Like; to: AccountId32Like };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14749,20 +14321,19 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {[AccountId32Like, number]} derivation
      **/
     migrateParachainSovereignDerivedAcc: GenericTxCall<
-      Rv,
       (
         from: AccountId32Like,
         to: AccountId32Like,
         derivation: [AccountId32Like, number],
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AhOps';
           palletCall: {
             name: 'MigrateParachainSovereignDerivedAcc';
             params: { from: AccountId32Like; to: AccountId32Like; derivation: [AccountId32Like, number] };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
@@ -14774,13 +14345,11 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
      * @param {AssetHubWestendRuntimeRuntimeHoldReason | undefined} reason
      **/
     forceUnreserve: GenericTxCall<
-      Rv,
       (
         account: AccountId32Like,
         amount: bigint,
         reason: AssetHubWestendRuntimeRuntimeHoldReason | undefined,
       ) => ChainSubmittableExtrinsic<
-        Rv,
         {
           pallet: 'AhOps';
           palletCall: {
@@ -14791,13 +14360,14 @@ export interface ChainTx<Rv extends RpcVersion> extends GenericChainTx<Rv, TxCal
               reason: AssetHubWestendRuntimeRuntimeHoldReason | undefined;
             };
           };
-        }
+        },
+        ChainKnownTypes
       >
     >;
 
     /**
      * Generic pallet tx call
      **/
-    [callName: string]: GenericTxCall<Rv, TxCall<Rv>>;
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
 }

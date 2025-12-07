@@ -11,7 +11,12 @@ async function run() {
 
     if (endpoint) {
       console.log(`Generate types for ${chain} via endpoint ${endpoint}`);
-      await generateTypesFromEndpoint(chain, endpoint[0], OUT_DIR, undefined, true);
+      await generateTypesFromEndpoint({
+        chain,
+        endpoint: endpoint[0],
+        outDir: OUT_DIR,
+        useSubPaths: true,
+      });
     } else if (staticData) {
       const { metadataHex = '0x', rpcMethods = [] } = staticData;
       console.log(`Generate types for ${chain} via raw data`);
@@ -25,11 +30,18 @@ async function run() {
             return o;
           },
           {} as Record<string, number>,
-        )
+        ),
 
-      }
+      };
 
-      await generateTypes(chain, metadata.latest, rpcMethods, substrateRuntimeVersion, OUT_DIR, undefined, true);
+      await generateTypes({
+        chain,
+        metadata: metadata.latest,
+        rpcMethods,
+        runtimeVersion: substrateRuntimeVersion,
+        outDir: OUT_DIR,
+        useSubPaths: true,
+      });
     }
   }
 

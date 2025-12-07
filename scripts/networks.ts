@@ -49,7 +49,7 @@ export const networks: NetworkInfo[] = [
   },
   {
     chain: 'moonbeam',
-    endpoint: ['wss://wss.api.moonbeam.network'],
+    endpoint: ['wss://moonbeam.api.onfinality.io/public-ws'],
   },
   {
     chain: 'aleph',
@@ -65,7 +65,7 @@ export const networks: NetworkInfo[] = [
   },
   {
     chain: 'westendPeople',
-    endpoint: ['wss://people-westend-rpc.dwellir.com'],
+    endpoint: ['wss://westend-people-rpc.polkadot.io'],
   },
   {
     chain: 'paseo',

@@ -2320,7 +2320,7 @@ __metadata:
     dedot: "npm:^1.0.1"
     husky: "npm:^8.0.3"
     lerna: "npm:^7.4.2"
-    prettier: "npm:^3.3.3"
+    prettier: "npm:^3.7.4"
     prettier-plugin-organize-imports: "npm:^3.2.3"
     tsx: "npm:^4.19.3"
     typescript: "npm:5.4.5"
@@ -5320,16 +5320,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.3.3":
-  version: 3.3.3
-  resolution: "prettier@npm:3.3.3"
-  bin:
-    prettier: bin/prettier.cjs
-  checksum: 10/5beac1f30b5b40162532b8e2f7c3a4eb650910a2695e9c8512a62ffdc09dae93190c29db9107fa7f26d1b6c71aad3628ecb9b5de1ecb0911191099be109434d7
-  languageName: node
-  linkType: hard
-
-"prettier@npm:^3.7.3":
+"prettier@npm:^3.7.3, prettier@npm:^3.7.4":
   version: 3.7.4
   resolution: "prettier@npm:3.7.4"
   bin:

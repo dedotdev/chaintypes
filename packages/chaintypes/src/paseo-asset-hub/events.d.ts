@@ -4442,6 +4442,54 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * Failed to unreserve a multisig deposit.
+     **/
+    FailedToUnreserveMultisigDeposit: GenericPalletEvent<
+      'AhMigrator',
+      'FailedToUnreserveMultisigDeposit',
+      {
+        /**
+         * The expected amount of the deposit that was expected to be unreserved.
+         **/
+        expectedAmount: bigint;
+
+        /**
+         * The missing amount of the deposit.
+         **/
+        missingAmount: bigint;
+
+        /**
+         * The account that the deposit was unreserved from.
+         **/
+        account: AccountId32;
+      }
+    >;
+
+    /**
+     * Failed to unreserve a legacy status preimage deposit.
+     **/
+    FailedToUnreservePreimageDeposit: GenericPalletEvent<
+      'AhMigrator',
+      'FailedToUnreservePreimageDeposit',
+      {
+        /**
+         * The expected amount of the deposit that was expected to be unreserved.
+         **/
+        expectedAmount: bigint;
+
+        /**
+         * The missing amount of the deposit.
+         **/
+        missingAmount: bigint;
+
+        /**
+         * The account that the deposit was unreserved from.
+         **/
+        account: AccountId32;
+      }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;

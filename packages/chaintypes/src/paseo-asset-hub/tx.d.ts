@@ -15245,14 +15245,18 @@ export interface ChainTx<
      * so we do not need to do it this time.
      *
      * @param {PalletRcMigratorMigrationFinishedData | undefined} data
+     * @param {number} coolOffEndAt
      **/
     finishMigration: GenericTxCall<
-      (data: PalletRcMigratorMigrationFinishedData | undefined) => ChainSubmittableExtrinsic<
+      (
+        data: PalletRcMigratorMigrationFinishedData | undefined,
+        coolOffEndAt: number,
+      ) => ChainSubmittableExtrinsic<
         {
           pallet: 'AhMigrator';
           palletCall: {
             name: 'FinishMigration';
-            params: { data: PalletRcMigratorMigrationFinishedData | undefined };
+            params: { data: PalletRcMigratorMigrationFinishedData | undefined; coolOffEndAt: number };
           };
         },
         ChainKnownTypes

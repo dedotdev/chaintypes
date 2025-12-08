@@ -2801,6 +2801,11 @@ export interface ChainErrors extends GenericChainErrors {
     InvalidStageTransition: GenericPalletError;
 
     /**
+     * Unsigned validation failed.
+     **/
+    UnsignedValidationFailed: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;

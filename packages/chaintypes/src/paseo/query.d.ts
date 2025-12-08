@@ -150,7 +150,7 @@ import type {
   PalletRcMigratorAccountsMigratedBalances,
   PalletRcMigratorQueuePriority,
   FrameSupportScheduleDispatchTime,
-  SpRuntimeMultiSigner,
+  PalletRcMigratorMigrationSettings,
   PaseoRuntimeRuntimeCall,
   PaseoRuntimeRuntimeCallLike,
 } from './types.js';
@@ -3966,10 +3966,10 @@ export interface ChainStorage extends GenericChainStorage {
      *
      * Unconfirmed messages can be resent by calling the [`Pallet::resend_xcm`] function.
      *
-     * @param {H256} arg
+     * @param {[bigint, H256]} arg
      * @param {Callback<StagingXcmV5Xcm | undefined> =} callback
      **/
-    pendingXcmMessages: GenericStorageQuery<(arg: H256) => StagingXcmV5Xcm | undefined, H256>;
+    pendingXcmMessages: GenericStorageQuery<(arg: [bigint, H256]) => StagingXcmV5Xcm | undefined, [bigint, H256]>;
 
     /**
      * Counter for the related counted storage map
@@ -4082,20 +4082,41 @@ export interface ChainStorage extends GenericChainStorage {
     coolOffPeriod: GenericStorageQuery<() => FrameSupportScheduleDispatchTime | undefined>;
 
     /**
+     * The migration settings.
+     *
+     * @param {Callback<PalletRcMigratorMigrationSettings | undefined> =} callback
+     **/
+    settings: GenericStorageQuery<() => PalletRcMigratorMigrationSettings | undefined>;
+
+    /**
+     * The multisig AccountIDs that votes to execute a specific call.
      *
      * @param {PaseoRuntimeRuntimeCallLike} arg
-     * @param {Callback<Array<SpRuntimeMultiSigner>> =} callback
+     * @param {Callback<Array<AccountId32>> =} callback
      **/
     managerMultisigs: GenericStorageQuery<
-      (arg: PaseoRuntimeRuntimeCallLike) => Array<SpRuntimeMultiSigner>,
+      (arg: PaseoRuntimeRuntimeCallLike) => Array<AccountId32>,
       PaseoRuntimeRuntimeCall
     >;
 
     /**
+     * The current round of the multisig voting.
+     *
+     * Votes are only valid for the current round.
      *
      * @param {Callback<number> =} callback
      **/
     managerMultisigRound: GenericStorageQuery<() => number>;
+
+    /**
+     * How often each participant voted in the current round.
+     *
+     * Will be cleared at the end of each round.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number> =} callback
+     **/
+    managerVotesInCurrentRound: GenericStorageQuery<(arg: AccountId32Like) => number, AccountId32>;
 
     /**
      * Generic pallet storage query

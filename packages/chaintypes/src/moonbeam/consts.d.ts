@@ -265,7 +265,7 @@ export interface ChainConsts extends GenericChainConsts {
     slotDuration: bigint;
 
     /**
-     * Get the average time beetween 2 blocks in milliseconds
+     * Get the average time between 2 blocks in milliseconds
      **/
     blockTime: bigint;
 
@@ -343,6 +343,15 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   asyncBacking: {
     /**
+     * The slot duration Nimbus should run with, expressed in milliseconds.
+     * The effective value of this type should not change while the chain is running.
+     **/
+    slotDuration: bigint;
+
+    /**
+     * TODO: Remove this constant once chopsticks has been updated
+     * - https://github.com/AcalaNetwork/chopsticks/blob/1a84b55097d2efdfaee64964b4b36af7c741d854/packages/core/src/utils/index.ts#L132
+     *
      * Purely informative, but used by mocking tools like chospticks to allow knowing how to mock
      * blocks
      **/
@@ -853,54 +862,6 @@ export interface ChainConsts extends GenericChainConsts {
      * The maximum number of consumers a single remote lock may have.
      **/
     maxRemoteLockConsumers: number;
-
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `Assets`'s constants
-   **/
-  assets: {
-    /**
-     * Max number of items to destroy per `destroy_accounts` and `destroy_approvals` call.
-     *
-     * Must be configured to result in a weight that makes each call fit in a block.
-     **/
-    removeItemsLimit: number;
-
-    /**
-     * The basic amount of funds that must be reserved for an asset.
-     **/
-    assetDeposit: bigint;
-
-    /**
-     * The amount of funds that must be reserved for a non-provider asset account to be
-     * maintained.
-     **/
-    assetAccountDeposit: bigint;
-
-    /**
-     * The basic amount of funds that must be reserved when adding metadata to your asset.
-     **/
-    metadataDepositBase: bigint;
-
-    /**
-     * The additional funds that must be reserved for the number of bytes you store in your
-     * metadata.
-     **/
-    metadataDepositPerByte: bigint;
-
-    /**
-     * The amount of funds that must be reserved when creating a new approval.
-     **/
-    approvalDeposit: bigint;
-
-    /**
-     * The maximum length of a name or symbol stored on-chain.
-     **/
-    stringLimit: number;
 
     /**
      * Generic pallet constant

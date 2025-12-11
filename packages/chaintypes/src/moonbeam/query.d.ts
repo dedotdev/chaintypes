@@ -39,7 +39,7 @@ import type {
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
   FrameSupportTokensMiscIdAmount,
-  FrameSupportTokensMiscIdAmount002,
+  FrameSupportTokensMiscIdAmountRuntimeFreezeReason,
   PalletTransactionPaymentReleases,
   PalletParachainStakingInflationDistributionConfig,
   PalletParachainStakingRoundInfo,
@@ -92,10 +92,6 @@ import type {
   XcmVersionedAssetId,
   StagingXcmV5Xcm,
   PalletXcmAuthorizedAliasesEntry,
-  PalletAssetsAssetDetails,
-  PalletAssetsAssetAccount,
-  PalletAssetsApproval,
-  PalletAssetsAssetMetadata,
   PalletXcmTransactorRemoteTransactInfoWithMaxWeight,
   StagingXcmV5Location,
   PalletXcmTransactorRelayIndicesRelayChainIndices,
@@ -674,9 +670,12 @@ export interface ChainStorage extends GenericChainStorage {
      * Freeze locks on account balances.
      *
      * @param {AccountId20Like} arg
-     * @param {Callback<Array<FrameSupportTokensMiscIdAmount002>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>> =} callback
      **/
-    freezes: GenericStorageQuery<(arg: AccountId20Like) => Array<FrameSupportTokensMiscIdAmount002>, AccountId20>;
+    freezes: GenericStorageQuery<
+      (arg: AccountId20Like) => Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>,
+      AccountId20
+    >;
 
     /**
      * Generic pallet storage query
@@ -885,6 +884,24 @@ export interface ChainStorage extends GenericChainStorage {
     enableMarkingOffline: GenericStorageQuery<() => boolean>;
 
     /**
+     * Temporary storage to track candidates that have been migrated from locks to freezes.
+     * This storage should be removed after all accounts have been migrated.
+     *
+     * @param {AccountId20Like} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    migratedCandidates: GenericStorageQuery<(arg: AccountId20Like) => [] | undefined, AccountId20>;
+
+    /**
+     * Temporary storage to track delegators that have been migrated from locks to freezes.
+     * This storage should be removed after all accounts have been migrated.
+     *
+     * @param {AccountId20Like} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    migratedDelegators: GenericStorageQuery<(arg: AccountId20Like) => [] | undefined, AccountId20>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
@@ -1051,9 +1068,10 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   asyncBacking: {
     /**
-     * First tuple element is the highest slot that has been seen in the history of this chain.
-     * Second tuple element is the number of authored blocks so far.
-     * This is a strictly-increasing value if T::AllowMultipleBlocksPerSlot = false.
+     * Current relay chain slot paired with a number of authored blocks.
+     *
+     * This is updated in [`FixedVelocityConsensusHook::on_state_proof`] with the current relay
+     * chain slot as provided by the relay chain state proof.
      *
      * @param {Callback<[SpConsensusSlotsSlot, number] | undefined> =} callback
      **/
@@ -2047,70 +2065,6 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: XcmVersionedLocation) => PalletXcmAuthorizedAliasesEntry | undefined,
       XcmVersionedLocation
     >;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `Assets`'s storage queries
-   **/
-  assets: {
-    /**
-     * Details of an asset.
-     *
-     * @param {bigint} arg
-     * @param {Callback<PalletAssetsAssetDetails | undefined> =} callback
-     **/
-    asset: GenericStorageQuery<(arg: bigint) => PalletAssetsAssetDetails | undefined, bigint>;
-
-    /**
-     * The holdings of a specific account for a specific asset.
-     *
-     * @param {[bigint, AccountId20Like]} arg
-     * @param {Callback<PalletAssetsAssetAccount | undefined> =} callback
-     **/
-    account: GenericStorageQuery<
-      (arg: [bigint, AccountId20Like]) => PalletAssetsAssetAccount | undefined,
-      [bigint, AccountId20]
-    >;
-
-    /**
-     * Approved balance transfers. First balance is the amount approved for transfer. Second
-     * is the amount of `T::Currency` reserved for storing this.
-     * First key is the asset ID, second key is the owner and third key is the delegate.
-     *
-     * @param {[bigint, AccountId20Like, AccountId20Like]} arg
-     * @param {Callback<PalletAssetsApproval | undefined> =} callback
-     **/
-    approvals: GenericStorageQuery<
-      (arg: [bigint, AccountId20Like, AccountId20Like]) => PalletAssetsApproval | undefined,
-      [bigint, AccountId20, AccountId20]
-    >;
-
-    /**
-     * Metadata of an asset.
-     *
-     * @param {bigint} arg
-     * @param {Callback<PalletAssetsAssetMetadata> =} callback
-     **/
-    metadata: GenericStorageQuery<(arg: bigint) => PalletAssetsAssetMetadata, bigint>;
-
-    /**
-     * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
-     * item has no effect.
-     *
-     * This can be useful for setting up constraints for IDs of the new assets. For example, by
-     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
-     * auto-increment model can be applied to all new asset IDs.
-     *
-     * The initial next asset ID can be set using the [`GenesisConfig`] or the
-     * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
-     *
-     * @param {Callback<bigint | undefined> =} callback
-     **/
-    nextAssetId: GenericStorageQuery<() => bigint | undefined>;
 
     /**
      * Generic pallet storage query

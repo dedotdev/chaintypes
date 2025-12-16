@@ -3456,15 +3456,15 @@ export type PalletSessionCallLike =
 export type WestendRuntimeSessionKeys = {
   grandpa: SpConsensusGrandpaAppPublic;
   babe: SpConsensusBabeAppPublic;
-  paraValidator: PolkadotPrimitivesV8ValidatorAppPublic;
-  paraAssignment: PolkadotPrimitivesV8AssignmentAppPublic;
+  paraValidator: PolkadotPrimitivesV9ValidatorAppPublic;
+  paraAssignment: PolkadotPrimitivesV9AssignmentAppPublic;
   authorityDiscovery: SpAuthorityDiscoveryAppPublic;
   beefy: SpConsensusBeefyEcdsaCryptoPublic;
 };
 
-export type PolkadotPrimitivesV8ValidatorAppPublic = FixedBytes<32>;
+export type PolkadotPrimitivesV9ValidatorAppPublic = FixedBytes<32>;
 
-export type PolkadotPrimitivesV8AssignmentAppPublic = FixedBytes<32>;
+export type PolkadotPrimitivesV9AssignmentAppPublic = FixedBytes<32>;
 
 export type SpAuthorityDiscoveryAppPublic = FixedBytes<32>;
 
@@ -4474,7 +4474,8 @@ export type PalletIdentityJudgement =
 export type SpRuntimeMultiSignature =
   | { type: 'Ed25519'; value: FixedBytes<64> }
   | { type: 'Sr25519'; value: FixedBytes<64> }
-  | { type: 'Ecdsa'; value: FixedBytes<65> };
+  | { type: 'Ecdsa'; value: FixedBytes<65> }
+  | { type: 'Eth'; value: FixedBytes<65> };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8185,11 +8186,11 @@ export type PolkadotRuntimeParachainsConfigurationPalletCall =
   /**
    * Set the asynchronous backing parameters.
    **/
-  | { name: 'SetAsyncBackingParams'; params: { new: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams } }
+  | { name: 'SetAsyncBackingParams'; params: { new: PolkadotPrimitivesV9AsyncBackingAsyncBackingParams } }
   /**
    * Set PVF executor parameters.
    **/
-  | { name: 'SetExecutorParams'; params: { new: PolkadotPrimitivesV8ExecutorParams } }
+  | { name: 'SetExecutorParams'; params: { new: PolkadotPrimitivesV9ExecutorParams } }
   /**
    * Set the on demand (parathreads) base fee.
    **/
@@ -8217,11 +8218,11 @@ export type PolkadotRuntimeParachainsConfigurationPalletCall =
   /**
    * Set approval-voting-params.
    **/
-  | { name: 'SetApprovalVotingParams'; params: { new: PolkadotPrimitivesV8ApprovalVotingParams } }
+  | { name: 'SetApprovalVotingParams'; params: { new: PolkadotPrimitivesV9ApprovalVotingParams } }
   /**
    * Set scheduler-params.
    **/
-  | { name: 'SetSchedulerParams'; params: { new: PolkadotPrimitivesV8SchedulerParams } };
+  | { name: 'SetSchedulerParams'; params: { new: PolkadotPrimitivesV9SchedulerParams } };
 
 export type PolkadotRuntimeParachainsConfigurationPalletCallLike =
   /**
@@ -8381,11 +8382,11 @@ export type PolkadotRuntimeParachainsConfigurationPalletCallLike =
   /**
    * Set the asynchronous backing parameters.
    **/
-  | { name: 'SetAsyncBackingParams'; params: { new: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams } }
+  | { name: 'SetAsyncBackingParams'; params: { new: PolkadotPrimitivesV9AsyncBackingAsyncBackingParams } }
   /**
    * Set PVF executor parameters.
    **/
-  | { name: 'SetExecutorParams'; params: { new: PolkadotPrimitivesV8ExecutorParams } }
+  | { name: 'SetExecutorParams'; params: { new: PolkadotPrimitivesV9ExecutorParams } }
   /**
    * Set the on demand (parathreads) base fee.
    **/
@@ -8413,35 +8414,35 @@ export type PolkadotRuntimeParachainsConfigurationPalletCallLike =
   /**
    * Set approval-voting-params.
    **/
-  | { name: 'SetApprovalVotingParams'; params: { new: PolkadotPrimitivesV8ApprovalVotingParams } }
+  | { name: 'SetApprovalVotingParams'; params: { new: PolkadotPrimitivesV9ApprovalVotingParams } }
   /**
    * Set scheduler-params.
    **/
-  | { name: 'SetSchedulerParams'; params: { new: PolkadotPrimitivesV8SchedulerParams } };
+  | { name: 'SetSchedulerParams'; params: { new: PolkadotPrimitivesV9SchedulerParams } };
 
-export type PolkadotPrimitivesV8AsyncBackingAsyncBackingParams = {
+export type PolkadotPrimitivesV9AsyncBackingAsyncBackingParams = {
   maxCandidateDepth: number;
   allowedAncestryLen: number;
 };
 
-export type PolkadotPrimitivesV8ExecutorParams = Array<PolkadotPrimitivesV8ExecutorParamsExecutorParam>;
+export type PolkadotPrimitivesV9ExecutorParams = Array<PolkadotPrimitivesV9ExecutorParamsExecutorParam>;
 
-export type PolkadotPrimitivesV8ExecutorParamsExecutorParam =
+export type PolkadotPrimitivesV9ExecutorParamsExecutorParam =
   | { type: 'MaxMemoryPages'; value: number }
   | { type: 'StackLogicalMax'; value: number }
   | { type: 'StackNativeMax'; value: number }
   | { type: 'PrecheckingMaxMemory'; value: bigint }
-  | { type: 'PvfPrepTimeout'; value: [PolkadotPrimitivesV8PvfPrepKind, bigint] }
-  | { type: 'PvfExecTimeout'; value: [PolkadotPrimitivesV8PvfExecKind, bigint] }
+  | { type: 'PvfPrepTimeout'; value: [PolkadotPrimitivesV9PvfPrepKind, bigint] }
+  | { type: 'PvfExecTimeout'; value: [PolkadotPrimitivesV9PvfExecKind, bigint] }
   | { type: 'WasmExtBulkMemory' };
 
-export type PolkadotPrimitivesV8PvfPrepKind = 'Precheck' | 'Prepare';
+export type PolkadotPrimitivesV9PvfPrepKind = 'Precheck' | 'Prepare';
 
-export type PolkadotPrimitivesV8PvfExecKind = 'Backing' | 'Approval';
+export type PolkadotPrimitivesV9PvfExecKind = 'Backing' | 'Approval';
 
-export type PolkadotPrimitivesV8ApprovalVotingParams = { maxApprovalCoalesceCount: number };
+export type PolkadotPrimitivesV9ApprovalVotingParams = { maxApprovalCoalesceCount: number };
 
-export type PolkadotPrimitivesV8SchedulerParams = {
+export type PolkadotPrimitivesV9SchedulerParams = {
   groupRotationFrequency: number;
   parasAvailabilityPeriod: number;
   maxValidatorsPerCore?: number | undefined;
@@ -8476,50 +8477,50 @@ export type PolkadotRuntimeParachainsParasInherentPalletCall =
   /**
    * Enter the paras inherent. This will process bitfields and backed candidates.
    **/
-  { name: 'Enter'; params: { data: PolkadotPrimitivesVstagingInherentData } };
+  { name: 'Enter'; params: { data: PolkadotPrimitivesV9InherentData } };
 
 export type PolkadotRuntimeParachainsParasInherentPalletCallLike =
   /**
    * Enter the paras inherent. This will process bitfields and backed candidates.
    **/
-  { name: 'Enter'; params: { data: PolkadotPrimitivesVstagingInherentData } };
+  { name: 'Enter'; params: { data: PolkadotPrimitivesV9InherentData } };
 
-export type PolkadotPrimitivesVstagingInherentData = {
-  bitfields: Array<PolkadotPrimitivesV8SignedUncheckedSigned>;
-  backedCandidates: Array<PolkadotPrimitivesVstagingBackedCandidate>;
-  disputes: Array<PolkadotPrimitivesV8DisputeStatementSet>;
+export type PolkadotPrimitivesV9InherentData = {
+  bitfields: Array<PolkadotPrimitivesV9SignedUncheckedSigned>;
+  backedCandidates: Array<PolkadotPrimitivesV9BackedCandidate>;
+  disputes: Array<PolkadotPrimitivesV9DisputeStatementSet>;
   parentHeader: Header;
 };
 
-export type PolkadotPrimitivesV8SignedUncheckedSigned = {
-  payload: PolkadotPrimitivesV8AvailabilityBitfield;
-  validatorIndex: PolkadotPrimitivesV8ValidatorIndex;
-  signature: PolkadotPrimitivesV8ValidatorAppSignature;
+export type PolkadotPrimitivesV9SignedUncheckedSigned = {
+  payload: PolkadotPrimitivesV9AvailabilityBitfield;
+  validatorIndex: PolkadotPrimitivesV9ValidatorIndex;
+  signature: PolkadotPrimitivesV9ValidatorAppSignature;
 };
 
-export type PolkadotPrimitivesV8AvailabilityBitfield = BitSequence;
+export type PolkadotPrimitivesV9AvailabilityBitfield = BitSequence;
 
 export type BitvecOrderLsb0 = {};
 
-export type PolkadotPrimitivesV8ValidatorIndex = number;
+export type PolkadotPrimitivesV9ValidatorIndex = number;
 
-export type PolkadotPrimitivesV8ValidatorAppSignature = FixedBytes<64>;
+export type PolkadotPrimitivesV9ValidatorAppSignature = FixedBytes<64>;
 
-export type PolkadotPrimitivesVstagingBackedCandidate = {
-  candidate: PolkadotPrimitivesVstagingCommittedCandidateReceiptV2;
-  validityVotes: Array<PolkadotPrimitivesV8ValidityAttestation>;
+export type PolkadotPrimitivesV9BackedCandidate = {
+  candidate: PolkadotPrimitivesV9CommittedCandidateReceiptV2;
+  validityVotes: Array<PolkadotPrimitivesV9ValidityAttestation>;
   validatorIndices: BitSequence;
 };
 
-export type PolkadotPrimitivesVstagingCommittedCandidateReceiptV2 = {
-  descriptor: PolkadotPrimitivesVstagingCandidateDescriptorV2;
-  commitments: PolkadotPrimitivesV8CandidateCommitments;
+export type PolkadotPrimitivesV9CommittedCandidateReceiptV2 = {
+  descriptor: PolkadotPrimitivesV9CandidateDescriptorV2;
+  commitments: PolkadotPrimitivesV9CandidateCommitments;
 };
 
-export type PolkadotPrimitivesVstagingCandidateDescriptorV2 = {
+export type PolkadotPrimitivesV9CandidateDescriptorV2 = {
   paraId: PolkadotParachainPrimitivesPrimitivesId;
   relayParent: H256;
-  version: PolkadotPrimitivesVstagingInternalVersion;
+  version: PolkadotPrimitivesV9InternalVersion;
   coreIndex: number;
   sessionIndex: number;
   reserved1: FixedBytes<25>;
@@ -8531,11 +8532,11 @@ export type PolkadotPrimitivesVstagingCandidateDescriptorV2 = {
   validationCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
 };
 
-export type PolkadotPrimitivesVstagingInternalVersion = number;
+export type PolkadotPrimitivesV9InternalVersion = number;
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCodeHash = H256;
 
-export type PolkadotPrimitivesV8CandidateCommitments = {
+export type PolkadotPrimitivesV9CandidateCommitments = {
   upwardMessages: Array<Bytes>;
   horizontalMessages: Array<PolkadotCorePrimitivesOutboundHrmpMessage>;
   newValidationCode?: PolkadotParachainPrimitivesPrimitivesValidationCode | undefined;
@@ -8553,36 +8554,36 @@ export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
 
 export type PolkadotParachainPrimitivesPrimitivesHeadData = Bytes;
 
-export type PolkadotPrimitivesV8ValidityAttestation =
-  | { type: 'Implicit'; value: PolkadotPrimitivesV8ValidatorAppSignature }
-  | { type: 'Explicit'; value: PolkadotPrimitivesV8ValidatorAppSignature };
+export type PolkadotPrimitivesV9ValidityAttestation =
+  | { type: 'Implicit'; value: PolkadotPrimitivesV9ValidatorAppSignature }
+  | { type: 'Explicit'; value: PolkadotPrimitivesV9ValidatorAppSignature };
 
-export type PolkadotPrimitivesV8DisputeStatementSet = {
+export type PolkadotPrimitivesV9DisputeStatementSet = {
   candidateHash: PolkadotCorePrimitivesCandidateHash;
   session: number;
   statements: Array<
     [
-      PolkadotPrimitivesV8DisputeStatement,
-      PolkadotPrimitivesV8ValidatorIndex,
-      PolkadotPrimitivesV8ValidatorAppSignature,
+      PolkadotPrimitivesV9DisputeStatement,
+      PolkadotPrimitivesV9ValidatorIndex,
+      PolkadotPrimitivesV9ValidatorAppSignature,
     ]
   >;
 };
 
 export type PolkadotCorePrimitivesCandidateHash = H256;
 
-export type PolkadotPrimitivesV8DisputeStatement =
-  | { type: 'Valid'; value: PolkadotPrimitivesV8ValidDisputeStatementKind }
-  | { type: 'Invalid'; value: PolkadotPrimitivesV8InvalidDisputeStatementKind };
+export type PolkadotPrimitivesV9DisputeStatement =
+  | { type: 'Valid'; value: PolkadotPrimitivesV9ValidDisputeStatementKind }
+  | { type: 'Invalid'; value: PolkadotPrimitivesV9InvalidDisputeStatementKind };
 
-export type PolkadotPrimitivesV8ValidDisputeStatementKind =
+export type PolkadotPrimitivesV9ValidDisputeStatementKind =
   | { type: 'Explicit' }
   | { type: 'BackingSeconded'; value: H256 }
   | { type: 'BackingValid'; value: H256 }
   | { type: 'ApprovalChecking' }
   | { type: 'ApprovalCheckingMultipleCandidates'; value: Array<PolkadotCorePrimitivesCandidateHash> };
 
-export type PolkadotPrimitivesV8InvalidDisputeStatementKind = 'Explicit';
+export type PolkadotPrimitivesV9InvalidDisputeStatementKind = 'Explicit';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8666,7 +8667,7 @@ export type PolkadotRuntimeParachainsParasPalletCall =
    **/
   | {
       name: 'IncludePvfCheckStatement';
-      params: { stmt: PolkadotPrimitivesV8PvfCheckStatement; signature: PolkadotPrimitivesV8ValidatorAppSignature };
+      params: { stmt: PolkadotPrimitivesV9PvfCheckStatement; signature: PolkadotPrimitivesV9ValidatorAppSignature };
     }
   /**
    * Set the storage for the current parachain head data immediately.
@@ -8791,7 +8792,7 @@ export type PolkadotRuntimeParachainsParasPalletCallLike =
    **/
   | {
       name: 'IncludePvfCheckStatement';
-      params: { stmt: PolkadotPrimitivesV8PvfCheckStatement; signature: PolkadotPrimitivesV8ValidatorAppSignature };
+      params: { stmt: PolkadotPrimitivesV9PvfCheckStatement; signature: PolkadotPrimitivesV9ValidatorAppSignature };
     }
   /**
    * Set the storage for the current parachain head data immediately.
@@ -8837,11 +8838,11 @@ export type PolkadotRuntimeParachainsParasPalletCallLike =
       };
     };
 
-export type PolkadotPrimitivesV8PvfCheckStatement = {
+export type PolkadotPrimitivesV9PvfCheckStatement = {
   accept: boolean;
   subject: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
   sessionIndex: number;
-  validatorIndex: PolkadotPrimitivesV8ValidatorIndex;
+  validatorIndex: PolkadotPrimitivesV9ValidatorIndex;
 };
 
 /**
@@ -9175,27 +9176,27 @@ export type PolkadotRuntimeParachainsDisputesPalletCallLike = 'ForceUnfreeze';
  **/
 export type PolkadotRuntimeParachainsDisputesSlashingPalletCall = {
   name: 'ReportDisputeLostUnsigned';
-  params: { disputeProof: PolkadotPrimitivesVstagingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+  params: { disputeProof: PolkadotPrimitivesV9SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
 };
 
 export type PolkadotRuntimeParachainsDisputesSlashingPalletCallLike = {
   name: 'ReportDisputeLostUnsigned';
-  params: { disputeProof: PolkadotPrimitivesVstagingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+  params: { disputeProof: PolkadotPrimitivesV9SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
 };
 
-export type PolkadotPrimitivesVstagingDisputeProof = {
-  timeSlot: PolkadotPrimitivesV8SlashingDisputesTimeSlot;
-  kind: PolkadotPrimitivesVstagingDisputeOffenceKind;
-  validatorIndex: PolkadotPrimitivesV8ValidatorIndex;
-  validatorId: PolkadotPrimitivesV8ValidatorAppPublic;
+export type PolkadotPrimitivesV9SlashingDisputeProof = {
+  timeSlot: PolkadotPrimitivesV9SlashingDisputesTimeSlot;
+  kind: PolkadotPrimitivesV9DisputeOffenceKind;
+  validatorIndex: PolkadotPrimitivesV9ValidatorIndex;
+  validatorId: PolkadotPrimitivesV9ValidatorAppPublic;
 };
 
-export type PolkadotPrimitivesV8SlashingDisputesTimeSlot = {
+export type PolkadotPrimitivesV9SlashingDisputesTimeSlot = {
   sessionIndex: number;
   candidateHash: PolkadotCorePrimitivesCandidateHash;
 };
 
-export type PolkadotPrimitivesVstagingDisputeOffenceKind = 'ForInvalidBacked' | 'AgainstValid' | 'ForInvalidApproved';
+export type PolkadotPrimitivesV9DisputeOffenceKind = 'ForInvalidBacked' | 'AgainstValid' | 'ForInvalidApproved';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10639,7 +10640,8 @@ export type PolkadotRuntimeCommonCrowdloanPalletCallLike =
 export type SpRuntimeMultiSigner =
   | { type: 'Ed25519'; value: FixedBytes<32> }
   | { type: 'Sr25519'; value: FixedBytes<32> }
-  | { type: 'Ecdsa'; value: FixedBytes<33> };
+  | { type: 'Ecdsa'; value: FixedBytes<33> }
+  | { type: 'Eth'; value: FixedBytes<33> };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -12227,10 +12229,10 @@ export type PolkadotRuntimeParachainsInclusionPalletEvent =
   | {
       name: 'CandidateBacked';
       data: [
-        PolkadotPrimitivesVstagingCandidateReceiptV2,
+        PolkadotPrimitivesV9CandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV8CoreIndex,
-        PolkadotPrimitivesV8GroupIndex,
+        PolkadotPrimitivesV9CoreIndex,
+        PolkadotPrimitivesV9GroupIndex,
       ];
     }
   /**
@@ -12239,10 +12241,10 @@ export type PolkadotRuntimeParachainsInclusionPalletEvent =
   | {
       name: 'CandidateIncluded';
       data: [
-        PolkadotPrimitivesVstagingCandidateReceiptV2,
+        PolkadotPrimitivesV9CandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV8CoreIndex,
-        PolkadotPrimitivesV8GroupIndex,
+        PolkadotPrimitivesV9CoreIndex,
+        PolkadotPrimitivesV9GroupIndex,
       ];
     }
   /**
@@ -12251,9 +12253,9 @@ export type PolkadotRuntimeParachainsInclusionPalletEvent =
   | {
       name: 'CandidateTimedOut';
       data: [
-        PolkadotPrimitivesVstagingCandidateReceiptV2,
+        PolkadotPrimitivesV9CandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV8CoreIndex,
+        PolkadotPrimitivesV9CoreIndex,
       ];
     }
   /**
@@ -12261,14 +12263,14 @@ export type PolkadotRuntimeParachainsInclusionPalletEvent =
    **/
   | { name: 'UpwardMessagesReceived'; data: { from: PolkadotParachainPrimitivesPrimitivesId; count: number } };
 
-export type PolkadotPrimitivesVstagingCandidateReceiptV2 = {
-  descriptor: PolkadotPrimitivesVstagingCandidateDescriptorV2;
+export type PolkadotPrimitivesV9CandidateReceiptV2 = {
+  descriptor: PolkadotPrimitivesV9CandidateDescriptorV2;
   commitmentsHash: H256;
 };
 
-export type PolkadotPrimitivesV8CoreIndex = number;
+export type PolkadotPrimitivesV9CoreIndex = number;
 
-export type PolkadotPrimitivesV8GroupIndex = number;
+export type PolkadotPrimitivesV9GroupIndex = number;
 
 /**
  * The `Event` enum of this pallet
@@ -12649,7 +12651,7 @@ export type PolkadotRuntimeParachainsCoretimePalletEvent =
   /**
    * A core has received a new assignment from the broker chain.
    **/
-  | { name: 'CoreAssigned'; data: { core: PolkadotPrimitivesV8CoreIndex } };
+  | { name: 'CoreAssigned'; data: { core: PolkadotPrimitivesV9CoreIndex } };
 
 /**
  * The `Event` enum of this pallet
@@ -13427,6 +13429,10 @@ export type PalletBalancesError =
   | 'DeltaZero';
 
 export type PalletTransactionPaymentReleases = 'V1Ancient' | 'V2';
+
+export type FrameSupportStorageNoDrop = FrameSupportTokensFungibleImbalance;
+
+export type FrameSupportTokensFungibleImbalance = { amount: bigint };
 
 export type PalletStakingStakingLedger = {
   stash: AccountId32;
@@ -14876,7 +14882,7 @@ export type PolkadotRuntimeParachainsConfigurationHostConfiguration = {
   hrmpMaxMessageNumPerCandidate: number;
   validationUpgradeCooldown: number;
   validationUpgradeDelay: number;
-  asyncBackingParams: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams;
+  asyncBackingParams: PolkadotPrimitivesV9AsyncBackingAsyncBackingParams;
   maxPovSize: number;
   maxDownwardMessageSize: number;
   hrmpMaxParachainOutboundChannels: number;
@@ -14886,7 +14892,7 @@ export type PolkadotRuntimeParachainsConfigurationHostConfiguration = {
   hrmpChannelMaxTotalSize: number;
   hrmpMaxParachainInboundChannels: number;
   hrmpChannelMaxMessageSize: number;
-  executorParams: PolkadotPrimitivesV8ExecutorParams;
+  executorParams: PolkadotPrimitivesV9ExecutorParams;
   codeRetentionPeriod: number;
   maxValidators?: number | undefined;
   disputePeriod: number;
@@ -14900,8 +14906,8 @@ export type PolkadotRuntimeParachainsConfigurationHostConfiguration = {
   minimumValidationUpgradeDelay: number;
   minimumBackingVotes: number;
   nodeFeatures: BitSequence;
-  approvalVotingParams: PolkadotPrimitivesV8ApprovalVotingParams;
-  schedulerParams: PolkadotPrimitivesV8SchedulerParams;
+  approvalVotingParams: PolkadotPrimitivesV9ApprovalVotingParams;
+  schedulerParams: PolkadotPrimitivesV9SchedulerParams;
 };
 
 /**
@@ -14921,19 +14927,19 @@ export type PolkadotRuntimeParachainsSharedAllowedRelayParentsTracker = {
 export type PolkadotRuntimeParachainsSharedRelayParentInfo = {
   relayParent: H256;
   stateRoot: H256;
-  claimQueue: Array<[PolkadotParachainPrimitivesPrimitivesId, Array<[number, Array<PolkadotPrimitivesV8CoreIndex>]>]>;
+  claimQueue: Array<[PolkadotParachainPrimitivesPrimitivesId, Array<[number, Array<PolkadotPrimitivesV9CoreIndex>]>]>;
 };
 
 export type PolkadotRuntimeParachainsInclusionCandidatePendingAvailability = {
-  core: PolkadotPrimitivesV8CoreIndex;
+  core: PolkadotPrimitivesV9CoreIndex;
   hash: PolkadotCorePrimitivesCandidateHash;
-  descriptor: PolkadotPrimitivesVstagingCandidateDescriptorV2;
-  commitments: PolkadotPrimitivesV8CandidateCommitments;
+  descriptor: PolkadotPrimitivesV9CandidateDescriptorV2;
+  commitments: PolkadotPrimitivesV9CandidateCommitments;
   availabilityVotes: BitSequence;
   backers: BitSequence;
   relayParentNumber: number;
   backedInNumber: number;
-  backingGroup: PolkadotPrimitivesV8GroupIndex;
+  backingGroup: PolkadotPrimitivesV9GroupIndex;
 };
 
 /**
@@ -15012,15 +15018,15 @@ export type PolkadotRuntimeParachainsInclusionPalletError =
    **/
   | 'ParaHeadMismatch';
 
-export type PolkadotPrimitivesVstagingScrapedOnChainVotes = {
+export type PolkadotPrimitivesV9ScrapedOnChainVotes = {
   session: number;
   backingValidatorsPerCandidate: Array<
     [
-      PolkadotPrimitivesVstagingCandidateReceiptV2,
-      Array<[PolkadotPrimitivesV8ValidatorIndex, PolkadotPrimitivesV8ValidityAttestation]>,
+      PolkadotPrimitivesV9CandidateReceiptV2,
+      Array<[PolkadotPrimitivesV9ValidatorIndex, PolkadotPrimitivesV9ValidityAttestation]>,
     ]
   >;
-  disputes: Array<PolkadotPrimitivesV8DisputeStatementSet>;
+  disputes: Array<PolkadotPrimitivesV9DisputeStatementSet>;
 };
 
 /**
@@ -15049,7 +15055,7 @@ export type PolkadotRuntimeParachainsParasInherentPalletError =
 export type PolkadotRuntimeParachainsSchedulerCommonAssignment =
   | {
       type: 'Pool';
-      value: { paraId: PolkadotParachainPrimitivesPrimitivesId; coreIndex: PolkadotPrimitivesV8CoreIndex };
+      value: { paraId: PolkadotParachainPrimitivesPrimitivesId; coreIndex: PolkadotPrimitivesV9CoreIndex };
     }
   | { type: 'Bulk'; value: PolkadotParachainPrimitivesPrimitivesId };
 
@@ -15095,9 +15101,9 @@ export type PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry = {
   expireAt: number;
 };
 
-export type PolkadotPrimitivesV8UpgradeGoAhead = 'Abort' | 'GoAhead';
+export type PolkadotPrimitivesV9UpgradeGoAhead = 'Abort' | 'GoAhead';
 
-export type PolkadotPrimitivesV8UpgradeRestriction = 'Present';
+export type PolkadotPrimitivesV9UpgradeRestriction = 'Present';
 
 /**
  * The `Error` enum of this pallet.
@@ -15169,8 +15175,8 @@ export type PolkadotRuntimeParachainsParasPalletError =
   | 'InvalidBlockNumber';
 
 export type PolkadotRuntimeParachainsInitializerBufferedSessionChange = {
-  validators: Array<PolkadotPrimitivesV8ValidatorAppPublic>;
-  queued: Array<PolkadotPrimitivesV8ValidatorAppPublic>;
+  validators: Array<PolkadotPrimitivesV9ValidatorAppPublic>;
+  queued: Array<PolkadotPrimitivesV9ValidatorAppPublic>;
   sessionIndex: number;
 };
 
@@ -15283,14 +15289,14 @@ export type PolkadotRuntimeParachainsHrmpPalletError =
    **/
   | 'ChannelCreationNotAuthorized';
 
-export type PolkadotPrimitivesV8SessionInfo = {
-  activeValidatorIndices: Array<PolkadotPrimitivesV8ValidatorIndex>;
+export type PolkadotPrimitivesV9SessionInfo = {
+  activeValidatorIndices: Array<PolkadotPrimitivesV9ValidatorIndex>;
   randomSeed: FixedBytes<32>;
   disputePeriod: number;
-  validators: PolkadotPrimitivesV8IndexedVec;
+  validators: PolkadotPrimitivesV9IndexedVec;
   discoveryKeys: Array<SpAuthorityDiscoveryAppPublic>;
-  assignmentKeys: Array<PolkadotPrimitivesV8AssignmentAppPublic>;
-  validatorGroups: PolkadotPrimitivesV8IndexedVecGroupIndex;
+  assignmentKeys: Array<PolkadotPrimitivesV9AssignmentAppPublic>;
+  validatorGroups: PolkadotPrimitivesV9IndexedVecGroupIndex;
   nCores: number;
   zerothDelayTrancheWidth: number;
   relayVrfModuloSamples: number;
@@ -15299,11 +15305,11 @@ export type PolkadotPrimitivesV8SessionInfo = {
   neededApprovals: number;
 };
 
-export type PolkadotPrimitivesV8IndexedVec = Array<PolkadotPrimitivesV8ValidatorAppPublic>;
+export type PolkadotPrimitivesV9IndexedVec = Array<PolkadotPrimitivesV9ValidatorAppPublic>;
 
-export type PolkadotPrimitivesV8IndexedVecGroupIndex = Array<Array<PolkadotPrimitivesV8ValidatorIndex>>;
+export type PolkadotPrimitivesV9IndexedVecGroupIndex = Array<Array<PolkadotPrimitivesV9ValidatorIndex>>;
 
-export type PolkadotPrimitivesV8DisputeState = {
+export type PolkadotPrimitivesV9DisputeState = {
   validatorsFor: BitSequence;
   validatorsAgainst: BitSequence;
   start: number;
@@ -15351,9 +15357,9 @@ export type PolkadotRuntimeParachainsDisputesPalletError =
    **/
   | 'UnconfirmedDispute';
 
-export type PolkadotPrimitivesVstagingPendingSlashes = {
-  keys: Array<[PolkadotPrimitivesV8ValidatorIndex, PolkadotPrimitivesV8ValidatorAppPublic]>;
-  kind: PolkadotPrimitivesVstagingDisputeOffenceKind;
+export type PolkadotPrimitivesV9SlashingPendingSlashes = {
+  keys: Array<[PolkadotPrimitivesV9ValidatorIndex, PolkadotPrimitivesV9ValidatorAppPublic]>;
+  kind: PolkadotPrimitivesV9DisputeOffenceKind;
 };
 
 /**
@@ -15387,7 +15393,7 @@ export type PolkadotRuntimeParachainsDisputesSlashingPalletError =
   | 'DuplicateSlashingReport';
 
 export type PolkadotRuntimeParachainsOnDemandTypesCoreAffinityCount = {
-  coreIndex: PolkadotPrimitivesV8CoreIndex;
+  coreIndex: PolkadotPrimitivesV9CoreIndex;
   count: number;
 };
 
@@ -16199,6 +16205,10 @@ export type PalletBeefyError =
    **/
   | 'InvalidEquivocationProofSession'
   /**
+   * The session of the equivocation proof is not in the mapping (anymore)
+   **/
+  | 'InvalidEquivocationProofSessionMember'
+  /**
    * A given equivocation report is valid but already previously reported.
    **/
   | 'DuplicateOffenceReport'
@@ -16208,6 +16218,10 @@ export type PalletBeefyError =
   | 'InvalidConfiguration';
 
 export type SpConsensusBeefyMmrBeefyAuthoritySet = { id: bigint; len: number; keysetCommitment: H256 };
+
+export type SpRuntimeBlockLazyBlock = { header: Header; extrinsics: Array<SpRuntimeOpaqueExtrinsic> };
+
+export type SpRuntimeOpaqueExtrinsic = Bytes;
 
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 
@@ -16258,128 +16272,87 @@ export type SpRuntimeTransactionValidityValidTransaction = {
   propagate: boolean;
 };
 
-export type PolkadotPrimitivesV8GroupRotationInfo = {
+export type PolkadotPrimitivesV9GroupRotationInfo = {
   sessionStartBlock: number;
   groupRotationFrequency: number;
   now: number;
 };
 
-export type PolkadotPrimitivesVstagingCoreState =
-  | { type: 'Occupied'; value: PolkadotPrimitivesVstagingOccupiedCore }
-  | { type: 'Scheduled'; value: PolkadotPrimitivesV8ScheduledCore }
+export type PolkadotPrimitivesV9CoreState =
+  | { type: 'Occupied'; value: PolkadotPrimitivesV9OccupiedCore }
+  | { type: 'Scheduled'; value: PolkadotPrimitivesV9ScheduledCore }
   | { type: 'Free' };
 
-export type PolkadotPrimitivesVstagingOccupiedCore = {
-  nextUpOnAvailable?: PolkadotPrimitivesV8ScheduledCore | undefined;
+export type PolkadotPrimitivesV9OccupiedCore = {
+  nextUpOnAvailable?: PolkadotPrimitivesV9ScheduledCore | undefined;
   occupiedSince: number;
   timeOutAt: number;
-  nextUpOnTimeOut?: PolkadotPrimitivesV8ScheduledCore | undefined;
+  nextUpOnTimeOut?: PolkadotPrimitivesV9ScheduledCore | undefined;
   availability: BitSequence;
-  groupResponsible: PolkadotPrimitivesV8GroupIndex;
+  groupResponsible: PolkadotPrimitivesV9GroupIndex;
   candidateHash: PolkadotCorePrimitivesCandidateHash;
-  candidateDescriptor: PolkadotPrimitivesVstagingCandidateDescriptorV2;
+  candidateDescriptor: PolkadotPrimitivesV9CandidateDescriptorV2;
 };
 
-export type PolkadotPrimitivesV8ScheduledCore = {
+export type PolkadotPrimitivesV9ScheduledCore = {
   paraId: PolkadotParachainPrimitivesPrimitivesId;
-  collator?: PolkadotPrimitivesV8CollatorAppPublic | undefined;
+  collator?: PolkadotPrimitivesV9CollatorAppPublic | undefined;
 };
 
-export type PolkadotPrimitivesV8CollatorAppPublic = FixedBytes<32>;
+export type PolkadotPrimitivesV9CollatorAppPublic = FixedBytes<32>;
 
-export type PolkadotPrimitivesV8OccupiedCoreAssumption = 'Included' | 'TimedOut' | 'Free';
+export type PolkadotPrimitivesV9OccupiedCoreAssumption = 'Included' | 'TimedOut' | 'Free';
 
-export type PolkadotPrimitivesV8PersistedValidationData = {
+export type PolkadotPrimitivesV9PersistedValidationData = {
   parentHead: PolkadotParachainPrimitivesPrimitivesHeadData;
   relayParentNumber: number;
   relayParentStorageRoot: H256;
   maxPovSize: number;
 };
 
-export type PolkadotPrimitivesVstagingCandidateEvent =
+export type PolkadotPrimitivesV9CandidateEvent =
   | {
       type: 'CandidateBacked';
       value: [
-        PolkadotPrimitivesVstagingCandidateReceiptV2,
+        PolkadotPrimitivesV9CandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV8CoreIndex,
-        PolkadotPrimitivesV8GroupIndex,
+        PolkadotPrimitivesV9CoreIndex,
+        PolkadotPrimitivesV9GroupIndex,
       ];
     }
   | {
       type: 'CandidateIncluded';
       value: [
-        PolkadotPrimitivesVstagingCandidateReceiptV2,
+        PolkadotPrimitivesV9CandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV8CoreIndex,
-        PolkadotPrimitivesV8GroupIndex,
+        PolkadotPrimitivesV9CoreIndex,
+        PolkadotPrimitivesV9GroupIndex,
       ];
     }
   | {
       type: 'CandidateTimedOut';
       value: [
-        PolkadotPrimitivesVstagingCandidateReceiptV2,
+        PolkadotPrimitivesV9CandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV8CoreIndex,
+        PolkadotPrimitivesV9CoreIndex,
       ];
     };
 
-export type PolkadotPrimitivesV8SlashingPendingSlashes = {
-  keys: Array<[PolkadotPrimitivesV8ValidatorIndex, PolkadotPrimitivesV8ValidatorAppPublic]>;
-  kind: PolkadotPrimitivesV8SlashingSlashingOffenceKind;
+export type PolkadotPrimitivesV9SlashingLegacyPendingSlashes = {
+  keys: Array<[PolkadotPrimitivesV9ValidatorIndex, PolkadotPrimitivesV9ValidatorAppPublic]>;
+  kind: PolkadotPrimitivesV9SlashingSlashingOffenceKind;
 };
 
-export type PolkadotPrimitivesV8SlashingSlashingOffenceKind = 'ForInvalid' | 'AgainstValid';
+export type PolkadotPrimitivesV9SlashingSlashingOffenceKind = 'ForInvalid' | 'AgainstValid';
 
-export type PolkadotPrimitivesV8SlashingOpaqueKeyOwnershipProof = Bytes;
+export type PolkadotPrimitivesV9SlashingOpaqueKeyOwnershipProof = Bytes;
 
-export type PolkadotPrimitivesV8SlashingDisputeProof = {
-  timeSlot: PolkadotPrimitivesV8SlashingDisputesTimeSlot;
-  kind: PolkadotPrimitivesV8SlashingSlashingOffenceKind;
-  validatorIndex: PolkadotPrimitivesV8ValidatorIndex;
-  validatorId: PolkadotPrimitivesV8ValidatorAppPublic;
+export type PolkadotPrimitivesV9AsyncBackingBackingState = {
+  constraints: PolkadotPrimitivesV9AsyncBackingConstraints;
+  pendingAvailability: Array<PolkadotPrimitivesV9AsyncBackingCandidatePendingAvailability>;
 };
 
-export type PolkadotPrimitivesVstagingAsyncBackingBackingState = {
-  constraints: PolkadotPrimitivesV8AsyncBackingConstraints;
-  pendingAvailability: Array<PolkadotPrimitivesVstagingAsyncBackingCandidatePendingAvailability>;
-};
-
-export type PolkadotPrimitivesV8AsyncBackingConstraints = {
-  minRelayParentNumber: number;
-  maxPovSize: number;
-  maxCodeSize: number;
-  umpRemaining: number;
-  umpRemainingBytes: number;
-  maxUmpNumPerCandidate: number;
-  dmpRemainingMessages: Array<number>;
-  hrmpInbound: PolkadotPrimitivesV8AsyncBackingInboundHrmpLimitations;
-  hrmpChannelsOut: Array<
-    [PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AsyncBackingOutboundHrmpChannelLimitations]
-  >;
-  maxHrmpNumPerCandidate: number;
-  requiredParent: PolkadotParachainPrimitivesPrimitivesHeadData;
-  validationCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
-  upgradeRestriction?: PolkadotPrimitivesV8UpgradeRestriction | undefined;
-  futureValidationCode?: [number, PolkadotParachainPrimitivesPrimitivesValidationCodeHash] | undefined;
-};
-
-export type PolkadotPrimitivesV8AsyncBackingInboundHrmpLimitations = { validWatermarks: Array<number> };
-
-export type PolkadotPrimitivesV8AsyncBackingOutboundHrmpChannelLimitations = {
-  bytesRemaining: number;
-  messagesRemaining: number;
-};
-
-export type PolkadotPrimitivesVstagingAsyncBackingCandidatePendingAvailability = {
-  candidateHash: PolkadotCorePrimitivesCandidateHash;
-  descriptor: PolkadotPrimitivesVstagingCandidateDescriptorV2;
-  commitments: PolkadotPrimitivesV8CandidateCommitments;
-  relayParentNumber: number;
-  maxPovSize: number;
-};
-
-export type PolkadotPrimitivesVstagingAsyncBackingConstraints = {
+export type PolkadotPrimitivesV9AsyncBackingConstraints = {
   minRelayParentNumber: number;
   maxPovSize: number;
   maxCodeSize: number;
@@ -16388,15 +16361,30 @@ export type PolkadotPrimitivesVstagingAsyncBackingConstraints = {
   umpRemainingBytes: number;
   maxUmpNumPerCandidate: number;
   dmpRemainingMessages: Array<number>;
-  hrmpInbound: PolkadotPrimitivesV8AsyncBackingInboundHrmpLimitations;
+  hrmpInbound: PolkadotPrimitivesV9AsyncBackingInboundHrmpLimitations;
   hrmpChannelsOut: Array<
-    [PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AsyncBackingOutboundHrmpChannelLimitations]
+    [PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV9AsyncBackingOutboundHrmpChannelLimitations]
   >;
   maxHrmpNumPerCandidate: number;
   requiredParent: PolkadotParachainPrimitivesPrimitivesHeadData;
   validationCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
-  upgradeRestriction?: PolkadotPrimitivesV8UpgradeRestriction | undefined;
+  upgradeRestriction?: PolkadotPrimitivesV9UpgradeRestriction | undefined;
   futureValidationCode?: [number, PolkadotParachainPrimitivesPrimitivesValidationCodeHash] | undefined;
+};
+
+export type PolkadotPrimitivesV9AsyncBackingInboundHrmpLimitations = { validWatermarks: Array<number> };
+
+export type PolkadotPrimitivesV9AsyncBackingOutboundHrmpChannelLimitations = {
+  bytesRemaining: number;
+  messagesRemaining: number;
+};
+
+export type PolkadotPrimitivesV9AsyncBackingCandidatePendingAvailability = {
+  candidateHash: PolkadotCorePrimitivesCandidateHash;
+  descriptor: PolkadotPrimitivesV9CandidateDescriptorV2;
+  commitments: PolkadotPrimitivesV9CandidateCommitments;
+  relayParentNumber: number;
+  maxPovSize: number;
 };
 
 export type SpConsensusBeefyValidatorSet = { validators: Array<SpConsensusBeefyEcdsaCryptoPublic>; id: bigint };

@@ -22,12 +22,12 @@ import type {
   SpWeightsWeightV2Weight,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
-  PolkadotPrimitivesV8PersistedValidationData,
-  PolkadotPrimitivesV8UpgradeRestriction,
-  PolkadotPrimitivesV8UpgradeGoAhead,
+  PolkadotPrimitivesV9PersistedValidationData,
+  PolkadotPrimitivesV9UpgradeRestriction,
+  PolkadotPrimitivesV9UpgradeGoAhead,
   SpTrieStorageProof,
   CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot,
-  PolkadotPrimitivesV8AbridgedHostConfiguration,
+  PolkadotPrimitivesV9AbridgedHostConfiguration,
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   CumulusPalletParachainSystemParachainInherentInboundMessageId,
@@ -38,6 +38,7 @@ import type {
   FrameSupportTokensMiscIdAmount,
   FrameSupportTokensMiscIdAmount002,
   PalletTransactionPaymentReleases,
+  FrameSupportStorageNoDrop,
   PalletCollatorSelectionCandidateInfo,
   PeopleWestendRuntimeSessionKeys,
   SpStakingOffenceOffenceSeverity,
@@ -288,12 +289,12 @@ export interface ChainStorage extends GenericChainStorage {
 
     /**
      * The [`PersistedValidationData`] set for this block.
-     * This value is expected to be set only once per block and it's never stored
-     * in the trie.
      *
-     * @param {Callback<PolkadotPrimitivesV8PersistedValidationData | undefined> =} callback
+     * This value is expected to be set only once by the [`Pallet::set_validation_data`] inherent.
+     *
+     * @param {Callback<PolkadotPrimitivesV9PersistedValidationData | undefined> =} callback
      **/
-    validationData: GenericStorageQuery<() => PolkadotPrimitivesV8PersistedValidationData | undefined>;
+    validationData: GenericStorageQuery<() => PolkadotPrimitivesV9PersistedValidationData | undefined>;
 
     /**
      * Were the validation data set to notify the relay chain?
@@ -320,9 +321,9 @@ export interface ChainStorage extends GenericChainStorage {
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV8UpgradeRestriction | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV9UpgradeRestriction | undefined> =} callback
      **/
-    upgradeRestrictionSignal: GenericStorageQuery<() => PolkadotPrimitivesV8UpgradeRestriction | undefined>;
+    upgradeRestrictionSignal: GenericStorageQuery<() => PolkadotPrimitivesV9UpgradeRestriction | undefined>;
 
     /**
      * Optional upgrade go-ahead signal from the relay-chain.
@@ -331,9 +332,9 @@ export interface ChainStorage extends GenericChainStorage {
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV8UpgradeGoAhead | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV9UpgradeGoAhead | undefined> =} callback
      **/
-    upgradeGoAhead: GenericStorageQuery<() => PolkadotPrimitivesV8UpgradeGoAhead | undefined>;
+    upgradeGoAhead: GenericStorageQuery<() => PolkadotPrimitivesV9UpgradeGoAhead | undefined>;
 
     /**
      * The state proof for the last relay parent block.
@@ -370,9 +371,9 @@ export interface ChainStorage extends GenericChainStorage {
      *
      * This data is also absent from the genesis.
      *
-     * @param {Callback<PolkadotPrimitivesV8AbridgedHostConfiguration | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV9AbridgedHostConfiguration | undefined> =} callback
      **/
-    hostConfiguration: GenericStorageQuery<() => PolkadotPrimitivesV8AbridgedHostConfiguration | undefined>;
+    hostConfiguration: GenericStorageQuery<() => PolkadotPrimitivesV9AbridgedHostConfiguration | undefined>;
 
     /**
      * The last downward message queue chain head we have observed.
@@ -446,18 +447,27 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * Upward messages that were sent in a block.
      *
-     * This will be cleared in `on_initialize` of each new block.
+     * This will be cleared in `on_initialize` for each new block.
      *
      * @param {Callback<Array<Bytes>> =} callback
      **/
     upwardMessages: GenericStorageQuery<() => Array<Bytes>>;
 
     /**
-     * Upward messages that are still pending and not yet send to the relay chain.
+     * Upward messages that are still pending and not yet sent to the relay chain.
      *
      * @param {Callback<Array<Bytes>> =} callback
      **/
     pendingUpwardMessages: GenericStorageQuery<() => Array<Bytes>>;
+
+    /**
+     * Upward signals that are still pending and not yet sent to the relay chain.
+     *
+     * This will be cleared in `on_finalize` for each block.
+     *
+     * @param {Callback<Array<Bytes>> =} callback
+     **/
+    pendingUpwardSignals: GenericStorageQuery<() => Array<Bytes>>;
 
     /**
      * The factor to multiply the base delivery fee by for UMP.
@@ -651,6 +661,15 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletTransactionPaymentReleases> =} callback
      **/
     storageVersion: GenericStorageQuery<() => PalletTransactionPaymentReleases>;
+
+    /**
+     * The `OnChargeTransaction` stores the withdrawn tx fee here.
+     *
+     * Use `withdraw_txfee` and `remaining_txfee` to access from outside the crate.
+     *
+     * @param {Callback<FrameSupportStorageNoDrop | undefined> =} callback
+     **/
+    txPaymentCredit: GenericStorageQuery<() => FrameSupportStorageNoDrop | undefined>;
 
     /**
      * Generic pallet storage query

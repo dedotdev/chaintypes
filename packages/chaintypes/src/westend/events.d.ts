@@ -31,10 +31,10 @@ import type {
   SpRuntimeDispatchErrorWithPostInfo,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   XcmVersionedLocation,
-  PolkadotPrimitivesVstagingCandidateReceiptV2,
+  PolkadotPrimitivesV9CandidateReceiptV2,
   PolkadotParachainPrimitivesPrimitivesHeadData,
-  PolkadotPrimitivesV8CoreIndex,
-  PolkadotPrimitivesV8GroupIndex,
+  PolkadotPrimitivesV9CoreIndex,
+  PolkadotPrimitivesV9GroupIndex,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
@@ -2067,10 +2067,10 @@ export interface ChainEvents extends GenericChainEvents {
       'ParaInclusion',
       'CandidateBacked',
       [
-        PolkadotPrimitivesVstagingCandidateReceiptV2,
+        PolkadotPrimitivesV9CandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV8CoreIndex,
-        PolkadotPrimitivesV8GroupIndex,
+        PolkadotPrimitivesV9CoreIndex,
+        PolkadotPrimitivesV9GroupIndex,
       ]
     >;
 
@@ -2081,10 +2081,10 @@ export interface ChainEvents extends GenericChainEvents {
       'ParaInclusion',
       'CandidateIncluded',
       [
-        PolkadotPrimitivesVstagingCandidateReceiptV2,
+        PolkadotPrimitivesV9CandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV8CoreIndex,
-        PolkadotPrimitivesV8GroupIndex,
+        PolkadotPrimitivesV9CoreIndex,
+        PolkadotPrimitivesV9GroupIndex,
       ]
     >;
 
@@ -2095,9 +2095,9 @@ export interface ChainEvents extends GenericChainEvents {
       'ParaInclusion',
       'CandidateTimedOut',
       [
-        PolkadotPrimitivesVstagingCandidateReceiptV2,
+        PolkadotPrimitivesV9CandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV8CoreIndex,
+        PolkadotPrimitivesV9CoreIndex,
       ]
     >;
 
@@ -2639,7 +2639,7 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * A core has received a new assignment from the broker chain.
      **/
-    CoreAssigned: GenericPalletEvent<'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV8CoreIndex }>;
+    CoreAssigned: GenericPalletEvent<'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV9CoreIndex }>;
 
     /**
      * Generic pallet event

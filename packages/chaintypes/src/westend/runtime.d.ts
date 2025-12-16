@@ -16,7 +16,7 @@ import type {
   AccountId32,
 } from 'dedot/codecs';
 import type {
-  SpRuntimeBlock,
+  SpRuntimeBlockLazyBlock,
   SpRuntimeExtrinsicInclusionMode,
   SpCoreOpaqueMetadata,
   FrameSupportViewFunctionsViewFunctionDispatchError,
@@ -26,35 +26,36 @@ import type {
   SpInherentsCheckInherentsResult,
   SpRuntimeTransactionValidityValidTransaction,
   SpRuntimeTransactionValidityTransactionSource,
-  PolkadotPrimitivesV8ValidatorAppPublic,
-  PolkadotPrimitivesV8ValidatorIndex,
-  PolkadotPrimitivesV8GroupRotationInfo,
-  PolkadotPrimitivesVstagingCoreState,
-  PolkadotPrimitivesV8PersistedValidationData,
+  PolkadotPrimitivesV9ValidatorAppPublic,
+  PolkadotPrimitivesV9ValidatorIndex,
+  PolkadotPrimitivesV9GroupRotationInfo,
+  PolkadotPrimitivesV9CoreState,
+  PolkadotPrimitivesV9PersistedValidationData,
   PolkadotParachainPrimitivesPrimitivesId,
-  PolkadotPrimitivesV8OccupiedCoreAssumption,
+  PolkadotPrimitivesV9OccupiedCoreAssumption,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
-  PolkadotPrimitivesV8CandidateCommitments,
+  PolkadotPrimitivesV9CandidateCommitments,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
-  PolkadotPrimitivesVstagingCommittedCandidateReceiptV2,
-  PolkadotPrimitivesVstagingCandidateEvent,
+  PolkadotPrimitivesV9CommittedCandidateReceiptV2,
+  PolkadotPrimitivesV9CandidateEvent,
   PolkadotCorePrimitivesInboundDownwardMessage,
   PolkadotCorePrimitivesInboundHrmpMessage,
-  PolkadotPrimitivesVstagingScrapedOnChainVotes,
-  PolkadotPrimitivesV8SessionInfo,
-  PolkadotPrimitivesV8PvfCheckStatement,
-  PolkadotPrimitivesV8ValidatorAppSignature,
+  PolkadotPrimitivesV9ScrapedOnChainVotes,
+  PolkadotPrimitivesV9SessionInfo,
+  PolkadotPrimitivesV9PvfCheckStatement,
+  PolkadotPrimitivesV9ValidatorAppSignature,
   PolkadotCorePrimitivesCandidateHash,
-  PolkadotPrimitivesV8DisputeState,
-  PolkadotPrimitivesV8ExecutorParams,
-  PolkadotPrimitivesV8SlashingPendingSlashes,
-  PolkadotPrimitivesV8SlashingOpaqueKeyOwnershipProof,
-  PolkadotPrimitivesV8SlashingDisputeProof,
-  PolkadotPrimitivesVstagingAsyncBackingBackingState,
-  PolkadotPrimitivesV8AsyncBackingAsyncBackingParams,
-  PolkadotPrimitivesV8ApprovalVotingParams,
-  PolkadotPrimitivesV8CoreIndex,
-  PolkadotPrimitivesVstagingAsyncBackingConstraints,
+  PolkadotPrimitivesV9DisputeState,
+  PolkadotPrimitivesV9ExecutorParams,
+  PolkadotPrimitivesV9SlashingLegacyPendingSlashes,
+  PolkadotPrimitivesV9SlashingOpaqueKeyOwnershipProof,
+  PolkadotPrimitivesV9SlashingDisputeProof,
+  PolkadotPrimitivesV9AsyncBackingBackingState,
+  PolkadotPrimitivesV9AsyncBackingAsyncBackingParams,
+  PolkadotPrimitivesV9ApprovalVotingParams,
+  PolkadotPrimitivesV9CoreIndex,
+  PolkadotPrimitivesV9AsyncBackingConstraints,
+  PolkadotPrimitivesV9SlashingPendingSlashes,
   SpConsensusBeefyValidatorSet,
   SpConsensusBeefyDoubleVotingProof,
   SpRuntimeOpaqueValue,
@@ -64,6 +65,7 @@ import type {
   SpMmrPrimitivesError,
   SpMmrPrimitivesEncodableOpaqueLeaf,
   SpMmrPrimitivesLeafProof,
+  SpMmrPrimitivesAncestryProof,
   SpConsensusBeefyMmrBeefyAuthoritySet,
   SpConsensusGrandpaAppPublic,
   SpConsensusGrandpaEquivocationProof,
@@ -109,9 +111,9 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Execute the given block.
      *
      * @callname: Core_execute_block
-     * @param {SpRuntimeBlock} block
+     * @param {SpRuntimeBlockLazyBlock} block
      **/
-    executeBlock: GenericRuntimeApiMethod<(block: SpRuntimeBlock) => Promise<[]>>;
+    executeBlock: GenericRuntimeApiMethod<(block: SpRuntimeBlockLazyBlock) => Promise<[]>>;
 
     /**
      * Initialize a block with the given header and return the runtime executive mode.
@@ -225,11 +227,11 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Check that the inherents are valid. The inherent data will vary from chain to chain.
      *
      * @callname: BlockBuilder_check_inherents
-     * @param {SpRuntimeBlock} block
+     * @param {SpRuntimeBlockLazyBlock} block
      * @param {SpInherentsInherentData} data
      **/
     checkInherents: GenericRuntimeApiMethod<
-      (block: SpRuntimeBlock, data: SpInherentsInherentData) => Promise<SpInherentsCheckInherentsResult>
+      (block: SpRuntimeBlockLazyBlock, data: SpInherentsInherentData) => Promise<SpInherentsCheckInherentsResult>
     >;
 
     /**
@@ -298,7 +300,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ParachainHost_validators
      **/
-    validators: GenericRuntimeApiMethod<() => Promise<Array<PolkadotPrimitivesV8ValidatorAppPublic>>>;
+    validators: GenericRuntimeApiMethod<() => Promise<Array<PolkadotPrimitivesV9ValidatorAppPublic>>>;
 
     /**
      * Returns the validator groups and rotation info localized based on the hypothetical child
@@ -308,7 +310,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: ParachainHost_validator_groups
      **/
     validatorGroups: GenericRuntimeApiMethod<
-      () => Promise<[Array<Array<PolkadotPrimitivesV8ValidatorIndex>>, PolkadotPrimitivesV8GroupRotationInfo]>
+      () => Promise<[Array<Array<PolkadotPrimitivesV9ValidatorIndex>>, PolkadotPrimitivesV9GroupRotationInfo]>
     >;
 
     /**
@@ -317,7 +319,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ParachainHost_availability_cores
      **/
-    availabilityCores: GenericRuntimeApiMethod<() => Promise<Array<PolkadotPrimitivesVstagingCoreState>>>;
+    availabilityCores: GenericRuntimeApiMethod<() => Promise<Array<PolkadotPrimitivesV9CoreState>>>;
 
     /**
      * Yields the persisted validation data for the given `ParaId` along with an assumption that
@@ -328,13 +330,13 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ParachainHost_persisted_validation_data
      * @param {PolkadotParachainPrimitivesPrimitivesId} para_id
-     * @param {PolkadotPrimitivesV8OccupiedCoreAssumption} assumption
+     * @param {PolkadotPrimitivesV9OccupiedCoreAssumption} assumption
      **/
     persistedValidationData: GenericRuntimeApiMethod<
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-        assumption: PolkadotPrimitivesV8OccupiedCoreAssumption,
-      ) => Promise<PolkadotPrimitivesV8PersistedValidationData | undefined>
+        assumption: PolkadotPrimitivesV9OccupiedCoreAssumption,
+      ) => Promise<PolkadotPrimitivesV9PersistedValidationData | undefined>
     >;
 
     /**
@@ -351,7 +353,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
         paraId: PolkadotParachainPrimitivesPrimitivesId,
         expectedPersistedValidationDataHash: H256,
       ) => Promise<
-        | [PolkadotPrimitivesV8PersistedValidationData, PolkadotParachainPrimitivesPrimitivesValidationCodeHash]
+        | [PolkadotPrimitivesV9PersistedValidationData, PolkadotParachainPrimitivesPrimitivesValidationCodeHash]
         | undefined
       >
     >;
@@ -361,12 +363,12 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ParachainHost_check_validation_outputs
      * @param {PolkadotParachainPrimitivesPrimitivesId} para_id
-     * @param {PolkadotPrimitivesV8CandidateCommitments} outputs
+     * @param {PolkadotPrimitivesV9CandidateCommitments} outputs
      **/
     checkValidationOutputs: GenericRuntimeApiMethod<
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-        outputs: PolkadotPrimitivesV8CandidateCommitments,
+        outputs: PolkadotPrimitivesV9CandidateCommitments,
       ) => Promise<boolean>
     >;
 
@@ -387,12 +389,12 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ParachainHost_validation_code
      * @param {PolkadotParachainPrimitivesPrimitivesId} para_id
-     * @param {PolkadotPrimitivesV8OccupiedCoreAssumption} assumption
+     * @param {PolkadotPrimitivesV9OccupiedCoreAssumption} assumption
      **/
     validationCode: GenericRuntimeApiMethod<
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-        assumption: PolkadotPrimitivesV8OccupiedCoreAssumption,
+        assumption: PolkadotPrimitivesV9OccupiedCoreAssumption,
       ) => Promise<PolkadotParachainPrimitivesPrimitivesValidationCode | undefined>
     >;
 
@@ -406,7 +408,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
     candidatePendingAvailability: GenericRuntimeApiMethod<
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-      ) => Promise<PolkadotPrimitivesVstagingCommittedCandidateReceiptV2 | undefined>
+      ) => Promise<PolkadotPrimitivesV9CommittedCandidateReceiptV2 | undefined>
     >;
 
     /**
@@ -414,7 +416,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ParachainHost_candidate_events
      **/
-    candidateEvents: GenericRuntimeApiMethod<() => Promise<Array<PolkadotPrimitivesVstagingCandidateEvent>>>;
+    candidateEvents: GenericRuntimeApiMethod<() => Promise<Array<PolkadotPrimitivesV9CandidateEvent>>>;
 
     /**
      * Get all the pending inbound messages in the downward message queue for a para.
@@ -458,7 +460,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ParachainHost_on_chain_votes
      **/
-    onChainVotes: GenericRuntimeApiMethod<() => Promise<PolkadotPrimitivesVstagingScrapedOnChainVotes | undefined>>;
+    onChainVotes: GenericRuntimeApiMethod<() => Promise<PolkadotPrimitivesV9ScrapedOnChainVotes | undefined>>;
 
     /**
      * Get the session info for the given session, if stored.
@@ -468,7 +470,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: ParachainHost_session_info
      * @param {number} index
      **/
-    sessionInfo: GenericRuntimeApiMethod<(index: number) => Promise<PolkadotPrimitivesV8SessionInfo | undefined>>;
+    sessionInfo: GenericRuntimeApiMethod<(index: number) => Promise<PolkadotPrimitivesV9SessionInfo | undefined>>;
 
     /**
      * Submits a PVF pre-checking statement into the transaction pool.
@@ -476,11 +478,11 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * NOTE: This function is only available since parachain host version 2.
      *
      * @callname: ParachainHost_submit_pvf_check_statement
-     * @param {PolkadotPrimitivesV8PvfCheckStatement} stmt
-     * @param {PolkadotPrimitivesV8ValidatorAppSignature} signature
+     * @param {PolkadotPrimitivesV9PvfCheckStatement} stmt
+     * @param {PolkadotPrimitivesV9ValidatorAppSignature} signature
      **/
     submitPvfCheckStatement: GenericRuntimeApiMethod<
-      (stmt: PolkadotPrimitivesV8PvfCheckStatement, signature: PolkadotPrimitivesV8ValidatorAppSignature) => Promise<[]>
+      (stmt: PolkadotPrimitivesV9PvfCheckStatement, signature: PolkadotPrimitivesV9ValidatorAppSignature) => Promise<[]>
     >;
 
     /**
@@ -501,12 +503,12 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ParachainHost_validation_code_hash
      * @param {PolkadotParachainPrimitivesPrimitivesId} para_id
-     * @param {PolkadotPrimitivesV8OccupiedCoreAssumption} assumption
+     * @param {PolkadotPrimitivesV9OccupiedCoreAssumption} assumption
      **/
     validationCodeHash: GenericRuntimeApiMethod<
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-        assumption: PolkadotPrimitivesV8OccupiedCoreAssumption,
+        assumption: PolkadotPrimitivesV9OccupiedCoreAssumption,
       ) => Promise<PolkadotParachainPrimitivesPrimitivesValidationCodeHash | undefined>
     >;
 
@@ -516,7 +518,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: ParachainHost_disputes
      **/
     disputes: GenericRuntimeApiMethod<
-      () => Promise<Array<[number, PolkadotCorePrimitivesCandidateHash, PolkadotPrimitivesV8DisputeState]>>
+      () => Promise<Array<[number, PolkadotCorePrimitivesCandidateHash, PolkadotPrimitivesV9DisputeState]>>
     >;
 
     /**
@@ -526,17 +528,20 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {number} session_index
      **/
     sessionExecutorParams: GenericRuntimeApiMethod<
-      (sessionIndex: number) => Promise<PolkadotPrimitivesV8ExecutorParams | undefined>
+      (sessionIndex: number) => Promise<PolkadotPrimitivesV9ExecutorParams | undefined>
     >;
 
     /**
      * Returns a list of validators that lost a past session dispute and need to be slashed.
-     * NOTE: This function is only available since parachain host version 5.
+     *
+     * Deprecated. Use `unapplied_slashes_v2` instead.
      *
      * @callname: ParachainHost_unapplied_slashes
      **/
     unappliedSlashes: GenericRuntimeApiMethod<
-      () => Promise<Array<[number, PolkadotCorePrimitivesCandidateHash, PolkadotPrimitivesV8SlashingPendingSlashes]>>
+      () => Promise<
+        Array<[number, PolkadotCorePrimitivesCandidateHash, PolkadotPrimitivesV9SlashingLegacyPendingSlashes]>
+      >
     >;
 
     /**
@@ -544,12 +549,12 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * NOTE: This function is only available since parachain host version 5.
      *
      * @callname: ParachainHost_key_ownership_proof
-     * @param {PolkadotPrimitivesV8ValidatorAppPublic} validator_id
+     * @param {PolkadotPrimitivesV9ValidatorAppPublic} validator_id
      **/
     keyOwnershipProof: GenericRuntimeApiMethod<
       (
-        validatorId: PolkadotPrimitivesV8ValidatorAppPublic,
-      ) => Promise<PolkadotPrimitivesV8SlashingOpaqueKeyOwnershipProof | undefined>
+        validatorId: PolkadotPrimitivesV9ValidatorAppPublic,
+      ) => Promise<PolkadotPrimitivesV9SlashingOpaqueKeyOwnershipProof | undefined>
     >;
 
     /**
@@ -558,13 +563,13 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * NOTE: This function is only available since parachain host version 5.
      *
      * @callname: ParachainHost_submit_report_dispute_lost
-     * @param {PolkadotPrimitivesV8SlashingDisputeProof} dispute_proof
-     * @param {PolkadotPrimitivesV8SlashingOpaqueKeyOwnershipProof} key_ownership_proof
+     * @param {PolkadotPrimitivesV9SlashingDisputeProof} dispute_proof
+     * @param {PolkadotPrimitivesV9SlashingOpaqueKeyOwnershipProof} key_ownership_proof
      **/
     submitReportDisputeLost: GenericRuntimeApiMethod<
       (
-        disputeProof: PolkadotPrimitivesV8SlashingDisputeProof,
-        keyOwnershipProof: PolkadotPrimitivesV8SlashingOpaqueKeyOwnershipProof,
+        disputeProof: PolkadotPrimitivesV9SlashingDisputeProof,
+        keyOwnershipProof: PolkadotPrimitivesV9SlashingOpaqueKeyOwnershipProof,
       ) => Promise<[] | undefined>
     >;
 
@@ -585,7 +590,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
     paraBackingState: GenericRuntimeApiMethod<
       (
         runtimeApiGeneratedName0: PolkadotParachainPrimitivesPrimitivesId,
-      ) => Promise<PolkadotPrimitivesVstagingAsyncBackingBackingState | undefined>
+      ) => Promise<PolkadotPrimitivesV9AsyncBackingBackingState | undefined>
     >;
 
     /**
@@ -593,14 +598,14 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ParachainHost_async_backing_params
      **/
-    asyncBackingParams: GenericRuntimeApiMethod<() => Promise<PolkadotPrimitivesV8AsyncBackingAsyncBackingParams>>;
+    asyncBackingParams: GenericRuntimeApiMethod<() => Promise<PolkadotPrimitivesV9AsyncBackingAsyncBackingParams>>;
 
     /**
      * Returns a list of all disabled validators at the given block.
      *
      * @callname: ParachainHost_disabled_validators
      **/
-    disabledValidators: GenericRuntimeApiMethod<() => Promise<Array<PolkadotPrimitivesV8ValidatorIndex>>>;
+    disabledValidators: GenericRuntimeApiMethod<() => Promise<Array<PolkadotPrimitivesV9ValidatorIndex>>>;
 
     /**
      * Get node features.
@@ -615,7 +620,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ParachainHost_approval_voting_params
      **/
-    approvalVotingParams: GenericRuntimeApiMethod<() => Promise<PolkadotPrimitivesV8ApprovalVotingParams>>;
+    approvalVotingParams: GenericRuntimeApiMethod<() => Promise<PolkadotPrimitivesV9ApprovalVotingParams>>;
 
     /**
      * Claim queue
@@ -623,7 +628,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: ParachainHost_claim_queue
      **/
     claimQueue: GenericRuntimeApiMethod<
-      () => Promise<Array<[PolkadotPrimitivesV8CoreIndex, Array<PolkadotParachainPrimitivesPrimitivesId>]>>
+      () => Promise<Array<[PolkadotPrimitivesV9CoreIndex, Array<PolkadotParachainPrimitivesPrimitivesId>]>>
     >;
 
     /**
@@ -635,7 +640,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
     candidatesPendingAvailability: GenericRuntimeApiMethod<
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-      ) => Promise<Array<PolkadotPrimitivesVstagingCommittedCandidateReceiptV2>>
+      ) => Promise<Array<PolkadotPrimitivesV9CommittedCandidateReceiptV2>>
     >;
 
     /**
@@ -655,7 +660,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
     backingConstraints: GenericRuntimeApiMethod<
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-      ) => Promise<PolkadotPrimitivesVstagingAsyncBackingConstraints | undefined>
+      ) => Promise<PolkadotPrimitivesV9AsyncBackingConstraints | undefined>
     >;
 
     /**
@@ -671,6 +676,15 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: ParachainHost_para_ids
      **/
     paraIds: GenericRuntimeApiMethod<() => Promise<Array<PolkadotParachainPrimitivesPrimitivesId>>>;
+
+    /**
+     * Returns a list of validators that lost a past session dispute and need to be slashed.
+     *
+     * @callname: ParachainHost_unapplied_slashes_v2
+     **/
+    unappliedSlashesV2: GenericRuntimeApiMethod<
+      () => Promise<Array<[number, PolkadotCorePrimitivesCandidateHash, PolkadotPrimitivesV9SlashingPendingSlashes]>>
+    >;
 
     /**
      * Generic runtime api call
@@ -780,18 +794,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
     >;
 
     /**
-     * Generates a proof that the `prev_block_number` is part of the canonical chain at
-     * `best_known_block_number`.
-     *
-     * @callname: BeefyApi_generate_ancestry_proof
-     * @param {number} prev_block_number
-     * @param {number | undefined} best_known_block_number
-     **/
-    generateAncestryProof: GenericRuntimeApiMethod<
-      (prevBlockNumber: number, bestKnownBlockNumber?: number | undefined) => Promise<SpRuntimeOpaqueValue | undefined>
-    >;
-
-    /**
      * Generic runtime api call
      **/
     [method: string]: GenericRuntimeApiMethod;
@@ -827,6 +829,21 @@ export interface RuntimeApis extends GenericRuntimeApis {
         blockNumbers: Array<number>,
         bestKnownBlockNumber?: number | undefined,
       ) => Promise<Result<[Array<SpMmrPrimitivesEncodableOpaqueLeaf>, SpMmrPrimitivesLeafProof], SpMmrPrimitivesError>>
+    >;
+
+    /**
+     * Generates a proof that the `prev_block_number` is part of the canonical chain at
+     * `best_known_block_number`.
+     *
+     * @callname: MmrApi_generate_ancestry_proof
+     * @param {number} prev_block_number
+     * @param {number | undefined} best_known_block_number
+     **/
+    generateAncestryProof: GenericRuntimeApiMethod<
+      (
+        prevBlockNumber: number,
+        bestKnownBlockNumber?: number | undefined,
+      ) => Promise<Result<SpMmrPrimitivesAncestryProof, SpMmrPrimitivesError>>
     >;
 
     /**
@@ -1257,6 +1274,8 @@ export interface RuntimeApis extends GenericRuntimeApis {
     >;
 
     /**
+     * Query delivery fees V2.
+     *
      * Get delivery fees for sending a specific `message` to a `destination`.
      * These always come in a specific asset, defined by the chain.
      *
@@ -1269,11 +1288,13 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: XcmPaymentApi_query_delivery_fees
      * @param {XcmVersionedLocation} destination
      * @param {XcmVersionedXcm} message
+     * @param {XcmVersionedAssetId} asset_id
      **/
     queryDeliveryFees: GenericRuntimeApiMethod<
       (
         destination: XcmVersionedLocation,
         message: XcmVersionedXcm,
+        assetId: XcmVersionedAssetId,
       ) => Promise<Result<XcmVersionedAssets, XcmRuntimeApisFeesError>>
     >;
 
@@ -1469,7 +1490,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
     erasStakersPageCount: GenericRuntimeApiMethod<(era: number, account: AccountId32Like) => Promise<number>>;
 
     /**
-     * Returns true if validator `account` has pages to be claimed for the given era.
+     * Returns true if a validator `account` has pages to be claimed for the given era.
      *
      * @callname: StakingApi_pending_rewards
      * @param {number} era

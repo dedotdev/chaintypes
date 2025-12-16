@@ -2882,6 +2882,11 @@ export interface ChainErrors extends GenericChainErrors {
     InvalidEquivocationProofSession: GenericPalletError;
 
     /**
+     * The session of the equivocation proof is not in the mapping (anymore)
+     **/
+    InvalidEquivocationProofSessionMember: GenericPalletError;
+
+    /**
      * A given equivocation report is valid but already previously reported.
      **/
     DuplicateOffenceReport: GenericPalletError;

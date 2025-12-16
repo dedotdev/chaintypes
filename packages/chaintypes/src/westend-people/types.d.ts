@@ -1879,13 +1879,13 @@ export type CumulusPalletParachainSystemCallLike =
   | { name: 'SudoSendUpwardMessage'; params: { message: BytesLike } };
 
 export type CumulusPalletParachainSystemParachainInherentBasicParachainInherentData = {
-  validationData: PolkadotPrimitivesV8PersistedValidationData;
+  validationData: PolkadotPrimitivesV9PersistedValidationData;
   relayChainState: SpTrieStorageProof;
   relayParentDescendants: Array<Header>;
   collatorPeerId?: Bytes | undefined;
 };
 
-export type PolkadotPrimitivesV8PersistedValidationData = {
+export type PolkadotPrimitivesV9PersistedValidationData = {
   parentHead: PolkadotParachainPrimitivesPrimitivesHeadData;
   relayParentNumber: number;
   relayParentStorageRoot: H256;
@@ -5053,7 +5053,8 @@ export type PalletIdentityJudgement =
 export type SpRuntimeMultiSignature =
   | { type: 'Ed25519'; value: FixedBytes<64> }
   | { type: 'Sr25519'; value: FixedBytes<64> }
-  | { type: 'Ecdsa'; value: FixedBytes<65> };
+  | { type: 'Ecdsa'; value: FixedBytes<65> }
+  | { type: 'Eth'; value: FixedBytes<65> };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5206,7 +5207,7 @@ export type PalletTransactionPaymentChargeTransactionPayment = bigint;
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV9UpgradeGoAhead | undefined;
 };
 
 export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
@@ -5219,21 +5220,21 @@ export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
 
 export type CumulusPalletParachainSystemUnincludedSegmentHrmpChannelUpdate = { msgCount: number; totalBytes: number };
 
-export type PolkadotPrimitivesV8UpgradeGoAhead = 'Abort' | 'GoAhead';
+export type PolkadotPrimitivesV9UpgradeGoAhead = 'Abort' | 'GoAhead';
 
 export type CumulusPalletParachainSystemUnincludedSegmentSegmentTracker = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   hrmpWatermark?: number | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV9UpgradeGoAhead | undefined;
 };
 
-export type PolkadotPrimitivesV8UpgradeRestriction = 'Present';
+export type PolkadotPrimitivesV9UpgradeRestriction = 'Present';
 
 export type CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot = {
   dmqMqcHead: H256;
   relayDispatchQueueRemainingCapacity: CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity;
-  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
-  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
+  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV9AbridgedHrmpChannel]>;
+  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV9AbridgedHrmpChannel]>;
 };
 
 export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity = {
@@ -5241,7 +5242,7 @@ export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRema
   remainingSize: number;
 };
 
-export type PolkadotPrimitivesV8AbridgedHrmpChannel = {
+export type PolkadotPrimitivesV9AbridgedHrmpChannel = {
   maxCapacity: number;
   maxTotalSize: number;
   maxMessageSize: number;
@@ -5250,7 +5251,7 @@ export type PolkadotPrimitivesV8AbridgedHrmpChannel = {
   mqcHead?: H256 | undefined;
 };
 
-export type PolkadotPrimitivesV8AbridgedHostConfiguration = {
+export type PolkadotPrimitivesV9AbridgedHostConfiguration = {
   maxCodeSize: number;
   maxHeadDataSize: number;
   maxUpwardQueueCount: number;
@@ -5260,10 +5261,10 @@ export type PolkadotPrimitivesV8AbridgedHostConfiguration = {
   hrmpMaxMessageNumPerCandidate: number;
   validationUpgradeCooldown: number;
   validationUpgradeDelay: number;
-  asyncBackingParams: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams;
+  asyncBackingParams: PolkadotPrimitivesV9AsyncBackingAsyncBackingParams;
 };
 
-export type PolkadotPrimitivesV8AsyncBackingAsyncBackingParams = {
+export type PolkadotPrimitivesV9AsyncBackingAsyncBackingParams = {
   maxCandidateDepth: number;
   allowedAncestryLen: number;
 };
@@ -5371,6 +5372,10 @@ export type PalletBalancesError =
   | 'DeltaZero';
 
 export type PalletTransactionPaymentReleases = 'V1Ancient' | 'V2';
+
+export type FrameSupportStorageNoDrop = FrameSupportTokensFungibleImbalance;
+
+export type FrameSupportTokensFungibleImbalance = { amount: bigint };
 
 export type PalletCollatorSelectionCandidateInfo = { who: AccountId32; deposit: bigint };
 
@@ -6076,6 +6081,10 @@ export type PalletMigrationsError =
   'Ongoing';
 
 export type SpConsensusSlotsSlotDuration = bigint;
+
+export type SpRuntimeBlockLazyBlock = { header: Header; extrinsics: Array<SpRuntimeOpaqueExtrinsic> };
+
+export type SpRuntimeOpaqueExtrinsic = Bytes;
 
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 

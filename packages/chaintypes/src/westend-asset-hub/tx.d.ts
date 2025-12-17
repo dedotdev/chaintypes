@@ -61,6 +61,7 @@ import type {
   PalletNftsPriceWithDirection,
   PalletNftsPreSignedMint,
   PalletNftsPreSignedAttributes,
+  AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
   FrameSupportScheduleDispatchTime,
   PalletStateTrieMigrationMigrationLimits,
   PalletStateTrieMigrationMigrationTask,
@@ -83,6 +84,7 @@ import type {
   PalletNominationPoolsCommissionClaimPermission,
   PalletStakingAsyncRcClientSessionReport,
   PalletStakingAsyncRcClientOffence,
+  PalletElectionProviderMultiBlockManagerOperation,
   PalletElectionProviderMultiBlockAdminOperation,
   PalletElectionProviderMultiBlockPagedRawSolution,
   SpNposElectionsElectionScore,
@@ -5041,6 +5043,36 @@ export interface ChainTx<
     >;
 
     /**
+     * Sets the trusted reserve information of an asset.
+     *
+     * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+     * `CreateOrigin` or be the signed `owner` configured during asset creation.
+     *
+     * - `id`: The identifier of the asset.
+     * - `reserves`: The full list of trusted reserves information.
+     *
+     * Emits `AssetMinBalanceChanged` event when successful.
+     *
+     * @param {number} id
+     * @param {Array<[]>} reserves
+     **/
+    setReserves: GenericTxCall<
+      (
+        id: number,
+        reserves: Array<[]>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'SetReserves';
+            params: { id: number; reserves: Array<[]> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -8629,6 +8661,39 @@ export interface ChainTx<
     >;
 
     /**
+     * Sets the trusted reserve information of an asset.
+     *
+     * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+     * `CreateOrigin` or be the signed `owner` configured during asset creation.
+     *
+     * - `id`: The identifier of the asset.
+     * - `reserves`: The full list of trusted reserves information.
+     *
+     * Emits `AssetMinBalanceChanged` event when successful.
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData>} reserves
+     **/
+    setReserves: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        reserves: Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'ForeignAssets';
+          palletCall: {
+            name: 'SetReserves';
+            params: {
+              id: StagingXcmV5Location;
+              reserves: Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData>;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -9908,6 +9973,36 @@ export interface ChainTx<
     >;
 
     /**
+     * Sets the trusted reserve information of an asset.
+     *
+     * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+     * `CreateOrigin` or be the signed `owner` configured during asset creation.
+     *
+     * - `id`: The identifier of the asset.
+     * - `reserves`: The full list of trusted reserves information.
+     *
+     * Emits `AssetMinBalanceChanged` event when successful.
+     *
+     * @param {number} id
+     * @param {Array<[]>} reserves
+     **/
+    setReserves: GenericTxCall<
+      (
+        id: number,
+        reserves: Array<[]>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'SetReserves';
+            params: { id: number; reserves: Array<[]> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -10429,6 +10524,37 @@ export interface ChainTx<
               effectiveGasPrice: U256;
               encodedLen: number;
             };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Executes a Substrate runtime call from an Ethereum transaction.
+     *
+     * This dispatchable is intended to be called **only** through the EVM compatibility
+     * layer. The provided call will be dispatched using `RawOrigin::Signed`.
+     *
+     * # Parameters
+     *
+     * * `origin`: Must be an [`Origin::EthTransaction`] origin.
+     * * `call`: The Substrate runtime call to execute.
+     * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
+     *
+     * @param {AssetHubWestendRuntimeRuntimeCallLike} call
+     * @param {BytesLike} transactionEncoded
+     **/
+    ethSubstrateCall: GenericTxCall<
+      (
+        call: AssetHubWestendRuntimeRuntimeCallLike,
+        transactionEncoded: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'EthSubstrateCall';
+            params: { call: AssetHubWestendRuntimeRuntimeCallLike; transactionEncoded: BytesLike };
           };
         },
         ChainKnownTypes
@@ -12810,119 +12936,6 @@ export interface ChainTx<
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
-   * Pallet `FastUnstake`'s transaction calls
-   **/
-  fastUnstake: {
-    /**
-     * Register oneself for fast-unstake.
-     *
-     * ## Dispatch Origin
-     *
-     * The dispatch origin of this call must be *signed* by whoever is permitted to call
-     * unbond funds by the staking system. See [`Config::Staking`].
-     *
-     * ## Details
-     *
-     * The stash associated with the origin must have no ongoing unlocking chunks. If
-     * successful, this will fully unbond and chill the stash. Then, it will enqueue the stash
-     * to be checked in further blocks.
-     *
-     * If by the time this is called, the stash is actually eligible for fast-unstake, then
-     * they are guaranteed to remain eligible, because the call will chill them as well.
-     *
-     * If the check works, the entire staking data is removed, i.e. the stash is fully
-     * unstaked.
-     *
-     * If the check fails, the stash remains chilled and waiting for being unbonded as in with
-     * the normal staking system, but they lose part of their unbonding chunks due to consuming
-     * the chain's resources.
-     *
-     * ## Events
-     *
-     * Some events from the staking and currency system might be emitted.
-     *
-     **/
-    registerFastUnstake: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'FastUnstake';
-          palletCall: {
-            name: 'RegisterFastUnstake';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Deregister oneself from the fast-unstake.
-     *
-     * ## Dispatch Origin
-     *
-     * The dispatch origin of this call must be *signed* by whoever is permitted to call
-     * unbond funds by the staking system. See [`Config::Staking`].
-     *
-     * ## Details
-     *
-     * This is useful if one is registered, they are still waiting, and they change their mind.
-     *
-     * Note that the associated stash is still fully unbonded and chilled as a consequence of
-     * calling [`Pallet::register_fast_unstake`]. Therefore, this should probably be followed
-     * by a call to `rebond` in the staking system.
-     *
-     * ## Events
-     *
-     * Some events from the staking and currency system might be emitted.
-     *
-     **/
-    deregister: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'FastUnstake';
-          palletCall: {
-            name: 'Deregister';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Control the operation of this pallet.
-     *
-     * ## Dispatch Origin
-     *
-     * The dispatch origin of this call must be [`Config::ControlOrigin`].
-     *
-     * ## Details
-     *
-     * Can set the number of eras to check per block, and potentially other admin work.
-     *
-     * ## Events
-     *
-     * No events are emitted from this dispatch.
-     *
-     * @param {number} erasToCheck
-     **/
-    control: GenericTxCall<
-      (erasToCheck: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'FastUnstake';
-          palletCall: {
-            name: 'Control';
-            params: { erasToCheck: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
    * Pallet `VoterList`'s transaction calls
    **/
   voterList: {
@@ -13060,18 +13073,35 @@ export interface ChainTx<
     /**
      * Manage this pallet.
      *
-     * The origin of this call must be [`Config::AdminOrigin`].
+     * The origin of this call must be [`Config::ManagerOrigin`].
      *
-     * See [`AdminOperation`] for various operations that are possible.
+     * See [`ManagerOperation`] for various operations that are possible.
      *
-     * @param {PalletElectionProviderMultiBlockAdminOperation} op
+     * @param {PalletElectionProviderMultiBlockManagerOperation} op
      **/
     manage: GenericTxCall<
-      (op: PalletElectionProviderMultiBlockAdminOperation) => ChainSubmittableExtrinsic<
+      (op: PalletElectionProviderMultiBlockManagerOperation) => ChainSubmittableExtrinsic<
         {
           pallet: 'MultiBlockElection';
           palletCall: {
             name: 'Manage';
+            params: { op: PalletElectionProviderMultiBlockManagerOperation };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     * @param {PalletElectionProviderMultiBlockAdminOperation} op
+     **/
+    admin: GenericTxCall<
+      (op: PalletElectionProviderMultiBlockAdminOperation) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockElection';
+          palletCall: {
+            name: 'Admin';
             params: { op: PalletElectionProviderMultiBlockAdminOperation };
           };
         },

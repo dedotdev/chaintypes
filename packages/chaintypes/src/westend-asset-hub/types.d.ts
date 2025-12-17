@@ -91,7 +91,6 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent }
   | { pallet: 'Staking'; palletEvent: PalletStakingAsyncPalletEvent }
   | { pallet: 'NominationPools'; palletEvent: PalletNominationPoolsEvent }
-  | { pallet: 'FastUnstake'; palletEvent: PalletFastUnstakeEvent }
   | { pallet: 'VoterList'; palletEvent: PalletBagsListEvent }
   | { pallet: 'DelegatedStaking'; palletEvent: PalletDelegatedStakingEvent }
   | { pallet: 'StakingRcClient'; palletEvent: PalletStakingAsyncRcClientEvent }
@@ -1886,7 +1885,15 @@ export type PalletAssetsEvent =
   /**
    * Some assets were withdrawn from the account (e.g. for transaction fees).
    **/
-  | { name: 'Withdrawn'; data: { assetId: number; who: AccountId32; amount: bigint } };
+  | { name: 'Withdrawn'; data: { assetId: number; who: AccountId32; amount: bigint } }
+  /**
+   * Reserve information was set or updated for `asset_id`.
+   **/
+  | { name: 'ReservesUpdated'; data: { assetId: number; reserves: Array<[]> } }
+  /**
+   * Reserve information was removed for `asset_id`.
+   **/
+  | { name: 'ReservesRemoved'; data: { assetId: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -2392,7 +2399,26 @@ export type PalletAssetsEvent002 =
   /**
    * Some assets were withdrawn from the account (e.g. for transaction fees).
    **/
-  | { name: 'Withdrawn'; data: { assetId: StagingXcmV5Location; who: AccountId32; amount: bigint } };
+  | { name: 'Withdrawn'; data: { assetId: StagingXcmV5Location; who: AccountId32; amount: bigint } }
+  /**
+   * Reserve information was set or updated for `asset_id`.
+   **/
+  | {
+      name: 'ReservesUpdated';
+      data: {
+        assetId: StagingXcmV5Location;
+        reserves: Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData>;
+      };
+    }
+  /**
+   * Reserve information was removed for `asset_id`.
+   **/
+  | { name: 'ReservesRemoved'; data: { assetId: StagingXcmV5Location } };
+
+export type AssetsCommonLocalAndForeignAssetsForeignAssetReserveData = {
+  reserve: StagingXcmV5Location;
+  teleportable: boolean;
+};
 
 /**
  * The `Event` enum of this pallet
@@ -3204,34 +3230,6 @@ export type PalletNominationPoolsClaimPermission =
 /**
  * The `Event` enum of this pallet
  **/
-export type PalletFastUnstakeEvent =
-  /**
-   * A staker was unstaked.
-   **/
-  | { name: 'Unstaked'; data: { stash: AccountId32; result: Result<[], DispatchError> } }
-  /**
-   * A staker was slashed for requesting fast-unstake whilst being exposed.
-   **/
-  | { name: 'Slashed'; data: { stash: AccountId32; amount: bigint } }
-  /**
-   * A batch was partially checked for the given eras, but the process did not finish.
-   **/
-  | { name: 'BatchChecked'; data: { eras: Array<number> } }
-  /**
-   * A batch of a given size was terminated.
-   *
-   * This is always follows by a number of `Unstaked` or `Slashed` events, marking the end
-   * of the batch. A new batch will be created upon next block.
-   **/
-  | { name: 'BatchFinished'; data: { size: number } }
-  /**
-   * An internal error happened. Operations will be paused now.
-   **/
-  | { name: 'InternalError' };
-
-/**
- * The `Event` enum of this pallet
- **/
 export type PalletBagsListEvent =
   /**
    * Moved an account from one bag to another.
@@ -3777,7 +3775,6 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall }
   | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCall }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
-  | { pallet: 'FastUnstake'; palletCall: PalletFastUnstakeCall }
   | { pallet: 'VoterList'; palletCall: PalletBagsListCall }
   | { pallet: 'StakingRcClient'; palletCall: PalletStakingAsyncRcClientCall }
   | { pallet: 'MultiBlockElection'; palletCall: PalletElectionProviderMultiBlockCall }
@@ -3827,7 +3824,6 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike }
   | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCallLike }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
-  | { pallet: 'FastUnstake'; palletCall: PalletFastUnstakeCallLike }
   | { pallet: 'VoterList'; palletCall: PalletBagsListCallLike }
   | { pallet: 'StakingRcClient'; palletCall: PalletStakingAsyncRcClientCallLike }
   | { pallet: 'MultiBlockElection'; palletCall: PalletElectionProviderMultiBlockCallLike }
@@ -8157,7 +8153,19 @@ export type PalletAssetsCall =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: number; dest: MultiAddress; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: number; dest: MultiAddress; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetReserves'; params: { id: number; reserves: Array<[]> } };
 
 export type PalletAssetsCallLike =
   /**
@@ -8729,7 +8737,19 @@ export type PalletAssetsCallLike =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: number; dest: MultiAddressLike; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: number; dest: MultiAddressLike; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetReserves'; params: { id: number; reserves: Array<[]> } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11712,7 +11732,22 @@ export type PalletAssetsCall002 =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddress; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddress; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | {
+      name: 'SetReserves';
+      params: { id: StagingXcmV5Location; reserves: Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData> };
+    };
 
 export type PalletAssetsCallLike002 =
   /**
@@ -12298,7 +12333,22 @@ export type PalletAssetsCallLike002 =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddressLike; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddressLike; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | {
+      name: 'SetReserves';
+      params: { id: StagingXcmV5Location; reserves: Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData> };
+    };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -12967,7 +13017,19 @@ export type PalletAssetsCall003 =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: number; dest: MultiAddress; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: number; dest: MultiAddress; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetReserves'; params: { id: number; reserves: Array<[]> } };
 
 export type PalletAssetsCallLike003 =
   /**
@@ -13539,7 +13601,19 @@ export type PalletAssetsCallLike003 =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: number; dest: MultiAddressLike; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: number; dest: MultiAddressLike; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetReserves'; params: { id: number; reserves: Array<[]> } };
 
 /**
  * Pallet's callable functions.
@@ -13907,6 +13981,19 @@ export type PalletReviveCall =
       };
     }
   /**
+   * Executes a Substrate runtime call from an Ethereum transaction.
+   *
+   * This dispatchable is intended to be called **only** through the EVM compatibility
+   * layer. The provided call will be dispatched using `RawOrigin::Signed`.
+   *
+   * # Parameters
+   *
+   * * `origin`: Must be an [`Origin::EthTransaction`] origin.
+   * * `call`: The Substrate runtime call to execute.
+   * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
+   **/
+  | { name: 'EthSubstrateCall'; params: { call: AssetHubWestendRuntimeRuntimeCall; transactionEncoded: Bytes } }
+  /**
    * Upload new `code` without instantiating a contract from it.
    *
    * If the code does not already exist a deposit is reserved from the caller
@@ -14119,6 +14206,19 @@ export type PalletReviveCallLike =
         encodedLen: number;
       };
     }
+  /**
+   * Executes a Substrate runtime call from an Ethereum transaction.
+   *
+   * This dispatchable is intended to be called **only** through the EVM compatibility
+   * layer. The provided call will be dispatched using `RawOrigin::Signed`.
+   *
+   * # Parameters
+   *
+   * * `origin`: Must be an [`Origin::EthTransaction`] origin.
+   * * `call`: The Substrate runtime call to execute.
+   * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
+   **/
+  | { name: 'EthSubstrateCall'; params: { call: AssetHubWestendRuntimeRuntimeCallLike; transactionEncoded: BytesLike } }
   /**
    * Upload new `code` without instantiating a contract from it.
    *
@@ -16247,145 +16347,6 @@ export type PalletNominationPoolsConfigOp004 =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletFastUnstakeCall =
-  /**
-   * Register oneself for fast-unstake.
-   *
-   * ## Dispatch Origin
-   *
-   * The dispatch origin of this call must be *signed* by whoever is permitted to call
-   * unbond funds by the staking system. See [`Config::Staking`].
-   *
-   * ## Details
-   *
-   * The stash associated with the origin must have no ongoing unlocking chunks. If
-   * successful, this will fully unbond and chill the stash. Then, it will enqueue the stash
-   * to be checked in further blocks.
-   *
-   * If by the time this is called, the stash is actually eligible for fast-unstake, then
-   * they are guaranteed to remain eligible, because the call will chill them as well.
-   *
-   * If the check works, the entire staking data is removed, i.e. the stash is fully
-   * unstaked.
-   *
-   * If the check fails, the stash remains chilled and waiting for being unbonded as in with
-   * the normal staking system, but they lose part of their unbonding chunks due to consuming
-   * the chain's resources.
-   *
-   * ## Events
-   *
-   * Some events from the staking and currency system might be emitted.
-   **/
-  | { name: 'RegisterFastUnstake' }
-  /**
-   * Deregister oneself from the fast-unstake.
-   *
-   * ## Dispatch Origin
-   *
-   * The dispatch origin of this call must be *signed* by whoever is permitted to call
-   * unbond funds by the staking system. See [`Config::Staking`].
-   *
-   * ## Details
-   *
-   * This is useful if one is registered, they are still waiting, and they change their mind.
-   *
-   * Note that the associated stash is still fully unbonded and chilled as a consequence of
-   * calling [`Pallet::register_fast_unstake`]. Therefore, this should probably be followed
-   * by a call to `rebond` in the staking system.
-   *
-   * ## Events
-   *
-   * Some events from the staking and currency system might be emitted.
-   **/
-  | { name: 'Deregister' }
-  /**
-   * Control the operation of this pallet.
-   *
-   * ## Dispatch Origin
-   *
-   * The dispatch origin of this call must be [`Config::ControlOrigin`].
-   *
-   * ## Details
-   *
-   * Can set the number of eras to check per block, and potentially other admin work.
-   *
-   * ## Events
-   *
-   * No events are emitted from this dispatch.
-   **/
-  | { name: 'Control'; params: { erasToCheck: number } };
-
-export type PalletFastUnstakeCallLike =
-  /**
-   * Register oneself for fast-unstake.
-   *
-   * ## Dispatch Origin
-   *
-   * The dispatch origin of this call must be *signed* by whoever is permitted to call
-   * unbond funds by the staking system. See [`Config::Staking`].
-   *
-   * ## Details
-   *
-   * The stash associated with the origin must have no ongoing unlocking chunks. If
-   * successful, this will fully unbond and chill the stash. Then, it will enqueue the stash
-   * to be checked in further blocks.
-   *
-   * If by the time this is called, the stash is actually eligible for fast-unstake, then
-   * they are guaranteed to remain eligible, because the call will chill them as well.
-   *
-   * If the check works, the entire staking data is removed, i.e. the stash is fully
-   * unstaked.
-   *
-   * If the check fails, the stash remains chilled and waiting for being unbonded as in with
-   * the normal staking system, but they lose part of their unbonding chunks due to consuming
-   * the chain's resources.
-   *
-   * ## Events
-   *
-   * Some events from the staking and currency system might be emitted.
-   **/
-  | { name: 'RegisterFastUnstake' }
-  /**
-   * Deregister oneself from the fast-unstake.
-   *
-   * ## Dispatch Origin
-   *
-   * The dispatch origin of this call must be *signed* by whoever is permitted to call
-   * unbond funds by the staking system. See [`Config::Staking`].
-   *
-   * ## Details
-   *
-   * This is useful if one is registered, they are still waiting, and they change their mind.
-   *
-   * Note that the associated stash is still fully unbonded and chilled as a consequence of
-   * calling [`Pallet::register_fast_unstake`]. Therefore, this should probably be followed
-   * by a call to `rebond` in the staking system.
-   *
-   * ## Events
-   *
-   * Some events from the staking and currency system might be emitted.
-   **/
-  | { name: 'Deregister' }
-  /**
-   * Control the operation of this pallet.
-   *
-   * ## Dispatch Origin
-   *
-   * The dispatch origin of this call must be [`Config::ControlOrigin`].
-   *
-   * ## Details
-   *
-   * Can set the number of eras to check per block, and potentially other admin work.
-   *
-   * ## Events
-   *
-   * No events are emitted from this dispatch.
-   **/
-  | { name: 'Control'; params: { erasToCheck: number } };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
 export type PalletBagsListCall =
   /**
    * Declare that some `dislocated` account has, through rewards or penalties, sufficiently
@@ -16491,27 +16452,31 @@ export type PalletElectionProviderMultiBlockCall =
   /**
    * Manage this pallet.
    *
-   * The origin of this call must be [`Config::AdminOrigin`].
+   * The origin of this call must be [`Config::ManagerOrigin`].
    *
-   * See [`AdminOperation`] for various operations that are possible.
+   * See [`ManagerOperation`] for various operations that are possible.
    **/
-  { name: 'Manage'; params: { op: PalletElectionProviderMultiBlockAdminOperation } };
+  | { name: 'Manage'; params: { op: PalletElectionProviderMultiBlockManagerOperation } }
+  | { name: 'Admin'; params: { op: PalletElectionProviderMultiBlockAdminOperation } };
 
 export type PalletElectionProviderMultiBlockCallLike =
   /**
    * Manage this pallet.
    *
-   * The origin of this call must be [`Config::AdminOrigin`].
+   * The origin of this call must be [`Config::ManagerOrigin`].
    *
-   * See [`AdminOperation`] for various operations that are possible.
+   * See [`ManagerOperation`] for various operations that are possible.
    **/
-  { name: 'Manage'; params: { op: PalletElectionProviderMultiBlockAdminOperation } };
+  | { name: 'Manage'; params: { op: PalletElectionProviderMultiBlockManagerOperation } }
+  | { name: 'Admin'; params: { op: PalletElectionProviderMultiBlockAdminOperation } };
 
-export type PalletElectionProviderMultiBlockAdminOperation =
+export type PalletElectionProviderMultiBlockManagerOperation =
   | { type: 'ForceRotateRound' }
   | { type: 'ForceSetPhase'; value: PalletElectionProviderMultiBlockPhase }
+  | { type: 'EmergencyFallback' };
+
+export type PalletElectionProviderMultiBlockAdminOperation =
   | { type: 'EmergencySetSolution'; value: [FrameElectionProviderSupportBoundedSupports, SpNposElectionsElectionScore] }
-  | { type: 'EmergencyFallback' }
   | { type: 'SetMinUntrustedScore'; value: SpNposElectionsElectionScore };
 
 export type FrameElectionProviderSupportBoundedSupports = Array<
@@ -19086,7 +19051,11 @@ export type PalletAssetsError =
   /**
    * The asset cannot be destroyed because some accounts for this asset contain holds.
    **/
-  | 'ContainsHolds';
+  | 'ContainsHolds'
+  /**
+   * Tried setting too many reserves.
+   **/
+  | 'TooManyReserves';
 
 export type PalletUniquesCollectionDetails = {
   owner: AccountId32;
@@ -19778,11 +19747,13 @@ export type PalletReviveEvmApiRpcTypesGenWithdrawal = {
   validatorIndex: U256;
 };
 
-export type PalletReviveEvmBlockHashReceiptGasInfo = { gasUsed: U256 };
+export type PalletReviveEvmBlockHashReceiptGasInfo = { gasUsed: U256; effectiveGasPrice: U256 };
 
 export type PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR = {
   transactionRootBuilder: PalletReviveEvmBlockHashHashBuilderIncrementalHashBuilderIR;
   receiptsRootBuilder: PalletReviveEvmBlockHashHashBuilderIncrementalHashBuilderIR;
+  baseFeePerGas: U256;
+  blockGasLimit: U256;
   gasUsed: U256;
   logsBloom: FixedBytes<256>;
   txHashes: Array<H256>;
@@ -20023,7 +19994,20 @@ export type PalletReviveError =
    *
    * This happens if the passed `gas` inside the ethereum transaction is too low.
    **/
-  | 'TxFeeOverdraw';
+  | 'TxFeeOverdraw'
+  /**
+   * When calling an EVM constructor `data` has to be empty.
+   *
+   * EVM constructors do not accept data. Their input data is part of the code blob itself.
+   **/
+  | 'EvmConstructorNonEmptyData'
+  /**
+   * Tried to construct an EVM contract via code hash.
+   *
+   * EVM contracts can only be instantiated via code upload as no initcode is
+   * stored on-chain.
+   **/
+  | 'EvmConstructedFromHash';
 
 export type PalletAssetRewardsPoolStakerInfo = { amount: bigint; rewards: bigint; rewardPerTokenPaid: bigint };
 
@@ -20509,39 +20493,6 @@ export type PalletNominationPoolsDefensiveError =
   | 'BondedStashKilledPrematurely'
   | 'DelegationUnsupported'
   | 'SlashNotApplied';
-
-export type PalletFastUnstakeUnstakeRequest = { stashes: Array<[AccountId32, bigint]>; checked: Array<number> };
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletFastUnstakeError =
-  /**
-   * The provided Controller account was not found.
-   *
-   * This means that the given account is not bonded.
-   **/
-  | 'NotController'
-  /**
-   * The bonded account has already been queued.
-   **/
-  | 'AlreadyQueued'
-  /**
-   * The bonded account has active unlocking chunks.
-   **/
-  | 'NotFullyBonded'
-  /**
-   * The provided un-staker is not in the `Queue`.
-   **/
-  | 'NotQueued'
-  /**
-   * The provided un-staker is already in Head, and cannot deregister.
-   **/
-  | 'AlreadyHead'
-  /**
-   * The call is not allowed at this point because the pallet is not active.
-   **/
-  | 'CallNotAllowed';
 
 export type PalletBagsListListNode = {
   id: AccountId32;
@@ -21107,10 +21058,6 @@ export type PalletAhOpsError =
 
 export type SpConsensusSlotsSlotDuration = bigint;
 
-export type CumulusPrimitivesCoreNextSlotSchedule = { numberOfBlocks: number; blockTime: Duration };
-
-export type Duration = [bigint, number];
-
 export type SpRuntimeBlockLazyBlock = { header: Header; extrinsics: Array<SpRuntimeOpaqueExtrinsic> };
 
 export type SpRuntimeOpaqueExtrinsic = Bytes;
@@ -21283,6 +21230,11 @@ export type PalletRevivePrimitivesEthTransactError =
   | { type: 'Data'; value: Bytes }
   | { type: 'Message'; value: string };
 
+export type PalletReviveEvmApiRpcTypesDryRunConfig = {
+  timestampOverride?: bigint | undefined;
+  reserved?: [] | undefined;
+};
+
 export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
 
 export type PalletRevivePrimitivesContractAccessError =
@@ -21384,7 +21336,6 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'StateTrieMigration'; palletError: PalletStateTrieMigrationError }
   | { pallet: 'Staking'; palletError: PalletStakingAsyncPalletError }
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }
-  | { pallet: 'FastUnstake'; palletError: PalletFastUnstakeError }
   | { pallet: 'VoterList'; palletError: PalletBagsListError }
   | { pallet: 'DelegatedStaking'; palletError: PalletDelegatedStakingError }
   | { pallet: 'MultiBlockElection'; palletError: PalletElectionProviderMultiBlockError }

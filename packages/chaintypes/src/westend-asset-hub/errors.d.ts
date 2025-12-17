@@ -1068,6 +1068,11 @@ export interface ChainErrors extends GenericChainErrors {
     ContainsHolds: GenericPalletError;
 
     /**
+     * Tried setting too many reserves.
+     **/
+    TooManyReserves: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1548,6 +1553,11 @@ export interface ChainErrors extends GenericChainErrors {
     ContainsHolds: GenericPalletError;
 
     /**
+     * Tried setting too many reserves.
+     **/
+    TooManyReserves: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1702,6 +1712,11 @@ export interface ChainErrors extends GenericChainErrors {
      * The asset cannot be destroyed because some accounts for this asset contain holds.
      **/
     ContainsHolds: GenericPalletError;
+
+    /**
+     * Tried setting too many reserves.
+     **/
+    TooManyReserves: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2146,6 +2161,21 @@ export interface ChainErrors extends GenericChainErrors {
      * This happens if the passed `gas` inside the ethereum transaction is too low.
      **/
     TxFeeOverdraw: GenericPalletError;
+
+    /**
+     * When calling an EVM constructor `data` has to be empty.
+     *
+     * EVM constructors do not accept data. Their input data is part of the code blob itself.
+     **/
+    EvmConstructorNonEmptyData: GenericPalletError;
+
+    /**
+     * Tried to construct an EVM contract via code hash.
+     *
+     * EVM contracts can only be instantiated via code upload as no initcode is
+     * stored on-chain.
+     **/
+    EvmConstructedFromHash: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2653,47 +2683,6 @@ export interface ChainErrors extends GenericChainErrors {
      * staking in another way already.
      **/
     Restricted: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `FastUnstake`'s errors
-   **/
-  fastUnstake: {
-    /**
-     * The provided Controller account was not found.
-     *
-     * This means that the given account is not bonded.
-     **/
-    NotController: GenericPalletError;
-
-    /**
-     * The bonded account has already been queued.
-     **/
-    AlreadyQueued: GenericPalletError;
-
-    /**
-     * The bonded account has active unlocking chunks.
-     **/
-    NotFullyBonded: GenericPalletError;
-
-    /**
-     * The provided un-staker is not in the `Queue`.
-     **/
-    NotQueued: GenericPalletError;
-
-    /**
-     * The provided un-staker is already in Head, and cannot deregister.
-     **/
-    AlreadyHead: GenericPalletError;
-
-    /**
-     * The call is not allowed at this point because the pallet is not active.
-     **/
-    CallNotAllowed: GenericPalletError;
 
     /**
      * Generic pallet error

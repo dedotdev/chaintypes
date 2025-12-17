@@ -1304,21 +1304,6 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
-   * Pallet `FastUnstake`'s constants
-   **/
-  fastUnstake: {
-    /**
-     * Deposit to take for unstaking, to make sure we're able to slash the it in order to cover
-     * the costs of resources on unsuccessful unstake.
-     **/
-    deposit: bigint;
-
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
    * Pallet `VoterList`'s constants
    **/
   voterList: {

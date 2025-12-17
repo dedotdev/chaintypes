@@ -37,6 +37,7 @@ import type {
   PalletNftsAttributeNamespace,
   PalletNftsPriceWithDirection,
   PalletNftsPalletAttributes,
+  AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
   PalletStateTrieMigrationMigrationCompute,
   PalletStateTrieMigrationError,
   PalletStakingAsyncRewardDestination,
@@ -1771,6 +1772,16 @@ export interface ChainEvents extends GenericChainEvents {
     Withdrawn: GenericPalletEvent<'Assets', 'Withdrawn', { assetId: number; who: AccountId32; amount: bigint }>;
 
     /**
+     * Reserve information was set or updated for `asset_id`.
+     **/
+    ReservesUpdated: GenericPalletEvent<'Assets', 'ReservesUpdated', { assetId: number; reserves: Array<[]> }>;
+
+    /**
+     * Reserve information was removed for `asset_id`.
+     **/
+    ReservesRemoved: GenericPalletEvent<'Assets', 'ReservesRemoved', { assetId: number }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -2499,6 +2510,20 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * Reserve information was set or updated for `asset_id`.
+     **/
+    ReservesUpdated: GenericPalletEvent<
+      'ForeignAssets',
+      'ReservesUpdated',
+      { assetId: StagingXcmV5Location; reserves: Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData> }
+    >;
+
+    /**
+     * Reserve information was removed for `asset_id`.
+     **/
+    ReservesRemoved: GenericPalletEvent<'ForeignAssets', 'ReservesRemoved', { assetId: StagingXcmV5Location }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -2700,6 +2725,16 @@ export interface ChainEvents extends GenericChainEvents {
      * Some assets were withdrawn from the account (e.g. for transaction fees).
      **/
     Withdrawn: GenericPalletEvent<'PoolAssets', 'Withdrawn', { assetId: number; who: AccountId32; amount: bigint }>;
+
+    /**
+     * Reserve information was set or updated for `asset_id`.
+     **/
+    ReservesUpdated: GenericPalletEvent<'PoolAssets', 'ReservesUpdated', { assetId: number; reserves: Array<[]> }>;
+
+    /**
+     * Reserve information was removed for `asset_id`.
+     **/
+    ReservesRemoved: GenericPalletEvent<'PoolAssets', 'ReservesRemoved', { assetId: number }>;
 
     /**
      * Generic pallet event
@@ -3654,43 +3689,6 @@ export interface ChainEvents extends GenericChainEvents {
         globalMaxCommission?: Perbill | undefined;
       }
     >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
-   * Pallet `FastUnstake`'s events
-   **/
-  fastUnstake: {
-    /**
-     * A staker was unstaked.
-     **/
-    Unstaked: GenericPalletEvent<'FastUnstake', 'Unstaked', { stash: AccountId32; result: Result<[], DispatchError> }>;
-
-    /**
-     * A staker was slashed for requesting fast-unstake whilst being exposed.
-     **/
-    Slashed: GenericPalletEvent<'FastUnstake', 'Slashed', { stash: AccountId32; amount: bigint }>;
-
-    /**
-     * A batch was partially checked for the given eras, but the process did not finish.
-     **/
-    BatchChecked: GenericPalletEvent<'FastUnstake', 'BatchChecked', { eras: Array<number> }>;
-
-    /**
-     * A batch of a given size was terminated.
-     *
-     * This is always follows by a number of `Unstaked` or `Slashed` events, marking the end
-     * of the batch. A new batch will be created upon next block.
-     **/
-    BatchFinished: GenericPalletEvent<'FastUnstake', 'BatchFinished', { size: number }>;
-
-    /**
-     * An internal error happened. Operations will be paused now.
-     **/
-    InternalError: GenericPalletEvent<'FastUnstake', 'InternalError', null>;
 
     /**
      * Generic pallet event

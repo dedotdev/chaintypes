@@ -21,7 +21,6 @@ import type {
   SpConsensusSlotsSlotDuration,
   SpConsensusAuraSr25519AppSr25519Public,
   PolkadotParachainPrimitivesPrimitivesId,
-  CumulusPrimitivesCoreNextSlotSchedule,
   SpConsensusSlotsSlot,
   SpRuntimeBlockLazyBlock,
   SpRuntimeExtrinsicInclusionMode,
@@ -61,6 +60,7 @@ import type {
   PalletRevivePrimitivesEthTransactInfo,
   PalletRevivePrimitivesEthTransactError,
   PalletReviveEvmApiRpcTypesGenGenericTransaction,
+  PalletReviveEvmApiRpcTypesDryRunConfig,
   PalletRevivePrimitivesCodeUploadReturnValue,
   PalletRevivePrimitivesContractAccessError,
   PalletReviveEvmApiDebugRpcTypesTrace,
@@ -128,20 +128,17 @@ export interface RuntimeApis extends GenericRuntimeApis {
     [method: string]: GenericRuntimeApiMethod;
   };
   /**
-   * @runtimeapi: SlotSchedule - 0x5bfafc20876faaf0
+   * @runtimeapi: TargetBlockRate - 0xad694c0c2537478a
    **/
-  slotSchedule: {
+  targetBlockRate: {
     /**
-     * Get the block production schedule for the next relay chain slot.
+     * Get the target block rate for this parachain.
      *
-     * - `num_cores`: The number of cores assigned to this parachain
+     * Returns the target number of blocks per relay chain slot.
      *
-     * Returns a [`NextSlotSchedule`].
-     *
-     * @callname: SlotSchedule_next_slot_schedule
-     * @param {number} num_cores
+     * @callname: TargetBlockRate_target_block_rate
      **/
-    nextSlotSchedule: GenericRuntimeApiMethod<(numCores: number) => Promise<CumulusPrimitivesCoreNextSlotSchedule>>;
+    targetBlockRate: GenericRuntimeApiMethod<() => Promise<number>>;
 
     /**
      * Generic runtime api call
@@ -619,6 +616,8 @@ export interface RuntimeApis extends GenericRuntimeApis {
     >;
 
     /**
+     * Query delivery fees V2.
+     *
      * Get delivery fees for sending a specific `message` to a `destination`.
      * These always come in a specific asset, defined by the chain.
      *
@@ -631,11 +630,13 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: XcmPaymentApi_query_delivery_fees
      * @param {XcmVersionedLocation} destination
      * @param {XcmVersionedXcm} message
+     * @param {XcmVersionedAssetId} asset_id
      **/
     queryDeliveryFees: GenericRuntimeApiMethod<
       (
         destination: XcmVersionedLocation,
         message: XcmVersionedXcm,
+        assetId: XcmVersionedAssetId,
       ) => Promise<Result<XcmVersionedAssets, XcmRuntimeApisFeesError>>
     >;
 
@@ -1200,6 +1201,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
     /**
      * Perform an Ethereum call.
      *
+     * Deprecated use `v2` version instead.
      * See [`crate::Pallet::dry_run_eth_transact`]
      *
      * @callname: ReviveApi_eth_transact
@@ -1208,6 +1210,22 @@ export interface RuntimeApis extends GenericRuntimeApis {
     ethTransact: GenericRuntimeApiMethod<
       (
         tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+      ) => Promise<Result<PalletRevivePrimitivesEthTransactInfo, PalletRevivePrimitivesEthTransactError>>
+    >;
+
+    /**
+     * Perform an Ethereum call.
+     *
+     * See [`crate::Pallet::dry_run_eth_transact`]
+     *
+     * @callname: ReviveApi_eth_transact_with_config
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
+     * @param {PalletReviveEvmApiRpcTypesDryRunConfig} config
+     **/
+    ethTransactWithConfig: GenericRuntimeApiMethod<
+      (
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+        config: PalletReviveEvmApiRpcTypesDryRunConfig,
       ) => Promise<Result<PalletRevivePrimitivesEthTransactInfo, PalletRevivePrimitivesEthTransactError>>
     >;
 

@@ -12,7 +12,6 @@ import type {
   BytesLike,
   FixedBytes,
   H160,
-  U256,
   Perbill,
   Percent,
 } from 'dedot/codecs';
@@ -91,6 +90,7 @@ import type {
   PalletNftsCollectionConfig,
   PalletNftsItemConfig,
   StagingXcmV5Location,
+  AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
   PalletNftFractionalizationDetails,
   PalletAssetConversionPoolInfo,
   PalletReviveVmCodeInfo,
@@ -123,7 +123,6 @@ import type {
   PalletNominationPoolsRewardPool,
   PalletNominationPoolsSubPools,
   PalletNominationPoolsClaimPermission,
-  PalletFastUnstakeUnstakeRequest,
   PalletBagsListListNode,
   PalletBagsListListBag,
   PalletDelegatedStakingDelegation,
@@ -524,18 +523,27 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * Upward messages that were sent in a block.
      *
-     * This will be cleared in `on_initialize` of each new block.
+     * This will be cleared in `on_initialize` for each new block.
      *
      * @param {Callback<Array<Bytes>> =} callback
      **/
     upwardMessages: GenericStorageQuery<() => Array<Bytes>>;
 
     /**
-     * Upward messages that are still pending and not yet send to the relay chain.
+     * Upward messages that are still pending and not yet sent to the relay chain.
      *
      * @param {Callback<Array<Bytes>> =} callback
      **/
     pendingUpwardMessages: GenericStorageQuery<() => Array<Bytes>>;
+
+    /**
+     * Upward signals that are still pending and not yet sent to the relay chain.
+     *
+     * This will be cleared in `on_finalize` for each block.
+     *
+     * @param {Callback<Array<Bytes>> =} callback
+     **/
+    pendingUpwardSignals: GenericStorageQuery<() => Array<Bytes>>;
 
     /**
      * The factor to multiply the base delivery fee by for UMP.
@@ -1514,6 +1522,14 @@ export interface ChainStorage extends GenericChainStorage {
     metadata: GenericStorageQuery<(arg: number) => PalletAssetsAssetMetadata, number>;
 
     /**
+     * Maps an asset to a list of its configured reserve information.
+     *
+     * @param {number} arg
+     * @param {Callback<Array<[]>> =} callback
+     **/
+    reserves: GenericStorageQuery<(arg: number) => Array<[]>, number>;
+
+    /**
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
      * item has no effect.
      *
@@ -1833,6 +1849,17 @@ export interface ChainStorage extends GenericChainStorage {
     metadata: GenericStorageQuery<(arg: StagingXcmV5Location) => PalletAssetsAssetMetadata, StagingXcmV5Location>;
 
     /**
+     * Maps an asset to a list of its configured reserve information.
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData>> =} callback
+     **/
+    reserves: GenericStorageQuery<
+      (arg: StagingXcmV5Location) => Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData>,
+      StagingXcmV5Location
+    >;
+
+    /**
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
      * item has no effect.
      *
@@ -1915,6 +1942,14 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletAssetsAssetMetadata> =} callback
      **/
     metadata: GenericStorageQuery<(arg: number) => PalletAssetsAssetMetadata, number>;
+
+    /**
+     * Maps an asset to a list of its configured reserve information.
+     *
+     * @param {number} arg
+     * @param {Callback<Array<[]>> =} callback
+     **/
+    reserves: GenericStorageQuery<(arg: number) => Array<[]>, number>;
 
     /**
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
@@ -2142,10 +2177,10 @@ export interface ChainStorage extends GenericChainStorage {
      *
      * The maximum number of elements stored is capped by the block hash count `BLOCK_HASH_COUNT`.
      *
-     * @param {U256} arg
+     * @param {number} arg
      * @param {Callback<H256> =} callback
      **/
-    blockHash: GenericStorageQuery<(arg: U256) => H256, U256>;
+    blockHash: GenericStorageQuery<(arg: number) => H256, number>;
 
     /**
      * The details needed to reconstruct the receipt info offchain.
@@ -2930,55 +2965,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletNominationPoolsClaimPermission> =} callback
      **/
     claimPermissions: GenericStorageQuery<(arg: AccountId32Like) => PalletNominationPoolsClaimPermission, AccountId32>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `FastUnstake`'s storage queries
-   **/
-  fastUnstake: {
-    /**
-     * The current "head of the queue" being unstaked.
-     *
-     * The head in itself can be a batch of up to [`Config::BatchSize`] stakers.
-     *
-     * @param {Callback<PalletFastUnstakeUnstakeRequest | undefined> =} callback
-     **/
-    head: GenericStorageQuery<() => PalletFastUnstakeUnstakeRequest | undefined>;
-
-    /**
-     * The map of all accounts wishing to be unstaked.
-     *
-     * Keeps track of `AccountId` wishing to unstake and it's corresponding deposit.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<bigint | undefined> =} callback
-     **/
-    queue: GenericStorageQuery<(arg: AccountId32Like) => bigint | undefined, AccountId32>;
-
-    /**
-     * Counter for the related counted storage map
-     *
-     * @param {Callback<number> =} callback
-     **/
-    counterForQueue: GenericStorageQuery<() => number>;
-
-    /**
-     * Number of eras to check per block.
-     *
-     * If set to 0, this pallet does absolutely nothing. Cannot be set to more than
-     * [`Config::MaxErasToCheckPerBlock`].
-     *
-     * Based on the amount of weight available at [`Pallet::on_idle`], up to this many eras are
-     * checked. The checking is represented by updating [`UnstakeRequest::checked`], which is
-     * stored in [`Head`].
-     *
-     * @param {Callback<number> =} callback
-     **/
-    erasToCheckPerBlock: GenericStorageQuery<() => number>;
 
     /**
      * Generic pallet storage query

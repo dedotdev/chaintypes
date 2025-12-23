@@ -19849,6 +19849,19 @@ export type PalletIsmpError =
 /**
  * The `Error` enum of this pallet.
  **/
+export type IsmpParachainError =
+  /**
+   * Only Parachain Consensus updates should be passed in the inherents.
+   **/
+  | 'InvalidConsensusStateId'
+  /**
+   * ValidationData must be updated only once in a block.
+   **/
+  | 'ConsensusAlreadyUpdated';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
 export type PalletHyperbridgeError = null;
 
 /**
@@ -20172,6 +20185,7 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'CollatorSelection'; palletError: PalletCollatorSelectionError }
   | { pallet: 'Session'; palletError: PalletSessionError }
   | { pallet: 'Ismp'; palletError: PalletIsmpError }
+  | { pallet: 'IsmpParachain'; palletError: IsmpParachainError }
   | { pallet: 'Hyperbridge'; palletError: PalletHyperbridgeError }
   | { pallet: 'TokenGateway'; palletError: PalletTokenGatewayError }
   | { pallet: 'EmaOracle'; palletError: PalletEmaOracleError }

@@ -59,6 +59,10 @@ import type {
   PalletReferralsLevel,
   PalletReferralsFeeDistribution,
   PalletHsmArbitrage,
+  PalletSignetSerializationFormat,
+  PalletSignetSignature,
+  PalletSignetErrorResponse,
+  PalletDispenserEvmTransactionParams,
   OrmlVestingVestingSchedule,
   EthereumTransactionTransactionV2,
   PalletXykAssetPair,
@@ -85,8 +89,6 @@ import type {
   PalletTokenGatewayAssetRegistration,
   TokenGatewayPrimitivesGatewayAssetUpdate,
   PalletTokenGatewayPrecisionUpdate,
-  PalletIsmpOracleTestGetParams,
-  PalletIsmpOracleTestPostParams,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -9332,6 +9334,351 @@ export interface ChainTx<
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
+   * Pallet `Signet`'s transaction calls
+   **/
+  signet: {
+    /**
+     * Initialize the pallet with admin, deposit, and chain ID
+     *
+     * @param {AccountId32Like} admin
+     * @param {bigint} signatureDeposit
+     * @param {BytesLike} chainId
+     **/
+    initialize: GenericTxCall<
+      (
+        admin: AccountId32Like,
+        signatureDeposit: bigint,
+        chainId: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Signet';
+          palletCall: {
+            name: 'Initialize';
+            params: { admin: AccountId32Like; signatureDeposit: bigint; chainId: BytesLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Update the signature deposit amount (admin only)
+     *
+     * @param {bigint} newDeposit
+     **/
+    updateDeposit: GenericTxCall<
+      (newDeposit: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Signet';
+          palletCall: {
+            name: 'UpdateDeposit';
+            params: { newDeposit: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Withdraw funds from the pallet account (admin only)
+     *
+     * @param {AccountId32Like} recipient
+     * @param {bigint} amount
+     **/
+    withdrawFunds: GenericTxCall<
+      (
+        recipient: AccountId32Like,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Signet';
+          palletCall: {
+            name: 'WithdrawFunds';
+            params: { recipient: AccountId32Like; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Request a signature for a payload
+     *
+     * @param {FixedBytes<32>} payload
+     * @param {number} keyVersion
+     * @param {BytesLike} path
+     * @param {BytesLike} algo
+     * @param {BytesLike} dest
+     * @param {BytesLike} params
+     **/
+    sign: GenericTxCall<
+      (
+        payload: FixedBytes<32>,
+        keyVersion: number,
+        path: BytesLike,
+        algo: BytesLike,
+        dest: BytesLike,
+        params: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Signet';
+          palletCall: {
+            name: 'Sign';
+            params: {
+              payload: FixedBytes<32>;
+              keyVersion: number;
+              path: BytesLike;
+              algo: BytesLike;
+              dest: BytesLike;
+              params: BytesLike;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Request a signature for a serialized transaction
+     *
+     * @param {BytesLike} serializedTransaction
+     * @param {number} slip44ChainId
+     * @param {number} keyVersion
+     * @param {BytesLike} path
+     * @param {BytesLike} algo
+     * @param {BytesLike} dest
+     * @param {BytesLike} params
+     * @param {PalletSignetSerializationFormat} explorerDeserializationFormat
+     * @param {BytesLike} explorerDeserializationSchema
+     * @param {PalletSignetSerializationFormat} callbackSerializationFormat
+     * @param {BytesLike} callbackSerializationSchema
+     **/
+    signRespond: GenericTxCall<
+      (
+        serializedTransaction: BytesLike,
+        slip44ChainId: number,
+        keyVersion: number,
+        path: BytesLike,
+        algo: BytesLike,
+        dest: BytesLike,
+        params: BytesLike,
+        explorerDeserializationFormat: PalletSignetSerializationFormat,
+        explorerDeserializationSchema: BytesLike,
+        callbackSerializationFormat: PalletSignetSerializationFormat,
+        callbackSerializationSchema: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Signet';
+          palletCall: {
+            name: 'SignRespond';
+            params: {
+              serializedTransaction: BytesLike;
+              slip44ChainId: number;
+              keyVersion: number;
+              path: BytesLike;
+              algo: BytesLike;
+              dest: BytesLike;
+              params: BytesLike;
+              explorerDeserializationFormat: PalletSignetSerializationFormat;
+              explorerDeserializationSchema: BytesLike;
+              callbackSerializationFormat: PalletSignetSerializationFormat;
+              callbackSerializationSchema: BytesLike;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Respond to signature requests (batch support)
+     *
+     * @param {Array<FixedBytes<32>>} requestIds
+     * @param {Array<PalletSignetSignature>} signatures
+     **/
+    respond: GenericTxCall<
+      (
+        requestIds: Array<FixedBytes<32>>,
+        signatures: Array<PalletSignetSignature>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Signet';
+          palletCall: {
+            name: 'Respond';
+            params: { requestIds: Array<FixedBytes<32>>; signatures: Array<PalletSignetSignature> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Report signature generation errors (batch support)
+     *
+     * @param {Array<PalletSignetErrorResponse>} errors
+     **/
+    respondError: GenericTxCall<
+      (errors: Array<PalletSignetErrorResponse>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Signet';
+          palletCall: {
+            name: 'RespondError';
+            params: { errors: Array<PalletSignetErrorResponse> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Provide a read response with signature
+     *
+     * @param {FixedBytes<32>} requestId
+     * @param {BytesLike} serializedOutput
+     * @param {PalletSignetSignature} signature
+     **/
+    readRespond: GenericTxCall<
+      (
+        requestId: FixedBytes<32>,
+        serializedOutput: BytesLike,
+        signature: PalletSignetSignature,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Signet';
+          palletCall: {
+            name: 'ReadRespond';
+            params: { requestId: FixedBytes<32>; serializedOutput: BytesLike; signature: PalletSignetSignature };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `EthDispenser`'s transaction calls
+   **/
+  ethDispenser: {
+    /**
+     * Request ETH from the external faucet for a given EVM address.
+     *
+     * This call:
+     * - Verifies amount bounds and EVM transaction parameters.
+     * - Checks the tracked faucet ETH balance against `MinFaucetEthThreshold`.
+     * - Charges the configured fee in `FeeAsset`.
+     * - Transfers the requested faucet asset from the user to `FeeDestination`.
+     * - Builds an EVM transaction calling `IGasFaucet::fund`.
+     * - Submits a signing request to SigNet via `pallet_signet::sign_respond`.
+     *
+     * The `request_id` must match the ID derived internally from the inputs,
+     * otherwise the call will fail with `InvalidRequestId`.
+     * Parameters:
+     * - `to`: Target EVM address to receive ETH.
+     * - `amount`: Amount of ETH (in wei) to request.
+     * - `request_id`: Client-supplied request ID; must match derived ID.
+     * - `tx`: Parameters for the EVM transaction submitted to the faucet.
+     *
+     * @param {FixedBytes<20>} to
+     * @param {bigint} amount
+     * @param {FixedBytes<32>} requestId
+     * @param {PalletDispenserEvmTransactionParams} tx
+     **/
+    requestFund: GenericTxCall<
+      (
+        to: FixedBytes<20>,
+        amount: bigint,
+        requestId: FixedBytes<32>,
+        tx: PalletDispenserEvmTransactionParams,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EthDispenser';
+          palletCall: {
+            name: 'RequestFund';
+            params: {
+              to: FixedBytes<20>;
+              amount: bigint;
+              requestId: FixedBytes<32>;
+              tx: PalletDispenserEvmTransactionParams;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Pause the dispenser so that no new funding requests can be made.
+     *
+     * Parameters:
+     * - `origin`: Must satisfy `UpdateOrigin`.
+     *
+     **/
+    pause: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EthDispenser';
+          palletCall: {
+            name: 'Pause';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unpause the dispenser so that funding requests are allowed again.
+     *
+     * Parameters:
+     * - `origin`: Must satisfy `UpdateOrigin`
+     *
+     **/
+    unpause: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EthDispenser';
+          palletCall: {
+            name: 'Unpause';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Increase the tracked faucet ETH balance (in wei).
+     *
+     * This is an accounting helper used to keep `FaucetBalanceWei`
+     * roughly in sync with the real faucet balance on the EVM chain.
+     *
+     * Parameters:
+     * - `origin`: Must satisfy `UpdateOrigin`.
+     * - `balance_wei`: Amount (in wei) to add to the currently stored balance.
+     *
+     * @param {bigint} balanceWei
+     **/
+    setFaucetBalance: GenericTxCall<
+      (balanceWei: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EthDispenser';
+          palletCall: {
+            name: 'SetFaucetBalance';
+            params: { balanceWei: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
    * Pallet `Tokens`'s transaction calls
    **/
   tokens: {
@@ -9894,6 +10241,7 @@ export interface ChainTx<
      * to the origin address.
      *
      * Binding an address is not necessary for interacting with the EVM.
+     * Increases `sufficients` for the account.
      *
      * Parameters:
      * - `origin`: Substrate account binding an address
@@ -10027,6 +10375,40 @@ export interface ChainTx<
           palletCall: {
             name: 'DisapproveContract';
             params: { address: H160 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Proves ownership of an account and binds it to the EVM address.
+     * This is useful for accounts that want to submit some substrate transaction, but only
+     * received some ERC20 balance and `System` pallet doesn't register them as a substrate account.
+     *
+     * Parameters:
+     * - `origin`: Unsigned origin.
+     * - `account`: Account proving ownership of the address.
+     * - `asset_id`: Asset ID to be set as fee currency for the account.
+     * - `signature`: Signed message by the account that proves ownership of the account.
+     *
+     * Emits `AccountClaimed` event when successful.
+     *
+     * @param {AccountId32Like} account
+     * @param {number} assetId
+     * @param {SpRuntimeMultiSignature} signature
+     **/
+    claimAccount: GenericTxCall<
+      (
+        account: AccountId32Like,
+        assetId: number,
+        signature: SpRuntimeMultiSignature,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EvmAccounts';
+          palletCall: {
+            name: 'ClaimAccount';
+            params: { account: AccountId32Like; assetId: number; signature: SpRuntimeMultiSignature };
           };
         },
         ChainKnownTypes
@@ -12674,49 +13056,6 @@ export interface ChainTx<
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
-   * Pallet `IsmpOracle`'s transaction calls
-   **/
-  ismpOracle: {
-    /**
-     *
-     * @param {PalletIsmpOracleTestGetParams} params
-     **/
-    requestGet: GenericTxCall<
-      (params: PalletIsmpOracleTestGetParams) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'IsmpOracle';
-          palletCall: {
-            name: 'RequestGet';
-            params: { params: PalletIsmpOracleTestGetParams };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {PalletIsmpOracleTestPostParams} params
-     **/
-    requestPost: GenericTxCall<
-      (params: PalletIsmpOracleTestPostParams) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'IsmpOracle';
-          palletCall: {
-            name: 'RequestPost';
-            params: { params: PalletIsmpOracleTestPostParams };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
    * Pallet `EmaOracle`'s transaction calls
    **/
   emaOracle: {
@@ -12778,29 +13117,6 @@ export interface ChainTx<
           pallet: 'EmaOracle';
           palletCall: {
             name: 'UpdateBifrostOracle';
-            params: { assetA: XcmVersionedLocation; assetB: XcmVersionedLocation; price: [bigint, bigint] };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {XcmVersionedLocation} assetA
-     * @param {XcmVersionedLocation} assetB
-     * @param {[bigint, bigint]} price
-     **/
-    updateIsmpOracle: GenericTxCall<
-      (
-        assetA: XcmVersionedLocation,
-        assetB: XcmVersionedLocation,
-        price: [bigint, bigint],
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'EmaOracle';
-          palletCall: {
-            name: 'UpdateIsmpOracle';
             params: { assetA: XcmVersionedLocation; assetB: XcmVersionedLocation; price: [bigint, bigint] };
           };
         },

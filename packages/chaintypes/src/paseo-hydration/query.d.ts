@@ -12,6 +12,7 @@ import type {
   Data,
   BytesLike,
   FixedBytes,
+  Permill,
   H160,
   U256,
 } from 'dedot/codecs';
@@ -83,6 +84,7 @@ import type {
   PalletReferralsLevel,
   PalletReferralsFeeDistribution,
   PalletHsmCollateralInfo,
+  PalletDispenserDispenserConfigData,
   OrmlTokensBalanceLock,
   OrmlTokensAccountData,
   OrmlTokensReserveData,
@@ -1655,6 +1657,14 @@ export interface ChainStorage extends GenericChainStorage {
     poolSnapshots: GenericStorageQuery<(arg: number) => PalletStableswapPoolSnapshot | undefined, number>;
 
     /**
+     * Temporary pool's trade fee for current block.
+     *
+     * @param {number} arg
+     * @param {Callback<Permill | undefined> =} callback
+     **/
+    blockFee: GenericStorageQuery<(arg: number) => Permill | undefined, number>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
@@ -1914,6 +1924,75 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
+   * Pallet `Signet`'s storage queries
+   **/
+  signet: {
+    /**
+     * The admin account that controls this pallet
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    admin: GenericStorageQuery<() => AccountId32 | undefined>;
+
+    /**
+     * The amount required as deposit for signature requests
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    signatureDeposit: GenericStorageQuery<() => bigint>;
+
+    /**
+     * The CAIP-2 chain identifier
+     *
+     * @param {Callback<Bytes> =} callback
+     **/
+    chainId: GenericStorageQuery<() => Bytes>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `EthDispenser`'s storage queries
+   **/
+  ethDispenser: {
+    /**
+     * Global configuration for the dispenser.
+     *
+     * Currently only tracks whether the pallet is paused. If `None`, defaults
+     * to unpaused.
+     *
+     * @param {Callback<PalletDispenserDispenserConfigData | undefined> =} callback
+     **/
+    dispenserConfig: GenericStorageQuery<() => PalletDispenserDispenserConfigData | undefined>;
+
+    /**
+     * Tracked ETH balance (in wei) currently available in the external faucet.
+     *
+     * This value is updated manually via governance and is used as a guardrail
+     * to prevent issuing requests that would over-spend the faucet.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    faucetBalanceWei: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Request IDs that have already been used.
+     *
+     * This prevents accidental or malicious re-submission of the same request.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    usedRequestIds: GenericStorageQuery<(arg: FixedBytes<32>) => [] | undefined, FixedBytes<32>>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
    * Pallet `Tokens`'s storage queries
    **/
   tokens: {
@@ -2117,6 +2196,18 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<[] | undefined> =} callback
      **/
     approvedContract: GenericStorageQuery<(arg: H160) => [] | undefined, H160>;
+
+    /**
+     * Tracks accounts that have been marked as EVM accounts.
+     * An account is marked as EVM account right before we charge the evm fee
+     * This is used to avoid resetting frame system nonce of accounts.
+     * When we mark account as EVM account, we increase its sufficients counter by one.
+     * We never decrease this sufficients, so side effect is that account can never be reaped
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    markedEvmAccounts: GenericStorageQuery<(arg: AccountId32Like) => [] | undefined, AccountId32>;
 
     /**
      * Generic pallet storage query

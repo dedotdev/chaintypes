@@ -92,6 +92,8 @@ export type HydradxRuntimeRuntimeEvent =
   | { pallet: 'Referrals'; palletEvent: PalletReferralsEvent }
   | { pallet: 'Liquidation'; palletEvent: PalletLiquidationEvent }
   | { pallet: 'Hsm'; palletEvent: PalletHsmEvent }
+  | { pallet: 'Signet'; palletEvent: PalletSignetEvent }
+  | { pallet: 'EthDispenser'; palletEvent: PalletDispenserEvent }
   | { pallet: 'Tokens'; palletEvent: OrmlTokensModuleEvent }
   | { pallet: 'Currencies'; palletEvent: PalletCurrenciesModuleEvent }
   | { pallet: 'Vesting'; palletEvent: OrmlVestingModuleEvent }
@@ -117,7 +119,6 @@ export type HydradxRuntimeRuntimeEvent =
   | { pallet: 'IsmpParachain'; palletEvent: IsmpParachainEvent }
   | { pallet: 'Hyperbridge'; palletEvent: PalletHyperbridgeEvent }
   | { pallet: 'TokenGateway'; palletEvent: PalletTokenGatewayEvent }
-  | { pallet: 'IsmpOracle'; palletEvent: PalletIsmpOracleTestEvent }
   | { pallet: 'EmaOracle'; palletEvent: PalletEmaOracleEvent }
   | { pallet: 'Broadcast'; palletEvent: PalletBroadcastEvent };
 
@@ -1293,6 +1294,8 @@ export type HydradxRuntimeRuntimeCall =
   | { pallet: 'Referrals'; palletCall: PalletReferralsCall }
   | { pallet: 'Liquidation'; palletCall: PalletLiquidationCall }
   | { pallet: 'Hsm'; palletCall: PalletHsmCall }
+  | { pallet: 'Signet'; palletCall: PalletSignetCall }
+  | { pallet: 'EthDispenser'; palletCall: PalletDispenserCall }
   | { pallet: 'Tokens'; palletCall: OrmlTokensModuleCall }
   | { pallet: 'Currencies'; palletCall: PalletCurrenciesModuleCall }
   | { pallet: 'Vesting'; palletCall: OrmlVestingModuleCall }
@@ -1316,7 +1319,6 @@ export type HydradxRuntimeRuntimeCall =
   | { pallet: 'Ismp'; palletCall: PalletIsmpCall }
   | { pallet: 'IsmpParachain'; palletCall: IsmpParachainCall }
   | { pallet: 'TokenGateway'; palletCall: PalletTokenGatewayCall }
-  | { pallet: 'IsmpOracle'; palletCall: PalletIsmpOracleTestCall }
   | { pallet: 'EmaOracle'; palletCall: PalletEmaOracleCall }
   | { pallet: 'Broadcast'; palletCall: PalletBroadcastCall };
 
@@ -1360,6 +1362,8 @@ export type HydradxRuntimeRuntimeCallLike =
   | { pallet: 'Referrals'; palletCall: PalletReferralsCallLike }
   | { pallet: 'Liquidation'; palletCall: PalletLiquidationCallLike }
   | { pallet: 'Hsm'; palletCall: PalletHsmCallLike }
+  | { pallet: 'Signet'; palletCall: PalletSignetCallLike }
+  | { pallet: 'EthDispenser'; palletCall: PalletDispenserCallLike }
   | { pallet: 'Tokens'; palletCall: OrmlTokensModuleCallLike }
   | { pallet: 'Currencies'; palletCall: PalletCurrenciesModuleCallLike }
   | { pallet: 'Vesting'; palletCall: OrmlVestingModuleCallLike }
@@ -1383,7 +1387,6 @@ export type HydradxRuntimeRuntimeCallLike =
   | { pallet: 'Ismp'; palletCall: PalletIsmpCallLike }
   | { pallet: 'IsmpParachain'; palletCall: IsmpParachainCallLike }
   | { pallet: 'TokenGateway'; palletCall: PalletTokenGatewayCallLike }
-  | { pallet: 'IsmpOracle'; palletCall: PalletIsmpOracleTestCallLike }
   | { pallet: 'EmaOracle'; palletCall: PalletEmaOracleCallLike }
   | { pallet: 'Broadcast'; palletCall: PalletBroadcastCallLike };
 
@@ -10235,6 +10238,256 @@ export type PalletHsmArbitrage = { type: 'HollarOut'; value: bigint } | { type: 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletSignetCall =
+  /**
+   * Initialize the pallet with admin, deposit, and chain ID
+   **/
+  | { name: 'Initialize'; params: { admin: AccountId32; signatureDeposit: bigint; chainId: Bytes } }
+  /**
+   * Update the signature deposit amount (admin only)
+   **/
+  | { name: 'UpdateDeposit'; params: { newDeposit: bigint } }
+  /**
+   * Withdraw funds from the pallet account (admin only)
+   **/
+  | { name: 'WithdrawFunds'; params: { recipient: AccountId32; amount: bigint } }
+  /**
+   * Request a signature for a payload
+   **/
+  | {
+      name: 'Sign';
+      params: { payload: FixedBytes<32>; keyVersion: number; path: Bytes; algo: Bytes; dest: Bytes; params: Bytes };
+    }
+  /**
+   * Request a signature for a serialized transaction
+   **/
+  | {
+      name: 'SignRespond';
+      params: {
+        serializedTransaction: Bytes;
+        slip44ChainId: number;
+        keyVersion: number;
+        path: Bytes;
+        algo: Bytes;
+        dest: Bytes;
+        params: Bytes;
+        explorerDeserializationFormat: PalletSignetSerializationFormat;
+        explorerDeserializationSchema: Bytes;
+        callbackSerializationFormat: PalletSignetSerializationFormat;
+        callbackSerializationSchema: Bytes;
+      };
+    }
+  /**
+   * Respond to signature requests (batch support)
+   **/
+  | { name: 'Respond'; params: { requestIds: Array<FixedBytes<32>>; signatures: Array<PalletSignetSignature> } }
+  /**
+   * Report signature generation errors (batch support)
+   **/
+  | { name: 'RespondError'; params: { errors: Array<PalletSignetErrorResponse> } }
+  /**
+   * Provide a read response with signature
+   **/
+  | {
+      name: 'ReadRespond';
+      params: { requestId: FixedBytes<32>; serializedOutput: Bytes; signature: PalletSignetSignature };
+    };
+
+export type PalletSignetCallLike =
+  /**
+   * Initialize the pallet with admin, deposit, and chain ID
+   **/
+  | { name: 'Initialize'; params: { admin: AccountId32Like; signatureDeposit: bigint; chainId: BytesLike } }
+  /**
+   * Update the signature deposit amount (admin only)
+   **/
+  | { name: 'UpdateDeposit'; params: { newDeposit: bigint } }
+  /**
+   * Withdraw funds from the pallet account (admin only)
+   **/
+  | { name: 'WithdrawFunds'; params: { recipient: AccountId32Like; amount: bigint } }
+  /**
+   * Request a signature for a payload
+   **/
+  | {
+      name: 'Sign';
+      params: {
+        payload: FixedBytes<32>;
+        keyVersion: number;
+        path: BytesLike;
+        algo: BytesLike;
+        dest: BytesLike;
+        params: BytesLike;
+      };
+    }
+  /**
+   * Request a signature for a serialized transaction
+   **/
+  | {
+      name: 'SignRespond';
+      params: {
+        serializedTransaction: BytesLike;
+        slip44ChainId: number;
+        keyVersion: number;
+        path: BytesLike;
+        algo: BytesLike;
+        dest: BytesLike;
+        params: BytesLike;
+        explorerDeserializationFormat: PalletSignetSerializationFormat;
+        explorerDeserializationSchema: BytesLike;
+        callbackSerializationFormat: PalletSignetSerializationFormat;
+        callbackSerializationSchema: BytesLike;
+      };
+    }
+  /**
+   * Respond to signature requests (batch support)
+   **/
+  | { name: 'Respond'; params: { requestIds: Array<FixedBytes<32>>; signatures: Array<PalletSignetSignature> } }
+  /**
+   * Report signature generation errors (batch support)
+   **/
+  | { name: 'RespondError'; params: { errors: Array<PalletSignetErrorResponse> } }
+  /**
+   * Provide a read response with signature
+   **/
+  | {
+      name: 'ReadRespond';
+      params: { requestId: FixedBytes<32>; serializedOutput: BytesLike; signature: PalletSignetSignature };
+    };
+
+export type PalletSignetSerializationFormat = 'Borsh' | 'AbiJson';
+
+export type PalletSignetSignature = { bigR: PalletSignetAffinePoint; s: FixedBytes<32>; recoveryId: number };
+
+export type PalletSignetAffinePoint = { x: FixedBytes<32>; y: FixedBytes<32> };
+
+export type PalletSignetErrorResponse = { requestId: FixedBytes<32>; errorMessage: Bytes };
+
+/**
+ * Dispatchable functions.
+ **/
+export type PalletDispenserCall =
+  /**
+   * Request ETH from the external faucet for a given EVM address.
+   *
+   * This call:
+   * - Verifies amount bounds and EVM transaction parameters.
+   * - Checks the tracked faucet ETH balance against `MinFaucetEthThreshold`.
+   * - Charges the configured fee in `FeeAsset`.
+   * - Transfers the requested faucet asset from the user to `FeeDestination`.
+   * - Builds an EVM transaction calling `IGasFaucet::fund`.
+   * - Submits a signing request to SigNet via `pallet_signet::sign_respond`.
+   *
+   * The `request_id` must match the ID derived internally from the inputs,
+   * otherwise the call will fail with `InvalidRequestId`.
+   * Parameters:
+   * - `to`: Target EVM address to receive ETH.
+   * - `amount`: Amount of ETH (in wei) to request.
+   * - `request_id`: Client-supplied request ID; must match derived ID.
+   * - `tx`: Parameters for the EVM transaction submitted to the faucet.
+   **/
+  | {
+      name: 'RequestFund';
+      params: {
+        to: FixedBytes<20>;
+        amount: bigint;
+        requestId: FixedBytes<32>;
+        tx: PalletDispenserEvmTransactionParams;
+      };
+    }
+  /**
+   * Pause the dispenser so that no new funding requests can be made.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`.
+   **/
+  | { name: 'Pause' }
+  /**
+   * Unpause the dispenser so that funding requests are allowed again.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`
+   **/
+  | { name: 'Unpause' }
+  /**
+   * Increase the tracked faucet ETH balance (in wei).
+   *
+   * This is an accounting helper used to keep `FaucetBalanceWei`
+   * roughly in sync with the real faucet balance on the EVM chain.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`.
+   * - `balance_wei`: Amount (in wei) to add to the currently stored balance.
+   **/
+  | { name: 'SetFaucetBalance'; params: { balanceWei: bigint } };
+
+export type PalletDispenserCallLike =
+  /**
+   * Request ETH from the external faucet for a given EVM address.
+   *
+   * This call:
+   * - Verifies amount bounds and EVM transaction parameters.
+   * - Checks the tracked faucet ETH balance against `MinFaucetEthThreshold`.
+   * - Charges the configured fee in `FeeAsset`.
+   * - Transfers the requested faucet asset from the user to `FeeDestination`.
+   * - Builds an EVM transaction calling `IGasFaucet::fund`.
+   * - Submits a signing request to SigNet via `pallet_signet::sign_respond`.
+   *
+   * The `request_id` must match the ID derived internally from the inputs,
+   * otherwise the call will fail with `InvalidRequestId`.
+   * Parameters:
+   * - `to`: Target EVM address to receive ETH.
+   * - `amount`: Amount of ETH (in wei) to request.
+   * - `request_id`: Client-supplied request ID; must match derived ID.
+   * - `tx`: Parameters for the EVM transaction submitted to the faucet.
+   **/
+  | {
+      name: 'RequestFund';
+      params: {
+        to: FixedBytes<20>;
+        amount: bigint;
+        requestId: FixedBytes<32>;
+        tx: PalletDispenserEvmTransactionParams;
+      };
+    }
+  /**
+   * Pause the dispenser so that no new funding requests can be made.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`.
+   **/
+  | { name: 'Pause' }
+  /**
+   * Unpause the dispenser so that funding requests are allowed again.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`
+   **/
+  | { name: 'Unpause' }
+  /**
+   * Increase the tracked faucet ETH balance (in wei).
+   *
+   * This is an accounting helper used to keep `FaucetBalanceWei`
+   * roughly in sync with the real faucet balance on the EVM chain.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`.
+   * - `balance_wei`: Amount (in wei) to add to the currently stored balance.
+   **/
+  | { name: 'SetFaucetBalance'; params: { balanceWei: bigint } };
+
+export type PalletDispenserEvmTransactionParams = {
+  value: bigint;
+  gasLimit: bigint;
+  maxFeePerGas: bigint;
+  maxPriorityFeePerGas: bigint;
+  nonce: bigint;
+  chainId: bigint;
+};
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type OrmlTokensModuleCall =
   /**
    * Transfer some liquid free balance to another account.
@@ -10657,6 +10910,7 @@ export type PalletEvmAccountsCall =
    * to the origin address.
    *
    * Binding an address is not necessary for interacting with the EVM.
+   * Increases `sufficients` for the account.
    *
    * Parameters:
    * - `origin`: Substrate account binding an address
@@ -10715,7 +10969,21 @@ export type PalletEvmAccountsCall =
    *
    * Emits `ContractDisapproved` event when successful.
    **/
-  | { name: 'DisapproveContract'; params: { address: H160 } };
+  | { name: 'DisapproveContract'; params: { address: H160 } }
+  /**
+   * Proves ownership of an account and binds it to the EVM address.
+   * This is useful for accounts that want to submit some substrate transaction, but only
+   * received some ERC20 balance and `System` pallet doesn't register them as a substrate account.
+   *
+   * Parameters:
+   * - `origin`: Unsigned origin.
+   * - `account`: Account proving ownership of the address.
+   * - `asset_id`: Asset ID to be set as fee currency for the account.
+   * - `signature`: Signed message by the account that proves ownership of the account.
+   *
+   * Emits `AccountClaimed` event when successful.
+   **/
+  | { name: 'ClaimAccount'; params: { account: AccountId32; assetId: number; signature: SpRuntimeMultiSignature } };
 
 export type PalletEvmAccountsCallLike =
   /**
@@ -10725,6 +10993,7 @@ export type PalletEvmAccountsCallLike =
    * to the origin address.
    *
    * Binding an address is not necessary for interacting with the EVM.
+   * Increases `sufficients` for the account.
    *
    * Parameters:
    * - `origin`: Substrate account binding an address
@@ -10783,7 +11052,21 @@ export type PalletEvmAccountsCallLike =
    *
    * Emits `ContractDisapproved` event when successful.
    **/
-  | { name: 'DisapproveContract'; params: { address: H160 } };
+  | { name: 'DisapproveContract'; params: { address: H160 } }
+  /**
+   * Proves ownership of an account and binds it to the EVM address.
+   * This is useful for accounts that want to submit some substrate transaction, but only
+   * received some ERC20 balance and `System` pallet doesn't register them as a substrate account.
+   *
+   * Parameters:
+   * - `origin`: Unsigned origin.
+   * - `account`: Account proving ownership of the address.
+   * - `asset_id`: Asset ID to be set as fee currency for the account.
+   * - `signature`: Signed message by the account that proves ownership of the account.
+   *
+   * Emits `AccountClaimed` event when successful.
+   **/
+  | { name: 'ClaimAccount'; params: { account: AccountId32Like; assetId: number; signature: SpRuntimeMultiSignature } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -14041,30 +14324,11 @@ export type PalletTokenGatewayPrecisionUpdate = { assetId: number; precisions: A
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletIsmpOracleTestCall =
-  | { name: 'RequestGet'; params: { params: PalletIsmpOracleTestGetParams } }
-  | { name: 'RequestPost'; params: { params: PalletIsmpOracleTestPostParams } };
-
-export type PalletIsmpOracleTestCallLike =
-  | { name: 'RequestGet'; params: { params: PalletIsmpOracleTestGetParams } }
-  | { name: 'RequestPost'; params: { params: PalletIsmpOracleTestPostParams } };
-
-export type PalletIsmpOracleTestGetParams = { dest: IsmpHostStateMachine; height: bigint };
-
-export type PalletIsmpOracleTestPostParams = { dest: IsmpHostStateMachine; to: Bytes; body: Bytes };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
 export type PalletEmaOracleCall =
   | { name: 'AddOracle'; params: { source: FixedBytes<8>; assets: [number, number] } }
   | { name: 'RemoveOracle'; params: { source: FixedBytes<8>; assets: [number, number] } }
   | {
       name: 'UpdateBifrostOracle';
-      params: { assetA: XcmVersionedLocation; assetB: XcmVersionedLocation; price: [bigint, bigint] };
-    }
-  | {
-      name: 'UpdateIsmpOracle';
       params: { assetA: XcmVersionedLocation; assetB: XcmVersionedLocation; price: [bigint, bigint] };
     };
 
@@ -14073,10 +14337,6 @@ export type PalletEmaOracleCallLike =
   | { name: 'RemoveOracle'; params: { source: FixedBytes<8>; assets: [number, number] } }
   | {
       name: 'UpdateBifrostOracle';
-      params: { assetA: XcmVersionedLocation; assetB: XcmVersionedLocation; price: [bigint, bigint] };
-    }
-  | {
-      name: 'UpdateIsmpOracle';
       params: { assetA: XcmVersionedLocation; assetB: XcmVersionedLocation; price: [bigint, bigint] };
     };
 
@@ -14733,6 +14993,7 @@ export type NonZeroU16 = number;
 
 export type PalletStableswapPoolPegInfo = {
   source: Array<PalletStableswapPegSource>;
+  updatedAt: number;
   maxPegUpdate: Perbill;
   current: Array<[bigint, bigint]>;
 };
@@ -15023,6 +15284,144 @@ export type PalletHsmEvent =
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletSignetEvent =
+  /**
+   * Pallet has been initialized with an admin
+   **/
+  | { name: 'Initialized'; data: { admin: AccountId32; signatureDeposit: bigint; chainId: Bytes } }
+  /**
+   * Signature deposit amount has been updated
+   **/
+  | { name: 'DepositUpdated'; data: { oldDeposit: bigint; newDeposit: bigint } }
+  /**
+   * Funds have been withdrawn from the pallet
+   **/
+  | { name: 'FundsWithdrawn'; data: { amount: bigint; recipient: AccountId32 } }
+  /**
+   * A signature has been requested
+   **/
+  | {
+      name: 'SignatureRequested';
+      data: {
+        sender: AccountId32;
+        payload: FixedBytes<32>;
+        keyVersion: number;
+        deposit: bigint;
+        chainId: Bytes;
+        path: Bytes;
+        algo: Bytes;
+        dest: Bytes;
+        params: Bytes;
+      };
+    }
+  /**
+   * Sign-respond request event
+   **/
+  | {
+      name: 'SignRespondRequested';
+      data: {
+        sender: AccountId32;
+        transactionData: Bytes;
+        slip44ChainId: number;
+        keyVersion: number;
+        deposit: bigint;
+        path: Bytes;
+        algo: Bytes;
+        dest: Bytes;
+        params: Bytes;
+        explorerDeserializationFormat: number;
+        explorerDeserializationSchema: Bytes;
+        callbackSerializationFormat: number;
+        callbackSerializationSchema: Bytes;
+      };
+    }
+  /**
+   * Signature response event
+   **/
+  | {
+      name: 'SignatureResponded';
+      data: { requestId: FixedBytes<32>; responder: AccountId32; signature: PalletSignetSignature };
+    }
+  /**
+   * Signature error event
+   **/
+  | { name: 'SignatureError'; data: { requestId: FixedBytes<32>; responder: AccountId32; error: Bytes } }
+  /**
+   * Read response event
+   **/
+  | {
+      name: 'ReadResponded';
+      data: {
+        requestId: FixedBytes<32>;
+        responder: AccountId32;
+        serializedOutput: Bytes;
+        signature: PalletSignetSignature;
+      };
+    };
+
+/**
+ * Pallet events.
+ **/
+export type PalletDispenserEvent =
+  /**
+   * Dispenser has been paused. No new requests will be accepted.
+   **/
+  | { name: 'Paused' }
+  /**
+   * Dispenser has been unpaused. New requests are allowed again.
+   **/
+  | { name: 'Unpaused' }
+  /**
+   * A funding request has been submitted to SigNet.
+   *
+   * Note: This indicates the request was formed and submitted, not that
+   * the EVM transaction has been included on the target chain.
+   **/
+  | {
+      name: 'FundRequested';
+      data: {
+        /**
+         * Unique request ID derived from request parameters.
+         **/
+        requestId: FixedBytes<32>;
+
+        /**
+         * Account that initiated the request.
+         **/
+        requester: AccountId32;
+
+        /**
+         * Target EVM address to receive ETH.
+         **/
+        to: FixedBytes<20>;
+
+        /**
+         * Requested amount of ETH (in wei).
+         **/
+        amount: bigint;
+      };
+    }
+  /**
+   * Tracked faucet ETH balance has been updated.
+   **/
+  | {
+      name: 'FaucetBalanceUpdated';
+      data: {
+        /**
+         * Previous tracked balance (in wei).
+         **/
+        oldBalanceWei: bigint;
+
+        /**
+         * New tracked balance (in wei).
+         **/
+        newBalanceWei: bigint;
+      };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type OrmlTokensModuleEvent =
   /**
    * An account was created with some free balance.
@@ -15237,7 +15636,11 @@ export type PalletEvmAccountsEvent =
   /**
    * Contract was disapproved.
    **/
-  | { name: 'ContractDisapproved'; data: { address: H160 } };
+  | { name: 'ContractDisapproved'; data: { address: H160 } }
+  /**
+   * Account was claimed.
+   **/
+  | { name: 'AccountClaimed'; data: { account: AccountId32; assetId: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -16287,18 +16690,6 @@ export type PalletTokenGatewayEvent =
 /**
  * The `Event` enum of this pallet
  **/
-export type PalletIsmpOracleTestEvent =
-  | { name: 'GetRequestSent'; data: { commitment: H256 } }
-  | { name: 'PostRequestSent'; data: { commitment: H256 } }
-  | { name: 'GetRequestResponded'; data: { commitment: H256; storageValues: Array<IsmpRouterStorageValue> } }
-  | { name: 'WstEthPriceReceived'; data: { commitment: H256; ethPerWsteth: U256 } }
-  | { name: 'PostRequestResponded'; data: { commitment: H256 } }
-  | { name: 'GetRequestTimedOut'; data: { commitment: H256 } }
-  | { name: 'PostResponseTimedOut'; data: { commitment: H256 } };
-
-/**
- * The `Event` enum of this pallet
- **/
 export type PalletEmaOracleEvent =
   /**
    * Oracle was added to the whitelist.
@@ -16560,7 +16951,11 @@ export type PalletTransactionMultiPaymentError =
   /**
    * EVM permit call failed.
    **/
-  | 'EvmPermitRunnerError';
+  | 'EvmPermitRunnerError'
+  /**
+   * EVM permit must not affect account nonce.
+   **/
+  | 'EvmPermitNonceInvariantViolated';
 
 export type PalletTreasuryProposal = { proposer: AccountId32; value: bigint; beneficiary: AccountId32; bond: bigint };
 
@@ -17443,7 +17838,35 @@ export type PalletDispatcherError =
   /**
    * The provided call is not an EVM call. This extrinsic only accepts `pallet_evm::Call::call`.
    **/
-  | 'NotEvmCall';
+  | 'NotEvmCall'
+  /**
+   * The EVM call ran out of gas.
+   **/
+  | 'EvmOutOfGas'
+  /**
+   * The EVM call resulted in an arithmetic overflow or underflow.
+   **/
+  | 'EvmArithmeticOverflowOrUnderflow'
+  /**
+   * Aave - supply cap has been exceeded.
+   **/
+  | 'AaveSupplyCapExceeded'
+  /**
+   * Aave - borrow cap has been exceeded.
+   **/
+  | 'AaveBorrowCapExceeded'
+  /**
+   * Aave - health factor is not below the threshold.
+   **/
+  | 'AaveHealthFactorNotBelowThreshold'
+  /**
+   * Aave - health factor is lesser than the liquidation threshold
+   **/
+  | 'AaveHealthFactorLowerThanLiquidationThreshold'
+  /**
+   * Aave - there is not enough collateral to cover a new borrow
+   **/
+  | 'CollateralCannotCoverNewBorrow';
 
 export type PalletAssetRegistryAssetDetails = {
   name?: Bytes | undefined;
@@ -18229,6 +18652,7 @@ export type PalletStableswapPoolSnapshot = {
   reserves: Array<HydraDxMathStableswapTypesAssetReserve>;
   amplification: bigint;
   fee: Permill;
+  blockFee: Permill;
   pegs: Array<[bigint, bigint]>;
   shareIssuance: bigint;
 };
@@ -18536,16 +18960,6 @@ export type PalletXykError =
    **/
   | 'ZeroLiquidity'
   /**
-   * It is not allowed to create a pool with zero initial price.
-   * Not used, kept for backward compatibility
-   **/
-  | 'ZeroInitialPrice'
-  /**
-   * Overflow
-   * Not used, kept for backward compatibility
-   **/
-  | 'CreatePoolAssetAmountInvalid'
-  /**
    * Overflow
    **/
   | 'InvalidMintedLiquidity'
@@ -18601,10 +19015,6 @@ export type PalletXykError =
    * Overflow
    **/
   | 'FeeAmountInvalid'
-  /**
-   * Overflow
-   **/
-  | 'CannotApplyDiscount'
   /**
    * Max fraction of pool to buy in single transaction has been exceeded.
    **/
@@ -18850,6 +19260,106 @@ export type PalletHsmError =
    **/
   | 'InvalidArbitrageData';
 
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletSignetError =
+  /**
+   * The pallet has already been initialized
+   **/
+  | 'AlreadyInitialized'
+  /**
+   * The pallet has not been initialized yet
+   **/
+  | 'NotInitialized'
+  /**
+   * Unauthorized - caller is not admin
+   **/
+  | 'Unauthorized'
+  /**
+   * Insufficient funds for withdrawal
+   **/
+  | 'InsufficientFunds'
+  /**
+   * Invalid transaction data (empty)
+   **/
+  | 'InvalidTransaction'
+  /**
+   * Arrays must have the same length
+   **/
+  | 'InvalidInputLength'
+  /**
+   * The chain ID is too long
+   **/
+  | 'ChainIdTooLong'
+  /**
+   * Transaction data exceeds maximum allowed length
+   **/
+  | 'DataTooLong'
+  /**
+   * Invalid address format - must be exactly 20 bytes
+   **/
+  | 'InvalidAddress'
+  /**
+   * Priority fee cannot exceed max fee per gas (EIP-1559 requirement)
+   **/
+  | 'InvalidGasPrice'
+  /**
+   * Signature Deposit cannot exceed MaxSignatureDeposit
+   **/
+  | 'MaxDepositExceeded';
+
+export type PalletDispenserDispenserConfigData = { paused: boolean };
+
+/**
+ * Pallet errors.
+ **/
+export type PalletDispenserError =
+  /**
+   * Request ID has already been used.
+   **/
+  | 'DuplicateRequest'
+  /**
+   * Failed to (de)serialize data.
+   **/
+  | 'Serialization'
+  /**
+   * Output data did not match the expected format.
+   **/
+  | 'InvalidOutput'
+  /**
+   * Request ID does not match the derived ID for the provided data.
+   **/
+  | 'InvalidRequestId'
+  /**
+   * Pallet is paused and cannot process this call.
+   **/
+  | 'Paused'
+  /**
+   * Requested amount is below the configured minimum.
+   **/
+  | 'AmountTooSmall'
+  /**
+   * Requested amount exceeds the configured maximum.
+   **/
+  | 'AmountTooLarge'
+  /**
+   * EVM address parameter is invalid (e.g., zero address).
+   **/
+  | 'InvalidAddress'
+  /**
+   * Faucet balance would fall below the configured threshold after this request.
+   **/
+  | 'FaucetBalanceBelowThreshold'
+  /**
+   * Caller does not have enough balance of the fee asset.
+   **/
+  | 'NotEnoughFeeFunds'
+  /**
+   * Caller does not have enough balance of the faucet asset.
+   **/
+  | 'NotEnoughFaucetFunds';
+
 export type OrmlTokensBalanceLock = { id: FixedBytes<8>; amount: bigint };
 
 export type OrmlTokensAccountData = { free: bigint; reserved: bigint; frozen: bigint };
@@ -19081,7 +19591,19 @@ export type PalletEvmAccountsError =
   /**
    * Address not whitelisted
    **/
-  | 'AddressNotWhitelisted';
+  | 'AddressNotWhitelisted'
+  /**
+   * Provided signature is invalid
+   **/
+  | 'InvalidSignature'
+  /**
+   * Account already exists in the system pallet
+   **/
+  | 'AccountAlreadyExists'
+  /**
+   * Insufficient asset balance of the claimed asset
+   **/
+  | 'InsufficientAssetBalance';
 
 /**
  * The `Error` enum of this pallet.
@@ -19884,6 +20406,19 @@ export type PalletIsmpError =
 /**
  * The `Error` enum of this pallet.
  **/
+export type IsmpParachainError =
+  /**
+   * Only Parachain Consensus updates should be passed in the inherents.
+   **/
+  | 'InvalidConsensusStateId'
+  /**
+   * ValidationData must be updated only once in a block.
+   **/
+  | 'ConsensusAlreadyUpdated';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
 export type PalletHyperbridgeError = null;
 
 /**
@@ -19926,11 +20461,6 @@ export type PalletTokenGatewayError =
    * Only root or asset owner can update asset
    **/
   | 'NotAssetOwner';
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletIsmpOracleTestError = 'GetRequestFailed';
 
 export type PalletEmaOracleOracleEntry = {
   price: HydraDxMathRatio;
@@ -20191,6 +20721,8 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'Referrals'; palletError: PalletReferralsError }
   | { pallet: 'Liquidation'; palletError: PalletLiquidationError }
   | { pallet: 'Hsm'; palletError: PalletHsmError }
+  | { pallet: 'Signet'; palletError: PalletSignetError }
+  | { pallet: 'EthDispenser'; palletError: PalletDispenserError }
   | { pallet: 'Tokens'; palletError: OrmlTokensModuleError }
   | { pallet: 'Currencies'; palletError: PalletCurrenciesModuleError }
   | { pallet: 'Vesting'; palletError: OrmlVestingModuleError }
@@ -20212,8 +20744,8 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'CollatorSelection'; palletError: PalletCollatorSelectionError }
   | { pallet: 'Session'; palletError: PalletSessionError }
   | { pallet: 'Ismp'; palletError: PalletIsmpError }
+  | { pallet: 'IsmpParachain'; palletError: IsmpParachainError }
   | { pallet: 'Hyperbridge'; palletError: PalletHyperbridgeError }
   | { pallet: 'TokenGateway'; palletError: PalletTokenGatewayError }
-  | { pallet: 'IsmpOracle'; palletError: PalletIsmpOracleTestError }
   | { pallet: 'EmaOracle'; palletError: PalletEmaOracleError }
   | { pallet: 'Broadcast'; palletError: PalletBroadcastError };

@@ -3929,6 +3929,25 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `IsmpParachain`'s errors
+   **/
+  ismpParachain: {
+    /**
+     * Only Parachain Consensus updates should be passed in the inherents.
+     **/
+    InvalidConsensusStateId: GenericPalletError;
+
+    /**
+     * ValidationData must be updated only once in a block.
+     **/
+    ConsensusAlreadyUpdated: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `Hyperbridge`'s errors
    **/
   hyperbridge: {

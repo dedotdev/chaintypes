@@ -16,7 +16,6 @@ import type {
   AccountId32,
 } from 'dedot/codecs';
 import type {
-  RelayCommonApisInflationInfo,
   SpRuntimeBlock,
   SpRuntimeExtrinsicInclusionMode,
   SpCoreOpaqueMetadata,
@@ -74,6 +73,8 @@ import type {
   SpConsensusSlotsEquivocationProof,
   SpAuthorityDiscoveryAppPublic,
   SpCoreCryptoKeyTypeId,
+  FrameSupportViewFunctionsViewFunctionDispatchError,
+  FrameSupportViewFunctionsViewFunctionId,
   PalletTransactionPaymentRuntimeDispatchInfo,
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
@@ -91,25 +92,6 @@ import type {
 } from './types.js';
 
 export interface RuntimeApis extends GenericRuntimeApis {
-  /**
-   * @runtimeapi: Inflation - 0xc51ff1fa3f5d0cca
-   **/
-  inflation: {
-    /**
-     * Return the current estimates of the inflation amount.
-     *
-     * This is marked as experimental in light of RFC#89. Nonetheless, its usage is highly
-     * recommended over trying to read-storage, or re-create the onchain logic.
-     *
-     * @callname: Inflation_experimental_inflation_prediction_info
-     **/
-    experimentalInflationPredictionInfo: GenericRuntimeApiMethod<() => Promise<RelayCommonApisInflationInfo>>;
-
-    /**
-     * Generic runtime api call
-     **/
-    [method: string]: GenericRuntimeApiMethod;
-  };
   /**
    * @runtimeapi: Core - 0xdf6acb689907609b
    **/
@@ -1080,6 +1062,29 @@ export interface RuntimeApis extends GenericRuntimeApis {
      **/
     decodeSessionKeys: GenericRuntimeApiMethod<
       (encoded: BytesLike) => Promise<Array<[Bytes, SpCoreCryptoKeyTypeId]> | undefined>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: RuntimeViewFunction - 0xccd9de6396c899ca
+   **/
+  runtimeViewFunction: {
+    /**
+     * Execute a view function query.
+     *
+     * @callname: RuntimeViewFunction_execute_view_function
+     * @param {FrameSupportViewFunctionsViewFunctionId} query_id
+     * @param {BytesLike} input
+     **/
+    executeViewFunction: GenericRuntimeApiMethod<
+      (
+        queryId: FrameSupportViewFunctionsViewFunctionId,
+        input: BytesLike,
+      ) => Promise<Result<Bytes, FrameSupportViewFunctionsViewFunctionDispatchError>>
     >;
 
     /**

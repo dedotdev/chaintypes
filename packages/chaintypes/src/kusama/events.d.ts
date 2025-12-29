@@ -68,6 +68,7 @@ import type {
   PalletRcMigratorMigrationStage,
   XcmV3MaybeErrorCode,
   PalletRcMigratorQueuePriority,
+  PalletRcMigratorMigrationSettings,
 } from './types.js';
 
 export interface ChainEvents extends GenericChainEvents {
@@ -3731,6 +3732,25 @@ export interface ChainEvents extends GenericChainEvents {
      * The manager multisig received a vote.
      **/
     ManagerMultisigVoted: GenericPalletEvent<'RcMigrator', 'ManagerMultisigVoted', { votes: number }>;
+
+    /**
+     * The migration settings were set.
+     **/
+    MigrationSettingsSet: GenericPalletEvent<
+      'RcMigrator',
+      'MigrationSettingsSet',
+      {
+        /**
+         * The old migration settings.
+         **/
+        old?: PalletRcMigratorMigrationSettings | undefined;
+
+        /**
+         * The new migration settings.
+         **/
+        new?: PalletRcMigratorMigrationSettings | undefined;
+      }
+    >;
 
     /**
      * Generic pallet event

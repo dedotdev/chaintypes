@@ -12029,7 +12029,11 @@ export type PalletRcMigratorCall =
   | {
       name: 'VoteManagerMultisig';
       params: { payload: PalletRcMigratorManagerMultisigVote; sig: SpRuntimeMultiSignature };
-    };
+    }
+  /**
+   * Set the migration settings. Can only be done by admin or manager.
+   **/
+  | { name: 'SetSettings'; params: { settings?: PalletRcMigratorMigrationSettings | undefined } };
 
 export type PalletRcMigratorCallLike =
   /**
@@ -12147,7 +12151,11 @@ export type PalletRcMigratorCallLike =
   | {
       name: 'VoteManagerMultisig';
       params: { payload: PalletRcMigratorManagerMultisigVote; sig: SpRuntimeMultiSignature };
-    };
+    }
+  /**
+   * Set the migration settings. Can only be done by admin or manager.
+   **/
+  | { name: 'SetSettings'; params: { settings?: PalletRcMigratorMigrationSettings | undefined } };
 
 export type PalletRcMigratorMigrationStage =
   | { type: 'Pending' }
@@ -12374,6 +12382,11 @@ export type PalletRcMigratorManagerMultisigVote = {
   who: SpRuntimeMultiSigner;
   call: StagingKusamaRuntimeRuntimeCall;
   round: number;
+};
+
+export type PalletRcMigratorMigrationSettings = {
+  maxAccountsPerBlock?: number | undefined;
+  maxItemsPerBlock?: number | undefined;
 };
 
 export type SpRuntimeBlakeTwo256 = {};
@@ -14553,7 +14566,24 @@ export type PalletRcMigratorEvent =
   /**
    * The manager multisig received a vote.
    **/
-  | { name: 'ManagerMultisigVoted'; data: { votes: number } };
+  | { name: 'ManagerMultisigVoted'; data: { votes: number } }
+  /**
+   * The migration settings were set.
+   **/
+  | {
+      name: 'MigrationSettingsSet';
+      data: {
+        /**
+         * The old migration settings.
+         **/
+        old?: PalletRcMigratorMigrationSettings | undefined;
+
+        /**
+         * The new migration settings.
+         **/
+        new?: PalletRcMigratorMigrationSettings | undefined;
+      };
+    };
 
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
@@ -14811,6 +14841,10 @@ export type PalletBalancesError =
   | 'DeltaZero';
 
 export type PalletTransactionPaymentReleases = 'V1Ancient' | 'V2';
+
+export type FrameSupportStorageNoDrop = FrameSupportTokensFungibleImbalance;
+
+export type FrameSupportTokensFungibleImbalance = { amount: bigint };
 
 export type PalletStakingStakingLedger = {
   stash: AccountId32;
@@ -17767,9 +17801,11 @@ export type PalletRcMigratorError =
   /**
    * The stage transition is invalid.
    **/
-  | 'InvalidStageTransition';
-
-export type RelayCommonApisInflationInfo = { inflation: Perquintill; nextMint: [bigint, bigint] };
+  | 'InvalidStageTransition'
+  /**
+   * Unsigned validation failed.
+   **/
+  | 'UnsignedValidationFailed';
 
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 
@@ -17999,6 +18035,13 @@ export type SpConsensusBabeEpoch = {
 };
 
 export type SpConsensusBabeOpaqueKeyOwnershipProof = Bytes;
+
+export type FrameSupportViewFunctionsViewFunctionId = { prefix: FixedBytes<16>; suffix: FixedBytes<16> };
+
+export type FrameSupportViewFunctionsViewFunctionDispatchError =
+  | { type: 'NotImplemented' }
+  | { type: 'NotFound'; value: FrameSupportViewFunctionsViewFunctionId }
+  | { type: 'Codec' };
 
 export type PalletTransactionPaymentRuntimeDispatchInfo = {
   weight: SpWeightsWeightV2Weight;

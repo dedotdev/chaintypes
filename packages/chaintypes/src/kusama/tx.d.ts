@@ -96,6 +96,7 @@ import type {
   StagingXcmV5Response,
   PalletRcMigratorQueuePriority,
   PalletRcMigratorManagerMultisigVote,
+  PalletRcMigratorMigrationSettings,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -11687,6 +11688,24 @@ export interface ChainTx<
           palletCall: {
             name: 'VoteManagerMultisig';
             params: { payload: PalletRcMigratorManagerMultisigVote; sig: SpRuntimeMultiSignature };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the migration settings. Can only be done by admin or manager.
+     *
+     * @param {PalletRcMigratorMigrationSettings | undefined} settings
+     **/
+    setSettings: GenericTxCall<
+      (settings: PalletRcMigratorMigrationSettings | undefined) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'RcMigrator';
+          palletCall: {
+            name: 'SetSettings';
+            params: { settings: PalletRcMigratorMigrationSettings | undefined };
           };
         },
         ChainKnownTypes

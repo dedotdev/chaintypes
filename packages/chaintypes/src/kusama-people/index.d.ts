@@ -41,6 +41,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     FrameSystemExtensionsCheckWeight,
     PalletTransactionPaymentChargeTransactionPayment,
     FrameMetadataHashExtensionCheckMetadataHash,
+    [],
   ];
   AssetId: undefined;
   EventRecord: FrameSystemEventRecord;
@@ -48,7 +49,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: KusamaPeopleApi
- * @specVersion: 1009001
+ * @specVersion: 2000004
  **/
 export interface KusamaPeopleApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

@@ -2777,7 +2777,16 @@ export type PalletReviveEvent =
   /**
    * Contract deployed by deployer at the specified address.
    **/
-  | { name: 'Instantiated'; data: { deployer: H160; contract: H160 } };
+  | { name: 'Instantiated'; data: { deployer: H160; contract: H160 } }
+  /**
+   * Emitted when an Ethereum transaction reverts.
+   *
+   * Ethereum transactions always complete successfully at the extrinsic level,
+   * as even reverted calls must store their `ReceiptInfo`.
+   * To distinguish reverted calls from successful ones, this event is emitted
+   * for failed Ethereum transactions.
+   **/
+  | { name: 'EthExtrinsicRevert'; data: { dispatchError: DispatchError } };
 
 /**
  * Inner events of this pallet.
@@ -6857,6 +6866,7 @@ export type AssetHubKusamaRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
   | { type: 'PolkadotXcm'; value: PalletXcmOrigin }
   | { type: 'CumulusXcm'; value: CumulusPalletXcmOrigin }
+  | { type: 'Revive'; value: PalletReviveOrigin }
   | { type: 'Origins'; value: AssetHubKusamaRuntimeGovernanceOriginsPalletCustomOriginsOrigin };
 
 export type FrameSupportDispatchRawOrigin =
@@ -6872,6 +6882,8 @@ export type PalletXcmOrigin =
 export type CumulusPalletXcmOrigin =
   | { type: 'Relay' }
   | { type: 'SiblingParachain'; value: PolkadotParachainPrimitivesPrimitivesId };
+
+export type PalletReviveOrigin = { type: 'EthTransaction'; value: AccountId32 };
 
 export type AssetHubKusamaRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
   | 'StakingAdmin'
@@ -8457,9 +8469,10 @@ export type PalletAssetsCall =
    *
    * A deposit will be taken from the signer account.
    *
-   * - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-   * must have sufficient funds for a deposit to be taken.
-   * - `id`: The identifier of the asset for the account to be created.
+   * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+   * to be taken.
+   * - `id`: The identifier of the asset for the account to be created, the asset status must
+   * be live.
    * - `who`: The account to be created.
    *
    * Emits `Touched` event when successful.
@@ -9028,9 +9041,10 @@ export type PalletAssetsCallLike =
    *
    * A deposit will be taken from the signer account.
    *
-   * - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-   * must have sufficient funds for a deposit to be taken.
-   * - `id`: The identifier of the asset for the account to be created.
+   * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+   * to be taken.
+   * - `id`: The identifier of the asset for the account to be created, the asset status must
+   * be live.
    * - `who`: The account to be created.
    *
    * Emits `Touched` event when successful.
@@ -12009,9 +12023,10 @@ export type PalletAssetsCall002 =
    *
    * A deposit will be taken from the signer account.
    *
-   * - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-   * must have sufficient funds for a deposit to be taken.
-   * - `id`: The identifier of the asset for the account to be created.
+   * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+   * to be taken.
+   * - `id`: The identifier of the asset for the account to be created, the asset status must
+   * be live.
    * - `who`: The account to be created.
    *
    * Emits `Touched` event when successful.
@@ -12594,9 +12609,10 @@ export type PalletAssetsCallLike002 =
    *
    * A deposit will be taken from the signer account.
    *
-   * - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-   * must have sufficient funds for a deposit to be taken.
-   * - `id`: The identifier of the asset for the account to be created.
+   * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+   * to be taken.
+   * - `id`: The identifier of the asset for the account to be created, the asset status must
+   * be live.
    * - `who`: The account to be created.
    *
    * Emits `Touched` event when successful.
@@ -13262,9 +13278,10 @@ export type PalletAssetsCall003 =
    *
    * A deposit will be taken from the signer account.
    *
-   * - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-   * must have sufficient funds for a deposit to be taken.
-   * - `id`: The identifier of the asset for the account to be created.
+   * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+   * to be taken.
+   * - `id`: The identifier of the asset for the account to be created, the asset status must
+   * be live.
    * - `who`: The account to be created.
    *
    * Emits `Touched` event when successful.
@@ -13833,9 +13850,10 @@ export type PalletAssetsCallLike003 =
    *
    * A deposit will be taken from the signer account.
    *
-   * - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-   * must have sufficient funds for a deposit to be taken.
-   * - `id`: The identifier of the asset for the account to be created.
+   * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+   * to be taken.
+   * - `id`: The identifier of the asset for the account to be created, the asset status must
+   * be live.
    * - `who`: The account to be created.
    *
    * Emits `Touched` event when successful.
@@ -14863,9 +14881,6 @@ export type PalletReviveCall =
    * # Parameters
    *
    * * `payload`: The encoded [`crate::evm::TransactionSigned`].
-   * * `gas_limit`: The gas limit enforced during contract execution.
-   * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
-   * storage usage.
    *
    * # Note
    *
@@ -14882,7 +14897,7 @@ export type PalletReviveCall =
    *
    * * `dest`: Address of the contract to call.
    * * `value`: The balance to transfer from the `origin` to `dest`.
-   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `weight_limit`: The weight limit enforced when executing the constructor.
    * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
    * caller to pay for the storage consumed.
    * * `data`: The input data to pass to the contract.
@@ -14898,7 +14913,7 @@ export type PalletReviveCall =
       params: {
         dest: H160;
         value: bigint;
-        gasLimit: SpWeightsWeightV2Weight;
+        weightLimit: SpWeightsWeightV2Weight;
         storageDepositLimit: bigint;
         data: Bytes;
       };
@@ -14914,7 +14929,7 @@ export type PalletReviveCall =
       name: 'Instantiate';
       params: {
         value: bigint;
-        gasLimit: SpWeightsWeightV2Weight;
+        weightLimit: SpWeightsWeightV2Weight;
         storageDepositLimit: bigint;
         codeHash: H256;
         data: Bytes;
@@ -14932,7 +14947,7 @@ export type PalletReviveCall =
    * # Parameters
    *
    * * `value`: The balance to transfer from the `origin` to the newly created contract.
-   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `weight_limit`: The weight limit enforced when executing the constructor.
    * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
    * from the caller to pay for the storage consumed.
    * * `code`: The contract code to deploy in raw bytes.
@@ -14954,7 +14969,7 @@ export type PalletReviveCall =
       name: 'InstantiateWithCode';
       params: {
         value: bigint;
-        gasLimit: SpWeightsWeightV2Weight;
+        weightLimit: SpWeightsWeightV2Weight;
         storageDepositLimit: bigint;
         code: Bytes;
         data: Bytes;
@@ -14965,6 +14980,20 @@ export type PalletReviveCall =
    * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
    * by an EVM transaction through the EVM compatibility layer.
    *
+   * # Parameters
+   *
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
+   * payment
+   * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
+   * * `code`: The contract code to deploy in raw bytes.
+   * * `data`: The input data to pass to the contract constructor.
+   * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
+   * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
+   * is used for building the Ethereum transaction root.
+   * * effective_gas_price: the price of a unit of gas
+   * * encoded len: the byte code size of the `eth_transact` extrinsic
+   *
    * Calling this dispatchable ensures that the origin's nonce is bumped only once,
    * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
    * also bumps the nonce after contract instantiation, since it may be invoked multiple
@@ -14972,22 +15001,66 @@ export type PalletReviveCall =
    **/
   | {
       name: 'EthInstantiateWithCode';
-      params: { value: U256; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint; code: Bytes; data: Bytes };
+      params: {
+        value: U256;
+        weightLimit: SpWeightsWeightV2Weight;
+        ethGasLimit: U256;
+        code: Bytes;
+        data: Bytes;
+        transactionEncoded: Bytes;
+        effectiveGasPrice: U256;
+        encodedLen: number;
+      };
     }
   /**
    * Same as [`Self::call`], but intended to be dispatched **only**
    * by an EVM transaction through the EVM compatibility layer.
+   *
+   * # Parameters
+   *
+   * * `dest`: The Ethereum address of the account to be called
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
+   * payment
+   * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
+   * * `data`: The input data to pass to the contract constructor.
+   * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
+   * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
+   * is used for building the Ethereum transaction root.
+   * * effective_gas_price: the price of a unit of gas
+   * * encoded len: the byte code size of the `eth_transact` extrinsic
    **/
   | {
       name: 'EthCall';
-      params: { dest: H160; value: U256; gasLimit: SpWeightsWeightV2Weight; storageDepositLimit: bigint; data: Bytes };
+      params: {
+        dest: H160;
+        value: U256;
+        weightLimit: SpWeightsWeightV2Weight;
+        ethGasLimit: U256;
+        data: Bytes;
+        transactionEncoded: Bytes;
+        effectiveGasPrice: U256;
+        encodedLen: number;
+      };
     }
+  /**
+   * Executes a Substrate runtime call from an Ethereum transaction.
+   *
+   * This dispatchable is intended to be called **only** through the EVM compatibility
+   * layer. The provided call will be dispatched using `RawOrigin::Signed`.
+   *
+   * # Parameters
+   *
+   * * `origin`: Must be an [`Origin::EthTransaction`] origin.
+   * * `call`: The Substrate runtime call to execute.
+   * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
+   **/
+  | { name: 'EthSubstrateCall'; params: { call: AssetHubKusamaRuntimeRuntimeCall; transactionEncoded: Bytes } }
   /**
    * Upload new `code` without instantiating a contract from it.
    *
    * If the code does not already exist a deposit is reserved from the caller
-   * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
-   * depends on the size of the supplied `code`.
+   * The size of the reserve depends on the size of the supplied `code`.
    *
    * # Note
    *
@@ -14995,6 +15068,9 @@ export type PalletReviveCall =
    * To avoid this situation a constructor could employ access control so that it can
    * only be instantiated by permissioned entities. The same is true when uploading
    * through [`Self::instantiate_with_code`].
+   *
+   * If the refcount of the code reaches zero after terminating the last contract that
+   * references this code, the code will be removed automatically.
    **/
   | { name: 'UploadCode'; params: { code: Bytes; storageDepositLimit: bigint } }
   /**
@@ -15047,9 +15123,6 @@ export type PalletReviveCallLike =
    * # Parameters
    *
    * * `payload`: The encoded [`crate::evm::TransactionSigned`].
-   * * `gas_limit`: The gas limit enforced during contract execution.
-   * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
-   * storage usage.
    *
    * # Note
    *
@@ -15066,7 +15139,7 @@ export type PalletReviveCallLike =
    *
    * * `dest`: Address of the contract to call.
    * * `value`: The balance to transfer from the `origin` to `dest`.
-   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `weight_limit`: The weight limit enforced when executing the constructor.
    * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
    * caller to pay for the storage consumed.
    * * `data`: The input data to pass to the contract.
@@ -15082,7 +15155,7 @@ export type PalletReviveCallLike =
       params: {
         dest: H160;
         value: bigint;
-        gasLimit: SpWeightsWeightV2Weight;
+        weightLimit: SpWeightsWeightV2Weight;
         storageDepositLimit: bigint;
         data: BytesLike;
       };
@@ -15098,7 +15171,7 @@ export type PalletReviveCallLike =
       name: 'Instantiate';
       params: {
         value: bigint;
-        gasLimit: SpWeightsWeightV2Weight;
+        weightLimit: SpWeightsWeightV2Weight;
         storageDepositLimit: bigint;
         codeHash: H256;
         data: BytesLike;
@@ -15116,7 +15189,7 @@ export type PalletReviveCallLike =
    * # Parameters
    *
    * * `value`: The balance to transfer from the `origin` to the newly created contract.
-   * * `gas_limit`: The gas limit enforced when executing the constructor.
+   * * `weight_limit`: The weight limit enforced when executing the constructor.
    * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
    * from the caller to pay for the storage consumed.
    * * `code`: The contract code to deploy in raw bytes.
@@ -15138,7 +15211,7 @@ export type PalletReviveCallLike =
       name: 'InstantiateWithCode';
       params: {
         value: bigint;
-        gasLimit: SpWeightsWeightV2Weight;
+        weightLimit: SpWeightsWeightV2Weight;
         storageDepositLimit: bigint;
         code: BytesLike;
         data: BytesLike;
@@ -15149,6 +15222,20 @@ export type PalletReviveCallLike =
    * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
    * by an EVM transaction through the EVM compatibility layer.
    *
+   * # Parameters
+   *
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
+   * payment
+   * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
+   * * `code`: The contract code to deploy in raw bytes.
+   * * `data`: The input data to pass to the contract constructor.
+   * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
+   * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
+   * is used for building the Ethereum transaction root.
+   * * effective_gas_price: the price of a unit of gas
+   * * encoded len: the byte code size of the `eth_transact` extrinsic
+   *
    * Calling this dispatchable ensures that the origin's nonce is bumped only once,
    * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
    * also bumps the nonce after contract instantiation, since it may be invoked multiple
@@ -15158,32 +15245,64 @@ export type PalletReviveCallLike =
       name: 'EthInstantiateWithCode';
       params: {
         value: U256;
-        gasLimit: SpWeightsWeightV2Weight;
-        storageDepositLimit: bigint;
+        weightLimit: SpWeightsWeightV2Weight;
+        ethGasLimit: U256;
         code: BytesLike;
         data: BytesLike;
+        transactionEncoded: BytesLike;
+        effectiveGasPrice: U256;
+        encodedLen: number;
       };
     }
   /**
    * Same as [`Self::call`], but intended to be dispatched **only**
    * by an EVM transaction through the EVM compatibility layer.
+   *
+   * # Parameters
+   *
+   * * `dest`: The Ethereum address of the account to be called
+   * * `value`: The balance to transfer from the `origin` to the newly created contract.
+   * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
+   * payment
+   * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
+   * * `data`: The input data to pass to the contract constructor.
+   * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
+   * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
+   * is used for building the Ethereum transaction root.
+   * * effective_gas_price: the price of a unit of gas
+   * * encoded len: the byte code size of the `eth_transact` extrinsic
    **/
   | {
       name: 'EthCall';
       params: {
         dest: H160;
         value: U256;
-        gasLimit: SpWeightsWeightV2Weight;
-        storageDepositLimit: bigint;
+        weightLimit: SpWeightsWeightV2Weight;
+        ethGasLimit: U256;
         data: BytesLike;
+        transactionEncoded: BytesLike;
+        effectiveGasPrice: U256;
+        encodedLen: number;
       };
     }
+  /**
+   * Executes a Substrate runtime call from an Ethereum transaction.
+   *
+   * This dispatchable is intended to be called **only** through the EVM compatibility
+   * layer. The provided call will be dispatched using `RawOrigin::Signed`.
+   *
+   * # Parameters
+   *
+   * * `origin`: Must be an [`Origin::EthTransaction`] origin.
+   * * `call`: The Substrate runtime call to execute.
+   * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
+   **/
+  | { name: 'EthSubstrateCall'; params: { call: AssetHubKusamaRuntimeRuntimeCallLike; transactionEncoded: BytesLike } }
   /**
    * Upload new `code` without instantiating a contract from it.
    *
    * If the code does not already exist a deposit is reserved from the caller
-   * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
-   * depends on the size of the supplied `code`.
+   * The size of the reserve depends on the size of the supplied `code`.
    *
    * # Note
    *
@@ -15191,6 +15310,9 @@ export type PalletReviveCallLike =
    * To avoid this situation a constructor could employ access control so that it can
    * only be instantiated by permissioned entities. The same is true when uploading
    * through [`Self::instantiate_with_code`].
+   *
+   * If the refcount of the code reaches zero after terminating the last contract that
+   * references this code, the code will be removed automatically.
    **/
   | { name: 'UploadCode'; params: { code: BytesLike; storageDepositLimit: bigint } }
   /**
@@ -20333,6 +20455,19 @@ export type FrameSystemError =
 
 export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
 
+export type CumulusPalletWeightReclaimStorageWeightReclaim = [
+  FrameSystemExtensionsCheckNonZeroSender,
+  FrameSystemExtensionsCheckSpecVersion,
+  FrameSystemExtensionsCheckTxVersion,
+  FrameSystemExtensionsCheckGenesis,
+  FrameSystemExtensionsCheckMortality,
+  FrameSystemExtensionsCheckNonce,
+  FrameSystemExtensionsCheckWeight,
+  PalletAssetConversionTxPaymentChargeAssetTxPayment,
+  FrameMetadataHashExtensionCheckMetadataHash,
+  PalletReviveEvmTxExtensionSetOrigin,
+];
+
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
 export type FrameSystemExtensionsCheckSpecVersion = {};
@@ -20355,6 +20490,8 @@ export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
 export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
 
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
+
+export type PalletReviveEvmTxExtensionSetOrigin = {};
 
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
@@ -20649,6 +20786,10 @@ export type PalletBalancesError =
   | 'DeltaZero';
 
 export type PalletTransactionPaymentReleases = 'V1Ancient' | 'V2';
+
+export type FrameSupportStorageNoDrop = FrameSupportTokensFungibleImbalance;
+
+export type FrameSupportTokensFungibleImbalance = { amount: bigint };
 
 export type PalletVestingReleases = 'V0' | 'V1';
 
@@ -22181,8 +22322,11 @@ export type PalletReviveVmCodeInfo = {
   deposit: bigint;
   refcount: bigint;
   codeLen: number;
+  codeType: PalletReviveVmBytecodeType;
   behaviourVersion: number;
 };
+
+export type PalletReviveVmBytecodeType = 'Pvm' | 'Evm';
 
 export type PalletReviveStorageAccountInfo = { accountType: PalletReviveStorageAccountType; dust: number };
 
@@ -22202,6 +22346,217 @@ export type PalletReviveStorageContractInfo = {
 };
 
 export type PalletReviveStorageDeletionQueueManager = { insertCounter: number; deleteCounter: number };
+
+export type PalletReviveEvmApiRpcTypesGenBlock = {
+  baseFeePerGas: U256;
+  blobGasUsed: U256;
+  difficulty: U256;
+  excessBlobGas: U256;
+  extraData: PalletReviveEvmApiByteBytes;
+  gasLimit: U256;
+  gasUsed: U256;
+  hash: H256;
+  logsBloom: PalletReviveEvmApiByteBytes256;
+  miner: H160;
+  mixHash: H256;
+  nonce: PalletReviveEvmApiByteBytes8;
+  number: U256;
+  parentBeaconBlockRoot?: H256 | undefined;
+  parentHash: H256;
+  receiptsRoot: H256;
+  requestsHash?: H256 | undefined;
+  sha3Uncles: H256;
+  size: U256;
+  stateRoot: H256;
+  timestamp: U256;
+  totalDifficulty?: U256 | undefined;
+  transactions: PalletReviveEvmApiRpcTypesGenHashesOrTransactionInfos;
+  transactionsRoot: H256;
+  uncles: Array<H256>;
+  withdrawals: Array<PalletReviveEvmApiRpcTypesGenWithdrawal>;
+  withdrawalsRoot: H256;
+};
+
+export type PalletReviveEvmApiByteBytes = Bytes;
+
+export type PalletReviveEvmApiByteBytes256 = FixedBytes<256>;
+
+export type PalletReviveEvmApiByteBytes8 = FixedBytes<8>;
+
+export type PalletReviveEvmApiRpcTypesGenHashesOrTransactionInfos =
+  | { type: 'Hashes'; value: Array<H256> }
+  | { type: 'TransactionInfos'; value: Array<PalletReviveEvmApiRpcTypesGenTransactionInfo> };
+
+export type PalletReviveEvmApiRpcTypesGenTransactionInfo = {
+  blockHash: H256;
+  blockNumber: U256;
+  from: H160;
+  hash: H256;
+  transactionIndex: U256;
+  transactionSigned: PalletReviveEvmApiRpcTypesGenTransactionSigned;
+};
+
+export type PalletReviveEvmApiRpcTypesGenTransactionSigned =
+  | { type: 'Transaction7702Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction7702Signed }
+  | { type: 'Transaction4844Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction4844Signed }
+  | { type: 'Transaction1559Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction1559Signed }
+  | { type: 'Transaction2930Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction2930Signed }
+  | { type: 'TransactionLegacySigned'; value: PalletReviveEvmApiRpcTypesGenTransactionLegacySigned };
+
+export type PalletReviveEvmApiRpcTypesGenTransaction7702Signed = {
+  transaction7702Unsigned: PalletReviveEvmApiRpcTypesGenTransaction7702Unsigned;
+  r: U256;
+  s: U256;
+  v?: U256 | undefined;
+  yParity: U256;
+};
+
+export type PalletReviveEvmApiRpcTypesGenTransaction7702Unsigned = {
+  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
+  authorizationList: Array<PalletReviveEvmApiRpcTypesGenAuthorizationListEntry>;
+  chainId: U256;
+  gas: U256;
+  gasPrice: U256;
+  input: PalletReviveEvmApiByteBytes;
+  maxFeePerGas: U256;
+  maxPriorityFeePerGas: U256;
+  nonce: U256;
+  to: H160;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveEvmApiRpcTypesGenAccessListEntry = { address: H160; storageKeys: Array<H256> };
+
+export type PalletReviveEvmApiRpcTypesGenAuthorizationListEntry = {
+  chainId: U256;
+  address: H160;
+  nonce: U256;
+  yParity: U256;
+  r: U256;
+  s: U256;
+};
+
+export type PalletReviveEvmApiRpcTypesGenTransaction4844Signed = {
+  transaction4844Unsigned: PalletReviveEvmApiRpcTypesGenTransaction4844Unsigned;
+  r: U256;
+  s: U256;
+  yParity: U256;
+};
+
+export type PalletReviveEvmApiRpcTypesGenTransaction4844Unsigned = {
+  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
+  blobVersionedHashes: Array<H256>;
+  chainId: U256;
+  gas: U256;
+  input: PalletReviveEvmApiByteBytes;
+  maxFeePerBlobGas: U256;
+  maxFeePerGas: U256;
+  maxPriorityFeePerGas: U256;
+  nonce: U256;
+  to: H160;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveEvmApiRpcTypesGenTransaction1559Signed = {
+  transaction1559Unsigned: PalletReviveEvmApiRpcTypesGenTransaction1559Unsigned;
+  r: U256;
+  s: U256;
+  v?: U256 | undefined;
+  yParity: U256;
+};
+
+export type PalletReviveEvmApiRpcTypesGenTransaction1559Unsigned = {
+  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
+  chainId: U256;
+  gas: U256;
+  gasPrice: U256;
+  input: PalletReviveEvmApiByteBytes;
+  maxFeePerGas: U256;
+  maxPriorityFeePerGas: U256;
+  nonce: U256;
+  to?: H160 | undefined;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveEvmApiRpcTypesGenTransaction2930Signed = {
+  transaction2930Unsigned: PalletReviveEvmApiRpcTypesGenTransaction2930Unsigned;
+  r: U256;
+  s: U256;
+  v?: U256 | undefined;
+  yParity: U256;
+};
+
+export type PalletReviveEvmApiRpcTypesGenTransaction2930Unsigned = {
+  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
+  chainId: U256;
+  gas: U256;
+  gasPrice: U256;
+  input: PalletReviveEvmApiByteBytes;
+  nonce: U256;
+  to?: H160 | undefined;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveEvmApiRpcTypesGenTransactionLegacySigned = {
+  transactionLegacyUnsigned: PalletReviveEvmApiRpcTypesGenTransactionLegacyUnsigned;
+  r: U256;
+  s: U256;
+  v: U256;
+};
+
+export type PalletReviveEvmApiRpcTypesGenTransactionLegacyUnsigned = {
+  chainId?: U256 | undefined;
+  gas: U256;
+  gasPrice: U256;
+  input: PalletReviveEvmApiByteBytes;
+  nonce: U256;
+  to?: H160 | undefined;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveEvmApiRpcTypesGenWithdrawal = {
+  address: H160;
+  amount: U256;
+  index: U256;
+  validatorIndex: U256;
+};
+
+export type PalletReviveEvmBlockHashReceiptGasInfo = { gasUsed: U256; effectiveGasPrice: U256 };
+
+export type PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR = {
+  transactionRootBuilder: PalletReviveEvmBlockHashHashBuilderIncrementalHashBuilderIR;
+  receiptsRootBuilder: PalletReviveEvmBlockHashHashBuilderIncrementalHashBuilderIR;
+  baseFeePerGas: U256;
+  blockGasLimit: U256;
+  gasUsed: U256;
+  logsBloom: FixedBytes<256>;
+  txHashes: Array<H256>;
+  gasInfo: Array<PalletReviveEvmBlockHashReceiptGasInfo>;
+};
+
+export type PalletReviveEvmBlockHashHashBuilderIncrementalHashBuilderIR = {
+  key: Bytes;
+  valueType: number;
+  builderValue: Bytes;
+  stack: Array<Bytes>;
+  stateMasks: Array<number>;
+  treeMasks: Array<number>;
+  hashMasks: Array<number>;
+  storedInDatabase: boolean;
+  rlpBuf: Bytes;
+  index: bigint;
+};
+
+export type PalletReviveDebugDebugSettings = {
+  allowUnlimitedContractSize: boolean;
+  bypassEip3607: boolean;
+  pvmLogs: boolean;
+};
 
 /**
  * The `Error` enum of this pallet.
@@ -22254,7 +22609,7 @@ export type PalletReviveError =
    **/
   | 'ContractTrapped'
   /**
-   * Event body or storage item exceeds [`limits::PAYLOAD_BYTES`].
+   * Event body or storage item exceeds [`limits::STORAGE_BYTES`].
    **/
   | 'ValueTooLarge'
   /**
@@ -22404,7 +22759,58 @@ export type PalletReviveError =
   /**
    * The return data exceeds [`limits::CALLDATA_BYTES`].
    **/
-  | 'ReturnDataTooLarge';
+  | 'ReturnDataTooLarge'
+  /**
+   * Invalid jump destination. Dynamic jumps points to invalid not jumpdest opcode.
+   **/
+  | 'InvalidJump'
+  /**
+   * Attempting to pop a value from an empty stack.
+   **/
+  | 'StackUnderflow'
+  /**
+   * Attempting to push a value onto a full stack.
+   **/
+  | 'StackOverflow'
+  /**
+   * Too much deposit was drawn from the shared txfee and deposit credit.
+   *
+   * This happens if the passed `gas` inside the ethereum transaction is too low.
+   **/
+  | 'TxFeeOverdraw'
+  /**
+   * When calling an EVM constructor `data` has to be empty.
+   *
+   * EVM constructors do not accept data. Their input data is part of the code blob itself.
+   **/
+  | 'EvmConstructorNonEmptyData'
+  /**
+   * Tried to construct an EVM contract via code hash.
+   *
+   * EVM contracts can only be instantiated via code upload as no initcode is
+   * stored on-chain.
+   **/
+  | 'EvmConstructedFromHash'
+  /**
+   * The contract does not have enough balance to refund the storage deposit.
+   *
+   * This is a bug and should never happen. It means the accounting got out of sync.
+   **/
+  | 'StorageRefundNotEnoughFunds'
+  /**
+   * This means there are locks on the contracts storage deposit that prevents refunding it.
+   *
+   * This would be the case if the contract used its storage deposits for governance
+   * or other pallets that allow creating locks over held balance.
+   **/
+  | 'StorageRefundLocked'
+  /**
+   * Called a pre-compile that is not allowed to be delegate called.
+   *
+   * Some pre-compile functions will trap the caller context if being delegate
+   * called or if their caller was being delegate called.
+   **/
+  | 'PrecompileDelegateDenied';
 
 export type PalletNominationPoolsRewardPool = {
   lastRecordedRewardCounter: FixedU128;
@@ -23574,9 +23980,11 @@ export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
 export type SystemParachainsCommonApisInflationInfo = { issuance: Perquintill; nextMint: [bigint, bigint] };
 
 export type PalletRevivePrimitivesContractResult = {
-  gasConsumed: SpWeightsWeightV2Weight;
-  gasRequired: SpWeightsWeightV2Weight;
+  weightConsumed: SpWeightsWeightV2Weight;
+  weightRequired: SpWeightsWeightV2Weight;
   storageDeposit: PalletRevivePrimitivesStorageDeposit;
+  maxStorageDeposit: PalletRevivePrimitivesStorageDeposit;
+  gasConsumed: bigint;
   result: Result<PalletRevivePrimitivesExecReturnValue, DispatchError>;
 };
 
@@ -23591,9 +23999,11 @@ export type PalletRevivePrimitivesStorageDeposit =
 export type PalletRevivePrimitivesCode = { type: 'Upload'; value: Bytes } | { type: 'Existing'; value: H256 };
 
 export type PalletRevivePrimitivesContractResultInstantiateReturnValue = {
-  gasConsumed: SpWeightsWeightV2Weight;
-  gasRequired: SpWeightsWeightV2Weight;
+  weightConsumed: SpWeightsWeightV2Weight;
+  weightRequired: SpWeightsWeightV2Weight;
   storageDeposit: PalletRevivePrimitivesStorageDeposit;
+  maxStorageDeposit: PalletRevivePrimitivesStorageDeposit;
+  gasConsumed: bigint;
   result: Result<PalletRevivePrimitivesInstantiateReturnValue, DispatchError>;
 };
 
@@ -23604,6 +24014,7 @@ export type PalletRevivePrimitivesInstantiateReturnValue = {
 
 export type PalletReviveEvmApiRpcTypesGenGenericTransaction = {
   accessList?: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry> | undefined;
+  authorizationList: Array<PalletReviveEvmApiRpcTypesGenAuthorizationListEntry>;
   blobVersionedHashes: Array<H256>;
   blobs: Array<PalletReviveEvmApiByteBytes>;
   chainId?: U256 | undefined;
@@ -23620,10 +24031,6 @@ export type PalletReviveEvmApiRpcTypesGenGenericTransaction = {
   value?: U256 | undefined;
 };
 
-export type PalletReviveEvmApiRpcTypesGenAccessListEntry = { address: H160; storageKeys: Array<H256> };
-
-export type PalletReviveEvmApiByteBytes = Bytes;
-
 export type PalletReviveEvmApiRpcTypesGenInputOrData = {
   input?: PalletReviveEvmApiByteBytes | undefined;
   data?: PalletReviveEvmApiByteBytes | undefined;
@@ -23632,8 +24039,9 @@ export type PalletReviveEvmApiRpcTypesGenInputOrData = {
 export type PalletReviveEvmApiByte = number;
 
 export type PalletRevivePrimitivesEthTransactInfo = {
-  gasRequired: SpWeightsWeightV2Weight;
+  weightRequired: SpWeightsWeightV2Weight;
   storageDeposit: bigint;
+  maxStorageDeposit: bigint;
   ethGas: U256;
   data: Bytes;
 };
@@ -23642,9 +24050,17 @@ export type PalletRevivePrimitivesEthTransactError =
   | { type: 'Data'; value: Bytes }
   | { type: 'Message'; value: string };
 
+export type PalletReviveEvmApiRpcTypesDryRunConfig = {
+  timestampOverride?: bigint | undefined;
+  reserved?: [] | undefined;
+};
+
 export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
 
-export type PalletRevivePrimitivesContractAccessError = 'DoesntExist' | 'KeyDecodingFailed';
+export type PalletRevivePrimitivesContractAccessError =
+  | { type: 'DoesntExist' }
+  | { type: 'KeyDecodingFailed' }
+  | { type: 'StorageWriteFailed'; value: DispatchError };
 
 export type PalletReviveEvmApiDebugRpcTypesTracerType =
   | { type: 'CallTracer'; value?: PalletReviveEvmApiDebugRpcTypesCallTracerConfig | undefined }
@@ -23675,6 +24091,7 @@ export type PalletReviveEvmApiDebugRpcTypesCallTrace = {
   logs: Array<PalletReviveEvmApiDebugRpcTypesCallLog>;
   value?: U256 | undefined;
   callType: PalletReviveEvmApiDebugRpcTypesCallType;
+  childCallCount: number;
 };
 
 export type PalletReviveEvmApiDebugRpcTypesCallLog = {
@@ -23684,7 +24101,13 @@ export type PalletReviveEvmApiDebugRpcTypesCallLog = {
   position: number;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesCallType = 'Call' | 'StaticCall' | 'DelegateCall' | 'Create' | 'Create2';
+export type PalletReviveEvmApiDebugRpcTypesCallType =
+  | 'Call'
+  | 'StaticCall'
+  | 'DelegateCall'
+  | 'Create'
+  | 'Create2'
+  | 'Selfdestruct';
 
 export type PalletReviveEvmApiDebugRpcTypesPrestateTrace =
   | { type: 'Prestate'; value: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]> }
@@ -23702,6 +24125,8 @@ export type PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo = {
   code?: PalletReviveEvmApiByteBytes | undefined;
   storage: Array<[PalletReviveEvmApiByteBytes, PalletReviveEvmApiByteBytes | undefined]>;
 };
+
+export type PalletRevivePrimitivesBalanceConversionError = 'Value' | 'Dust';
 
 export type AssetHubKusamaRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }

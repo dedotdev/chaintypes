@@ -2165,7 +2165,7 @@ export interface ChainErrors extends GenericChainErrors {
     ContractTrapped: GenericPalletError;
 
     /**
-     * Event body or storage item exceeds [`limits::PAYLOAD_BYTES`].
+     * Event body or storage item exceeds [`limits::STORAGE_BYTES`].
      **/
     ValueTooLarge: GenericPalletError;
 
@@ -2350,6 +2350,66 @@ export interface ChainErrors extends GenericChainErrors {
      * The return data exceeds [`limits::CALLDATA_BYTES`].
      **/
     ReturnDataTooLarge: GenericPalletError;
+
+    /**
+     * Invalid jump destination. Dynamic jumps points to invalid not jumpdest opcode.
+     **/
+    InvalidJump: GenericPalletError;
+
+    /**
+     * Attempting to pop a value from an empty stack.
+     **/
+    StackUnderflow: GenericPalletError;
+
+    /**
+     * Attempting to push a value onto a full stack.
+     **/
+    StackOverflow: GenericPalletError;
+
+    /**
+     * Too much deposit was drawn from the shared txfee and deposit credit.
+     *
+     * This happens if the passed `gas` inside the ethereum transaction is too low.
+     **/
+    TxFeeOverdraw: GenericPalletError;
+
+    /**
+     * When calling an EVM constructor `data` has to be empty.
+     *
+     * EVM constructors do not accept data. Their input data is part of the code blob itself.
+     **/
+    EvmConstructorNonEmptyData: GenericPalletError;
+
+    /**
+     * Tried to construct an EVM contract via code hash.
+     *
+     * EVM contracts can only be instantiated via code upload as no initcode is
+     * stored on-chain.
+     **/
+    EvmConstructedFromHash: GenericPalletError;
+
+    /**
+     * The contract does not have enough balance to refund the storage deposit.
+     *
+     * This is a bug and should never happen. It means the accounting got out of sync.
+     **/
+    StorageRefundNotEnoughFunds: GenericPalletError;
+
+    /**
+     * This means there are locks on the contracts storage deposit that prevents refunding it.
+     *
+     * This would be the case if the contract used its storage deposits for governance
+     * or other pallets that allow creating locks over held balance.
+     **/
+    StorageRefundLocked: GenericPalletError;
+
+    /**
+     * Called a pre-compile that is not allowed to be delegate called.
+     *
+     * Some pre-compile functions will trap the caller context if being delegate
+     * called or if their caller was being delegate called.
+     **/
+    PrecompileDelegateDenied: GenericPalletError;
 
     /**
      * Generic pallet error

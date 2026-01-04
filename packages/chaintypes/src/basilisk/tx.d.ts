@@ -48,7 +48,7 @@ import type {
   XcmVersionedLocation,
   XcmVersionedXcm,
   XcmVersionedAssets,
-  StagingXcmV4Location,
+  StagingXcmV5Location,
   XcmV3WeightLimit,
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
@@ -58,8 +58,8 @@ import type {
   BasiliskRuntimeXcmAssetLocation,
   PalletLbpWeightCurveType,
   PalletNftCollectionType,
-  HydradxTraitsRouterTrade,
-  HydradxTraitsRouterAssetPair,
+  BasiliskTraitsRouterTrade,
+  BasiliskTraitsRouterAssetPair,
   PalletXykAssetPair,
   PalletLiquidityMiningLoyaltyCurve,
   XcmVersionedAsset,
@@ -1202,6 +1202,76 @@ export interface ChainTx<
     >;
 
     /**
+     * Dispatch a fallback call in the event the main call fails to execute.
+     * May be called from any origin except `None`.
+     *
+     * This function first attempts to dispatch the `main` call.
+     * If the `main` call fails, the `fallback` is attemted.
+     * if the fallback is successfully dispatched, the weights of both calls
+     * are accumulated and an event containing the main call error is deposited.
+     *
+     * In the event of a fallback failure the whole call fails
+     * with the weights returned.
+     *
+     * - `main`: The main call to be dispatched. This is the primary action to execute.
+     * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+     *
+     * ## Dispatch Logic
+     * - If the origin is `root`, both the main and fallback calls are executed without
+     * applying any origin filters.
+     * - If the origin is not `root`, the origin filter is applied to both the `main` and
+     * `fallback` calls.
+     *
+     * ## Use Case
+     * - Some use cases might involve submitting a `batch` type call in either main, fallback
+     * or both.
+     *
+     * @param {BasiliskRuntimeRuntimeCallLike} main
+     * @param {BasiliskRuntimeRuntimeCallLike} fallback
+     **/
+    ifElse: GenericTxCall<
+      (
+        main: BasiliskRuntimeRuntimeCallLike,
+        fallback: BasiliskRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Utility';
+          palletCall: {
+            name: 'IfElse';
+            params: { main: BasiliskRuntimeRuntimeCallLike; fallback: BasiliskRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Dispatches a function call with a provided origin.
+     *
+     * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * @param {BasiliskRuntimeOriginCaller} asOrigin
+     * @param {BasiliskRuntimeRuntimeCallLike} call
+     **/
+    dispatchAsFallible: GenericTxCall<
+      (
+        asOrigin: BasiliskRuntimeOriginCaller,
+        call: BasiliskRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Utility';
+          palletCall: {
+            name: 'DispatchAsFallible';
+            params: { asOrigin: BasiliskRuntimeOriginCaller; call: BasiliskRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -2011,6 +2081,56 @@ export interface ChainTx<
     >;
 
     /**
+     * Disapprove the proposal and burn the cost held for storing this proposal.
+     *
+     * Parameters:
+     * - `origin`: must be the `KillOrigin`.
+     * - `proposal_hash`: The hash of the proposal that should be killed.
+     *
+     * Emits `Killed` and `ProposalCostBurned` if any cost was held for a given proposal.
+     *
+     * @param {H256} proposalHash
+     **/
+    kill: GenericTxCall<
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'TechnicalCommittee';
+          palletCall: {
+            name: 'Kill';
+            params: { proposalHash: H256 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Release the cost held for storing a proposal once the given proposal is completed.
+     *
+     * If there is no associated cost for the given proposal, this call will have no effect.
+     *
+     * Parameters:
+     * - `origin`: must be `Signed` or `Root`.
+     * - `proposal_hash`: The hash of the proposal.
+     *
+     * Emits `ProposalCostReleased` if any cost held for a given proposal.
+     *
+     * @param {H256} proposalHash
+     **/
+    releaseProposalCost: GenericTxCall<
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'TechnicalCommittee';
+          palletCall: {
+            name: 'ReleaseProposalCost';
+            params: { proposalHash: H256 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -2451,6 +2571,29 @@ export interface ChainTx<
     >;
 
     /**
+     * Poke / Adjust deposits made for proxies and announcements based on current values.
+     * This can be used by accounts to possibly lower their locked amount.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * The transaction fee is waived if the deposit amount has changed.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     **/
+    pokeDeposit: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'PokeDeposit';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -2829,7 +2972,7 @@ export interface ChainTx<
     >;
 
     /**
-     * Ensure that the a bulk of pre-images is upgraded.
+     * Ensure that the bulk of pre-images is upgraded.
      *
      * The caller pays no fee if at least 90% of pre-images were successfully updated.
      *
@@ -4220,8 +4363,9 @@ export interface ChainTx<
     /**
      * Add an `AccountId` with permission to grant usernames with a given `suffix` appended.
      *
-     * The authority can grant up to `allocation` usernames. To top up their allocation, they
-     * should just issue (or request via governance) a new `add_username_authority` call.
+     * The authority can grant up to `allocation` usernames. To top up the allocation or
+     * change the account used to grant usernames, this call can be used with the updated
+     * parameters to overwrite the existing configuration.
      *
      * @param {AccountId32Like} authority
      * @param {BytesLike} suffix
@@ -4247,15 +4391,19 @@ export interface ChainTx<
     /**
      * Remove `authority` from the username authorities.
      *
+     * @param {BytesLike} suffix
      * @param {AccountId32Like} authority
      **/
     removeUsernameAuthority: GenericTxCall<
-      (authority: AccountId32Like) => ChainSubmittableExtrinsic<
+      (
+        suffix: BytesLike,
+        authority: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Identity';
           palletCall: {
             name: 'RemoveUsernameAuthority';
-            params: { authority: AccountId32Like };
+            params: { suffix: BytesLike; authority: AccountId32Like };
           };
         },
         ChainKnownTypes
@@ -4265,7 +4413,11 @@ export interface ChainTx<
     /**
      * Set the username for `who`. Must be called by a username authority.
      *
-     * The authority must have an `allocation`. Users can either pre-sign their usernames or
+     * If `use_allocation` is set, the authority must have a username allocation available to
+     * spend. Otherwise, the authority will need to put up a deposit for registering the
+     * username.
+     *
+     * Users can either pre-sign their usernames or
      * accept them later.
      *
      * Usernames must:
@@ -4276,18 +4428,25 @@ export interface ChainTx<
      * @param {AccountId32Like} who
      * @param {BytesLike} username
      * @param {SpRuntimeMultiSignature | undefined} signature
+     * @param {boolean} useAllocation
      **/
     setUsernameFor: GenericTxCall<
       (
         who: AccountId32Like,
         username: BytesLike,
         signature: SpRuntimeMultiSignature | undefined,
+        useAllocation: boolean,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Identity';
           palletCall: {
             name: 'SetUsernameFor';
-            params: { who: AccountId32Like; username: BytesLike; signature: SpRuntimeMultiSignature | undefined };
+            params: {
+              who: AccountId32Like;
+              username: BytesLike;
+              signature: SpRuntimeMultiSignature | undefined;
+              useAllocation: boolean;
+            };
           };
         },
         ChainKnownTypes
@@ -4352,17 +4511,56 @@ export interface ChainTx<
     >;
 
     /**
-     * Remove a username that corresponds to an account with no identity. Exists when a user
-     * gets a username but then calls `clear_identity`.
+     * Start the process of removing a username by placing it in the unbinding usernames map.
+     * Once the grace period has passed, the username can be deleted by calling
+     * [remove_username](crate::Call::remove_username).
      *
      * @param {BytesLike} username
      **/
-    removeDanglingUsername: GenericTxCall<
+    unbindUsername: GenericTxCall<
       (username: BytesLike) => ChainSubmittableExtrinsic<
         {
           pallet: 'Identity';
           palletCall: {
-            name: 'RemoveDanglingUsername';
+            name: 'UnbindUsername';
+            params: { username: BytesLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Permanently delete a username which has been unbinding for longer than the grace period.
+     * Caller is refunded the fee if the username expired and the removal was successful.
+     *
+     * @param {BytesLike} username
+     **/
+    removeUsername: GenericTxCall<
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'RemoveUsername';
+            params: { username: BytesLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Call with [ForceOrigin](crate::Config::ForceOrigin) privileges which deletes a username
+     * and slashes any deposit associated with it.
+     *
+     * @param {BytesLike} username
+     **/
+    killUsername: GenericTxCall<
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'KillUsername';
             params: { username: BytesLike };
           };
         },
@@ -4592,6 +4790,42 @@ export interface ChainTx<
               timepoint: PalletMultisigTimepoint;
               callHash: FixedBytes<32>;
             };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Poke the deposit reserved for an existing multisig operation.
+     *
+     * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+     * the multisig operation.
+     *
+     * The transaction fee is waived if the deposit amount has changed.
+     *
+     * - `threshold`: The total number of approvals needed for this multisig.
+     * - `other_signatories`: The accounts (other than the sender) who are part of the
+     * multisig.
+     * - `call_hash`: The hash of the call this deposit is reserved for.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     * @param {number} threshold
+     * @param {Array<AccountId32Like>} otherSignatories
+     * @param {FixedBytes<32>} callHash
+     **/
+    pokeDeposit: GenericTxCall<
+      (
+        threshold: number,
+        otherSignatories: Array<AccountId32Like>,
+        callHash: FixedBytes<32>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Multisig';
+          palletCall: {
+            name: 'PokeDeposit';
+            params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
           };
         },
         ChainKnownTypes
@@ -5012,6 +5246,43 @@ export interface ChainTx<
           pallet: 'ConvictionVoting';
           palletCall: {
             name: 'RemoveOtherVote';
+            params: { target: AccountId32Like; class: number; index: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Allow to force remove a vote for a referendum.
+     *
+     * The dispatch origin of this call must be `VoteRemovalOrigin`.
+     *
+     * Only allowed if the referendum is finished.
+     *
+     * The dispatch origin of this call must be _Signed_.
+     *
+     * - `target`: The account of the vote to be removed; this account must have voted for
+     * referendum `index`.
+     * - `index`: The index of referendum of the vote to be removed.
+     *
+     * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
+     * Weight is calculated for the maximum number of vote.
+     *
+     * @param {AccountId32Like} target
+     * @param {number} class_
+     * @param {number} index
+     **/
+    forceRemoveVote: GenericTxCall<
+      (
+        target: AccountId32Like,
+        class_: number,
+        index: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'ConvictionVoting';
+          palletCall: {
+            name: 'ForceRemoveVote';
             params: { target: AccountId32Like; class: number; index: number };
           };
         },
@@ -5871,19 +6142,19 @@ export interface ChainTx<
      * - `location`: The destination that is being described.
      * - `xcm_version`: The latest version of XCM that `location` supports.
      *
-     * @param {StagingXcmV4Location} location
+     * @param {StagingXcmV5Location} location
      * @param {number} version
      **/
     forceXcmVersion: GenericTxCall<
       (
-        location: StagingXcmV4Location,
+        location: StagingXcmV5Location,
         version: number,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'ForceXcmVersion';
-            params: { location: StagingXcmV4Location; version: number };
+            params: { location: StagingXcmV5Location; version: number };
           };
         },
         ChainKnownTypes
@@ -6265,6 +6536,74 @@ export interface ChainTx<
               customXcmOnDest: XcmVersionedXcm;
               weightLimit: XcmV3WeightLimit;
             };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Authorize another `aliaser` location to alias into the local `origin` making this call.
+     * The `aliaser` is only authorized until the provided `expiry` block number.
+     * The call can also be used for a previously authorized alias in order to update its
+     * `expiry` block number.
+     *
+     * Usually useful to allow your local account to be aliased into from a remote location
+     * also under your control (like your account on another chain).
+     *
+     * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+     * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+     * `origin` in XCM programs executed on the local chain.
+     *
+     * @param {XcmVersionedLocation} aliaser
+     * @param {bigint | undefined} expires
+     **/
+    addAuthorizedAlias: GenericTxCall<
+      (
+        aliaser: XcmVersionedLocation,
+        expires: bigint | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'AddAuthorizedAlias';
+            params: { aliaser: XcmVersionedLocation; expires: bigint | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove a previously authorized `aliaser` from the list of locations that can alias into
+     * the local `origin` making this call.
+     *
+     * @param {XcmVersionedLocation} aliaser
+     **/
+    removeAuthorizedAlias: GenericTxCall<
+      (aliaser: XcmVersionedLocation) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'RemoveAuthorizedAlias';
+            params: { aliaser: XcmVersionedLocation };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+     * making this call.
+     *
+     **/
+    removeAllAuthorizedAliases: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'RemoveAllAuthorizedAliases';
           };
         },
         ChainKnownTypes
@@ -6690,9 +7029,15 @@ export interface ChainTx<
     /**
      * Dust specified account.
      * IF account balance is < min. existential deposit of given currency, and account is allowed to
-     * be dusted, the remaining balance is transferred to selected account (usually treasury).
+     * be dusted, the remaining balance is transferred to treasury account.
      *
-     * Caller is rewarded with chosen reward in native currency.
+     * In case of AToken, we perform an erc20 dust, which does a wihtdraw all then supply atoken on behalf of the dust receiver
+     *
+     * The transaction fee is returned back in case of successful dusting.
+     *
+     * Treasury account can never be dusted.
+     *
+     * Emits `Dusted` event when successful.
      *
      * @param {AccountId32Like} account
      * @param {number} currencyId
@@ -6714,18 +7059,21 @@ export interface ChainTx<
     >;
 
     /**
-     * Add account to list of non-dustable account. Account whihc are excluded from udsting.
-     * If such account should be dusted - `AccountBlacklisted` error is returned.
+     * Add account to list of whitelist accounts. Account which are excluded from dusting.
+     * If such account should be dusted - `AccountWhitelisted` error is returned.
      * Only root can perform this action.
+     *
+     * Emits `Added` event when successful.
+     *
      *
      * @param {AccountId32Like} account
      **/
-    addNondustableAccount: GenericTxCall<
+    whitelistAccount: GenericTxCall<
       (account: AccountId32Like) => ChainSubmittableExtrinsic<
         {
           pallet: 'Duster';
           palletCall: {
-            name: 'AddNondustableAccount';
+            name: 'WhitelistAccount';
             params: { account: AccountId32Like };
           };
         },
@@ -6734,16 +7082,19 @@ export interface ChainTx<
     >;
 
     /**
-     * Remove account from list of non-dustable accounts. That means account can be dusted again.
+     * Remove account from list of whitelist accounts. That means account can be dusted again.
+     *
+     * Emits `Removed` event when successful.
+     *
      *
      * @param {AccountId32Like} account
      **/
-    removeNondustableAccount: GenericTxCall<
+    removeFromWhitelist: GenericTxCall<
       (account: AccountId32Like) => ChainSubmittableExtrinsic<
         {
           pallet: 'Duster';
           palletCall: {
-            name: 'RemoveNondustableAccount';
+            name: 'RemoveFromWhitelist';
             params: { account: AccountId32Like };
           };
         },
@@ -7481,7 +7832,7 @@ export interface ChainTx<
      * @param {number} assetOut
      * @param {bigint} amountIn
      * @param {bigint} minAmountOut
-     * @param {Array<HydradxTraitsRouterTrade>} route
+     * @param {Array<BasiliskTraitsRouterTrade>} route
      **/
     sell: GenericTxCall<
       (
@@ -7489,7 +7840,7 @@ export interface ChainTx<
         assetOut: number,
         amountIn: bigint,
         minAmountOut: bigint,
-        route: Array<HydradxTraitsRouterTrade>,
+        route: Array<BasiliskTraitsRouterTrade>,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Router';
@@ -7500,7 +7851,7 @@ export interface ChainTx<
               assetOut: number;
               amountIn: bigint;
               minAmountOut: bigint;
-              route: Array<HydradxTraitsRouterTrade>;
+              route: Array<BasiliskTraitsRouterTrade>;
             };
           };
         },
@@ -7527,7 +7878,7 @@ export interface ChainTx<
      * @param {number} assetOut
      * @param {bigint} amountOut
      * @param {bigint} maxAmountIn
-     * @param {Array<HydradxTraitsRouterTrade>} route
+     * @param {Array<BasiliskTraitsRouterTrade>} route
      **/
     buy: GenericTxCall<
       (
@@ -7535,7 +7886,7 @@ export interface ChainTx<
         assetOut: number,
         amountOut: bigint,
         maxAmountIn: bigint,
-        route: Array<HydradxTraitsRouterTrade>,
+        route: Array<BasiliskTraitsRouterTrade>,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Router';
@@ -7546,7 +7897,7 @@ export interface ChainTx<
               assetOut: number;
               amountOut: bigint;
               maxAmountIn: bigint;
-              route: Array<HydradxTraitsRouterTrade>;
+              route: Array<BasiliskTraitsRouterTrade>;
             };
           };
         },
@@ -7577,19 +7928,19 @@ export interface ChainTx<
      * Fails with `RouteUpdateIsNotSuccessful` error when failed to set the route
      *
      *
-     * @param {HydradxTraitsRouterAssetPair} assetPair
-     * @param {Array<HydradxTraitsRouterTrade>} newRoute
+     * @param {BasiliskTraitsRouterAssetPair} assetPair
+     * @param {Array<BasiliskTraitsRouterTrade>} newRoute
      **/
     setRoute: GenericTxCall<
       (
-        assetPair: HydradxTraitsRouterAssetPair,
-        newRoute: Array<HydradxTraitsRouterTrade>,
+        assetPair: BasiliskTraitsRouterAssetPair,
+        newRoute: Array<BasiliskTraitsRouterTrade>,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Router';
           palletCall: {
             name: 'SetRoute';
-            params: { assetPair: HydradxTraitsRouterAssetPair; newRoute: Array<HydradxTraitsRouterTrade> };
+            params: { assetPair: BasiliskTraitsRouterAssetPair; newRoute: Array<BasiliskTraitsRouterTrade> };
           };
         },
         ChainKnownTypes
@@ -7612,19 +7963,19 @@ export interface ChainTx<
      * Emits `RouteUpdated` when successful.
      *
      *
-     * @param {HydradxTraitsRouterAssetPair} assetPair
-     * @param {Array<HydradxTraitsRouterTrade>} newRoute
+     * @param {BasiliskTraitsRouterAssetPair} assetPair
+     * @param {Array<BasiliskTraitsRouterTrade>} newRoute
      **/
     forceInsertRoute: GenericTxCall<
       (
-        assetPair: HydradxTraitsRouterAssetPair,
-        newRoute: Array<HydradxTraitsRouterTrade>,
+        assetPair: BasiliskTraitsRouterAssetPair,
+        newRoute: Array<BasiliskTraitsRouterTrade>,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Router';
           palletCall: {
             name: 'ForceInsertRoute';
-            params: { assetPair: HydradxTraitsRouterAssetPair; newRoute: Array<HydradxTraitsRouterTrade> };
+            params: { assetPair: BasiliskTraitsRouterAssetPair; newRoute: Array<BasiliskTraitsRouterTrade> };
           };
         },
         ChainKnownTypes
@@ -7650,20 +8001,25 @@ export interface ChainTx<
      * @param {number} assetIn
      * @param {number} assetOut
      * @param {bigint} minAmountOut
-     * @param {Array<HydradxTraitsRouterTrade>} route
+     * @param {Array<BasiliskTraitsRouterTrade>} route
      **/
     sellAll: GenericTxCall<
       (
         assetIn: number,
         assetOut: number,
         minAmountOut: bigint,
-        route: Array<HydradxTraitsRouterTrade>,
+        route: Array<BasiliskTraitsRouterTrade>,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Router';
           palletCall: {
             name: 'SellAll';
-            params: { assetIn: number; assetOut: number; minAmountOut: bigint; route: Array<HydradxTraitsRouterTrade> };
+            params: {
+              assetIn: number;
+              assetOut: number;
+              minAmountOut: bigint;
+              route: Array<BasiliskTraitsRouterTrade>;
+            };
           };
         },
         ChainKnownTypes
@@ -8346,7 +8702,7 @@ export interface ChainTx<
      *
      * - `dest`: The recipient of the transfer.
      * - `currency_id`: currency type.
-     * - `amount`: free balance amount to tranfer.
+     * - `amount`: free balance amount to transfer.
      *
      * @param {AccountId32Like} dest
      * @param {number} currencyId
@@ -8422,7 +8778,7 @@ export interface ChainTx<
      *
      * - `dest`: The recipient of the transfer.
      * - `currency_id`: currency type.
-     * - `amount`: free balance amount to tranfer.
+     * - `amount`: free balance amount to transfer.
      *
      * @param {AccountId32Like} dest
      * @param {number} currencyId
@@ -8454,7 +8810,7 @@ export interface ChainTx<
      * - `source`: The sender of the transfer.
      * - `dest`: The recipient of the transfer.
      * - `currency_id`: currency type.
-     * - `amount`: free balance amount to tranfer.
+     * - `amount`: free balance amount to transfer.
      *
      * @param {AccountId32Like} source
      * @param {AccountId32Like} dest

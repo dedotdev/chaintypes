@@ -2767,25 +2767,23 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * Sign-respond request event
+     * Sign bidirectional request event
      **/
-    SignRespondRequested: GenericPalletEvent<
+    SignBidirectionalRequested: GenericPalletEvent<
       'Signet',
-      'SignRespondRequested',
+      'SignBidirectionalRequested',
       {
         sender: AccountId32;
-        transactionData: Bytes;
-        slip44ChainId: number;
+        serializedTransaction: Bytes;
+        caip2Id: Bytes;
         keyVersion: number;
         deposit: bigint;
         path: Bytes;
         algo: Bytes;
         dest: Bytes;
         params: Bytes;
-        explorerDeserializationFormat: number;
-        explorerDeserializationSchema: Bytes;
-        callbackSerializationFormat: number;
-        callbackSerializationSchema: Bytes;
+        outputDeserializationSchema: Bytes;
+        respondSerializationSchema: Bytes;
       }
     >;
 
@@ -2808,11 +2806,11 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * Read response event
+     * Respond bidirectional event
      **/
-    ReadResponded: GenericPalletEvent<
+    RespondBidirectionalEvent: GenericPalletEvent<
       'Signet',
-      'ReadResponded',
+      'RespondBidirectionalEvent',
       { requestId: FixedBytes<32>; responder: AccountId32; serializedOutput: Bytes; signature: PalletSignetSignature }
     >;
 

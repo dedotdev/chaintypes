@@ -10262,19 +10262,17 @@ export type PalletSignetCall =
    * Request a signature for a serialized transaction
    **/
   | {
-      name: 'SignRespond';
+      name: 'SignBidirectional';
       params: {
         serializedTransaction: Bytes;
-        slip44ChainId: number;
+        caip2Id: Bytes;
         keyVersion: number;
         path: Bytes;
         algo: Bytes;
         dest: Bytes;
         params: Bytes;
-        explorerDeserializationFormat: PalletSignetSerializationFormat;
-        explorerDeserializationSchema: Bytes;
-        callbackSerializationFormat: PalletSignetSerializationFormat;
-        callbackSerializationSchema: Bytes;
+        outputDeserializationSchema: Bytes;
+        respondSerializationSchema: Bytes;
       };
     }
   /**
@@ -10289,7 +10287,7 @@ export type PalletSignetCall =
    * Provide a read response with signature
    **/
   | {
-      name: 'ReadRespond';
+      name: 'RespondBidirectional';
       params: { requestId: FixedBytes<32>; serializedOutput: Bytes; signature: PalletSignetSignature };
     };
 
@@ -10324,19 +10322,17 @@ export type PalletSignetCallLike =
    * Request a signature for a serialized transaction
    **/
   | {
-      name: 'SignRespond';
+      name: 'SignBidirectional';
       params: {
         serializedTransaction: BytesLike;
-        slip44ChainId: number;
+        caip2Id: BytesLike;
         keyVersion: number;
         path: BytesLike;
         algo: BytesLike;
         dest: BytesLike;
         params: BytesLike;
-        explorerDeserializationFormat: PalletSignetSerializationFormat;
-        explorerDeserializationSchema: BytesLike;
-        callbackSerializationFormat: PalletSignetSerializationFormat;
-        callbackSerializationSchema: BytesLike;
+        outputDeserializationSchema: BytesLike;
+        respondSerializationSchema: BytesLike;
       };
     }
   /**
@@ -10351,11 +10347,9 @@ export type PalletSignetCallLike =
    * Provide a read response with signature
    **/
   | {
-      name: 'ReadRespond';
+      name: 'RespondBidirectional';
       params: { requestId: FixedBytes<32>; serializedOutput: BytesLike; signature: PalletSignetSignature };
     };
-
-export type PalletSignetSerializationFormat = 'Borsh' | 'AbiJson';
 
 export type PalletSignetSignature = { bigR: PalletSignetAffinePoint; s: FixedBytes<32>; recoveryId: number };
 
@@ -10376,7 +10370,7 @@ export type PalletDispenserCall =
    * - Charges the configured fee in `FeeAsset`.
    * - Transfers the requested faucet asset from the user to `FeeDestination`.
    * - Builds an EVM transaction calling `IGasFaucet::fund`.
-   * - Submits a signing request to SigNet via `pallet_signet::sign_respond`.
+   * - Submits a signing request to SigNet via `pallet_signet::sign_bidirectional`.
    *
    * The `request_id` must match the ID derived internally from the inputs,
    * otherwise the call will fail with `InvalidRequestId`.
@@ -10431,7 +10425,7 @@ export type PalletDispenserCallLike =
    * - Charges the configured fee in `FeeAsset`.
    * - Transfers the requested faucet asset from the user to `FeeDestination`.
    * - Builds an EVM transaction calling `IGasFaucet::fund`.
-   * - Submits a signing request to SigNet via `pallet_signet::sign_respond`.
+   * - Submits a signing request to SigNet via `pallet_signet::sign_bidirectional`.
    *
    * The `request_id` must match the ID derived internally from the inputs,
    * otherwise the call will fail with `InvalidRequestId`.
@@ -15315,24 +15309,22 @@ export type PalletSignetEvent =
       };
     }
   /**
-   * Sign-respond request event
+   * Sign bidirectional request event
    **/
   | {
-      name: 'SignRespondRequested';
+      name: 'SignBidirectionalRequested';
       data: {
         sender: AccountId32;
-        transactionData: Bytes;
-        slip44ChainId: number;
+        serializedTransaction: Bytes;
+        caip2Id: Bytes;
         keyVersion: number;
         deposit: bigint;
         path: Bytes;
         algo: Bytes;
         dest: Bytes;
         params: Bytes;
-        explorerDeserializationFormat: number;
-        explorerDeserializationSchema: Bytes;
-        callbackSerializationFormat: number;
-        callbackSerializationSchema: Bytes;
+        outputDeserializationSchema: Bytes;
+        respondSerializationSchema: Bytes;
       };
     }
   /**
@@ -15347,10 +15339,10 @@ export type PalletSignetEvent =
    **/
   | { name: 'SignatureError'; data: { requestId: FixedBytes<32>; responder: AccountId32; error: Bytes } }
   /**
-   * Read response event
+   * Respond bidirectional event
    **/
   | {
-      name: 'ReadResponded';
+      name: 'RespondBidirectionalEvent';
       data: {
         requestId: FixedBytes<32>;
         responder: AccountId32;

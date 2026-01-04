@@ -468,6 +468,11 @@ export interface ChainErrors extends GenericChainErrors {
     PrimeAccountNotMember: GenericPalletError;
 
     /**
+     * Proposal is still active.
+     **/
+    ProposalActive: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -971,6 +976,27 @@ export interface ChainErrors extends GenericChainErrors {
     NotExpired: GenericPalletError;
 
     /**
+     * The username cannot be removed because it's still in the grace period.
+     **/
+    TooEarly: GenericPalletError;
+
+    /**
+     * The username cannot be removed because it is not unbinding.
+     **/
+    NotUnbinding: GenericPalletError;
+
+    /**
+     * The username cannot be unbound because it is already unbinding.
+     **/
+    AlreadyUnbinding: GenericPalletError;
+
+    /**
+     * The action cannot be performed because of insufficient privileges (e.g. authority
+     * trying to unbind a username provided by the system).
+     **/
+    InsufficientPrivileges: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1015,12 +1041,13 @@ export interface ChainErrors extends GenericChainErrors {
     SenderInSignatories: GenericPalletError;
 
     /**
-     * Multisig operation not found when attempting to cancel.
+     * Multisig operation not found in storage.
      **/
     NotFound: GenericPalletError;
 
     /**
-     * Only the account that originally created the multisig is able to cancel it.
+     * Only the account that originally created the multisig is able to cancel it or update
+     * its deposits.
      **/
     NotOwner: GenericPalletError;
 
@@ -1361,16 +1388,6 @@ export interface ChainErrors extends GenericChainErrors {
     NotScheduled: GenericPalletError;
 
     /**
-     * No code upgrade has been authorized.
-     **/
-    NothingAuthorized: GenericPalletError;
-
-    /**
-     * The given code upgrade has not been authorized.
-     **/
-    Unauthorized: GenericPalletError;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1501,6 +1518,21 @@ export interface ChainErrors extends GenericChainErrors {
      * Local XCM execution incomplete.
      **/
     LocalExecutionIncomplete: GenericPalletError;
+
+    /**
+     * Too many locations authorized to alias origin.
+     **/
+    TooManyAuthorizedAliases: GenericPalletError;
+
+    /**
+     * Expiry block number is in the past.
+     **/
+    ExpiresInPast: GenericPalletError;
+
+    /**
+     * The alias to remove authorization for was not found.
+     **/
+    AliasNotFound: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1798,12 +1830,12 @@ export interface ChainErrors extends GenericChainErrors {
     /**
      * Account is excluded from dusting.
      **/
-    AccountBlacklisted: GenericPalletError;
+    AccountWhitelisted: GenericPalletError;
 
     /**
      * Account is not present in the non-dustable list.
      **/
-    AccountNotBlacklisted: GenericPalletError;
+    AccountNotWhitelisted: GenericPalletError;
 
     /**
      * The balance is zero.
@@ -1811,14 +1843,14 @@ export interface ChainErrors extends GenericChainErrors {
     ZeroBalance: GenericPalletError;
 
     /**
+     * The balance was not fully dusted, there is some leftover on the account. Normally, it should never happen.
+     **/
+    NonZeroBalance: GenericPalletError;
+
+    /**
      * The balance is sufficient to keep account open.
      **/
     BalanceSufficient: GenericPalletError;
-
-    /**
-     * Dust account is not set.
-     **/
-    DustAccountNotSet: GenericPalletError;
 
     /**
      * Reserve account is not set.
@@ -2239,11 +2271,6 @@ export interface ChainErrors extends GenericChainErrors {
     LiquidityMiningIsNotStopped: GenericPalletError;
 
     /**
-     * LP shares amount is not valid.
-     **/
-    InvalidDepositAmount: GenericPalletError;
-
-    /**
      * Account is not allowed to perform action.
      **/
     Forbidden: GenericPalletError;
@@ -2350,6 +2377,11 @@ export interface ChainErrors extends GenericChainErrors {
     IncentivizedAssetNotRegistered: GenericPalletError;
 
     /**
+     * Provided `amm_pool_id` doesn't match deposit's `amm_pool_id`.
+     **/
+    AmmPoolIdMismatch: GenericPalletError;
+
+    /**
      * Action cannot be completed because unexpected error has occurred. This should be reported
      * to protocol maintainers.
      **/
@@ -2373,6 +2405,16 @@ export interface ChainErrors extends GenericChainErrors {
    * Pallet `Broadcast`'s errors
    **/
   broadcast: {
+    /**
+     * The execution context call stack has reached its maximum size
+     **/
+    ExecutionCallStackOverflow: GenericPalletError;
+
+    /**
+     * The execution context call stack is empty, unable to decrease level
+     **/
+    ExecutionCallStackUnderflow: GenericPalletError;
+
     /**
      * Generic pallet error
      **/
@@ -2565,7 +2607,7 @@ export interface ChainErrors extends GenericChainErrors {
     ZeroFee: GenericPalletError;
 
     /**
-     * The transfering asset amount is zero.
+     * The transferring asset amount is zero.
      **/
     ZeroAmount: GenericPalletError;
 

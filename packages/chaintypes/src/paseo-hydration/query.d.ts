@@ -2210,6 +2210,15 @@ export interface ChainStorage extends GenericChainStorage {
     markedEvmAccounts: GenericStorageQuery<(arg: AccountId32Like) => [] | undefined, AccountId32>;
 
     /**
+     * ERC20-style allowances storage for the MultiCurrency precompile:
+     * (asset_id, owner, spender) -> allowance
+     *
+     * @param {[number, H160, H160]} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    allowances: GenericStorageQuery<(arg: [number, H160, H160]) => bigint, [number, H160, H160]>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;

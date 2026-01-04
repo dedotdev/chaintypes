@@ -59,7 +59,6 @@ import type {
   PalletReferralsLevel,
   PalletReferralsFeeDistribution,
   PalletHsmArbitrage,
-  PalletSignetSerializationFormat,
   PalletSignetSignature,
   PalletSignetErrorResponse,
   PalletDispenserEvmTransactionParams,
@@ -9442,47 +9441,41 @@ export interface ChainTx<
      * Request a signature for a serialized transaction
      *
      * @param {BytesLike} serializedTransaction
-     * @param {number} slip44ChainId
+     * @param {BytesLike} caip2Id
      * @param {number} keyVersion
      * @param {BytesLike} path
      * @param {BytesLike} algo
      * @param {BytesLike} dest
      * @param {BytesLike} params
-     * @param {PalletSignetSerializationFormat} explorerDeserializationFormat
-     * @param {BytesLike} explorerDeserializationSchema
-     * @param {PalletSignetSerializationFormat} callbackSerializationFormat
-     * @param {BytesLike} callbackSerializationSchema
+     * @param {BytesLike} outputDeserializationSchema
+     * @param {BytesLike} respondSerializationSchema
      **/
-    signRespond: GenericTxCall<
+    signBidirectional: GenericTxCall<
       (
         serializedTransaction: BytesLike,
-        slip44ChainId: number,
+        caip2Id: BytesLike,
         keyVersion: number,
         path: BytesLike,
         algo: BytesLike,
         dest: BytesLike,
         params: BytesLike,
-        explorerDeserializationFormat: PalletSignetSerializationFormat,
-        explorerDeserializationSchema: BytesLike,
-        callbackSerializationFormat: PalletSignetSerializationFormat,
-        callbackSerializationSchema: BytesLike,
+        outputDeserializationSchema: BytesLike,
+        respondSerializationSchema: BytesLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Signet';
           palletCall: {
-            name: 'SignRespond';
+            name: 'SignBidirectional';
             params: {
               serializedTransaction: BytesLike;
-              slip44ChainId: number;
+              caip2Id: BytesLike;
               keyVersion: number;
               path: BytesLike;
               algo: BytesLike;
               dest: BytesLike;
               params: BytesLike;
-              explorerDeserializationFormat: PalletSignetSerializationFormat;
-              explorerDeserializationSchema: BytesLike;
-              callbackSerializationFormat: PalletSignetSerializationFormat;
-              callbackSerializationSchema: BytesLike;
+              outputDeserializationSchema: BytesLike;
+              respondSerializationSchema: BytesLike;
             };
           };
         },
@@ -9537,7 +9530,7 @@ export interface ChainTx<
      * @param {BytesLike} serializedOutput
      * @param {PalletSignetSignature} signature
      **/
-    readRespond: GenericTxCall<
+    respondBidirectional: GenericTxCall<
       (
         requestId: FixedBytes<32>,
         serializedOutput: BytesLike,
@@ -9546,7 +9539,7 @@ export interface ChainTx<
         {
           pallet: 'Signet';
           palletCall: {
-            name: 'ReadRespond';
+            name: 'RespondBidirectional';
             params: { requestId: FixedBytes<32>; serializedOutput: BytesLike; signature: PalletSignetSignature };
           };
         },
@@ -9572,7 +9565,7 @@ export interface ChainTx<
      * - Charges the configured fee in `FeeAsset`.
      * - Transfers the requested faucet asset from the user to `FeeDestination`.
      * - Builds an EVM transaction calling `IGasFaucet::fund`.
-     * - Submits a signing request to SigNet via `pallet_signet::sign_respond`.
+     * - Submits a signing request to SigNet via `pallet_signet::sign_bidirectional`.
      *
      * The `request_id` must match the ID derived internally from the inputs,
      * otherwise the call will fail with `InvalidRequestId`.

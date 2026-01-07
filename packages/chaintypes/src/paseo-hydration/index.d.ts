@@ -52,7 +52,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PaseoHydrationApi
- * @specVersion: 376
+ * @specVersion: 377
  **/
 export interface PaseoHydrationApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

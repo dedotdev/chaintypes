@@ -52,6 +52,7 @@ export type ChainJsonRpcApis = Pick<
   | 'grandpa_proveFinality'
   | 'grandpa_roundState'
   | 'grandpa_subscribeJustifications'
+  | 'mmr_generateAncestryProof'
   | 'mmr_generateProof'
   | 'mmr_root'
   | 'mmr_verifyProof'

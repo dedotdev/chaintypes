@@ -15,6 +15,7 @@ import type {
   FrameSystemExtensionsCheckWeight,
   PalletAssetConversionTxPaymentChargeAssetTxPayment,
   FrameMetadataHashExtensionCheckMetadataHash,
+  PalletReviveEvmTxExtensionSetOrigin,
   StagingXcmV5Location,
 } from './types.js';
 import { ChainConsts } from './consts.js';
@@ -42,6 +43,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     FrameSystemExtensionsCheckWeight,
     PalletAssetConversionTxPaymentChargeAssetTxPayment,
     FrameMetadataHashExtensionCheckMetadataHash,
+    PalletReviveEvmTxExtensionSetOrigin,
   ];
   AssetId: StagingXcmV5Location;
   EventRecord: FrameSystemEventRecord;
@@ -49,7 +51,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PaseoAssetHubApi
- * @specVersion: 2000002
+ * @specVersion: 2000004
  **/
 export interface PaseoAssetHubApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

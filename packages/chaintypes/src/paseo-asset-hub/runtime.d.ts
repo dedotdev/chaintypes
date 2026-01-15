@@ -55,16 +55,20 @@ import type {
   StagingXcmV5Location,
   PolkadotParachainPrimitivesPrimitivesId,
   SystemParachainsCommonApisInflationInfo,
+  PalletReviveEvmApiRpcTypesGenBlock,
+  PalletReviveEvmBlockHashReceiptGasInfo,
   PalletRevivePrimitivesContractResult,
   PalletRevivePrimitivesContractResultInstantiateReturnValue,
   PalletRevivePrimitivesCode,
   PalletRevivePrimitivesEthTransactInfo,
   PalletRevivePrimitivesEthTransactError,
   PalletReviveEvmApiRpcTypesGenGenericTransaction,
+  PalletReviveEvmApiRpcTypesDryRunConfig,
   PalletRevivePrimitivesCodeUploadReturnValue,
   PalletRevivePrimitivesContractAccessError,
   PalletReviveEvmApiDebugRpcTypesTrace,
   PalletReviveEvmApiDebugRpcTypesTracerType,
+  PalletRevivePrimitivesBalanceConversionError,
 } from './types.js';
 
 export interface RuntimeApis extends GenericRuntimeApis {
@@ -1025,6 +1029,34 @@ export interface RuntimeApis extends GenericRuntimeApis {
    **/
   reviveApi: {
     /**
+     * Returns the current ETH block.
+     *
+     * This is one block behind the substrate block.
+     *
+     * @callname: ReviveApi_eth_block
+     **/
+    ethBlock: GenericRuntimeApiMethod<() => Promise<PalletReviveEvmApiRpcTypesGenBlock>>;
+
+    /**
+     * Returns the ETH block hash for the given block number.
+     *
+     * @callname: ReviveApi_eth_block_hash
+     * @param {U256} number
+     **/
+    ethBlockHash: GenericRuntimeApiMethod<(number: U256) => Promise<H256 | undefined>>;
+
+    /**
+     * The details needed to reconstruct the receipt information offchain.
+     *
+     * # Note
+     *
+     * Each entry corresponds to the appropriate Ethereum transaction in the current block.
+     *
+     * @callname: ReviveApi_eth_receipt_data
+     **/
+    ethReceiptData: GenericRuntimeApiMethod<() => Promise<Array<PalletReviveEvmBlockHashReceiptGasInfo>>>;
+
+    /**
      * Returns the block gas limit.
      *
      * @callname: ReviveApi_block_gas_limit
@@ -1107,6 +1139,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
     /**
      * Perform an Ethereum call.
      *
+     * Deprecated use `v2` version instead.
      * See [`crate::Pallet::dry_run_eth_transact`]
      *
      * @callname: ReviveApi_eth_transact
@@ -1115,6 +1148,22 @@ export interface RuntimeApis extends GenericRuntimeApis {
     ethTransact: GenericRuntimeApiMethod<
       (
         tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+      ) => Promise<Result<PalletRevivePrimitivesEthTransactInfo, PalletRevivePrimitivesEthTransactError>>
+    >;
+
+    /**
+     * Perform an Ethereum call.
+     *
+     * See [`crate::Pallet::dry_run_eth_transact`]
+     *
+     * @callname: ReviveApi_eth_transact_with_config
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
+     * @param {PalletReviveEvmApiRpcTypesDryRunConfig} config
+     **/
+    ethTransactWithConfig: GenericRuntimeApiMethod<
+      (
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+        config: PalletReviveEvmApiRpcTypesDryRunConfig,
       ) => Promise<Result<PalletRevivePrimitivesEthTransactInfo, PalletRevivePrimitivesEthTransactError>>
     >;
 
@@ -1230,7 +1279,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ReviveApi_block_author
      **/
-    blockAuthor: GenericRuntimeApiMethod<() => Promise<H160 | undefined>>;
+    blockAuthor: GenericRuntimeApiMethod<() => Promise<H160>>;
 
     /**
      * Get the H160 address associated to this account id
@@ -1239,6 +1288,14 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {AccountId32Like} account_id
      **/
     address: GenericRuntimeApiMethod<(accountId: AccountId32Like) => Promise<H160>>;
+
+    /**
+     * Get the account id associated to this H160 address.
+     *
+     * @callname: ReviveApi_account_id
+     * @param {H160} address
+     **/
+    accountId: GenericRuntimeApiMethod<(address: H160) => Promise<AccountId32>>;
 
     /**
      * The address used to call the runtime's pallets dispatchables
@@ -1254,6 +1311,16 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {H160} address
      **/
     code: GenericRuntimeApiMethod<(address: H160) => Promise<Bytes>>;
+
+    /**
+     * Construct the new balance and dust components of this EVM balance.
+     *
+     * @callname: ReviveApi_new_balance_with_dust
+     * @param {U256} balance
+     **/
+    newBalanceWithDust: GenericRuntimeApiMethod<
+      (balance: U256) => Promise<Result<[bigint, number], PalletRevivePrimitivesBalanceConversionError>>
+    >;
 
     /**
      * Generic runtime api call

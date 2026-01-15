@@ -50,7 +50,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PaseoApi
- * @specVersion: 2000002
+ * @specVersion: 2000004
  **/
 export interface PaseoApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

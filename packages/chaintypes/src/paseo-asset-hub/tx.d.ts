@@ -80,7 +80,7 @@ import type {
   PalletNominationPoolsConfigOp,
   PalletNominationPoolsConfigOpU32,
   PalletNominationPoolsConfigOpPerbill,
-  PalletNominationPoolsConfigOp004,
+  PalletNominationPoolsConfigOpAccountId32,
   PalletNominationPoolsClaimPermission,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
@@ -5084,9 +5084,10 @@ export interface ChainTx<
      *
      * A deposit will be taken from the signer account.
      *
-     * - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-     * must have sufficient funds for a deposit to be taken.
-     * - `id`: The identifier of the asset for the account to be created.
+     * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+     * to be taken.
+     * - `id`: The identifier of the asset for the account to be created, the asset status must
+     * be live.
      * - `who`: The account to be created.
      *
      * Emits `Touched` event when successful.
@@ -8671,9 +8672,10 @@ export interface ChainTx<
      *
      * A deposit will be taken from the signer account.
      *
-     * - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-     * must have sufficient funds for a deposit to be taken.
-     * - `id`: The identifier of the asset for the account to be created.
+     * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+     * to be taken.
+     * - `id`: The identifier of the asset for the account to be created, the asset status must
+     * be live.
      * - `who`: The account to be created.
      *
      * Emits `Touched` event when successful.
@@ -9849,9 +9851,10 @@ export interface ChainTx<
      *
      * A deposit will be taken from the signer account.
      *
-     * - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-     * must have sufficient funds for a deposit to be taken.
-     * - `id`: The identifier of the asset for the account to be created.
+     * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+     * to be taken.
+     * - `id`: The identifier of the asset for the account to be created, the asset status must
+     * be live.
      * - `who`: The account to be created.
      *
      * Emits `Touched` event when successful.
@@ -12367,16 +12370,16 @@ export interface ChainTx<
      * most pool members and they should be informed of changes to pool roles.
      *
      * @param {number} poolId
-     * @param {PalletNominationPoolsConfigOp004} newRoot
-     * @param {PalletNominationPoolsConfigOp004} newNominator
-     * @param {PalletNominationPoolsConfigOp004} newBouncer
+     * @param {PalletNominationPoolsConfigOpAccountId32} newRoot
+     * @param {PalletNominationPoolsConfigOpAccountId32} newNominator
+     * @param {PalletNominationPoolsConfigOpAccountId32} newBouncer
      **/
     updateRoles: GenericTxCall<
       (
         poolId: number,
-        newRoot: PalletNominationPoolsConfigOp004,
-        newNominator: PalletNominationPoolsConfigOp004,
-        newBouncer: PalletNominationPoolsConfigOp004,
+        newRoot: PalletNominationPoolsConfigOpAccountId32,
+        newNominator: PalletNominationPoolsConfigOpAccountId32,
+        newBouncer: PalletNominationPoolsConfigOpAccountId32,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'NominationPools';
@@ -12384,9 +12387,9 @@ export interface ChainTx<
             name: 'UpdateRoles';
             params: {
               poolId: number;
-              newRoot: PalletNominationPoolsConfigOp004;
-              newNominator: PalletNominationPoolsConfigOp004;
-              newBouncer: PalletNominationPoolsConfigOp004;
+              newRoot: PalletNominationPoolsConfigOpAccountId32;
+              newNominator: PalletNominationPoolsConfigOpAccountId32;
+              newBouncer: PalletNominationPoolsConfigOpAccountId32;
             };
           };
         },
@@ -14056,9 +14059,6 @@ export interface ChainTx<
      * # Parameters
      *
      * * `payload`: The encoded [`crate::evm::TransactionSigned`].
-     * * `gas_limit`: The gas limit enforced during contract execution.
-     * * `storage_deposit_limit`: The maximum balance that can be charged to the caller for
-     * storage usage.
      *
      * # Note
      *
@@ -14089,7 +14089,7 @@ export interface ChainTx<
      *
      * * `dest`: Address of the contract to call.
      * * `value`: The balance to transfer from the `origin` to `dest`.
-     * * `gas_limit`: The gas limit enforced when executing the constructor.
+     * * `weight_limit`: The weight limit enforced when executing the constructor.
      * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
      * caller to pay for the storage consumed.
      * * `data`: The input data to pass to the contract.
@@ -14102,7 +14102,7 @@ export interface ChainTx<
      *
      * @param {H160} dest
      * @param {bigint} value
-     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {SpWeightsWeightV2Weight} weightLimit
      * @param {bigint} storageDepositLimit
      * @param {BytesLike} data
      **/
@@ -14110,7 +14110,7 @@ export interface ChainTx<
       (
         dest: H160,
         value: bigint,
-        gasLimit: SpWeightsWeightV2Weight,
+        weightLimit: SpWeightsWeightV2Weight,
         storageDepositLimit: bigint,
         data: BytesLike,
       ) => ChainSubmittableExtrinsic<
@@ -14121,7 +14121,7 @@ export interface ChainTx<
             params: {
               dest: H160;
               value: bigint;
-              gasLimit: SpWeightsWeightV2Weight;
+              weightLimit: SpWeightsWeightV2Weight;
               storageDepositLimit: bigint;
               data: BytesLike;
             };
@@ -14139,7 +14139,7 @@ export interface ChainTx<
      * must be supplied.
      *
      * @param {bigint} value
-     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {SpWeightsWeightV2Weight} weightLimit
      * @param {bigint} storageDepositLimit
      * @param {H256} codeHash
      * @param {BytesLike} data
@@ -14148,7 +14148,7 @@ export interface ChainTx<
     instantiate: GenericTxCall<
       (
         value: bigint,
-        gasLimit: SpWeightsWeightV2Weight,
+        weightLimit: SpWeightsWeightV2Weight,
         storageDepositLimit: bigint,
         codeHash: H256,
         data: BytesLike,
@@ -14160,7 +14160,7 @@ export interface ChainTx<
             name: 'Instantiate';
             params: {
               value: bigint;
-              gasLimit: SpWeightsWeightV2Weight;
+              weightLimit: SpWeightsWeightV2Weight;
               storageDepositLimit: bigint;
               codeHash: H256;
               data: BytesLike;
@@ -14183,7 +14183,7 @@ export interface ChainTx<
      * # Parameters
      *
      * * `value`: The balance to transfer from the `origin` to the newly created contract.
-     * * `gas_limit`: The gas limit enforced when executing the constructor.
+     * * `weight_limit`: The weight limit enforced when executing the constructor.
      * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
      * from the caller to pay for the storage consumed.
      * * `code`: The contract code to deploy in raw bytes.
@@ -14202,7 +14202,7 @@ export interface ChainTx<
      * - The `deploy` function is executed in the context of the newly-created account.
      *
      * @param {bigint} value
-     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {SpWeightsWeightV2Weight} weightLimit
      * @param {bigint} storageDepositLimit
      * @param {BytesLike} code
      * @param {BytesLike} data
@@ -14211,7 +14211,7 @@ export interface ChainTx<
     instantiateWithCode: GenericTxCall<
       (
         value: bigint,
-        gasLimit: SpWeightsWeightV2Weight,
+        weightLimit: SpWeightsWeightV2Weight,
         storageDepositLimit: bigint,
         code: BytesLike,
         data: BytesLike,
@@ -14223,7 +14223,7 @@ export interface ChainTx<
             name: 'InstantiateWithCode';
             params: {
               value: bigint;
-              gasLimit: SpWeightsWeightV2Weight;
+              weightLimit: SpWeightsWeightV2Weight;
               storageDepositLimit: bigint;
               code: BytesLike;
               data: BytesLike;
@@ -14239,24 +14239,44 @@ export interface ChainTx<
      * Same as [`Self::instantiate_with_code`], but intended to be dispatched **only**
      * by an EVM transaction through the EVM compatibility layer.
      *
+     * # Parameters
+     *
+     * * `value`: The balance to transfer from the `origin` to the newly created contract.
+     * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
+     * payment
+     * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
+     * * `code`: The contract code to deploy in raw bytes.
+     * * `data`: The input data to pass to the contract constructor.
+     * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
+     * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
+     * is used for building the Ethereum transaction root.
+     * * effective_gas_price: the price of a unit of gas
+     * * encoded len: the byte code size of the `eth_transact` extrinsic
+     *
      * Calling this dispatchable ensures that the origin's nonce is bumped only once,
      * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
      * also bumps the nonce after contract instantiation, since it may be invoked multiple
      * times within a batch call transaction.
      *
      * @param {U256} value
-     * @param {SpWeightsWeightV2Weight} gasLimit
-     * @param {bigint} storageDepositLimit
+     * @param {SpWeightsWeightV2Weight} weightLimit
+     * @param {U256} ethGasLimit
      * @param {BytesLike} code
      * @param {BytesLike} data
+     * @param {BytesLike} transactionEncoded
+     * @param {U256} effectiveGasPrice
+     * @param {number} encodedLen
      **/
     ethInstantiateWithCode: GenericTxCall<
       (
         value: U256,
-        gasLimit: SpWeightsWeightV2Weight,
-        storageDepositLimit: bigint,
+        weightLimit: SpWeightsWeightV2Weight,
+        ethGasLimit: U256,
         code: BytesLike,
         data: BytesLike,
+        transactionEncoded: BytesLike,
+        effectiveGasPrice: U256,
+        encodedLen: number,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Revive';
@@ -14264,10 +14284,13 @@ export interface ChainTx<
             name: 'EthInstantiateWithCode';
             params: {
               value: U256;
-              gasLimit: SpWeightsWeightV2Weight;
-              storageDepositLimit: bigint;
+              weightLimit: SpWeightsWeightV2Weight;
+              ethGasLimit: U256;
               code: BytesLike;
               data: BytesLike;
+              transactionEncoded: BytesLike;
+              effectiveGasPrice: U256;
+              encodedLen: number;
             };
           };
         },
@@ -14279,19 +14302,39 @@ export interface ChainTx<
      * Same as [`Self::call`], but intended to be dispatched **only**
      * by an EVM transaction through the EVM compatibility layer.
      *
+     * # Parameters
+     *
+     * * `dest`: The Ethereum address of the account to be called
+     * * `value`: The balance to transfer from the `origin` to the newly created contract.
+     * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
+     * payment
+     * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
+     * * `data`: The input data to pass to the contract constructor.
+     * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
+     * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
+     * is used for building the Ethereum transaction root.
+     * * effective_gas_price: the price of a unit of gas
+     * * encoded len: the byte code size of the `eth_transact` extrinsic
+     *
      * @param {H160} dest
      * @param {U256} value
-     * @param {SpWeightsWeightV2Weight} gasLimit
-     * @param {bigint} storageDepositLimit
+     * @param {SpWeightsWeightV2Weight} weightLimit
+     * @param {U256} ethGasLimit
      * @param {BytesLike} data
+     * @param {BytesLike} transactionEncoded
+     * @param {U256} effectiveGasPrice
+     * @param {number} encodedLen
      **/
     ethCall: GenericTxCall<
       (
         dest: H160,
         value: U256,
-        gasLimit: SpWeightsWeightV2Weight,
-        storageDepositLimit: bigint,
+        weightLimit: SpWeightsWeightV2Weight,
+        ethGasLimit: U256,
         data: BytesLike,
+        transactionEncoded: BytesLike,
+        effectiveGasPrice: U256,
+        encodedLen: number,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Revive';
@@ -14300,10 +14343,44 @@ export interface ChainTx<
             params: {
               dest: H160;
               value: U256;
-              gasLimit: SpWeightsWeightV2Weight;
-              storageDepositLimit: bigint;
+              weightLimit: SpWeightsWeightV2Weight;
+              ethGasLimit: U256;
               data: BytesLike;
+              transactionEncoded: BytesLike;
+              effectiveGasPrice: U256;
+              encodedLen: number;
             };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Executes a Substrate runtime call from an Ethereum transaction.
+     *
+     * This dispatchable is intended to be called **only** through the EVM compatibility
+     * layer. The provided call will be dispatched using `RawOrigin::Signed`.
+     *
+     * # Parameters
+     *
+     * * `origin`: Must be an [`Origin::EthTransaction`] origin.
+     * * `call`: The Substrate runtime call to execute.
+     * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
+     *
+     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {BytesLike} transactionEncoded
+     **/
+    ethSubstrateCall: GenericTxCall<
+      (
+        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        transactionEncoded: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'EthSubstrateCall';
+            params: { call: AssetHubPaseoRuntimeRuntimeCallLike; transactionEncoded: BytesLike };
           };
         },
         ChainKnownTypes
@@ -14314,8 +14391,7 @@ export interface ChainTx<
      * Upload new `code` without instantiating a contract from it.
      *
      * If the code does not already exist a deposit is reserved from the caller
-     * and unreserved only when [`Self::remove_code`] is called. The size of the reserve
-     * depends on the size of the supplied `code`.
+     * The size of the reserve depends on the size of the supplied `code`.
      *
      * # Note
      *
@@ -14323,6 +14399,9 @@ export interface ChainTx<
      * To avoid this situation a constructor could employ access control so that it can
      * only be instantiated by permissioned entities. The same is true when uploading
      * through [`Self::instantiate_with_code`].
+     *
+     * If the refcount of the code reaches zero after terminating the last contract that
+     * references this code, the code will be removed automatically.
      *
      * @param {BytesLike} code
      * @param {bigint} storageDepositLimit

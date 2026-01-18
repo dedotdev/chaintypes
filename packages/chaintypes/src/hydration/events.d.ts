@@ -44,6 +44,7 @@ import type {
   PalletReferralsAssetAmount,
   PalletReferralsLevel,
   PalletReferralsFeeDistribution,
+  PalletSignetSignature,
   OrmlVestingVestingSchedule,
   EthereumLog,
   EvmCoreErrorExitReason,
@@ -2629,7 +2630,7 @@ export interface ChainEvents extends GenericChainEvents {
     Liquidated: GenericPalletEvent<
       'Liquidation',
       'Liquidated',
-      { user: H160; collateralAsset: number; debtAsset: number; debtToCover: bigint; profit: bigint }
+      { user: H160; collateralAsset: number; debtAsset: number; profit: bigint }
     >;
 
     /**
@@ -2717,6 +2718,171 @@ export interface ChainEvents extends GenericChainEvents {
      * - `flash_minter`: The EVM address of the flash minter contract
      **/
     FlashMinterSet: GenericPalletEvent<'HSM', 'FlashMinterSet', { flashMinter: H160 }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Signet`'s events
+   **/
+  signet: {
+    /**
+     * Pallet has been initialized with an admin
+     **/
+    Initialized: GenericPalletEvent<
+      'Signet',
+      'Initialized',
+      { admin: AccountId32; signatureDeposit: bigint; chainId: Bytes }
+    >;
+
+    /**
+     * Signature deposit amount has been updated
+     **/
+    DepositUpdated: GenericPalletEvent<'Signet', 'DepositUpdated', { oldDeposit: bigint; newDeposit: bigint }>;
+
+    /**
+     * Funds have been withdrawn from the pallet
+     **/
+    FundsWithdrawn: GenericPalletEvent<'Signet', 'FundsWithdrawn', { amount: bigint; recipient: AccountId32 }>;
+
+    /**
+     * A signature has been requested
+     **/
+    SignatureRequested: GenericPalletEvent<
+      'Signet',
+      'SignatureRequested',
+      {
+        sender: AccountId32;
+        payload: FixedBytes<32>;
+        keyVersion: number;
+        deposit: bigint;
+        chainId: Bytes;
+        path: Bytes;
+        algo: Bytes;
+        dest: Bytes;
+        params: Bytes;
+      }
+    >;
+
+    /**
+     * Sign bidirectional request event
+     **/
+    SignBidirectionalRequested: GenericPalletEvent<
+      'Signet',
+      'SignBidirectionalRequested',
+      {
+        sender: AccountId32;
+        serializedTransaction: Bytes;
+        caip2Id: Bytes;
+        keyVersion: number;
+        deposit: bigint;
+        path: Bytes;
+        algo: Bytes;
+        dest: Bytes;
+        params: Bytes;
+        outputDeserializationSchema: Bytes;
+        respondSerializationSchema: Bytes;
+      }
+    >;
+
+    /**
+     * Signature response event
+     **/
+    SignatureResponded: GenericPalletEvent<
+      'Signet',
+      'SignatureResponded',
+      { requestId: FixedBytes<32>; responder: AccountId32; signature: PalletSignetSignature }
+    >;
+
+    /**
+     * Signature error event
+     **/
+    SignatureError: GenericPalletEvent<
+      'Signet',
+      'SignatureError',
+      { requestId: FixedBytes<32>; responder: AccountId32; error: Bytes }
+    >;
+
+    /**
+     * Respond bidirectional event
+     **/
+    RespondBidirectionalEvent: GenericPalletEvent<
+      'Signet',
+      'RespondBidirectionalEvent',
+      { requestId: FixedBytes<32>; responder: AccountId32; serializedOutput: Bytes; signature: PalletSignetSignature }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `EthDispenser`'s events
+   **/
+  ethDispenser: {
+    /**
+     * Dispenser has been paused. No new requests will be accepted.
+     **/
+    Paused: GenericPalletEvent<'EthDispenser', 'Paused', null>;
+
+    /**
+     * Dispenser has been unpaused. New requests are allowed again.
+     **/
+    Unpaused: GenericPalletEvent<'EthDispenser', 'Unpaused', null>;
+
+    /**
+     * A funding request has been submitted to SigNet.
+     *
+     * Note: This indicates the request was formed and submitted, not that
+     * the EVM transaction has been included on the target chain.
+     **/
+    FundRequested: GenericPalletEvent<
+      'EthDispenser',
+      'FundRequested',
+      {
+        /**
+         * Unique request ID derived from request parameters.
+         **/
+        requestId: FixedBytes<32>;
+
+        /**
+         * Account that initiated the request.
+         **/
+        requester: AccountId32;
+
+        /**
+         * Target EVM address to receive ETH.
+         **/
+        to: FixedBytes<20>;
+
+        /**
+         * Requested amount of ETH (in wei).
+         **/
+        amount: bigint;
+      }
+    >;
+
+    /**
+     * Tracked faucet ETH balance has been updated.
+     **/
+    FaucetBalanceUpdated: GenericPalletEvent<
+      'EthDispenser',
+      'FaucetBalanceUpdated',
+      {
+        /**
+         * Previous tracked balance (in wei).
+         **/
+        oldBalanceWei: bigint;
+
+        /**
+         * New tracked balance (in wei).
+         **/
+        newBalanceWei: bigint;
+      }
+    >;
 
     /**
      * Generic pallet event
@@ -2986,6 +3152,11 @@ export interface ChainEvents extends GenericChainEvents {
      * Contract was disapproved.
      **/
     ContractDisapproved: GenericPalletEvent<'EVMAccounts', 'ContractDisapproved', { address: H160 }>;
+
+    /**
+     * Account was claimed.
+     **/
+    AccountClaimed: GenericPalletEvent<'EVMAccounts', 'AccountClaimed', { account: AccountId32; assetId: number }>;
 
     /**
      * Generic pallet event

@@ -668,6 +668,24 @@ export interface RuntimeApis extends GenericRuntimeApis {
     [method: string]: GenericRuntimeApiMethod;
   };
   /**
+   * @runtimeapi: DusterApi - 0x34a3d488166b5a55
+   **/
+  dusterApi: {
+    /**
+     * Check if an account is whitelisted (protected from dusting).
+     * Returns true if the account is whitelisted, false otherwise.
+     *
+     * @callname: DusterApi_is_whitelisted
+     * @param {AccountId32Like} account
+     **/
+    isWhitelisted: GenericRuntimeApiMethod<(account: AccountId32Like) => Promise<boolean>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
    * @runtimeapi: Erc20MappingApi - 0x542334fe4fd7cada
    **/
   erc20MappingApi: {

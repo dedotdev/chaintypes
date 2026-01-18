@@ -1247,6 +1247,89 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `Signet`'s constants
+   **/
+  signet: {
+    /**
+     * The pallet's unique ID for deriving its account
+     **/
+    palletId: FrameSupportPalletId;
+
+    /**
+     * Maximum length for chain ID
+     **/
+    maxChainIdLength: number;
+
+    /**
+     * Maximum length of transaction data
+     **/
+    maxDataLength: number;
+    maxSignatureDeposit: bigint;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `EthDispenser`'s constants
+   **/
+  ethDispenser: {
+    /**
+     * Minimum amount of faucet asset that can be requested in a single call.
+     **/
+    minimumRequestAmount: bigint;
+
+    /**
+     * Maximum amount of faucet asset that can be requested in a single call.
+     **/
+    maxDispenseAmount: bigint;
+
+    /**
+     * Flat fee charged in `FeeAsset` for each faucet request.
+     **/
+    dispenserFee: bigint;
+
+    /**
+     * Asset ID used to charge the faucet request fee.
+     * (HDX - 0)
+     **/
+    feeAsset: number;
+
+    /**
+     * Asset ID deducted to receive faucet on the destination chain.
+     * (WETH - 20)
+     **/
+    faucetAsset: number;
+
+    /**
+     * Account that receives the collected dispenser fees and faucet asset.
+     **/
+    feeDestination: AccountId32;
+
+    /**
+     * EVM address of the external gas faucet contract.
+     **/
+    faucetAddress: FixedBytes<20>;
+
+    /**
+     * Pallet ID used to derive the pallet's sovereign account.
+     **/
+    palletId: FrameSupportPalletId;
+
+    /**
+     * Minimum remaining ETH (in wei) that must be available in the faucet
+     * after servicing a request. Requests are rejected if this threshold
+     * would be breached.
+     **/
+    minFaucetEthThreshold: bigint;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Tokens`'s constants
    **/
   tokens: {

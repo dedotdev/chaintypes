@@ -195,6 +195,11 @@ export interface ChainErrors extends GenericChainErrors {
     EvmPermitRunnerError: GenericPalletError;
 
     /**
+     * EVM permit must not affect account nonce.
+     **/
+    EvmPermitNonceInvariantViolated: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1129,6 +1134,41 @@ export interface ChainErrors extends GenericChainErrors {
      * The provided call is not an EVM call. This extrinsic only accepts `pallet_evm::Call::call`.
      **/
     NotEvmCall: GenericPalletError;
+
+    /**
+     * The EVM call ran out of gas.
+     **/
+    EvmOutOfGas: GenericPalletError;
+
+    /**
+     * The EVM call resulted in an arithmetic overflow or underflow.
+     **/
+    EvmArithmeticOverflowOrUnderflow: GenericPalletError;
+
+    /**
+     * Aave - supply cap has been exceeded.
+     **/
+    AaveSupplyCapExceeded: GenericPalletError;
+
+    /**
+     * Aave - borrow cap has been exceeded.
+     **/
+    AaveBorrowCapExceeded: GenericPalletError;
+
+    /**
+     * Aave - health factor is not below the threshold.
+     **/
+    AaveHealthFactorNotBelowThreshold: GenericPalletError;
+
+    /**
+     * Aave - health factor is lesser than the liquidation threshold
+     **/
+    AaveHealthFactorLowerThanLiquidationThreshold: GenericPalletError;
+
+    /**
+     * Aave - there is not enough collateral to cover a new borrow
+     **/
+    CollateralCannotCoverNewBorrow: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2326,18 +2366,6 @@ export interface ChainErrors extends GenericChainErrors {
     ZeroLiquidity: GenericPalletError;
 
     /**
-     * It is not allowed to create a pool with zero initial price.
-     * Not used, kept for backward compatibility
-     **/
-    ZeroInitialPrice: GenericPalletError;
-
-    /**
-     * Overflow
-     * Not used, kept for backward compatibility
-     **/
-    CreatePoolAssetAmountInvalid: GenericPalletError;
-
-    /**
      * Overflow
      **/
     InvalidMintedLiquidity: GenericPalletError;
@@ -2406,11 +2434,6 @@ export interface ChainErrors extends GenericChainErrors {
      * Overflow
      **/
     FeeAmountInvalid: GenericPalletError;
-
-    /**
-     * Overflow
-     **/
-    CannotApplyDiscount: GenericPalletError;
 
     /**
      * Max fraction of pool to buy in single transaction has been exceeded.
@@ -2711,6 +2734,134 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `Signet`'s errors
+   **/
+  signet: {
+    /**
+     * The pallet has already been initialized
+     **/
+    AlreadyInitialized: GenericPalletError;
+
+    /**
+     * The pallet has not been initialized yet
+     **/
+    NotInitialized: GenericPalletError;
+
+    /**
+     * Unauthorized - caller is not admin
+     **/
+    Unauthorized: GenericPalletError;
+
+    /**
+     * Insufficient funds for withdrawal
+     **/
+    InsufficientFunds: GenericPalletError;
+
+    /**
+     * Invalid transaction data (empty)
+     **/
+    InvalidTransaction: GenericPalletError;
+
+    /**
+     * Arrays must have the same length
+     **/
+    InvalidInputLength: GenericPalletError;
+
+    /**
+     * The chain ID is too long
+     **/
+    ChainIdTooLong: GenericPalletError;
+
+    /**
+     * Transaction data exceeds maximum allowed length
+     **/
+    DataTooLong: GenericPalletError;
+
+    /**
+     * Invalid address format - must be exactly 20 bytes
+     **/
+    InvalidAddress: GenericPalletError;
+
+    /**
+     * Priority fee cannot exceed max fee per gas (EIP-1559 requirement)
+     **/
+    InvalidGasPrice: GenericPalletError;
+
+    /**
+     * Signature Deposit cannot exceed MaxSignatureDeposit
+     **/
+    MaxDepositExceeded: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `EthDispenser`'s errors
+   **/
+  ethDispenser: {
+    /**
+     * Request ID has already been used.
+     **/
+    DuplicateRequest: GenericPalletError;
+
+    /**
+     * Failed to (de)serialize data.
+     **/
+    Serialization: GenericPalletError;
+
+    /**
+     * Output data did not match the expected format.
+     **/
+    InvalidOutput: GenericPalletError;
+
+    /**
+     * Request ID does not match the derived ID for the provided data.
+     **/
+    InvalidRequestId: GenericPalletError;
+
+    /**
+     * Pallet is paused and cannot process this call.
+     **/
+    Paused: GenericPalletError;
+
+    /**
+     * Requested amount is below the configured minimum.
+     **/
+    AmountTooSmall: GenericPalletError;
+
+    /**
+     * Requested amount exceeds the configured maximum.
+     **/
+    AmountTooLarge: GenericPalletError;
+
+    /**
+     * EVM address parameter is invalid (e.g., zero address).
+     **/
+    InvalidAddress: GenericPalletError;
+
+    /**
+     * Faucet balance would fall below the configured threshold after this request.
+     **/
+    FaucetBalanceBelowThreshold: GenericPalletError;
+
+    /**
+     * Caller does not have enough balance of the fee asset.
+     **/
+    NotEnoughFeeFunds: GenericPalletError;
+
+    /**
+     * Caller does not have enough balance of the faucet asset.
+     **/
+    NotEnoughFaucetFunds: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `Tokens`'s errors
    **/
   tokens: {
@@ -2939,6 +3090,21 @@ export interface ChainErrors extends GenericChainErrors {
      * Address not whitelisted
      **/
     AddressNotWhitelisted: GenericPalletError;
+
+    /**
+     * Provided signature is invalid
+     **/
+    InvalidSignature: GenericPalletError;
+
+    /**
+     * Account already exists in the system pallet
+     **/
+    AccountAlreadyExists: GenericPalletError;
+
+    /**
+     * Insufficient asset balance of the claimed asset
+     **/
+    InsufficientAssetBalance: GenericPalletError;
 
     /**
      * Generic pallet error

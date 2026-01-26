@@ -46,7 +46,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: AstarApi
- * @specVersion: 1900
+ * @specVersion: 2000
  **/
 export interface AstarApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

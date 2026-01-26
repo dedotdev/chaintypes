@@ -275,12 +275,13 @@ export interface ChainErrors extends GenericChainErrors {
     SenderInSignatories: GenericPalletError;
 
     /**
-     * Multisig operation not found when attempting to cancel.
+     * Multisig operation not found in storage.
      **/
     NotFound: GenericPalletError;
 
     /**
-     * Only the account that originally created the multisig is able to cancel it.
+     * Only the account that originally created the multisig is able to cancel it or update
+     * its deposits.
      **/
     NotOwner: GenericPalletError;
 
@@ -431,16 +432,6 @@ export interface ChainErrors extends GenericChainErrors {
      * No validation function upgrade is currently scheduled.
      **/
     NotScheduled: GenericPalletError;
-
-    /**
-     * No code upgrade has been authorized.
-     **/
-    NothingAuthorized: GenericPalletError;
-
-    /**
-     * The given code upgrade has not been authorized.
-     **/
-    Unauthorized: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -874,6 +865,16 @@ export interface ChainErrors extends GenericChainErrors {
     BadAssetId: GenericPalletError;
 
     /**
+     * The asset cannot be destroyed because some accounts for this asset contain freezes.
+     **/
+    ContainsFreezes: GenericPalletError;
+
+    /**
+     * The asset cannot be destroyed because some accounts for this asset contain holds.
+     **/
+    ContainsHolds: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -888,7 +889,7 @@ export interface ChainErrors extends GenericChainErrors {
     NoPermission: GenericPalletError;
 
     /**
-     * Feeder has already feeded at this block
+     * Feeder has already fed at this block
      **/
     AlreadyFeeded: GenericPalletError;
 
@@ -1201,6 +1202,29 @@ export interface ChainErrors extends GenericChainErrors {
     LocalExecutionIncomplete: GenericPalletError;
 
     /**
+     * Too many locations authorized to alias origin.
+     *
+     * @deprecated Use `LocalExecutionIncompleteWithError` instead (since 20.0.0)
+     **/
+    TooManyAuthorizedAliases: GenericPalletError;
+
+    /**
+     * Expiry block number is in the past.
+     **/
+    ExpiresInPast: GenericPalletError;
+
+    /**
+     * The alias to remove authorization for was not found.
+     **/
+    AliasNotFound: GenericPalletError;
+
+    /**
+     * Local XCM execution incomplete with the actual XCM error and the index of the
+     * instruction that caused the error.
+     **/
+    LocalExecutionIncompleteWithError: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1302,7 +1326,7 @@ export interface ChainErrors extends GenericChainErrors {
     ZeroFee: GenericPalletError;
 
     /**
-     * The transfering asset amount is zero.
+     * The transferring asset amount is zero.
      **/
     ZeroAmount: GenericPalletError;
 
@@ -1469,6 +1493,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Undefined error.
      **/
     Undefined: GenericPalletError;
+
+    /**
+     * Address not allowed to deploy contracts either via CREATE or CALL(CREATE).
+     **/
+    CreateOriginNotAllowed: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1766,20 +1795,6 @@ export interface ChainErrors extends GenericChainErrors {
      * Too few hashes were requested to be upgraded (i.e. zero).
      **/
     TooFew: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `Sudo`'s errors
-   **/
-  sudo: {
-    /**
-     * Sender must be the Sudo account.
-     **/
-    RequireSudo: GenericPalletError;
 
     /**
      * Generic pallet error

@@ -46,10 +46,10 @@ import type {
   XcmV3WeightLimit,
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
-  PalletXcAssetConfigMigrationStep,
   XcmVersionedAsset,
   CumulusPrimitivesCoreAggregateMessageOrigin,
-  EthereumTransactionTransactionV2,
+  EthereumTransactionEip7702AuthorizationListItem,
+  EthereumTransactionTransactionV3,
   PalletContractsWasmDeterminism,
   FrameSupportPreimagesBounded,
   PalletDemocracyVoteAccountVote,
@@ -490,6 +490,76 @@ export interface ChainTx<
           palletCall: {
             name: 'WithWeight';
             params: { call: AstarRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Dispatch a fallback call in the event the main call fails to execute.
+     * May be called from any origin except `None`.
+     *
+     * This function first attempts to dispatch the `main` call.
+     * If the `main` call fails, the `fallback` is attemted.
+     * if the fallback is successfully dispatched, the weights of both calls
+     * are accumulated and an event containing the main call error is deposited.
+     *
+     * In the event of a fallback failure the whole call fails
+     * with the weights returned.
+     *
+     * - `main`: The main call to be dispatched. This is the primary action to execute.
+     * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+     *
+     * ## Dispatch Logic
+     * - If the origin is `root`, both the main and fallback calls are executed without
+     * applying any origin filters.
+     * - If the origin is not `root`, the origin filter is applied to both the `main` and
+     * `fallback` calls.
+     *
+     * ## Use Case
+     * - Some use cases might involve submitting a `batch` type call in either main, fallback
+     * or both.
+     *
+     * @param {AstarRuntimeRuntimeCallLike} main
+     * @param {AstarRuntimeRuntimeCallLike} fallback
+     **/
+    ifElse: GenericTxCall<
+      (
+        main: AstarRuntimeRuntimeCallLike,
+        fallback: AstarRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Utility';
+          palletCall: {
+            name: 'IfElse';
+            params: { main: AstarRuntimeRuntimeCallLike; fallback: AstarRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Dispatches a function call with a provided origin.
+     *
+     * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * @param {AstarRuntimeOriginCaller} asOrigin
+     * @param {AstarRuntimeRuntimeCallLike} call
+     **/
+    dispatchAsFallible: GenericTxCall<
+      (
+        asOrigin: AstarRuntimeOriginCaller,
+        call: AstarRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Utility';
+          palletCall: {
+            name: 'DispatchAsFallible';
+            params: { asOrigin: AstarRuntimeOriginCaller; call: AstarRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes
@@ -1406,6 +1476,42 @@ export interface ChainTx<
     >;
 
     /**
+     * Poke the deposit reserved for an existing multisig operation.
+     *
+     * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+     * the multisig operation.
+     *
+     * The transaction fee is waived if the deposit amount has changed.
+     *
+     * - `threshold`: The total number of approvals needed for this multisig.
+     * - `other_signatories`: The accounts (other than the sender) who are part of the
+     * multisig.
+     * - `call_hash`: The hash of the call this deposit is reserved for.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     * @param {number} threshold
+     * @param {Array<AccountId32Like>} otherSignatories
+     * @param {FixedBytes<32>} callHash
+     **/
+    pokeDeposit: GenericTxCall<
+      (
+        threshold: number,
+        otherSignatories: Array<AccountId32Like>,
+        callHash: FixedBytes<32>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Multisig';
+          palletCall: {
+            name: 'PokeDeposit';
+            params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -1584,7 +1690,7 @@ export interface ChainTx<
      * `pure` with corresponding parameters.
      *
      * - `spawner`: The account that originally called `pure` to create this account.
-     * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+     * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
      * - `proxy_type`: The proxy type originally passed to `pure`.
      * - `height`: The height of the chain when the call to `pure` was processed.
      * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
@@ -1756,6 +1862,29 @@ export interface ChainTx<
               forceProxyType: AstarRuntimeProxyType | undefined;
               call: AstarRuntimeRuntimeCallLike;
             };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Poke / Adjust deposits made for proxies and announcements based on current values.
+     * This can be used by accounts to possibly lower their locked amount.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * The transaction fee is waived if the deposit amount has changed.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     **/
+    pokeDeposit: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'PokeDeposit';
           };
         },
         ChainKnownTypes
@@ -3270,6 +3399,9 @@ export interface ChainTx<
      * - `id`: The identifier of the asset to be destroyed. This must identify an existing
      * asset.
      *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * an account contains holds or freezes in place.
+     *
      * @param {bigint} id
      **/
     startDestroy: GenericTxCall<
@@ -4147,6 +4279,9 @@ export interface ChainTx<
      * refunded.
      * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
      *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * the asset account contains holds or freezes in place.
+     *
      * Emits `Refunded` event when successful.
      *
      * @param {bigint} id
@@ -4241,6 +4376,9 @@ export interface ChainTx<
      *
      * - `id`: The identifier of the asset for the account holding a deposit.
      * - `who`: The account to refund.
+     *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * the asset account contains holds or freezes in place.
      *
      * Emits `Refunded` event when successful.
      *
@@ -5017,6 +5155,8 @@ export interface ChainTx<
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_teleport_assets` or `transfer_assets`
      **/
     teleportAssets: GenericTxCall<
       (
@@ -5077,6 +5217,8 @@ export interface ChainTx<
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_reserve_transfer_assets` or `transfer_assets`
      **/
     reserveTransferAssets: GenericTxCall<
       (
@@ -5539,6 +5681,74 @@ export interface ChainTx<
     >;
 
     /**
+     * Authorize another `aliaser` location to alias into the local `origin` making this call.
+     * The `aliaser` is only authorized until the provided `expiry` block number.
+     * The call can also be used for a previously authorized alias in order to update its
+     * `expiry` block number.
+     *
+     * Usually useful to allow your local account to be aliased into from a remote location
+     * also under your control (like your account on another chain).
+     *
+     * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+     * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+     * `origin` in XCM programs executed on the local chain.
+     *
+     * @param {XcmVersionedLocation} aliaser
+     * @param {bigint | undefined} expires
+     **/
+    addAuthorizedAlias: GenericTxCall<
+      (
+        aliaser: XcmVersionedLocation,
+        expires: bigint | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'AddAuthorizedAlias';
+            params: { aliaser: XcmVersionedLocation; expires: bigint | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove a previously authorized `aliaser` from the list of locations that can alias into
+     * the local `origin` making this call.
+     *
+     * @param {XcmVersionedLocation} aliaser
+     **/
+    removeAuthorizedAlias: GenericTxCall<
+      (aliaser: XcmVersionedLocation) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'RemoveAuthorizedAlias';
+            params: { aliaser: XcmVersionedLocation };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+     * making this call.
+     *
+     **/
+    removeAllAuthorizedAliases: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'RemoveAllAuthorizedAliases';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -5658,23 +5868,6 @@ export interface ChainTx<
           palletCall: {
             name: 'RemoveAsset';
             params: { assetId: bigint };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {PalletXcAssetConfigMigrationStep} migrationStep
-     **/
-    updateMigrationStep: GenericTxCall<
-      (migrationStep: PalletXcAssetConfigMigrationStep) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'XcAssetConfig';
-          palletCall: {
-            name: 'UpdateMigrationStep';
-            params: { migrationStep: PalletXcAssetConfigMigrationStep };
           };
         },
         ChainKnownTypes
@@ -6079,6 +6272,7 @@ export interface ChainTx<
      * @param {U256 | undefined} maxPriorityFeePerGas
      * @param {U256 | undefined} nonce
      * @param {Array<[H160, Array<H256>]>} accessList
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem>} authorizationList
      **/
     call: GenericTxCall<
       (
@@ -6091,6 +6285,7 @@ export interface ChainTx<
         maxPriorityFeePerGas: U256 | undefined,
         nonce: U256 | undefined,
         accessList: Array<[H160, Array<H256>]>,
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Evm';
@@ -6106,6 +6301,7 @@ export interface ChainTx<
               maxPriorityFeePerGas: U256 | undefined;
               nonce: U256 | undefined;
               accessList: Array<[H160, Array<H256>]>;
+              authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
             };
           };
         },
@@ -6125,6 +6321,7 @@ export interface ChainTx<
      * @param {U256 | undefined} maxPriorityFeePerGas
      * @param {U256 | undefined} nonce
      * @param {Array<[H160, Array<H256>]>} accessList
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem>} authorizationList
      **/
     create: GenericTxCall<
       (
@@ -6136,6 +6333,7 @@ export interface ChainTx<
         maxPriorityFeePerGas: U256 | undefined,
         nonce: U256 | undefined,
         accessList: Array<[H160, Array<H256>]>,
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Evm';
@@ -6150,6 +6348,7 @@ export interface ChainTx<
               maxPriorityFeePerGas: U256 | undefined;
               nonce: U256 | undefined;
               accessList: Array<[H160, Array<H256>]>;
+              authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
             };
           };
         },
@@ -6169,6 +6368,7 @@ export interface ChainTx<
      * @param {U256 | undefined} maxPriorityFeePerGas
      * @param {U256 | undefined} nonce
      * @param {Array<[H160, Array<H256>]>} accessList
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem>} authorizationList
      **/
     create2: GenericTxCall<
       (
@@ -6181,6 +6381,7 @@ export interface ChainTx<
         maxPriorityFeePerGas: U256 | undefined,
         nonce: U256 | undefined,
         accessList: Array<[H160, Array<H256>]>,
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Evm';
@@ -6196,6 +6397,7 @@ export interface ChainTx<
               maxPriorityFeePerGas: U256 | undefined;
               nonce: U256 | undefined;
               accessList: Array<[H160, Array<H256>]>;
+              authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
             };
           };
         },
@@ -6215,15 +6417,15 @@ export interface ChainTx<
     /**
      * Transact an Ethereum transaction.
      *
-     * @param {EthereumTransactionTransactionV2} transaction
+     * @param {EthereumTransactionTransactionV3} transaction
      **/
     transact: GenericTxCall<
-      (transaction: EthereumTransactionTransactionV2) => ChainSubmittableExtrinsic<
+      (transaction: EthereumTransactionTransactionV3) => ChainSubmittableExtrinsic<
         {
           pallet: 'Ethereum';
           palletCall: {
             name: 'Transact';
-            params: { transaction: EthereumTransactionTransactionV2 };
+            params: { transaction: EthereumTransactionTransactionV3 };
           };
         },
         ChainKnownTypes
@@ -6275,6 +6477,8 @@ export interface ChainTx<
      * @param {bigint} gasLimit
      * @param {bigint | undefined} storageDepositLimit
      * @param {BytesLike} data
+     *
+     * @deprecated 1D weight is used in this extrinsic, please migrate to `call`
      **/
     callOldWeight: GenericTxCall<
       (
@@ -6310,6 +6514,8 @@ export interface ChainTx<
      * @param {BytesLike} code
      * @param {BytesLike} data
      * @param {BytesLike} salt
+     *
+     * @deprecated 1D weight is used in this extrinsic, please migrate to `instantiate_with_code`
      **/
     instantiateWithCodeOldWeight: GenericTxCall<
       (
@@ -6347,6 +6553,8 @@ export interface ChainTx<
      * @param {H256} codeHash
      * @param {BytesLike} data
      * @param {BytesLike} salt
+     *
+     * @deprecated 1D weight is used in this extrinsic, please migrate to `instantiate`
      **/
     instantiateOldWeight: GenericTxCall<
       (
@@ -6745,7 +6953,7 @@ export interface ChainTx<
     >;
 
     /**
-     * Ensure that the a bulk of pre-images is upgraded.
+     * Ensure that the bulk of pre-images is upgraded.
      *
      * The caller pays no fee if at least 90% of pre-images were successfully updated.
      *
@@ -6758,121 +6966,6 @@ export interface ChainTx<
           palletCall: {
             name: 'EnsureUpdated';
             params: { hashes: Array<H256> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
-   * Pallet `Sudo`'s transaction calls
-   **/
-  sudo: {
-    /**
-     * Authenticates the sudo key and dispatches a function call with `Root` origin.
-     *
-     * @param {AstarRuntimeRuntimeCallLike} call
-     **/
-    sudo: GenericTxCall<
-      (call: AstarRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Sudo';
-          palletCall: {
-            name: 'Sudo';
-            params: { call: AstarRuntimeRuntimeCallLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Authenticates the sudo key and dispatches a function call with `Root` origin.
-     * This function does not check the weight of the call, and instead allows the
-     * Sudo user to specify the weight of the call.
-     *
-     * The dispatch origin for this call must be _Signed_.
-     *
-     * @param {AstarRuntimeRuntimeCallLike} call
-     * @param {SpWeightsWeightV2Weight} weight
-     **/
-    sudoUncheckedWeight: GenericTxCall<
-      (
-        call: AstarRuntimeRuntimeCallLike,
-        weight: SpWeightsWeightV2Weight,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Sudo';
-          palletCall: {
-            name: 'SudoUncheckedWeight';
-            params: { call: AstarRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
-     * key.
-     *
-     * @param {MultiAddressLike} new_
-     **/
-    setKey: GenericTxCall<
-      (new_: MultiAddressLike) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Sudo';
-          palletCall: {
-            name: 'SetKey';
-            params: { new: MultiAddressLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Authenticates the sudo key and dispatches a function call with `Signed` origin from
-     * a given account.
-     *
-     * The dispatch origin for this call must be _Signed_.
-     *
-     * @param {MultiAddressLike} who
-     * @param {AstarRuntimeRuntimeCallLike} call
-     **/
-    sudoAs: GenericTxCall<
-      (
-        who: MultiAddressLike,
-        call: AstarRuntimeRuntimeCallLike,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Sudo';
-          palletCall: {
-            name: 'SudoAs';
-            params: { who: MultiAddressLike; call: AstarRuntimeRuntimeCallLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Permanently removes the sudo key.
-     *
-     * **This cannot be un-done.**
-     *
-     **/
-    removeKey: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Sudo';
-          palletCall: {
-            name: 'RemoveKey';
           };
         },
         ChainKnownTypes
@@ -8807,6 +8900,8 @@ export interface ChainTx<
      *
      * @param {bigint} value
      * @param {MultiAddressLike} beneficiary
+     *
+     * @deprecated `propose_spend` will be removed in February 2024. Use `spend` instead.
      **/
     proposeSpend: GenericTxCall<
       (
@@ -8842,6 +8937,8 @@ export interface ChainTx<
      * Emits [`Event::Rejected`] if successful.
      *
      * @param {number} proposalId
+     *
+     * @deprecated `reject_proposal` will be removed in February 2024. Use `spend` instead.
      **/
     rejectProposal: GenericTxCall<
       (proposalId: number) => ChainSubmittableExtrinsic<
@@ -8876,6 +8973,8 @@ export interface ChainTx<
      * No events are emitted from this dispatch.
      *
      * @param {number} proposalId
+     *
+     * @deprecated `approve_proposal` will be removed in February 2024. Use `spend` instead.
      **/
     approveProposal: GenericTxCall<
       (proposalId: number) => ChainSubmittableExtrinsic<
@@ -8919,6 +9018,8 @@ export interface ChainTx<
      *
      * @param {bigint} value
      * @param {MultiAddressLike} beneficiary
+     *
+     * @deprecated `propose_spend` will be removed in February 2024. Use `spend` instead.
      **/
     proposeSpend: GenericTxCall<
       (
@@ -8954,6 +9055,8 @@ export interface ChainTx<
      * Emits [`Event::Rejected`] if successful.
      *
      * @param {number} proposalId
+     *
+     * @deprecated `reject_proposal` will be removed in February 2024. Use `spend` instead.
      **/
     rejectProposal: GenericTxCall<
       (proposalId: number) => ChainSubmittableExtrinsic<
@@ -8988,6 +9091,8 @@ export interface ChainTx<
      * No events are emitted from this dispatch.
      *
      * @param {number} proposalId
+     *
+     * @deprecated `approve_proposal` will be removed in February 2024. Use `spend` instead.
      **/
     approveProposal: GenericTxCall<
       (proposalId: number) => ChainSubmittableExtrinsic<

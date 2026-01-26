@@ -35,11 +35,12 @@ import type {
   CumulusPrimitivesCoreCollationInfo,
   EvmBackendBasic,
   FpEvmExecutionInfoV2,
+  EthereumTransactionEip7702AuthorizationListItem,
   FpEvmExecutionInfoV2H160,
   EthereumBlock,
-  EthereumReceiptReceiptV3,
+  EthereumReceiptReceiptV4,
   FpRpcTransactionStatus,
-  EthereumTransactionTransactionV2,
+  EthereumTransactionTransactionV3,
   PalletContractsPrimitivesContractResult,
   PalletContractsPrimitivesContractResultResult,
   PalletContractsPrimitivesCode,
@@ -161,7 +162,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
     /**
      * Whether it is legal to extend the chain, assuming the given block is the most
      * recently included one as-of the relay parent that will be built against, and
-     * the given slot.
+     * the given relay chain slot.
      *
      * This should be consistent with the logic the runtime uses when validating blocks to
      * avoid issues.
@@ -510,6 +511,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {U256 | undefined} nonce
      * @param {boolean} estimate
      * @param {Array<[H160, Array<H256>]> | undefined} access_list
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem> | undefined} authorization_list
      **/
     call: GenericRuntimeApiMethod<
       (
@@ -523,6 +525,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
         nonce: U256 | undefined,
         estimate: boolean,
         accessList?: Array<[H160, Array<H256>]> | undefined,
+        authorizationList?: Array<EthereumTransactionEip7702AuthorizationListItem> | undefined,
       ) => Promise<Result<FpEvmExecutionInfoV2, DispatchError>>
     >;
 
@@ -538,6 +541,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {U256 | undefined} nonce
      * @param {boolean} estimate
      * @param {Array<[H160, Array<H256>]> | undefined} access_list
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem> | undefined} authorization_list
      **/
     create: GenericRuntimeApiMethod<
       (
@@ -550,6 +554,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
         nonce: U256 | undefined,
         estimate: boolean,
         accessList?: Array<[H160, Array<H256>]> | undefined,
+        authorizationList?: Array<EthereumTransactionEip7702AuthorizationListItem> | undefined,
       ) => Promise<Result<FpEvmExecutionInfoV2H160, DispatchError>>
     >;
 
@@ -565,7 +570,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: EthereumRuntimeRPCApi_current_receipts
      **/
-    currentReceipts: GenericRuntimeApiMethod<() => Promise<Array<EthereumReceiptReceiptV3> | undefined>>;
+    currentReceipts: GenericRuntimeApiMethod<() => Promise<Array<EthereumReceiptReceiptV4> | undefined>>;
 
     /**
      * Return the current transaction status.
@@ -582,7 +587,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
       () => Promise<
         [
           EthereumBlock | undefined,
-          Array<EthereumReceiptReceiptV3> | undefined,
+          Array<EthereumReceiptReceiptV4> | undefined,
           Array<FpRpcTransactionStatus> | undefined,
         ]
       >
@@ -595,7 +600,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {Array<FpSelfContainedUncheckedExtrinsic>} xts
      **/
     extrinsicFilter: GenericRuntimeApiMethod<
-      (xts: Array<FpSelfContainedUncheckedExtrinsic>) => Promise<Array<EthereumTransactionTransactionV2>>
+      (xts: Array<FpSelfContainedUncheckedExtrinsic>) => Promise<Array<EthereumTransactionTransactionV3>>
     >;
 
     /**
@@ -649,10 +654,10 @@ export interface RuntimeApis extends GenericRuntimeApis {
     /**
      *
      * @callname: ConvertTransactionRuntimeApi_convert_transaction
-     * @param {EthereumTransactionTransactionV2} transaction
+     * @param {EthereumTransactionTransactionV3} transaction
      **/
     convertTransaction: GenericRuntimeApiMethod<
-      (transaction: EthereumTransactionTransactionV2) => Promise<FpSelfContainedUncheckedExtrinsic>
+      (transaction: EthereumTransactionTransactionV3) => Promise<FpSelfContainedUncheckedExtrinsic>
     >;
 
     /**

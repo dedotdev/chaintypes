@@ -8,6 +8,7 @@ import type {
   SpWeightsRuntimeDbWeight,
   SpWeightsWeightV2Weight,
   PolkadotParachainPrimitivesPrimitivesId,
+  StagingXcmV5Junctions,
   StagingXcmV5Location,
   PalletContractsSchedule,
   PalletContractsEnvironment,
@@ -667,6 +668,27 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   polkadotXcm: {
     /**
+     * This chain's Universal Location.
+     **/
+    universalLocation: StagingXcmV5Junctions;
+
+    /**
+     * The latest supported version that we advertise. Generally just set it to
+     * `pallet_xcm::CurrentXcmVersion`.
+     **/
+    advertisedXcmVersion: number;
+
+    /**
+     * The maximum number of local XCM locks that a single account may have.
+     **/
+    maxLockers: number;
+
+    /**
+     * The maximum number of consumers a single remote lock may have.
+     **/
+    maxRemoteLockConsumers: number;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -895,15 +917,6 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `Preimage`'s constants
    **/
   preimage: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `Sudo`'s constants
-   **/
-  sudo: {
     /**
      * Generic pallet constant
      **/

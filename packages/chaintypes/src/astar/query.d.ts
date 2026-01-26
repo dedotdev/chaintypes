@@ -21,6 +21,7 @@ import type {
   FrameSystemEventRecord,
   FrameSystemLastRuntimeUpgradeInfo,
   FrameSystemCodeUpgradeAuthorization,
+  SpWeightsWeightV2Weight,
   PalletIdentityRegistration,
   PalletIdentityRegistrarInfo,
   PalletIdentityAuthorityProperties,
@@ -42,7 +43,6 @@ import type {
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
-  SpWeightsWeightV2Weight,
   PalletTransactionPaymentReleases,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
@@ -77,6 +77,7 @@ import type {
   OrmlUtilitiesOrderedSet,
   PalletCollatorSelectionCandidateInfo,
   AstarRuntimeSessionKeys,
+  SpStakingOffenceOffenceSeverity,
   SpCoreCryptoKeyTypeId,
   SpConsensusAuraSr25519AppSr25519Public,
   SpConsensusSlotsSlot,
@@ -88,14 +89,14 @@ import type {
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
   StagingXcmV5Xcm,
-  PalletXcAssetConfigMigrationStep,
+  PalletXcmAuthorizedAliasesEntry,
   PalletMessageQueueBookState,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMessageQueuePage,
   PalletEvmCodeMetadata,
-  EthereumTransactionTransactionV2,
+  EthereumTransactionTransactionV3,
   FpRpcTransactionStatus,
-  EthereumReceiptReceiptV3,
+  EthereumReceiptReceiptV4,
   EthereumBlock,
   PalletContractsWasmCodeInfo,
   PalletContractsStorageContractInfo,
@@ -263,6 +264,19 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<FrameSystemCodeUpgradeAuthorization | undefined> =} callback
      **/
     authorizedUpgrade: GenericStorageQuery<() => FrameSystemCodeUpgradeAuthorization | undefined>;
+
+    /**
+     * The weight reclaimed for the extrinsic.
+     *
+     * This information is available until the end of the extrinsic execution.
+     * More precisely this information is removed in `note_applied_extrinsic`.
+     *
+     * Logic doing some post dispatch weight reduction must update this storage to avoid duplicate
+     * reduction.
+     *
+     * @param {Callback<SpWeightsWeightV2Weight> =} callback
+     **/
+    extrinsicWeightReclaimed: GenericStorageQuery<() => SpWeightsWeightV2Weight>;
 
     /**
      * Generic pallet storage query
@@ -453,6 +467,7 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   scheduler: {
     /**
+     * Block number at which the agenda began incomplete execution.
      *
      * @param {Callback<number | undefined> =} callback
      **/
@@ -1351,9 +1366,9 @@ export interface ChainStorage extends GenericChainStorage {
      * disabled using binary search. It gets cleared when `on_session_ending` returns
      * a new set of identities.
      *
-     * @param {Callback<Array<number>> =} callback
+     * @param {Callback<Array<[number, SpStakingOffenceOffenceSeverity]>> =} callback
      **/
-    disabledValidators: GenericStorageQuery<() => Array<number>>;
+    disabledValidators: GenericStorageQuery<() => Array<[number, SpStakingOffenceOffenceSeverity]>>;
 
     /**
      * The next session keys for a validator.
@@ -1420,13 +1435,14 @@ export interface ChainStorage extends GenericChainStorage {
     authorities: GenericStorageQuery<() => Array<SpConsensusAuraSr25519AppSr25519Public>>;
 
     /**
-     * Current slot paired with a number of authored blocks.
+     * Current relay chain slot paired with a number of authored blocks.
      *
-     * Updated on each block initialization.
+     * This is updated in [`FixedVelocityConsensusHook::on_state_proof`] with the current relay
+     * chain slot as provided by the relay chain state proof.
      *
      * @param {Callback<[SpConsensusSlotsSlot, number] | undefined> =} callback
      **/
-    slotInfo: GenericStorageQuery<() => [SpConsensusSlotsSlot, number] | undefined>;
+    relaySlotInfo: GenericStorageQuery<() => [SpConsensusSlotsSlot, number] | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1658,6 +1674,19 @@ export interface ChainStorage extends GenericChainStorage {
     recordedXcm: GenericStorageQuery<() => StagingXcmV5Xcm | undefined>;
 
     /**
+     * Map of authorized aliasers of local origins. Each local location can authorize a list of
+     * other locations to alias into it. Each aliaser is only valid until its inner `expiry`
+     * block number.
+     *
+     * @param {XcmVersionedLocation} arg
+     * @param {Callback<PalletXcmAuthorizedAliasesEntry | undefined> =} callback
+     **/
+    authorizedAliases: GenericStorageQuery<
+      (arg: XcmVersionedLocation) => PalletXcmAuthorizedAliasesEntry | undefined,
+      XcmVersionedLocation
+    >;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
@@ -1699,12 +1728,6 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: XcmVersionedLocation) => bigint | undefined,
       XcmVersionedLocation
     >;
-
-    /**
-     *
-     * @param {Callback<PalletXcAssetConfigMigrationStep> =} callback
-     **/
-    assetHubMigrationStep: GenericStorageQuery<() => PalletXcAssetConfigMigrationStep>;
 
     /**
      * Generic pallet storage query
@@ -1787,10 +1810,10 @@ export interface ChainStorage extends GenericChainStorage {
      * Mapping from transaction index to transaction in the current building block.
      *
      * @param {number} arg
-     * @param {Callback<[EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3] | undefined> =} callback
+     * @param {Callback<[EthereumTransactionTransactionV3, FpRpcTransactionStatus, EthereumReceiptReceiptV4] | undefined> =} callback
      **/
     pending: GenericStorageQuery<
-      (arg: number) => [EthereumTransactionTransactionV2, FpRpcTransactionStatus, EthereumReceiptReceiptV3] | undefined,
+      (arg: number) => [EthereumTransactionTransactionV3, FpRpcTransactionStatus, EthereumReceiptReceiptV4] | undefined,
       number
     >;
 
@@ -1811,9 +1834,9 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * The current Ethereum receipts.
      *
-     * @param {Callback<Array<EthereumReceiptReceiptV3> | undefined> =} callback
+     * @param {Callback<Array<EthereumReceiptReceiptV4> | undefined> =} callback
      **/
-    currentReceipts: GenericStorageQuery<() => Array<EthereumReceiptReceiptV3> | undefined>;
+    currentReceipts: GenericStorageQuery<() => Array<EthereumReceiptReceiptV4> | undefined>;
 
     /**
      * The current transaction statuses.
@@ -1951,6 +1974,8 @@ export interface ChainStorage extends GenericChainStorage {
      *
      * @param {H256} arg
      * @param {Callback<PalletPreimageOldRequestStatus | undefined> =} callback
+     *
+     * @deprecated RequestStatusFor
      **/
     statusFor: GenericStorageQuery<(arg: H256) => PalletPreimageOldRequestStatus | undefined, H256>;
 
@@ -1968,22 +1993,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<Bytes | undefined> =} callback
      **/
     preimageFor: GenericStorageQuery<(arg: [H256, number]) => Bytes | undefined, [H256, number]>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `Sudo`'s storage queries
-   **/
-  sudo: {
-    /**
-     * The `AccountId` of the sudo key.
-     *
-     * @param {Callback<AccountId32 | undefined> =} callback
-     **/
-    key: GenericStorageQuery<() => AccountId32 | undefined>;
 
     /**
      * Generic pallet storage query

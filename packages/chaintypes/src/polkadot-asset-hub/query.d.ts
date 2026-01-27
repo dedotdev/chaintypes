@@ -15,6 +15,7 @@ import type {
   BytesLike,
   Perbill,
   Percent,
+  H160,
 } from 'dedot/codecs';
 import type {
   FrameSystemAccountInfo,
@@ -47,6 +48,7 @@ import type {
   FrameSupportTokensMiscIdAmountRuntimeHoldReason,
   FrameSupportTokensMiscIdAmountRuntimeFreezeReason,
   PalletTransactionPaymentReleases,
+  FrameSupportStorageNoDrop,
   PalletVestingVestingInfo,
   PalletVestingReleases,
   PolkadotRuntimeCommonClaimsStatementKind,
@@ -134,6 +136,13 @@ import type {
   PalletStakingAsyncUnappliedSlash,
   PalletStakingAsyncSnapshotStatus,
   PalletStakingAsyncPalletPruningStep,
+  PalletReviveVmCodeInfo,
+  PalletReviveStorageAccountInfo,
+  PalletReviveStorageDeletionQueueManager,
+  PalletReviveEvmApiRpcTypesGenBlock,
+  PalletReviveEvmBlockHashReceiptGasInfo,
+  PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR,
+  PalletReviveDebugDebugSettings,
   PalletRcMigratorAccountsAccount,
   PalletAhMigratorMigrationStage,
   PalletAhMigratorBalancesBefore,
@@ -827,6 +836,15 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletTransactionPaymentReleases> =} callback
      **/
     storageVersion: GenericStorageQuery<() => PalletTransactionPaymentReleases>;
+
+    /**
+     * The `OnChargeTransaction` stores the withdrawn tx fee here.
+     *
+     * Use `withdraw_txfee` and `remaining_txfee` to access from outside the crate.
+     *
+     * @param {Callback<FrameSupportStorageNoDrop | undefined> =} callback
+     **/
+    txPaymentCredit: GenericStorageQuery<() => FrameSupportStorageNoDrop | undefined>;
 
     /**
      * Generic pallet storage query
@@ -3337,6 +3355,142 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletStakingAsyncPalletPruningStep | undefined> =} callback
      **/
     eraPruningState: GenericStorageQuery<(arg: number) => PalletStakingAsyncPalletPruningStep | undefined, number>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Revive`'s storage queries
+   **/
+  revive: {
+    /**
+     * A mapping from a contract's code hash to its code.
+     * The code's size is bounded by [`crate::limits::BLOB_BYTES`] for PVM and
+     * [`revm::primitives::eip170::MAX_CODE_SIZE`] for EVM bytecode.
+     *
+     * @param {H256} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    pristineCode: GenericStorageQuery<(arg: H256) => Bytes | undefined, H256>;
+
+    /**
+     * A mapping from a contract's code hash to its code info.
+     *
+     * @param {H256} arg
+     * @param {Callback<PalletReviveVmCodeInfo | undefined> =} callback
+     **/
+    codeInfoOf: GenericStorageQuery<(arg: H256) => PalletReviveVmCodeInfo | undefined, H256>;
+
+    /**
+     * The data associated to a contract or externally owned account.
+     *
+     * @param {H160} arg
+     * @param {Callback<PalletReviveStorageAccountInfo | undefined> =} callback
+     **/
+    accountInfoOf: GenericStorageQuery<(arg: H160) => PalletReviveStorageAccountInfo | undefined, H160>;
+
+    /**
+     * The immutable data associated with a given account.
+     *
+     * @param {H160} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    immutableDataOf: GenericStorageQuery<(arg: H160) => Bytes | undefined, H160>;
+
+    /**
+     * Evicted contracts that await child trie deletion.
+     *
+     * Child trie deletion is a heavy operation depending on the amount of storage items
+     * stored in said trie. Therefore this operation is performed lazily in `on_idle`.
+     *
+     * @param {number} arg
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    deletionQueue: GenericStorageQuery<(arg: number) => Bytes | undefined, number>;
+
+    /**
+     * A pair of monotonic counters used to track the latest contract marked for deletion
+     * and the latest deleted contract in queue.
+     *
+     * @param {Callback<PalletReviveStorageDeletionQueueManager> =} callback
+     **/
+    deletionQueueCounter: GenericStorageQuery<() => PalletReviveStorageDeletionQueueManager>;
+
+    /**
+     * Map a Ethereum address to its original `AccountId32`.
+     *
+     * When deriving a `H160` from an `AccountId32` we use a hash function. In order to
+     * reconstruct the original account we need to store the reverse mapping here.
+     * Register your `AccountId32` using [`Pallet::map_account`] in order to
+     * use it with this pallet.
+     *
+     * @param {H160} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    originalAccount: GenericStorageQuery<(arg: H160) => AccountId32 | undefined, H160>;
+
+    /**
+     * The current Ethereum block that is stored in the `on_finalize` method.
+     *
+     * # Note
+     *
+     * This could be further optimized into the future to store only the minimum
+     * information needed to reconstruct the Ethereum block at the RPC level.
+     *
+     * Since the block is convenient to have around, and the extra details are capped
+     * by a few hashes and the vector of transaction hashes, we store the block here.
+     *
+     * @param {Callback<PalletReviveEvmApiRpcTypesGenBlock> =} callback
+     **/
+    ethereumBlock: GenericStorageQuery<() => PalletReviveEvmApiRpcTypesGenBlock>;
+
+    /**
+     * Mapping for block number and hashes.
+     *
+     * The maximum number of elements stored is capped by the block hash count `BLOCK_HASH_COUNT`.
+     *
+     * @param {number} arg
+     * @param {Callback<H256> =} callback
+     **/
+    blockHash: GenericStorageQuery<(arg: number) => H256, number>;
+
+    /**
+     * The details needed to reconstruct the receipt info offchain.
+     *
+     * This contains valuable information about the gas used by the transaction.
+     *
+     * NOTE: The item is unbound and should therefore never be read on chain.
+     * It could otherwise inflate the PoV size of a block.
+     *
+     * @param {Callback<Array<PalletReviveEvmBlockHashReceiptGasInfo>> =} callback
+     **/
+    receiptInfoData: GenericStorageQuery<() => Array<PalletReviveEvmBlockHashReceiptGasInfo>>;
+
+    /**
+     * Incremental ethereum block builder.
+     *
+     * @param {Callback<PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR> =} callback
+     **/
+    ethBlockBuilderIR: GenericStorageQuery<() => PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR>;
+
+    /**
+     * The first transaction and receipt of the ethereum block.
+     *
+     * These values are moved out of the `EthBlockBuilderIR` to avoid serializing and
+     * deserializing them on every transaction. Instead, they are loaded when needed.
+     *
+     * @param {Callback<[Bytes, Bytes] | undefined> =} callback
+     **/
+    ethBlockBuilderFirstValues: GenericStorageQuery<() => [Bytes, Bytes] | undefined>;
+
+    /**
+     * Debugging settings that can be configured when DebugEnabled config is true.
+     *
+     * @param {Callback<PalletReviveDebugDebugSettings> =} callback
+     **/
+    debugSettingsOf: GenericStorageQuery<() => PalletReviveDebugDebugSettings>;
 
     /**
      * Generic pallet storage query

@@ -12,6 +12,7 @@ import type {
   Bytes,
   Permill,
   Perbill,
+  H160,
 } from 'dedot/codecs';
 import type {
   FrameSystemDispatchEventInfo,
@@ -3988,6 +3989,56 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `Revive`'s events
+   **/
+  revive: {
+    /**
+     * A custom event emitted by the contract.
+     **/
+    ContractEmitted: GenericPalletEvent<
+      'Revive',
+      'ContractEmitted',
+      {
+        /**
+         * The contract that emitted the event.
+         **/
+        contract: H160;
+
+        /**
+         * Data supplied by the contract. Metadata generated during contract compilation
+         * is needed to decode it.
+         **/
+        data: Bytes;
+
+        /**
+         * A list of topics used to index the event.
+         * Number of topics is capped by [`limits::NUM_EVENT_TOPICS`].
+         **/
+        topics: Array<H256>;
+      }
+    >;
+
+    /**
+     * Contract deployed by deployer at the specified address.
+     **/
+    Instantiated: GenericPalletEvent<'Revive', 'Instantiated', { deployer: H160; contract: H160 }>;
+
+    /**
+     * Emitted when an Ethereum transaction reverts.
+     *
+     * Ethereum transactions always complete successfully at the extrinsic level,
+     * as even reverted calls must store their `ReceiptInfo`.
+     * To distinguish reverted calls from successful ones, this event is emitted
+     * for failed Ethereum transactions.
+     **/
+    EthExtrinsicRevert: GenericPalletEvent<'Revive', 'EthExtrinsicRevert', { dispatchError: DispatchError }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `AhOps`'s events
    **/
   ahOps: {
@@ -4020,7 +4071,7 @@ export interface ChainEvents extends GenericChainEvents {
         /**
          * The parachain ID that had its account migrated.
          **/
-        paraId: PolkadotParachainPrimitivesPrimitivesId;
+        paraId: number;
 
         /**
          * The old account that was migrated out of.
@@ -4033,11 +4084,16 @@ export interface ChainEvents extends GenericChainEvents {
         to: AccountId32;
 
         /**
-         * Set if this account was derived from a para sovereign account.
+         * The derivation path that was used to translate the account.
          **/
-        derivationIndex?: number | undefined;
+        derivationPath: Array<number>;
       }
     >;
+
+    /**
+     * Failed to re-bond some migrated funds.
+     **/
+    FailedToBond: GenericPalletEvent<'AhOps', 'FailedToBond', { account: AccountId32; amount: bigint }>;
 
     /**
      * Generic pallet event

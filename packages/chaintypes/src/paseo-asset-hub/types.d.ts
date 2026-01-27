@@ -14964,7 +14964,24 @@ export type PalletAhOpsCall =
    *
    * This call can only be called after the migration is completed.
    **/
-  | { name: 'TransferToPostMigrationTreasury'; params: { assetId: StagingXcmV5Location } };
+  | { name: 'TransferToPostMigrationTreasury'; params: { assetId: StagingXcmV5Location } }
+  /**
+   * Translate recursively derived parachain sovereign child account to its sibling.
+   *
+   * Uses the same derivation path on the sibling. The old and new account arguments are only
+   * witness data to ensure correct usage. Can only be called by the `MigrateOrigin`.
+   *
+   * This migrates:
+   * - Native DOT balance
+   * - All assets listed in `T::RelevantAssets`
+   * - Staked balances
+   *
+   * Things like non-relevant assets or vested transfers may remain on the old account.
+   **/
+  | {
+      name: 'TranslateParaSovereignChildToSiblingDerived';
+      params: { paraId: number; derivationPath: Array<number>; oldAccount: AccountId32; newAccount: AccountId32 };
+    };
 
 export type PalletAhOpsCallLike =
   /**
@@ -15026,7 +15043,29 @@ export type PalletAhOpsCallLike =
    *
    * This call can only be called after the migration is completed.
    **/
-  | { name: 'TransferToPostMigrationTreasury'; params: { assetId: StagingXcmV5Location } };
+  | { name: 'TransferToPostMigrationTreasury'; params: { assetId: StagingXcmV5Location } }
+  /**
+   * Translate recursively derived parachain sovereign child account to its sibling.
+   *
+   * Uses the same derivation path on the sibling. The old and new account arguments are only
+   * witness data to ensure correct usage. Can only be called by the `MigrateOrigin`.
+   *
+   * This migrates:
+   * - Native DOT balance
+   * - All assets listed in `T::RelevantAssets`
+   * - Staked balances
+   *
+   * Things like non-relevant assets or vested transfers may remain on the old account.
+   **/
+  | {
+      name: 'TranslateParaSovereignChildToSiblingDerived';
+      params: {
+        paraId: number;
+        derivationPath: Array<number>;
+        oldAccount: AccountId32Like;
+        newAccount: AccountId32Like;
+      };
+    };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -19021,7 +19060,7 @@ export type PalletAhOpsEvent =
         /**
          * The parachain ID that had its account migrated.
          **/
-        paraId: PolkadotParachainPrimitivesPrimitivesId;
+        paraId: number;
 
         /**
          * The old account that was migrated out of.
@@ -19034,11 +19073,15 @@ export type PalletAhOpsEvent =
         to: AccountId32;
 
         /**
-         * Set if this account was derived from a para sovereign account.
+         * The derivation path that was used to translate the account.
          **/
-        derivationIndex?: number | undefined;
+        derivationPath: Array<number>;
       };
-    };
+    }
+  /**
+   * Failed to re-bond some migrated funds.
+   **/
+  | { name: 'FailedToBond'; data: { account: AccountId32; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -19330,6 +19373,19 @@ export type FrameSystemError =
   | 'Unauthorized';
 
 export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
+
+export type CumulusPalletWeightReclaimStorageWeightReclaim = [
+  FrameSystemExtensionsCheckNonZeroSender,
+  FrameSystemExtensionsCheckSpecVersion,
+  FrameSystemExtensionsCheckTxVersion,
+  FrameSystemExtensionsCheckGenesis,
+  FrameSystemExtensionsCheckMortality,
+  FrameSystemExtensionsCheckNonce,
+  FrameSystemExtensionsCheckWeight,
+  PalletAssetConversionTxPaymentChargeAssetTxPayment,
+  FrameMetadataHashExtensionCheckMetadataHash,
+  PalletReviveEvmTxExtensionSetOrigin,
+];
 
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
@@ -22378,7 +22434,23 @@ export type PalletAhOpsError =
   /**
    * The balance is zero.
    **/
-  | 'ZeroBalance';
+  | 'ZeroBalance'
+  /**
+   * Failed to transfer balance.
+   **/
+  | 'FailedToTransfer'
+  /**
+   * The account has already been translated.
+   **/
+  | 'AlreadyTranslated'
+  /**
+   * The derivation path is too long.
+   **/
+  | 'TooLongDerivationPath'
+  /**
+   * Failed to force unstake.
+   **/
+  | 'FailedToForceUnstake';
 
 export type PalletAhMigratorBalancesBefore = { checkingAccount: bigint; totalIssuance: bigint };
 

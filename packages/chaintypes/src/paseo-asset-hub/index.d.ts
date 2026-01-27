@@ -44,6 +44,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     PalletAssetConversionTxPaymentChargeAssetTxPayment,
     FrameMetadataHashExtensionCheckMetadataHash,
     PalletReviveEvmTxExtensionSetOrigin,
+    [],
   ];
   AssetId: StagingXcmV5Location;
   EventRecord: FrameSystemEventRecord;
@@ -51,7 +52,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PaseoAssetHubApi
- * @specVersion: 2000004
+ * @specVersion: 2000005
  **/
 export interface PaseoAssetHubApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

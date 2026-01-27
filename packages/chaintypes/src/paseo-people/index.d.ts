@@ -41,6 +41,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     FrameSystemExtensionsCheckWeight,
     PalletTransactionPaymentChargeTransactionPayment,
     FrameMetadataHashExtensionCheckMetadataHash,
+    [],
   ];
   AssetId: undefined;
   EventRecord: FrameSystemEventRecord;
@@ -48,7 +49,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PaseoPeopleApi
- * @specVersion: 2000004
+ * @specVersion: 2000005
  **/
 export interface PaseoPeopleApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

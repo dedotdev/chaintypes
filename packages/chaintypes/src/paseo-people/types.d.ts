@@ -5211,6 +5211,18 @@ export type SpRuntimeBlakeTwo256 = {};
 
 export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
 
+export type CumulusPalletWeightReclaimStorageWeightReclaim = [
+  FrameSystemExtensionsCheckNonZeroSender,
+  FrameSystemExtensionsCheckSpecVersion,
+  FrameSystemExtensionsCheckTxVersion,
+  FrameSystemExtensionsCheckGenesis,
+  FrameSystemExtensionsCheckMortality,
+  FrameSystemExtensionsCheckNonce,
+  FrameSystemExtensionsCheckWeight,
+  PalletTransactionPaymentChargeTransactionPayment,
+  FrameMetadataHashExtensionCheckMetadataHash,
+];
+
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;

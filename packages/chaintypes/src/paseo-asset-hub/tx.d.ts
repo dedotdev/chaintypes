@@ -14784,6 +14784,47 @@ export interface ChainTx<
     >;
 
     /**
+     * Translate recursively derived parachain sovereign child account to its sibling.
+     *
+     * Uses the same derivation path on the sibling. The old and new account arguments are only
+     * witness data to ensure correct usage. Can only be called by the `MigrateOrigin`.
+     *
+     * This migrates:
+     * - Native DOT balance
+     * - All assets listed in `T::RelevantAssets`
+     * - Staked balances
+     *
+     * Things like non-relevant assets or vested transfers may remain on the old account.
+     *
+     * @param {number} paraId
+     * @param {Array<number>} derivationPath
+     * @param {AccountId32Like} oldAccount
+     * @param {AccountId32Like} newAccount
+     **/
+    translateParaSovereignChildToSiblingDerived: GenericTxCall<
+      (
+        paraId: number,
+        derivationPath: Array<number>,
+        oldAccount: AccountId32Like,
+        newAccount: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AhOps';
+          palletCall: {
+            name: 'TranslateParaSovereignChildToSiblingDerived';
+            params: {
+              paraId: number;
+              derivationPath: Array<number>;
+              oldAccount: AccountId32Like;
+              newAccount: AccountId32Like;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;

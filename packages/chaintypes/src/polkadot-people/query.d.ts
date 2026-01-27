@@ -39,6 +39,7 @@ import type {
   FrameSupportTokensMiscIdAmount,
   FrameSupportTokensMiscIdAmount002,
   PalletTransactionPaymentReleases,
+  FrameSupportStorageNoDrop,
   PalletCollatorSelectionCandidateInfo,
   PeoplePolkadotRuntimeSessionKeys,
   SpStakingOffenceOffenceSeverity,
@@ -680,6 +681,15 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletTransactionPaymentReleases> =} callback
      **/
     storageVersion: GenericStorageQuery<() => PalletTransactionPaymentReleases>;
+
+    /**
+     * The `OnChargeTransaction` stores the withdrawn tx fee here.
+     *
+     * Use `withdraw_txfee` and `remaining_txfee` to access from outside the crate.
+     *
+     * @param {Callback<FrameSupportStorageNoDrop | undefined> =} callback
+     **/
+    txPaymentCredit: GenericStorageQuery<() => FrameSupportStorageNoDrop | undefined>;
 
     /**
      * Generic pallet storage query

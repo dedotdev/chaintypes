@@ -4256,7 +4256,7 @@ export interface ChainEvents extends GenericChainEvents {
         /**
          * The parachain ID that had its account migrated.
          **/
-        paraId: PolkadotParachainPrimitivesPrimitivesId;
+        paraId: number;
 
         /**
          * The old account that was migrated out of.
@@ -4269,11 +4269,16 @@ export interface ChainEvents extends GenericChainEvents {
         to: AccountId32;
 
         /**
-         * Set if this account was derived from a para sovereign account.
+         * The derivation path that was used to translate the account.
          **/
-        derivationIndex?: number | undefined;
+        derivationPath: Array<number>;
       }
     >;
+
+    /**
+     * Failed to re-bond some migrated funds.
+     **/
+    FailedToBond: GenericPalletEvent<'AhOps', 'FailedToBond', { account: AccountId32; amount: bigint }>;
 
     /**
      * Generic pallet event

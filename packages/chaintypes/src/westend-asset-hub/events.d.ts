@@ -4410,6 +4410,125 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `MultiAssetBounties`'s events
+   **/
+  multiAssetBounties: {
+    /**
+     * A new bounty was created and funding has been initiated.
+     **/
+    BountyCreated: GenericPalletEvent<'MultiAssetBounties', 'BountyCreated', { index: number }>;
+
+    /**
+     * A new child-bounty was created and funding has been initiated.
+     **/
+    ChildBountyCreated: GenericPalletEvent<
+      'MultiAssetBounties',
+      'ChildBountyCreated',
+      { index: number; childIndex: number }
+    >;
+
+    /**
+     * The curator accepted role and child-/bounty became active.
+     **/
+    BountyBecameActive: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyBecameActive',
+      { index: number; childIndex?: number | undefined; curator: AccountId32 }
+    >;
+
+    /**
+     * A child-/bounty was awarded to a beneficiary.
+     **/
+    BountyAwarded: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyAwarded',
+      { index: number; childIndex?: number | undefined; beneficiary: ParachainsCommonPayVersionedLocatableAccount }
+    >;
+
+    /**
+     * Payout payment to the beneficiary has concluded successfully.
+     **/
+    BountyPayoutProcessed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyPayoutProcessed',
+      {
+        index: number;
+        childIndex?: number | undefined;
+        assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
+        value: bigint;
+        beneficiary: ParachainsCommonPayVersionedLocatableAccount;
+      }
+    >;
+
+    /**
+     * Funding payment has concluded successfully.
+     **/
+    BountyFundingProcessed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyFundingProcessed',
+      { index: number; childIndex?: number | undefined }
+    >;
+
+    /**
+     * Refund payment has concluded successfully.
+     **/
+    BountyRefundProcessed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyRefundProcessed',
+      { index: number; childIndex?: number | undefined }
+    >;
+
+    /**
+     * A child-/bounty was cancelled.
+     **/
+    BountyCanceled: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyCanceled',
+      { index: number; childIndex?: number | undefined }
+    >;
+
+    /**
+     * A child-/bounty curator was unassigned.
+     **/
+    CuratorUnassigned: GenericPalletEvent<
+      'MultiAssetBounties',
+      'CuratorUnassigned',
+      { index: number; childIndex?: number | undefined }
+    >;
+
+    /**
+     * A child-/bounty curator was proposed.
+     **/
+    CuratorProposed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'CuratorProposed',
+      { index: number; childIndex?: number | undefined; curator: AccountId32 }
+    >;
+
+    /**
+     * A payment failed and can be retried.
+     **/
+    PaymentFailed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'PaymentFailed',
+      { index: number; childIndex?: number | undefined; paymentId: bigint }
+    >;
+
+    /**
+     * A payment happened and can be checked.
+     **/
+    Paid: GenericPalletEvent<
+      'MultiAssetBounties',
+      'Paid',
+      { index: number; childIndex?: number | undefined; paymentId: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `AssetConversionMigration`'s events
    **/
   assetConversionMigration: {

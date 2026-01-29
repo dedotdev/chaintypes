@@ -142,6 +142,8 @@ import type {
   PalletTreasuryProposal,
   PalletTreasurySpendStatus,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
+  PalletMultiAssetBountiesBounty,
+  PalletMultiAssetBountiesChildBounty,
 } from './types.js';
 
 export interface ChainStorage extends GenericChainStorage {
@@ -2372,6 +2374,33 @@ export interface ChainStorage extends GenericChainStorage {
     minCommission: GenericStorageQuery<() => Perbill>;
 
     /**
+     * Whether nominators are slashable or not.
+     *
+     * - When set to `true` (default), nominators are slashed along with validators and must wait
+     * the full [`Config::BondingDuration`] before withdrawing unbonded funds.
+     * - When set to `false`, nominators are not slashed, and can unbond in
+     * [`Config::NominatorFastUnbondDuration`] eras instead of the full
+     * [`Config::BondingDuration`] (see [`StakingInterface::nominator_bonding_duration`]).
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    areNominatorsSlashable: GenericStorageQuery<() => boolean>;
+
+    /**
+     * Per-era snapshot of whether nominators are slashable.
+     *
+     * This is copied from [`AreNominatorsSlashable`] at the start of each era. When processing
+     * offences, we use the value from this storage for the offence era to ensure that the
+     * slashing rules at the time of the offence are applied, not the current rules.
+     *
+     * If an entry does not exist for an era, nominators are assumed to be slashable (default).
+     *
+     * @param {number} arg
+     * @param {Callback<boolean | undefined> =} callback
+     **/
+    erasNominatorsSlashable: GenericStorageQuery<(arg: number) => boolean | undefined, number>;
+
+    /**
      * Map from all (unlocked) "controller" accounts to the info regarding the staking.
      *
      * Note: All the reads and mutations to this storage *MUST* be done through the methods exposed
@@ -2420,6 +2449,25 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<number | undefined> =} callback
      **/
     maxValidatorsCount: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * Tracks the last era in which an account was active as a validator (included in the era's
+     * exposure/snapshot).
+     *
+     * This is used to enforce that accounts who were recently validators must wait the full
+     * [`Config::BondingDuration`] before their funds can be withdrawn, even if they switch to
+     * nominator role. This prevents validators from:
+     * 1. Committing a slashable offence in era N
+     * 2. Switching to nominator role
+     * 3. Using the shorter nominator unbonding duration to withdraw funds before being slashed
+     *
+     * Updated when era snapshots are created (in `ErasStakersPaged`/`ErasStakersOverview`).
+     * Cleaned up when the stash is killed (fully withdrawn/reaped).
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    lastValidatorEra: GenericStorageQuery<(arg: AccountId32Like) => number | undefined, AccountId32>;
 
     /**
      * The map from nominator stash key to their nomination preferences, namely the validators that
@@ -3554,6 +3602,95 @@ export interface ChainStorage extends GenericChainStorage {
     conversionRateToNative: GenericStorageQuery<
       (arg: PolkadotRuntimeCommonImplsVersionedLocatableAsset) => FixedU128 | undefined,
       PolkadotRuntimeCommonImplsVersionedLocatableAsset
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `MultiAssetBounties`'s storage queries
+   **/
+  multiAssetBounties: {
+    /**
+     * Number of bounty proposals that have been made.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    bountyCount: GenericStorageQuery<() => number>;
+
+    /**
+     * Bounties that have been made.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletMultiAssetBountiesBounty | undefined> =} callback
+     **/
+    bounties: GenericStorageQuery<(arg: number) => PalletMultiAssetBountiesBounty | undefined, number>;
+
+    /**
+     * Child bounties that have been added.
+     *
+     * Indexed by `(parent_bounty_id, child_bounty_id)`.
+     *
+     * @param {[number, number]} arg
+     * @param {Callback<PalletMultiAssetBountiesChildBounty | undefined> =} callback
+     **/
+    childBounties: GenericStorageQuery<
+      (arg: [number, number]) => PalletMultiAssetBountiesChildBounty | undefined,
+      [number, number]
+    >;
+
+    /**
+     * Number of active child bounties per parent bounty.
+     *
+     * Indexed by `parent_bounty_id`.
+     *
+     * @param {number} arg
+     * @param {Callback<number> =} callback
+     **/
+    childBountiesPerParent: GenericStorageQuery<(arg: number) => number, number>;
+
+    /**
+     * Number of total child bounties per parent bounty, including completed bounties.
+     *
+     * Indexed by `parent_bounty_id`.
+     *
+     * @param {number} arg
+     * @param {Callback<number> =} callback
+     **/
+    totalChildBountiesPerParent: GenericStorageQuery<(arg: number) => number, number>;
+
+    /**
+     * The cumulative child-bounty value for each parent bounty. To be subtracted from the parent
+     * bounty payout when awarding bounty.
+     *
+     * Indexed by `parent_bounty_id`.
+     *
+     * @param {number} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    childBountiesValuePerParent: GenericStorageQuery<(arg: number) => bigint, number>;
+
+    /**
+     * The consideration cost incurred by the child-/bounty curator for committing to the role.
+     *
+     * Determined by [`pallet::Config::Consideration`]. It is created when the curator accepts the
+     * role, and is either burned if the curator misbehaves or consumed upon successful
+     * completion of the child-/bounty.
+     *
+     * Note: If the parent curator is also assigned to the child-bounty,
+     * the consideration cost is charged only once — when the curator
+     * accepts the role for the parent bounty.
+     *
+     * Indexed by `(parent_bounty_id, child_bounty_id)`.
+     *
+     * @param {[number, number | undefined]} arg
+     * @param {Callback<FrameSupportTokensFungibleHoldConsideration | undefined> =} callback
+     **/
+    curatorDeposit: GenericStorageQuery<
+      (arg: [number, number | undefined]) => FrameSupportTokensFungibleHoldConsideration | undefined,
+      [number, number | undefined]
     >;
 
     /**

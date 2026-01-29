@@ -1089,6 +1089,27 @@ export interface ChainConsts extends GenericChainConsts {
     debugEnabled: boolean;
 
     /**
+     * This determines the relative scale of our gas price and gas estimates.
+     *
+     * By default, the gas price (in wei) is `FeeInfo::next_fee_multiplier()` multiplied by
+     * `NativeToEthRatio`. `GasScale` allows to scale this value: the actual gas price is the
+     * default gas price multiplied by `GasScale`.
+     *
+     * As a consequence, gas cost (gas estimates and actual gas usage during transaction) is
+     * scaled down by the same factor. Thus, the total transaction cost is not affected by
+     * `GasScale` – apart from rounding differences: the transaction cost is always a multiple
+     * of the gas price and is derived by rounded up, so that with higher `GasScales` this can
+     * lead to higher gas cost as the rounding difference would be larger.
+     *
+     * The main purpose of changing the `GasScale` is to tune the gas cost so that it is closer
+     * to standard EVM gas cost and contracts will not run out of gas when tools or code
+     * assume hard coded gas limits.
+     *
+     * Requirement: `GasScale` must not be 0
+     **/
+    gasScale: number;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -1189,8 +1210,24 @@ export interface ChainConsts extends GenericChainConsts {
 
     /**
      * Number of eras that staked funds must remain bonded for.
+     *
+     * This is the bonding duration for validators. Nominators may have a shorter bonding
+     * duration when [`AreNominatorsSlashable`] is set to `false` (see
+     * [`StakingInterface::nominator_bonding_duration`]).
      **/
     bondingDuration: number;
+
+    /**
+     * Number of eras nominators must wait to unbond when they are not slashable.
+     *
+     * This duration is used for nominators when [`AreNominatorsSlashable`] is `false`.
+     * When nominators are slashable, they use the full [`Config::BondingDuration`] to ensure
+     * slashes can be applied during the unbonding period.
+     *
+     * Setting this to a lower value (e.g., 1 era) allows for faster withdrawals when
+     * nominators are not subject to slashing risk.
+     **/
+    nominatorFastUnbondDuration: number;
 
     /**
      * Number of eras that slashes are deferred by, after computation.
@@ -1626,6 +1663,47 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `AssetRate`'s constants
    **/
   assetRate: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `MultiAssetBounties`'s constants
+   **/
+  multiAssetBounties: {
+    /**
+     * Minimum value for a bounty.
+     **/
+    bountyValueMinimum: bigint;
+
+    /**
+     * Minimum value for a child-bounty.
+     **/
+    childBountyValueMinimum: bigint;
+
+    /**
+     * Maximum number of child bounties that can be added to a parent bounty.
+     **/
+    maxActiveChildBountyCount: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `Dap`'s constants
+   **/
+  dap: {
+    /**
+     * The pallet ID used to derive the buffer account.
+     *
+     * Each runtime should configure a unique ID to avoid collisions if multiple
+     * DAP instances are used.
+     **/
+    palletId: FrameSupportPalletId;
+
     /**
      * Generic pallet constant
      **/

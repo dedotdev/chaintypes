@@ -72,13 +72,14 @@ import type {
   PalletStakingAsyncPalletConfigOpU32,
   PalletStakingAsyncPalletConfigOpPercent,
   PalletStakingAsyncPalletConfigOpPerbill,
+  PalletStakingAsyncPalletConfigOpBool,
   PalletStakingAsyncLedgerUnlockChunk,
   PalletNominationPoolsBondExtra,
   PalletNominationPoolsPoolState,
   PalletNominationPoolsConfigOp,
   PalletNominationPoolsConfigOpU32,
   PalletNominationPoolsConfigOpPerbill,
-  PalletNominationPoolsConfigOp004,
+  PalletNominationPoolsConfigOpAccountId32,
   PalletNominationPoolsClaimPermission,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
@@ -10283,7 +10284,7 @@ export interface ChainTx<
      *
      * * `dest`: Address of the contract to call.
      * * `value`: The balance to transfer from the `origin` to `dest`.
-     * * `gas_limit`: The gas limit enforced when executing the constructor.
+     * * `weight_limit`: The weight limit enforced when executing the constructor.
      * * `storage_deposit_limit`: The maximum amount of balance that can be charged from the
      * caller to pay for the storage consumed.
      * * `data`: The input data to pass to the contract.
@@ -10296,7 +10297,7 @@ export interface ChainTx<
      *
      * @param {H160} dest
      * @param {bigint} value
-     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {SpWeightsWeightV2Weight} weightLimit
      * @param {bigint} storageDepositLimit
      * @param {BytesLike} data
      **/
@@ -10304,7 +10305,7 @@ export interface ChainTx<
       (
         dest: H160,
         value: bigint,
-        gasLimit: SpWeightsWeightV2Weight,
+        weightLimit: SpWeightsWeightV2Weight,
         storageDepositLimit: bigint,
         data: BytesLike,
       ) => ChainSubmittableExtrinsic<
@@ -10315,7 +10316,7 @@ export interface ChainTx<
             params: {
               dest: H160;
               value: bigint;
-              gasLimit: SpWeightsWeightV2Weight;
+              weightLimit: SpWeightsWeightV2Weight;
               storageDepositLimit: bigint;
               data: BytesLike;
             };
@@ -10333,7 +10334,7 @@ export interface ChainTx<
      * must be supplied.
      *
      * @param {bigint} value
-     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {SpWeightsWeightV2Weight} weightLimit
      * @param {bigint} storageDepositLimit
      * @param {H256} codeHash
      * @param {BytesLike} data
@@ -10342,7 +10343,7 @@ export interface ChainTx<
     instantiate: GenericTxCall<
       (
         value: bigint,
-        gasLimit: SpWeightsWeightV2Weight,
+        weightLimit: SpWeightsWeightV2Weight,
         storageDepositLimit: bigint,
         codeHash: H256,
         data: BytesLike,
@@ -10354,7 +10355,7 @@ export interface ChainTx<
             name: 'Instantiate';
             params: {
               value: bigint;
-              gasLimit: SpWeightsWeightV2Weight;
+              weightLimit: SpWeightsWeightV2Weight;
               storageDepositLimit: bigint;
               codeHash: H256;
               data: BytesLike;
@@ -10377,7 +10378,7 @@ export interface ChainTx<
      * # Parameters
      *
      * * `value`: The balance to transfer from the `origin` to the newly created contract.
-     * * `gas_limit`: The gas limit enforced when executing the constructor.
+     * * `weight_limit`: The weight limit enforced when executing the constructor.
      * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
      * from the caller to pay for the storage consumed.
      * * `code`: The contract code to deploy in raw bytes.
@@ -10396,7 +10397,7 @@ export interface ChainTx<
      * - The `deploy` function is executed in the context of the newly-created account.
      *
      * @param {bigint} value
-     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {SpWeightsWeightV2Weight} weightLimit
      * @param {bigint} storageDepositLimit
      * @param {BytesLike} code
      * @param {BytesLike} data
@@ -10405,7 +10406,7 @@ export interface ChainTx<
     instantiateWithCode: GenericTxCall<
       (
         value: bigint,
-        gasLimit: SpWeightsWeightV2Weight,
+        weightLimit: SpWeightsWeightV2Weight,
         storageDepositLimit: bigint,
         code: BytesLike,
         data: BytesLike,
@@ -10417,7 +10418,7 @@ export interface ChainTx<
             name: 'InstantiateWithCode';
             params: {
               value: bigint;
-              gasLimit: SpWeightsWeightV2Weight;
+              weightLimit: SpWeightsWeightV2Weight;
               storageDepositLimit: bigint;
               code: BytesLike;
               data: BytesLike;
@@ -10436,16 +10437,16 @@ export interface ChainTx<
      * # Parameters
      *
      * * `value`: The balance to transfer from the `origin` to the newly created contract.
-     * * `gas_limit`: The gas limit enforced when executing the constructor.
-     * * `storage_deposit_limit`: The maximum amount of balance that can be charged/reserved
-     * from the caller to pay for the storage consumed.
+     * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
+     * payment
+     * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
      * * `code`: The contract code to deploy in raw bytes.
      * * `data`: The input data to pass to the contract constructor.
-     * * `salt`: Used for the address derivation. If `Some` is supplied then `CREATE2`
-     * semantics are used. If `None` then `CRATE1` is used.
      * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
      * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
      * is used for building the Ethereum transaction root.
+     * * effective_gas_price: the price of a unit of gas
+     * * encoded len: the byte code size of the `eth_transact` extrinsic
      *
      * Calling this dispatchable ensures that the origin's nonce is bumped only once,
      * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
@@ -10453,7 +10454,8 @@ export interface ChainTx<
      * times within a batch call transaction.
      *
      * @param {U256} value
-     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {SpWeightsWeightV2Weight} weightLimit
+     * @param {U256} ethGasLimit
      * @param {BytesLike} code
      * @param {BytesLike} data
      * @param {BytesLike} transactionEncoded
@@ -10463,7 +10465,8 @@ export interface ChainTx<
     ethInstantiateWithCode: GenericTxCall<
       (
         value: U256,
-        gasLimit: SpWeightsWeightV2Weight,
+        weightLimit: SpWeightsWeightV2Weight,
+        ethGasLimit: U256,
         code: BytesLike,
         data: BytesLike,
         transactionEncoded: BytesLike,
@@ -10476,7 +10479,8 @@ export interface ChainTx<
             name: 'EthInstantiateWithCode';
             params: {
               value: U256;
-              gasLimit: SpWeightsWeightV2Weight;
+              weightLimit: SpWeightsWeightV2Weight;
+              ethGasLimit: U256;
               code: BytesLike;
               data: BytesLike;
               transactionEncoded: BytesLike;
@@ -10493,9 +10497,24 @@ export interface ChainTx<
      * Same as [`Self::call`], but intended to be dispatched **only**
      * by an EVM transaction through the EVM compatibility layer.
      *
+     * # Parameters
+     *
+     * * `dest`: The Ethereum address of the account to be called
+     * * `value`: The balance to transfer from the `origin` to the newly created contract.
+     * * `weight_limit`: The gas limit used to derive the transaction weight for transaction
+     * payment
+     * * `eth_gas_limit`: The Ethereum gas limit governing the resource usage of the execution
+     * * `data`: The input data to pass to the contract constructor.
+     * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
+     * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
+     * is used for building the Ethereum transaction root.
+     * * effective_gas_price: the price of a unit of gas
+     * * encoded len: the byte code size of the `eth_transact` extrinsic
+     *
      * @param {H160} dest
      * @param {U256} value
-     * @param {SpWeightsWeightV2Weight} gasLimit
+     * @param {SpWeightsWeightV2Weight} weightLimit
+     * @param {U256} ethGasLimit
      * @param {BytesLike} data
      * @param {BytesLike} transactionEncoded
      * @param {U256} effectiveGasPrice
@@ -10505,7 +10524,8 @@ export interface ChainTx<
       (
         dest: H160,
         value: U256,
-        gasLimit: SpWeightsWeightV2Weight,
+        weightLimit: SpWeightsWeightV2Weight,
+        ethGasLimit: U256,
         data: BytesLike,
         transactionEncoded: BytesLike,
         effectiveGasPrice: U256,
@@ -10518,7 +10538,8 @@ export interface ChainTx<
             params: {
               dest: H160;
               value: U256;
-              gasLimit: SpWeightsWeightV2Weight;
+              weightLimit: SpWeightsWeightV2Weight;
+              ethGasLimit: U256;
               data: BytesLike;
               transactionEncoded: BytesLike;
               effectiveGasPrice: U256;
@@ -11767,6 +11788,7 @@ export interface ChainTx<
      * @param {PalletStakingAsyncPalletConfigOpPercent} chillThreshold
      * @param {PalletStakingAsyncPalletConfigOpPerbill} minCommission
      * @param {PalletStakingAsyncPalletConfigOpPercent} maxStakedRewards
+     * @param {PalletStakingAsyncPalletConfigOpBool} areNominatorsSlashable
      **/
     setStakingConfigs: GenericTxCall<
       (
@@ -11777,6 +11799,7 @@ export interface ChainTx<
         chillThreshold: PalletStakingAsyncPalletConfigOpPercent,
         minCommission: PalletStakingAsyncPalletConfigOpPerbill,
         maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent,
+        areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Staking';
@@ -11790,6 +11813,7 @@ export interface ChainTx<
               chillThreshold: PalletStakingAsyncPalletConfigOpPercent;
               minCommission: PalletStakingAsyncPalletConfigOpPerbill;
               maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
+              areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool;
             };
           };
         },
@@ -12557,16 +12581,16 @@ export interface ChainTx<
      * most pool members and they should be informed of changes to pool roles.
      *
      * @param {number} poolId
-     * @param {PalletNominationPoolsConfigOp004} newRoot
-     * @param {PalletNominationPoolsConfigOp004} newNominator
-     * @param {PalletNominationPoolsConfigOp004} newBouncer
+     * @param {PalletNominationPoolsConfigOpAccountId32} newRoot
+     * @param {PalletNominationPoolsConfigOpAccountId32} newNominator
+     * @param {PalletNominationPoolsConfigOpAccountId32} newBouncer
      **/
     updateRoles: GenericTxCall<
       (
         poolId: number,
-        newRoot: PalletNominationPoolsConfigOp004,
-        newNominator: PalletNominationPoolsConfigOp004,
-        newBouncer: PalletNominationPoolsConfigOp004,
+        newRoot: PalletNominationPoolsConfigOpAccountId32,
+        newNominator: PalletNominationPoolsConfigOpAccountId32,
+        newBouncer: PalletNominationPoolsConfigOpAccountId32,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'NominationPools';
@@ -12574,9 +12598,9 @@ export interface ChainTx<
             name: 'UpdateRoles';
             params: {
               poolId: number;
-              newRoot: PalletNominationPoolsConfigOp004;
-              newNominator: PalletNominationPoolsConfigOp004;
-              newBouncer: PalletNominationPoolsConfigOp004;
+              newRoot: PalletNominationPoolsConfigOpAccountId32;
+              newNominator: PalletNominationPoolsConfigOpAccountId32;
+              newBouncer: PalletNominationPoolsConfigOpAccountId32;
             };
           };
         },
@@ -14170,6 +14194,434 @@ export interface ChainTx<
           palletCall: {
             name: 'Remove';
             params: { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `MultiAssetBounties`'s transaction calls
+   **/
+  multiAssetBounties: {
+    /**
+     * Fund a new bounty with a proposed curator, initiating the payment from the
+     * funding source to the bounty account/location.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::SpendOrigin`] with the `Success` value being at least
+     * the bounty value converted to native balance using [`Config::BalanceConverter`].
+     * The converted native amount is validated against the maximum spendable amount
+     * returned by [`Config::SpendOrigin`].
+     *
+     * ## Details
+     *
+     * - The `SpendOrigin` must have sufficient permissions to fund the bounty.
+     * - The bounty `value` (in asset balance) is converted to native balance for validation.
+     * - In case of a funding failure, the bounty status must be updated with the
+     * `check_status` call before retrying with `retry_payment` call.
+     *
+     * ### Parameters
+     * - `asset_kind`: An indicator of the specific asset class to be funded.
+     * - `value`: The total payment amount of this bounty.
+     * - `curator`: Address of bounty curator.
+     * - `metadata`: The hash of an on-chain stored preimage with bounty metadata.
+     *
+     * ## Events
+     *
+     * Emits [`Event::BountyCreated`] and [`Event::Paid`] if successful.
+     *
+     * @param {PolkadotRuntimeCommonImplsVersionedLocatableAsset} assetKind
+     * @param {bigint} value
+     * @param {MultiAddressLike} curator
+     * @param {H256} metadata
+     **/
+    fundBounty: GenericTxCall<
+      (
+        assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset,
+        value: bigint,
+        curator: MultiAddressLike,
+        metadata: H256,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiAssetBounties';
+          palletCall: {
+            name: 'FundBounty';
+            params: {
+              assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
+              value: bigint;
+              curator: MultiAddressLike;
+              metadata: H256;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Fund a new child-bounty with a proposed curator, initiating the payment from the parent
+     * bounty to the child-bounty account/location.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed by the parent curator.
+     *
+     * ## Details
+     *
+     * - If `curator` is not provided, the child-bounty will default to using the parent
+     * curator, allowing the parent curator to immediately call `check_status` and
+     * `award_bounty` to payout the child-bounty.
+     * - In case of a funding failure, the child-/bounty status must be updated with the
+     * `check_status` call before retrying with `retry_payment` call.
+     *
+     * ### Parameters
+     * - `parent_bounty_id`: Index of parent bounty for which child-bounty is being added.
+     * - `value`: The payment amount of this child-bounty.
+     * - `metadata`: The hash of an on-chain stored preimage with child-bounty metadata.
+     * - `curator`: Address of child-bounty curator.
+     *
+     * ## Events
+     *
+     * Emits [`Event::ChildBountyCreated`] and [`Event::Paid`] if successful.
+     *
+     * @param {number} parentBountyId
+     * @param {bigint} value
+     * @param {H256} metadata
+     * @param {MultiAddressLike | undefined} curator
+     **/
+    fundChildBounty: GenericTxCall<
+      (
+        parentBountyId: number,
+        value: bigint,
+        metadata: H256,
+        curator: MultiAddressLike | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiAssetBounties';
+          palletCall: {
+            name: 'FundChildBounty';
+            params: { parentBountyId: number; value: bigint; metadata: H256; curator: MultiAddressLike | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Propose a new curator for a child-/bounty after the previous was unassigned.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed by `T::SpendOrigin` for a bounty, or by the parent bounty curator
+     * for a child-bounty.
+     *
+     * ## Details
+     *
+     * - The child-/bounty must be in the `CuratorUnassigned` state.
+     * - For a bounty, the `SpendOrigin` must have sufficient permissions to propose the
+     * curator.
+     *
+     * ### Parameters
+     * - `parent_bounty_id`: Index of bounty.
+     * - `child_bounty_id`: Index of child-bounty.
+     * - `curator`: Account to be proposed as the curator.
+     *
+     * ## Events
+     *
+     * Emits [`Event::CuratorProposed`] if successful.
+     *
+     * @param {number} parentBountyId
+     * @param {number | undefined} childBountyId
+     * @param {MultiAddressLike} curator
+     **/
+    proposeCurator: GenericTxCall<
+      (
+        parentBountyId: number,
+        childBountyId: number | undefined,
+        curator: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiAssetBounties';
+          palletCall: {
+            name: 'ProposeCurator';
+            params: { parentBountyId: number; childBountyId: number | undefined; curator: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Accept the curator role for a child-/bounty.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed by the proposed curator.
+     *
+     * ## Details
+     *
+     * - The child-/bounty must be in the `Funded` state.
+     * - The curator must accept the role by calling this function.
+     * - A deposit will be reserved from the curator and refunded upon successful payout.
+     *
+     * ### Parameters
+     * - `parent_bounty_id`: Index of parent bounty.
+     * - `child_bounty_id`: Index of child-bounty.
+     *
+     * ## Events
+     *
+     * Emits [`Event::BountyBecameActive`] if successful.
+     *
+     * @param {number} parentBountyId
+     * @param {number | undefined} childBountyId
+     **/
+    acceptCurator: GenericTxCall<
+      (
+        parentBountyId: number,
+        childBountyId: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiAssetBounties';
+          palletCall: {
+            name: 'AcceptCurator';
+            params: { parentBountyId: number; childBountyId: number | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unassign curator from a child-/bounty.
+     *
+     * ## Dispatch Origin
+     *
+     * This function can only be called by the `RejectOrigin` or the child-/bounty curator.
+     *
+     * ## Details
+     *
+     * - If this function is called by the `RejectOrigin`, or by the parent curator in the case
+     * of a child bounty, we assume that the curator is malicious or inactive. As a result,
+     * we will slash the curator when possible.
+     * - If the origin is the child-/bounty curator, we take this as a sign they are unable to
+     * do their job and they willingly give up. We could slash them, but for now we allow
+     * them to recover their deposit and exit without issue. (We may want to change this if
+     * it is abused).
+     * - If successful, the child-/bounty status is updated to `CuratorUnassigned`. To
+     * reactivate the bounty, a new curator must be proposed and must accept the role.
+     *
+     * ### Parameters
+     * - `parent_bounty_id`: Index of parent bounty.
+     * - `child_bounty_id`: Index of child-bounty.
+     *
+     * ## Events
+     *
+     * Emits [`Event::CuratorUnassigned`] if successful.
+     *
+     * @param {number} parentBountyId
+     * @param {number | undefined} childBountyId
+     **/
+    unassignCurator: GenericTxCall<
+      (
+        parentBountyId: number,
+        childBountyId: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiAssetBounties';
+          palletCall: {
+            name: 'UnassignCurator';
+            params: { parentBountyId: number; childBountyId: number | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Awards the child-/bounty to a beneficiary account/location,
+     * initiating the payout payments to both the beneficiary and the curator.
+     *
+     * ## Dispatch Origin
+     *
+     * This function can only be called by the `RejectOrigin` or the child-/bounty curator.
+     *
+     * ## Details
+     *
+     * - The child-/bounty must be in the `Active` state.
+     * - if awarding a parent bounty it must not have active or funded child bounties.
+     * - Initiates payout payment from the child-/bounty to the beneficiary account/location.
+     * - If successful the child-/bounty status is updated to `PayoutAttempted`.
+     * - In case of a payout failure, the child-/bounty status must be updated with
+     * `check_status` call before retrying with `retry_payment` call.
+     *
+     * ### Parameters
+     * - `parent_bounty_id`: Index of parent bounty.
+     * - `child_bounty_id`: Index of child-bounty.
+     * - `beneficiary`: Account/location to be awarded the child-/bounty.
+     *
+     * ## Events
+     *
+     * Emits [`Event::BountyAwarded`] and [`Event::Paid`] if successful.
+     *
+     * @param {number} parentBountyId
+     * @param {number | undefined} childBountyId
+     * @param {ParachainsCommonPayVersionedLocatableAccount} beneficiary
+     **/
+    awardBounty: GenericTxCall<
+      (
+        parentBountyId: number,
+        childBountyId: number | undefined,
+        beneficiary: ParachainsCommonPayVersionedLocatableAccount,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiAssetBounties';
+          palletCall: {
+            name: 'AwardBounty';
+            params: {
+              parentBountyId: number;
+              childBountyId: number | undefined;
+              beneficiary: ParachainsCommonPayVersionedLocatableAccount;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Cancel an active child-/bounty. A payment to send all the funds to the funding source is
+     * initialized.
+     *
+     * ## Dispatch Origin
+     *
+     * This function can only be called by the `RejectOrigin` or the parent bounty curator.
+     *
+     * ## Details
+     *
+     * - If the child-/bounty is in the `Funded` state, a refund payment is initiated.
+     * - If the child-/bounty is in the `Active` state, a refund payment is initiated and the
+     * child-/bounty status is updated with the curator account/location.
+     * - If the child-/bounty is in the funding or payout phase, it cannot be canceled.
+     * - In case of a refund failure, the child-/bounty status must be updated with the
+     * `check_status` call before retrying with `retry_payment` call.
+     *
+     * ### Parameters
+     * - `parent_bounty_id`: Index of parent bounty.
+     * - `child_bounty_id`: Index of child-bounty.
+     *
+     * ## Events
+     *
+     * Emits [`Event::BountyCanceled`] and [`Event::Paid`] if successful.
+     *
+     * @param {number} parentBountyId
+     * @param {number | undefined} childBountyId
+     **/
+    closeBounty: GenericTxCall<
+      (
+        parentBountyId: number,
+        childBountyId: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiAssetBounties';
+          palletCall: {
+            name: 'CloseBounty';
+            params: { parentBountyId: number; childBountyId: number | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Check and update the payment status of a child-/bounty.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed.
+     *
+     * ## Details
+     *
+     * - If the child-/bounty status is `FundingAttempted`, it checks if the funding payment
+     * has succeeded. If successful, the bounty status becomes `Funded`.
+     * - If the child-/bounty status is `RefundAttempted`, it checks if the refund payment has
+     * succeeded. If successful, the child-/bounty is removed from storage.
+     * - If the child-/bounty status is `PayoutAttempted`, it checks if the payout payment has
+     * succeeded. If successful, the child-/bounty is removed from storage.
+     *
+     * ### Parameters
+     * - `parent_bounty_id`: Index of parent bounty.
+     * - `child_bounty_id`: Index of child-bounty.
+     *
+     * ## Events
+     *
+     * Emits [`Event::BountyBecameActive`] if the child/bounty status transitions to `Active`.
+     * Emits [`Event::BountyRefundProcessed`] if the refund payment has succeed.
+     * Emits [`Event::BountyPayoutProcessed`] if the payout payment has succeed.
+     * Emits [`Event::PaymentFailed`] if the funding, refund our payment payment has failed.
+     *
+     * @param {number} parentBountyId
+     * @param {number | undefined} childBountyId
+     **/
+    checkStatus: GenericTxCall<
+      (
+        parentBountyId: number,
+        childBountyId: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiAssetBounties';
+          palletCall: {
+            name: 'CheckStatus';
+            params: { parentBountyId: number; childBountyId: number | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Retry the funding, refund or payout payments.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed.
+     *
+     * ## Details
+     *
+     * - If the child-/bounty status is `FundingAttempted`, it retries the funding payment from
+     * funding source the child-/bounty account/location.
+     * - If the child-/bounty status is `RefundAttempted`, it retries the refund payment from
+     * the child-/bounty account/location to the funding source.
+     * - If the child-/bounty status is `PayoutAttempted`, it retries the payout payment from
+     * the child-/bounty account/location to the beneficiary account/location.
+     *
+     * ### Parameters
+     * - `parent_bounty_id`: Index of parent bounty.
+     * - `child_bounty_id`: Index of child-bounty.
+     *
+     * ## Events
+     *
+     * Emits [`Event::Paid`] if the funding, refund or payout payment has initiated.
+     *
+     * @param {number} parentBountyId
+     * @param {number | undefined} childBountyId
+     **/
+    retryPayment: GenericTxCall<
+      (
+        parentBountyId: number,
+        childBountyId: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiAssetBounties';
+          palletCall: {
+            name: 'RetryPayment';
+            params: { parentBountyId: number; childBountyId: number | undefined };
           };
         },
         ChainKnownTypes

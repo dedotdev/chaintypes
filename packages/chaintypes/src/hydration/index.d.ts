@@ -52,7 +52,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: HydrationApi
- * @specVersion: 378
+ * @specVersion: 379
  **/
 export interface HydrationApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

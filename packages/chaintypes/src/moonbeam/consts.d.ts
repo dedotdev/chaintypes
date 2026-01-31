@@ -250,6 +250,11 @@ export interface ChainConsts extends GenericChainConsts {
     maxDelegationsPerDelegator: number;
 
     /**
+     * Maximum number of scheduled delegation requests per (collator, delegator).
+     **/
+    maxScheduledRequestsPerDelegator: number;
+
+    /**
      * Minimum stake required for any account to be a collator candidate
      **/
     minCandidateStk: bigint;

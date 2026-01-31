@@ -1084,7 +1084,7 @@ export interface ChainTx<
     /**
      * Request bond less for delegators wrt a specific collator candidate. The delegation's
      * rewards for rounds while the request is pending use the reduced bonded amount.
-     * A bond less may not be performed if any other scheduled request is pending.
+     * A bond less may not be performed if a revoke request is pending for the same delegation.
      *
      * @param {AccountId20Like} candidate
      * @param {bigint} less
@@ -1249,38 +1249,6 @@ export interface ChainTx<
           palletCall: {
             name: 'SetInflationDistributionConfig';
             params: { new: PalletParachainStakingInflationDistributionConfig };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Batch migrate locks to freezes for a list of accounts.
-     *
-     * This function allows migrating multiple accounts from the old lock-based
-     * staking to the new freeze-based staking in a single transaction.
-     *
-     * Parameters:
-     * - `accounts`: List of tuples containing (account_id, is_collator)
-     * where is_collator indicates if the account is a collator (true) or delegator (false)
-     *
-     * The maximum number of accounts that can be migrated in one batch is MAX_ACCOUNTS_PER_MIGRATION_BATCH.
-     * The batch cannot be empty.
-     *
-     * If 50% or more of the migration attempts are successful, the entire
-     * extrinsic fee is refunded to incentivize successful batch migrations.
-     * Weight is calculated based on actual successful operations performed.
-     *
-     * @param {Array<[AccountId20Like, boolean]>} accounts
-     **/
-    migrateLocksToFreezesBatch: GenericTxCall<
-      (accounts: Array<[AccountId20Like, boolean]>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'ParachainStaking';
-          palletCall: {
-            name: 'MigrateLocksToFreezesBatch';
-            params: { accounts: Array<[AccountId20Like, boolean]> };
           };
         },
         ChainKnownTypes
@@ -2033,7 +2001,7 @@ export interface ChainTx<
      * `pure` with corresponding parameters.
      *
      * - `spawner`: The account that originally called `pure` to create this account.
-     * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+     * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
      * - `proxy_type`: The proxy type originally passed to `pure`.
      * - `height`: The height of the chain when the call to `pure` was processed.
      * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
@@ -5136,6 +5104,8 @@ export interface ChainTx<
      * Emits [`Event::Paid`] if successful.
      *
      * @param {number} index
+     *
+     * @deprecated The `spend_local` call will be removed by May 2025. Migrate to the new flow and use the `spend` call.
      **/
     payout: GenericTxCall<
       (index: number) => ChainSubmittableExtrinsic<
@@ -5172,6 +5142,8 @@ export interface ChainTx<
      * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
      *
      * @param {number} index
+     *
+     * @deprecated The `remove_approval` call will be removed by May 2025. It associated with the deprecated `spend_local` call.
      **/
     checkStatus: GenericTxCall<
       (index: number) => ChainSubmittableExtrinsic<
@@ -5376,6 +5348,8 @@ export interface ChainTx<
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_teleport_assets` or `transfer_assets`
      **/
     teleportAssets: GenericTxCall<
       (
@@ -5436,6 +5410,8 @@ export interface ChainTx<
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_reserve_transfer_assets` or `transfer_assets`
      **/
     reserveTransferAssets: GenericTxCall<
       (
@@ -6844,6 +6820,8 @@ export interface ChainTx<
      *
      * @param {Header} finalityTarget
      * @param {BpHeaderChainJustificationGrandpaJustification} justification
+     *
+     * @deprecated `submit_finality_proof` will be removed in May 2024. Use `submit_finality_proof_ex` instead.
      **/
     submitFinalityProof: GenericTxCall<
       (

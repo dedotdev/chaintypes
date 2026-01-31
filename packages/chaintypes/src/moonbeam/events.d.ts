@@ -531,7 +531,7 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * Delegation from candidate state has been remove.
+     * Delegation from candidate state has been removed.
      **/
     DelegatorLeftCandidate: GenericPalletEvent<
       'ParachainStaking',
@@ -821,6 +821,15 @@ export interface ChainEvents extends GenericChainEvents {
       'Proxy',
       'PureCreated',
       { pure: AccountId20; who: AccountId20; proxyType: MoonbeamRuntimeProxyType; disambiguationIndex: number }
+    >;
+
+    /**
+     * A pure proxy was killed by its spawner.
+     **/
+    PureKilled: GenericPalletEvent<
+      'Proxy',
+      'PureKilled',
+      { pure: AccountId20; spawner: AccountId20; proxyType: MoonbeamRuntimeProxyType; disambiguationIndex: number }
     >;
 
     /**

@@ -761,15 +761,31 @@ export interface ChainStorage extends GenericChainStorage {
     >;
 
     /**
-     * Stores outstanding delegation requests per collator.
+     * Stores outstanding delegation requests per collator & delegator.
      *
-     * @param {AccountId20Like} arg
+     * Each `(collator, delegator)` pair can have up to
+     * `T::MaxScheduledRequestsPerDelegator` scheduled requests,
+     * which are always interpreted and executed in FIFO order.
+     *
+     * @param {[AccountId20Like, AccountId20Like]} arg
      * @param {Callback<Array<PalletParachainStakingDelegationRequestsScheduledRequest>> =} callback
      **/
     delegationScheduledRequests: GenericStorageQuery<
-      (arg: AccountId20Like) => Array<PalletParachainStakingDelegationRequestsScheduledRequest>,
-      AccountId20
+      (arg: [AccountId20Like, AccountId20Like]) => Array<PalletParachainStakingDelegationRequestsScheduledRequest>,
+      [AccountId20, AccountId20]
     >;
+
+    /**
+     * Tracks how many delegators have at least one pending delegation request for a given collator.
+     *
+     * This is used to enforce that the number of delegators with pending requests per collator
+     * does not exceed `MaxTopDelegationsPerCandidate + MaxBottomDelegationsPerCandidate` without
+     * having to iterate over all scheduled requests.
+     *
+     * @param {AccountId20Like} arg
+     * @param {Callback<number> =} callback
+     **/
+    delegationScheduledRequestsPerCollator: GenericStorageQuery<(arg: AccountId20Like) => number, AccountId20>;
 
     /**
      * Stores auto-compounding configuration per collator.
@@ -884,24 +900,6 @@ export interface ChainStorage extends GenericChainStorage {
     enableMarkingOffline: GenericStorageQuery<() => boolean>;
 
     /**
-     * Temporary storage to track candidates that have been migrated from locks to freezes.
-     * This storage should be removed after all accounts have been migrated.
-     *
-     * @param {AccountId20Like} arg
-     * @param {Callback<[] | undefined> =} callback
-     **/
-    migratedCandidates: GenericStorageQuery<(arg: AccountId20Like) => [] | undefined, AccountId20>;
-
-    /**
-     * Temporary storage to track delegators that have been migrated from locks to freezes.
-     * This storage should be removed after all accounts have been migrated.
-     *
-     * @param {AccountId20Like} arg
-     * @param {Callback<[] | undefined> =} callback
-     **/
-    migratedDelegators: GenericStorageQuery<(arg: AccountId20Like) => [] | undefined, AccountId20>;
-
-    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
@@ -936,6 +934,8 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      *
      * @param {Callback<Percent> =} callback
+     *
+     * @deprecated use `pallet::EligibleCount` instead
      **/
     eligibleRatio: GenericStorageQuery<() => Percent>;
 
@@ -1435,6 +1435,8 @@ export interface ChainStorage extends GenericChainStorage {
      *
      * @param {H256} arg
      * @param {Callback<PalletPreimageOldRequestStatus | undefined> =} callback
+     *
+     * @deprecated RequestStatusFor
      **/
     statusFor: GenericStorageQuery<(arg: H256) => PalletPreimageOldRequestStatus | undefined, H256>;
 

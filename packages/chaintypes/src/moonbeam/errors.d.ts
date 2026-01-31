@@ -1524,6 +1524,8 @@ export interface ChainErrors extends GenericChainErrors {
 
     /**
      * Too many locations authorized to alias origin.
+     *
+     * @deprecated Use `LocalExecutionIncompleteWithError` instead (since 20.0.0)
      **/
     TooManyAuthorizedAliases: GenericPalletError;
 
@@ -1536,6 +1538,12 @@ export interface ChainErrors extends GenericChainErrors {
      * The alias to remove authorization for was not found.
      **/
     AliasNotFound: GenericPalletError;
+
+    /**
+     * Local XCM execution incomplete with the actual XCM error and the index of the
+     * instruction that caused the error.
+     **/
+    LocalExecutionIncompleteWithError: GenericPalletError;
 
     /**
      * Generic pallet error

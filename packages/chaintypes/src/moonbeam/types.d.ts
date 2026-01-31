@@ -13,13 +13,13 @@ import type {
   Bytes,
   H160,
   BytesLike,
+  Header,
   AccountId20Like,
   Data,
   U256,
-  Header,
-  FixedI64,
-  Era,
   UncheckedExtrinsic,
+  Era,
+  FixedI64,
 } from 'dedot/codecs';
 
 export type FrameSystemAccountInfo = {
@@ -439,7 +439,7 @@ export type PalletParachainStakingEvent =
       };
     }
   /**
-   * Delegation from candidate state has been remove.
+   * Delegation from candidate state has been removed.
    **/
   | {
       name: 'DelegatorLeftCandidate';
@@ -665,6 +665,18 @@ export type PalletProxyEvent =
   | {
       name: 'PureCreated';
       data: { pure: AccountId20; who: AccountId20; proxyType: MoonbeamRuntimeProxyType; disambiguationIndex: number };
+    }
+  /**
+   * A pure proxy was killed by its spawner.
+   **/
+  | {
+      name: 'PureKilled';
+      data: {
+        pure: AccountId20;
+        spawner: AccountId20;
+        proxyType: MoonbeamRuntimeProxyType;
+        disambiguationIndex: number;
+      };
     }
   /**
    * An announcement was placed to make a call in the future.
@@ -1690,6 +1702,8 @@ export type CumulusPrimitivesParachainInherentParachainInherentData = {
   relayChainState: SpTrieStorageProof;
   downwardMessages: Array<PolkadotCorePrimitivesInboundDownwardMessage>;
   horizontalMessages: Array<[PolkadotParachainPrimitivesPrimitivesId, Array<PolkadotCorePrimitivesInboundHrmpMessage>]>;
+  relayParentDescendants: Array<Header>;
+  collatorPeerId?: Bytes | undefined;
 };
 
 export type PolkadotPrimitivesV8PersistedValidationData = {
@@ -2052,7 +2066,7 @@ export type PalletParachainStakingCall =
   /**
    * Request bond less for delegators wrt a specific collator candidate. The delegation's
    * rewards for rounds while the request is pending use the reduced bonded amount.
-   * A bond less may not be performed if any other scheduled request is pending.
+   * A bond less may not be performed if a revoke request is pending for the same delegation.
    **/
   | { name: 'ScheduleDelegatorBondLess'; params: { candidate: AccountId20; less: bigint } }
   /**
@@ -2091,25 +2105,7 @@ export type PalletParachainStakingCall =
   /**
    * Set the inflation distribution configuration.
    **/
-  | { name: 'SetInflationDistributionConfig'; params: { new: PalletParachainStakingInflationDistributionConfig } }
-  /**
-   * Batch migrate locks to freezes for a list of accounts.
-   *
-   * This function allows migrating multiple accounts from the old lock-based
-   * staking to the new freeze-based staking in a single transaction.
-   *
-   * Parameters:
-   * - `accounts`: List of tuples containing (account_id, is_collator)
-   * where is_collator indicates if the account is a collator (true) or delegator (false)
-   *
-   * The maximum number of accounts that can be migrated in one batch is MAX_ACCOUNTS_PER_MIGRATION_BATCH.
-   * The batch cannot be empty.
-   *
-   * If 50% or more of the migration attempts are successful, the entire
-   * extrinsic fee is refunded to incentivize successful batch migrations.
-   * Weight is calculated based on actual successful operations performed.
-   **/
-  | { name: 'MigrateLocksToFreezesBatch'; params: { accounts: Array<[AccountId20, boolean]> } };
+  | { name: 'SetInflationDistributionConfig'; params: { new: PalletParachainStakingInflationDistributionConfig } };
 
 export type PalletParachainStakingCallLike =
   /**
@@ -2210,7 +2206,7 @@ export type PalletParachainStakingCallLike =
   /**
    * Request bond less for delegators wrt a specific collator candidate. The delegation's
    * rewards for rounds while the request is pending use the reduced bonded amount.
-   * A bond less may not be performed if any other scheduled request is pending.
+   * A bond less may not be performed if a revoke request is pending for the same delegation.
    **/
   | { name: 'ScheduleDelegatorBondLess'; params: { candidate: AccountId20Like; less: bigint } }
   /**
@@ -2249,25 +2245,7 @@ export type PalletParachainStakingCallLike =
   /**
    * Set the inflation distribution configuration.
    **/
-  | { name: 'SetInflationDistributionConfig'; params: { new: PalletParachainStakingInflationDistributionConfig } }
-  /**
-   * Batch migrate locks to freezes for a list of accounts.
-   *
-   * This function allows migrating multiple accounts from the old lock-based
-   * staking to the new freeze-based staking in a single transaction.
-   *
-   * Parameters:
-   * - `accounts`: List of tuples containing (account_id, is_collator)
-   * where is_collator indicates if the account is a collator (true) or delegator (false)
-   *
-   * The maximum number of accounts that can be migrated in one batch is MAX_ACCOUNTS_PER_MIGRATION_BATCH.
-   * The batch cannot be empty.
-   *
-   * If 50% or more of the migration attempts are successful, the entire
-   * extrinsic fee is refunded to incentivize successful batch migrations.
-   * Weight is calculated based on actual successful operations performed.
-   **/
-  | { name: 'MigrateLocksToFreezesBatch'; params: { accounts: Array<[AccountId20Like, boolean]> } };
+  | { name: 'SetInflationDistributionConfig'; params: { new: PalletParachainStakingInflationDistributionConfig } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2716,7 +2694,8 @@ export type MoonbeamRuntimeOriginCaller =
 export type FrameSupportDispatchRawOrigin =
   | { type: 'Root' }
   | { type: 'Signed'; value: AccountId20 }
-  | { type: 'None' };
+  | { type: 'None' }
+  | { type: 'Authorized' };
 
 export type PalletEthereumRawOrigin = { type: 'EthereumTransaction'; value: H160 };
 
@@ -2881,7 +2860,7 @@ export type PalletProxyCall =
    * `pure` with corresponding parameters.
    *
    * - `spawner`: The account that originally called `pure` to create this account.
-   * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+   * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
    * - `proxy_type`: The proxy type originally passed to `pure`.
    * - `height`: The height of the chain when the call to `pure` was processed.
    * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
@@ -3059,7 +3038,7 @@ export type PalletProxyCallLike =
    * `pure` with corresponding parameters.
    *
    * - `spawner`: The account that originally called `pure` to create this account.
-   * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+   * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
    * - `proxy_type`: The proxy type originally passed to `pure`.
    * - `height`: The height of the chain when the call to `pure` was processed.
    * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
@@ -8540,8 +8519,10 @@ export type CumulusPalletXcmEvent =
 
 export type StagingXcmV5TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
-  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV5TraitsError } }
-  | { type: 'Error'; value: { error: XcmV5TraitsError } };
+  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: StagingXcmV5TraitsInstructionError } }
+  | { type: 'Error'; value: StagingXcmV5TraitsInstructionError };
+
+export type StagingXcmV5TraitsInstructionError = { index: number; error: XcmV5TraitsError };
 
 /**
  * The `Event` enum of this pallet
@@ -9534,6 +9515,45 @@ export type FrameSystemError =
    **/
   | 'Unauthorized';
 
+export type SpRuntimeBlock = { header: Header; extrinsics: Array<FpSelfContainedUncheckedExtrinsic> };
+
+export type FpSelfContainedUncheckedExtrinsic = UncheckedExtrinsic;
+
+export type CumulusPalletWeightReclaimStorageWeightReclaim = [
+  FrameSystemExtensionsCheckNonZeroSender,
+  FrameSystemExtensionsCheckSpecVersion,
+  FrameSystemExtensionsCheckTxVersion,
+  FrameSystemExtensionsCheckGenesis,
+  FrameSystemExtensionsCheckMortality,
+  FrameSystemExtensionsCheckNonce,
+  FrameSystemExtensionsCheckWeight,
+  PalletTransactionPaymentChargeTransactionPayment,
+  MoonbeamRuntimeBridgeRejectObsoleteHeadersAndMessages,
+  FrameMetadataHashExtensionCheckMetadataHash,
+];
+
+export type FrameSystemExtensionsCheckNonZeroSender = {};
+
+export type FrameSystemExtensionsCheckSpecVersion = {};
+
+export type FrameSystemExtensionsCheckTxVersion = {};
+
+export type FrameSystemExtensionsCheckGenesis = {};
+
+export type FrameSystemExtensionsCheckMortality = Era;
+
+export type FrameSystemExtensionsCheckNonce = number;
+
+export type FrameSystemExtensionsCheckWeight = {};
+
+export type PalletTransactionPaymentChargeTransactionPayment = bigint;
+
+export type MoonbeamRuntimeBridgeRejectObsoleteHeadersAndMessages = {};
+
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
+
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
+
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
@@ -9758,7 +9778,6 @@ export type PalletParachainStakingCollatorStatus =
   | { type: 'Leaving'; value: number };
 
 export type PalletParachainStakingDelegationRequestsScheduledRequest = {
-  delegator: AccountId20;
   whenExecutable: number;
   action: PalletParachainStakingDelegationRequestsDelegationAction;
 };
@@ -10973,113 +10992,161 @@ export type PalletXcmError =
    * The desired destination was unreachable, generally because there is a no way of routing
    * to it.
    **/
-  | 'Unreachable'
+  | { name: 'Unreachable' }
   /**
    * There was some other issue (i.e. not to do with routing) in sending the message.
    * Perhaps a lack of space for buffering the message.
    **/
-  | 'SendFailure'
+  | { name: 'SendFailure' }
   /**
    * The message execution fails the filter.
    **/
-  | 'Filtered'
+  | { name: 'Filtered' }
   /**
    * The message's weight could not be determined.
    **/
-  | 'UnweighableMessage'
+  | { name: 'UnweighableMessage' }
   /**
    * The destination `Location` provided cannot be inverted.
    **/
-  | 'DestinationNotInvertible'
+  | { name: 'DestinationNotInvertible' }
   /**
    * The assets to be sent are empty.
    **/
-  | 'Empty'
+  | { name: 'Empty' }
   /**
    * Could not re-anchor the assets to declare the fees for the destination chain.
    **/
-  | 'CannotReanchor'
+  | { name: 'CannotReanchor' }
   /**
    * Too many assets have been attempted for transfer.
    **/
-  | 'TooManyAssets'
+  | { name: 'TooManyAssets' }
   /**
    * Origin is invalid for sending.
    **/
-  | 'InvalidOrigin'
+  | { name: 'InvalidOrigin' }
   /**
    * The version of the `Versioned` value used is not able to be interpreted.
    **/
-  | 'BadVersion'
+  | { name: 'BadVersion' }
   /**
    * The given location could not be used (e.g. because it cannot be expressed in the
    * desired version of XCM).
    **/
-  | 'BadLocation'
+  | { name: 'BadLocation' }
   /**
    * The referenced subscription could not be found.
    **/
-  | 'NoSubscription'
+  | { name: 'NoSubscription' }
   /**
    * The location is invalid since it already has a subscription from us.
    **/
-  | 'AlreadySubscribed'
+  | { name: 'AlreadySubscribed' }
   /**
    * Could not check-out the assets for teleportation to the destination chain.
    **/
-  | 'CannotCheckOutTeleport'
+  | { name: 'CannotCheckOutTeleport' }
   /**
    * The owner does not own (all) of the asset that they wish to do the operation on.
    **/
-  | 'LowBalance'
+  | { name: 'LowBalance' }
   /**
    * The asset owner has too many locks on the asset.
    **/
-  | 'TooManyLocks'
+  | { name: 'TooManyLocks' }
   /**
    * The given account is not an identifiable sovereign account for any location.
    **/
-  | 'AccountNotSovereign'
+  | { name: 'AccountNotSovereign' }
   /**
    * The operation required fees to be paid which the initiator could not meet.
    **/
-  | 'FeesNotMet'
+  | { name: 'FeesNotMet' }
   /**
    * A remote lock with the corresponding data could not be found.
    **/
-  | 'LockNotFound'
+  | { name: 'LockNotFound' }
   /**
    * The unlock operation cannot succeed because there are still consumers of the lock.
    **/
-  | 'InUse'
+  | { name: 'InUse' }
   /**
    * Invalid asset, reserve chain could not be determined for it.
    **/
-  | 'InvalidAssetUnknownReserve'
+  | { name: 'InvalidAssetUnknownReserve' }
   /**
    * Invalid asset, do not support remote asset reserves with different fees reserves.
    **/
-  | 'InvalidAssetUnsupportedReserve'
+  | { name: 'InvalidAssetUnsupportedReserve' }
   /**
    * Too many assets with different reserve locations have been attempted for transfer.
    **/
-  | 'TooManyReserves'
+  | { name: 'TooManyReserves' }
   /**
    * Local XCM execution incomplete.
    **/
-  | 'LocalExecutionIncomplete'
+  | { name: 'LocalExecutionIncomplete' }
   /**
    * Too many locations authorized to alias origin.
    **/
-  | 'TooManyAuthorizedAliases'
+  | { name: 'TooManyAuthorizedAliases' }
   /**
    * Expiry block number is in the past.
    **/
-  | 'ExpiresInPast'
+  | { name: 'ExpiresInPast' }
   /**
    * The alias to remove authorization for was not found.
    **/
-  | 'AliasNotFound';
+  | { name: 'AliasNotFound' }
+  /**
+   * Local XCM execution incomplete with the actual XCM error and the index of the
+   * instruction that caused the error.
+   **/
+  | { name: 'LocalExecutionIncompleteWithError'; data: { index: number; error: PalletXcmErrorsExecutionError } };
+
+export type PalletXcmErrorsExecutionError =
+  | 'Overflow'
+  | 'Unimplemented'
+  | 'UntrustedReserveLocation'
+  | 'UntrustedTeleportLocation'
+  | 'LocationFull'
+  | 'LocationNotInvertible'
+  | 'BadOrigin'
+  | 'InvalidLocation'
+  | 'AssetNotFound'
+  | 'FailedToTransactAsset'
+  | 'NotWithdrawable'
+  | 'LocationCannotHold'
+  | 'ExceedsMaxMessageSize'
+  | 'DestinationUnsupported'
+  | 'Transport'
+  | 'Unroutable'
+  | 'UnknownClaim'
+  | 'FailedToDecode'
+  | 'MaxWeightInvalid'
+  | 'NotHoldingFees'
+  | 'TooExpensive'
+  | 'Trap'
+  | 'ExpectationFalse'
+  | 'PalletNotFound'
+  | 'NameMismatch'
+  | 'VersionIncompatible'
+  | 'HoldingWouldOverflow'
+  | 'ExportError'
+  | 'ReanchorFailed'
+  | 'NoDeal'
+  | 'FeesNotMet'
+  | 'LockError'
+  | 'NoPermission'
+  | 'Unanchored'
+  | 'NotDepositable'
+  | 'TooManyAssets'
+  | 'UnhandledXcmVersion'
+  | 'WeightLimitReached'
+  | 'Barrier'
+  | 'WeightNotComputable'
+  | 'ExceedsStackLimit';
 
 export type PalletXcmTransactorRelayIndicesRelayChainIndices = {
   staking: number;
@@ -11606,44 +11673,7 @@ export type BpXcmBridgeHubBridgeLocationsError =
   | 'UnsupportedXcmVersion'
   | 'UnsupportedLaneIdType';
 
-export type CumulusPalletWeightReclaimStorageWeightReclaim = [
-  FrameSystemExtensionsCheckNonZeroSender,
-  FrameSystemExtensionsCheckSpecVersion,
-  FrameSystemExtensionsCheckTxVersion,
-  FrameSystemExtensionsCheckGenesis,
-  FrameSystemExtensionsCheckMortality,
-  FrameSystemExtensionsCheckNonce,
-  FrameSystemExtensionsCheckWeight,
-  PalletTransactionPaymentChargeTransactionPayment,
-  MoonbeamRuntimeBridgeRejectObsoleteHeadersAndMessages,
-  FrameMetadataHashExtensionCheckMetadataHash,
-];
-
-export type FrameSystemExtensionsCheckNonZeroSender = {};
-
-export type FrameSystemExtensionsCheckSpecVersion = {};
-
-export type FrameSystemExtensionsCheckTxVersion = {};
-
-export type FrameSystemExtensionsCheckGenesis = {};
-
-export type FrameSystemExtensionsCheckMortality = Era;
-
-export type FrameSystemExtensionsCheckNonce = number;
-
-export type FrameSystemExtensionsCheckWeight = {};
-
-export type PalletTransactionPaymentChargeTransactionPayment = bigint;
-
-export type MoonbeamRuntimeBridgeRejectObsoleteHeadersAndMessages = {};
-
-export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
-
-export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
-
 export type SpRuntimeTransactionValidityTransactionSource = 'InBlock' | 'Local' | 'External';
-
-export type FpSelfContainedUncheckedExtrinsic = UncheckedExtrinsic;
 
 export type SpRuntimeTransactionValidityValidTransaction = {
   priority: bigint;
@@ -11681,9 +11711,11 @@ export type BpMessagesOutboundMessageDetails = { nonce: bigint; dispatchWeight: 
 
 export type BpMessagesInboundMessageDetails = { dispatchWeight: SpWeightsWeightV2Weight };
 
-export type SpRuntimeBlock = { header: Header; extrinsics: Array<FpSelfContainedUncheckedExtrinsic> };
-
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
+
+export type PolkadotPrimitivesVstagingCoreSelector = number;
+
+export type PolkadotPrimitivesVstagingClaimQueueOffset = number;
 
 export type SpCoreOpaqueMetadata = Bytes;
 

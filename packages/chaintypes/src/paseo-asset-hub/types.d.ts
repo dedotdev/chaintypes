@@ -4402,8 +4402,7 @@ export type AssetHubPaseoRuntimeProxyType =
   | 'Staking'
   | 'NominationPools'
   | 'Auction'
-  | 'ParaRegistration'
-  | 'StakingOperator';
+  | 'ParaRegistration';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -15386,8 +15385,7 @@ export type PaseoRuntimeConstantsProxyProxyType =
   | 'CancelProxy'
   | 'Auction'
   | 'NominationPools'
-  | 'ParaRegistration'
-  | 'StakingOperator';
+  | 'ParaRegistration';
 
 export type PalletProxyProxyDefinition = {
   delegate: AccountId32;

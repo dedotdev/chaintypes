@@ -1923,47 +1923,6 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
-   * Pallet `Ismp`'s constants
-   **/
-  ismp: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `IsmpParachain`'s constants
-   **/
-  ismpParachain: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `Hyperbridge`'s constants
-   **/
-  hyperbridge: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `TokenGateway`'s constants
-   **/
-  tokenGateway: {
-    /**
-     * The decimals of the native currency
-     **/
-    decimals: number;
-
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
    * Pallet `EmaOracle`'s constants
    **/
   emaOracle: {

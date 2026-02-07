@@ -56,13 +56,6 @@ import type {
   XcmRuntimeApisConversionsError,
   HydradxTraitsOracleOraclePeriod,
   HydradxRuntimeEvmAaveTradeExecutorPoolData,
-  IsmpHostStateMachine,
-  IsmpEventsEvent,
-  IsmpConsensusStateMachineHeight,
-  IsmpConsensusStateMachineId,
-  IsmpRouterRequest,
-  IsmpRouterResponse,
-  CumulusPalletParachainSystemRelayChainState,
 } from './types.js';
 
 export interface RuntimeApis extends GenericRuntimeApis {
@@ -942,109 +935,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: AaveTradeExecutor_pools
      **/
     pools: GenericRuntimeApiMethod<() => Promise<Array<HydradxRuntimeEvmAaveTradeExecutorPoolData>>>;
-
-    /**
-     * Generic runtime api call
-     **/
-    [method: string]: GenericRuntimeApiMethod;
-  };
-  /**
-   * @runtimeapi: IsmpRuntimeApi - 0x0ebc8fd84ae20ada
-   **/
-  ismpRuntimeApi: {
-    /**
-     * Should return the host's state machine identifier
-     *
-     * @callname: IsmpRuntimeApi_host_state_machine
-     **/
-    hostStateMachine: GenericRuntimeApiMethod<() => Promise<IsmpHostStateMachine>>;
-
-    /**
-     * Fetch all ISMP events
-     *
-     * @callname: IsmpRuntimeApi_block_events
-     **/
-    blockEvents: GenericRuntimeApiMethod<() => Promise<Array<IsmpEventsEvent>>>;
-
-    /**
-     * Fetch all ISMP events and their extrinsic metadata
-     *
-     * @callname: IsmpRuntimeApi_block_events_with_metadata
-     **/
-    blockEventsWithMetadata: GenericRuntimeApiMethod<() => Promise<Array<[IsmpEventsEvent, number | undefined]>>>;
-
-    /**
-     * Return the scale encoded consensus state
-     *
-     * @callname: IsmpRuntimeApi_consensus_state
-     * @param {FixedBytes<4>} id
-     **/
-    consensusState: GenericRuntimeApiMethod<(id: FixedBytes<4>) => Promise<Bytes | undefined>>;
-
-    /**
-     * Return the timestamp this client was last updated in seconds
-     *
-     * @callname: IsmpRuntimeApi_state_machine_update_time
-     * @param {IsmpConsensusStateMachineHeight} id
-     **/
-    stateMachineUpdateTime: GenericRuntimeApiMethod<
-      (id: IsmpConsensusStateMachineHeight) => Promise<bigint | undefined>
-    >;
-
-    /**
-     * Return the challenge period timestamp
-     *
-     * @callname: IsmpRuntimeApi_challenge_period
-     * @param {IsmpConsensusStateMachineId} id
-     **/
-    challengePeriod: GenericRuntimeApiMethod<(id: IsmpConsensusStateMachineId) => Promise<bigint | undefined>>;
-
-    /**
-     * Return the latest height of the state machine
-     *
-     * @callname: IsmpRuntimeApi_latest_state_machine_height
-     * @param {IsmpConsensusStateMachineId} id
-     **/
-    latestStateMachineHeight: GenericRuntimeApiMethod<(id: IsmpConsensusStateMachineId) => Promise<bigint | undefined>>;
-
-    /**
-     * Fetch the requests for the given commitments.
-     *
-     * @callname: IsmpRuntimeApi_requests
-     * @param {Array<H256>} request_commitments
-     **/
-    requests: GenericRuntimeApiMethod<(requestCommitments: Array<H256>) => Promise<Array<IsmpRouterRequest>>>;
-
-    /**
-     * Fetch the responses for the given commitments.
-     *
-     * @callname: IsmpRuntimeApi_responses
-     * @param {Array<H256>} response_commitments
-     **/
-    responses: GenericRuntimeApiMethod<(responseCommitments: Array<H256>) => Promise<Array<IsmpRouterResponse>>>;
-
-    /**
-     * Generic runtime api call
-     **/
-    [method: string]: GenericRuntimeApiMethod;
-  };
-  /**
-   * @runtimeapi: IsmpParachainApi - 0x5d1df2fe7d4f6bc8
-   **/
-  ismpParachainApi: {
-    /**
-     * Return all the para_ids this runtime is interested in. Used by the inherent provider
-     *
-     * @callname: IsmpParachainApi_para_ids
-     **/
-    paraIds: GenericRuntimeApiMethod<() => Promise<Array<number>>>;
-
-    /**
-     * Return the current relay chain state.
-     *
-     * @callname: IsmpParachainApi_current_relay_chain_state
-     **/
-    currentRelayChainState: GenericRuntimeApiMethod<() => Promise<CumulusPalletParachainSystemRelayChainState>>;
 
     /**
      * Generic runtime api call

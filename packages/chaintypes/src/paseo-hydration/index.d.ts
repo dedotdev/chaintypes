@@ -16,7 +16,6 @@ import type {
   PalletTransactionPaymentChargeTransactionPayment,
   PalletClaimsValidateClaim,
   FrameMetadataHashExtensionCheckMetadataHash,
-  CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim,
 } from './types.js';
 import { ChainConsts } from './consts.js';
 import { ChainStorage } from './query.js';
@@ -44,7 +43,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     PalletTransactionPaymentChargeTransactionPayment,
     PalletClaimsValidateClaim,
     FrameMetadataHashExtensionCheckMetadataHash,
-    CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim,
+    [],
   ];
   AssetId: undefined;
   EventRecord: FrameSystemEventRecord;
@@ -52,7 +51,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PaseoHydrationApi
- * @specVersion: 378
+ * @specVersion: 390
  **/
 export interface PaseoHydrationApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

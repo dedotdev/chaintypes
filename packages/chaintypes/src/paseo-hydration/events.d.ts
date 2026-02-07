@@ -2,7 +2,6 @@
 
 import type { GenericChainEvents, GenericPalletEvent } from 'dedot/types';
 import type {
-  DispatchInfo,
   DispatchError,
   AccountId32,
   H256,
@@ -16,11 +15,13 @@ import type {
   H160,
 } from 'dedot/codecs';
 import type {
+  FrameSystemDispatchEventInfo,
   FrameSupportTokensMiscBalanceStatus,
   PalletDemocracyVoteThreshold,
   PalletDemocracyVoteAccountVote,
   PalletDemocracyMetadataOwner,
   HydradxRuntimeSystemProxyType,
+  PalletProxyDepositKind,
   PalletMultisigTimepoint,
   PalletStateTrieMigrationMigrationCompute,
   PalletStateTrieMigrationError,
@@ -51,17 +52,18 @@ import type {
   PalletXykAssetPair,
   PalletDcaOrder,
   SpWeightsWeightV2Weight,
-  StagingXcmV4TraitsOutcome,
-  StagingXcmV4Location,
-  StagingXcmV4Xcm,
-  StagingXcmV4Response,
+  StagingXcmV5TraitsOutcome,
+  StagingXcmV5Location,
+  StagingXcmV5Xcm,
+  XcmV3TraitsSendError,
+  XcmV5TraitsError,
+  StagingXcmV5Response,
   XcmVersionedAssets,
-  StagingXcmV4AssetAssets,
-  XcmV3TraitsError,
+  StagingXcmV5AssetAssets,
   XcmVersionedLocation,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
-  StagingXcmV4Asset,
+  StagingXcmV5Asset,
   IsmpConsensusStateMachineId,
   IsmpConsensusStateMachineHeight,
   IsmpHostStateMachine,
@@ -70,6 +72,8 @@ import type {
   IsmpEventsTimeoutHandled,
   IsmpParachainParachainData,
   PalletHyperbridgeVersionedHostParams,
+  HydradxTraitsOracleOraclePeriod,
+  HydraDxMathRatio,
   PalletBroadcastFiller,
   PalletBroadcastTradeOperation,
   PalletBroadcastAsset,
@@ -85,7 +89,7 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * An extrinsic completed successfully.
      **/
-    ExtrinsicSuccess: GenericPalletEvent<'System', 'ExtrinsicSuccess', { dispatchInfo: DispatchInfo }>;
+    ExtrinsicSuccess: GenericPalletEvent<'System', 'ExtrinsicSuccess', { dispatchInfo: FrameSystemDispatchEventInfo }>;
 
     /**
      * An extrinsic failed.
@@ -93,7 +97,7 @@ export interface ChainEvents extends GenericChainEvents {
     ExtrinsicFailed: GenericPalletEvent<
       'System',
       'ExtrinsicFailed',
-      { dispatchError: DispatchError; dispatchInfo: DispatchInfo }
+      { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo }
     >;
 
     /**
@@ -120,6 +124,15 @@ export interface ChainEvents extends GenericChainEvents {
      * An upgrade was authorized.
      **/
     UpgradeAuthorized: GenericPalletEvent<'System', 'UpgradeAuthorized', { codeHash: H256; checkVersion: boolean }>;
+
+    /**
+     * An invalid authorized upgrade was rejected while trying to apply it.
+     **/
+    RejectedInvalidAuthorizedUpgrade: GenericPalletEvent<
+      'System',
+      'RejectedInvalidAuthorizedUpgrade',
+      { codeHash: H256; error: DispatchError }
+    >;
 
     /**
      * Generic pallet event
@@ -431,6 +444,16 @@ export interface ChainEvents extends GenericChainEvents {
     DispatchedAs: GenericPalletEvent<'Utility', 'DispatchedAs', { result: Result<[], DispatchError> }>;
 
     /**
+     * Main call was dispatched.
+     **/
+    IfElseMainSuccess: GenericPalletEvent<'Utility', 'IfElseMainSuccess', null>;
+
+    /**
+     * The fallback call was dispatched.
+     **/
+    IfElseFallbackCalled: GenericPalletEvent<'Utility', 'IfElseFallbackCalled', { mainError: DispatchError }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -516,6 +539,20 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * An account's sub-identities were set (in bulk).
+     **/
+    SubIdentitiesSet: GenericPalletEvent<
+      'Identity',
+      'SubIdentitiesSet',
+      { main: AccountId32; numberOfSubs: number; newDeposit: bigint }
+    >;
+
+    /**
+     * A given sub-account's associated name was changed by its super-identity.
+     **/
+    SubIdentityRenamed: GenericPalletEvent<'Identity', 'SubIdentityRenamed', { sub: AccountId32; main: AccountId32 }>;
+
+    /**
      * A sub-identity was removed from an identity and the deposit freed.
      **/
     SubIdentityRemoved: GenericPalletEvent<
@@ -577,6 +614,21 @@ export interface ChainEvents extends GenericChainEvents {
       'DanglingUsernameRemoved',
       { who: AccountId32; username: Bytes }
     >;
+
+    /**
+     * A username has been unbound.
+     **/
+    UsernameUnbound: GenericPalletEvent<'Identity', 'UsernameUnbound', { username: Bytes }>;
+
+    /**
+     * A username has been removed.
+     **/
+    UsernameRemoved: GenericPalletEvent<'Identity', 'UsernameRemoved', { username: Bytes }>;
+
+    /**
+     * A username has been killed.
+     **/
+    UsernameKilled: GenericPalletEvent<'Identity', 'UsernameKilled', { username: Bytes }>;
 
     /**
      * Generic pallet event
@@ -786,6 +838,29 @@ export interface ChainEvents extends GenericChainEvents {
     Closed: GenericPalletEvent<'TechnicalCommittee', 'Closed', { proposalHash: H256; yes: number; no: number }>;
 
     /**
+     * A proposal was killed.
+     **/
+    Killed: GenericPalletEvent<'TechnicalCommittee', 'Killed', { proposalHash: H256 }>;
+
+    /**
+     * Some cost for storing a proposal was burned.
+     **/
+    ProposalCostBurned: GenericPalletEvent<
+      'TechnicalCommittee',
+      'ProposalCostBurned',
+      { proposalHash: H256; who: AccountId32 }
+    >;
+
+    /**
+     * Some cost for storing a proposal was released.
+     **/
+    ProposalCostReleased: GenericPalletEvent<
+      'TechnicalCommittee',
+      'ProposalCostReleased',
+      { proposalHash: H256; who: AccountId32 }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -830,6 +905,15 @@ export interface ChainEvents extends GenericChainEvents {
       'Proxy',
       'ProxyRemoved',
       { delegator: AccountId32; delegatee: AccountId32; proxyType: HydradxRuntimeSystemProxyType; delay: number }
+    >;
+
+    /**
+     * A deposit stored for proxies or announcements was poked / updated.
+     **/
+    DepositPoked: GenericPalletEvent<
+      'Proxy',
+      'DepositPoked',
+      { who: AccountId32; kind: PalletProxyDepositKind; oldDeposit: bigint; newDeposit: bigint }
     >;
 
     /**
@@ -881,6 +965,15 @@ export interface ChainEvents extends GenericChainEvents {
       'Multisig',
       'MultisigCancelled',
       { cancelling: AccountId32; timepoint: PalletMultisigTimepoint; multisig: AccountId32; callHash: FixedBytes<32> }
+    >;
+
+    /**
+     * The deposit for a multisig operation has been updated/poked.
+     **/
+    DepositPoked: GenericPalletEvent<
+      'Multisig',
+      'DepositPoked',
+      { who: AccountId32; callHash: FixedBytes<32>; oldDeposit: bigint; newDeposit: bigint }
     >;
 
     /**
@@ -1131,7 +1224,7 @@ export interface ChainEvents extends GenericChainEvents {
     Undelegated: GenericPalletEvent<'ConvictionVoting', 'Undelegated', AccountId32>;
 
     /**
-     * An account that has voted
+     * An account has voted
      **/
     Voted: GenericPalletEvent<
       'ConvictionVoting',
@@ -1140,13 +1233,18 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * A vote that been removed
+     * A vote has been removed
      **/
     VoteRemoved: GenericPalletEvent<
       'ConvictionVoting',
       'VoteRemoved',
       { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
     >;
+
+    /**
+     * The lockup period of a conviction vote expired, and the funds have been unlocked.
+     **/
+    VoteUnlocked: GenericPalletEvent<'ConvictionVoting', 'VoteUnlocked', { who: AccountId32; class: number }>;
 
     /**
      * Generic pallet event
@@ -2856,7 +2954,7 @@ export interface ChainEvents extends GenericChainEvents {
         /**
          * Target EVM address to receive ETH.
          **/
-        to: FixedBytes<20>;
+        to: H160;
 
         /**
          * Requested amount of ETH (in wei).
@@ -3543,6 +3641,11 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * Agenda is incomplete from `when`.
+     **/
+    AgendaIncomplete: GenericPalletEvent<'Scheduler', 'AgendaIncomplete', { when: number }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -3605,20 +3708,43 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * Execution of an XCM message was attempted.
      **/
-    Attempted: GenericPalletEvent<'PolkadotXcm', 'Attempted', { outcome: StagingXcmV4TraitsOutcome }>;
+    Attempted: GenericPalletEvent<'PolkadotXcm', 'Attempted', { outcome: StagingXcmV5TraitsOutcome }>;
 
     /**
-     * A XCM message was sent.
+     * An XCM message was sent.
      **/
     Sent: GenericPalletEvent<
       'PolkadotXcm',
       'Sent',
       {
-        origin: StagingXcmV4Location;
-        destination: StagingXcmV4Location;
-        message: StagingXcmV4Xcm;
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       }
+    >;
+
+    /**
+     * An XCM message failed to send.
+     **/
+    SendFailed: GenericPalletEvent<
+      'PolkadotXcm',
+      'SendFailed',
+      {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        error: XcmV3TraitsSendError;
+        messageId: FixedBytes<32>;
+      }
+    >;
+
+    /**
+     * An XCM message failed to process.
+     **/
+    ProcessXcmError: GenericPalletEvent<
+      'PolkadotXcm',
+      'ProcessXcmError',
+      { origin: StagingXcmV5Location; error: XcmV5TraitsError; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -3629,7 +3755,7 @@ export interface ChainEvents extends GenericChainEvents {
     UnexpectedResponse: GenericPalletEvent<
       'PolkadotXcm',
       'UnexpectedResponse',
-      { origin: StagingXcmV4Location; queryId: bigint }
+      { origin: StagingXcmV5Location; queryId: bigint }
     >;
 
     /**
@@ -3639,7 +3765,7 @@ export interface ChainEvents extends GenericChainEvents {
     ResponseReady: GenericPalletEvent<
       'PolkadotXcm',
       'ResponseReady',
-      { queryId: bigint; response: StagingXcmV4Response }
+      { queryId: bigint; response: StagingXcmV5Response }
     >;
 
     /**
@@ -3698,7 +3824,7 @@ export interface ChainEvents extends GenericChainEvents {
     InvalidResponder: GenericPalletEvent<
       'PolkadotXcm',
       'InvalidResponder',
-      { origin: StagingXcmV4Location; queryId: bigint; expectedLocation?: StagingXcmV4Location | undefined }
+      { origin: StagingXcmV5Location; queryId: bigint; expectedLocation?: StagingXcmV5Location | undefined }
     >;
 
     /**
@@ -3713,7 +3839,7 @@ export interface ChainEvents extends GenericChainEvents {
     InvalidResponderVersion: GenericPalletEvent<
       'PolkadotXcm',
       'InvalidResponderVersion',
-      { origin: StagingXcmV4Location; queryId: bigint }
+      { origin: StagingXcmV5Location; queryId: bigint }
     >;
 
     /**
@@ -3727,7 +3853,7 @@ export interface ChainEvents extends GenericChainEvents {
     AssetsTrapped: GenericPalletEvent<
       'PolkadotXcm',
       'AssetsTrapped',
-      { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets }
+      { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets }
     >;
 
     /**
@@ -3738,7 +3864,7 @@ export interface ChainEvents extends GenericChainEvents {
     VersionChangeNotified: GenericPalletEvent<
       'PolkadotXcm',
       'VersionChangeNotified',
-      { destination: StagingXcmV4Location; result: number; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; result: number; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -3748,7 +3874,7 @@ export interface ChainEvents extends GenericChainEvents {
     SupportedVersionChanged: GenericPalletEvent<
       'PolkadotXcm',
       'SupportedVersionChanged',
-      { location: StagingXcmV4Location; version: number }
+      { location: StagingXcmV5Location; version: number }
     >;
 
     /**
@@ -3758,7 +3884,7 @@ export interface ChainEvents extends GenericChainEvents {
     NotifyTargetSendFail: GenericPalletEvent<
       'PolkadotXcm',
       'NotifyTargetSendFail',
-      { location: StagingXcmV4Location; queryId: bigint; error: XcmV3TraitsError }
+      { location: StagingXcmV5Location; queryId: bigint; error: XcmV5TraitsError }
     >;
 
     /**
@@ -3783,7 +3909,7 @@ export interface ChainEvents extends GenericChainEvents {
     InvalidQuerierVersion: GenericPalletEvent<
       'PolkadotXcm',
       'InvalidQuerierVersion',
-      { origin: StagingXcmV4Location; queryId: bigint }
+      { origin: StagingXcmV5Location; queryId: bigint }
     >;
 
     /**
@@ -3795,10 +3921,10 @@ export interface ChainEvents extends GenericChainEvents {
       'PolkadotXcm',
       'InvalidQuerier',
       {
-        origin: StagingXcmV4Location;
+        origin: StagingXcmV5Location;
         queryId: bigint;
-        expectedQuerier: StagingXcmV4Location;
-        maybeActualQuerier?: StagingXcmV4Location | undefined;
+        expectedQuerier: StagingXcmV5Location;
+        maybeActualQuerier?: StagingXcmV5Location | undefined;
       }
     >;
 
@@ -3809,7 +3935,7 @@ export interface ChainEvents extends GenericChainEvents {
     VersionNotifyStarted: GenericPalletEvent<
       'PolkadotXcm',
       'VersionNotifyStarted',
-      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -3818,7 +3944,7 @@ export interface ChainEvents extends GenericChainEvents {
     VersionNotifyRequested: GenericPalletEvent<
       'PolkadotXcm',
       'VersionNotifyRequested',
-      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -3828,7 +3954,7 @@ export interface ChainEvents extends GenericChainEvents {
     VersionNotifyUnrequested: GenericPalletEvent<
       'PolkadotXcm',
       'VersionNotifyUnrequested',
-      { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> }
+      { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> }
     >;
 
     /**
@@ -3837,7 +3963,7 @@ export interface ChainEvents extends GenericChainEvents {
     FeesPaid: GenericPalletEvent<
       'PolkadotXcm',
       'FeesPaid',
-      { paying: StagingXcmV4Location; fees: StagingXcmV4AssetAssets }
+      { paying: StagingXcmV5Location; fees: StagingXcmV5AssetAssets }
     >;
 
     /**
@@ -3846,13 +3972,41 @@ export interface ChainEvents extends GenericChainEvents {
     AssetsClaimed: GenericPalletEvent<
       'PolkadotXcm',
       'AssetsClaimed',
-      { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets }
+      { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets }
     >;
 
     /**
      * A XCM version migration finished.
      **/
     VersionMigrationFinished: GenericPalletEvent<'PolkadotXcm', 'VersionMigrationFinished', { version: number }>;
+
+    /**
+     * An `aliaser` location was authorized by `target` to alias it, authorization valid until
+     * `expiry` block number.
+     **/
+    AliasAuthorized: GenericPalletEvent<
+      'PolkadotXcm',
+      'AliasAuthorized',
+      { aliaser: StagingXcmV5Location; target: StagingXcmV5Location; expiry?: bigint | undefined }
+    >;
+
+    /**
+     * `target` removed alias authorization for `aliaser`.
+     **/
+    AliasAuthorizationRemoved: GenericPalletEvent<
+      'PolkadotXcm',
+      'AliasAuthorizationRemoved',
+      { aliaser: StagingXcmV5Location; target: StagingXcmV5Location }
+    >;
+
+    /**
+     * `target` removed all alias authorizations.
+     **/
+    AliasesAuthorizationsRemoved: GenericPalletEvent<
+      'PolkadotXcm',
+      'AliasesAuthorizationsRemoved',
+      { target: StagingXcmV5Location }
+    >;
 
     /**
      * Generic pallet event
@@ -3879,7 +4033,7 @@ export interface ChainEvents extends GenericChainEvents {
      * Downward message executed with the given outcome.
      * \[ id, outcome \]
      **/
-    ExecutedDownward: GenericPalletEvent<'CumulusXcm', 'ExecutedDownward', [FixedBytes<32>, StagingXcmV4TraitsOutcome]>;
+    ExecutedDownward: GenericPalletEvent<'CumulusXcm', 'ExecutedDownward', [FixedBytes<32>, StagingXcmV5TraitsOutcome]>;
 
     /**
      * Generic pallet event
@@ -4019,13 +4173,142 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `MultiBlockMigrations`'s events
+   **/
+  multiBlockMigrations: {
+    /**
+     * A Runtime upgrade started.
+     *
+     * Its end is indicated by `UpgradeCompleted` or `UpgradeFailed`.
+     **/
+    UpgradeStarted: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'UpgradeStarted',
+      {
+        /**
+         * The number of migrations that this upgrade contains.
+         *
+         * This can be used to design a progress indicator in combination with counting the
+         * `MigrationCompleted` and `MigrationSkipped` events.
+         **/
+        migrations: number;
+      }
+    >;
+
+    /**
+     * The current runtime upgrade completed.
+     *
+     * This implies that all of its migrations completed successfully as well.
+     **/
+    UpgradeCompleted: GenericPalletEvent<'MultiBlockMigrations', 'UpgradeCompleted', null>;
+
+    /**
+     * Runtime upgrade failed.
+     *
+     * This is very bad and will require governance intervention.
+     **/
+    UpgradeFailed: GenericPalletEvent<'MultiBlockMigrations', 'UpgradeFailed', null>;
+
+    /**
+     * A migration was skipped since it was already executed in the past.
+     **/
+    MigrationSkipped: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationSkipped',
+      {
+        /**
+         * The index of the skipped migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+      }
+    >;
+
+    /**
+     * A migration progressed.
+     **/
+    MigrationAdvanced: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationAdvanced',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * A Migration completed.
+     **/
+    MigrationCompleted: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationCompleted',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * A Migration failed.
+     *
+     * This implies that the whole upgrade failed and governance intervention is required.
+     **/
+    MigrationFailed: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationFailed',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * The set of historical migrations has been cleared.
+     **/
+    HistoricCleared: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'HistoricCleared',
+      {
+        /**
+         * Should be passed to `clear_historic` in a successive call.
+         **/
+        nextCursor?: Bytes | undefined;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `OrmlXcm`'s events
    **/
   ormlXcm: {
     /**
      * XCM message sent. \[to, message\]
      **/
-    Sent: GenericPalletEvent<'OrmlXcm', 'Sent', { to: StagingXcmV4Location; message: StagingXcmV4Xcm }>;
+    Sent: GenericPalletEvent<'OrmlXcm', 'Sent', { to: StagingXcmV5Location; message: StagingXcmV5Xcm }>;
 
     /**
      * Generic pallet event
@@ -4042,7 +4325,7 @@ export interface ChainEvents extends GenericChainEvents {
     TransferredAssets: GenericPalletEvent<
       'XTokens',
       'TransferredAssets',
-      { sender: AccountId32; assets: StagingXcmV4AssetAssets; fee: StagingXcmV4Asset; dest: StagingXcmV4Location }
+      { sender: AccountId32; assets: StagingXcmV5AssetAssets; fee: StagingXcmV5Asset; dest: StagingXcmV5Location }
     >;
 
     /**
@@ -4060,7 +4343,7 @@ export interface ChainEvents extends GenericChainEvents {
     Deposited: GenericPalletEvent<
       'UnknownTokens',
       'Deposited',
-      { asset: StagingXcmV4Asset; who: StagingXcmV4Location }
+      { asset: StagingXcmV5Asset; who: StagingXcmV5Location }
     >;
 
     /**
@@ -4069,7 +4352,7 @@ export interface ChainEvents extends GenericChainEvents {
     Withdrawn: GenericPalletEvent<
       'UnknownTokens',
       'Withdrawn',
-      { asset: StagingXcmV4Asset; who: StagingXcmV4Location }
+      { asset: StagingXcmV5Asset; who: StagingXcmV5Location }
     >;
 
     /**
@@ -4170,6 +4453,16 @@ export interface ChainEvents extends GenericChainEvents {
      * block number as the type might suggest.
      **/
     NewSession: GenericPalletEvent<'Session', 'NewSession', { sessionIndex: number }>;
+
+    /**
+     * Validator has been disabled.
+     **/
+    ValidatorDisabled: GenericPalletEvent<'Session', 'ValidatorDisabled', { validator: AccountId32 }>;
+
+    /**
+     * Validator has been re-enabled.
+     **/
+    ValidatorReenabled: GenericPalletEvent<'Session', 'ValidatorReenabled', { validator: AccountId32 }>;
 
     /**
      * Generic pallet event
@@ -4586,6 +4879,19 @@ export interface ChainEvents extends GenericChainEvents {
       'EmaOracle',
       'RemovedFromWhitelist',
       { source: FixedBytes<8>; assets: [number, number] }
+    >;
+
+    /**
+     * Oracle price was updated
+     **/
+    OracleUpdated: GenericPalletEvent<
+      'EmaOracle',
+      'OracleUpdated',
+      {
+        source: FixedBytes<8>;
+        assets: [number, number];
+        updates: Array<[HydradxTraitsOracleOraclePeriod, HydraDxMathRatio]>;
+      }
     >;
 
     /**

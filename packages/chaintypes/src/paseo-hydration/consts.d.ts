@@ -8,12 +8,13 @@ import type {
   SpWeightsRuntimeDbWeight,
   FrameSupportPalletId,
   SpWeightsWeightV2Weight,
-  PalletReferendaTrackInfo,
+  PalletReferendaTrackDetails,
   HydradxTraitsOracleOraclePeriod,
   PalletDynamicFeesFeeParams,
   NonZeroU16,
   PolkadotParachainPrimitivesPrimitivesId,
-  StagingXcmV4Location,
+  StagingXcmV5Junctions,
+  StagingXcmV5Location,
 } from './types.js';
 
 export interface ChainConsts extends GenericChainConsts {
@@ -198,6 +199,9 @@ export interface ChainConsts extends GenericChainConsts {
     palletId: FrameSupportPalletId;
 
     /**
+     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+     *
      * The maximum number of approvals that can wait in the spending queue.
      *
      * NOTE: This parameter is also used within the Bounties Pallet extension if enabled.
@@ -208,6 +212,11 @@ export interface ChainConsts extends GenericChainConsts {
      * The period during which an approved treasury spend has to be claimed.
      **/
     payoutPeriod: number;
+
+    /**
+     * Gets this pallet's derived pot account.
+     **/
+    potAccount: AccountId32;
 
     /**
      * Generic pallet constant
@@ -252,6 +261,12 @@ export interface ChainConsts extends GenericChainConsts {
     byteDeposit: bigint;
 
     /**
+     * The amount held on deposit per registered username. This value should change only in
+     * runtime upgrades with proper migration of existing deposits.
+     **/
+    usernameDeposit: bigint;
+
+    /**
      * The amount held on deposit for a registered subaccount. This should account for the fact
      * that one storage item's value will increase by the size of an account ID, and there will
      * be another trie item whose value is the size of an account ID plus 32 bytes.
@@ -273,6 +288,12 @@ export interface ChainConsts extends GenericChainConsts {
      * The number of blocks within which a username grant must be accepted.
      **/
     pendingUsernameExpiration: number;
+
+    /**
+     * The number of blocks that must pass to enable the permanent deletion of a username by
+     * its respective authority.
+     **/
+    usernameGracePeriod: number;
 
     /**
      * The maximum length of a suffix.
@@ -604,9 +625,11 @@ export interface ChainConsts extends GenericChainConsts {
     alarmInterval: number;
 
     /**
-     * Information concerning the different referendum tracks.
+     * A list of tracks.
+     *
+     * Note: if the tracks are dynamic, the value in the static metadata might be inaccurate.
      **/
-    tracks: Array<[number, PalletReferendaTrackInfo]>;
+    tracks: Array<[number, PalletReferendaTrackDetails]>;
 
     /**
      * Generic pallet constant
@@ -1310,7 +1333,7 @@ export interface ChainConsts extends GenericChainConsts {
     /**
      * EVM address of the external gas faucet contract.
      **/
-    faucetAddress: FixedBytes<20>;
+    faucetAddress: H160;
 
     /**
      * Pallet ID used to derive the pallet's sovereign account.
@@ -1620,6 +1643,27 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   polkadotXcm: {
     /**
+     * This chain's Universal Location.
+     **/
+    universalLocation: StagingXcmV5Junctions;
+
+    /**
+     * The latest supported version that we advertise. Generally just set it to
+     * `pallet_xcm::CurrentXcmVersion`.
+     **/
+    advertisedXcmVersion: number;
+
+    /**
+     * The maximum number of local XCM locks that a single account may have.
+     **/
+    maxLockers: number;
+
+    /**
+     * The maximum number of consumers a single remote lock may have.
+     **/
+    maxRemoteLockConsumers: number;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -1717,6 +1761,40 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `WeightReclaim`'s constants
+   **/
+  weightReclaim: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s constants
+   **/
+  multiBlockMigrations: {
+    /**
+     * The maximal length of an encoded cursor.
+     *
+     * A good default needs to selected such that no migration will ever have a cursor with MEL
+     * above this limit. This is statically checked in `integrity_test`.
+     **/
+    cursorMaxLen: number;
+
+    /**
+     * The maximal length of an encoded identifier.
+     *
+     * A good default needs to selected such that no migration will ever have an identifier
+     * with MEL above this limit. This is statically checked in `integrity_test`.
+     **/
+    identifierMaxLen: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `OrmlXcm`'s constants
    **/
   ormlXcm: {
@@ -1732,7 +1810,7 @@ export interface ChainConsts extends GenericChainConsts {
     /**
      * Self chain location.
      **/
-    selfLocation: StagingXcmV4Location;
+    selfLocation: StagingXcmV5Location;
 
     /**
      * Base XCM weight.
@@ -1774,6 +1852,36 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `CollatorSelection`'s constants
    **/
   collatorSelection: {
+    /**
+     * Account Identifier from which the internal Pot is generated.
+     **/
+    potId: FrameSupportPalletId;
+
+    /**
+     * Maximum number of candidates that we should have.
+     *
+     * This does not take into account the invulnerables.
+     **/
+    maxCandidates: number;
+
+    /**
+     * Minimum number eligible collators. Should always be greater than zero. This includes
+     * Invulnerable collators. This ensures that there will always be one collator who can
+     * produce a block.
+     **/
+    minEligibleCollators: number;
+
+    /**
+     * Maximum number of invulnerables.
+     **/
+    maxInvulnerables: number;
+    kickThreshold: number;
+
+    /**
+     * Gets this pallet's derived pot account.
+     **/
+    potAccount: AccountId32;
+
     /**
      * Generic pallet constant
      **/

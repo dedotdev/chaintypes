@@ -3,7 +3,6 @@
 import type {
   Phase,
   H256,
-  DispatchInfo,
   DispatchError,
   AccountId32,
   Result,
@@ -110,6 +109,7 @@ export type HydradxRuntimeRuntimeEvent =
   | { pallet: 'CumulusXcm'; palletEvent: CumulusPalletXcmEvent }
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
+  | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent }
   | { pallet: 'OrmlXcm'; palletEvent: OrmlXcmModuleEvent }
   | { pallet: 'XTokens'; palletEvent: OrmlXtokensModuleEvent }
   | { pallet: 'UnknownTokens'; palletEvent: OrmlUnknownTokensModuleEvent }
@@ -129,11 +129,11 @@ export type FrameSystemEvent =
   /**
    * An extrinsic completed successfully.
    **/
-  | { name: 'ExtrinsicSuccess'; data: { dispatchInfo: DispatchInfo } }
+  | { name: 'ExtrinsicSuccess'; data: { dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
    * An extrinsic failed.
    **/
-  | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: DispatchInfo } }
+  | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
    * `:code` was updated.
    **/
@@ -153,11 +153,37 @@ export type FrameSystemEvent =
   /**
    * An upgrade was authorized.
    **/
-  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } };
+  | { name: 'UpgradeAuthorized'; data: { codeHash: H256; checkVersion: boolean } }
+  /**
+   * An invalid authorized upgrade was rejected while trying to apply it.
+   **/
+  | { name: 'RejectedInvalidAuthorizedUpgrade'; data: { codeHash: H256; error: DispatchError } };
+
+export type FrameSystemDispatchEventInfo = {
+  weight: SpWeightsWeightV2Weight;
+  class: FrameSupportDispatchDispatchClass;
+  paysFee: FrameSupportDispatchPays;
+};
 
 export type FrameSupportDispatchDispatchClass = 'Normal' | 'Operational' | 'Mandatory';
 
 export type FrameSupportDispatchPays = 'Yes' | 'No';
+
+export type SpRuntimeProvingTrieTrieError =
+  | 'InvalidStateRoot'
+  | 'IncompleteDatabase'
+  | 'ValueAtIncompleteKey'
+  | 'DecoderError'
+  | 'InvalidHash'
+  | 'DuplicateKey'
+  | 'ExtraneousNode'
+  | 'ExtraneousValue'
+  | 'ExtraneousHashReference'
+  | 'InvalidChildReference'
+  | 'ValueMismatch'
+  | 'IncompleteProof'
+  | 'RootMismatch'
+  | 'DecodeError';
 
 /**
  * The `Event` enum of this pallet
@@ -400,7 +426,15 @@ export type PalletUtilityEvent =
   /**
    * A call was dispatched.
    **/
-  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } };
+  | { name: 'DispatchedAs'; data: { result: Result<[], DispatchError> } }
+  /**
+   * Main call was dispatched.
+   **/
+  | { name: 'IfElseMainSuccess' }
+  /**
+   * The fallback call was dispatched.
+   **/
+  | { name: 'IfElseFallbackCalled'; data: { mainError: DispatchError } };
 
 /**
  * The `Event` enum of this pallet
@@ -456,6 +490,14 @@ export type PalletIdentityEvent =
    **/
   | { name: 'SubIdentityAdded'; data: { sub: AccountId32; main: AccountId32; deposit: bigint } }
   /**
+   * An account's sub-identities were set (in bulk).
+   **/
+  | { name: 'SubIdentitiesSet'; data: { main: AccountId32; numberOfSubs: number; newDeposit: bigint } }
+  /**
+   * A given sub-account's associated name was changed by its super-identity.
+   **/
+  | { name: 'SubIdentityRenamed'; data: { sub: AccountId32; main: AccountId32 } }
+  /**
    * A sub-identity was removed from an identity and the deposit freed.
    **/
   | { name: 'SubIdentityRemoved'; data: { sub: AccountId32; main: AccountId32; deposit: bigint } }
@@ -492,7 +534,19 @@ export type PalletIdentityEvent =
    * A dangling username (as in, a username corresponding to an account that has removed its
    * identity) has been removed.
    **/
-  | { name: 'DanglingUsernameRemoved'; data: { who: AccountId32; username: Bytes } };
+  | { name: 'DanglingUsernameRemoved'; data: { who: AccountId32; username: Bytes } }
+  /**
+   * A username has been unbound.
+   **/
+  | { name: 'UsernameUnbound'; data: { username: Bytes } }
+  /**
+   * A username has been removed.
+   **/
+  | { name: 'UsernameRemoved'; data: { username: Bytes } }
+  /**
+   * A username has been killed.
+   **/
+  | { name: 'UsernameKilled'; data: { username: Bytes } };
 
 /**
  * The `Event` enum of this pallet
@@ -657,7 +711,19 @@ export type PalletCollectiveEvent =
   /**
    * A proposal was closed because its threshold was reached or after its duration was up.
    **/
-  | { name: 'Closed'; data: { proposalHash: H256; yes: number; no: number } };
+  | { name: 'Closed'; data: { proposalHash: H256; yes: number; no: number } }
+  /**
+   * A proposal was killed.
+   **/
+  | { name: 'Killed'; data: { proposalHash: H256 } }
+  /**
+   * Some cost for storing a proposal was burned.
+   **/
+  | { name: 'ProposalCostBurned'; data: { proposalHash: H256; who: AccountId32 } }
+  /**
+   * Some cost for storing a proposal was released.
+   **/
+  | { name: 'ProposalCostReleased'; data: { proposalHash: H256; who: AccountId32 } };
 
 /**
  * The `Event` enum of this pallet
@@ -697,6 +763,13 @@ export type PalletProxyEvent =
   | {
       name: 'ProxyRemoved';
       data: { delegator: AccountId32; delegatee: AccountId32; proxyType: HydradxRuntimeSystemProxyType; delay: number };
+    }
+  /**
+   * A deposit stored for proxies or announcements was poked / updated.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; kind: PalletProxyDepositKind; oldDeposit: bigint; newDeposit: bigint };
     };
 
 export type HydradxRuntimeSystemProxyType =
@@ -706,6 +779,8 @@ export type HydradxRuntimeSystemProxyType =
   | 'Transfer'
   | 'Liquidity'
   | 'LiquidityMining';
+
+export type PalletProxyDepositKind = 'Proxies' | 'Announcements';
 
 /**
  * The `Event` enum of this pallet
@@ -751,6 +826,13 @@ export type PalletMultisigEvent =
         multisig: AccountId32;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * The deposit for a multisig operation has been updated/poked.
+   **/
+  | {
+      name: 'DepositPoked';
+      data: { who: AccountId32; callHash: FixedBytes<32>; oldDeposit: bigint; newDeposit: bigint };
     };
 
 export type PalletMultisigTimepoint = { height: number; index: number };
@@ -948,13 +1030,17 @@ export type PalletConvictionVotingEvent =
    **/
   | { name: 'Undelegated'; data: AccountId32 }
   /**
-   * An account that has voted
+   * An account has voted
    **/
   | { name: 'Voted'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } }
   /**
-   * A vote that been removed
+   * A vote has been removed
    **/
-  | { name: 'VoteRemoved'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } };
+  | { name: 'VoteRemoved'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } }
+  /**
+   * The lockup period of a conviction vote expired, and the funds have been unlocked.
+   **/
+  | { name: 'VoteUnlocked'; data: { who: AccountId32; class: number } };
 
 export type PalletConvictionVotingVoteAccountVote =
   | { type: 'Standard'; value: { vote: PalletConvictionVotingVote; balance: bigint } }
@@ -1312,6 +1398,7 @@ export type HydradxRuntimeRuntimeCall =
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCall }
   | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCall }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
+  | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCall }
   | { pallet: 'OrmlXcm'; palletCall: OrmlXcmModuleCall }
   | { pallet: 'XTokens'; palletCall: OrmlXtokensModuleCall }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCall }
@@ -1380,6 +1467,7 @@ export type HydradxRuntimeRuntimeCallLike =
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCallLike }
   | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCallLike }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
+  | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCallLike }
   | { pallet: 'OrmlXcm'; palletCall: OrmlXcmModuleCallLike }
   | { pallet: 'XTokens'; palletCall: OrmlXtokensModuleCallLike }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCallLike }
@@ -2271,7 +2359,41 @@ export type PalletUtilityCall =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: HydradxRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } };
+  | { name: 'WithWeight'; params: { call: HydradxRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | { name: 'IfElse'; params: { main: HydradxRuntimeRuntimeCall; fallback: HydradxRuntimeRuntimeCall } }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | { name: 'DispatchAsFallible'; params: { asOrigin: HydradxRuntimeOriginCaller; call: HydradxRuntimeRuntimeCall } };
 
 export type PalletUtilityCallLike =
   /**
@@ -2360,7 +2482,44 @@ export type PalletUtilityCallLike =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: HydradxRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } };
+  | { name: 'WithWeight'; params: { call: HydradxRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | { name: 'IfElse'; params: { main: HydradxRuntimeRuntimeCallLike; fallback: HydradxRuntimeRuntimeCallLike } }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | {
+      name: 'DispatchAsFallible';
+      params: { asOrigin: HydradxRuntimeOriginCaller; call: HydradxRuntimeRuntimeCallLike };
+    };
 
 export type HydradxRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
@@ -2368,8 +2527,7 @@ export type HydradxRuntimeOriginCaller =
   | { type: 'Origins'; value: HydradxRuntimeGovernanceOriginsPalletCustomOriginsOrigin }
   | { type: 'Ethereum'; value: PalletEthereumRawOrigin }
   | { type: 'PolkadotXcm'; value: PalletXcmOrigin }
-  | { type: 'CumulusXcm'; value: CumulusPalletXcmOrigin }
-  | { type: 'Void'; value: SpCoreVoid };
+  | { type: 'CumulusXcm'; value: CumulusPalletXcmOrigin };
 
 export type FrameSupportDispatchRawOrigin =
   | { type: 'Root' }
@@ -2395,42 +2553,39 @@ export type HydradxRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
 export type PalletEthereumRawOrigin = { type: 'EthereumTransaction'; value: H160 };
 
 export type PalletXcmOrigin =
-  | { type: 'Xcm'; value: StagingXcmV4Location }
-  | { type: 'Response'; value: StagingXcmV4Location };
+  | { type: 'Xcm'; value: StagingXcmV5Location }
+  | { type: 'Response'; value: StagingXcmV5Location };
 
-export type StagingXcmV4Location = { parents: number; interior: StagingXcmV4Junctions };
+export type StagingXcmV5Location = { parents: number; interior: StagingXcmV5Junctions };
 
-export type StagingXcmV4Junctions =
+export type StagingXcmV5Junctions =
   | { type: 'Here' }
-  | { type: 'X1'; value: FixedArray<StagingXcmV4Junction, 1> }
-  | { type: 'X2'; value: FixedArray<StagingXcmV4Junction, 2> }
-  | { type: 'X3'; value: FixedArray<StagingXcmV4Junction, 3> }
-  | { type: 'X4'; value: FixedArray<StagingXcmV4Junction, 4> }
-  | { type: 'X5'; value: FixedArray<StagingXcmV4Junction, 5> }
-  | { type: 'X6'; value: FixedArray<StagingXcmV4Junction, 6> }
-  | { type: 'X7'; value: FixedArray<StagingXcmV4Junction, 7> }
-  | { type: 'X8'; value: FixedArray<StagingXcmV4Junction, 8> };
+  | { type: 'X1'; value: FixedArray<StagingXcmV5Junction, 1> }
+  | { type: 'X2'; value: FixedArray<StagingXcmV5Junction, 2> }
+  | { type: 'X3'; value: FixedArray<StagingXcmV5Junction, 3> }
+  | { type: 'X4'; value: FixedArray<StagingXcmV5Junction, 4> }
+  | { type: 'X5'; value: FixedArray<StagingXcmV5Junction, 5> }
+  | { type: 'X6'; value: FixedArray<StagingXcmV5Junction, 6> }
+  | { type: 'X7'; value: FixedArray<StagingXcmV5Junction, 7> }
+  | { type: 'X8'; value: FixedArray<StagingXcmV5Junction, 8> };
 
-export type StagingXcmV4Junction =
+export type StagingXcmV5Junction =
   | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; index: bigint } }
-  | { type: 'AccountKey20'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; key: FixedBytes<20> } }
+  | { type: 'AccountId32'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; key: FixedBytes<20> } }
   | { type: 'PalletInstance'; value: number }
   | { type: 'GeneralIndex'; value: bigint }
   | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
   | { type: 'OnlyChild' }
   | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
-  | { type: 'GlobalConsensus'; value: StagingXcmV4JunctionNetworkId };
+  | { type: 'GlobalConsensus'; value: StagingXcmV5JunctionNetworkId };
 
-export type StagingXcmV4JunctionNetworkId =
+export type StagingXcmV5JunctionNetworkId =
   | { type: 'ByGenesis'; value: FixedBytes<32> }
   | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
   | { type: 'Polkadot' }
   | { type: 'Kusama' }
-  | { type: 'Westend' }
-  | { type: 'Rococo' }
-  | { type: 'Wococo' }
   | { type: 'Ethereum'; value: { chainId: bigint } }
   | { type: 'BitcoinCore' }
   | { type: 'BitcoinCash' }
@@ -2460,8 +2615,6 @@ export type CumulusPalletXcmOrigin =
   | { type: 'SiblingParachain'; value: PolkadotParachainPrimitivesPrimitivesId };
 
 export type PolkadotParachainPrimitivesPrimitivesId = number;
-
-export type SpCoreVoid = null;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2497,7 +2650,7 @@ export type PalletPreimageCall =
    **/
   | { name: 'UnrequestPreimage'; params: { hash: H256 } }
   /**
-   * Ensure that the a bulk of pre-images is upgraded.
+   * Ensure that the bulk of pre-images is upgraded.
    *
    * The caller pays no fee if at least 90% of pre-images were successfully updated.
    **/
@@ -2534,7 +2687,7 @@ export type PalletPreimageCallLike =
    **/
   | { name: 'UnrequestPreimage'; params: { hash: H256 } }
   /**
-   * Ensure that the a bulk of pre-images is upgraded.
+   * Ensure that the bulk of pre-images is upgraded.
    *
    * The caller pays no fee if at least 90% of pre-images were successfully updated.
    **/
@@ -2731,18 +2884,23 @@ export type PalletIdentityCall =
   /**
    * Add an `AccountId` with permission to grant usernames with a given `suffix` appended.
    *
-   * The authority can grant up to `allocation` usernames. To top up their allocation, they
-   * should just issue (or request via governance) a new `add_username_authority` call.
+   * The authority can grant up to `allocation` usernames. To top up the allocation or
+   * change the account used to grant usernames, this call can be used with the updated
+   * parameters to overwrite the existing configuration.
    **/
   | { name: 'AddUsernameAuthority'; params: { authority: AccountId32; suffix: Bytes; allocation: number } }
   /**
    * Remove `authority` from the username authorities.
    **/
-  | { name: 'RemoveUsernameAuthority'; params: { authority: AccountId32 } }
+  | { name: 'RemoveUsernameAuthority'; params: { suffix: Bytes; authority: AccountId32 } }
   /**
    * Set the username for `who`. Must be called by a username authority.
    *
-   * The authority must have an `allocation`. Users can either pre-sign their usernames or
+   * If `use_allocation` is set, the authority must have a username allocation available to
+   * spend. Otherwise, the authority will need to put up a deposit for registering the
+   * username.
+   *
+   * Users can either pre-sign their usernames or
    * accept them later.
    *
    * Usernames must:
@@ -2752,7 +2910,12 @@ export type PalletIdentityCall =
    **/
   | {
       name: 'SetUsernameFor';
-      params: { who: AccountId32; username: Bytes; signature?: SpRuntimeMultiSignature | undefined };
+      params: {
+        who: AccountId32;
+        username: Bytes;
+        signature?: SpRuntimeMultiSignature | undefined;
+        useAllocation: boolean;
+      };
     }
   /**
    * Accept a given username that an `authority` granted. The call must include the full
@@ -2770,10 +2933,21 @@ export type PalletIdentityCall =
    **/
   | { name: 'SetPrimaryUsername'; params: { username: Bytes } }
   /**
-   * Remove a username that corresponds to an account with no identity. Exists when a user
-   * gets a username but then calls `clear_identity`.
+   * Start the process of removing a username by placing it in the unbinding usernames map.
+   * Once the grace period has passed, the username can be deleted by calling
+   * [remove_username](crate::Call::remove_username).
    **/
-  | { name: 'RemoveDanglingUsername'; params: { username: Bytes } };
+  | { name: 'UnbindUsername'; params: { username: Bytes } }
+  /**
+   * Permanently delete a username which has been unbinding for longer than the grace period.
+   * Caller is refunded the fee if the username expired and the removal was successful.
+   **/
+  | { name: 'RemoveUsername'; params: { username: Bytes } }
+  /**
+   * Call with [ForceOrigin](crate::Config::ForceOrigin) privileges which deletes a username
+   * and slashes any deposit associated with it.
+   **/
+  | { name: 'KillUsername'; params: { username: Bytes } };
 
 export type PalletIdentityCallLike =
   /**
@@ -2963,18 +3137,23 @@ export type PalletIdentityCallLike =
   /**
    * Add an `AccountId` with permission to grant usernames with a given `suffix` appended.
    *
-   * The authority can grant up to `allocation` usernames. To top up their allocation, they
-   * should just issue (or request via governance) a new `add_username_authority` call.
+   * The authority can grant up to `allocation` usernames. To top up the allocation or
+   * change the account used to grant usernames, this call can be used with the updated
+   * parameters to overwrite the existing configuration.
    **/
   | { name: 'AddUsernameAuthority'; params: { authority: AccountId32Like; suffix: BytesLike; allocation: number } }
   /**
    * Remove `authority` from the username authorities.
    **/
-  | { name: 'RemoveUsernameAuthority'; params: { authority: AccountId32Like } }
+  | { name: 'RemoveUsernameAuthority'; params: { suffix: BytesLike; authority: AccountId32Like } }
   /**
    * Set the username for `who`. Must be called by a username authority.
    *
-   * The authority must have an `allocation`. Users can either pre-sign their usernames or
+   * If `use_allocation` is set, the authority must have a username allocation available to
+   * spend. Otherwise, the authority will need to put up a deposit for registering the
+   * username.
+   *
+   * Users can either pre-sign their usernames or
    * accept them later.
    *
    * Usernames must:
@@ -2984,7 +3163,12 @@ export type PalletIdentityCallLike =
    **/
   | {
       name: 'SetUsernameFor';
-      params: { who: AccountId32Like; username: BytesLike; signature?: SpRuntimeMultiSignature | undefined };
+      params: {
+        who: AccountId32Like;
+        username: BytesLike;
+        signature?: SpRuntimeMultiSignature | undefined;
+        useAllocation: boolean;
+      };
     }
   /**
    * Accept a given username that an `authority` granted. The call must include the full
@@ -3002,10 +3186,21 @@ export type PalletIdentityCallLike =
    **/
   | { name: 'SetPrimaryUsername'; params: { username: BytesLike } }
   /**
-   * Remove a username that corresponds to an account with no identity. Exists when a user
-   * gets a username but then calls `clear_identity`.
+   * Start the process of removing a username by placing it in the unbinding usernames map.
+   * Once the grace period has passed, the username can be deleted by calling
+   * [remove_username](crate::Call::remove_username).
    **/
-  | { name: 'RemoveDanglingUsername'; params: { username: BytesLike } };
+  | { name: 'UnbindUsername'; params: { username: BytesLike } }
+  /**
+   * Permanently delete a username which has been unbinding for longer than the grace period.
+   * Caller is refunded the fee if the username expired and the removal was successful.
+   **/
+  | { name: 'RemoveUsername'; params: { username: BytesLike } }
+  /**
+   * Call with [ForceOrigin](crate::Config::ForceOrigin) privileges which deletes a username
+   * and slashes any deposit associated with it.
+   **/
+  | { name: 'KillUsername'; params: { username: BytesLike } };
 
 export type PalletIdentityLegacyIdentityInfo = {
   additional: Array<[Data, Data]>;
@@ -3742,7 +3937,29 @@ export type PalletCollectiveCall =
   | {
       name: 'Close';
       params: { proposalHash: H256; index: number; proposalWeightBound: SpWeightsWeightV2Weight; lengthBound: number };
-    };
+    }
+  /**
+   * Disapprove the proposal and burn the cost held for storing this proposal.
+   *
+   * Parameters:
+   * - `origin`: must be the `KillOrigin`.
+   * - `proposal_hash`: The hash of the proposal that should be killed.
+   *
+   * Emits `Killed` and `ProposalCostBurned` if any cost was held for a given proposal.
+   **/
+  | { name: 'Kill'; params: { proposalHash: H256 } }
+  /**
+   * Release the cost held for storing a proposal once the given proposal is completed.
+   *
+   * If there is no associated cost for the given proposal, this call will have no effect.
+   *
+   * Parameters:
+   * - `origin`: must be `Signed` or `Root`.
+   * - `proposal_hash`: The hash of the proposal.
+   *
+   * Emits `ProposalCostReleased` if any cost held for a given proposal.
+   **/
+  | { name: 'ReleaseProposalCost'; params: { proposalHash: H256 } };
 
 export type PalletCollectiveCallLike =
   /**
@@ -3858,7 +4075,29 @@ export type PalletCollectiveCallLike =
   | {
       name: 'Close';
       params: { proposalHash: H256; index: number; proposalWeightBound: SpWeightsWeightV2Weight; lengthBound: number };
-    };
+    }
+  /**
+   * Disapprove the proposal and burn the cost held for storing this proposal.
+   *
+   * Parameters:
+   * - `origin`: must be the `KillOrigin`.
+   * - `proposal_hash`: The hash of the proposal that should be killed.
+   *
+   * Emits `Killed` and `ProposalCostBurned` if any cost was held for a given proposal.
+   **/
+  | { name: 'Kill'; params: { proposalHash: H256 } }
+  /**
+   * Release the cost held for storing a proposal once the given proposal is completed.
+   *
+   * If there is no associated cost for the given proposal, this call will have no effect.
+   *
+   * Parameters:
+   * - `origin`: must be `Signed` or `Root`.
+   * - `proposal_hash`: The hash of the proposal.
+   *
+   * Emits `ProposalCostReleased` if any cost held for a given proposal.
+   **/
+  | { name: 'ReleaseProposalCost'; params: { proposalHash: H256 } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4028,7 +4267,18 @@ export type PalletProxyCall =
         forceProxyType?: HydradxRuntimeSystemProxyType | undefined;
         call: HydradxRuntimeRuntimeCall;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 export type PalletProxyCallLike =
   /**
@@ -4198,7 +4448,18 @@ export type PalletProxyCallLike =
         forceProxyType?: HydradxRuntimeSystemProxyType | undefined;
         call: HydradxRuntimeRuntimeCallLike;
       };
-    };
+    }
+  /**
+   * Poke / Adjust deposits made for proxies and announcements based on current values.
+   * This can be used by accounts to possibly lower their locked amount.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | { name: 'PokeDeposit' };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4343,6 +4604,25 @@ export type PalletMultisigCall =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId32>; callHash: FixedBytes<32> };
     };
 
 export type PalletMultisigCallLike =
@@ -4488,6 +4768,25 @@ export type PalletMultisigCallLike =
         timepoint: PalletMultisigTimepoint;
         callHash: FixedBytes<32>;
       };
+    }
+  /**
+   * Poke the deposit reserved for an existing multisig operation.
+   *
+   * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+   * the multisig operation.
+   *
+   * The transaction fee is waived if the deposit amount has changed.
+   *
+   * - `threshold`: The total number of approvals needed for this multisig.
+   * - `other_signatories`: The accounts (other than the sender) who are part of the
+   * multisig.
+   * - `call_hash`: The hash of the call this deposit is reserved for.
+   *
+   * Emits `DepositPoked` if successful.
+   **/
+  | {
+      name: 'PokeDeposit';
+      params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
     };
 
 /**
@@ -6267,60 +6566,7 @@ export type PalletAssetRegistryCallLike =
 
 export type PalletAssetRegistryAssetType = 'Token' | 'Xyk' | 'StableSwap' | 'Bond' | 'External' | 'Erc20';
 
-export type HydradxRuntimeXcmAssetLocation = StagingXcmV3MultilocationMultiLocation;
-
-export type StagingXcmV3MultilocationMultiLocation = { parents: number; interior: XcmV3Junctions };
-
-export type XcmV3Junctions =
-  | { type: 'Here' }
-  | { type: 'X1'; value: XcmV3Junction }
-  | { type: 'X2'; value: [XcmV3Junction, XcmV3Junction] }
-  | { type: 'X3'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction] }
-  | { type: 'X4'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
-  | { type: 'X5'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
-  | { type: 'X6'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
-  | {
-      type: 'X7';
-      value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction];
-    }
-  | {
-      type: 'X8';
-      value: [
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-      ];
-    };
-
-export type XcmV3Junction =
-  | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network?: XcmV3JunctionNetworkId | undefined; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network?: XcmV3JunctionNetworkId | undefined; index: bigint } }
-  | { type: 'AccountKey20'; value: { network?: XcmV3JunctionNetworkId | undefined; key: FixedBytes<20> } }
-  | { type: 'PalletInstance'; value: number }
-  | { type: 'GeneralIndex'; value: bigint }
-  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
-  | { type: 'OnlyChild' }
-  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
-  | { type: 'GlobalConsensus'; value: XcmV3JunctionNetworkId };
-
-export type XcmV3JunctionNetworkId =
-  | { type: 'ByGenesis'; value: FixedBytes<32> }
-  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
-  | { type: 'Polkadot' }
-  | { type: 'Kusama' }
-  | { type: 'Westend' }
-  | { type: 'Rococo' }
-  | { type: 'Wococo' }
-  | { type: 'Ethereum'; value: { chainId: bigint } }
-  | { type: 'BitcoinCore' }
-  | { type: 'BitcoinCash' }
-  | { type: 'PolkadotBulletin' };
+export type HydradxRuntimeXcmAssetLocation = StagingXcmV5Location;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -7283,6 +7529,8 @@ export type PalletOmnipoolLiquidityMiningCall =
    * - `stable_pool_id`: id of the stableswap pool to add liquidity to.
    * - `stable_asset_amounts`: amount of each asset to be deposited into the stableswap pool.
    * - `farm_entries`: list of farms to join.
+   * - `min_shares_limit`: optional minimum Omnipool shares to receive (slippage protection).
+   * Applies to Omnipool step only. None defaults to no protection.
    *
    * Emits `LiquidityAdded` events from both pool
    * Emits `SharesDeposited` event for the first farm entry
@@ -7295,6 +7543,43 @@ export type PalletOmnipoolLiquidityMiningCall =
         stablePoolId: number;
         stableAssetAmounts: Array<HydradxTraitsStableswapAssetAmount>;
         farmEntries?: Array<[number, number]> | undefined;
+        minSharesLimit?: bigint | undefined;
+      };
+    }
+  /**
+   * Remove liquidity from stableswap and omnipool, optionally exiting associated yield farms.
+   *
+   * This extrinsic reverses the operation performed by `add_liquidity_stableswap_omnipool_and_join_farms`,
+   * with optional farm exit to match the optional farm join in the add function.
+   *
+   * It performs the following steps in order:
+   * 1. [OPTIONAL] If deposit_id is provided: Exits from ALL yield farms associated with the deposit (claiming rewards)
+   * 2. Removes liquidity from the omnipool to retrieve stableswap shares (protected by omnipool_min_limit)
+   * 3. Removes liquidity from the stableswap pool to retrieve underlying assets (protected by stableswap_min_amounts_out)
+   *
+   * The stabelswap liquidity asset removal strategy is determined by the `min_amounts_out` parameter length:
+   * - If 1 asset is specified: Uses `remove_liquidity_one_asset` (trading fee applies)
+   * - If multiple assets: Uses `remove_liquidity` (proportional, no trading fee)
+   *
+   * Parameters:
+   * - `origin`: Owner of the omnipool position
+   * - `position_id`: The omnipool position NFT ID to remove liquidity from
+   * - `omnipool_min_limit`: The min amount of asset to be removed from omnipool (slippage protection)
+   * - `stableswap_min_amounts_out`: Asset IDs and minimum amounts minimum amounts of each asset to receive from omnipool.
+   * - `deposit_id`: Optional liquidity mining deposit NFT ID. If provided, exits all farms first.
+   *
+   * Emits events:
+   * - If deposit_id provided: `RewardClaimed`, `SharesWithdrawn`, `DepositDestroyed`
+   * - Always: Omnipool's `LiquidityRemoved`, Stableswap's `LiquidityRemoved`
+   *
+   **/
+  | {
+      name: 'RemoveLiquidityStableswapOmnipoolAndExitFarms';
+      params: {
+        positionId: bigint;
+        omnipoolMinLimit: bigint;
+        stableswapMinAmountsOut: Array<HydradxTraitsStableswapAssetAmount>;
+        depositId?: bigint | undefined;
       };
     };
 
@@ -7626,6 +7911,8 @@ export type PalletOmnipoolLiquidityMiningCallLike =
    * - `stable_pool_id`: id of the stableswap pool to add liquidity to.
    * - `stable_asset_amounts`: amount of each asset to be deposited into the stableswap pool.
    * - `farm_entries`: list of farms to join.
+   * - `min_shares_limit`: optional minimum Omnipool shares to receive (slippage protection).
+   * Applies to Omnipool step only. None defaults to no protection.
    *
    * Emits `LiquidityAdded` events from both pool
    * Emits `SharesDeposited` event for the first farm entry
@@ -7638,6 +7925,43 @@ export type PalletOmnipoolLiquidityMiningCallLike =
         stablePoolId: number;
         stableAssetAmounts: Array<HydradxTraitsStableswapAssetAmount>;
         farmEntries?: Array<[number, number]> | undefined;
+        minSharesLimit?: bigint | undefined;
+      };
+    }
+  /**
+   * Remove liquidity from stableswap and omnipool, optionally exiting associated yield farms.
+   *
+   * This extrinsic reverses the operation performed by `add_liquidity_stableswap_omnipool_and_join_farms`,
+   * with optional farm exit to match the optional farm join in the add function.
+   *
+   * It performs the following steps in order:
+   * 1. [OPTIONAL] If deposit_id is provided: Exits from ALL yield farms associated with the deposit (claiming rewards)
+   * 2. Removes liquidity from the omnipool to retrieve stableswap shares (protected by omnipool_min_limit)
+   * 3. Removes liquidity from the stableswap pool to retrieve underlying assets (protected by stableswap_min_amounts_out)
+   *
+   * The stabelswap liquidity asset removal strategy is determined by the `min_amounts_out` parameter length:
+   * - If 1 asset is specified: Uses `remove_liquidity_one_asset` (trading fee applies)
+   * - If multiple assets: Uses `remove_liquidity` (proportional, no trading fee)
+   *
+   * Parameters:
+   * - `origin`: Owner of the omnipool position
+   * - `position_id`: The omnipool position NFT ID to remove liquidity from
+   * - `omnipool_min_limit`: The min amount of asset to be removed from omnipool (slippage protection)
+   * - `stableswap_min_amounts_out`: Asset IDs and minimum amounts minimum amounts of each asset to receive from omnipool.
+   * - `deposit_id`: Optional liquidity mining deposit NFT ID. If provided, exits all farms first.
+   *
+   * Emits events:
+   * - If deposit_id provided: `RewardClaimed`, `SharesWithdrawn`, `DepositDestroyed`
+   * - Always: Omnipool's `LiquidityRemoved`, Stableswap's `LiquidityRemoved`
+   *
+   **/
+  | {
+      name: 'RemoveLiquidityStableswapOmnipoolAndExitFarms';
+      params: {
+        positionId: bigint;
+        omnipoolMinLimit: bigint;
+        stableswapMinAmountsOut: Array<HydradxTraitsStableswapAssetAmount>;
+        depositId?: bigint | undefined;
       };
     };
 
@@ -10382,12 +10706,7 @@ export type PalletDispenserCall =
    **/
   | {
       name: 'RequestFund';
-      params: {
-        to: FixedBytes<20>;
-        amount: bigint;
-        requestId: FixedBytes<32>;
-        tx: PalletDispenserEvmTransactionParams;
-      };
+      params: { to: H160; amount: bigint; requestId: FixedBytes<32>; tx: PalletDispenserEvmTransactionParams };
     }
   /**
    * Pause the dispenser so that no new funding requests can be made.
@@ -10437,12 +10756,7 @@ export type PalletDispenserCallLike =
    **/
   | {
       name: 'RequestFund';
-      params: {
-        to: FixedBytes<20>;
-        amount: bigint;
-        requestId: FixedBytes<32>;
-        tx: PalletDispenserEvmTransactionParams;
-      };
+      params: { to: H160; amount: bigint; requestId: FixedBytes<32>; tx: PalletDispenserEvmTransactionParams };
     }
   /**
    * Pause the dispenser so that no new funding requests can be made.
@@ -10496,7 +10810,7 @@ export type OrmlTokensModuleCall =
    *
    * - `dest`: The recipient of the transfer.
    * - `currency_id`: currency type.
-   * - `amount`: free balance amount to tranfer.
+   * - `amount`: free balance amount to transfer.
    **/
   | { name: 'Transfer'; params: { dest: AccountId32; currencyId: number; amount: bigint } }
   /**
@@ -10532,7 +10846,7 @@ export type OrmlTokensModuleCall =
    *
    * - `dest`: The recipient of the transfer.
    * - `currency_id`: currency type.
-   * - `amount`: free balance amount to tranfer.
+   * - `amount`: free balance amount to transfer.
    **/
   | { name: 'TransferKeepAlive'; params: { dest: AccountId32; currencyId: number; amount: bigint } }
   /**
@@ -10544,7 +10858,7 @@ export type OrmlTokensModuleCall =
    * - `source`: The sender of the transfer.
    * - `dest`: The recipient of the transfer.
    * - `currency_id`: currency type.
-   * - `amount`: free balance amount to tranfer.
+   * - `amount`: free balance amount to transfer.
    **/
   | { name: 'ForceTransfer'; params: { source: AccountId32; dest: AccountId32; currencyId: number; amount: bigint } }
   /**
@@ -10573,7 +10887,7 @@ export type OrmlTokensModuleCallLike =
    *
    * - `dest`: The recipient of the transfer.
    * - `currency_id`: currency type.
-   * - `amount`: free balance amount to tranfer.
+   * - `amount`: free balance amount to transfer.
    **/
   | { name: 'Transfer'; params: { dest: AccountId32Like; currencyId: number; amount: bigint } }
   /**
@@ -10609,7 +10923,7 @@ export type OrmlTokensModuleCallLike =
    *
    * - `dest`: The recipient of the transfer.
    * - `currency_id`: currency type.
-   * - `amount`: free balance amount to tranfer.
+   * - `amount`: free balance amount to transfer.
    **/
   | { name: 'TransferKeepAlive'; params: { dest: AccountId32Like; currencyId: number; amount: bigint } }
   /**
@@ -10621,7 +10935,7 @@ export type OrmlTokensModuleCallLike =
    * - `source`: The sender of the transfer.
    * - `dest`: The recipient of the transfer.
    * - `currency_id`: currency type.
-   * - `amount`: free balance amount to tranfer.
+   * - `amount`: free balance amount to transfer.
    **/
   | {
       name: 'ForceTransfer';
@@ -10732,6 +11046,7 @@ export type PalletEvmCall =
         maxPriorityFeePerGas?: U256 | undefined;
         nonce?: U256 | undefined;
         accessList: Array<[H160, Array<H256>]>;
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
       };
     }
   /**
@@ -10749,6 +11064,7 @@ export type PalletEvmCall =
         maxPriorityFeePerGas?: U256 | undefined;
         nonce?: U256 | undefined;
         accessList: Array<[H160, Array<H256>]>;
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
       };
     }
   /**
@@ -10766,6 +11082,7 @@ export type PalletEvmCall =
         maxPriorityFeePerGas?: U256 | undefined;
         nonce?: U256 | undefined;
         accessList: Array<[H160, Array<H256>]>;
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
       };
     };
 
@@ -10789,6 +11106,7 @@ export type PalletEvmCallLike =
         maxPriorityFeePerGas?: U256 | undefined;
         nonce?: U256 | undefined;
         accessList: Array<[H160, Array<H256>]>;
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
       };
     }
   /**
@@ -10806,6 +11124,7 @@ export type PalletEvmCallLike =
         maxPriorityFeePerGas?: U256 | undefined;
         nonce?: U256 | undefined;
         accessList: Array<[H160, Array<H256>]>;
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
       };
     }
   /**
@@ -10823,8 +11142,18 @@ export type PalletEvmCallLike =
         maxPriorityFeePerGas?: U256 | undefined;
         nonce?: U256 | undefined;
         accessList: Array<[H160, Array<H256>]>;
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
       };
     };
+
+export type EthereumTransactionEip7702AuthorizationListItem = {
+  chainId: bigint;
+  address: H160;
+  nonce: U256;
+  signature: EthereumTransactionEip2930MalleableTransactionSignature;
+};
+
+export type EthereumTransactionEip2930MalleableTransactionSignature = { oddYParity: boolean; r: H256; s: H256 };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10833,64 +11162,81 @@ export type PalletEthereumCall =
   /**
    * Transact an Ethereum transaction.
    **/
-  { name: 'Transact'; params: { transaction: EthereumTransactionTransactionV2 } };
+  { name: 'Transact'; params: { transaction: EthereumTransactionTransactionV3 } };
 
 export type PalletEthereumCallLike =
   /**
    * Transact an Ethereum transaction.
    **/
-  { name: 'Transact'; params: { transaction: EthereumTransactionTransactionV2 } };
+  { name: 'Transact'; params: { transaction: EthereumTransactionTransactionV3 } };
 
-export type EthereumTransactionTransactionV2 =
-  | { type: 'Legacy'; value: EthereumTransactionLegacyTransaction }
-  | { type: 'Eip2930'; value: EthereumTransactionEip2930Transaction }
-  | { type: 'Eip1559'; value: EthereumTransactionEip1559Transaction };
+export type EthereumTransactionTransactionV3 =
+  | { type: 'Legacy'; value: EthereumTransactionLegacyLegacyTransaction }
+  | { type: 'Eip2930'; value: EthereumTransactionEip2930Eip2930Transaction }
+  | { type: 'Eip1559'; value: EthereumTransactionEip1559Eip1559Transaction }
+  | { type: 'Eip7702'; value: EthereumTransactionEip7702Eip7702Transaction };
 
-export type EthereumTransactionLegacyTransaction = {
+export type EthereumTransactionLegacyLegacyTransaction = {
   nonce: U256;
   gasPrice: U256;
   gasLimit: U256;
-  action: EthereumTransactionTransactionAction;
+  action: EthereumTransactionLegacyTransactionAction;
   value: U256;
   input: Bytes;
-  signature: EthereumTransactionTransactionSignature;
+  signature: EthereumTransactionLegacyTransactionSignature;
 };
 
-export type EthereumTransactionTransactionAction = { type: 'Call'; value: H160 } | { type: 'Create' };
+export type EthereumTransactionLegacyTransactionAction = { type: 'Call'; value: H160 } | { type: 'Create' };
 
-export type EthereumTransactionTransactionSignature = { v: EthereumTransactionTransactionRecoveryId; r: H256; s: H256 };
-
-export type EthereumTransactionTransactionRecoveryId = bigint;
-
-export type EthereumTransactionEip2930Transaction = {
-  chainId: bigint;
-  nonce: U256;
-  gasPrice: U256;
-  gasLimit: U256;
-  action: EthereumTransactionTransactionAction;
-  value: U256;
-  input: Bytes;
-  accessList: Array<EthereumTransactionAccessListItem>;
-  oddYParity: boolean;
+export type EthereumTransactionLegacyTransactionSignature = {
+  v: EthereumTransactionLegacyTransactionRecoveryId;
   r: H256;
   s: H256;
 };
 
-export type EthereumTransactionAccessListItem = { address: H160; storageKeys: Array<H256> };
+export type EthereumTransactionLegacyTransactionRecoveryId = bigint;
 
-export type EthereumTransactionEip1559Transaction = {
+export type EthereumTransactionEip2930Eip2930Transaction = {
+  chainId: bigint;
+  nonce: U256;
+  gasPrice: U256;
+  gasLimit: U256;
+  action: EthereumTransactionLegacyTransactionAction;
+  value: U256;
+  input: Bytes;
+  accessList: Array<EthereumTransactionEip2930AccessListItem>;
+  signature: EthereumTransactionEip2930TransactionSignature;
+};
+
+export type EthereumTransactionEip2930AccessListItem = { address: H160; storageKeys: Array<H256> };
+
+export type EthereumTransactionEip2930TransactionSignature = { oddYParity: boolean; r: H256; s: H256 };
+
+export type EthereumTransactionEip1559Eip1559Transaction = {
   chainId: bigint;
   nonce: U256;
   maxPriorityFeePerGas: U256;
   maxFeePerGas: U256;
   gasLimit: U256;
-  action: EthereumTransactionTransactionAction;
+  action: EthereumTransactionLegacyTransactionAction;
   value: U256;
   input: Bytes;
-  accessList: Array<EthereumTransactionAccessListItem>;
-  oddYParity: boolean;
-  r: H256;
-  s: H256;
+  accessList: Array<EthereumTransactionEip2930AccessListItem>;
+  signature: EthereumTransactionEip2930TransactionSignature;
+};
+
+export type EthereumTransactionEip7702Eip7702Transaction = {
+  chainId: bigint;
+  nonce: U256;
+  maxPriorityFeePerGas: U256;
+  maxFeePerGas: U256;
+  gasLimit: U256;
+  destination: EthereumTransactionLegacyTransactionAction;
+  value: U256;
+  data: Bytes;
+  accessList: Array<EthereumTransactionEip2930AccessListItem>;
+  authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
+  signature: EthereumTransactionEip2930TransactionSignature;
 };
 
 /**
@@ -12234,7 +12580,7 @@ export type PalletXcmCall =
    * - `location`: The destination that is being described.
    * - `xcm_version`: The latest version of XCM that `location` supports.
    **/
-  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV4Location; version: number } }
+  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV5Location; version: number } }
   /**
    * Set a safe XCM version (the version that XCM should be encoded with if the most recent
    * version a destination can accept is unknown).
@@ -12453,7 +12799,31 @@ export type PalletXcmCall =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type PalletXcmCallLike =
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
@@ -12546,7 +12916,7 @@ export type PalletXcmCallLike =
    * - `location`: The destination that is being described.
    * - `xcm_version`: The latest version of XCM that `location` supports.
    **/
-  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV4Location; version: number } }
+  | { name: 'ForceXcmVersion'; params: { location: StagingXcmV5Location; version: number } }
   /**
    * Set a safe XCM version (the version that XCM should be encoded with if the most recent
    * version a destination can accept is unknown).
@@ -12765,222 +13135,132 @@ export type PalletXcmCallLike =
         customXcmOnDest: XcmVersionedXcm;
         weightLimit: XcmV3WeightLimit;
       };
-    };
+    }
+  /**
+   * Authorize another `aliaser` location to alias into the local `origin` making this call.
+   * The `aliaser` is only authorized until the provided `expiry` block number.
+   * The call can also be used for a previously authorized alias in order to update its
+   * `expiry` block number.
+   *
+   * Usually useful to allow your local account to be aliased into from a remote location
+   * also under your control (like your account on another chain).
+   *
+   * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+   * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+   * `origin` in XCM programs executed on the local chain.
+   **/
+  | { name: 'AddAuthorizedAlias'; params: { aliaser: XcmVersionedLocation; expires?: bigint | undefined } }
+  /**
+   * Remove a previously authorized `aliaser` from the list of locations that can alias into
+   * the local `origin` making this call.
+   **/
+  | { name: 'RemoveAuthorizedAlias'; params: { aliaser: XcmVersionedLocation } }
+  /**
+   * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+   * making this call.
+   **/
+  | { name: 'RemoveAllAuthorizedAliases' };
 
 export type XcmVersionedLocation =
-  | { type: 'V2'; value: XcmV2MultilocationMultiLocation }
   | { type: 'V3'; value: StagingXcmV3MultilocationMultiLocation }
-  | { type: 'V4'; value: StagingXcmV4Location };
+  | { type: 'V4'; value: StagingXcmV4Location }
+  | { type: 'V5'; value: StagingXcmV5Location };
 
-export type XcmV2MultilocationMultiLocation = { parents: number; interior: XcmV2MultilocationJunctions };
+export type StagingXcmV3MultilocationMultiLocation = { parents: number; interior: XcmV3Junctions };
 
-export type XcmV2MultilocationJunctions =
+export type XcmV3Junctions =
   | { type: 'Here' }
-  | { type: 'X1'; value: XcmV2Junction }
-  | { type: 'X2'; value: [XcmV2Junction, XcmV2Junction] }
-  | { type: 'X3'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | { type: 'X4'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | { type: 'X5'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction] }
-  | { type: 'X6'; value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction] }
+  | { type: 'X1'; value: XcmV3Junction }
+  | { type: 'X2'; value: [XcmV3Junction, XcmV3Junction] }
+  | { type: 'X3'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction] }
+  | { type: 'X4'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
+  | { type: 'X5'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
+  | { type: 'X6'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
   | {
       type: 'X7';
-      value: [XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction, XcmV2Junction];
+      value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction];
     }
   | {
       type: 'X8';
       value: [
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
-        XcmV2Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
       ];
     };
 
-export type XcmV2Junction =
+export type XcmV3Junction =
   | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network: XcmV2NetworkId; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network: XcmV2NetworkId; index: bigint } }
-  | { type: 'AccountKey20'; value: { network: XcmV2NetworkId; key: FixedBytes<20> } }
+  | { type: 'AccountId32'; value: { network?: XcmV3JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: XcmV3JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: XcmV3JunctionNetworkId | undefined; key: FixedBytes<20> } }
   | { type: 'PalletInstance'; value: number }
   | { type: 'GeneralIndex'; value: bigint }
-  | { type: 'GeneralKey'; value: Bytes }
+  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
   | { type: 'OnlyChild' }
-  | { type: 'Plurality'; value: { id: XcmV2BodyId; part: XcmV2BodyPart } };
+  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
+  | { type: 'GlobalConsensus'; value: XcmV3JunctionNetworkId };
 
-export type XcmV2NetworkId =
-  | { type: 'Any' }
-  | { type: 'Named'; value: Bytes }
+export type XcmV3JunctionNetworkId =
+  | { type: 'ByGenesis'; value: FixedBytes<32> }
+  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
   | { type: 'Polkadot' }
-  | { type: 'Kusama' };
+  | { type: 'Kusama' }
+  | { type: 'Westend' }
+  | { type: 'Rococo' }
+  | { type: 'Wococo' }
+  | { type: 'Ethereum'; value: { chainId: bigint } }
+  | { type: 'BitcoinCore' }
+  | { type: 'BitcoinCash' }
+  | { type: 'PolkadotBulletin' };
 
-export type XcmV2BodyId =
-  | { type: 'Unit' }
-  | { type: 'Named'; value: Bytes }
-  | { type: 'Index'; value: number }
-  | { type: 'Executive' }
-  | { type: 'Technical' }
-  | { type: 'Legislative' }
-  | { type: 'Judicial' }
-  | { type: 'Defense' }
-  | { type: 'Administration' }
-  | { type: 'Treasury' };
+export type StagingXcmV4Location = { parents: number; interior: StagingXcmV4Junctions };
 
-export type XcmV2BodyPart =
-  | { type: 'Voice' }
-  | { type: 'Members'; value: { count: number } }
-  | { type: 'Fraction'; value: { nom: number; denom: number } }
-  | { type: 'AtLeastProportion'; value: { nom: number; denom: number } }
-  | { type: 'MoreThanProportion'; value: { nom: number; denom: number } };
+export type StagingXcmV4Junctions =
+  | { type: 'Here' }
+  | { type: 'X1'; value: FixedArray<StagingXcmV4Junction, 1> }
+  | { type: 'X2'; value: FixedArray<StagingXcmV4Junction, 2> }
+  | { type: 'X3'; value: FixedArray<StagingXcmV4Junction, 3> }
+  | { type: 'X4'; value: FixedArray<StagingXcmV4Junction, 4> }
+  | { type: 'X5'; value: FixedArray<StagingXcmV4Junction, 5> }
+  | { type: 'X6'; value: FixedArray<StagingXcmV4Junction, 6> }
+  | { type: 'X7'; value: FixedArray<StagingXcmV4Junction, 7> }
+  | { type: 'X8'; value: FixedArray<StagingXcmV4Junction, 8> };
+
+export type StagingXcmV4Junction =
+  | { type: 'Parachain'; value: number }
+  | { type: 'AccountId32'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; key: FixedBytes<20> } }
+  | { type: 'PalletInstance'; value: number }
+  | { type: 'GeneralIndex'; value: bigint }
+  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
+  | { type: 'OnlyChild' }
+  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
+  | { type: 'GlobalConsensus'; value: StagingXcmV4JunctionNetworkId };
+
+export type StagingXcmV4JunctionNetworkId =
+  | { type: 'ByGenesis'; value: FixedBytes<32> }
+  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
+  | { type: 'Polkadot' }
+  | { type: 'Kusama' }
+  | { type: 'Westend' }
+  | { type: 'Rococo' }
+  | { type: 'Wococo' }
+  | { type: 'Ethereum'; value: { chainId: bigint } }
+  | { type: 'BitcoinCore' }
+  | { type: 'BitcoinCash' }
+  | { type: 'PolkadotBulletin' };
 
 export type XcmVersionedXcm =
-  | { type: 'V2'; value: XcmV2Xcm }
   | { type: 'V3'; value: XcmV3Xcm }
-  | { type: 'V4'; value: StagingXcmV4Xcm };
-
-export type XcmV2Xcm = Array<XcmV2Instruction>;
-
-export type XcmV2Instruction =
-  | { type: 'WithdrawAsset'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'ReserveAssetDeposited'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'ReceiveTeleportedAsset'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'QueryResponse'; value: { queryId: bigint; response: XcmV2Response; maxWeight: bigint } }
-  | {
-      type: 'TransferAsset';
-      value: { assets: XcmV2MultiassetMultiAssets; beneficiary: XcmV2MultilocationMultiLocation };
-    }
-  | {
-      type: 'TransferReserveAsset';
-      value: { assets: XcmV2MultiassetMultiAssets; dest: XcmV2MultilocationMultiLocation; xcm: XcmV2Xcm };
-    }
-  | { type: 'Transact'; value: { originType: XcmV2OriginKind; requireWeightAtMost: bigint; call: XcmDoubleEncoded } }
-  | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
-  | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
-  | { type: 'HrmpChannelClosing'; value: { initiator: number; sender: number; recipient: number } }
-  | { type: 'ClearOrigin' }
-  | { type: 'DescendOrigin'; value: XcmV2MultilocationJunctions }
-  | {
-      type: 'ReportError';
-      value: { queryId: bigint; dest: XcmV2MultilocationMultiLocation; maxResponseWeight: bigint };
-    }
-  | {
-      type: 'DepositAsset';
-      value: {
-        assets: XcmV2MultiassetMultiAssetFilter;
-        maxAssets: number;
-        beneficiary: XcmV2MultilocationMultiLocation;
-      };
-    }
-  | {
-      type: 'DepositReserveAsset';
-      value: {
-        assets: XcmV2MultiassetMultiAssetFilter;
-        maxAssets: number;
-        dest: XcmV2MultilocationMultiLocation;
-        xcm: XcmV2Xcm;
-      };
-    }
-  | { type: 'ExchangeAsset'; value: { give: XcmV2MultiassetMultiAssetFilter; receive: XcmV2MultiassetMultiAssets } }
-  | {
-      type: 'InitiateReserveWithdraw';
-      value: { assets: XcmV2MultiassetMultiAssetFilter; reserve: XcmV2MultilocationMultiLocation; xcm: XcmV2Xcm };
-    }
-  | {
-      type: 'InitiateTeleport';
-      value: { assets: XcmV2MultiassetMultiAssetFilter; dest: XcmV2MultilocationMultiLocation; xcm: XcmV2Xcm };
-    }
-  | {
-      type: 'QueryHolding';
-      value: {
-        queryId: bigint;
-        dest: XcmV2MultilocationMultiLocation;
-        assets: XcmV2MultiassetMultiAssetFilter;
-        maxResponseWeight: bigint;
-      };
-    }
-  | { type: 'BuyExecution'; value: { fees: XcmV2MultiassetMultiAsset; weightLimit: XcmV2WeightLimit } }
-  | { type: 'RefundSurplus' }
-  | { type: 'SetErrorHandler'; value: XcmV2Xcm }
-  | { type: 'SetAppendix'; value: XcmV2Xcm }
-  | { type: 'ClearError' }
-  | { type: 'ClaimAsset'; value: { assets: XcmV2MultiassetMultiAssets; ticket: XcmV2MultilocationMultiLocation } }
-  | { type: 'Trap'; value: bigint }
-  | { type: 'SubscribeVersion'; value: { queryId: bigint; maxResponseWeight: bigint } }
-  | { type: 'UnsubscribeVersion' };
-
-export type XcmV2MultiassetMultiAssets = Array<XcmV2MultiassetMultiAsset>;
-
-export type XcmV2MultiassetMultiAsset = { id: XcmV2MultiassetAssetId; fun: XcmV2MultiassetFungibility };
-
-export type XcmV2MultiassetAssetId =
-  | { type: 'Concrete'; value: XcmV2MultilocationMultiLocation }
-  | { type: 'Abstract'; value: Bytes };
-
-export type XcmV2MultiassetFungibility =
-  | { type: 'Fungible'; value: bigint }
-  | { type: 'NonFungible'; value: XcmV2MultiassetAssetInstance };
-
-export type XcmV2MultiassetAssetInstance =
-  | { type: 'Undefined' }
-  | { type: 'Index'; value: bigint }
-  | { type: 'Array4'; value: FixedBytes<4> }
-  | { type: 'Array8'; value: FixedBytes<8> }
-  | { type: 'Array16'; value: FixedBytes<16> }
-  | { type: 'Array32'; value: FixedBytes<32> }
-  | { type: 'Blob'; value: Bytes };
-
-export type XcmV2Response =
-  | { type: 'Null' }
-  | { type: 'Assets'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'ExecutionResult'; value?: [number, XcmV2TraitsError] | undefined }
-  | { type: 'Version'; value: number };
-
-export type XcmV2TraitsError =
-  | { type: 'Overflow' }
-  | { type: 'Unimplemented' }
-  | { type: 'UntrustedReserveLocation' }
-  | { type: 'UntrustedTeleportLocation' }
-  | { type: 'MultiLocationFull' }
-  | { type: 'MultiLocationNotInvertible' }
-  | { type: 'BadOrigin' }
-  | { type: 'InvalidLocation' }
-  | { type: 'AssetNotFound' }
-  | { type: 'FailedToTransactAsset' }
-  | { type: 'NotWithdrawable' }
-  | { type: 'LocationCannotHold' }
-  | { type: 'ExceedsMaxMessageSize' }
-  | { type: 'DestinationUnsupported' }
-  | { type: 'Transport' }
-  | { type: 'Unroutable' }
-  | { type: 'UnknownClaim' }
-  | { type: 'FailedToDecode' }
-  | { type: 'MaxWeightInvalid' }
-  | { type: 'NotHoldingFees' }
-  | { type: 'TooExpensive' }
-  | { type: 'Trap'; value: bigint }
-  | { type: 'UnhandledXcmVersion' }
-  | { type: 'WeightLimitReached'; value: bigint }
-  | { type: 'Barrier' }
-  | { type: 'WeightNotComputable' };
-
-export type XcmV2OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
-
-export type XcmDoubleEncoded = { encoded: Bytes };
-
-export type XcmV2MultiassetMultiAssetFilter =
-  | { type: 'Definite'; value: XcmV2MultiassetMultiAssets }
-  | { type: 'Wild'; value: XcmV2MultiassetWildMultiAsset };
-
-export type XcmV2MultiassetWildMultiAsset =
-  | { type: 'All' }
-  | { type: 'AllOf'; value: { id: XcmV2MultiassetAssetId; fun: XcmV2MultiassetWildFungibility } };
-
-export type XcmV2MultiassetWildFungibility = 'Fungible' | 'NonFungible';
-
-export type XcmV2WeightLimit = { type: 'Unlimited' } | { type: 'Limited'; value: bigint };
+  | { type: 'V4'; value: StagingXcmV4Xcm }
+  | { type: 'V5'; value: StagingXcmV5Xcm };
 
 export type XcmV3Xcm = Array<XcmV3Instruction>;
 
@@ -13171,6 +13451,8 @@ export type XcmV3MaybeErrorCode =
 
 export type XcmV3OriginKind = 'Native' | 'SovereignAccount' | 'Superuser' | 'Xcm';
 
+export type XcmDoubleEncoded = { encoded: Bytes };
+
 export type XcmV3QueryResponseInfo = {
   destination: StagingXcmV3MultilocationMultiLocation;
   queryId: bigint;
@@ -13337,10 +13619,223 @@ export type StagingXcmV4AssetWildAsset =
 
 export type StagingXcmV4AssetWildFungibility = 'Fungible' | 'NonFungible';
 
+export type StagingXcmV5Xcm = Array<StagingXcmV5Instruction>;
+
+export type StagingXcmV5Instruction =
+  | { type: 'WithdrawAsset'; value: StagingXcmV5AssetAssets }
+  | { type: 'ReserveAssetDeposited'; value: StagingXcmV5AssetAssets }
+  | { type: 'ReceiveTeleportedAsset'; value: StagingXcmV5AssetAssets }
+  | {
+      type: 'QueryResponse';
+      value: {
+        queryId: bigint;
+        response: StagingXcmV5Response;
+        maxWeight: SpWeightsWeightV2Weight;
+        querier?: StagingXcmV5Location | undefined;
+      };
+    }
+  | { type: 'TransferAsset'; value: { assets: StagingXcmV5AssetAssets; beneficiary: StagingXcmV5Location } }
+  | {
+      type: 'TransferReserveAsset';
+      value: { assets: StagingXcmV5AssetAssets; dest: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
+    }
+  | {
+      type: 'Transact';
+      value: {
+        originKind: XcmV3OriginKind;
+        fallbackMaxWeight?: SpWeightsWeightV2Weight | undefined;
+        call: XcmDoubleEncoded;
+      };
+    }
+  | { type: 'HrmpNewChannelOpenRequest'; value: { sender: number; maxMessageSize: number; maxCapacity: number } }
+  | { type: 'HrmpChannelAccepted'; value: { recipient: number } }
+  | { type: 'HrmpChannelClosing'; value: { initiator: number; sender: number; recipient: number } }
+  | { type: 'ClearOrigin' }
+  | { type: 'DescendOrigin'; value: StagingXcmV5Junctions }
+  | { type: 'ReportError'; value: StagingXcmV5QueryResponseInfo }
+  | { type: 'DepositAsset'; value: { assets: StagingXcmV5AssetAssetFilter; beneficiary: StagingXcmV5Location } }
+  | {
+      type: 'DepositReserveAsset';
+      value: { assets: StagingXcmV5AssetAssetFilter; dest: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
+    }
+  | {
+      type: 'ExchangeAsset';
+      value: { give: StagingXcmV5AssetAssetFilter; want: StagingXcmV5AssetAssets; maximal: boolean };
+    }
+  | {
+      type: 'InitiateReserveWithdraw';
+      value: { assets: StagingXcmV5AssetAssetFilter; reserve: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
+    }
+  | {
+      type: 'InitiateTeleport';
+      value: { assets: StagingXcmV5AssetAssetFilter; dest: StagingXcmV5Location; xcm: StagingXcmV5Xcm };
+    }
+  | {
+      type: 'ReportHolding';
+      value: { responseInfo: StagingXcmV5QueryResponseInfo; assets: StagingXcmV5AssetAssetFilter };
+    }
+  | { type: 'BuyExecution'; value: { fees: StagingXcmV5Asset; weightLimit: XcmV3WeightLimit } }
+  | { type: 'RefundSurplus' }
+  | { type: 'SetErrorHandler'; value: StagingXcmV5Xcm }
+  | { type: 'SetAppendix'; value: StagingXcmV5Xcm }
+  | { type: 'ClearError' }
+  | { type: 'ClaimAsset'; value: { assets: StagingXcmV5AssetAssets; ticket: StagingXcmV5Location } }
+  | { type: 'Trap'; value: bigint }
+  | { type: 'SubscribeVersion'; value: { queryId: bigint; maxResponseWeight: SpWeightsWeightV2Weight } }
+  | { type: 'UnsubscribeVersion' }
+  | { type: 'BurnAsset'; value: StagingXcmV5AssetAssets }
+  | { type: 'ExpectAsset'; value: StagingXcmV5AssetAssets }
+  | { type: 'ExpectOrigin'; value?: StagingXcmV5Location | undefined }
+  | { type: 'ExpectError'; value?: [number, XcmV5TraitsError] | undefined }
+  | { type: 'ExpectTransactStatus'; value: XcmV3MaybeErrorCode }
+  | { type: 'QueryPallet'; value: { moduleName: Bytes; responseInfo: StagingXcmV5QueryResponseInfo } }
+  | {
+      type: 'ExpectPallet';
+      value: { index: number; name: Bytes; moduleName: Bytes; crateMajor: number; minCrateMinor: number };
+    }
+  | { type: 'ReportTransactStatus'; value: StagingXcmV5QueryResponseInfo }
+  | { type: 'ClearTransactStatus' }
+  | { type: 'UniversalOrigin'; value: StagingXcmV5Junction }
+  | {
+      type: 'ExportMessage';
+      value: { network: StagingXcmV5JunctionNetworkId; destination: StagingXcmV5Junctions; xcm: StagingXcmV5Xcm };
+    }
+  | { type: 'LockAsset'; value: { asset: StagingXcmV5Asset; unlocker: StagingXcmV5Location } }
+  | { type: 'UnlockAsset'; value: { asset: StagingXcmV5Asset; target: StagingXcmV5Location } }
+  | { type: 'NoteUnlockable'; value: { asset: StagingXcmV5Asset; owner: StagingXcmV5Location } }
+  | { type: 'RequestUnlock'; value: { asset: StagingXcmV5Asset; locker: StagingXcmV5Location } }
+  | { type: 'SetFeesMode'; value: { jitWithdraw: boolean } }
+  | { type: 'SetTopic'; value: FixedBytes<32> }
+  | { type: 'ClearTopic' }
+  | { type: 'AliasOrigin'; value: StagingXcmV5Location }
+  | {
+      type: 'UnpaidExecution';
+      value: { weightLimit: XcmV3WeightLimit; checkOrigin?: StagingXcmV5Location | undefined };
+    }
+  | { type: 'PayFees'; value: { asset: StagingXcmV5Asset } }
+  | {
+      type: 'InitiateTransfer';
+      value: {
+        destination: StagingXcmV5Location;
+        remoteFees?: StagingXcmV5AssetAssetTransferFilter | undefined;
+        preserveOrigin: boolean;
+        assets: Array<StagingXcmV5AssetAssetTransferFilter>;
+        remoteXcm: StagingXcmV5Xcm;
+      };
+    }
+  | { type: 'ExecuteWithOrigin'; value: { descendantOrigin?: StagingXcmV5Junctions | undefined; xcm: StagingXcmV5Xcm } }
+  | { type: 'SetHints'; value: { hints: Array<StagingXcmV5Hint> } };
+
+export type StagingXcmV5AssetAssets = Array<StagingXcmV5Asset>;
+
+export type StagingXcmV5Asset = { id: StagingXcmV5AssetAssetId; fun: StagingXcmV5AssetFungibility };
+
+export type StagingXcmV5AssetAssetId = StagingXcmV5Location;
+
+export type StagingXcmV5AssetFungibility =
+  | { type: 'Fungible'; value: bigint }
+  | { type: 'NonFungible'; value: StagingXcmV5AssetAssetInstance };
+
+export type StagingXcmV5AssetAssetInstance =
+  | { type: 'Undefined' }
+  | { type: 'Index'; value: bigint }
+  | { type: 'Array4'; value: FixedBytes<4> }
+  | { type: 'Array8'; value: FixedBytes<8> }
+  | { type: 'Array16'; value: FixedBytes<16> }
+  | { type: 'Array32'; value: FixedBytes<32> };
+
+export type StagingXcmV5Response =
+  | { type: 'Null' }
+  | { type: 'Assets'; value: StagingXcmV5AssetAssets }
+  | { type: 'ExecutionResult'; value?: [number, XcmV5TraitsError] | undefined }
+  | { type: 'Version'; value: number }
+  | { type: 'PalletsInfo'; value: Array<StagingXcmV5PalletInfo> }
+  | { type: 'DispatchResult'; value: XcmV3MaybeErrorCode };
+
+export type XcmV5TraitsError =
+  | { type: 'Overflow' }
+  | { type: 'Unimplemented' }
+  | { type: 'UntrustedReserveLocation' }
+  | { type: 'UntrustedTeleportLocation' }
+  | { type: 'LocationFull' }
+  | { type: 'LocationNotInvertible' }
+  | { type: 'BadOrigin' }
+  | { type: 'InvalidLocation' }
+  | { type: 'AssetNotFound' }
+  | { type: 'FailedToTransactAsset' }
+  | { type: 'NotWithdrawable' }
+  | { type: 'LocationCannotHold' }
+  | { type: 'ExceedsMaxMessageSize' }
+  | { type: 'DestinationUnsupported' }
+  | { type: 'Transport' }
+  | { type: 'Unroutable' }
+  | { type: 'UnknownClaim' }
+  | { type: 'FailedToDecode' }
+  | { type: 'MaxWeightInvalid' }
+  | { type: 'NotHoldingFees' }
+  | { type: 'TooExpensive' }
+  | { type: 'Trap'; value: bigint }
+  | { type: 'ExpectationFalse' }
+  | { type: 'PalletNotFound' }
+  | { type: 'NameMismatch' }
+  | { type: 'VersionIncompatible' }
+  | { type: 'HoldingWouldOverflow' }
+  | { type: 'ExportError' }
+  | { type: 'ReanchorFailed' }
+  | { type: 'NoDeal' }
+  | { type: 'FeesNotMet' }
+  | { type: 'LockError' }
+  | { type: 'NoPermission' }
+  | { type: 'Unanchored' }
+  | { type: 'NotDepositable' }
+  | { type: 'TooManyAssets' }
+  | { type: 'UnhandledXcmVersion' }
+  | { type: 'WeightLimitReached'; value: SpWeightsWeightV2Weight }
+  | { type: 'Barrier' }
+  | { type: 'WeightNotComputable' }
+  | { type: 'ExceedsStackLimit' };
+
+export type StagingXcmV5PalletInfo = {
+  index: number;
+  name: Bytes;
+  moduleName: Bytes;
+  major: number;
+  minor: number;
+  patch: number;
+};
+
+export type StagingXcmV5QueryResponseInfo = {
+  destination: StagingXcmV5Location;
+  queryId: bigint;
+  maxWeight: SpWeightsWeightV2Weight;
+};
+
+export type StagingXcmV5AssetAssetFilter =
+  | { type: 'Definite'; value: StagingXcmV5AssetAssets }
+  | { type: 'Wild'; value: StagingXcmV5AssetWildAsset };
+
+export type StagingXcmV5AssetWildAsset =
+  | { type: 'All' }
+  | { type: 'AllOf'; value: { id: StagingXcmV5AssetAssetId; fun: StagingXcmV5AssetWildFungibility } }
+  | { type: 'AllCounted'; value: number }
+  | {
+      type: 'AllOfCounted';
+      value: { id: StagingXcmV5AssetAssetId; fun: StagingXcmV5AssetWildFungibility; count: number };
+    };
+
+export type StagingXcmV5AssetWildFungibility = 'Fungible' | 'NonFungible';
+
+export type StagingXcmV5AssetAssetTransferFilter =
+  | { type: 'Teleport'; value: StagingXcmV5AssetAssetFilter }
+  | { type: 'ReserveDeposit'; value: StagingXcmV5AssetAssetFilter }
+  | { type: 'ReserveWithdraw'; value: StagingXcmV5AssetAssetFilter };
+
+export type StagingXcmV5Hint = { type: 'AssetClaimer'; value: { location: StagingXcmV5Location } };
+
 export type XcmVersionedAssets =
-  | { type: 'V2'; value: XcmV2MultiassetMultiAssets }
   | { type: 'V3'; value: XcmV3MultiassetMultiAssets }
-  | { type: 'V4'; value: StagingXcmV4AssetAssets };
+  | { type: 'V4'; value: StagingXcmV4AssetAssets }
+  | { type: 'V5'; value: StagingXcmV5AssetAssets };
 
 export type StagingXcmExecutorAssetTransferTransferType =
   | { type: 'Teleport' }
@@ -13350,7 +13845,8 @@ export type StagingXcmExecutorAssetTransferTransferType =
 
 export type XcmVersionedAssetId =
   | { type: 'V3'; value: XcmV3MultiassetAssetId }
-  | { type: 'V4'; value: StagingXcmV4AssetAssetId };
+  | { type: 'V4'; value: StagingXcmV4AssetAssetId }
+  | { type: 'V5'; value: StagingXcmV5AssetAssetId };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -13426,6 +13922,93 @@ export type CumulusPrimitivesCoreAggregateMessageOrigin =
   | { type: 'Here' }
   | { type: 'Parent' }
   | { type: 'Sibling'; value: PolkadotParachainPrimitivesPrimitivesId };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletMigrationsCall =
+  /**
+   * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+   *
+   * Should normally not be needed and is only in place as emergency measure. Note that
+   * restarting the migration process in this manner will not call the
+   * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+   **/
+  | { name: 'ForceSetCursor'; params: { cursor?: PalletMigrationsMigrationCursor | undefined } }
+  /**
+   * Allows root to set an active cursor to forcefully start/forward the migration process.
+   *
+   * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+   * `started_at` value to the next block number. Otherwise this would not be possible, since
+   * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+   * indicates that the current block number plus one should be used.
+   **/
+  | {
+      name: 'ForceSetActiveCursor';
+      params: { index: number; innerCursor?: Bytes | undefined; startedAt?: number | undefined };
+    }
+  /**
+   * Forces the onboarding of the migrations.
+   *
+   * This process happens automatically on a runtime upgrade. It is in place as an emergency
+   * measurement. The cursor needs to be `None` for this to succeed.
+   **/
+  | { name: 'ForceOnboardMbms' }
+  /**
+   * Clears the `Historic` set.
+   *
+   * `map_cursor` must be set to the last value that was returned by the
+   * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+   * way that will result in a sensible weight.
+   **/
+  | { name: 'ClearHistoric'; params: { selector: PalletMigrationsHistoricCleanupSelector } };
+
+export type PalletMigrationsCallLike =
+  /**
+   * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+   *
+   * Should normally not be needed and is only in place as emergency measure. Note that
+   * restarting the migration process in this manner will not call the
+   * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+   **/
+  | { name: 'ForceSetCursor'; params: { cursor?: PalletMigrationsMigrationCursor | undefined } }
+  /**
+   * Allows root to set an active cursor to forcefully start/forward the migration process.
+   *
+   * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+   * `started_at` value to the next block number. Otherwise this would not be possible, since
+   * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+   * indicates that the current block number plus one should be used.
+   **/
+  | {
+      name: 'ForceSetActiveCursor';
+      params: { index: number; innerCursor?: BytesLike | undefined; startedAt?: number | undefined };
+    }
+  /**
+   * Forces the onboarding of the migrations.
+   *
+   * This process happens automatically on a runtime upgrade. It is in place as an emergency
+   * measurement. The cursor needs to be `None` for this to succeed.
+   **/
+  | { name: 'ForceOnboardMbms' }
+  /**
+   * Clears the `Historic` set.
+   *
+   * `map_cursor` must be set to the last value that was returned by the
+   * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+   * way that will result in a sensible weight.
+   **/
+  | { name: 'ClearHistoric'; params: { selector: PalletMigrationsHistoricCleanupSelector } };
+
+export type PalletMigrationsMigrationCursor =
+  | { type: 'Active'; value: PalletMigrationsActiveCursor }
+  | { type: 'Stuck' };
+
+export type PalletMigrationsActiveCursor = { index: number; innerCursor?: Bytes | undefined; startedAt: number };
+
+export type PalletMigrationsHistoricCleanupSelector =
+  | { type: 'Specific'; value: Array<Bytes> }
+  | { type: 'Wildcard'; value: { limit?: number | undefined; previousCursor?: Bytes | undefined } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -13756,9 +14339,9 @@ export type OrmlXtokensModuleCallLike =
     };
 
 export type XcmVersionedAsset =
-  | { type: 'V2'; value: XcmV2MultiassetMultiAsset }
   | { type: 'V3'; value: XcmV3MultiassetMultiAsset }
-  | { type: 'V4'; value: StagingXcmV4Asset };
+  | { type: 'V4'; value: StagingXcmV4Asset }
+  | { type: 'V5'; value: StagingXcmV5Asset };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -14088,7 +14671,12 @@ export type IsmpMessagingMessage =
 
 export type IsmpMessagingConsensusMessage = { consensusProof: Bytes; consensusStateId: FixedBytes<4>; signer: Bytes };
 
-export type IsmpMessagingFraudProofMessage = { proof1: Bytes; proof2: Bytes; consensusStateId: FixedBytes<4> };
+export type IsmpMessagingFraudProofMessage = {
+  proof1: Bytes;
+  proof2: Bytes;
+  consensusStateId: FixedBytes<4>;
+  signer: Bytes;
+};
 
 export type IsmpMessagingRequestMessage = {
   requests: Array<IsmpRouterPostRequest>;
@@ -14111,7 +14699,8 @@ export type IsmpHostStateMachine =
   | { type: 'Polkadot'; value: number }
   | { type: 'Kusama'; value: number }
   | { type: 'Substrate'; value: FixedBytes<4> }
-  | { type: 'Tendermint'; value: FixedBytes<4> };
+  | { type: 'Tendermint'; value: FixedBytes<4> }
+  | { type: 'Relay'; value: { relay: FixedBytes<4>; paraId: number } };
 
 export type IsmpMessagingProof = { height: IsmpConsensusStateMachineHeight; proof: Bytes };
 
@@ -15385,7 +15974,7 @@ export type PalletDispenserEvent =
         /**
          * Target EVM address to receive ETH.
          **/
-        to: FixedBytes<20>;
+        to: H160;
 
         /**
          * Requested amount of ETH (in wei).
@@ -15882,7 +16471,11 @@ export type PalletSchedulerEvent =
   /**
    * The given task can never be executed since it is overweight.
    **/
-  | { name: 'PermanentlyOverweight'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } };
+  | { name: 'PermanentlyOverweight'; data: { task: [number, number]; id?: FixedBytes<32> | undefined } }
+  /**
+   * Agenda is incomplete from `when`.
+   **/
+  | { name: 'AgendaIncomplete'; data: { when: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -15920,30 +16513,49 @@ export type PalletXcmEvent =
   /**
    * Execution of an XCM message was attempted.
    **/
-  | { name: 'Attempted'; data: { outcome: StagingXcmV4TraitsOutcome } }
+  | { name: 'Attempted'; data: { outcome: StagingXcmV5TraitsOutcome } }
   /**
-   * A XCM message was sent.
+   * An XCM message was sent.
    **/
   | {
       name: 'Sent';
       data: {
-        origin: StagingXcmV4Location;
-        destination: StagingXcmV4Location;
-        message: StagingXcmV4Xcm;
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        message: StagingXcmV5Xcm;
         messageId: FixedBytes<32>;
       };
+    }
+  /**
+   * An XCM message failed to send.
+   **/
+  | {
+      name: 'SendFailed';
+      data: {
+        origin: StagingXcmV5Location;
+        destination: StagingXcmV5Location;
+        error: XcmV3TraitsSendError;
+        messageId: FixedBytes<32>;
+      };
+    }
+  /**
+   * An XCM message failed to process.
+   **/
+  | {
+      name: 'ProcessXcmError';
+      data: { origin: StagingXcmV5Location; error: XcmV5TraitsError; messageId: FixedBytes<32> };
     }
   /**
    * Query response received which does not match a registered query. This may be because a
    * matching query was never registered, it may be because it is a duplicate response, or
    * because the query timed out.
    **/
-  | { name: 'UnexpectedResponse'; data: { origin: StagingXcmV4Location; queryId: bigint } }
+  | { name: 'UnexpectedResponse'; data: { origin: StagingXcmV5Location; queryId: bigint } }
   /**
    * Query response has been received and is ready for taking with `take_response`. There is
    * no registered notification call.
    **/
-  | { name: 'ResponseReady'; data: { queryId: bigint; response: StagingXcmV4Response } }
+  | { name: 'ResponseReady'; data: { queryId: bigint; response: StagingXcmV5Response } }
   /**
    * Query response has been received and query is removed. The registered notification has
    * been dispatched and executed successfully.
@@ -15982,7 +16594,7 @@ export type PalletXcmEvent =
    **/
   | {
       name: 'InvalidResponder';
-      data: { origin: StagingXcmV4Location; queryId: bigint; expectedLocation?: StagingXcmV4Location | undefined };
+      data: { origin: StagingXcmV5Location; queryId: bigint; expectedLocation?: StagingXcmV5Location | undefined };
     }
   /**
    * Expected query response has been received but the expected origin location placed in
@@ -15993,7 +16605,7 @@ export type PalletXcmEvent =
    * valid response will be dropped. Manual governance intervention is probably going to be
    * needed.
    **/
-  | { name: 'InvalidResponderVersion'; data: { origin: StagingXcmV4Location; queryId: bigint } }
+  | { name: 'InvalidResponderVersion'; data: { origin: StagingXcmV5Location; queryId: bigint } }
   /**
    * Received query response has been read and removed.
    **/
@@ -16001,7 +16613,7 @@ export type PalletXcmEvent =
   /**
    * Some assets have been placed in an asset trap.
    **/
-  | { name: 'AssetsTrapped'; data: { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets } }
+  | { name: 'AssetsTrapped'; data: { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets } }
   /**
    * An XCM version change notification message has been attempted to be sent.
    *
@@ -16010,9 +16622,9 @@ export type PalletXcmEvent =
   | {
       name: 'VersionChangeNotified';
       data: {
-        destination: StagingXcmV4Location;
+        destination: StagingXcmV5Location;
         result: number;
-        cost: StagingXcmV4AssetAssets;
+        cost: StagingXcmV5AssetAssets;
         messageId: FixedBytes<32>;
       };
     }
@@ -16020,12 +16632,12 @@ export type PalletXcmEvent =
    * The supported version of a location has been changed. This might be through an
    * automatic notification or a manual intervention.
    **/
-  | { name: 'SupportedVersionChanged'; data: { location: StagingXcmV4Location; version: number } }
+  | { name: 'SupportedVersionChanged'; data: { location: StagingXcmV5Location; version: number } }
   /**
    * A given location which had a version change subscription was dropped owing to an error
    * sending the notification to it.
    **/
-  | { name: 'NotifyTargetSendFail'; data: { location: StagingXcmV4Location; queryId: bigint; error: XcmV3TraitsError } }
+  | { name: 'NotifyTargetSendFail'; data: { location: StagingXcmV5Location; queryId: bigint; error: XcmV5TraitsError } }
   /**
    * A given location which had a version change subscription was dropped owing to an error
    * migrating the location to our new XCM format.
@@ -16040,7 +16652,7 @@ export type PalletXcmEvent =
    * valid response will be dropped. Manual governance intervention is probably going to be
    * needed.
    **/
-  | { name: 'InvalidQuerierVersion'; data: { origin: StagingXcmV4Location; queryId: bigint } }
+  | { name: 'InvalidQuerierVersion'; data: { origin: StagingXcmV5Location; queryId: bigint } }
   /**
    * Expected query response has been received but the querier location of the response does
    * not match the expected. The query remains registered for a later, valid, response to
@@ -16049,10 +16661,10 @@ export type PalletXcmEvent =
   | {
       name: 'InvalidQuerier';
       data: {
-        origin: StagingXcmV4Location;
+        origin: StagingXcmV5Location;
         queryId: bigint;
-        expectedQuerier: StagingXcmV4Location;
-        maybeActualQuerier?: StagingXcmV4Location | undefined;
+        expectedQuerier: StagingXcmV5Location;
+        maybeActualQuerier?: StagingXcmV5Location | undefined;
       };
     }
   /**
@@ -16061,14 +16673,14 @@ export type PalletXcmEvent =
    **/
   | {
       name: 'VersionNotifyStarted';
-      data: { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> };
+      data: { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> };
     }
   /**
    * We have requested that a remote chain send us XCM version change notifications.
    **/
   | {
       name: 'VersionNotifyRequested';
-      data: { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> };
+      data: { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> };
     }
   /**
    * We have requested that a remote chain stops sending us XCM version change
@@ -16076,25 +16688,50 @@ export type PalletXcmEvent =
    **/
   | {
       name: 'VersionNotifyUnrequested';
-      data: { destination: StagingXcmV4Location; cost: StagingXcmV4AssetAssets; messageId: FixedBytes<32> };
+      data: { destination: StagingXcmV5Location; cost: StagingXcmV5AssetAssets; messageId: FixedBytes<32> };
     }
   /**
    * Fees were paid from a location for an operation (often for using `SendXcm`).
    **/
-  | { name: 'FeesPaid'; data: { paying: StagingXcmV4Location; fees: StagingXcmV4AssetAssets } }
+  | { name: 'FeesPaid'; data: { paying: StagingXcmV5Location; fees: StagingXcmV5AssetAssets } }
   /**
    * Some assets have been claimed from an asset trap
    **/
-  | { name: 'AssetsClaimed'; data: { hash: H256; origin: StagingXcmV4Location; assets: XcmVersionedAssets } }
+  | { name: 'AssetsClaimed'; data: { hash: H256; origin: StagingXcmV5Location; assets: XcmVersionedAssets } }
   /**
    * A XCM version migration finished.
    **/
-  | { name: 'VersionMigrationFinished'; data: { version: number } };
+  | { name: 'VersionMigrationFinished'; data: { version: number } }
+  /**
+   * An `aliaser` location was authorized by `target` to alias it, authorization valid until
+   * `expiry` block number.
+   **/
+  | {
+      name: 'AliasAuthorized';
+      data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location; expiry?: bigint | undefined };
+    }
+  /**
+   * `target` removed alias authorization for `aliaser`.
+   **/
+  | { name: 'AliasAuthorizationRemoved'; data: { aliaser: StagingXcmV5Location; target: StagingXcmV5Location } }
+  /**
+   * `target` removed all alias authorizations.
+   **/
+  | { name: 'AliasesAuthorizationsRemoved'; data: { target: StagingXcmV5Location } };
 
-export type StagingXcmV4TraitsOutcome =
+export type StagingXcmV5TraitsOutcome =
   | { type: 'Complete'; value: { used: SpWeightsWeightV2Weight } }
-  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV3TraitsError } }
-  | { type: 'Error'; value: { error: XcmV3TraitsError } };
+  | { type: 'Incomplete'; value: { used: SpWeightsWeightV2Weight; error: XcmV5TraitsError } }
+  | { type: 'Error'; value: { error: XcmV5TraitsError } };
+
+export type XcmV3TraitsSendError =
+  | 'NotApplicable'
+  | 'Transport'
+  | 'Unroutable'
+  | 'DestinationUnsupported'
+  | 'ExceedsMaxMessageSize'
+  | 'MissingArgument'
+  | 'Fees';
 
 /**
  * The `Event` enum of this pallet
@@ -16114,7 +16751,7 @@ export type CumulusPalletXcmEvent =
    * Downward message executed with the given outcome.
    * \[ id, outcome \]
    **/
-  | { name: 'ExecutedDownward'; data: [FixedBytes<32>, StagingXcmV4TraitsOutcome] };
+  | { name: 'ExecutedDownward'; data: [FixedBytes<32>, StagingXcmV5TraitsOutcome] };
 
 /**
  * The `Event` enum of this pallet
@@ -16242,11 +16879,122 @@ export type FrameSupportMessagesProcessMessageError =
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletMigrationsEvent =
+  /**
+   * A Runtime upgrade started.
+   *
+   * Its end is indicated by `UpgradeCompleted` or `UpgradeFailed`.
+   **/
+  | {
+      name: 'UpgradeStarted';
+      data: {
+        /**
+         * The number of migrations that this upgrade contains.
+         *
+         * This can be used to design a progress indicator in combination with counting the
+         * `MigrationCompleted` and `MigrationSkipped` events.
+         **/
+        migrations: number;
+      };
+    }
+  /**
+   * The current runtime upgrade completed.
+   *
+   * This implies that all of its migrations completed successfully as well.
+   **/
+  | { name: 'UpgradeCompleted' }
+  /**
+   * Runtime upgrade failed.
+   *
+   * This is very bad and will require governance intervention.
+   **/
+  | { name: 'UpgradeFailed' }
+  /**
+   * A migration was skipped since it was already executed in the past.
+   **/
+  | {
+      name: 'MigrationSkipped';
+      data: {
+        /**
+         * The index of the skipped migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+      };
+    }
+  /**
+   * A migration progressed.
+   **/
+  | {
+      name: 'MigrationAdvanced';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * A Migration completed.
+   **/
+  | {
+      name: 'MigrationCompleted';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * A Migration failed.
+   *
+   * This implies that the whole upgrade failed and governance intervention is required.
+   **/
+  | {
+      name: 'MigrationFailed';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * The set of historical migrations has been cleared.
+   **/
+  | {
+      name: 'HistoricCleared';
+      data: {
+        /**
+         * Should be passed to `clear_historic` in a successive call.
+         **/
+        nextCursor?: Bytes | undefined;
+      };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type OrmlXcmModuleEvent =
   /**
    * XCM message sent. \[to, message\]
    **/
-  { name: 'Sent'; data: { to: StagingXcmV4Location; message: StagingXcmV4Xcm } };
+  { name: 'Sent'; data: { to: StagingXcmV5Location; message: StagingXcmV5Xcm } };
 
 /**
  * The `Event` enum of this pallet
@@ -16257,7 +17005,7 @@ export type OrmlXtokensModuleEvent =
    **/
   {
     name: 'TransferredAssets';
-    data: { sender: AccountId32; assets: StagingXcmV4AssetAssets; fee: StagingXcmV4Asset; dest: StagingXcmV4Location };
+    data: { sender: AccountId32; assets: StagingXcmV5AssetAssets; fee: StagingXcmV5Asset; dest: StagingXcmV5Location };
   };
 
 /**
@@ -16267,11 +17015,11 @@ export type OrmlUnknownTokensModuleEvent =
   /**
    * Deposit success.
    **/
-  | { name: 'Deposited'; data: { asset: StagingXcmV4Asset; who: StagingXcmV4Location } }
+  | { name: 'Deposited'; data: { asset: StagingXcmV5Asset; who: StagingXcmV5Location } }
   /**
    * Withdraw success.
    **/
-  | { name: 'Withdrawn'; data: { asset: StagingXcmV4Asset; who: StagingXcmV4Location } };
+  | { name: 'Withdrawn'; data: { asset: StagingXcmV5Asset; who: StagingXcmV5Location } };
 
 /**
  * The `Event` enum of this pallet
@@ -16327,7 +17075,15 @@ export type PalletSessionEvent =
    * New session has happened. Note that the argument is the session index, not the
    * block number as the type might suggest.
    **/
-  { name: 'NewSession'; data: { sessionIndex: number } };
+  | { name: 'NewSession'; data: { sessionIndex: number } }
+  /**
+   * Validator has been disabled.
+   **/
+  | { name: 'ValidatorDisabled'; data: { validator: AccountId32 } }
+  /**
+   * Validator has been re-enabled.
+   **/
+  | { name: 'ValidatorReenabled'; data: { validator: AccountId32 } };
 
 /**
  * Pallet Events
@@ -16690,7 +17446,20 @@ export type PalletEmaOracleEvent =
   /**
    * Oracle was removed from the whitelist.
    **/
-  | { name: 'RemovedFromWhitelist'; data: { source: FixedBytes<8>; assets: [number, number] } };
+  | { name: 'RemovedFromWhitelist'; data: { source: FixedBytes<8>; assets: [number, number] } }
+  /**
+   * Oracle price was updated
+   **/
+  | {
+      name: 'OracleUpdated';
+      data: {
+        source: FixedBytes<8>;
+        assets: [number, number];
+        updates: Array<[HydradxTraitsOracleOraclePeriod, HydraDxMathRatio]>;
+      };
+    };
+
+export type HydraDxMathRatio = { n: bigint; d: bigint };
 
 /**
  * The `Event` enum of this pallet
@@ -16829,11 +17598,17 @@ export type FrameSupportTokensMiscIdAmount = { id: HydradxRuntimeRuntimeHoldReas
 
 export type HydradxRuntimeRuntimeHoldReason =
   | { type: 'Preimage'; value: PalletPreimageHoldReason }
-  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason };
+  | { type: 'TechnicalCommittee'; value: PalletCollectiveHoldReason }
+  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
+  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason };
 
 export type PalletPreimageHoldReason = 'Preimage';
 
+export type PalletCollectiveHoldReason = 'ProposalSubmission';
+
 export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
+
+export type PalletXcmHoldReason = 'AuthorizeAlias';
 
 export type FrameSupportTokensMiscIdAmount002 = { id: []; amount: bigint };
 
@@ -17091,7 +17866,14 @@ export type PalletIdentityRegistration = {
 
 export type PalletIdentityRegistrarInfo = { account: AccountId32; fee: bigint; fields: bigint };
 
-export type PalletIdentityAuthorityProperties = { suffix: Bytes; allocation: number };
+export type PalletIdentityAuthorityProperties = { accountId: AccountId32; allocation: number };
+
+export type PalletIdentityUsernameInformation = { owner: AccountId32; provider: PalletIdentityProvider };
+
+export type PalletIdentityProvider =
+  | { type: 'Allocation' }
+  | { type: 'AuthorityDeposit'; value: bigint }
+  | { type: 'System' };
 
 /**
  * The `Error` enum of this pallet.
@@ -17200,7 +17982,24 @@ export type PalletIdentityError =
   /**
    * The username cannot be forcefully removed because it can still be accepted.
    **/
-  | 'NotExpired';
+  | 'NotExpired'
+  /**
+   * The username cannot be removed because it's still in the grace period.
+   **/
+  | 'TooEarly'
+  /**
+   * The username cannot be removed because it is not unbinding.
+   **/
+  | 'NotUnbinding'
+  /**
+   * The username cannot be unbound because it is already unbinding.
+   **/
+  | 'AlreadyUnbinding'
+  /**
+   * The action cannot be performed because of insufficient privileges (e.g. authority
+   * trying to unbind a username provided by the system).
+   **/
+  | 'InsufficientPrivileges';
 
 export type PalletDemocracyReferendumInfo =
   | { type: 'Ongoing'; value: PalletDemocracyReferendumStatus }
@@ -17397,7 +18196,11 @@ export type PalletCollectiveError =
   /**
    * Prime account is not a member
    **/
-  | 'PrimeAccountNotMember';
+  | 'PrimeAccountNotMember'
+  /**
+   * Proposal is still active.
+   **/
+  | 'ProposalActive';
 
 export type PalletProxyProxyDefinition = {
   delegate: AccountId32;
@@ -17484,11 +18287,12 @@ export type PalletMultisigError =
    **/
   | 'SenderInSignatories'
   /**
-   * Multisig operation not found when attempting to cancel.
+   * Multisig operation not found in storage.
    **/
   | 'NotFound'
   /**
-   * Only the account that originally created the multisig is able to cancel it.
+   * Only the account that originally created the multisig is able to cancel it or update
+   * its deposits.
    **/
   | 'NotOwner'
   /**
@@ -17715,7 +18519,7 @@ export type PalletReferendaDeposit = { who: AccountId32; amount: bigint };
 
 export type PalletReferendaDecidingStatus = { since: number; confirming?: number | undefined };
 
-export type PalletReferendaTrackInfo = {
+export type PalletReferendaTrackDetails = {
   name: string;
   maxDeciding: number;
   decisionDeposit: bigint;
@@ -18377,7 +19181,15 @@ export type PalletOmnipoolLiquidityMiningError =
   /**
    * No farms specified to join
    **/
-  | { name: 'NoFarmEntriesSpecified' };
+  | { name: 'NoFarmEntriesSpecified' }
+  /**
+   * No assets specified in the withdrawal
+   **/
+  | { name: 'NoAssetsSpecified' }
+  /**
+   * The provided position_id does not match the deposit's associated position.
+   **/
+  | { name: 'PositionIdMismatch' };
 
 export type PalletOmnipoolLiquidityMiningInconsistentStateError = 'MissingLpPosition' | 'DepositDataNotFound';
 
@@ -18478,7 +19290,12 @@ export type PalletCircuitBreakerError =
   /**
    * Invalid amount to save deposit
    **/
-  | 'InvalidAmount';
+  | 'InvalidAmount'
+  /**
+   * Deposit limit would be exceeded for a whitelisted account.
+   * Operation rejected to prevent funds being locked on system accounts.
+   **/
+  | 'DepositLimitExceededForWhitelistedAccount';
 
 /**
  * The `Error` enum of this pallet.
@@ -18766,7 +19583,15 @@ export type PalletStableswapError =
   /**
    * Pool does not have pegs configured.
    **/
-  | 'NoPegSource';
+  | 'NoPegSource'
+  /**
+   * Trade would result in zero amount out.
+   **/
+  | 'ZeroAmountOut'
+  /**
+   * Trade would result in zero amount in.
+   **/
+  | 'ZeroAmountIn';
 
 /**
  * The `Error` enum of this pallet.
@@ -19499,7 +20324,11 @@ export type PalletEvmError =
   /**
    * Undefined error.
    **/
-  | 'Undefined';
+  | 'Undefined'
+  /**
+   * Address not allowed to deploy contracts either via CREATE or CALL(CREATE).
+   **/
+  | 'CreateOriginNotAllowed';
 
 export type FpRpcTransactionStatus = {
   transactionHash: H256;
@@ -19513,10 +20342,11 @@ export type FpRpcTransactionStatus = {
 
 export type EthbloomBloom = FixedBytes<256>;
 
-export type EthereumReceiptReceiptV3 =
+export type EthereumReceiptReceiptV4 =
   | { type: 'Legacy'; value: EthereumReceiptEip658ReceiptData }
   | { type: 'Eip2930'; value: EthereumReceiptEip658ReceiptData }
-  | { type: 'Eip1559'; value: EthereumReceiptEip658ReceiptData };
+  | { type: 'Eip1559'; value: EthereumReceiptEip658ReceiptData }
+  | { type: 'Eip7702'; value: EthereumReceiptEip658ReceiptData };
 
 export type EthereumReceiptEip658ReceiptData = {
   statusCode: number;
@@ -19527,7 +20357,7 @@ export type EthereumReceiptEip658ReceiptData = {
 
 export type EthereumBlock = {
   header: EthereumHeader;
-  transactions: Array<EthereumTransactionTransactionV2>;
+  transactions: Array<EthereumTransactionTransactionV3>;
   ommers: Array<EthereumHeader>;
 };
 
@@ -19885,15 +20715,7 @@ export type CumulusPalletParachainSystemError =
   /**
    * No validation function upgrade is currently scheduled.
    **/
-  | 'NotScheduled'
-  /**
-   * No code upgrade has been authorized.
-   **/
-  | 'NothingAuthorized'
-  /**
-   * The given code upgrade has not been authorized.
-   **/
-  | 'Unauthorized';
+  | 'NotScheduled';
 
 export type PalletXcmQueryStatus =
   | {
@@ -19909,9 +20731,9 @@ export type PalletXcmQueryStatus =
   | { type: 'Ready'; value: { response: XcmVersionedResponse; at: number } };
 
 export type XcmVersionedResponse =
-  | { type: 'V2'; value: XcmV2Response }
   | { type: 'V3'; value: XcmV3Response }
-  | { type: 'V4'; value: StagingXcmV4Response };
+  | { type: 'V4'; value: StagingXcmV4Response }
+  | { type: 'V5'; value: StagingXcmV5Response };
 
 export type PalletXcmVersionMigrationStage =
   | { type: 'MigrateSupportedVersion' }
@@ -19924,6 +20746,20 @@ export type PalletXcmRemoteLockedFungibleRecord = {
   owner: XcmVersionedLocation;
   locker: XcmVersionedLocation;
   consumers: Array<[[], bigint]>;
+};
+
+export type PalletXcmAuthorizedAliasesEntry = {
+  aliasers: Array<XcmRuntimeApisAuthorizedAliasesOriginAliaser>;
+  ticket: FrameSupportStorageDisabled;
+};
+
+export type FrameSupportStorageDisabled = {};
+
+export type PalletXcmMaxAuthorizedAliases = {};
+
+export type XcmRuntimeApisAuthorizedAliasesOriginAliaser = {
+  location: XcmVersionedLocation;
+  expiry?: bigint | undefined;
 };
 
 /**
@@ -20028,7 +20864,19 @@ export type PalletXcmError =
   /**
    * Local XCM execution incomplete.
    **/
-  | 'LocalExecutionIncomplete';
+  | 'LocalExecutionIncomplete'
+  /**
+   * Too many locations authorized to alias origin.
+   **/
+  | 'TooManyAuthorizedAliases'
+  /**
+   * Expiry block number is in the past.
+   **/
+  | 'ExpiresInPast'
+  /**
+   * The alias to remove authorization for was not found.
+   **/
+  | 'AliasNotFound';
 
 export type CumulusPalletXcmpQueueOutboundChannelDetails = {
   recipient: PolkadotParachainPrimitivesPrimitivesId;
@@ -20144,6 +20992,15 @@ export type PalletMessageQueueError =
 /**
  * The `Error` enum of this pallet.
  **/
+export type PalletMigrationsError =
+  /**
+   * The operation cannot complete since some MBMs are ongoing.
+   **/
+  'Ongoing';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
 export type OrmlXcmModuleError =
   /**
    * The message and destination combination was not recognized as being
@@ -20221,7 +21078,7 @@ export type OrmlXtokensModuleError =
    **/
   | 'ZeroFee'
   /**
-   * The transfering asset amount is zero.
+   * The transferring asset amount is zero.
    **/
   | 'ZeroAmount'
   /**
@@ -20340,6 +21197,8 @@ export type PalletCollatorSelectionError =
    * Cannot lower candidacy bond while occupying a future collator slot in the list.
    **/
   | 'InvalidUnreserve';
+
+export type SpStakingOffenceOffenceSeverity = Perbill;
 
 export type SpCoreCryptoKeyTypeId = FixedBytes<4>;
 
@@ -20462,8 +21321,6 @@ export type PalletEmaOracleOracleEntry = {
   updatedAt: number;
 };
 
-export type HydraDxMathRatio = { n: bigint; d: bigint };
-
 export type HydradxTraitsOracleVolume = { aIn: bigint; bOut: bigint; aOut: bigint; bIn: bigint };
 
 export type HydradxTraitsOracleLiquidity = { a: bigint; b: bigint };
@@ -20497,6 +21354,19 @@ export type PalletBroadcastError =
    **/
   | 'ExecutionCallStackUnderflow';
 
+export type CumulusPalletWeightReclaimStorageWeightReclaim = [
+  FrameSystemExtensionsCheckNonZeroSender,
+  FrameSystemExtensionsCheckSpecVersion,
+  FrameSystemExtensionsCheckTxVersion,
+  FrameSystemExtensionsCheckGenesis,
+  FrameSystemExtensionsCheckMortality,
+  FrameSystemExtensionsCheckNonce,
+  FrameSystemExtensionsCheckWeight,
+  PalletTransactionPaymentChargeTransactionPayment,
+  PalletClaimsValidateClaim,
+  FrameMetadataHashExtensionCheckMetadataHash,
+];
+
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
 export type FrameSystemExtensionsCheckSpecVersion = {};
@@ -20518,8 +21388,6 @@ export type PalletClaimsValidateClaim = {};
 export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
 
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
-
-export type CumulusPrimitivesStorageWeightReclaimStorageWeightReclaim = {};
 
 export type HydradxRuntimeRuntime = {};
 
@@ -20546,7 +21414,9 @@ export type SpRuntimeTransactionValidityInvalidTransaction =
   | { type: 'Custom'; value: number }
   | { type: 'BadMandatory' }
   | { type: 'MandatoryValidation' }
-  | { type: 'BadSigner' };
+  | { type: 'BadSigner' }
+  | { type: 'IndeterminateImplicit' }
+  | { type: 'UnknownOrigin' };
 
 export type SpRuntimeTransactionValidityUnknownTransaction =
   | { type: 'CannotLookup' }
@@ -20640,7 +21510,7 @@ export type XcmRuntimeApisDryRunCallDryRunEffects = {
 export type XcmRuntimeApisDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
 
 export type XcmRuntimeApisDryRunXcmDryRunEffects = {
-  executionResult: StagingXcmV4TraitsOutcome;
+  executionResult: StagingXcmV5TraitsOutcome;
   emittedEvents: Array<HydradxRuntimeRuntimeEvent>;
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };
@@ -20730,6 +21600,7 @@ export type HydradxRuntimeRuntimeError =
   | { pallet: 'PolkadotXcm'; palletError: PalletXcmError }
   | { pallet: 'XcmpQueue'; palletError: CumulusPalletXcmpQueueError }
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }
+  | { pallet: 'MultiBlockMigrations'; palletError: PalletMigrationsError }
   | { pallet: 'OrmlXcm'; palletError: OrmlXcmModuleError }
   | { pallet: 'XTokens'; palletError: OrmlXtokensModuleError }
   | { pallet: 'UnknownTokens'; palletError: OrmlUnknownTokensModuleError }

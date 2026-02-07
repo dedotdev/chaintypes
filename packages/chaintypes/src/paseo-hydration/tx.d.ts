@@ -63,18 +63,21 @@ import type {
   PalletSignetErrorResponse,
   PalletDispenserEvmTransactionParams,
   OrmlVestingVestingSchedule,
-  EthereumTransactionTransactionV2,
+  EthereumTransactionEip7702AuthorizationListItem,
+  EthereumTransactionTransactionV3,
   PalletXykAssetPair,
   PalletDcaSchedule,
   CumulusPrimitivesParachainInherentParachainInherentData,
   XcmVersionedLocation,
   XcmVersionedXcm,
   XcmVersionedAssets,
-  StagingXcmV4Location,
+  StagingXcmV5Location,
   XcmV3WeightLimit,
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
   CumulusPrimitivesCoreAggregateMessageOrigin,
+  PalletMigrationsMigrationCursor,
+  PalletMigrationsHistoricCleanupSelector,
   XcmVersionedAsset,
   HydradxRuntimeOpaqueSessionKeys,
   IsmpMessagingMessage,
@@ -1227,6 +1230,76 @@ export interface ChainTx<
     >;
 
     /**
+     * Dispatch a fallback call in the event the main call fails to execute.
+     * May be called from any origin except `None`.
+     *
+     * This function first attempts to dispatch the `main` call.
+     * If the `main` call fails, the `fallback` is attemted.
+     * if the fallback is successfully dispatched, the weights of both calls
+     * are accumulated and an event containing the main call error is deposited.
+     *
+     * In the event of a fallback failure the whole call fails
+     * with the weights returned.
+     *
+     * - `main`: The main call to be dispatched. This is the primary action to execute.
+     * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+     *
+     * ## Dispatch Logic
+     * - If the origin is `root`, both the main and fallback calls are executed without
+     * applying any origin filters.
+     * - If the origin is not `root`, the origin filter is applied to both the `main` and
+     * `fallback` calls.
+     *
+     * ## Use Case
+     * - Some use cases might involve submitting a `batch` type call in either main, fallback
+     * or both.
+     *
+     * @param {HydradxRuntimeRuntimeCallLike} main
+     * @param {HydradxRuntimeRuntimeCallLike} fallback
+     **/
+    ifElse: GenericTxCall<
+      (
+        main: HydradxRuntimeRuntimeCallLike,
+        fallback: HydradxRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Utility';
+          palletCall: {
+            name: 'IfElse';
+            params: { main: HydradxRuntimeRuntimeCallLike; fallback: HydradxRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Dispatches a function call with a provided origin.
+     *
+     * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+     *
+     * The dispatch origin for this call must be _Root_.
+     *
+     * @param {HydradxRuntimeOriginCaller} asOrigin
+     * @param {HydradxRuntimeRuntimeCallLike} call
+     **/
+    dispatchAsFallible: GenericTxCall<
+      (
+        asOrigin: HydradxRuntimeOriginCaller,
+        call: HydradxRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Utility';
+          palletCall: {
+            name: 'DispatchAsFallible';
+            params: { asOrigin: HydradxRuntimeOriginCaller; call: HydradxRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -1321,7 +1394,7 @@ export interface ChainTx<
     >;
 
     /**
-     * Ensure that the a bulk of pre-images is upgraded.
+     * Ensure that the bulk of pre-images is upgraded.
      *
      * The caller pays no fee if at least 90% of pre-images were successfully updated.
      *
@@ -1771,8 +1844,9 @@ export interface ChainTx<
     /**
      * Add an `AccountId` with permission to grant usernames with a given `suffix` appended.
      *
-     * The authority can grant up to `allocation` usernames. To top up their allocation, they
-     * should just issue (or request via governance) a new `add_username_authority` call.
+     * The authority can grant up to `allocation` usernames. To top up the allocation or
+     * change the account used to grant usernames, this call can be used with the updated
+     * parameters to overwrite the existing configuration.
      *
      * @param {AccountId32Like} authority
      * @param {BytesLike} suffix
@@ -1798,15 +1872,19 @@ export interface ChainTx<
     /**
      * Remove `authority` from the username authorities.
      *
+     * @param {BytesLike} suffix
      * @param {AccountId32Like} authority
      **/
     removeUsernameAuthority: GenericTxCall<
-      (authority: AccountId32Like) => ChainSubmittableExtrinsic<
+      (
+        suffix: BytesLike,
+        authority: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Identity';
           palletCall: {
             name: 'RemoveUsernameAuthority';
-            params: { authority: AccountId32Like };
+            params: { suffix: BytesLike; authority: AccountId32Like };
           };
         },
         ChainKnownTypes
@@ -1816,7 +1894,11 @@ export interface ChainTx<
     /**
      * Set the username for `who`. Must be called by a username authority.
      *
-     * The authority must have an `allocation`. Users can either pre-sign their usernames or
+     * If `use_allocation` is set, the authority must have a username allocation available to
+     * spend. Otherwise, the authority will need to put up a deposit for registering the
+     * username.
+     *
+     * Users can either pre-sign their usernames or
      * accept them later.
      *
      * Usernames must:
@@ -1827,18 +1909,25 @@ export interface ChainTx<
      * @param {AccountId32Like} who
      * @param {BytesLike} username
      * @param {SpRuntimeMultiSignature | undefined} signature
+     * @param {boolean} useAllocation
      **/
     setUsernameFor: GenericTxCall<
       (
         who: AccountId32Like,
         username: BytesLike,
         signature: SpRuntimeMultiSignature | undefined,
+        useAllocation: boolean,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Identity';
           palletCall: {
             name: 'SetUsernameFor';
-            params: { who: AccountId32Like; username: BytesLike; signature: SpRuntimeMultiSignature | undefined };
+            params: {
+              who: AccountId32Like;
+              username: BytesLike;
+              signature: SpRuntimeMultiSignature | undefined;
+              useAllocation: boolean;
+            };
           };
         },
         ChainKnownTypes
@@ -1903,17 +1992,56 @@ export interface ChainTx<
     >;
 
     /**
-     * Remove a username that corresponds to an account with no identity. Exists when a user
-     * gets a username but then calls `clear_identity`.
+     * Start the process of removing a username by placing it in the unbinding usernames map.
+     * Once the grace period has passed, the username can be deleted by calling
+     * [remove_username](crate::Call::remove_username).
      *
      * @param {BytesLike} username
      **/
-    removeDanglingUsername: GenericTxCall<
+    unbindUsername: GenericTxCall<
       (username: BytesLike) => ChainSubmittableExtrinsic<
         {
           pallet: 'Identity';
           palletCall: {
-            name: 'RemoveDanglingUsername';
+            name: 'UnbindUsername';
+            params: { username: BytesLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Permanently delete a username which has been unbinding for longer than the grace period.
+     * Caller is refunded the fee if the username expired and the removal was successful.
+     *
+     * @param {BytesLike} username
+     **/
+    removeUsername: GenericTxCall<
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'RemoveUsername';
+            params: { username: BytesLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Call with [ForceOrigin](crate::Config::ForceOrigin) privileges which deletes a username
+     * and slashes any deposit associated with it.
+     *
+     * @param {BytesLike} username
+     **/
+    killUsername: GenericTxCall<
+      (username: BytesLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'KillUsername';
             params: { username: BytesLike };
           };
         },
@@ -2767,6 +2895,56 @@ export interface ChainTx<
     >;
 
     /**
+     * Disapprove the proposal and burn the cost held for storing this proposal.
+     *
+     * Parameters:
+     * - `origin`: must be the `KillOrigin`.
+     * - `proposal_hash`: The hash of the proposal that should be killed.
+     *
+     * Emits `Killed` and `ProposalCostBurned` if any cost was held for a given proposal.
+     *
+     * @param {H256} proposalHash
+     **/
+    kill: GenericTxCall<
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'TechnicalCommittee';
+          palletCall: {
+            name: 'Kill';
+            params: { proposalHash: H256 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Release the cost held for storing a proposal once the given proposal is completed.
+     *
+     * If there is no associated cost for the given proposal, this call will have no effect.
+     *
+     * Parameters:
+     * - `origin`: must be `Signed` or `Root`.
+     * - `proposal_hash`: The hash of the proposal.
+     *
+     * Emits `ProposalCostReleased` if any cost held for a given proposal.
+     *
+     * @param {H256} proposalHash
+     **/
+    releaseProposalCost: GenericTxCall<
+      (proposalHash: H256) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'TechnicalCommittee';
+          palletCall: {
+            name: 'ReleaseProposalCost';
+            params: { proposalHash: H256 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -3124,6 +3302,29 @@ export interface ChainTx<
     >;
 
     /**
+     * Poke / Adjust deposits made for proxies and announcements based on current values.
+     * This can be used by accounts to possibly lower their locked amount.
+     *
+     * The dispatch origin for this call must be _Signed_.
+     *
+     * The transaction fee is waived if the deposit amount has changed.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     **/
+    pokeDeposit: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Proxy';
+          palletCall: {
+            name: 'PokeDeposit';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -3345,6 +3546,42 @@ export interface ChainTx<
               timepoint: PalletMultisigTimepoint;
               callHash: FixedBytes<32>;
             };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Poke the deposit reserved for an existing multisig operation.
+     *
+     * The dispatch origin for this call must be _Signed_ and must be the original depositor of
+     * the multisig operation.
+     *
+     * The transaction fee is waived if the deposit amount has changed.
+     *
+     * - `threshold`: The total number of approvals needed for this multisig.
+     * - `other_signatories`: The accounts (other than the sender) who are part of the
+     * multisig.
+     * - `call_hash`: The hash of the call this deposit is reserved for.
+     *
+     * Emits `DepositPoked` if successful.
+     *
+     * @param {number} threshold
+     * @param {Array<AccountId32Like>} otherSignatories
+     * @param {FixedBytes<32>} callHash
+     **/
+    pokeDeposit: GenericTxCall<
+      (
+        threshold: number,
+        otherSignatories: Array<AccountId32Like>,
+        callHash: FixedBytes<32>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Multisig';
+          palletCall: {
+            name: 'PokeDeposit';
+            params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
           };
         },
         ChainKnownTypes
@@ -6699,6 +6936,8 @@ export interface ChainTx<
      * - `stable_pool_id`: id of the stableswap pool to add liquidity to.
      * - `stable_asset_amounts`: amount of each asset to be deposited into the stableswap pool.
      * - `farm_entries`: list of farms to join.
+     * - `min_shares_limit`: optional minimum Omnipool shares to receive (slippage protection).
+     * Applies to Omnipool step only. None defaults to no protection.
      *
      * Emits `LiquidityAdded` events from both pool
      * Emits `SharesDeposited` event for the first farm entry
@@ -6708,12 +6947,14 @@ export interface ChainTx<
      * @param {number} stablePoolId
      * @param {Array<HydradxTraitsStableswapAssetAmount>} stableAssetAmounts
      * @param {Array<[number, number]> | undefined} farmEntries
+     * @param {bigint | undefined} minSharesLimit
      **/
     addLiquidityStableswapOmnipoolAndJoinFarms: GenericTxCall<
       (
         stablePoolId: number,
         stableAssetAmounts: Array<HydradxTraitsStableswapAssetAmount>,
         farmEntries: Array<[number, number]> | undefined,
+        minSharesLimit: bigint | undefined,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'OmnipoolLiquidityMining';
@@ -6723,6 +6964,62 @@ export interface ChainTx<
               stablePoolId: number;
               stableAssetAmounts: Array<HydradxTraitsStableswapAssetAmount>;
               farmEntries: Array<[number, number]> | undefined;
+              minSharesLimit: bigint | undefined;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove liquidity from stableswap and omnipool, optionally exiting associated yield farms.
+     *
+     * This extrinsic reverses the operation performed by `add_liquidity_stableswap_omnipool_and_join_farms`,
+     * with optional farm exit to match the optional farm join in the add function.
+     *
+     * It performs the following steps in order:
+     * 1. [OPTIONAL] If deposit_id is provided: Exits from ALL yield farms associated with the deposit (claiming rewards)
+     * 2. Removes liquidity from the omnipool to retrieve stableswap shares (protected by omnipool_min_limit)
+     * 3. Removes liquidity from the stableswap pool to retrieve underlying assets (protected by stableswap_min_amounts_out)
+     *
+     * The stabelswap liquidity asset removal strategy is determined by the `min_amounts_out` parameter length:
+     * - If 1 asset is specified: Uses `remove_liquidity_one_asset` (trading fee applies)
+     * - If multiple assets: Uses `remove_liquidity` (proportional, no trading fee)
+     *
+     * Parameters:
+     * - `origin`: Owner of the omnipool position
+     * - `position_id`: The omnipool position NFT ID to remove liquidity from
+     * - `omnipool_min_limit`: The min amount of asset to be removed from omnipool (slippage protection)
+     * - `stableswap_min_amounts_out`: Asset IDs and minimum amounts minimum amounts of each asset to receive from omnipool.
+     * - `deposit_id`: Optional liquidity mining deposit NFT ID. If provided, exits all farms first.
+     *
+     * Emits events:
+     * - If deposit_id provided: `RewardClaimed`, `SharesWithdrawn`, `DepositDestroyed`
+     * - Always: Omnipool's `LiquidityRemoved`, Stableswap's `LiquidityRemoved`
+     *
+     *
+     * @param {bigint} positionId
+     * @param {bigint} omnipoolMinLimit
+     * @param {Array<HydradxTraitsStableswapAssetAmount>} stableswapMinAmountsOut
+     * @param {bigint | undefined} depositId
+     **/
+    removeLiquidityStableswapOmnipoolAndExitFarms: GenericTxCall<
+      (
+        positionId: bigint,
+        omnipoolMinLimit: bigint,
+        stableswapMinAmountsOut: Array<HydradxTraitsStableswapAssetAmount>,
+        depositId: bigint | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'OmnipoolLiquidityMining';
+          palletCall: {
+            name: 'RemoveLiquidityStableswapOmnipoolAndExitFarms';
+            params: {
+              positionId: bigint;
+              omnipoolMinLimit: bigint;
+              stableswapMinAmountsOut: Array<HydradxTraitsStableswapAssetAmount>;
+              depositId: bigint | undefined;
             };
           };
         },
@@ -9575,14 +9872,14 @@ export interface ChainTx<
      * - `request_id`: Client-supplied request ID; must match derived ID.
      * - `tx`: Parameters for the EVM transaction submitted to the faucet.
      *
-     * @param {FixedBytes<20>} to
+     * @param {H160} to
      * @param {bigint} amount
      * @param {FixedBytes<32>} requestId
      * @param {PalletDispenserEvmTransactionParams} tx
      **/
     requestFund: GenericTxCall<
       (
-        to: FixedBytes<20>,
+        to: H160,
         amount: bigint,
         requestId: FixedBytes<32>,
         tx: PalletDispenserEvmTransactionParams,
@@ -9591,12 +9888,7 @@ export interface ChainTx<
           pallet: 'EthDispenser';
           palletCall: {
             name: 'RequestFund';
-            params: {
-              to: FixedBytes<20>;
-              amount: bigint;
-              requestId: FixedBytes<32>;
-              tx: PalletDispenserEvmTransactionParams;
-            };
+            params: { to: H160; amount: bigint; requestId: FixedBytes<32>; tx: PalletDispenserEvmTransactionParams };
           };
         },
         ChainKnownTypes
@@ -9688,7 +9980,7 @@ export interface ChainTx<
      *
      * - `dest`: The recipient of the transfer.
      * - `currency_id`: currency type.
-     * - `amount`: free balance amount to tranfer.
+     * - `amount`: free balance amount to transfer.
      *
      * @param {AccountId32Like} dest
      * @param {number} currencyId
@@ -9764,7 +10056,7 @@ export interface ChainTx<
      *
      * - `dest`: The recipient of the transfer.
      * - `currency_id`: currency type.
-     * - `amount`: free balance amount to tranfer.
+     * - `amount`: free balance amount to transfer.
      *
      * @param {AccountId32Like} dest
      * @param {number} currencyId
@@ -9796,7 +10088,7 @@ export interface ChainTx<
      * - `source`: The sender of the transfer.
      * - `dest`: The recipient of the transfer.
      * - `currency_id`: currency type.
-     * - `amount`: free balance amount to tranfer.
+     * - `amount`: free balance amount to transfer.
      *
      * @param {AccountId32Like} source
      * @param {AccountId32Like} dest
@@ -10067,6 +10359,7 @@ export interface ChainTx<
      * @param {U256 | undefined} maxPriorityFeePerGas
      * @param {U256 | undefined} nonce
      * @param {Array<[H160, Array<H256>]>} accessList
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem>} authorizationList
      **/
     call: GenericTxCall<
       (
@@ -10079,6 +10372,7 @@ export interface ChainTx<
         maxPriorityFeePerGas: U256 | undefined,
         nonce: U256 | undefined,
         accessList: Array<[H160, Array<H256>]>,
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Evm';
@@ -10094,6 +10388,7 @@ export interface ChainTx<
               maxPriorityFeePerGas: U256 | undefined;
               nonce: U256 | undefined;
               accessList: Array<[H160, Array<H256>]>;
+              authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
             };
           };
         },
@@ -10113,6 +10408,7 @@ export interface ChainTx<
      * @param {U256 | undefined} maxPriorityFeePerGas
      * @param {U256 | undefined} nonce
      * @param {Array<[H160, Array<H256>]>} accessList
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem>} authorizationList
      **/
     create: GenericTxCall<
       (
@@ -10124,6 +10420,7 @@ export interface ChainTx<
         maxPriorityFeePerGas: U256 | undefined,
         nonce: U256 | undefined,
         accessList: Array<[H160, Array<H256>]>,
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Evm';
@@ -10138,6 +10435,7 @@ export interface ChainTx<
               maxPriorityFeePerGas: U256 | undefined;
               nonce: U256 | undefined;
               accessList: Array<[H160, Array<H256>]>;
+              authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
             };
           };
         },
@@ -10157,6 +10455,7 @@ export interface ChainTx<
      * @param {U256 | undefined} maxPriorityFeePerGas
      * @param {U256 | undefined} nonce
      * @param {Array<[H160, Array<H256>]>} accessList
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem>} authorizationList
      **/
     create2: GenericTxCall<
       (
@@ -10169,6 +10468,7 @@ export interface ChainTx<
         maxPriorityFeePerGas: U256 | undefined,
         nonce: U256 | undefined,
         accessList: Array<[H160, Array<H256>]>,
+        authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Evm';
@@ -10184,6 +10484,7 @@ export interface ChainTx<
               maxPriorityFeePerGas: U256 | undefined;
               nonce: U256 | undefined;
               accessList: Array<[H160, Array<H256>]>;
+              authorizationList: Array<EthereumTransactionEip7702AuthorizationListItem>;
             };
           };
         },
@@ -10203,15 +10504,15 @@ export interface ChainTx<
     /**
      * Transact an Ethereum transaction.
      *
-     * @param {EthereumTransactionTransactionV2} transaction
+     * @param {EthereumTransactionTransactionV3} transaction
      **/
     transact: GenericTxCall<
-      (transaction: EthereumTransactionTransactionV2) => ChainSubmittableExtrinsic<
+      (transaction: EthereumTransactionTransactionV3) => ChainSubmittableExtrinsic<
         {
           pallet: 'Ethereum';
           palletCall: {
             name: 'Transact';
-            params: { transaction: EthereumTransactionTransactionV2 };
+            params: { transaction: EthereumTransactionTransactionV3 };
           };
         },
         ChainKnownTypes
@@ -11691,19 +11992,19 @@ export interface ChainTx<
      * - `location`: The destination that is being described.
      * - `xcm_version`: The latest version of XCM that `location` supports.
      *
-     * @param {StagingXcmV4Location} location
+     * @param {StagingXcmV5Location} location
      * @param {number} version
      **/
     forceXcmVersion: GenericTxCall<
       (
-        location: StagingXcmV4Location,
+        location: StagingXcmV5Location,
         version: number,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'PolkadotXcm';
           palletCall: {
             name: 'ForceXcmVersion';
-            params: { location: StagingXcmV4Location; version: number };
+            params: { location: StagingXcmV5Location; version: number };
           };
         },
         ChainKnownTypes
@@ -12092,6 +12393,74 @@ export interface ChainTx<
     >;
 
     /**
+     * Authorize another `aliaser` location to alias into the local `origin` making this call.
+     * The `aliaser` is only authorized until the provided `expiry` block number.
+     * The call can also be used for a previously authorized alias in order to update its
+     * `expiry` block number.
+     *
+     * Usually useful to allow your local account to be aliased into from a remote location
+     * also under your control (like your account on another chain).
+     *
+     * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
+     * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
+     * `origin` in XCM programs executed on the local chain.
+     *
+     * @param {XcmVersionedLocation} aliaser
+     * @param {bigint | undefined} expires
+     **/
+    addAuthorizedAlias: GenericTxCall<
+      (
+        aliaser: XcmVersionedLocation,
+        expires: bigint | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'AddAuthorizedAlias';
+            params: { aliaser: XcmVersionedLocation; expires: bigint | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove a previously authorized `aliaser` from the list of locations that can alias into
+     * the local `origin` making this call.
+     *
+     * @param {XcmVersionedLocation} aliaser
+     **/
+    removeAuthorizedAlias: GenericTxCall<
+      (aliaser: XcmVersionedLocation) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'RemoveAuthorizedAlias';
+            params: { aliaser: XcmVersionedLocation };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove all previously authorized `aliaser`s that can alias into the local `origin`
+     * making this call.
+     *
+     **/
+    removeAllAuthorizedAliases: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PolkadotXcm';
+          palletCall: {
+            name: 'RemoveAllAuthorizedAliases';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -12168,6 +12537,107 @@ export interface ChainTx<
               index: number;
               weightLimit: SpWeightsWeightV2Weight;
             };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s transaction calls
+   **/
+  multiBlockMigrations: {
+    /**
+     * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+     *
+     * Should normally not be needed and is only in place as emergency measure. Note that
+     * restarting the migration process in this manner will not call the
+     * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+     *
+     * @param {PalletMigrationsMigrationCursor | undefined} cursor
+     **/
+    forceSetCursor: GenericTxCall<
+      (cursor: PalletMigrationsMigrationCursor | undefined) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceSetCursor';
+            params: { cursor: PalletMigrationsMigrationCursor | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Allows root to set an active cursor to forcefully start/forward the migration process.
+     *
+     * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+     * `started_at` value to the next block number. Otherwise this would not be possible, since
+     * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+     * indicates that the current block number plus one should be used.
+     *
+     * @param {number} index
+     * @param {BytesLike | undefined} innerCursor
+     * @param {number | undefined} startedAt
+     **/
+    forceSetActiveCursor: GenericTxCall<
+      (
+        index: number,
+        innerCursor: BytesLike | undefined,
+        startedAt: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceSetActiveCursor';
+            params: { index: number; innerCursor: BytesLike | undefined; startedAt: number | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Forces the onboarding of the migrations.
+     *
+     * This process happens automatically on a runtime upgrade. It is in place as an emergency
+     * measurement. The cursor needs to be `None` for this to succeed.
+     *
+     **/
+    forceOnboardMbms: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceOnboardMbms';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clears the `Historic` set.
+     *
+     * `map_cursor` must be set to the last value that was returned by the
+     * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+     * way that will result in a sensible weight.
+     *
+     * @param {PalletMigrationsHistoricCleanupSelector} selector
+     **/
+    clearHistoric: GenericTxCall<
+      (selector: PalletMigrationsHistoricCleanupSelector) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ClearHistoric';
+            params: { selector: PalletMigrationsHistoricCleanupSelector };
           };
         },
         ChainKnownTypes

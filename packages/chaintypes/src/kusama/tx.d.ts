@@ -60,7 +60,7 @@ import type {
   PalletNominationPoolsConfigOp,
   PalletNominationPoolsConfigOpU32,
   PalletNominationPoolsConfigOpPerbill,
-  PalletNominationPoolsConfigOp004,
+  PalletNominationPoolsConfigOpAccountId32,
   PalletNominationPoolsClaimPermission,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
@@ -7216,16 +7216,16 @@ export interface ChainTx<
      * most pool members and they should be informed of changes to pool roles.
      *
      * @param {number} poolId
-     * @param {PalletNominationPoolsConfigOp004} newRoot
-     * @param {PalletNominationPoolsConfigOp004} newNominator
-     * @param {PalletNominationPoolsConfigOp004} newBouncer
+     * @param {PalletNominationPoolsConfigOpAccountId32} newRoot
+     * @param {PalletNominationPoolsConfigOpAccountId32} newNominator
+     * @param {PalletNominationPoolsConfigOpAccountId32} newBouncer
      **/
     updateRoles: GenericTxCall<
       (
         poolId: number,
-        newRoot: PalletNominationPoolsConfigOp004,
-        newNominator: PalletNominationPoolsConfigOp004,
-        newBouncer: PalletNominationPoolsConfigOp004,
+        newRoot: PalletNominationPoolsConfigOpAccountId32,
+        newNominator: PalletNominationPoolsConfigOpAccountId32,
+        newBouncer: PalletNominationPoolsConfigOpAccountId32,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'NominationPools';
@@ -7233,9 +7233,9 @@ export interface ChainTx<
             name: 'UpdateRoles';
             params: {
               poolId: number;
-              newRoot: PalletNominationPoolsConfigOp004;
-              newNominator: PalletNominationPoolsConfigOp004;
-              newBouncer: PalletNominationPoolsConfigOp004;
+              newRoot: PalletNominationPoolsConfigOpAccountId32;
+              newNominator: PalletNominationPoolsConfigOpAccountId32;
+              newBouncer: PalletNominationPoolsConfigOpAccountId32;
             };
           };
         },

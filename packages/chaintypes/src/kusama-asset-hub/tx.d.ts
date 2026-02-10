@@ -71,12 +71,13 @@ import type {
   PalletNominationPoolsConfigOp,
   PalletNominationPoolsConfigOpU32,
   PalletNominationPoolsConfigOpPerbill,
-  PalletNominationPoolsConfigOp004,
+  PalletNominationPoolsConfigOpAccountId32,
   PalletNominationPoolsClaimPermission,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
   PalletStakingAsyncRcClientSessionReport,
   PalletStakingAsyncRcClientOffence,
+  PalletElectionProviderMultiBlockManagerOperation,
   PalletElectionProviderMultiBlockAdminOperation,
   PalletElectionProviderMultiBlockPagedRawSolution,
   SpNposElectionsElectionScore,
@@ -12336,16 +12337,16 @@ export interface ChainTx<
      * most pool members and they should be informed of changes to pool roles.
      *
      * @param {number} poolId
-     * @param {PalletNominationPoolsConfigOp004} newRoot
-     * @param {PalletNominationPoolsConfigOp004} newNominator
-     * @param {PalletNominationPoolsConfigOp004} newBouncer
+     * @param {PalletNominationPoolsConfigOpAccountId32} newRoot
+     * @param {PalletNominationPoolsConfigOpAccountId32} newNominator
+     * @param {PalletNominationPoolsConfigOpAccountId32} newBouncer
      **/
     updateRoles: GenericTxCall<
       (
         poolId: number,
-        newRoot: PalletNominationPoolsConfigOp004,
-        newNominator: PalletNominationPoolsConfigOp004,
-        newBouncer: PalletNominationPoolsConfigOp004,
+        newRoot: PalletNominationPoolsConfigOpAccountId32,
+        newNominator: PalletNominationPoolsConfigOpAccountId32,
+        newBouncer: PalletNominationPoolsConfigOpAccountId32,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'NominationPools';
@@ -12353,9 +12354,9 @@ export interface ChainTx<
             name: 'UpdateRoles';
             params: {
               poolId: number;
-              newRoot: PalletNominationPoolsConfigOp004;
-              newNominator: PalletNominationPoolsConfigOp004;
-              newBouncer: PalletNominationPoolsConfigOp004;
+              newRoot: PalletNominationPoolsConfigOpAccountId32;
+              newNominator: PalletNominationPoolsConfigOpAccountId32;
+              newBouncer: PalletNominationPoolsConfigOpAccountId32;
             };
           };
         },
@@ -12852,18 +12853,35 @@ export interface ChainTx<
     /**
      * Manage this pallet.
      *
-     * The origin of this call must be [`Config::AdminOrigin`].
+     * The origin of this call must be [`Config::ManagerOrigin`].
      *
-     * See [`AdminOperation`] for various operations that are possible.
+     * See [`ManagerOperation`] for various operations that are possible.
      *
-     * @param {PalletElectionProviderMultiBlockAdminOperation} op
+     * @param {PalletElectionProviderMultiBlockManagerOperation} op
      **/
     manage: GenericTxCall<
-      (op: PalletElectionProviderMultiBlockAdminOperation) => ChainSubmittableExtrinsic<
+      (op: PalletElectionProviderMultiBlockManagerOperation) => ChainSubmittableExtrinsic<
         {
           pallet: 'MultiBlockElection';
           palletCall: {
             name: 'Manage';
+            params: { op: PalletElectionProviderMultiBlockManagerOperation };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     * @param {PalletElectionProviderMultiBlockAdminOperation} op
+     **/
+    admin: GenericTxCall<
+      (op: PalletElectionProviderMultiBlockAdminOperation) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockElection';
+          palletCall: {
+            name: 'Admin';
             params: { op: PalletElectionProviderMultiBlockAdminOperation };
           };
         },
@@ -15669,6 +15687,47 @@ export interface ChainTx<
           palletCall: {
             name: 'TransferToPostMigrationTreasury';
             params: { assetId: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Translate recursively derived parachain sovereign child account to its sibling.
+     *
+     * Uses the same derivation path on the sibling. The old and new account arguments are only
+     * witness data to ensure correct usage. Can only be called by the `MigrateOrigin`.
+     *
+     * This migrates:
+     * - Native DOT balance
+     * - All assets listed in `T::RelevantAssets`
+     * - Staked balances
+     *
+     * Things like non-relevant assets or vested transfers may remain on the old account.
+     *
+     * @param {number} paraId
+     * @param {Array<number>} derivationPath
+     * @param {AccountId32Like} oldAccount
+     * @param {AccountId32Like} newAccount
+     **/
+    translateParaSovereignChildToSiblingDerived: GenericTxCall<
+      (
+        paraId: number,
+        derivationPath: Array<number>,
+        oldAccount: AccountId32Like,
+        newAccount: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AhOps';
+          palletCall: {
+            name: 'TranslateParaSovereignChildToSiblingDerived';
+            params: {
+              paraId: number;
+              derivationPath: Array<number>;
+              oldAccount: AccountId32Like;
+              newAccount: AccountId32Like;
+            };
           };
         },
         ChainKnownTypes

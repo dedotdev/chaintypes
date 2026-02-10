@@ -49,7 +49,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PolkadotPeopleApi
- * @specVersion: 2000005
+ * @specVersion: 2000006
  **/
 export interface PolkadotPeopleApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

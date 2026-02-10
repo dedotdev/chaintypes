@@ -3460,6 +3460,26 @@ export interface ChainErrors extends GenericChainErrors {
     ZeroBalance: GenericPalletError;
 
     /**
+     * Failed to transfer balance.
+     **/
+    FailedToTransfer: GenericPalletError;
+
+    /**
+     * The account has already been translated.
+     **/
+    AlreadyTranslated: GenericPalletError;
+
+    /**
+     * The derivation path is too long.
+     **/
+    TooLongDerivationPath: GenericPalletError;
+
+    /**
+     * Failed to force unstake.
+     **/
+    FailedToForceUnstake: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;

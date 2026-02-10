@@ -84,6 +84,7 @@ import type {
   PalletNominationPoolsCommissionClaimPermission,
   PalletStakingAsyncRcClientSessionReport,
   PalletStakingAsyncRcClientOffence,
+  PalletElectionProviderMultiBlockManagerOperation,
   PalletElectionProviderMultiBlockAdminOperation,
   PalletElectionProviderMultiBlockPagedRawSolution,
   SpNposElectionsElectionScore,
@@ -12783,18 +12784,35 @@ export interface ChainTx<
     /**
      * Manage this pallet.
      *
-     * The origin of this call must be [`Config::AdminOrigin`].
+     * The origin of this call must be [`Config::ManagerOrigin`].
      *
-     * See [`AdminOperation`] for various operations that are possible.
+     * See [`ManagerOperation`] for various operations that are possible.
      *
-     * @param {PalletElectionProviderMultiBlockAdminOperation} op
+     * @param {PalletElectionProviderMultiBlockManagerOperation} op
      **/
     manage: GenericTxCall<
-      (op: PalletElectionProviderMultiBlockAdminOperation) => ChainSubmittableExtrinsic<
+      (op: PalletElectionProviderMultiBlockManagerOperation) => ChainSubmittableExtrinsic<
         {
           pallet: 'MultiBlockElection';
           palletCall: {
             name: 'Manage';
+            params: { op: PalletElectionProviderMultiBlockManagerOperation };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     * @param {PalletElectionProviderMultiBlockAdminOperation} op
+     **/
+    admin: GenericTxCall<
+      (op: PalletElectionProviderMultiBlockAdminOperation) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockElection';
+          palletCall: {
+            name: 'Admin';
             params: { op: PalletElectionProviderMultiBlockAdminOperation };
           };
         },

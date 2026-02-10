@@ -13113,28 +13113,28 @@ export type PalletElectionProviderMultiBlockCall =
   /**
    * Manage this pallet.
    *
-   * The origin of this call must be [`Config::AdminOrigin`].
+   * The origin of this call must be [`Config::ManagerOrigin`].
    *
-   * See [`AdminOperation`] for various operations that are possible.
+   * See [`ManagerOperation`] for various operations that are possible.
    **/
-  { name: 'Manage'; params: { op: PalletElectionProviderMultiBlockAdminOperation } };
+  | { name: 'Manage'; params: { op: PalletElectionProviderMultiBlockManagerOperation } }
+  | { name: 'Admin'; params: { op: PalletElectionProviderMultiBlockAdminOperation } };
 
 export type PalletElectionProviderMultiBlockCallLike =
   /**
    * Manage this pallet.
    *
-   * The origin of this call must be [`Config::AdminOrigin`].
+   * The origin of this call must be [`Config::ManagerOrigin`].
    *
-   * See [`AdminOperation`] for various operations that are possible.
+   * See [`ManagerOperation`] for various operations that are possible.
    **/
-  { name: 'Manage'; params: { op: PalletElectionProviderMultiBlockAdminOperation } };
+  | { name: 'Manage'; params: { op: PalletElectionProviderMultiBlockManagerOperation } }
+  | { name: 'Admin'; params: { op: PalletElectionProviderMultiBlockAdminOperation } };
 
-export type PalletElectionProviderMultiBlockAdminOperation =
+export type PalletElectionProviderMultiBlockManagerOperation =
   | { type: 'ForceRotateRound' }
   | { type: 'ForceSetPhase'; value: PalletElectionProviderMultiBlockPhase }
-  | { type: 'EmergencySetSolution'; value: [FrameElectionProviderSupportBoundedSupports, SpNposElectionsElectionScore] }
-  | { type: 'EmergencyFallback' }
-  | { type: 'SetMinUntrustedScore'; value: SpNposElectionsElectionScore };
+  | { type: 'EmergencyFallback' };
 
 export type PalletElectionProviderMultiBlockPhase =
   | { type: 'Off' }
@@ -13145,6 +13145,10 @@ export type PalletElectionProviderMultiBlockPhase =
   | { type: 'Done' }
   | { type: 'Export'; value: number }
   | { type: 'Emergency' };
+
+export type PalletElectionProviderMultiBlockAdminOperation =
+  | { type: 'EmergencySetSolution'; value: [FrameElectionProviderSupportBoundedSupports, SpNposElectionsElectionScore] }
+  | { type: 'SetMinUntrustedScore'; value: SpNposElectionsElectionScore };
 
 export type FrameElectionProviderSupportBoundedSupports = Array<
   [AccountId32, FrameElectionProviderSupportBoundedSupport]

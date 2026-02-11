@@ -2810,6 +2810,39 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `StakingRcClient`'s errors
+   **/
+  stakingRcClient: {
+    /**
+     * Failed to send XCM message to the Relay Chain.
+     **/
+    XcmSendFailed: GenericPalletError;
+
+    /**
+     * The origin account is not a registered validator.
+     *
+     * Only accounts that have called `validate()` can set or purge session keys. When called
+     * via a staking proxy, the origin is the delegating account (stash), which must be a
+     * registered validator.
+     **/
+    NotValidator: GenericPalletError;
+
+    /**
+     * The session keys could not be decoded as the expected RelayChainSessionKeys type.
+     **/
+    InvalidKeys: GenericPalletError;
+
+    /**
+     * Delivery fees exceeded the specified maximum.
+     **/
+    FeesExceededMax: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `MultiBlockElection`'s errors
    **/
   multiBlockElection: {

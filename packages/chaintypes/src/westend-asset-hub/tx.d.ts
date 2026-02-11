@@ -13086,6 +13086,101 @@ export interface ChainTx<
     >;
 
     /**
+     * Set session keys for a validator. Keys are validated on AssetHub and forwarded to RC.
+     *
+     * **Validation on AssetHub:**
+     * Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
+     * format. This prevents malicious validators from bloating the XCM queue with garbage
+     * data.
+     *
+     * This, combined with the enforcement of a high minimum validator bond, makes it
+     * reasonable not to require a deposit.
+     *
+     * Note: Ownership proof validation requires PR #1739 which is not backported to
+     * stable2512. The proof parameter will be added when that PR is backported.
+     *
+     * **Fees:**
+     * The actual cost of this call is higher than what the weight-based fee estimate shows.
+     * In addition to the local transaction weight fee, the stash account is charged an XCM
+     * fee (delivery + RC execution cost) via `XcmExecutor::charge_fees`. The relay chain
+     * uses `UnpaidExecution`, so the full remote cost is charged upfront on AssetHub.
+     *
+     * When called via a staking proxy, the proxy pays the transaction weight fee,
+     * while the stash (delegating account) pays the XCM fee.
+     *
+     * **Max Fee Limit:**
+     * Users can optionally specify `max_delivery_and_remote_execution_fee` to limit the
+     * delivery + RC execution fee. This does not include the local transaction weight fee. If
+     * the fee exceeds this limit, the operation fails with `FeesExceededMax`. Pass `None` for
+     * unlimited (no cap).
+     *
+     * NOTE: unlike the current flow for new validators on RC (bond -> set_keys -> validate),
+     * users on Asset Hub MUST call bond and validate BEFORE calling set_keys. Attempting to
+     * set keys before declaring intent to validate will fail with NotValidator.
+     *
+     * @param {BytesLike} keys
+     * @param {bigint | undefined} maxDeliveryAndRemoteExecutionFee
+     **/
+    setKeys: GenericTxCall<
+      (
+        keys: BytesLike,
+        maxDeliveryAndRemoteExecutionFee: bigint | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'StakingRcClient';
+          palletCall: {
+            name: 'SetKeys';
+            params: { keys: BytesLike; maxDeliveryAndRemoteExecutionFee: bigint | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove session keys for a validator.
+     *
+     * This purges the keys from the Relay Chain.
+     *
+     * Unlike `set_keys`, this does not require the caller to be a registered validator.
+     * This is intentional: a validator who has chilled (stopped validating) should still
+     * be able to purge their session keys. This matches the behavior of the original
+     * `pallet-session::purge_keys` which allows anyone to call it.
+     *
+     * The Relay Chain will reject the call with `NoKeys` error if the account has no
+     * keys set.
+     *
+     * **Fees:**
+     * The actual cost of this call is higher than what the weight-based fee estimate shows.
+     * In addition to the local transaction weight fee, the caller is charged an XCM fee
+     * (delivery + RC execution cost) via `XcmExecutor::charge_fees`. The relay chain uses
+     * `UnpaidExecution`, so the full remote cost is charged upfront on AssetHub.
+     *
+     * When called via a staking proxy, the proxy pays the transaction weight fee,
+     * while the delegating account pays the XCM fee.
+     *
+     * **Max Fee Limit:**
+     * Users can optionally specify `max_delivery_and_remote_execution_fee` to limit the
+     * delivery + RC execution fee. This does not include the local transaction weight fee. If
+     * the fee exceeds this limit, the operation fails with `FeesExceededMax`. Pass `None` for
+     * unlimited (no cap).
+     *
+     * @param {bigint | undefined} maxDeliveryAndRemoteExecutionFee
+     **/
+    purgeKeys: GenericTxCall<
+      (maxDeliveryAndRemoteExecutionFee: bigint | undefined) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'StakingRcClient';
+          palletCall: {
+            name: 'PurgeKeys';
+            params: { maxDeliveryAndRemoteExecutionFee: bigint | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;

@@ -3787,6 +3787,13 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * Fees were charged for a user operation (set_keys or purge_keys).
+     *
+     * The fee includes both XCM delivery fee and relay chain execution cost.
+     **/
+    FeesPaid: GenericPalletEvent<'StakingRcClient', 'FeesPaid', { who: AccountId32; fees: bigint }>;
+
+    /**
      * Something occurred that should never happen under normal operation.
      * Logged as an event for fail-safe observability.
      **/

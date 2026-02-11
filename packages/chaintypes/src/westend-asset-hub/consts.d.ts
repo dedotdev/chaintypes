@@ -1428,6 +1428,11 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   stakingRcClient: {
     /**
+     * Maximum length of encoded session keys.
+     **/
+    maxSessionKeysLength: number;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;

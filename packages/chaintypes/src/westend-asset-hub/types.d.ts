@@ -4133,7 +4133,8 @@ export type AssetHubWestendRuntimeProxyType =
   | 'OldSudoBalances'
   | 'OldIdentityJudgement'
   | 'OldAuction'
-  | 'OldParaRegistration';
+  | 'OldParaRegistration'
+  | 'StakingOperator';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -13234,14 +13235,140 @@ export type PalletStakingAsyncRcClientCall =
    * Called to indicate the start of a new session on the relay chain.
    **/
   | { name: 'RelaySessionReport'; params: { report: PalletStakingAsyncRcClientSessionReport } }
-  | { name: 'RelayNewOffencePaged'; params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> } };
+  | { name: 'RelayNewOffencePaged'; params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> } }
+  /**
+   * Set session keys for a validator. Keys are validated on AssetHub and forwarded to RC.
+   *
+   * **Validation on AssetHub:**
+   * Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
+   * format. This prevents malicious validators from bloating the XCM queue with garbage
+   * data.
+   *
+   * This, combined with the enforcement of a high minimum validator bond, makes it
+   * reasonable not to require a deposit.
+   *
+   * Note: Ownership proof validation requires PR #1739 which is not backported to
+   * stable2512. The proof parameter will be added when that PR is backported.
+   *
+   * **Fees:**
+   * The actual cost of this call is higher than what the weight-based fee estimate shows.
+   * In addition to the local transaction weight fee, the stash account is charged an XCM
+   * fee (delivery + RC execution cost) via `XcmExecutor::charge_fees`. The relay chain
+   * uses `UnpaidExecution`, so the full remote cost is charged upfront on AssetHub.
+   *
+   * When called via a staking proxy, the proxy pays the transaction weight fee,
+   * while the stash (delegating account) pays the XCM fee.
+   *
+   * **Max Fee Limit:**
+   * Users can optionally specify `max_delivery_and_remote_execution_fee` to limit the
+   * delivery + RC execution fee. This does not include the local transaction weight fee. If
+   * the fee exceeds this limit, the operation fails with `FeesExceededMax`. Pass `None` for
+   * unlimited (no cap).
+   *
+   * NOTE: unlike the current flow for new validators on RC (bond -> set_keys -> validate),
+   * users on Asset Hub MUST call bond and validate BEFORE calling set_keys. Attempting to
+   * set keys before declaring intent to validate will fail with NotValidator.
+   **/
+  | { name: 'SetKeys'; params: { keys: Bytes; maxDeliveryAndRemoteExecutionFee?: bigint | undefined } }
+  /**
+   * Remove session keys for a validator.
+   *
+   * This purges the keys from the Relay Chain.
+   *
+   * Unlike `set_keys`, this does not require the caller to be a registered validator.
+   * This is intentional: a validator who has chilled (stopped validating) should still
+   * be able to purge their session keys. This matches the behavior of the original
+   * `pallet-session::purge_keys` which allows anyone to call it.
+   *
+   * The Relay Chain will reject the call with `NoKeys` error if the account has no
+   * keys set.
+   *
+   * **Fees:**
+   * The actual cost of this call is higher than what the weight-based fee estimate shows.
+   * In addition to the local transaction weight fee, the caller is charged an XCM fee
+   * (delivery + RC execution cost) via `XcmExecutor::charge_fees`. The relay chain uses
+   * `UnpaidExecution`, so the full remote cost is charged upfront on AssetHub.
+   *
+   * When called via a staking proxy, the proxy pays the transaction weight fee,
+   * while the delegating account pays the XCM fee.
+   *
+   * **Max Fee Limit:**
+   * Users can optionally specify `max_delivery_and_remote_execution_fee` to limit the
+   * delivery + RC execution fee. This does not include the local transaction weight fee. If
+   * the fee exceeds this limit, the operation fails with `FeesExceededMax`. Pass `None` for
+   * unlimited (no cap).
+   **/
+  | { name: 'PurgeKeys'; params: { maxDeliveryAndRemoteExecutionFee?: bigint | undefined } };
 
 export type PalletStakingAsyncRcClientCallLike =
   /**
    * Called to indicate the start of a new session on the relay chain.
    **/
   | { name: 'RelaySessionReport'; params: { report: PalletStakingAsyncRcClientSessionReport } }
-  | { name: 'RelayNewOffencePaged'; params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> } };
+  | { name: 'RelayNewOffencePaged'; params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> } }
+  /**
+   * Set session keys for a validator. Keys are validated on AssetHub and forwarded to RC.
+   *
+   * **Validation on AssetHub:**
+   * Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
+   * format. This prevents malicious validators from bloating the XCM queue with garbage
+   * data.
+   *
+   * This, combined with the enforcement of a high minimum validator bond, makes it
+   * reasonable not to require a deposit.
+   *
+   * Note: Ownership proof validation requires PR #1739 which is not backported to
+   * stable2512. The proof parameter will be added when that PR is backported.
+   *
+   * **Fees:**
+   * The actual cost of this call is higher than what the weight-based fee estimate shows.
+   * In addition to the local transaction weight fee, the stash account is charged an XCM
+   * fee (delivery + RC execution cost) via `XcmExecutor::charge_fees`. The relay chain
+   * uses `UnpaidExecution`, so the full remote cost is charged upfront on AssetHub.
+   *
+   * When called via a staking proxy, the proxy pays the transaction weight fee,
+   * while the stash (delegating account) pays the XCM fee.
+   *
+   * **Max Fee Limit:**
+   * Users can optionally specify `max_delivery_and_remote_execution_fee` to limit the
+   * delivery + RC execution fee. This does not include the local transaction weight fee. If
+   * the fee exceeds this limit, the operation fails with `FeesExceededMax`. Pass `None` for
+   * unlimited (no cap).
+   *
+   * NOTE: unlike the current flow for new validators on RC (bond -> set_keys -> validate),
+   * users on Asset Hub MUST call bond and validate BEFORE calling set_keys. Attempting to
+   * set keys before declaring intent to validate will fail with NotValidator.
+   **/
+  | { name: 'SetKeys'; params: { keys: BytesLike; maxDeliveryAndRemoteExecutionFee?: bigint | undefined } }
+  /**
+   * Remove session keys for a validator.
+   *
+   * This purges the keys from the Relay Chain.
+   *
+   * Unlike `set_keys`, this does not require the caller to be a registered validator.
+   * This is intentional: a validator who has chilled (stopped validating) should still
+   * be able to purge their session keys. This matches the behavior of the original
+   * `pallet-session::purge_keys` which allows anyone to call it.
+   *
+   * The Relay Chain will reject the call with `NoKeys` error if the account has no
+   * keys set.
+   *
+   * **Fees:**
+   * The actual cost of this call is higher than what the weight-based fee estimate shows.
+   * In addition to the local transaction weight fee, the caller is charged an XCM fee
+   * (delivery + RC execution cost) via `XcmExecutor::charge_fees`. The relay chain uses
+   * `UnpaidExecution`, so the full remote cost is charged upfront on AssetHub.
+   *
+   * When called via a staking proxy, the proxy pays the transaction weight fee,
+   * while the delegating account pays the XCM fee.
+   *
+   * **Max Fee Limit:**
+   * Users can optionally specify `max_delivery_and_remote_execution_fee` to limit the
+   * delivery + RC execution fee. This does not include the local transaction weight fee. If
+   * the fee exceeds this limit, the operation fails with `FeesExceededMax`. Pass `None` for
+   * unlimited (no cap).
+   **/
+  | { name: 'PurgeKeys'; params: { maxDeliveryAndRemoteExecutionFee?: bigint | undefined } };
 
 export type PalletStakingAsyncRcClientSessionReport = {
   endIndex: number;
@@ -17810,6 +17937,12 @@ export type PalletStakingAsyncRcClientEvent =
    **/
   | { name: 'OffenceReceived'; data: { slashSession: number; offencesCount: number } }
   /**
+   * Fees were charged for a user operation (set_keys or purge_keys).
+   *
+   * The fee includes both XCM delivery fee and relay chain execution cost.
+   **/
+  | { name: 'FeesPaid'; data: { who: AccountId32; fees: bigint } }
+  /**
    * Something occurred that should never happen under normal operation.
    * Logged as an event for fail-safe observability.
    **/
@@ -21257,6 +21390,31 @@ export type PalletStakingAsyncRcClientValidatorSetReport = {
 };
 
 /**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletStakingAsyncRcClientError =
+  /**
+   * Failed to send XCM message to the Relay Chain.
+   **/
+  | 'XcmSendFailed'
+  /**
+   * The origin account is not a registered validator.
+   *
+   * Only accounts that have called `validate()` can set or purge session keys. When called
+   * via a staking proxy, the origin is the delegating account (stash), which must be a
+   * registered validator.
+   **/
+  | 'NotValidator'
+  /**
+   * The session keys could not be decoded as the expected RelayChainSessionKeys type.
+   **/
+  | 'InvalidKeys'
+  /**
+   * Delivery fees exceeded the specified maximum.
+   **/
+  | 'FeesExceededMax';
+
+/**
  * Error of the pallet that can be returned in response to dispatches.
  **/
 export type PalletElectionProviderMultiBlockError =
@@ -22128,6 +22286,7 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }
   | { pallet: 'VoterList'; palletError: PalletBagsListError }
   | { pallet: 'DelegatedStaking'; palletError: PalletDelegatedStakingError }
+  | { pallet: 'StakingRcClient'; palletError: PalletStakingAsyncRcClientError }
   | { pallet: 'MultiBlockElection'; palletError: PalletElectionProviderMultiBlockError }
   | { pallet: 'MultiBlockElectionSigned'; palletError: PalletElectionProviderMultiBlockSignedPalletError }
   | { pallet: 'ConvictionVoting'; palletError: PalletConvictionVotingError }

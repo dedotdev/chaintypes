@@ -9291,7 +9291,24 @@ export type PalletStakingAsyncAhClientCall =
   /**
    * manually do what this pallet was meant to do at the end of the migration.
    **/
-  | { name: 'ForceOnMigrationEnd' };
+  | { name: 'ForceOnMigrationEnd' }
+  /**
+   * Set session keys for a validator, forwarded from AssetHub.
+   *
+   * This is called when a validator sets their session keys on AssetHub, which forwards
+   * the request to the RelayChain via XCM.
+   *
+   * AssetHub validates both keys and ownership proof before sending.
+   * RC trusts AH's validation and does not re-validate.
+   **/
+  | { name: 'SetKeysFromAh'; params: { stash: AccountId32; keys: Bytes } }
+  /**
+   * Purge session keys for a validator, forwarded from AssetHub.
+   *
+   * This is called when a validator purges their session keys on AssetHub, which forwards
+   * the request to the RelayChain via XCM.
+   **/
+  | { name: 'PurgeKeysFromAh'; params: { stash: AccountId32 } };
 
 export type PalletStakingAsyncAhClientCallLike =
   | { name: 'ValidatorSet'; params: { report: PalletStakingAsyncRcClientValidatorSetReport } }
@@ -9302,7 +9319,24 @@ export type PalletStakingAsyncAhClientCallLike =
   /**
    * manually do what this pallet was meant to do at the end of the migration.
    **/
-  | { name: 'ForceOnMigrationEnd' };
+  | { name: 'ForceOnMigrationEnd' }
+  /**
+   * Set session keys for a validator, forwarded from AssetHub.
+   *
+   * This is called when a validator sets their session keys on AssetHub, which forwards
+   * the request to the RelayChain via XCM.
+   *
+   * AssetHub validates both keys and ownership proof before sending.
+   * RC trusts AH's validation and does not re-validate.
+   **/
+  | { name: 'SetKeysFromAh'; params: { stash: AccountId32Like; keys: BytesLike } }
+  /**
+   * Purge session keys for a validator, forwarded from AssetHub.
+   *
+   * This is called when a validator purges their session keys on AssetHub, which forwards
+   * the request to the RelayChain via XCM.
+   **/
+  | { name: 'PurgeKeysFromAh'; params: { stash: AccountId32Like } };
 
 export type PalletStakingAsyncRcClientValidatorSetReport = {
   newValidatorSet: Array<AccountId32>;
@@ -12688,7 +12722,11 @@ export type PalletStakingAsyncAhClientEvent =
    * Something occurred that should never happen under normal operation. Logged as an event
    * for fail-safe observability.
    **/
-  | { name: 'Unexpected'; data: PalletStakingAsyncAhClientUnexpectedKind };
+  | { name: 'Unexpected'; data: PalletStakingAsyncAhClientUnexpectedKind }
+  /**
+   * Session keys updated for a validator.
+   **/
+  | { name: 'SessionKeysUpdated'; data: { stash: AccountId32; update: PalletStakingAsyncAhClientSessionKeysUpdate } };
 
 export type PalletStakingAsyncAhClientUnexpectedKind =
   | 'ReceivedValidatorSetWhilePassive'
@@ -12696,7 +12734,10 @@ export type PalletStakingAsyncAhClientUnexpectedKind =
   | 'SessionReportSendFailed'
   | 'SessionReportDropped'
   | 'OffenceSendFailed'
-  | 'ValidatorPointDropped';
+  | 'ValidatorPointDropped'
+  | 'InvalidKeysFromAssetHub';
+
+export type PalletStakingAsyncAhClientSessionKeysUpdate = 'Set' | 'Purged';
 
 /**
  * The `Event` enum of this pallet

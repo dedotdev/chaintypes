@@ -42,6 +42,7 @@ import type {
   PolkadotRuntimeParachainsDisputesDisputeLocation,
   PolkadotRuntimeParachainsDisputesDisputeResult,
   PalletStakingAsyncAhClientUnexpectedKind,
+  PalletStakingAsyncAhClientSessionKeysUpdate,
   StagingXcmV5TraitsOutcome,
   StagingXcmV5Location,
   StagingXcmV5Xcm,
@@ -2678,6 +2679,15 @@ export interface ChainEvents extends GenericChainEvents {
      * for fail-safe observability.
      **/
     Unexpected: GenericPalletEvent<'StakingAhClient', 'Unexpected', PalletStakingAsyncAhClientUnexpectedKind>;
+
+    /**
+     * Session keys updated for a validator.
+     **/
+    SessionKeysUpdated: GenericPalletEvent<
+      'StakingAhClient',
+      'SessionKeysUpdated',
+      { stash: AccountId32; update: PalletStakingAsyncAhClientSessionKeysUpdate }
+    >;
 
     /**
      * Generic pallet event

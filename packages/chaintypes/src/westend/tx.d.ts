@@ -9548,6 +9548,55 @@ export interface ChainTx<
     >;
 
     /**
+     * Set session keys for a validator, forwarded from AssetHub.
+     *
+     * This is called when a validator sets their session keys on AssetHub, which forwards
+     * the request to the RelayChain via XCM.
+     *
+     * AssetHub validates both keys and ownership proof before sending.
+     * RC trusts AH's validation and does not re-validate.
+     *
+     * @param {AccountId32Like} stash
+     * @param {BytesLike} keys
+     **/
+    setKeysFromAh: GenericTxCall<
+      (
+        stash: AccountId32Like,
+        keys: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'StakingAhClient';
+          palletCall: {
+            name: 'SetKeysFromAh';
+            params: { stash: AccountId32Like; keys: BytesLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Purge session keys for a validator, forwarded from AssetHub.
+     *
+     * This is called when a validator purges their session keys on AssetHub, which forwards
+     * the request to the RelayChain via XCM.
+     *
+     * @param {AccountId32Like} stash
+     **/
+    purgeKeysFromAh: GenericTxCall<
+      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'StakingAhClient';
+          palletCall: {
+            name: 'PurgeKeysFromAh';
+            params: { stash: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;

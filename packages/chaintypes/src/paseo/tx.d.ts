@@ -48,7 +48,7 @@ import type {
   PolkadotRuntimeCommonClaimsEcdsaSignature,
   PolkadotRuntimeCommonClaimsStatementKind,
   PalletVestingVestingInfo,
-  PaseoRuntimeConstantsProxyProxyType,
+  PaseoRuntimeProxyType,
   PalletMultisigTimepoint,
   PalletElectionProviderMultiPhaseRawSolution,
   PalletElectionProviderMultiPhaseSolutionOrSnapshotSize,
@@ -59,25 +59,23 @@ import type {
   PalletNominationPoolsConfigOp,
   PalletNominationPoolsConfigOpU32,
   PalletNominationPoolsConfigOpPerbill,
-  PalletNominationPoolsConfigOpAccountId32,
+  PalletNominationPoolsConfigOp004,
   PalletNominationPoolsClaimPermission,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
-  PalletStakingAsyncRcClientValidatorSetReport,
-  PalletStakingAsyncAhClientOperatingMode,
-  PolkadotPrimitivesV8AsyncBackingAsyncBackingParams,
-  PolkadotPrimitivesV8ExecutorParams,
-  PolkadotPrimitivesV8ApprovalVotingParams,
-  PolkadotPrimitivesV8SchedulerParams,
-  PolkadotPrimitivesVstagingInherentData,
+  PolkadotPrimitivesV7AsyncBackingAsyncBackingParams,
+  PolkadotPrimitivesV7ExecutorParams,
+  PolkadotPrimitivesV7ApprovalVotingParams,
+  PolkadotPrimitivesVstagingSchedulerParams,
+  PolkadotPrimitivesV7InherentData,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
-  PolkadotPrimitivesV8PvfCheckStatement,
-  PolkadotPrimitivesV8ValidatorAppSignature,
+  PolkadotPrimitivesV7PvfCheckStatement,
+  PolkadotPrimitivesV7ValidatorAppSignature,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
-  PolkadotPrimitivesVstagingDisputeProof,
+  PolkadotPrimitivesV7SlashingDisputeProof,
   SpRuntimeMultiSigner,
   PalletBrokerCoretimeInterfaceCoreAssignment,
   PolkadotRuntimeParachainsAssignerCoretimePartsOf57600,
@@ -86,20 +84,13 @@ import type {
   PalletStateTrieMigrationProgress,
   XcmVersionedXcm,
   XcmVersionedAssets,
-  StagingXcmV5Location,
+  StagingXcmV4Location,
   XcmV3WeightLimit,
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   SpConsensusBeefyDoubleVotingProof,
-  SpConsensusBeefyForkVotingProof,
-  SpConsensusBeefyFutureBlockVotingProof,
   PolkadotRuntimeParachainsParasParaGenesisArgs,
-  PalletRcMigratorMigrationStage,
-  StagingXcmV5Response,
-  PalletRcMigratorQueuePriority,
-  PalletRcMigratorManagerMultisigVote,
-  PalletRcMigratorMigrationSettings,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -727,7 +718,7 @@ export interface ChainTx<
     >;
 
     /**
-     * Ensure that the bulk of pre-images is upgraded.
+     * Ensure that the a bulk of pre-images is upgraded.
      *
      * The caller pays no fee if at least 90% of pre-images were successfully updated.
      *
@@ -1033,33 +1024,6 @@ export interface ChainTx<
           pallet: 'Indices';
           palletCall: {
             name: 'Freeze';
-            params: { index: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Poke the deposit reserved for an index.
-     *
-     * The dispatch origin for this call must be _Signed_ and the signing account must have a
-     * non-frozen account `index`.
-     *
-     * The transaction fees is waived if the deposit is changed after poking/reconsideration.
-     *
-     * - `index`: the index whose deposit is to be poked/reconsidered.
-     *
-     * Emits `DepositPoked` if successful.
-     *
-     * @param {number} index
-     **/
-    pokeDeposit: GenericTxCall<
-      (index: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Indices';
-          palletCall: {
-            name: 'PokeDeposit';
             params: { index: number };
           };
         },
@@ -1399,9 +1363,7 @@ export interface ChainTx<
     /**
      * Schedule a portion of the stash to be unlocked ready for transfer out after the bond
      * period ends. If this leaves an amount actively bonded less than
-     * [`asset::existential_deposit`], then it is increased to the full amount.
-     *
-     * The stash may be chilled if the ledger total amount falls to 0 after unbonding.
+     * T::Currency::minimum_balance(), then it is increased to the full amount.
      *
      * The dispatch origin for this call must be _Signed_ by the controller, not the stash.
      *
@@ -1813,7 +1775,6 @@ export interface ChainTx<
      * Can be called by the `T::AdminOrigin`.
      *
      * Parameters: era and indices of the slashes for that era to kill.
-     * They **must** be sorted in ascending order, *and* unique.
      *
      * @param {number} era
      * @param {Array<number>} slashIndices
@@ -2228,74 +2189,6 @@ export interface ChainTx<
     >;
 
     /**
-     * Removes the legacy Staking locks if they exist.
-     *
-     * This removes the legacy lock on the stake with [`Config::OldCurrency`] and creates a
-     * hold on it if needed. If all stake cannot be held, the best effort is made to hold as
-     * much as possible. The remaining stake is forced withdrawn from the ledger.
-     *
-     * The fee is waived if the migration is successful.
-     *
-     * @param {AccountId32Like} stash
-     **/
-    migrateCurrency: GenericTxCall<
-      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'MigrateCurrency';
-            params: { stash: AccountId32Like };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * This function allows governance to manually slash a validator and is a
-     * **fallback mechanism**.
-     *
-     * The dispatch origin must be `T::AdminOrigin`.
-     *
-     * ## Parameters
-     * - `validator_stash` - The stash account of the validator to slash.
-     * - `era` - The era in which the validator was in the active set.
-     * - `slash_fraction` - The percentage of the stake to slash, expressed as a Perbill.
-     *
-     * ## Behavior
-     *
-     * The slash will be applied using the standard slashing mechanics, respecting the
-     * configured `SlashDeferDuration`.
-     *
-     * This means:
-     * - If the validator was already slashed by a higher percentage for the same era, this
-     * slash will have no additional effect.
-     * - If the validator was previously slashed by a lower percentage, only the difference
-     * will be applied.
-     * - The slash will be deferred by `SlashDeferDuration` eras before being enacted.
-     *
-     * @param {AccountId32Like} validatorStash
-     * @param {number} era
-     * @param {Perbill} slashFraction
-     **/
-    manualSlash: GenericTxCall<
-      (
-        validatorStash: AccountId32Like,
-        era: number,
-        slashFraction: Perbill,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'ManualSlash';
-            params: { validatorStash: AccountId32Like; era: number; slashFraction: Perbill };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -2621,8 +2514,6 @@ export interface ChainTx<
      * Emits [`Event::Paid`] if successful.
      *
      * @param {number} index
-     *
-     * @deprecated The `spend_local` call will be removed by May 2025. Migrate to the new flow and use the `spend` call.
      **/
     payout: GenericTxCall<
       (index: number) => ChainSubmittableExtrinsic<
@@ -2659,8 +2550,6 @@ export interface ChainTx<
      * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
      *
      * @param {number} index
-     *
-     * @deprecated The `remove_approval` call will be removed by May 2025. It associated with the deprecated `spend_local` call.
      **/
     checkStatus: GenericTxCall<
       (index: number) => ChainSubmittableExtrinsic<
@@ -3429,7 +3318,7 @@ export interface ChainTx<
      * Attest to a statement, needed to finalize the claims process.
      *
      * WARNING: Insecure unless your chain includes `PrevalidateAttests` as a
-     * `TransactionExtension`.
+     * `SignedExtension`.
      *
      * Unsigned Validation:
      * A call to attest is deemed valid if the sender has a `Preclaim` registered
@@ -3878,76 +3767,6 @@ export interface ChainTx<
     >;
 
     /**
-     * Dispatch a fallback call in the event the main call fails to execute.
-     * May be called from any origin except `None`.
-     *
-     * This function first attempts to dispatch the `main` call.
-     * If the `main` call fails, the `fallback` is attemted.
-     * if the fallback is successfully dispatched, the weights of both calls
-     * are accumulated and an event containing the main call error is deposited.
-     *
-     * In the event of a fallback failure the whole call fails
-     * with the weights returned.
-     *
-     * - `main`: The main call to be dispatched. This is the primary action to execute.
-     * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
-     *
-     * ## Dispatch Logic
-     * - If the origin is `root`, both the main and fallback calls are executed without
-     * applying any origin filters.
-     * - If the origin is not `root`, the origin filter is applied to both the `main` and
-     * `fallback` calls.
-     *
-     * ## Use Case
-     * - Some use cases might involve submitting a `batch` type call in either main, fallback
-     * or both.
-     *
-     * @param {PaseoRuntimeRuntimeCallLike} main
-     * @param {PaseoRuntimeRuntimeCallLike} fallback
-     **/
-    ifElse: GenericTxCall<
-      (
-        main: PaseoRuntimeRuntimeCallLike,
-        fallback: PaseoRuntimeRuntimeCallLike,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Utility';
-          palletCall: {
-            name: 'IfElse';
-            params: { main: PaseoRuntimeRuntimeCallLike; fallback: PaseoRuntimeRuntimeCallLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Dispatches a function call with a provided origin.
-     *
-     * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
-     *
-     * The dispatch origin for this call must be _Root_.
-     *
-     * @param {PaseoRuntimeOriginCaller} asOrigin
-     * @param {PaseoRuntimeRuntimeCallLike} call
-     **/
-    dispatchAsFallible: GenericTxCall<
-      (
-        asOrigin: PaseoRuntimeOriginCaller,
-        call: PaseoRuntimeRuntimeCallLike,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Utility';
-          palletCall: {
-            name: 'DispatchAsFallible';
-            params: { asOrigin: PaseoRuntimeOriginCaller; call: PaseoRuntimeRuntimeCallLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -3968,13 +3787,13 @@ export interface ChainTx<
      * - `call`: The call to be made by the `real` account.
      *
      * @param {MultiAddressLike} real
-     * @param {PaseoRuntimeConstantsProxyProxyType | undefined} forceProxyType
+     * @param {PaseoRuntimeProxyType | undefined} forceProxyType
      * @param {PaseoRuntimeRuntimeCallLike} call
      **/
     proxy: GenericTxCall<
       (
         real: MultiAddressLike,
-        forceProxyType: PaseoRuntimeConstantsProxyProxyType | undefined,
+        forceProxyType: PaseoRuntimeProxyType | undefined,
         call: PaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
@@ -3983,7 +3802,7 @@ export interface ChainTx<
             name: 'Proxy';
             params: {
               real: MultiAddressLike;
-              forceProxyType: PaseoRuntimeConstantsProxyProxyType | undefined;
+              forceProxyType: PaseoRuntimeProxyType | undefined;
               call: PaseoRuntimeRuntimeCallLike;
             };
           };
@@ -4004,20 +3823,20 @@ export interface ChainTx<
      * zero.
      *
      * @param {MultiAddressLike} delegate
-     * @param {PaseoRuntimeConstantsProxyProxyType} proxyType
+     * @param {PaseoRuntimeProxyType} proxyType
      * @param {number} delay
      **/
     addProxy: GenericTxCall<
       (
         delegate: MultiAddressLike,
-        proxyType: PaseoRuntimeConstantsProxyProxyType,
+        proxyType: PaseoRuntimeProxyType,
         delay: number,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Proxy';
           palletCall: {
             name: 'AddProxy';
-            params: { delegate: MultiAddressLike; proxyType: PaseoRuntimeConstantsProxyProxyType; delay: number };
+            params: { delegate: MultiAddressLike; proxyType: PaseoRuntimeProxyType; delay: number };
           };
         },
         ChainKnownTypes
@@ -4034,20 +3853,20 @@ export interface ChainTx<
      * - `proxy_type`: The permissions currently enabled for the removed proxy account.
      *
      * @param {MultiAddressLike} delegate
-     * @param {PaseoRuntimeConstantsProxyProxyType} proxyType
+     * @param {PaseoRuntimeProxyType} proxyType
      * @param {number} delay
      **/
     removeProxy: GenericTxCall<
       (
         delegate: MultiAddressLike,
-        proxyType: PaseoRuntimeConstantsProxyProxyType,
+        proxyType: PaseoRuntimeProxyType,
         delay: number,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Proxy';
           palletCall: {
             name: 'RemoveProxy';
-            params: { delegate: MultiAddressLike; proxyType: PaseoRuntimeConstantsProxyProxyType; delay: number };
+            params: { delegate: MultiAddressLike; proxyType: PaseoRuntimeProxyType; delay: number };
           };
         },
         ChainKnownTypes
@@ -4059,7 +3878,7 @@ export interface ChainTx<
      *
      * The dispatch origin for this call must be _Signed_.
      *
-     * WARNING: This may be called on accounts created by `create_pure`, however if done, then
+     * WARNING: This may be called on accounts created by `pure`, however if done, then
      * the unreserved fees will be inaccessible. **All access to this account will be lost.**
      *
      **/
@@ -4095,13 +3914,13 @@ export interface ChainTx<
      *
      * Fails if there are insufficient funds to pay for deposit.
      *
-     * @param {PaseoRuntimeConstantsProxyProxyType} proxyType
+     * @param {PaseoRuntimeProxyType} proxyType
      * @param {number} delay
      * @param {number} index
      **/
     createPure: GenericTxCall<
       (
-        proxyType: PaseoRuntimeConstantsProxyProxyType,
+        proxyType: PaseoRuntimeProxyType,
         delay: number,
         index: number,
       ) => ChainSubmittableExtrinsic<
@@ -4109,7 +3928,7 @@ export interface ChainTx<
           pallet: 'Proxy';
           palletCall: {
             name: 'CreatePure';
-            params: { proxyType: PaseoRuntimeConstantsProxyProxyType; delay: number; index: number };
+            params: { proxyType: PaseoRuntimeProxyType; delay: number; index: number };
           };
         },
         ChainKnownTypes
@@ -4123,19 +3942,19 @@ export interface ChainTx<
      * inaccessible.
      *
      * Requires a `Signed` origin, and the sender account must have been created by a call to
-     * `create_pure` with corresponding parameters.
+     * `pure` with corresponding parameters.
      *
-     * - `spawner`: The account that originally called `create_pure` to create this account.
-     * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
-     * - `proxy_type`: The proxy type originally passed to `create_pure`.
-     * - `height`: The height of the chain when the call to `create_pure` was processed.
-     * - `ext_index`: The extrinsic index in which the call to `create_pure` was processed.
+     * - `spawner`: The account that originally called `pure` to create this account.
+     * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+     * - `proxy_type`: The proxy type originally passed to `pure`.
+     * - `height`: The height of the chain when the call to `pure` was processed.
+     * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
      *
      * Fails with `NoPermission` in case the caller is not a previously created pure
-     * account whose `create_pure` call has corresponding parameters.
+     * account whose `pure` call has corresponding parameters.
      *
      * @param {MultiAddressLike} spawner
-     * @param {PaseoRuntimeConstantsProxyProxyType} proxyType
+     * @param {PaseoRuntimeProxyType} proxyType
      * @param {number} index
      * @param {number} height
      * @param {number} extIndex
@@ -4143,7 +3962,7 @@ export interface ChainTx<
     killPure: GenericTxCall<
       (
         spawner: MultiAddressLike,
-        proxyType: PaseoRuntimeConstantsProxyProxyType,
+        proxyType: PaseoRuntimeProxyType,
         index: number,
         height: number,
         extIndex: number,
@@ -4154,7 +3973,7 @@ export interface ChainTx<
             name: 'KillPure';
             params: {
               spawner: MultiAddressLike;
-              proxyType: PaseoRuntimeConstantsProxyProxyType;
+              proxyType: PaseoRuntimeProxyType;
               index: number;
               height: number;
               extIndex: number;
@@ -4278,14 +4097,14 @@ export interface ChainTx<
      *
      * @param {MultiAddressLike} delegate
      * @param {MultiAddressLike} real
-     * @param {PaseoRuntimeConstantsProxyProxyType | undefined} forceProxyType
+     * @param {PaseoRuntimeProxyType | undefined} forceProxyType
      * @param {PaseoRuntimeRuntimeCallLike} call
      **/
     proxyAnnounced: GenericTxCall<
       (
         delegate: MultiAddressLike,
         real: MultiAddressLike,
-        forceProxyType: PaseoRuntimeConstantsProxyProxyType | undefined,
+        forceProxyType: PaseoRuntimeProxyType | undefined,
         call: PaseoRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
@@ -4295,32 +4114,9 @@ export interface ChainTx<
             params: {
               delegate: MultiAddressLike;
               real: MultiAddressLike;
-              forceProxyType: PaseoRuntimeConstantsProxyProxyType | undefined;
+              forceProxyType: PaseoRuntimeProxyType | undefined;
               call: PaseoRuntimeRuntimeCallLike;
             };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Poke / Adjust deposits made for proxies and announcements based on current values.
-     * This can be used by accounts to possibly lower their locked amount.
-     *
-     * The dispatch origin for this call must be _Signed_.
-     *
-     * The transaction fee is waived if the deposit amount has changed.
-     *
-     * Emits `DepositPoked` if successful.
-     *
-     **/
-    pokeDeposit: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Proxy';
-          palletCall: {
-            name: 'PokeDeposit';
           };
         },
         ChainKnownTypes
@@ -4549,42 +4345,6 @@ export interface ChainTx<
               timepoint: PalletMultisigTimepoint;
               callHash: FixedBytes<32>;
             };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Poke the deposit reserved for an existing multisig operation.
-     *
-     * The dispatch origin for this call must be _Signed_ and must be the original depositor of
-     * the multisig operation.
-     *
-     * The transaction fee is waived if the deposit amount has changed.
-     *
-     * - `threshold`: The total number of approvals needed for this multisig.
-     * - `other_signatories`: The accounts (other than the sender) who are part of the
-     * multisig.
-     * - `call_hash`: The hash of the call this deposit is reserved for.
-     *
-     * Emits `DepositPoked` if successful.
-     *
-     * @param {number} threshold
-     * @param {Array<AccountId32Like>} otherSignatories
-     * @param {FixedBytes<32>} callHash
-     **/
-    pokeDeposit: GenericTxCall<
-      (
-        threshold: number,
-        otherSignatories: Array<AccountId32Like>,
-        callHash: FixedBytes<32>,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Multisig';
-          palletCall: {
-            name: 'PokeDeposit';
-            params: { threshold: number; otherSignatories: Array<AccountId32Like>; callHash: FixedBytes<32> };
           };
         },
         ChainKnownTypes
@@ -4850,72 +4610,6 @@ export interface ChainTx<
           palletCall: {
             name: 'ExtendBountyExpiry';
             params: { bountyId: number; remark: BytesLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Approve bountry and propose a curator simultaneously.
-     * This call is a shortcut to calling `approve_bounty` and `propose_curator` separately.
-     *
-     * May only be called from `T::SpendOrigin`.
-     *
-     * - `bounty_id`: Bounty ID to approve.
-     * - `curator`: The curator account whom will manage this bounty.
-     * - `fee`: The curator fee.
-     *
-     * ## Complexity
-     * - O(1).
-     *
-     * @param {number} bountyId
-     * @param {MultiAddressLike} curator
-     * @param {bigint} fee
-     **/
-    approveBountyWithCurator: GenericTxCall<
-      (
-        bountyId: number,
-        curator: MultiAddressLike,
-        fee: bigint,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Bounties';
-          palletCall: {
-            name: 'ApproveBountyWithCurator';
-            params: { bountyId: number; curator: MultiAddressLike; fee: bigint };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Poke the deposit reserved for creating a bounty proposal.
-     *
-     * This can be used by accounts to update their reserved amount.
-     *
-     * The dispatch origin for this call must be _Signed_.
-     *
-     * Parameters:
-     * - `bounty_id`: The bounty id for which to adjust the deposit.
-     *
-     * If the deposit is updated, the difference will be reserved/unreserved from the
-     * proposer's account.
-     *
-     * The transaction is made free if the deposit is updated and paid otherwise.
-     *
-     * Emits `DepositPoked` if the deposit is updated.
-     *
-     * @param {number} bountyId
-     **/
-    pokeDeposit: GenericTxCall<
-      (bountyId: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Bounties';
-          palletCall: {
-            name: 'PokeDeposit';
-            params: { bountyId: number };
           };
         },
         ChainKnownTypes
@@ -5354,13 +5048,19 @@ export interface ChainTx<
      * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
      * calling [`Call::set_emergency_election_result`].
      *
+     * @param {number | undefined} maybeMaxVoters
+     * @param {number | undefined} maybeMaxTargets
      **/
     governanceFallback: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
+      (
+        maybeMaxVoters: number | undefined,
+        maybeMaxTargets: number | undefined,
+      ) => ChainSubmittableExtrinsic<
         {
           pallet: 'ElectionProviderMultiPhase';
           palletCall: {
             name: 'GovernanceFallback';
+            params: { maybeMaxVoters: number | undefined; maybeMaxTargets: number | undefined };
           };
         },
         ChainKnownTypes
@@ -5464,14 +5164,8 @@ export interface ChainTx<
    **/
   nominationPools: {
     /**
-     * Stake funds with a pool. The amount to bond is delegated (or transferred based on
-     * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
-     * increases the pool's bond.
-     *
-     * The method of transferring the amount to the pool account is determined by
-     * [`adapter::StakeStrategyType`]. If the pool is configured to use
-     * [`adapter::StakeStrategyType::Delegate`], the funds remain in the account of
-     * the `origin`, while the pool gains the right to use these funds for staking.
+     * Stake funds with a pool. The amount to bond is transferred from the member to the
+     * pools account and immediately increases the pools bond.
      *
      * # Note
      *
@@ -5756,13 +5450,13 @@ export interface ChainTx<
      * The dispatch origin of this call must be signed by the pool nominator or the pool
      * root role.
      *
-     * This directly forwards the call to an implementation of `StakingInterface` (e.g.,
-     * `pallet-staking`) through [`Config::StakeAdapter`], on behalf of the bonded pool.
+     * This directly forward the call to the staking pallet, on behalf of the pool bonded
+     * account.
      *
      * # Note
      *
-     * In addition to a `root` or `nominator` role of `origin`, the pool's depositor needs to
-     * have at least `depositor_min_bond` in the pool to start nominating.
+     * In addition to a `root` or `nominator` role of `origin`, pool's depositor needs to have
+     * at least `depositor_min_bond` in the pool to start nominating.
      *
      * @param {number} poolId
      * @param {Array<AccountId32Like>} validators
@@ -5896,16 +5590,16 @@ export interface ChainTx<
      * most pool members and they should be informed of changes to pool roles.
      *
      * @param {number} poolId
-     * @param {PalletNominationPoolsConfigOpAccountId32} newRoot
-     * @param {PalletNominationPoolsConfigOpAccountId32} newNominator
-     * @param {PalletNominationPoolsConfigOpAccountId32} newBouncer
+     * @param {PalletNominationPoolsConfigOp004} newRoot
+     * @param {PalletNominationPoolsConfigOp004} newNominator
+     * @param {PalletNominationPoolsConfigOp004} newBouncer
      **/
     updateRoles: GenericTxCall<
       (
         poolId: number,
-        newRoot: PalletNominationPoolsConfigOpAccountId32,
-        newNominator: PalletNominationPoolsConfigOpAccountId32,
-        newBouncer: PalletNominationPoolsConfigOpAccountId32,
+        newRoot: PalletNominationPoolsConfigOp004,
+        newNominator: PalletNominationPoolsConfigOp004,
+        newBouncer: PalletNominationPoolsConfigOp004,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'NominationPools';
@@ -5913,9 +5607,9 @@ export interface ChainTx<
             name: 'UpdateRoles';
             params: {
               poolId: number;
-              newRoot: PalletNominationPoolsConfigOpAccountId32;
-              newNominator: PalletNominationPoolsConfigOpAccountId32;
-              newBouncer: PalletNominationPoolsConfigOpAccountId32;
+              newRoot: PalletNominationPoolsConfigOp004;
+              newNominator: PalletNominationPoolsConfigOp004;
+              newBouncer: PalletNominationPoolsConfigOp004;
             };
           };
         },
@@ -5929,9 +5623,6 @@ export interface ChainTx<
      * The dispatch origin of this call can be signed by the pool nominator or the pool
      * root role, same as [`Pallet::nominate`].
      *
-     * This directly forwards the call to an implementation of `StakingInterface` (e.g.,
-     * `pallet-staking`) through [`Config::StakeAdapter`], on behalf of the bonded pool.
-     *
      * Under certain conditions, this call can be dispatched permissionlessly (i.e. by any
      * account).
      *
@@ -5940,7 +5631,9 @@ export interface ChainTx<
      * are unable to unbond.
      *
      * # Conditions for permissioned dispatch:
-     * * The caller is the pool's nominator or root.
+     * * The caller has a nominator or root role of the pool.
+     * This directly forward the call to the staking pallet, on behalf of the pool bonded
+     * account.
      *
      * @param {number} poolId
      **/
@@ -6112,20 +5805,9 @@ export interface ChainTx<
     /**
      * Claim pending commission.
      *
-     * The `root` role of the pool is _always_ allowed to claim the pool's commission.
-     *
-     * If the pool has set `CommissionClaimPermission::Permissionless`, then any account can
-     * trigger the process of claiming the pool's commission.
-     *
-     * If the pool has set its `CommissionClaimPermission` to `Account(acc)`, then only
-     * accounts
-     * * `acc`, and
-     * * the pool's root account
-     *
-     * may call this extrinsic on behalf of the pool.
-     *
-     * Pending commissions are paid out and added to the total claimed commission.
-     * The total pending commission is reset to zero.
+     * The dispatch origin of this call must be signed by the `root` role of the pool. Pending
+     * commission is paid out and added to total claimed commission`. Total pending commission
+     * is reset to zero. the current.
      *
      * @param {number} poolId
      **/
@@ -6197,10 +5879,8 @@ export interface ChainTx<
      * Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:
      * [`adapter::StakeStrategyType::Delegate`].
      *
-     * The pending slash amount of the member must be equal or more than `ExistentialDeposit`.
-     * This call can be dispatched permissionlessly (i.e. by any account). If the execution
-     * is successful, fee is refunded and caller may be rewarded with a part of the slash
-     * based on the [`crate::pallet::Config::StakeAdapter`] configuration.
+     * This call can be dispatched permissionlessly (i.e. by any account). If the member has
+     * slash to be applied, caller may be rewarded with the part of the slash.
      *
      * @param {MultiAddressLike} memberAccount
      **/
@@ -6388,66 +6068,6 @@ export interface ChainTx<
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
-   * Pallet `StakingAhClient`'s transaction calls
-   **/
-  stakingAhClient: {
-    /**
-     *
-     * @param {PalletStakingAsyncRcClientValidatorSetReport} report
-     **/
-    validatorSet: GenericTxCall<
-      (report: PalletStakingAsyncRcClientValidatorSetReport) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StakingAhClient';
-          palletCall: {
-            name: 'ValidatorSet';
-            params: { report: PalletStakingAsyncRcClientValidatorSetReport };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Allows governance to force set the operating mode of the pallet.
-     *
-     * @param {PalletStakingAsyncAhClientOperatingMode} mode
-     **/
-    setMode: GenericTxCall<
-      (mode: PalletStakingAsyncAhClientOperatingMode) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StakingAhClient';
-          palletCall: {
-            name: 'SetMode';
-            params: { mode: PalletStakingAsyncAhClientOperatingMode };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * manually do what this pallet was meant to do at the end of the migration.
-     *
-     **/
-    forceOnMigrationEnd: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StakingAhClient';
-          palletCall: {
-            name: 'ForceOnMigrationEnd';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
    * Pallet `Configuration`'s transaction calls
    **/
   configuration: {
@@ -6573,6 +6193,24 @@ export interface ChainTx<
           pallet: 'Configuration';
           palletCall: {
             name: 'SetCoretimeCores';
+            params: { new: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the max number of times a claim may timeout on a core before it is abandoned
+     *
+     * @param {number} new_
+     **/
+    setMaxAvailabilityTimeouts: GenericTxCall<
+      (new_: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Configuration';
+          palletCall: {
+            name: 'SetMaxAvailabilityTimeouts';
             params: { new: number };
           };
         },
@@ -7112,15 +6750,15 @@ export interface ChainTx<
     /**
      * Set the asynchronous backing parameters.
      *
-     * @param {PolkadotPrimitivesV8AsyncBackingAsyncBackingParams} new_
+     * @param {PolkadotPrimitivesV7AsyncBackingAsyncBackingParams} new_
      **/
     setAsyncBackingParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams) => ChainSubmittableExtrinsic<
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetAsyncBackingParams';
-            params: { new: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams };
+            params: { new: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams };
           };
         },
         ChainKnownTypes
@@ -7130,15 +6768,15 @@ export interface ChainTx<
     /**
      * Set PVF executor parameters.
      *
-     * @param {PolkadotPrimitivesV8ExecutorParams} new_
+     * @param {PolkadotPrimitivesV7ExecutorParams} new_
      **/
     setExecutorParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV8ExecutorParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV7ExecutorParams) => ChainSubmittableExtrinsic<
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetExecutorParams';
-            params: { new: PolkadotPrimitivesV8ExecutorParams };
+            params: { new: PolkadotPrimitivesV7ExecutorParams };
           };
         },
         ChainKnownTypes
@@ -7218,6 +6856,24 @@ export interface ChainTx<
     >;
 
     /**
+     * Set the on demand (parathreads) ttl in the claimqueue.
+     *
+     * @param {number} new_
+     **/
+    setOnDemandTtl: GenericTxCall<
+      (new_: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Configuration';
+          palletCall: {
+            name: 'SetOnDemandTtl';
+            params: { new: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Set the minimum backing votes threshold.
      *
      * @param {number} new_
@@ -7260,15 +6916,15 @@ export interface ChainTx<
     /**
      * Set approval-voting-params.
      *
-     * @param {PolkadotPrimitivesV8ApprovalVotingParams} new_
+     * @param {PolkadotPrimitivesV7ApprovalVotingParams} new_
      **/
     setApprovalVotingParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV8ApprovalVotingParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV7ApprovalVotingParams) => ChainSubmittableExtrinsic<
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetApprovalVotingParams';
-            params: { new: PolkadotPrimitivesV8ApprovalVotingParams };
+            params: { new: PolkadotPrimitivesV7ApprovalVotingParams };
           };
         },
         ChainKnownTypes
@@ -7278,15 +6934,15 @@ export interface ChainTx<
     /**
      * Set scheduler-params.
      *
-     * @param {PolkadotPrimitivesV8SchedulerParams} new_
+     * @param {PolkadotPrimitivesVstagingSchedulerParams} new_
      **/
     setSchedulerParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV8SchedulerParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesVstagingSchedulerParams) => ChainSubmittableExtrinsic<
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetSchedulerParams';
-            params: { new: PolkadotPrimitivesV8SchedulerParams };
+            params: { new: PolkadotPrimitivesVstagingSchedulerParams };
           };
         },
         ChainKnownTypes
@@ -7323,15 +6979,15 @@ export interface ChainTx<
     /**
      * Enter the paras inherent. This will process bitfields and backed candidates.
      *
-     * @param {PolkadotPrimitivesVstagingInherentData} data
+     * @param {PolkadotPrimitivesV7InherentData} data
      **/
     enter: GenericTxCall<
-      (data: PolkadotPrimitivesVstagingInherentData) => ChainSubmittableExtrinsic<
+      (data: PolkadotPrimitivesV7InherentData) => ChainSubmittableExtrinsic<
         {
           pallet: 'ParaInherent';
           palletCall: {
             name: 'Enter';
-            params: { data: PolkadotPrimitivesVstagingInherentData };
+            params: { data: PolkadotPrimitivesV7InherentData };
           };
         },
         ChainKnownTypes
@@ -7527,21 +7183,21 @@ export interface ChainTx<
      * Includes a statement for a PVF pre-checking vote. Potentially, finalizes the vote and
      * enacts the results if that was the last vote before achieving the supermajority.
      *
-     * @param {PolkadotPrimitivesV8PvfCheckStatement} stmt
-     * @param {PolkadotPrimitivesV8ValidatorAppSignature} signature
+     * @param {PolkadotPrimitivesV7PvfCheckStatement} stmt
+     * @param {PolkadotPrimitivesV7ValidatorAppSignature} signature
      **/
     includePvfCheckStatement: GenericTxCall<
       (
-        stmt: PolkadotPrimitivesV8PvfCheckStatement,
-        signature: PolkadotPrimitivesV8ValidatorAppSignature,
+        stmt: PolkadotPrimitivesV7PvfCheckStatement,
+        signature: PolkadotPrimitivesV7ValidatorAppSignature,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Paras';
           palletCall: {
             name: 'IncludePvfCheckStatement';
             params: {
-              stmt: PolkadotPrimitivesV8PvfCheckStatement;
-              signature: PolkadotPrimitivesV8ValidatorAppSignature;
+              stmt: PolkadotPrimitivesV7PvfCheckStatement;
+              signature: PolkadotPrimitivesV7ValidatorAppSignature;
             };
           };
         },
@@ -7565,91 +7221,6 @@ export interface ChainTx<
           palletCall: {
             name: 'ForceSetMostRecentContext';
             params: { para: PolkadotParachainPrimitivesPrimitivesId; context: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove an upgrade cooldown for a parachain.
-     *
-     * The cost for removing the cooldown earlier depends on the time left for the cooldown
-     * multiplied by [`Config::CooldownRemovalMultiplier`]. The paid tokens are burned.
-     *
-     * @param {PolkadotParachainPrimitivesPrimitivesId} para
-     **/
-    removeUpgradeCooldown: GenericTxCall<
-      (para: PolkadotParachainPrimitivesPrimitivesId) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Paras';
-          palletCall: {
-            name: 'RemoveUpgradeCooldown';
-            params: { para: PolkadotParachainPrimitivesPrimitivesId };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Sets the storage for the authorized current code hash of the parachain.
-     * If not applied, it will be removed at the `System::block_number() + valid_period` block.
-     *
-     * This can be useful, when triggering `Paras::force_set_current_code(para, code)`
-     * from a different chain than the one where the `Paras` pallet is deployed.
-     *
-     * The main purpose is to avoid transferring the entire `code` Wasm blob between chains.
-     * Instead, we authorize `code_hash` with `root`, which can later be applied by
-     * `Paras::apply_authorized_force_set_current_code(para, code)` by anyone.
-     *
-     * Authorizations are stored in an **overwriting manner**.
-     *
-     * @param {PolkadotParachainPrimitivesPrimitivesId} para
-     * @param {PolkadotParachainPrimitivesPrimitivesValidationCodeHash} newCodeHash
-     * @param {number} validPeriod
-     **/
-    authorizeForceSetCurrentCodeHash: GenericTxCall<
-      (
-        para: PolkadotParachainPrimitivesPrimitivesId,
-        newCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
-        validPeriod: number,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Paras';
-          palletCall: {
-            name: 'AuthorizeForceSetCurrentCodeHash';
-            params: {
-              para: PolkadotParachainPrimitivesPrimitivesId;
-              newCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
-              validPeriod: number;
-            };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Applies the already authorized current code for the parachain,
-     * triggering the same functionality as `force_set_current_code`.
-     *
-     * @param {PolkadotParachainPrimitivesPrimitivesId} para
-     * @param {PolkadotParachainPrimitivesPrimitivesValidationCode} newCode
-     **/
-    applyAuthorizedForceSetCurrentCode: GenericTxCall<
-      (
-        para: PolkadotParachainPrimitivesPrimitivesId,
-        newCode: PolkadotParachainPrimitivesPrimitivesValidationCode,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Paras';
-          palletCall: {
-            name: 'ApplyAuthorizedForceSetCurrentCode';
-            params: {
-              para: PolkadotParachainPrimitivesPrimitivesId;
-              newCode: PolkadotParachainPrimitivesPrimitivesValidationCode;
-            };
           };
         },
         ChainKnownTypes
@@ -8045,19 +7616,19 @@ export interface ChainTx<
   parasSlashing: {
     /**
      *
-     * @param {PolkadotPrimitivesVstagingDisputeProof} disputeProof
+     * @param {PolkadotPrimitivesV7SlashingDisputeProof} disputeProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
     reportDisputeLostUnsigned: GenericTxCall<
       (
-        disputeProof: PolkadotPrimitivesVstagingDisputeProof,
+        disputeProof: PolkadotPrimitivesV7SlashingDisputeProof,
         keyOwnerProof: SpSessionMembershipProof,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'ParasSlashing';
           palletCall: {
             name: 'ReportDisputeLostUnsigned';
-            params: { disputeProof: PolkadotPrimitivesVstagingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+            params: { disputeProof: PolkadotPrimitivesV7SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
           };
         },
         ChainKnownTypes
@@ -8092,8 +7663,6 @@ export interface ChainTx<
      *
      * @param {bigint} maxAmount
      * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
-     *
-     * @deprecated This will be removed in favor of using `place_order_with_credits`
      **/
     placeOrderAllowDeath: GenericTxCall<
       (
@@ -8130,8 +7699,6 @@ export interface ChainTx<
      *
      * @param {bigint} maxAmount
      * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
-     *
-     * @deprecated This will be removed in favor of using `place_order_with_credits`
      **/
     placeOrderKeepAlive: GenericTxCall<
       (
@@ -8142,44 +7709,6 @@ export interface ChainTx<
           pallet: 'OnDemand';
           palletCall: {
             name: 'PlaceOrderKeepAlive';
-            params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Create a single on demand core order with credits.
-     * Will charge the owner's on-demand credit account the spot price for the current block.
-     *
-     * Parameters:
-     * - `origin`: The sender of the call, on-demand credits will be withdrawn from this
-     * account.
-     * - `max_amount`: The maximum number of credits to spend from the origin to place an
-     * order.
-     * - `para_id`: A `ParaId` the origin wants to provide blockspace for.
-     *
-     * Errors:
-     * - `InsufficientCredits`
-     * - `QueueFull`
-     * - `SpotPriceHigherThanMaxAmount`
-     *
-     * Events:
-     * - `OnDemandOrderPlaced`
-     *
-     * @param {bigint} maxAmount
-     * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
-     **/
-    placeOrderWithCredits: GenericTxCall<
-      (
-        maxAmount: bigint,
-        paraId: PolkadotParachainPrimitivesPrimitivesId,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'OnDemand';
-          palletCall: {
-            name: 'PlaceOrderWithCredits';
             params: { maxAmount: bigint; paraId: PolkadotParachainPrimitivesPrimitivesId };
           };
         },
@@ -8984,27 +8513,6 @@ export interface ChainTx<
     >;
 
     /**
-     *
-     * @param {AccountId32Like} who
-     * @param {bigint} amount
-     **/
-    creditAccount: GenericTxCall<
-      (
-        who: AccountId32Like,
-        amount: bigint,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Coretime';
-          palletCall: {
-            name: 'CreditAccount';
-            params: { who: AccountId32Like; amount: bigint };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
      * Receive instructions from the `ExternalBrokerOrigin`, detailing how a specific core is
      * to be used.
      *
@@ -9280,8 +8788,6 @@ export interface ChainTx<
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
-     *
-     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_teleport_assets` or `transfer_assets`
      **/
     teleportAssets: GenericTxCall<
       (
@@ -9342,8 +8848,6 @@ export interface ChainTx<
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
-     *
-     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_reserve_transfer_assets` or `transfer_assets`
      **/
     reserveTransferAssets: GenericTxCall<
       (
@@ -9405,19 +8909,19 @@ export interface ChainTx<
      * - `location`: The destination that is being described.
      * - `xcm_version`: The latest version of XCM that `location` supports.
      *
-     * @param {StagingXcmV5Location} location
+     * @param {StagingXcmV4Location} location
      * @param {number} version
      **/
     forceXcmVersion: GenericTxCall<
       (
-        location: StagingXcmV5Location,
+        location: StagingXcmV4Location,
         version: number,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'XcmPallet';
           palletCall: {
             name: 'ForceXcmVersion';
-            params: { location: StagingXcmV5Location; version: number };
+            params: { location: StagingXcmV4Location; version: number };
           };
         },
         ChainKnownTypes
@@ -9806,74 +9310,6 @@ export interface ChainTx<
     >;
 
     /**
-     * Authorize another `aliaser` location to alias into the local `origin` making this call.
-     * The `aliaser` is only authorized until the provided `expiry` block number.
-     * The call can also be used for a previously authorized alias in order to update its
-     * `expiry` block number.
-     *
-     * Usually useful to allow your local account to be aliased into from a remote location
-     * also under your control (like your account on another chain).
-     *
-     * WARNING: make sure the caller `origin` (you) trusts the `aliaser` location to act in
-     * their/your name. Once authorized using this call, the `aliaser` can freely impersonate
-     * `origin` in XCM programs executed on the local chain.
-     *
-     * @param {XcmVersionedLocation} aliaser
-     * @param {bigint | undefined} expires
-     **/
-    addAuthorizedAlias: GenericTxCall<
-      (
-        aliaser: XcmVersionedLocation,
-        expires: bigint | undefined,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'XcmPallet';
-          palletCall: {
-            name: 'AddAuthorizedAlias';
-            params: { aliaser: XcmVersionedLocation; expires: bigint | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove a previously authorized `aliaser` from the list of locations that can alias into
-     * the local `origin` making this call.
-     *
-     * @param {XcmVersionedLocation} aliaser
-     **/
-    removeAuthorizedAlias: GenericTxCall<
-      (aliaser: XcmVersionedLocation) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'XcmPallet';
-          palletCall: {
-            name: 'RemoveAuthorizedAlias';
-            params: { aliaser: XcmVersionedLocation };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove all previously authorized `aliaser`s that can alias into the local `origin`
-     * making this call.
-     *
-     **/
-    removeAllAuthorizedAliases: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'XcmPallet';
-          palletCall: {
-            name: 'RemoveAllAuthorizedAliases';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -10045,7 +9481,7 @@ export interface ChainTx<
      * @param {SpConsensusBeefyDoubleVotingProof} equivocationProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
-    reportDoubleVoting: GenericTxCall<
+    reportEquivocation: GenericTxCall<
       (
         equivocationProof: SpConsensusBeefyDoubleVotingProof,
         keyOwnerProof: SpSessionMembershipProof,
@@ -10053,7 +9489,7 @@ export interface ChainTx<
         {
           pallet: 'Beefy';
           palletCall: {
-            name: 'ReportDoubleVoting';
+            name: 'ReportEquivocation';
             params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
           };
         },
@@ -10075,7 +9511,7 @@ export interface ChainTx<
      * @param {SpConsensusBeefyDoubleVotingProof} equivocationProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
-    reportDoubleVotingUnsigned: GenericTxCall<
+    reportEquivocationUnsigned: GenericTxCall<
       (
         equivocationProof: SpConsensusBeefyDoubleVotingProof,
         keyOwnerProof: SpSessionMembershipProof,
@@ -10083,7 +9519,7 @@ export interface ChainTx<
         {
           pallet: 'Beefy';
           palletCall: {
-            name: 'ReportDoubleVotingUnsigned';
+            name: 'ReportEquivocationUnsigned';
             params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
           };
         },
@@ -10106,118 +9542,6 @@ export interface ChainTx<
           palletCall: {
             name: 'SetNewGenesis';
             params: { delayInBlocks: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Report fork voting equivocation. This method will verify the equivocation proof
-     * and validate the given key ownership proof against the extracted offender.
-     * If both are valid, the offence will be reported.
-     *
-     * @param {SpConsensusBeefyForkVotingProof} equivocationProof
-     * @param {SpSessionMembershipProof} keyOwnerProof
-     **/
-    reportForkVoting: GenericTxCall<
-      (
-        equivocationProof: SpConsensusBeefyForkVotingProof,
-        keyOwnerProof: SpSessionMembershipProof,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Beefy';
-          palletCall: {
-            name: 'ReportForkVoting';
-            params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Report fork voting equivocation. This method will verify the equivocation proof
-     * and validate the given key ownership proof against the extracted offender.
-     * If both are valid, the offence will be reported.
-     *
-     * This extrinsic must be called unsigned and it is expected that only
-     * block authors will call it (validated in `ValidateUnsigned`), as such
-     * if the block author is defined it will be defined as the equivocation
-     * reporter.
-     *
-     * @param {SpConsensusBeefyForkVotingProof} equivocationProof
-     * @param {SpSessionMembershipProof} keyOwnerProof
-     **/
-    reportForkVotingUnsigned: GenericTxCall<
-      (
-        equivocationProof: SpConsensusBeefyForkVotingProof,
-        keyOwnerProof: SpSessionMembershipProof,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Beefy';
-          palletCall: {
-            name: 'ReportForkVotingUnsigned';
-            params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Report future block voting equivocation. This method will verify the equivocation proof
-     * and validate the given key ownership proof against the extracted offender.
-     * If both are valid, the offence will be reported.
-     *
-     * @param {SpConsensusBeefyFutureBlockVotingProof} equivocationProof
-     * @param {SpSessionMembershipProof} keyOwnerProof
-     **/
-    reportFutureBlockVoting: GenericTxCall<
-      (
-        equivocationProof: SpConsensusBeefyFutureBlockVotingProof,
-        keyOwnerProof: SpSessionMembershipProof,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Beefy';
-          palletCall: {
-            name: 'ReportFutureBlockVoting';
-            params: {
-              equivocationProof: SpConsensusBeefyFutureBlockVotingProof;
-              keyOwnerProof: SpSessionMembershipProof;
-            };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Report future block voting equivocation. This method will verify the equivocation proof
-     * and validate the given key ownership proof against the extracted offender.
-     * If both are valid, the offence will be reported.
-     *
-     * This extrinsic must be called unsigned and it is expected that only
-     * block authors will call it (validated in `ValidateUnsigned`), as such
-     * if the block author is defined it will be defined as the equivocation
-     * reporter.
-     *
-     * @param {SpConsensusBeefyFutureBlockVotingProof} equivocationProof
-     * @param {SpSessionMembershipProof} keyOwnerProof
-     **/
-    reportFutureBlockVotingUnsigned: GenericTxCall<
-      (
-        equivocationProof: SpConsensusBeefyFutureBlockVotingProof,
-        keyOwnerProof: SpSessionMembershipProof,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Beefy';
-          palletCall: {
-            name: 'ReportFutureBlockVotingUnsigned';
-            params: {
-              equivocationProof: SpConsensusBeefyFutureBlockVotingProof;
-              keyOwnerProof: SpSessionMembershipProof;
-            };
           };
         },
         ChainKnownTypes
@@ -10484,353 +9808,6 @@ export interface ChainTx<
           pallet: 'Sudo';
           palletCall: {
             name: 'RemoveKey';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
-   * Pallet `RcMigrator`'s transaction calls
-   **/
-  rcMigrator: {
-    /**
-     * Set the migration stage.
-     *
-     * This call is intended for emergency use only and is guarded by the
-     * [`Config::AdminOrigin`].
-     *
-     * @param {PalletRcMigratorMigrationStage} stage
-     **/
-    forceSetStage: GenericTxCall<
-      (stage: PalletRcMigratorMigrationStage) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'ForceSetStage';
-            params: { stage: PalletRcMigratorMigrationStage };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Schedule the migration to start at a given moment.
-     *
-     * ### Parameters:
-     * - `start`: The block number at which the migration will start. `DispatchTime` calculated
-     * at the moment of the extrinsic execution.
-     * - `warm_up`: Duration or timepoint that will be used to prepare for the migration. Calls
-     * are filtered during this period. It is intended to give enough time for UMP and DMP
-     * queues to empty. `DispatchTime` calculated at the moment of the transition to the
-     * warm-up stage.
-     * - `cool_off`: The block number at which the post migration cool-off period will end. The
-     * `DispatchTime` calculated at the moment of the transition to the cool-off stage.
-     * - `unsafe_ignore_staking_lock_check`: ONLY FOR TESTING. Ignore the check whether the
-     * scheduled time point is far enough in the future.
-     *
-     * Note: If the staking election for next era is already complete, and the next
-     * validator set is queued in `pallet-session`, we want to avoid starting the data
-     * migration at this point as it can lead to some missed validator rewards. To address
-     * this, we stop staking election at the start of migration and must wait atleast 1
-     * session (set via warm_up) before starting the data migration.
-     *
-     * Read [`MigrationStage::Scheduled`] documentation for more details.
-     *
-     * @param {FrameSupportScheduleDispatchTime} start
-     * @param {FrameSupportScheduleDispatchTime} warmUp
-     * @param {FrameSupportScheduleDispatchTime} coolOff
-     * @param {boolean} unsafeIgnoreStakingLockCheck
-     **/
-    scheduleMigration: GenericTxCall<
-      (
-        start: FrameSupportScheduleDispatchTime,
-        warmUp: FrameSupportScheduleDispatchTime,
-        coolOff: FrameSupportScheduleDispatchTime,
-        unsafeIgnoreStakingLockCheck: boolean,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'ScheduleMigration';
-            params: {
-              start: FrameSupportScheduleDispatchTime;
-              warmUp: FrameSupportScheduleDispatchTime;
-              coolOff: FrameSupportScheduleDispatchTime;
-              unsafeIgnoreStakingLockCheck: boolean;
-            };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Start the data migration.
-     *
-     * This is typically called by the Asset Hub to indicate it's readiness to receive the
-     * migration data.
-     *
-     **/
-    startDataMigration: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'StartDataMigration';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Receive a query response from the Asset Hub for a previously sent xcm message.
-     *
-     * @param {bigint} queryId
-     * @param {StagingXcmV5Response} response
-     **/
-    receiveQueryResponse: GenericTxCall<
-      (
-        queryId: bigint,
-        response: StagingXcmV5Response,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'ReceiveQueryResponse';
-            params: { queryId: bigint; response: StagingXcmV5Response };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Resend a previously sent and unconfirmed XCM message.
-     *
-     * @param {bigint} queryId
-     **/
-    resendXcm: GenericTxCall<
-      (queryId: bigint) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'ResendXcm';
-            params: { queryId: bigint };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the unprocessed message buffer size.
-     *
-     * `None` means to use the configuration value.
-     *
-     * @param {number | undefined} new_
-     **/
-    setUnprocessedMsgBuffer: GenericTxCall<
-      (new_: number | undefined) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'SetUnprocessedMsgBuffer';
-            params: { new: number | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the AH UMP queue priority configuration.
-     *
-     * Can only be called by the `AdminOrigin`.
-     *
-     * @param {PalletRcMigratorQueuePriority} new_
-     **/
-    setAhUmpQueuePriority: GenericTxCall<
-      (new_: PalletRcMigratorQueuePriority) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'SetAhUmpQueuePriority';
-            params: { new: PalletRcMigratorQueuePriority };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the manager account id.
-     *
-     * The manager has the similar to [`Config::AdminOrigin`] privileges except that it
-     * can not set the manager account id via `set_manager` call.
-     *
-     * @param {AccountId32Like | undefined} new_
-     **/
-    setManager: GenericTxCall<
-      (new_: AccountId32Like | undefined) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'SetManager';
-            params: { new: AccountId32Like | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * XCM send call identical to the [`pallet_xcm::Pallet::send`] call but with the
-     * [Config::SendXcm] router which will be able to send messages to the Asset Hub during
-     * the migration.
-     *
-     * @param {XcmVersionedLocation} dest
-     * @param {XcmVersionedXcm} message
-     **/
-    sendXcmMessage: GenericTxCall<
-      (
-        dest: XcmVersionedLocation,
-        message: XcmVersionedXcm,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'SendXcmMessage';
-            params: { dest: XcmVersionedLocation; message: XcmVersionedXcm };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the accounts to be preserved on Relay Chain during the migration.
-     *
-     * The accounts must have no consumers references.
-     *
-     * @param {Array<AccountId32Like>} accounts
-     **/
-    preserveAccounts: GenericTxCall<
-      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'PreserveAccounts';
-            params: { accounts: Array<AccountId32Like> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the canceller account id.
-     *
-     * The canceller can only stop scheduled migration.
-     *
-     * @param {AccountId32Like | undefined} new_
-     **/
-    setCanceller: GenericTxCall<
-      (new_: AccountId32Like | undefined) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'SetCanceller';
-            params: { new: AccountId32Like | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Pause the migration.
-     *
-     **/
-    pauseMigration: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'PauseMigration';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Cancel the migration.
-     *
-     * Migration can only be cancelled if it is in the [`MigrationStage::Scheduled`] state.
-     *
-     **/
-    cancelMigration: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'CancelMigration';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Vote on behalf of any of the members in `MultisigMembers`.
-     *
-     * Unsigned extrinsic, requiring the `payload` to be signed.
-     *
-     * Upon each call, a new entry is created in `ManagerMultisigs` map the `payload.call` to
-     * be dispatched. Once `MultisigThreshold` is reached, the entire map is deleted, and we
-     * move on to the next round.
-     *
-     * The round system ensures that signatures from older round cannot be reused.
-     *
-     * @param {PalletRcMigratorManagerMultisigVote} payload
-     * @param {SpRuntimeMultiSignature} sig
-     **/
-    voteManagerMultisig: GenericTxCall<
-      (
-        payload: PalletRcMigratorManagerMultisigVote,
-        sig: SpRuntimeMultiSignature,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'VoteManagerMultisig';
-            params: { payload: PalletRcMigratorManagerMultisigVote; sig: SpRuntimeMultiSignature };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the migration settings. Can only be done by admin or manager.
-     *
-     * @param {PalletRcMigratorMigrationSettings | undefined} settings
-     **/
-    setSettings: GenericTxCall<
-      (settings: PalletRcMigratorMigrationSettings | undefined) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'SetSettings';
-            params: { settings: PalletRcMigratorMigrationSettings | undefined };
           };
         },
         ChainKnownTypes

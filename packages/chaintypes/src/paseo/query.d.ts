@@ -62,6 +62,8 @@ import type {
   PalletTreasurySpendStatus,
   PalletConvictionVotingVoteVoting,
   PalletReferendaReferendumInfo,
+  PaseoRuntimeRuntimeParametersValue,
+  PaseoRuntimeRuntimeParametersKey,
   PolkadotRuntimeCommonClaimsStatementKind,
   PalletVestingVestingInfo,
   PalletVestingReleases,
@@ -1549,6 +1551,26 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<[] | undefined> =} callback
      **/
     whitelistedCall: GenericStorageQuery<(arg: H256) => [] | undefined, H256>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Parameters`'s storage queries
+   **/
+  parameters: {
+    /**
+     * Stored parameters.
+     *
+     * @param {PaseoRuntimeRuntimeParametersKey} arg
+     * @param {Callback<PaseoRuntimeRuntimeParametersValue | undefined> =} callback
+     **/
+    parameters: GenericStorageQuery<
+      (arg: PaseoRuntimeRuntimeParametersKey) => PaseoRuntimeRuntimeParametersValue | undefined,
+      PaseoRuntimeRuntimeParametersKey
+    >;
 
     /**
      * Generic pallet storage query

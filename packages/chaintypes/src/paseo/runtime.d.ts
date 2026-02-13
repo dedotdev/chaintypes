@@ -16,6 +16,7 @@ import type {
   AccountId32,
 } from 'dedot/codecs';
 import type {
+  RelayCommonApisInflationInfo,
   SpRuntimeBlock,
   SpRuntimeExtrinsicInclusionMode,
   SpCoreOpaqueMetadata,
@@ -87,6 +88,25 @@ import type {
 } from './types.js';
 
 export interface RuntimeApis extends GenericRuntimeApis {
+  /**
+   * @runtimeapi: Inflation - 0xc51ff1fa3f5d0cca
+   **/
+  inflation: {
+    /**
+     * Return the current estimates of the inflation amount.
+     *
+     * This is marked as experimental in light of RFC#89. Nonetheless, its usage is highly
+     * recommended over trying to read-storage, or re-create the onchain logic.
+     *
+     * @callname: Inflation_experimental_inflation_prediction_info
+     **/
+    experimentalInflationPredictionInfo: GenericRuntimeApiMethod<() => Promise<RelayCommonApisInflationInfo>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
   /**
    * @runtimeapi: Core - 0xdf6acb689907609b
    **/

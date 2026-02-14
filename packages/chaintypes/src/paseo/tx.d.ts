@@ -64,19 +64,19 @@ import type {
   PalletNominationPoolsClaimPermission,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
-  PolkadotPrimitivesV7AsyncBackingAsyncBackingParams,
-  PolkadotPrimitivesV7ExecutorParams,
-  PolkadotPrimitivesV7ApprovalVotingParams,
-  PolkadotPrimitivesVstagingSchedulerParams,
-  PolkadotPrimitivesV7InherentData,
+  PolkadotPrimitivesV8AsyncBackingAsyncBackingParams,
+  PolkadotPrimitivesV8ExecutorParams,
+  PolkadotPrimitivesV8ApprovalVotingParams,
+  PolkadotPrimitivesV8SchedulerParams,
+  PolkadotPrimitivesV8InherentData,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
-  PolkadotPrimitivesV7PvfCheckStatement,
-  PolkadotPrimitivesV7ValidatorAppSignature,
+  PolkadotPrimitivesV8PvfCheckStatement,
+  PolkadotPrimitivesV8ValidatorAppSignature,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
-  PolkadotPrimitivesV7SlashingDisputeProof,
+  PolkadotPrimitivesV8SlashingDisputeProof,
   SpRuntimeMultiSigner,
   PalletBrokerCoretimeInterfaceCoreAssignment,
   PolkadotRuntimeParachainsAssignerCoretimePartsOf57600,
@@ -91,6 +91,8 @@ import type {
   XcmVersionedAssetId,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   SpConsensusBeefyDoubleVotingProof,
+  SpConsensusBeefyForkVotingProof,
+  SpConsensusBeefyFutureBlockVotingProof,
   PolkadotRuntimeParachainsParasParaGenesisArgs,
 } from './types.js';
 
@@ -2183,6 +2185,29 @@ export interface ChainTx<
               maybeTotal: bigint | undefined;
               maybeUnlocking: Array<PalletStakingUnlockChunk> | undefined;
             };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Adjusts the staking ledger by withdrawing any excess staked amount.
+     *
+     * This function corrects cases where a user's recorded stake in the ledger
+     * exceeds their actual staked funds. This situation can arise due to cases such as
+     * external slashing by another pallet, leading to an inconsistency between the ledger
+     * and the actual stake.
+     *
+     * @param {AccountId32Like} stash
+     **/
+    withdrawOverstake: GenericTxCall<
+      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'WithdrawOverstake';
+            params: { stash: AccountId32Like };
           };
         },
         ChainKnownTypes
@@ -5195,8 +5220,14 @@ export interface ChainTx<
    **/
   nominationPools: {
     /**
-     * Stake funds with a pool. The amount to bond is transferred from the member to the
-     * pools account and immediately increases the pools bond.
+     * Stake funds with a pool. The amount to bond is delegated (or transferred based on
+     * [`adapter::StakeStrategyType`]) from the member to the pool account and immediately
+     * increases the pool's bond.
+     *
+     * The method of transferring the amount to the pool account is determined by
+     * [`adapter::StakeStrategyType`]. If the pool is configured to use
+     * [`adapter::StakeStrategyType::Delegate`], the funds remain in the account of
+     * the `origin`, while the pool gains the right to use these funds for staking.
      *
      * # Note
      *
@@ -5910,8 +5941,10 @@ export interface ChainTx<
      * Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:
      * [`adapter::StakeStrategyType::Delegate`].
      *
-     * This call can be dispatched permissionlessly (i.e. by any account). If the member has
-     * slash to be applied, caller may be rewarded with the part of the slash.
+     * The pending slash amount of the member must be equal or more than `ExistentialDeposit`.
+     * This call can be dispatched permissionlessly (i.e. by any account). If the execution
+     * is successful, fee is refunded and caller may be rewarded with a part of the slash
+     * based on the [`crate::pallet::Config::StakeAdapter`] configuration.
      *
      * @param {MultiAddressLike} memberAccount
      **/
@@ -6781,15 +6814,15 @@ export interface ChainTx<
     /**
      * Set the asynchronous backing parameters.
      *
-     * @param {PolkadotPrimitivesV7AsyncBackingAsyncBackingParams} new_
+     * @param {PolkadotPrimitivesV8AsyncBackingAsyncBackingParams} new_
      **/
     setAsyncBackingParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams) => ChainSubmittableExtrinsic<
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetAsyncBackingParams';
-            params: { new: PolkadotPrimitivesV7AsyncBackingAsyncBackingParams };
+            params: { new: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams };
           };
         },
         ChainKnownTypes
@@ -6799,15 +6832,15 @@ export interface ChainTx<
     /**
      * Set PVF executor parameters.
      *
-     * @param {PolkadotPrimitivesV7ExecutorParams} new_
+     * @param {PolkadotPrimitivesV8ExecutorParams} new_
      **/
     setExecutorParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV7ExecutorParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV8ExecutorParams) => ChainSubmittableExtrinsic<
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetExecutorParams';
-            params: { new: PolkadotPrimitivesV7ExecutorParams };
+            params: { new: PolkadotPrimitivesV8ExecutorParams };
           };
         },
         ChainKnownTypes
@@ -6947,15 +6980,15 @@ export interface ChainTx<
     /**
      * Set approval-voting-params.
      *
-     * @param {PolkadotPrimitivesV7ApprovalVotingParams} new_
+     * @param {PolkadotPrimitivesV8ApprovalVotingParams} new_
      **/
     setApprovalVotingParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV7ApprovalVotingParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV8ApprovalVotingParams) => ChainSubmittableExtrinsic<
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetApprovalVotingParams';
-            params: { new: PolkadotPrimitivesV7ApprovalVotingParams };
+            params: { new: PolkadotPrimitivesV8ApprovalVotingParams };
           };
         },
         ChainKnownTypes
@@ -6965,15 +6998,15 @@ export interface ChainTx<
     /**
      * Set scheduler-params.
      *
-     * @param {PolkadotPrimitivesVstagingSchedulerParams} new_
+     * @param {PolkadotPrimitivesV8SchedulerParams} new_
      **/
     setSchedulerParams: GenericTxCall<
-      (new_: PolkadotPrimitivesVstagingSchedulerParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV8SchedulerParams) => ChainSubmittableExtrinsic<
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetSchedulerParams';
-            params: { new: PolkadotPrimitivesVstagingSchedulerParams };
+            params: { new: PolkadotPrimitivesV8SchedulerParams };
           };
         },
         ChainKnownTypes
@@ -7010,15 +7043,15 @@ export interface ChainTx<
     /**
      * Enter the paras inherent. This will process bitfields and backed candidates.
      *
-     * @param {PolkadotPrimitivesV7InherentData} data
+     * @param {PolkadotPrimitivesV8InherentData} data
      **/
     enter: GenericTxCall<
-      (data: PolkadotPrimitivesV7InherentData) => ChainSubmittableExtrinsic<
+      (data: PolkadotPrimitivesV8InherentData) => ChainSubmittableExtrinsic<
         {
           pallet: 'ParaInherent';
           palletCall: {
             name: 'Enter';
-            params: { data: PolkadotPrimitivesV7InherentData };
+            params: { data: PolkadotPrimitivesV8InherentData };
           };
         },
         ChainKnownTypes
@@ -7214,21 +7247,21 @@ export interface ChainTx<
      * Includes a statement for a PVF pre-checking vote. Potentially, finalizes the vote and
      * enacts the results if that was the last vote before achieving the supermajority.
      *
-     * @param {PolkadotPrimitivesV7PvfCheckStatement} stmt
-     * @param {PolkadotPrimitivesV7ValidatorAppSignature} signature
+     * @param {PolkadotPrimitivesV8PvfCheckStatement} stmt
+     * @param {PolkadotPrimitivesV8ValidatorAppSignature} signature
      **/
     includePvfCheckStatement: GenericTxCall<
       (
-        stmt: PolkadotPrimitivesV7PvfCheckStatement,
-        signature: PolkadotPrimitivesV7ValidatorAppSignature,
+        stmt: PolkadotPrimitivesV8PvfCheckStatement,
+        signature: PolkadotPrimitivesV8ValidatorAppSignature,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Paras';
           palletCall: {
             name: 'IncludePvfCheckStatement';
             params: {
-              stmt: PolkadotPrimitivesV7PvfCheckStatement;
-              signature: PolkadotPrimitivesV7ValidatorAppSignature;
+              stmt: PolkadotPrimitivesV8PvfCheckStatement;
+              signature: PolkadotPrimitivesV8ValidatorAppSignature;
             };
           };
         },
@@ -7647,19 +7680,19 @@ export interface ChainTx<
   parasSlashing: {
     /**
      *
-     * @param {PolkadotPrimitivesV7SlashingDisputeProof} disputeProof
+     * @param {PolkadotPrimitivesV8SlashingDisputeProof} disputeProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
     reportDisputeLostUnsigned: GenericTxCall<
       (
-        disputeProof: PolkadotPrimitivesV7SlashingDisputeProof,
+        disputeProof: PolkadotPrimitivesV8SlashingDisputeProof,
         keyOwnerProof: SpSessionMembershipProof,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'ParasSlashing';
           palletCall: {
             name: 'ReportDisputeLostUnsigned';
-            params: { disputeProof: PolkadotPrimitivesV7SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+            params: { disputeProof: PolkadotPrimitivesV8SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
           };
         },
         ChainKnownTypes
@@ -9512,7 +9545,7 @@ export interface ChainTx<
      * @param {SpConsensusBeefyDoubleVotingProof} equivocationProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
-    reportEquivocation: GenericTxCall<
+    reportDoubleVoting: GenericTxCall<
       (
         equivocationProof: SpConsensusBeefyDoubleVotingProof,
         keyOwnerProof: SpSessionMembershipProof,
@@ -9520,7 +9553,7 @@ export interface ChainTx<
         {
           pallet: 'Beefy';
           palletCall: {
-            name: 'ReportEquivocation';
+            name: 'ReportDoubleVoting';
             params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
           };
         },
@@ -9542,7 +9575,7 @@ export interface ChainTx<
      * @param {SpConsensusBeefyDoubleVotingProof} equivocationProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
-    reportEquivocationUnsigned: GenericTxCall<
+    reportDoubleVotingUnsigned: GenericTxCall<
       (
         equivocationProof: SpConsensusBeefyDoubleVotingProof,
         keyOwnerProof: SpSessionMembershipProof,
@@ -9550,7 +9583,7 @@ export interface ChainTx<
         {
           pallet: 'Beefy';
           palletCall: {
-            name: 'ReportEquivocationUnsigned';
+            name: 'ReportDoubleVotingUnsigned';
             params: { equivocationProof: SpConsensusBeefyDoubleVotingProof; keyOwnerProof: SpSessionMembershipProof };
           };
         },
@@ -9573,6 +9606,118 @@ export interface ChainTx<
           palletCall: {
             name: 'SetNewGenesis';
             params: { delayInBlocks: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Report fork voting equivocation. This method will verify the equivocation proof
+     * and validate the given key ownership proof against the extracted offender.
+     * If both are valid, the offence will be reported.
+     *
+     * @param {SpConsensusBeefyForkVotingProof} equivocationProof
+     * @param {SpSessionMembershipProof} keyOwnerProof
+     **/
+    reportForkVoting: GenericTxCall<
+      (
+        equivocationProof: SpConsensusBeefyForkVotingProof,
+        keyOwnerProof: SpSessionMembershipProof,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'ReportForkVoting';
+            params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Report fork voting equivocation. This method will verify the equivocation proof
+     * and validate the given key ownership proof against the extracted offender.
+     * If both are valid, the offence will be reported.
+     *
+     * This extrinsic must be called unsigned and it is expected that only
+     * block authors will call it (validated in `ValidateUnsigned`), as such
+     * if the block author is defined it will be defined as the equivocation
+     * reporter.
+     *
+     * @param {SpConsensusBeefyForkVotingProof} equivocationProof
+     * @param {SpSessionMembershipProof} keyOwnerProof
+     **/
+    reportForkVotingUnsigned: GenericTxCall<
+      (
+        equivocationProof: SpConsensusBeefyForkVotingProof,
+        keyOwnerProof: SpSessionMembershipProof,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'ReportForkVotingUnsigned';
+            params: { equivocationProof: SpConsensusBeefyForkVotingProof; keyOwnerProof: SpSessionMembershipProof };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Report future block voting equivocation. This method will verify the equivocation proof
+     * and validate the given key ownership proof against the extracted offender.
+     * If both are valid, the offence will be reported.
+     *
+     * @param {SpConsensusBeefyFutureBlockVotingProof} equivocationProof
+     * @param {SpSessionMembershipProof} keyOwnerProof
+     **/
+    reportFutureBlockVoting: GenericTxCall<
+      (
+        equivocationProof: SpConsensusBeefyFutureBlockVotingProof,
+        keyOwnerProof: SpSessionMembershipProof,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'ReportFutureBlockVoting';
+            params: {
+              equivocationProof: SpConsensusBeefyFutureBlockVotingProof;
+              keyOwnerProof: SpSessionMembershipProof;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Report future block voting equivocation. This method will verify the equivocation proof
+     * and validate the given key ownership proof against the extracted offender.
+     * If both are valid, the offence will be reported.
+     *
+     * This extrinsic must be called unsigned and it is expected that only
+     * block authors will call it (validated in `ValidateUnsigned`), as such
+     * if the block author is defined it will be defined as the equivocation
+     * reporter.
+     *
+     * @param {SpConsensusBeefyFutureBlockVotingProof} equivocationProof
+     * @param {SpSessionMembershipProof} keyOwnerProof
+     **/
+    reportFutureBlockVotingUnsigned: GenericTxCall<
+      (
+        equivocationProof: SpConsensusBeefyFutureBlockVotingProof,
+        keyOwnerProof: SpSessionMembershipProof,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Beefy';
+          palletCall: {
+            name: 'ReportFutureBlockVotingUnsigned';
+            params: {
+              equivocationProof: SpConsensusBeefyFutureBlockVotingProof;
+              keyOwnerProof: SpSessionMembershipProof;
+            };
           };
         },
         ChainKnownTypes

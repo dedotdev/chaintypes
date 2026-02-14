@@ -21,6 +21,7 @@ import type {
   SpConsensusGrandpaAppPublic,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   XcmVersionedLocation,
+  PalletConvictionVotingVoteAccountVote,
   FrameSupportPreimagesBounded,
   PalletConvictionVotingTally,
   FrameSupportDispatchPostDispatchInfo,
@@ -35,10 +36,10 @@ import type {
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
-  PolkadotPrimitivesV7CandidateReceipt,
+  PolkadotPrimitivesV8CandidateReceipt,
   PolkadotParachainPrimitivesPrimitivesHeadData,
-  PolkadotPrimitivesV7CoreIndex,
-  PolkadotPrimitivesV7GroupIndex,
+  PolkadotPrimitivesV8CoreIndex,
+  PolkadotPrimitivesV8GroupIndex,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
@@ -658,6 +659,24 @@ export interface ChainEvents extends GenericChainEvents {
      * An \[account\] has cancelled a previous delegation operation.
      **/
     Undelegated: GenericPalletEvent<'ConvictionVoting', 'Undelegated', AccountId32>;
+
+    /**
+     * An account that has voted
+     **/
+    Voted: GenericPalletEvent<
+      'ConvictionVoting',
+      'Voted',
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+    >;
+
+    /**
+     * A vote that been removed
+     **/
+    VoteRemoved: GenericPalletEvent<
+      'ConvictionVoting',
+      'VoteRemoved',
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+    >;
 
     /**
      * Generic pallet event
@@ -1473,8 +1492,14 @@ export interface ChainEvents extends GenericChainEvents {
      * A member has been removed from a pool.
      *
      * The removal can be voluntary (withdrawn all unbonded funds) or involuntary (kicked).
+     * Any funds that are still delegated (i.e. dangling delegation) are released and are
+     * represented by `released_balance`.
      **/
-    MemberRemoved: GenericPalletEvent<'NominationPools', 'MemberRemoved', { poolId: number; member: AccountId32 }>;
+    MemberRemoved: GenericPalletEvent<
+      'NominationPools',
+      'MemberRemoved',
+      { poolId: number; member: AccountId32; releasedBalance: bigint }
+    >;
 
     /**
      * The roles of a pool have been updated to the given new roles. Note that the depositor
@@ -1606,6 +1631,51 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `DelegatedStaking`'s events
+   **/
+  delegatedStaking: {
+    /**
+     * Funds delegated by a delegator.
+     **/
+    Delegated: GenericPalletEvent<
+      'DelegatedStaking',
+      'Delegated',
+      { agent: AccountId32; delegator: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Funds released to a delegator.
+     **/
+    Released: GenericPalletEvent<
+      'DelegatedStaking',
+      'Released',
+      { agent: AccountId32; delegator: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Funds slashed from a delegator.
+     **/
+    Slashed: GenericPalletEvent<
+      'DelegatedStaking',
+      'Slashed',
+      { agent: AccountId32; delegator: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Unclaimed delegation funds migrated to delegator.
+     **/
+    MigratedDelegation: GenericPalletEvent<
+      'DelegatedStaking',
+      'MigratedDelegation',
+      { agent: AccountId32; delegator: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `ParaInclusion`'s events
    **/
   paraInclusion: {
@@ -1616,10 +1686,10 @@ export interface ChainEvents extends GenericChainEvents {
       'ParaInclusion',
       'CandidateBacked',
       [
-        PolkadotPrimitivesV7CandidateReceipt,
+        PolkadotPrimitivesV8CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV7CoreIndex,
-        PolkadotPrimitivesV7GroupIndex,
+        PolkadotPrimitivesV8CoreIndex,
+        PolkadotPrimitivesV8GroupIndex,
       ]
     >;
 
@@ -1630,10 +1700,10 @@ export interface ChainEvents extends GenericChainEvents {
       'ParaInclusion',
       'CandidateIncluded',
       [
-        PolkadotPrimitivesV7CandidateReceipt,
+        PolkadotPrimitivesV8CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV7CoreIndex,
-        PolkadotPrimitivesV7GroupIndex,
+        PolkadotPrimitivesV8CoreIndex,
+        PolkadotPrimitivesV8GroupIndex,
       ]
     >;
 
@@ -1644,9 +1714,9 @@ export interface ChainEvents extends GenericChainEvents {
       'ParaInclusion',
       'CandidateTimedOut',
       [
-        PolkadotPrimitivesV7CandidateReceipt,
+        PolkadotPrimitivesV8CandidateReceipt,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV7CoreIndex,
+        PolkadotPrimitivesV8CoreIndex,
       ]
     >;
 
@@ -2104,7 +2174,7 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * A core has received a new assignment from the broker chain.
      **/
-    CoreAssigned: GenericPalletEvent<'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV7CoreIndex }>;
+    CoreAssigned: GenericPalletEvent<'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV8CoreIndex }>;
 
     /**
      * Generic pallet event

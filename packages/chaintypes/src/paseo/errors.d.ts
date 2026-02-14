@@ -140,11 +140,6 @@ export interface ChainErrors extends GenericChainErrors {
     TooFew: GenericPalletError;
 
     /**
-     * No ticket with a cost was returned by [`Config::Consideration`] to store the preimage.
-     **/
-    NoCost: GenericPalletError;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -443,6 +438,12 @@ export interface ChainErrors extends GenericChainErrors {
      * Operation not allowed for virtual stakers.
      **/
     VirtualStakerNotAllowed: GenericPalletError;
+
+    /**
+     * Account is restricted from participation in staking. This may happen if the account is
+     * staking in another way already, such as via pool.
+     **/
+    Restricted: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1359,6 +1360,11 @@ export interface ChainErrors extends GenericChainErrors {
     NothingToSlash: GenericPalletError;
 
     /**
+     * The slash amount is too low to be applied.
+     **/
+    SlashTooLow: GenericPalletError;
+
+    /**
      * The pool or member delegation has already migrated to delegate stake.
      **/
     AlreadyMigrated: GenericPalletError;
@@ -1372,6 +1378,12 @@ export interface ChainErrors extends GenericChainErrors {
      * This call is not allowed in the current state of the pallet.
      **/
     NotSupported: GenericPalletError;
+
+    /**
+     * Account is restricted from participation in pools. This may happen if the account is
+     * staking in another way already.
+     **/
+    Restricted: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1413,6 +1425,79 @@ export interface ChainErrors extends GenericChainErrors {
      * The call is not allowed at this point because the pallet is not active.
      **/
     CallNotAllowed: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `DelegatedStaking`'s errors
+   **/
+  delegatedStaking: {
+    /**
+     * The account cannot perform this operation.
+     **/
+    NotAllowed: GenericPalletError;
+
+    /**
+     * An existing staker cannot perform this action.
+     **/
+    AlreadyStaking: GenericPalletError;
+
+    /**
+     * Reward Destination cannot be same as `Agent` account.
+     **/
+    InvalidRewardDestination: GenericPalletError;
+
+    /**
+     * Delegation conditions are not met.
+     *
+     * Possible issues are
+     * 1) Cannot delegate to self,
+     * 2) Cannot delegate to multiple delegates.
+     **/
+    InvalidDelegation: GenericPalletError;
+
+    /**
+     * The account does not have enough funds to perform the operation.
+     **/
+    NotEnoughFunds: GenericPalletError;
+
+    /**
+     * Not an existing `Agent` account.
+     **/
+    NotAgent: GenericPalletError;
+
+    /**
+     * Not a Delegator account.
+     **/
+    NotDelegator: GenericPalletError;
+
+    /**
+     * Some corruption in internal state.
+     **/
+    BadState: GenericPalletError;
+
+    /**
+     * Unapplied pending slash restricts operation on `Agent`.
+     **/
+    UnappliedSlash: GenericPalletError;
+
+    /**
+     * `Agent` has no pending slash to be applied.
+     **/
+    NothingToSlash: GenericPalletError;
+
+    /**
+     * Failed to withdraw amount from Core Staking.
+     **/
+    WithdrawFailed: GenericPalletError;
+
+    /**
+     * Operation not supported by this pallet.
+     **/
+    NotSupported: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1488,11 +1573,6 @@ export interface ChainErrors extends GenericChainErrors {
      * Invalid (bad signature, unknown validator, etc.) backing.
      **/
     InvalidBacking: GenericPalletError;
-
-    /**
-     * Collator did not sign PoV.
-     **/
-    NotCollatorSigned: GenericPalletError;
 
     /**
      * The validation data hash does not match expected.
@@ -2470,9 +2550,24 @@ export interface ChainErrors extends GenericChainErrors {
     InvalidKeyOwnershipProof: GenericPalletError;
 
     /**
-     * An equivocation proof provided as part of an equivocation report is invalid.
+     * A double voting proof provided as part of an equivocation report is invalid.
      **/
-    InvalidEquivocationProof: GenericPalletError;
+    InvalidDoubleVotingProof: GenericPalletError;
+
+    /**
+     * A fork voting proof provided as part of an equivocation report is invalid.
+     **/
+    InvalidForkVotingProof: GenericPalletError;
+
+    /**
+     * A future block voting proof provided as part of an equivocation report is invalid.
+     **/
+    InvalidFutureBlockVotingProof: GenericPalletError;
+
+    /**
+     * The session of the equivocation proof is invalid
+     **/
+    InvalidEquivocationProofSession: GenericPalletError;
 
     /**
      * A given equivocation report is valid but already previously reported.

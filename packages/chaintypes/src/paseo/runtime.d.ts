@@ -9,14 +9,13 @@ import type {
   UncheckedExtrinsicLike,
   UncheckedExtrinsic,
   AccountId32Like,
+  AccountId32,
   H256,
   BitSequence,
   Bytes,
   BytesLike,
-  AccountId32,
 } from 'dedot/codecs';
 import type {
-  RelayCommonApisInflationInfo,
   SpRuntimeBlock,
   SpRuntimeExtrinsicInclusionMode,
   SpCoreOpaqueMetadata,
@@ -28,18 +27,18 @@ import type {
   PolkadotPrimitivesV8ValidatorAppPublic,
   PolkadotPrimitivesV8ValidatorIndex,
   PolkadotPrimitivesV8GroupRotationInfo,
-  PolkadotPrimitivesV8CoreState,
+  PolkadotPrimitivesVstagingCoreState,
   PolkadotPrimitivesV8PersistedValidationData,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotPrimitivesV8OccupiedCoreAssumption,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotPrimitivesV8CandidateCommitments,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
-  PolkadotPrimitivesV8CommittedCandidateReceipt,
-  PolkadotPrimitivesV8CandidateEvent,
+  PolkadotPrimitivesVstagingCommittedCandidateReceiptV2,
+  PolkadotPrimitivesVstagingCandidateEvent,
   PolkadotCorePrimitivesInboundDownwardMessage,
   PolkadotCorePrimitivesInboundHrmpMessage,
-  PolkadotPrimitivesV8ScrapedOnChainVotes,
+  PolkadotPrimitivesVstagingScrapedOnChainVotes,
   PolkadotPrimitivesV8SessionInfo,
   PolkadotPrimitivesV8PvfCheckStatement,
   PolkadotPrimitivesV8ValidatorAppSignature,
@@ -49,10 +48,11 @@ import type {
   PolkadotPrimitivesV8SlashingPendingSlashes,
   PolkadotPrimitivesV8SlashingOpaqueKeyOwnershipProof,
   PolkadotPrimitivesV8SlashingDisputeProof,
-  PolkadotPrimitivesV8AsyncBackingBackingState,
+  PolkadotPrimitivesVstagingAsyncBackingBackingState,
   PolkadotPrimitivesV8AsyncBackingAsyncBackingParams,
   PolkadotPrimitivesV8ApprovalVotingParams,
   PolkadotPrimitivesV8CoreIndex,
+  PolkadotPrimitivesVstagingAsyncBackingConstraints,
   SpConsensusBeefyValidatorSet,
   SpConsensusBeefyDoubleVotingProof,
   SpRuntimeOpaqueValue,
@@ -73,6 +73,8 @@ import type {
   SpConsensusSlotsEquivocationProof,
   SpAuthorityDiscoveryAppPublic,
   SpCoreCryptoKeyTypeId,
+  FrameSupportViewFunctionsViewFunctionDispatchError,
+  FrameSupportViewFunctionsViewFunctionId,
   PalletTransactionPaymentRuntimeDispatchInfo,
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
@@ -90,25 +92,6 @@ import type {
 } from './types.js';
 
 export interface RuntimeApis extends GenericRuntimeApis {
-  /**
-   * @runtimeapi: Inflation - 0xc51ff1fa3f5d0cca
-   **/
-  inflation: {
-    /**
-     * Return the current estimates of the inflation amount.
-     *
-     * This is marked as experimental in light of RFC#89. Nonetheless, its usage is highly
-     * recommended over trying to read-storage, or re-create the onchain logic.
-     *
-     * @callname: Inflation_experimental_inflation_prediction_info
-     **/
-    experimentalInflationPredictionInfo: GenericRuntimeApiMethod<() => Promise<RelayCommonApisInflationInfo>>;
-
-    /**
-     * Generic runtime api call
-     **/
-    [method: string]: GenericRuntimeApiMethod;
-  };
   /**
    * @runtimeapi: Core - 0xdf6acb689907609b
    **/
@@ -324,6 +307,14 @@ export interface RuntimeApis extends GenericRuntimeApis {
     poolBalance: GenericRuntimeApiMethod<(poolId: number) => Promise<bigint>>;
 
     /**
+     * Returns the bonded account and reward account associated with the pool_id.
+     *
+     * @callname: NominationPoolsApi_pool_accounts
+     * @param {number} pool_id
+     **/
+    poolAccounts: GenericRuntimeApiMethod<(poolId: number) => Promise<[AccountId32, AccountId32]>>;
+
+    /**
      * Generic runtime api call
      **/
     [method: string]: GenericRuntimeApiMethod;
@@ -443,7 +434,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ParachainHost_availability_cores
      **/
-    availabilityCores: GenericRuntimeApiMethod<() => Promise<Array<PolkadotPrimitivesV8CoreState>>>;
+    availabilityCores: GenericRuntimeApiMethod<() => Promise<Array<PolkadotPrimitivesVstagingCoreState>>>;
 
     /**
      * Yields the persisted validation data for the given `ParaId` along with an assumption that
@@ -532,7 +523,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
     candidatePendingAvailability: GenericRuntimeApiMethod<
       (
         paraId: PolkadotParachainPrimitivesPrimitivesId,
-      ) => Promise<PolkadotPrimitivesV8CommittedCandidateReceipt | undefined>
+      ) => Promise<PolkadotPrimitivesVstagingCommittedCandidateReceiptV2 | undefined>
     >;
 
     /**
@@ -540,7 +531,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ParachainHost_candidate_events
      **/
-    candidateEvents: GenericRuntimeApiMethod<() => Promise<Array<PolkadotPrimitivesV8CandidateEvent>>>;
+    candidateEvents: GenericRuntimeApiMethod<() => Promise<Array<PolkadotPrimitivesVstagingCandidateEvent>>>;
 
     /**
      * Get all the pending inbound messages in the downward message queue for a para.
@@ -584,7 +575,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: ParachainHost_on_chain_votes
      **/
-    onChainVotes: GenericRuntimeApiMethod<() => Promise<PolkadotPrimitivesV8ScrapedOnChainVotes | undefined>>;
+    onChainVotes: GenericRuntimeApiMethod<() => Promise<PolkadotPrimitivesVstagingScrapedOnChainVotes | undefined>>;
 
     /**
      * Get the session info for the given session, if stored.
@@ -706,12 +697,12 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Returns the state of parachain backing for a given para.
      *
      * @callname: ParachainHost_para_backing_state
-     * @param {PolkadotParachainPrimitivesPrimitivesId} _
+     * @param {PolkadotParachainPrimitivesPrimitivesId} __runtime_api_generated_name_0__
      **/
     paraBackingState: GenericRuntimeApiMethod<
       (
-        undefined: PolkadotParachainPrimitivesPrimitivesId,
-      ) => Promise<PolkadotPrimitivesV8AsyncBackingBackingState | undefined>
+        runtimeApiGeneratedName0: PolkadotParachainPrimitivesPrimitivesId,
+      ) => Promise<PolkadotPrimitivesVstagingAsyncBackingBackingState | undefined>
     >;
 
     /**
@@ -759,8 +750,37 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {PolkadotParachainPrimitivesPrimitivesId} para_id
      **/
     candidatesPendingAvailability: GenericRuntimeApiMethod<
-      (paraId: PolkadotParachainPrimitivesPrimitivesId) => Promise<Array<PolkadotPrimitivesV8CommittedCandidateReceipt>>
+      (
+        paraId: PolkadotParachainPrimitivesPrimitivesId,
+      ) => Promise<Array<PolkadotPrimitivesVstagingCommittedCandidateReceiptV2>>
     >;
+
+    /**
+     * Retrieve the maximum uncompressed code size.
+     *
+     * @callname: ParachainHost_validation_code_bomb_limit
+     **/
+    validationCodeBombLimit: GenericRuntimeApiMethod<() => Promise<number>>;
+
+    /**
+     * Returns the constraints on the actions that can be taken by a new parachain
+     * block.
+     *
+     * @callname: ParachainHost_backing_constraints
+     * @param {PolkadotParachainPrimitivesPrimitivesId} para_id
+     **/
+    backingConstraints: GenericRuntimeApiMethod<
+      (
+        paraId: PolkadotParachainPrimitivesPrimitivesId,
+      ) => Promise<PolkadotPrimitivesVstagingAsyncBackingConstraints | undefined>
+    >;
+
+    /**
+     * Retrieve the scheduling lookahead
+     *
+     * @callname: ParachainHost_scheduling_lookahead
+     **/
+    schedulingLookahead: GenericRuntimeApiMethod<() => Promise<number>>;
 
     /**
      * Generic runtime api call
@@ -1192,6 +1212,29 @@ export interface RuntimeApis extends GenericRuntimeApis {
     [method: string]: GenericRuntimeApiMethod;
   };
   /**
+   * @runtimeapi: RuntimeViewFunction - 0xccd9de6396c899ca
+   **/
+  runtimeViewFunction: {
+    /**
+     * Execute a view function query.
+     *
+     * @callname: RuntimeViewFunction_execute_view_function
+     * @param {FrameSupportViewFunctionsViewFunctionId} query_id
+     * @param {BytesLike} input
+     **/
+    executeViewFunction: GenericRuntimeApiMethod<
+      (
+        queryId: FrameSupportViewFunctionsViewFunctionId,
+        input: BytesLike,
+      ) => Promise<Result<Bytes, FrameSupportViewFunctionsViewFunctionDispatchError>>
+    >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
    * @runtimeapi: AccountNonceApi - 0xbc9d89904f5b923f
    **/
   accountNonceApi: {
@@ -1377,16 +1420,18 @@ export interface RuntimeApis extends GenericRuntimeApis {
    **/
   dryRunApi: {
     /**
-     * Dry run call.
+     * Dry run call V2.
      *
      * @callname: DryRunApi_dry_run_call
      * @param {PaseoRuntimeOriginCaller} origin
      * @param {PaseoRuntimeRuntimeCallLike} call
+     * @param {number} result_xcms_version
      **/
     dryRunCall: GenericRuntimeApiMethod<
       (
         origin: PaseoRuntimeOriginCaller,
         call: PaseoRuntimeRuntimeCallLike,
+        resultXcmsVersion: number,
       ) => Promise<Result<XcmRuntimeApisDryRunCallDryRunEffects, XcmRuntimeApisDryRunError>>
     >;
 
@@ -1436,9 +1481,10 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Build `RuntimeGenesisConfig` from a JSON blob not using any defaults and store it in the
      * storage.
      *
-     * In the case of a FRAME-based runtime, this function deserializes the full `RuntimeGenesisConfig` from the given JSON blob and
-     * puts it into the storage. If the provided JSON blob is incorrect or incomplete or the
-     * deserialization fails, an error is returned.
+     * In the case of a FRAME-based runtime, this function deserializes the full
+     * `RuntimeGenesisConfig` from the given JSON blob and puts it into the storage. If the
+     * provided JSON blob is incorrect or incomplete or the deserialization fails, an error
+     * is returned.
      *
      * Please note that provided JSON blob must contain all `RuntimeGenesisConfig` fields, no
      * defaults will be used.
@@ -1452,7 +1498,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Returns a JSON blob representation of the built-in `RuntimeGenesisConfig` identified by
      * `id`.
      *
-     * If `id` is `None` the function returns JSON blob representation of the default
+     * If `id` is `None` the function should return JSON blob representation of the default
      * `RuntimeGenesisConfig` struct of the runtime. Implementation must provide default
      * `RuntimeGenesisConfig`.
      *

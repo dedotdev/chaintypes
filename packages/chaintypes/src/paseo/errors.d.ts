@@ -440,6 +440,16 @@ export interface ChainErrors extends GenericChainErrors {
     VirtualStakerNotAllowed: GenericPalletError;
 
     /**
+     * Stash could not be reaped as other pallet might depend on it.
+     **/
+    CannotReapStash: GenericPalletError;
+
+    /**
+     * The stake of this account is already migrated to `Fungible` holds.
+     **/
+    AlreadyMigrated: GenericPalletError;
+
+    /**
      * Account is restricted from participation in staking. This may happen if the account is
      * staking in another way already, such as via pool.
      **/
@@ -956,12 +966,13 @@ export interface ChainErrors extends GenericChainErrors {
     SenderInSignatories: GenericPalletError;
 
     /**
-     * Multisig operation not found when attempting to cancel.
+     * Multisig operation not found in storage.
      **/
     NotFound: GenericPalletError;
 
     /**
-     * Only the account that originally created the multisig is able to cancel it.
+     * Only the account that originally created the multisig is able to cancel it or update
+     * its deposits.
      **/
     NotOwner: GenericPalletError;
 
@@ -1054,6 +1065,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Too many approvals are already queued.
      **/
     TooManyQueued: GenericPalletError;
+
+    /**
+     * User is not the proposer of the bounty.
+     **/
+    NotProposer: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1176,6 +1192,11 @@ export interface ChainErrors extends GenericChainErrors {
      * A error in the list interface implementation.
      **/
     List: GenericPalletError;
+
+    /**
+     * Could not update a node, because the pallet is locked.
+     **/
+    Locked: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1505,6 +1526,20 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `StakingAhClient`'s errors
+   **/
+  stakingAhClient: {
+    /**
+     * Could not process incoming message because incoming messages are blocked.
+     **/
+    Blocked: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `Configuration`'s errors
    **/
   configuration: {
@@ -1631,15 +1666,10 @@ export interface ChainErrors extends GenericChainErrors {
     InvalidParentHeader: GenericPalletError;
 
     /**
-     * The data given to the inherent will result in an overweight block.
-     **/
-    InherentOverweight: GenericPalletError;
-
-    /**
-     * A candidate was filtered during inherent execution. This should have only been done
+     * Inherent data was filtered during execution. This should have only been done
      * during creation.
      **/
-    CandidatesFilteredDuringExecution: GenericPalletError;
+    InherentDataFilteredDuringExecution: GenericPalletError;
 
     /**
      * Too many candidates supplied.
@@ -1719,6 +1749,21 @@ export interface ChainErrors extends GenericChainErrors {
      * Invalid validation code size.
      **/
     InvalidCode: GenericPalletError;
+
+    /**
+     * No upgrade authorized.
+     **/
+    NothingAuthorized: GenericPalletError;
+
+    /**
+     * The submitted code is not authorized.
+     **/
+    Unauthorized: GenericPalletError;
+
+    /**
+     * Invalid block number.
+     **/
+    InvalidBlockNumber: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1944,6 +1989,11 @@ export interface ChainErrors extends GenericChainErrors {
     SpotPriceHigherThanMaxAmount: GenericPalletError;
 
     /**
+     * The account doesn't have enough credits to purchase on-demand coretime.
+     **/
+    InsufficientCredits: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1955,30 +2005,10 @@ export interface ChainErrors extends GenericChainErrors {
     AssignmentsEmpty: GenericPalletError;
 
     /**
-     * Assignments together exceeded 57600.
-     **/
-    OverScheduled: GenericPalletError;
-
-    /**
-     * Assignments together less than 57600
-     **/
-    UnderScheduled: GenericPalletError;
-
-    /**
      * assign_core is only allowed to append new assignments at the end of already existing
-     * ones.
+     * ones or update the last entry.
      **/
     DisallowedInsert: GenericPalletError;
-
-    /**
-     * Tried to insert a schedule for the same core and block number as an existing schedule
-     **/
-    DuplicateInsert: GenericPalletError;
-
-    /**
-     * Tried to add an unsorted set of assignments
-     **/
-    AssignmentsNotSorted: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2452,6 +2482,29 @@ export interface ChainErrors extends GenericChainErrors {
     LocalExecutionIncomplete: GenericPalletError;
 
     /**
+     * Too many locations authorized to alias origin.
+     *
+     * @deprecated Use `LocalExecutionIncompleteWithError` instead (since 20.0.0)
+     **/
+    TooManyAuthorizedAliases: GenericPalletError;
+
+    /**
+     * Expiry block number is in the past.
+     **/
+    ExpiresInPast: GenericPalletError;
+
+    /**
+     * The alias to remove authorization for was not found.
+     **/
+    AliasNotFound: GenericPalletError;
+
+    /**
+     * Local XCM execution incomplete with the actual XCM error and the index of the
+     * instruction that caused the error.
+     **/
+    LocalExecutionIncompleteWithError: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -2605,6 +2658,11 @@ export interface ChainErrors extends GenericChainErrors {
     ExceedsMaxMessageSize: GenericPalletError;
 
     /**
+     * A DMP message couldn't be sent because the destination is unreachable.
+     **/
+    Unroutable: GenericPalletError;
+
+    /**
      * Could not schedule para cleanup.
      **/
     CouldntCleanup: GenericPalletError;
@@ -2647,6 +2705,105 @@ export interface ChainErrors extends GenericChainErrors {
      * Sender must be the Sudo account.
      **/
     RequireSudo: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `RcMigrator`'s errors
+   **/
+  rcMigrator: {
+    Unreachable: GenericPalletError;
+    OutOfWeight: GenericPalletError;
+
+    /**
+     * Failed to send XCM message to AH.
+     **/
+    XcmError: GenericPalletError;
+
+    /**
+     * Failed to withdraw account from RC for migration to AH.
+     **/
+    FailedToWithdrawAccount: GenericPalletError;
+
+    /**
+     * Indicates that the specified block number is in the past.
+     **/
+    PastBlockNumber: GenericPalletError;
+
+    /**
+     * Indicates that there is not enough time for staking to lock.
+     *
+     * Schedule the migration at least two sessions before the current era ends.
+     **/
+    EraEndsTooSoon: GenericPalletError;
+
+    /**
+     * Balance accounting overflow.
+     **/
+    BalanceOverflow: GenericPalletError;
+
+    /**
+     * Balance accounting underflow.
+     **/
+    BalanceUnderflow: GenericPalletError;
+
+    /**
+     * The query response is invalid.
+     **/
+    InvalidQueryResponse: GenericPalletError;
+
+    /**
+     * The xcm query was not found.
+     **/
+    QueryNotFound: GenericPalletError;
+
+    /**
+     * Failed to send XCM message.
+     **/
+    XcmSendError: GenericPalletError;
+
+    /**
+     * The migration stage is not reachable from the current stage.
+     **/
+    UnreachableStage: GenericPalletError;
+
+    /**
+     * Invalid parameter.
+     **/
+    InvalidParameter: GenericPalletError;
+
+    /**
+     * The AH UMP queue priority configuration is already set.
+     **/
+    AhUmpQueuePriorityAlreadySet: GenericPalletError;
+
+    /**
+     * The account is referenced by some other pallet. It might have freezes or holds.
+     **/
+    AccountReferenced: GenericPalletError;
+
+    /**
+     * The XCM version is invalid.
+     **/
+    BadXcmVersion: GenericPalletError;
+
+    /**
+     * The origin is invalid.
+     **/
+    InvalidOrigin: GenericPalletError;
+
+    /**
+     * The stage transition is invalid.
+     **/
+    InvalidStageTransition: GenericPalletError;
+
+    /**
+     * Unsigned validation failed.
+     **/
+    UnsignedValidationFailed: GenericPalletError;
 
     /**
      * Generic pallet error

@@ -23,6 +23,7 @@ import type {
   FrameSystemEventRecord,
   FrameSystemLastRuntimeUpgradeInfo,
   FrameSystemCodeUpgradeAuthorization,
+  SpWeightsWeightV2Weight,
   PalletSchedulerScheduled,
   PalletSchedulerRetryConfig,
   PalletPreimageOldRequestStatus,
@@ -38,6 +39,7 @@ import type {
   FrameSupportTokensMiscIdAmount,
   FrameSupportTokensMiscIdAmountRuntimeFreezeReason,
   PalletTransactionPaymentReleases,
+  FrameSupportStorageNoDrop,
   PalletStakingStakingLedger,
   PalletStakingRewardDestination,
   PalletStakingValidatorPrefs,
@@ -53,6 +55,7 @@ import type {
   PalletStakingSlashingSpanRecord,
   SpStakingOffenceOffenceDetails,
   PaseoRuntimeSessionKeys,
+  SpStakingOffenceOffenceSeverity,
   SpCoreCryptoKeyTypeId,
   PalletGrandpaStoredState,
   PalletGrandpaStoredPendingChange,
@@ -62,8 +65,6 @@ import type {
   PalletTreasurySpendStatus,
   PalletConvictionVotingVoteVoting,
   PalletReferendaReferendumInfo,
-  PaseoRuntimeRuntimeParametersValue,
-  PaseoRuntimeRuntimeParametersKey,
   PolkadotRuntimeCommonClaimsStatementKind,
   PalletVestingVestingInfo,
   PalletVestingReleases,
@@ -88,21 +89,25 @@ import type {
   PalletFastUnstakeUnstakeRequest,
   PalletDelegatedStakingDelegation,
   PalletDelegatedStakingAgentLedger,
+  PalletStakingAsyncRcClientValidatorSetReport,
+  PalletStakingAsyncAhClientOperatingMode,
+  PalletStakingAsyncRcClientSessionReport,
+  PalletStakingAsyncRcClientOffence,
   PolkadotRuntimeParachainsConfigurationHostConfiguration,
   PolkadotPrimitivesV8ValidatorIndex,
   PolkadotPrimitivesV8ValidatorAppPublic,
   PolkadotRuntimeParachainsSharedAllowedRelayParentsTracker,
   PolkadotRuntimeParachainsInclusionCandidatePendingAvailability,
   PolkadotParachainPrimitivesPrimitivesId,
-  PolkadotPrimitivesV8ScrapedOnChainVotes,
-  PolkadotRuntimeParachainsSchedulerPalletCoreOccupied,
+  PolkadotPrimitivesVstagingScrapedOnChainVotes,
   PolkadotPrimitivesV8CoreIndex,
-  PolkadotRuntimeParachainsSchedulerPalletParasEntry,
+  PolkadotRuntimeParachainsSchedulerCommonAssignment,
   PolkadotRuntimeParachainsParasPvfCheckActiveVoteState,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotRuntimeParachainsParasParaLifecycle,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotRuntimeParachainsParasParaPastCodeMeta,
+  PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry,
   PolkadotPrimitivesV8UpgradeGoAhead,
   PolkadotPrimitivesV8UpgradeRestriction,
   PolkadotRuntimeParachainsParasParaGenesisArgs,
@@ -118,7 +123,7 @@ import type {
   PolkadotPrimitivesV8ExecutorParams,
   PolkadotPrimitivesV8DisputeState,
   PolkadotCorePrimitivesCandidateHash,
-  PolkadotPrimitivesV8SlashingPendingSlashes,
+  PolkadotPrimitivesVstagingPendingSlashes,
   PolkadotRuntimeParachainsOnDemandTypesCoreAffinityCount,
   PolkadotRuntimeParachainsOnDemandTypesQueueStatusType,
   BinaryHeapEnqueuedOrder,
@@ -130,17 +135,25 @@ import type {
   PalletStateTrieMigrationMigrationLimits,
   PalletXcmQueryStatus,
   XcmVersionedLocation,
-  SpWeightsWeightV2Weight,
   PalletXcmVersionMigrationStage,
   PalletXcmRemoteLockedFungibleRecord,
   XcmVersionedAssetId,
-  StagingXcmV4Xcm,
+  StagingXcmV5Xcm,
+  PalletXcmAuthorizedAliasesEntry,
   PalletMessageQueueBookState,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   PalletMessageQueuePage,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   SpConsensusBeefyEcdsaCryptoPublic,
   SpConsensusBeefyMmrBeefyAuthoritySet,
+  PalletRcMigratorMigrationStage,
+  PalletRcMigratorAccountsAccountState,
+  PalletRcMigratorAccountsMigratedBalances,
+  PalletRcMigratorQueuePriority,
+  FrameSupportScheduleDispatchTime,
+  PalletRcMigratorMigrationSettings,
+  PaseoRuntimeRuntimeCall,
+  PaseoRuntimeRuntimeCallLike,
 } from './types.js';
 
 export interface ChainStorage extends GenericChainStorage {
@@ -295,6 +308,19 @@ export interface ChainStorage extends GenericChainStorage {
     authorizedUpgrade: GenericStorageQuery<() => FrameSystemCodeUpgradeAuthorization | undefined>;
 
     /**
+     * The weight reclaimed for the extrinsic.
+     *
+     * This information is available until the end of the extrinsic execution.
+     * More precisely this information is removed in `note_applied_extrinsic`.
+     *
+     * Logic doing some post dispatch weight reduction must update this storage to avoid duplicate
+     * reduction.
+     *
+     * @param {Callback<SpWeightsWeightV2Weight> =} callback
+     **/
+    extrinsicWeightReclaimed: GenericStorageQuery<() => SpWeightsWeightV2Weight>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
@@ -304,6 +330,7 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   scheduler: {
     /**
+     * Block number at which the agenda began incomplete execution.
      *
      * @param {Callback<number | undefined> =} callback
      **/
@@ -350,6 +377,8 @@ export interface ChainStorage extends GenericChainStorage {
      *
      * @param {H256} arg
      * @param {Callback<PalletPreimageOldRequestStatus | undefined> =} callback
+     *
+     * @deprecated RequestStatusFor
      **/
     statusFor: GenericStorageQuery<(arg: H256) => PalletPreimageOldRequestStatus | undefined, H256>;
 
@@ -693,6 +722,15 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletTransactionPaymentReleases> =} callback
      **/
     storageVersion: GenericStorageQuery<() => PalletTransactionPaymentReleases>;
+
+    /**
+     * The `OnChargeTransaction` stores the withdrawn tx fee here.
+     *
+     * Use `withdraw_txfee` and `remaining_txfee` to access from outside the crate.
+     *
+     * @param {Callback<FrameSupportStorageNoDrop | undefined> =} callback
+     **/
+    txPaymentCredit: GenericStorageQuery<() => FrameSupportStorageNoDrop | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1164,19 +1202,6 @@ export interface ChainStorage extends GenericChainStorage {
     currentPlannedSession: GenericStorageQuery<() => number>;
 
     /**
-     * Indices of validators that have offended in the active era. The offenders are disabled for a
-     * whole era. For this reason they are kept here - only staking pallet knows about eras. The
-     * implementor of [`DisablingStrategy`] defines if a validator should be disabled which
-     * implicitly means that the implementor also controls the max number of disabled validators.
-     *
-     * The vec is always kept sorted so that we can find whether a given validator has previously
-     * offended using binary search.
-     *
-     * @param {Callback<Array<number>> =} callback
-     **/
-    disabledValidators: GenericStorageQuery<() => Array<number>>;
-
-    /**
      * The threshold for when users can start calling `chill_other` for other validators /
      * nominators. The threshold is compared to the actual number of validators / nominators
      * (`CountFor*`) in the system compared to the configured max (`Max*Count`).
@@ -1283,9 +1308,9 @@ export interface ChainStorage extends GenericChainStorage {
      * disabled using binary search. It gets cleared when `on_session_ending` returns
      * a new set of identities.
      *
-     * @param {Callback<Array<number>> =} callback
+     * @param {Callback<Array<[number, SpStakingOffenceOffenceSeverity]>> =} callback
      **/
-    disabledValidators: GenericStorageQuery<() => Array<number>>;
+    disabledValidators: GenericStorageQuery<() => Array<[number, SpStakingOffenceOffenceSeverity]>>;
 
     /**
      * The next session keys for a validator.
@@ -1408,6 +1433,9 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   treasury: {
     /**
+     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+     *
      * Number of proposals that have been made.
      *
      * @param {Callback<number> =} callback
@@ -1415,6 +1443,9 @@ export interface ChainStorage extends GenericChainStorage {
     proposalCount: GenericStorageQuery<() => number>;
 
     /**
+     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+     *
      * Proposals that have been made.
      *
      * @param {number} arg
@@ -1430,6 +1461,9 @@ export interface ChainStorage extends GenericChainStorage {
     deactivated: GenericStorageQuery<() => bigint>;
 
     /**
+     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
+     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
+     *
      * Proposal indices that have been approved but not yet awarded.
      *
      * @param {Callback<Array<number>> =} callback
@@ -1450,6 +1484,13 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletTreasurySpendStatus | undefined> =} callback
      **/
     spends: GenericStorageQuery<(arg: number) => PalletTreasurySpendStatus | undefined, number>;
+
+    /**
+     * The blocknumber for the last triggered spend period.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    lastSpendPeriod: GenericStorageQuery<() => number | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1553,26 +1594,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<[] | undefined> =} callback
      **/
     whitelistedCall: GenericStorageQuery<(arg: H256) => [] | undefined, H256>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `Parameters`'s storage queries
-   **/
-  parameters: {
-    /**
-     * Stored parameters.
-     *
-     * @param {PaseoRuntimeRuntimeParametersKey} arg
-     * @param {Callback<PaseoRuntimeRuntimeParametersValue | undefined> =} callback
-     **/
-    parameters: GenericStorageQuery<
-      (arg: PaseoRuntimeRuntimeParametersKey) => PaseoRuntimeRuntimeParametersValue | undefined,
-      PaseoRuntimeRuntimeParametersKey
-    >;
 
     /**
      * Generic pallet storage query
@@ -1747,20 +1768,29 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   childBounties: {
     /**
-     * Number of total child bounties.
+     * DEPRECATED: Replaced with `ParentTotalChildBounties` storage item keeping dedicated counts
+     * for each parent bounty. Number of total child bounties. Will be removed in May 2025.
      *
      * @param {Callback<number> =} callback
      **/
     childBountyCount: GenericStorageQuery<() => number>;
 
     /**
-     * Number of child bounties per parent bounty.
+     * Number of active child bounties per parent bounty.
      * Map of parent bounty index to number of child bounties.
      *
      * @param {number} arg
      * @param {Callback<number> =} callback
      **/
     parentChildBounties: GenericStorageQuery<(arg: number) => number, number>;
+
+    /**
+     * Number of total child bounties per parent bounty, including completed bounties.
+     *
+     * @param {number} arg
+     * @param {Callback<number> =} callback
+     **/
+    parentTotalChildBounties: GenericStorageQuery<(arg: number) => number, number>;
 
     /**
      * Child bounties that have been added.
@@ -1774,12 +1804,26 @@ export interface ChainStorage extends GenericChainStorage {
     >;
 
     /**
-     * The description of each child-bounty.
+     * The description of each child-bounty. Indexed by `(parent_id, child_id)`.
      *
-     * @param {number} arg
+     * This item replaces the `ChildBountyDescriptions` storage item from the V0 storage version.
+     *
+     * @param {[number, number]} arg
      * @param {Callback<Bytes | undefined> =} callback
      **/
-    childBountyDescriptions: GenericStorageQuery<(arg: number) => Bytes | undefined, number>;
+    childBountyDescriptionsV1: GenericStorageQuery<(arg: [number, number]) => Bytes | undefined, [number, number]>;
+
+    /**
+     * The mapping of the child bounty ids from storage version `V0` to the new `V1` version.
+     *
+     * The `V0` ids based on total child bounty count [`ChildBountyCount`]`. The `V1` version ids
+     * based on the child bounty count per parent bounty [`ParentTotalChildBounties`].
+     * The item intended solely for client convenience and not used in the pallet's core logic.
+     *
+     * @param {number} arg
+     * @param {Callback<[number, number] | undefined> =} callback
+     **/
+    v0ToV1ChildBountyIds: GenericStorageQuery<(arg: number) => [number, number] | undefined, number>;
 
     /**
      * The cumulative child-bounty curator fee for each parent bounty.
@@ -1945,6 +1989,24 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletBagsListListBag | undefined> =} callback
      **/
     listBags: GenericStorageQuery<(arg: bigint) => PalletBagsListListBag | undefined, bigint>;
+
+    /**
+     * Pointer that remembers the next node that will be auto-rebagged.
+     * When `None`, the next scan will start from the list head again.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    nextNodeAutoRebagged: GenericStorageQuery<() => AccountId32 | undefined>;
+
+    /**
+     * Lock all updates to this pallet.
+     *
+     * If any nodes needs updating, removal or addition due to a temporary lock, the
+     * [`Call::rebag`] can be used.
+     *
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    lock: GenericStorageQuery<() => [] | undefined>;
 
     /**
      * Generic pallet storage query
@@ -2234,6 +2296,104 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
+   * Pallet `StakingAhClient`'s storage queries
+   **/
+  stakingAhClient: {
+    /**
+     * The queued validator sets for a given planning session index.
+     *
+     * This is received via a call from AssetHub.
+     *
+     * @param {Callback<[number, Array<AccountId32>] | undefined> =} callback
+     **/
+    validatorSet: GenericStorageQuery<() => [number, Array<AccountId32>] | undefined>;
+
+    /**
+     * An incomplete validator set report.
+     *
+     * @param {Callback<PalletStakingAsyncRcClientValidatorSetReport | undefined> =} callback
+     **/
+    incompleteValidatorSetReport: GenericStorageQuery<() => PalletStakingAsyncRcClientValidatorSetReport | undefined>;
+
+    /**
+     * All of the points of the validators.
+     *
+     * This is populated during a session, and is flushed and sent over via [`SendToAssetHub`]
+     * at each session end.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number> =} callback
+     **/
+    validatorPoints: GenericStorageQuery<(arg: AccountId32Like) => number, AccountId32>;
+
+    /**
+     * Indicates the current operating mode of the pallet.
+     *
+     * This value determines how the pallet behaves in response to incoming and outgoing messages,
+     * particularly whether it should execute logic directly, defer it, or delegate it entirely.
+     *
+     * @param {Callback<PalletStakingAsyncAhClientOperatingMode> =} callback
+     **/
+    mode: GenericStorageQuery<() => PalletStakingAsyncAhClientOperatingMode>;
+
+    /**
+     * A storage value that is set when a `new_session` gives a new validator set to the session
+     * pallet, and is cleared on the next call.
+     *
+     * The inner u32 is the id of the said activated validator set. While not relevant here, good
+     * to know this is the planning era index of staking-async on AH.
+     *
+     * Once cleared, we know a validator set has been activated, and therefore we can send a
+     * timestamp to AH.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    nextSessionChangesValidators: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * The session index at which the latest elected validator set was applied.
+     *
+     * This is used to determine if an offence, given a session index, is in the current active era
+     * or not.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    validatorSetAppliedAt: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * A session report that is outgoing, and should be sent.
+     *
+     * This will be attempted to be sent, possibly on every `on_initialize` call, until it is sent,
+     * or the second value reaches zero, at which point we drop it.
+     *
+     * @param {Callback<[PalletStakingAsyncRcClientSessionReport, number] | undefined> =} callback
+     **/
+    outgoingSessionReport: GenericStorageQuery<() => [PalletStakingAsyncRcClientSessionReport, number] | undefined>;
+
+    /**
+     * Internal storage item of [`OffenceSendQueue`]. Should not be used manually.
+     *
+     * @param {number} arg
+     * @param {Callback<Array<[number, PalletStakingAsyncRcClientOffence]>> =} callback
+     **/
+    offenceSendQueueOffences: GenericStorageQuery<
+      (arg: number) => Array<[number, PalletStakingAsyncRcClientOffence]>,
+      number
+    >;
+
+    /**
+     * Internal storage item of [`OffenceSendQueue`]. Should not be used manually.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    offenceSendQueueCursor: GenericStorageQuery<() => number>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
    * Pallet `Configuration`'s storage queries
    **/
   configuration: {
@@ -2354,9 +2514,9 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * Scraped on chain data for extracting resolved disputes as well as backing votes.
      *
-     * @param {Callback<PolkadotPrimitivesV8ScrapedOnChainVotes | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesVstagingScrapedOnChainVotes | undefined> =} callback
      **/
-    onChainVotes: GenericStorageQuery<() => PolkadotPrimitivesV8ScrapedOnChainVotes | undefined>;
+    onChainVotes: GenericStorageQuery<() => PolkadotPrimitivesVstagingScrapedOnChainVotes | undefined>;
 
     /**
      * Generic pallet storage query
@@ -2381,18 +2541,6 @@ export interface ChainStorage extends GenericChainStorage {
     validatorGroups: GenericStorageQuery<() => Array<Array<PolkadotPrimitivesV8ValidatorIndex>>>;
 
     /**
-     * One entry for each availability core. The i'th parachain belongs to the i'th core, with the
-     * remaining cores all being on demand parachain multiplexers.
-     *
-     * Bounded by the maximum of either of these two values:
-     * * The number of parachains and parathread multiplexers
-     * * The number of validators divided by `configuration.max_validators_per_core`.
-     *
-     * @param {Callback<Array<PolkadotRuntimeParachainsSchedulerPalletCoreOccupied>> =} callback
-     **/
-    availabilityCores: GenericStorageQuery<() => Array<PolkadotRuntimeParachainsSchedulerPalletCoreOccupied>>;
-
-    /**
      * The block number where the session start occurred. Used to track how many group rotations
      * have occurred.
      *
@@ -2407,13 +2555,12 @@ export interface ChainStorage extends GenericChainStorage {
 
     /**
      * One entry for each availability core. The `VecDeque` represents the assignments to be
-     * scheduled on that core. The value contained here will not be valid after the end of
-     * a block. Runtime APIs should be used to determine scheduled cores for the upcoming block.
+     * scheduled on that core.
      *
-     * @param {Callback<Array<[PolkadotPrimitivesV8CoreIndex, Array<PolkadotRuntimeParachainsSchedulerPalletParasEntry>]>> =} callback
+     * @param {Callback<Array<[PolkadotPrimitivesV8CoreIndex, Array<PolkadotRuntimeParachainsSchedulerCommonAssignment>]>> =} callback
      **/
     claimQueue: GenericStorageQuery<
-      () => Array<[PolkadotPrimitivesV8CoreIndex, Array<PolkadotRuntimeParachainsSchedulerPalletParasEntry>]>
+      () => Array<[PolkadotPrimitivesV8CoreIndex, Array<PolkadotRuntimeParachainsSchedulerCommonAssignment>]>
     >;
 
     /**
@@ -2591,6 +2738,19 @@ export interface ChainStorage extends GenericChainStorage {
     >;
 
     /**
+     * The code hash authorizations for a para which will expire `expire_at` `BlockNumberFor<T>`.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} arg
+     * @param {Callback<PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry | undefined> =} callback
+     **/
+    authorizedCodeHash: GenericStorageQuery<
+      (
+        arg: PolkadotParachainPrimitivesPrimitivesId,
+      ) => PolkadotRuntimeParachainsParasAuthorizedCodeHashAndExpiry | undefined,
+      PolkadotParachainPrimitivesPrimitivesId
+    >;
+
+    /**
      * This is used by the relay-chain to communicate to a parachain a go-ahead with in the upgrade
      * procedure.
      *
@@ -2723,7 +2883,7 @@ export interface ChainStorage extends GenericChainStorage {
     hasInitialized: GenericStorageQuery<() => [] | undefined>;
 
     /**
-     * Buffered session changes along with the block number at which they should be applied.
+     * Buffered session changes.
      *
      * Typically this will be empty or one element long. Apart from that this item never hits
      * the storage.
@@ -3079,10 +3239,10 @@ export interface ChainStorage extends GenericChainStorage {
      * Validators pending dispute slashes.
      *
      * @param {[number, PolkadotCorePrimitivesCandidateHash]} arg
-     * @param {Callback<PolkadotPrimitivesV8SlashingPendingSlashes | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesVstagingPendingSlashes | undefined> =} callback
      **/
     unappliedSlashes: GenericStorageQuery<
-      (arg: [number, PolkadotCorePrimitivesCandidateHash]) => PolkadotPrimitivesV8SlashingPendingSlashes | undefined,
+      (arg: [number, PolkadotCorePrimitivesCandidateHash]) => PolkadotPrimitivesVstagingPendingSlashes | undefined,
       [number, PolkadotCorePrimitivesCandidateHash]
     >;
 
@@ -3149,6 +3309,14 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<Array<bigint>> =} callback
      **/
     revenue: GenericStorageQuery<() => Array<bigint>>;
+
+    /**
+     * Keeps track of credits owned by each account.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    credits: GenericStorageQuery<(arg: AccountId32Like) => bigint, AccountId32>;
 
     /**
      * Generic pallet storage query
@@ -3539,9 +3707,22 @@ export interface ChainStorage extends GenericChainStorage {
      * Only relevant if this pallet is being used as the [`xcm_executor::traits::RecordXcm`]
      * implementation in the XCM executor configuration.
      *
-     * @param {Callback<StagingXcmV4Xcm | undefined> =} callback
+     * @param {Callback<StagingXcmV5Xcm | undefined> =} callback
      **/
-    recordedXcm: GenericStorageQuery<() => StagingXcmV4Xcm | undefined>;
+    recordedXcm: GenericStorageQuery<() => StagingXcmV5Xcm | undefined>;
+
+    /**
+     * Map of authorized aliasers of local origins. Each local location can authorize a list of
+     * other locations to alias into it. Each aliaser is only valid until its inner `expiry`
+     * block number.
+     *
+     * @param {XcmVersionedLocation} arg
+     * @param {Callback<PalletXcmAuthorizedAliasesEntry | undefined> =} callback
+     **/
+    authorizedAliases: GenericStorageQuery<
+      (arg: XcmVersionedLocation) => PalletXcmAuthorizedAliasesEntry | undefined,
+      XcmVersionedLocation
+    >;
 
     /**
      * Generic pallet storage query
@@ -3733,6 +3914,219 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<AccountId32 | undefined> =} callback
      **/
     key: GenericStorageQuery<() => AccountId32 | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `RcMigrator`'s storage queries
+   **/
+  rcMigrator: {
+    /**
+     * The Relay Chain migration state.
+     *
+     * @param {Callback<PalletRcMigratorMigrationStage> =} callback
+     **/
+    rcMigrationStage: GenericStorageQuery<() => PalletRcMigratorMigrationStage>;
+
+    /**
+     * Helper storage item to obtain and store the known accounts that should be kept partially or
+     * fully on Relay Chain.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<PalletRcMigratorAccountsAccountState | undefined> =} callback
+     **/
+    rcAccounts: GenericStorageQuery<
+      (arg: AccountId32Like) => PalletRcMigratorAccountsAccountState | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForRcAccounts: GenericStorageQuery<() => number>;
+
+    /**
+     * Helper storage item to store the total balance that should be kept on Relay Chain.
+     *
+     * @param {Callback<PalletRcMigratorAccountsMigratedBalances> =} callback
+     **/
+    rcMigratedBalance: GenericStorageQuery<() => PalletRcMigratorAccountsMigratedBalances>;
+
+    /**
+     * Helper storage item to store the total balance that should be kept on Relay Chain after
+     * it is consumed from the `RcMigratedBalance` storage item and sent to the Asset Hub.
+     *
+     * This let us to take the value from the `RcMigratedBalance` storage item and keep the
+     * `SignalMigrationFinish` stage to be idempotent while preserving these values for tests and
+     * later discoveries.
+     *
+     * @param {Callback<PalletRcMigratorAccountsMigratedBalances> =} callback
+     **/
+    rcMigratedBalanceArchive: GenericStorageQuery<() => PalletRcMigratorAccountsMigratedBalances>;
+
+    /**
+     * The pending XCM messages.
+     *
+     * Contains data messages that have been sent to the Asset Hub but not yet confirmed.
+     *
+     * Unconfirmed messages can be resent by calling the [`Pallet::resend_xcm`] function.
+     *
+     * @param {[bigint, H256]} arg
+     * @param {Callback<StagingXcmV5Xcm | undefined> =} callback
+     **/
+    pendingXcmMessages: GenericStorageQuery<(arg: [bigint, H256]) => StagingXcmV5Xcm | undefined, [bigint, H256]>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForPendingXcmMessages: GenericStorageQuery<() => number>;
+
+    /**
+     * Accounts that use the proxy pallet to delegate permissions and have no nonce.
+     *
+     * Boolean value is whether they have been migrated to the Asset Hub. Needed for idempotency.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<boolean | undefined> =} callback
+     **/
+    pureProxyCandidatesMigrated: GenericStorageQuery<(arg: AccountId32Like) => boolean | undefined, AccountId32>;
+
+    /**
+     * The pending XCM response queries and their XCM hash referencing the message in the
+     * [`PendingXcmMessages`] storage.
+     *
+     * The `QueryId` is the identifier from the [`pallet_xcm`] query handler registry. The XCM
+     * pallet will notify about the status of the message by calling the
+     * [`Pallet::receive_query_response`] function with the `QueryId` and the
+     * response.
+     *
+     * @param {bigint} arg
+     * @param {Callback<H256 | undefined> =} callback
+     **/
+    pendingXcmQueries: GenericStorageQuery<(arg: bigint) => H256 | undefined, bigint>;
+
+    /**
+     * Manual override for `type UnprocessedMsgBuffer: Get<u32>`. Look there for docs.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    unprocessedMsgBuffer: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * The priority of the Asset Hub UMP queue during migration.
+     *
+     * Controls how the Asset Hub UMP (Upward Message Passing) queue is processed relative to other
+     * queues during the migration process. This helps ensure timely processing of migration
+     * messages. The default priority pattern is defined in the pallet configuration, but can be
+     * overridden by a storage value of this type.
+     *
+     * @param {Callback<PalletRcMigratorQueuePriority> =} callback
+     **/
+    ahUmpQueuePriorityConfig: GenericStorageQuery<() => PalletRcMigratorQueuePriority>;
+
+    /**
+     * An optional account id of a manager.
+     *
+     * This account id has similar privileges to [`Config::AdminOrigin`] except that it
+     * can not set the manager account id via `set_manager` call.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    manager: GenericStorageQuery<() => AccountId32 | undefined>;
+
+    /**
+     * An optional account id of a canceller.
+     *
+     * This account id can only stop scheduled migration.
+     *
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    canceller: GenericStorageQuery<() => AccountId32 | undefined>;
+
+    /**
+     * The block number at which the migration began and the pallet's extrinsics were locked.
+     *
+     * This value is set when entering the `WaitingForAh` stage, i.e., when
+     * `RcMigrationStage::is_ongoing()` becomes `true`.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    migrationStartBlock: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * Block number when migration finished and extrinsics were unlocked.
+     *
+     * This is set when entering the `MigrationDone` stage hence when
+     * `RcMigrationStage::is_finished()` becomes `true`.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    migrationEndBlock: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * The duration of the pre migration warm-up period.
+     *
+     * This is the duration of the warm-up period before the data migration starts. During this
+     * period, the migration will be in ongoing state and the concerned extrinsics will be locked.
+     *
+     * @param {Callback<FrameSupportScheduleDispatchTime | undefined> =} callback
+     **/
+    warmUpPeriod: GenericStorageQuery<() => FrameSupportScheduleDispatchTime | undefined>;
+
+    /**
+     * The duration of the post migration cool-off period.
+     *
+     * This is the duration of the cool-off period after the data migration is finished. During
+     * this period, the migration will be still in ongoing state and the concerned extrinsics will
+     * be locked.
+     *
+     * @param {Callback<FrameSupportScheduleDispatchTime | undefined> =} callback
+     **/
+    coolOffPeriod: GenericStorageQuery<() => FrameSupportScheduleDispatchTime | undefined>;
+
+    /**
+     * The migration settings.
+     *
+     * @param {Callback<PalletRcMigratorMigrationSettings | undefined> =} callback
+     **/
+    settings: GenericStorageQuery<() => PalletRcMigratorMigrationSettings | undefined>;
+
+    /**
+     * The multisig AccountIDs that votes to execute a specific call.
+     *
+     * @param {PaseoRuntimeRuntimeCallLike} arg
+     * @param {Callback<Array<AccountId32>> =} callback
+     **/
+    managerMultisigs: GenericStorageQuery<
+      (arg: PaseoRuntimeRuntimeCallLike) => Array<AccountId32>,
+      PaseoRuntimeRuntimeCall
+    >;
+
+    /**
+     * The current round of the multisig voting.
+     *
+     * Votes are only valid for the current round.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    managerMultisigRound: GenericStorageQuery<() => number>;
+
+    /**
+     * How often each participant voted in the current round.
+     *
+     * Will be cleared at the end of each round.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number> =} callback
+     **/
+    managerVotesInCurrentRound: GenericStorageQuery<(arg: AccountId32Like) => number, AccountId32>;
 
     /**
      * Generic pallet storage query

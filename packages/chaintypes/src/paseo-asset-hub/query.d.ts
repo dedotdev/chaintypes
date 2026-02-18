@@ -10,9 +10,9 @@ import type {
   Phase,
   FixedU128,
   FixedBytes,
-  BytesLike,
   EthereumAddress,
   EthereumAddressLike,
+  BytesLike,
   Perbill,
   Percent,
   H160,
@@ -40,9 +40,8 @@ import type {
   PalletPreimageRequestStatus,
   PalletSchedulerScheduled,
   PalletSchedulerRetryConfig,
-  AssetHubPaseoRuntimeRuntimeParametersValue,
-  AssetHubPaseoRuntimeRuntimeParametersKey,
-  PalletMigrationsMigrationCursor,
+  AssetHubPolkadotRuntimeRuntimeParametersValue,
+  AssetHubPolkadotRuntimeRuntimeParametersKey,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
@@ -54,10 +53,10 @@ import type {
   PalletVestingReleases,
   PolkadotRuntimeCommonClaimsStatementKind,
   PalletCollatorSelectionCandidateInfo,
-  AssetHubPaseoRuntimeSessionKeys,
+  AssetHubPolkadotRuntimeSessionKeys,
   SpStakingOffenceOffenceSeverity,
   SpCoreCryptoKeyTypeId,
-  SpConsensusAuraSr25519AppSr25519Public,
+  SpConsensusAuraEd25519AppEd25519Public,
   SpConsensusSlotsSlot,
   CumulusPalletXcmpQueueOutboundChannelDetails,
   CumulusPalletXcmpQueueQueueConfigData,
@@ -122,7 +121,7 @@ import type {
   PalletElectionProviderMultiBlockVerifierImplsPartialBackings,
   SpNposElectionsElectionScore,
   PalletElectionProviderMultiBlockVerifierImplsStatus,
-  AssetHubPaseoRuntimeStakingNposCompactSolution16,
+  AssetHubPolkadotRuntimeStakingNposCompactSolution16,
   PalletElectionProviderMultiBlockSignedSubmissionMetadata,
   PalletStakingAsyncLedgerStakingLedger,
   PalletStakingAsyncRewardDestination,
@@ -712,42 +711,13 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * Stored parameters.
      *
-     * @param {AssetHubPaseoRuntimeRuntimeParametersKey} arg
-     * @param {Callback<AssetHubPaseoRuntimeRuntimeParametersValue | undefined> =} callback
+     * @param {AssetHubPolkadotRuntimeRuntimeParametersKey} arg
+     * @param {Callback<AssetHubPolkadotRuntimeRuntimeParametersValue | undefined> =} callback
      **/
     parameters: GenericStorageQuery<
-      (arg: AssetHubPaseoRuntimeRuntimeParametersKey) => AssetHubPaseoRuntimeRuntimeParametersValue | undefined,
-      AssetHubPaseoRuntimeRuntimeParametersKey
+      (arg: AssetHubPolkadotRuntimeRuntimeParametersKey) => AssetHubPolkadotRuntimeRuntimeParametersValue | undefined,
+      AssetHubPolkadotRuntimeRuntimeParametersKey
     >;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `MultiBlockMigrations`'s storage queries
-   **/
-  multiBlockMigrations: {
-    /**
-     * The currently active migration to run and its cursor.
-     *
-     * `None` indicates that no migration is running.
-     *
-     * @param {Callback<PalletMigrationsMigrationCursor | undefined> =} callback
-     **/
-    cursor: GenericStorageQuery<() => PalletMigrationsMigrationCursor | undefined>;
-
-    /**
-     * Set of all successfully executed migrations.
-     *
-     * This is used as blacklist, to not re-execute migrations that have not been removed from the
-     * codebase yet. Governance can regularly clear this out via `clear_historic`.
-     *
-     * @param {BytesLike} arg
-     * @param {Callback<[] | undefined> =} callback
-     **/
-    historic: GenericStorageQuery<(arg: BytesLike) => [] | undefined, Bytes>;
 
     /**
      * Generic pallet storage query
@@ -1058,9 +1028,9 @@ export interface ChainStorage extends GenericChainStorage {
      * The queued keys for the next session. When the next session begins, these keys
      * will be used to determine the validator's session keys.
      *
-     * @param {Callback<Array<[AccountId32, AssetHubPaseoRuntimeSessionKeys]>> =} callback
+     * @param {Callback<Array<[AccountId32, AssetHubPolkadotRuntimeSessionKeys]>> =} callback
      **/
-    queuedKeys: GenericStorageQuery<() => Array<[AccountId32, AssetHubPaseoRuntimeSessionKeys]>>;
+    queuedKeys: GenericStorageQuery<() => Array<[AccountId32, AssetHubPolkadotRuntimeSessionKeys]>>;
 
     /**
      * Indices of disabled validators.
@@ -1077,9 +1047,12 @@ export interface ChainStorage extends GenericChainStorage {
      * The next session keys for a validator.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<AssetHubPaseoRuntimeSessionKeys | undefined> =} callback
+     * @param {Callback<AssetHubPolkadotRuntimeSessionKeys | undefined> =} callback
      **/
-    nextKeys: GenericStorageQuery<(arg: AccountId32Like) => AssetHubPaseoRuntimeSessionKeys | undefined, AccountId32>;
+    nextKeys: GenericStorageQuery<
+      (arg: AccountId32Like) => AssetHubPolkadotRuntimeSessionKeys | undefined,
+      AccountId32
+    >;
 
     /**
      * The owner of a key. The key is the `KeyTypeId` + the encoded key.
@@ -1104,9 +1077,9 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * The current authority set.
      *
-     * @param {Callback<Array<SpConsensusAuraSr25519AppSr25519Public>> =} callback
+     * @param {Callback<Array<SpConsensusAuraEd25519AppEd25519Public>> =} callback
      **/
-    authorities: GenericStorageQuery<() => Array<SpConsensusAuraSr25519AppSr25519Public>>;
+    authorities: GenericStorageQuery<() => Array<SpConsensusAuraEd25519AppEd25519Public>>;
 
     /**
      * The current slot of this block.
@@ -1133,9 +1106,9 @@ export interface ChainStorage extends GenericChainStorage {
      * but we require the old authorities to verify the seal when validating a PoV. This will
      * always be updated to the latest AuRa authorities in `on_finalize`.
      *
-     * @param {Callback<Array<SpConsensusAuraSr25519AppSr25519Public>> =} callback
+     * @param {Callback<Array<SpConsensusAuraEd25519AppEd25519Public>> =} callback
      **/
-    authorities: GenericStorageQuery<() => Array<SpConsensusAuraSr25519AppSr25519Public>>;
+    authorities: GenericStorageQuery<() => Array<SpConsensusAuraEd25519AppEd25519Public>>;
 
     /**
      * Current relay chain slot paired with a number of authored blocks.
@@ -2890,10 +2863,10 @@ export interface ChainStorage extends GenericChainStorage {
      * Triple map from (round, account, page) to a solution page.
      *
      * @param {[number, AccountId32Like, number]} arg
-     * @param {Callback<AssetHubPaseoRuntimeStakingNposCompactSolution16 | undefined> =} callback
+     * @param {Callback<AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined> =} callback
      **/
     submissionStorage: GenericStorageQuery<
-      (arg: [number, AccountId32Like, number]) => AssetHubPaseoRuntimeStakingNposCompactSolution16 | undefined,
+      (arg: [number, AccountId32Like, number]) => AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined,
       [number, AccountId32, number]
     >;
 
@@ -3518,22 +3491,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletReviveDebugDebugSettings> =} callback
      **/
     debugSettingsOf: GenericStorageQuery<() => PalletReviveDebugDebugSettings>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `Sudo`'s storage queries
-   **/
-  sudo: {
-    /**
-     * The `AccountId` of the sudo key.
-     *
-     * @param {Callback<AccountId32 | undefined> =} callback
-     **/
-    key: GenericStorageQuery<() => AccountId32 | undefined>;
 
     /**
      * Generic pallet storage query

@@ -467,6 +467,27 @@ export interface ChainErrors extends GenericChainErrors {
     NotExpired: GenericPalletError;
 
     /**
+     * The username cannot be removed because it's still in the grace period.
+     **/
+    TooEarly: GenericPalletError;
+
+    /**
+     * The username cannot be removed because it is not unbinding.
+     **/
+    NotUnbinding: GenericPalletError;
+
+    /**
+     * The username cannot be unbound because it is already unbinding.
+     **/
+    AlreadyUnbinding: GenericPalletError;
+
+    /**
+     * The action cannot be performed because of insufficient privileges (e.g. authority
+     * trying to unbind a username provided by the system).
+     **/
+    InsufficientPrivileges: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -661,6 +682,11 @@ export interface ChainErrors extends GenericChainErrors {
     PrimeAccountNotMember: GenericPalletError;
 
     /**
+     * Proposal is still active.
+     **/
+    ProposalActive: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -754,12 +780,13 @@ export interface ChainErrors extends GenericChainErrors {
     SenderInSignatories: GenericPalletError;
 
     /**
-     * Multisig operation not found when attempting to cancel.
+     * Multisig operation not found in storage.
      **/
     NotFound: GenericPalletError;
 
     /**
-     * Only the account that originally created the multisig is able to cancel it.
+     * Only the account that originally created the multisig is able to cancel it or update
+     * its deposits.
      **/
     NotOwner: GenericPalletError;
 
@@ -1377,7 +1404,7 @@ export interface ChainErrors extends GenericChainErrors {
     SameAssetTradeNotAllowed: GenericPalletError;
 
     /**
-     * LRNA update after trade results in positive value.
+     * Hub asset reserve update after trade resulted in unexpected Decrease.
      **/
     HubAssetUpdateError: GenericPalletError;
 
@@ -1721,6 +1748,16 @@ export interface ChainErrors extends GenericChainErrors {
     NoFarmEntriesSpecified: GenericPalletError;
 
     /**
+     * No assets specified in the withdrawal
+     **/
+    NoAssetsSpecified: GenericPalletError;
+
+    /**
+     * The provided position_id does not match the deposit's associated position.
+     **/
+    PositionIdMismatch: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1826,6 +1863,12 @@ export interface ChainErrors extends GenericChainErrors {
      * Invalid amount to save deposit
      **/
     InvalidAmount: GenericPalletError;
+
+    /**
+     * Deposit limit would be exceeded for a whitelisted account.
+     * Operation rejected to prevent funds being locked on system accounts.
+     **/
+    DepositLimitExceededForWhitelistedAccount: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2123,6 +2166,16 @@ export interface ChainErrors extends GenericChainErrors {
      * Pool does not have pegs configured.
      **/
     NoPegSource: GenericPalletError;
+
+    /**
+     * Trade would result in zero amount out.
+     **/
+    ZeroAmountOut: GenericPalletError;
+
+    /**
+     * Trade would result in zero amount in.
+     **/
+    ZeroAmountIn: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3044,6 +3097,11 @@ export interface ChainErrors extends GenericChainErrors {
     Undefined: GenericPalletError;
 
     /**
+     * Address not allowed to deploy contracts either via CREATE or CALL(CREATE).
+     **/
+    CreateOriginNotAllowed: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -3529,16 +3587,6 @@ export interface ChainErrors extends GenericChainErrors {
     NotScheduled: GenericPalletError;
 
     /**
-     * No code upgrade has been authorized.
-     **/
-    NothingAuthorized: GenericPalletError;
-
-    /**
-     * The given code upgrade has not been authorized.
-     **/
-    Unauthorized: GenericPalletError;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -3671,6 +3719,21 @@ export interface ChainErrors extends GenericChainErrors {
     LocalExecutionIncomplete: GenericPalletError;
 
     /**
+     * Too many locations authorized to alias origin.
+     **/
+    TooManyAuthorizedAliases: GenericPalletError;
+
+    /**
+     * Expiry block number is in the past.
+     **/
+    ExpiresInPast: GenericPalletError;
+
+    /**
+     * The alias to remove authorization for was not found.
+     **/
+    AliasNotFound: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -3763,6 +3826,20 @@ export interface ChainErrors extends GenericChainErrors {
      * Another call is in progress and needs to finish before this call can happen.
      **/
     RecursiveDisallowed: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s errors
+   **/
+  multiBlockMigrations: {
+    /**
+     * The operation cannot complete since some MBMs are ongoing.
+     **/
+    Ongoing: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3869,7 +3946,7 @@ export interface ChainErrors extends GenericChainErrors {
     ZeroFee: GenericPalletError;
 
     /**
-     * The transfering asset amount is zero.
+     * The transferring asset amount is zero.
      **/
     ZeroAmount: GenericPalletError;
 
@@ -4054,122 +4131,6 @@ export interface ChainErrors extends GenericChainErrors {
      * Key setting account is not live, so it's impossible to associate keys.
      **/
     NoAccount: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `Ismp`'s errors
-   **/
-  ismp: {
-    /**
-     * Invalid ISMP message
-     **/
-    InvalidMessage: GenericPalletError;
-
-    /**
-     * Requested message was not found
-     **/
-    MessageNotFound: GenericPalletError;
-
-    /**
-     * Encountered an error while creating the consensus client.
-     **/
-    ConsensusClientCreationFailed: GenericPalletError;
-
-    /**
-     * Couldn't update unbonding period
-     **/
-    UnbondingPeriodUpdateFailed: GenericPalletError;
-
-    /**
-     * Couldn't update challenge period
-     **/
-    ChallengePeriodUpdateFailed: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `IsmpParachain`'s errors
-   **/
-  ismpParachain: {
-    /**
-     * Only Parachain Consensus updates should be passed in the inherents.
-     **/
-    InvalidConsensusStateId: GenericPalletError;
-
-    /**
-     * ValidationData must be updated only once in a block.
-     **/
-    ConsensusAlreadyUpdated: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `Hyperbridge`'s errors
-   **/
-  hyperbridge: {
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `TokenGateway`'s errors
-   **/
-  tokenGateway: {
-    /**
-     * A asset that has not been registered
-     **/
-    UnregisteredAsset: GenericPalletError;
-
-    /**
-     * Error while teleporting asset
-     **/
-    AssetTeleportError: GenericPalletError;
-
-    /**
-     * Coprocessor was not configured in the runtime
-     **/
-    CoprocessorNotConfigured: GenericPalletError;
-
-    /**
-     * Asset or update Dispatch Error
-     **/
-    DispatchError: GenericPalletError;
-
-    /**
-     * Asset Id creation failed
-     **/
-    AssetCreationError: GenericPalletError;
-
-    /**
-     * Asset decimals not found
-     **/
-    AssetDecimalsNotFound: GenericPalletError;
-
-    /**
-     * Protocol Params have not been initialized
-     **/
-    NotInitialized: GenericPalletError;
-
-    /**
-     * Unknown Asset
-     **/
-    UnknownAsset: GenericPalletError;
-
-    /**
-     * Only root or asset owner can update asset
-     **/
-    NotAssetOwner: GenericPalletError;
 
     /**
      * Generic pallet error

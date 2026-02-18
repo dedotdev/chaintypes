@@ -36,11 +36,12 @@ import type {
   SpWeightsWeightV2Weight,
   EvmBackendBasic,
   FpEvmExecutionInfoV2,
+  EthereumTransactionEip7702AuthorizationListItem,
   FpEvmExecutionInfoV2H160,
   EthereumBlock,
-  EthereumReceiptReceiptV3,
+  EthereumReceiptReceiptV4,
   FpRpcTransactionStatus,
-  EthereumTransactionTransactionV2,
+  EthereumTransactionTransactionV3,
   XcmVersionedAssetId,
   XcmRuntimeApisFeesError,
   XcmVersionedXcm,
@@ -55,13 +56,6 @@ import type {
   XcmRuntimeApisConversionsError,
   HydradxTraitsOracleOraclePeriod,
   HydradxRuntimeEvmAaveTradeExecutorPoolData,
-  IsmpHostStateMachine,
-  IsmpEventsEvent,
-  IsmpConsensusStateMachineHeight,
-  IsmpConsensusStateMachineId,
-  IsmpRouterRequest,
-  IsmpRouterResponse,
-  CumulusPalletParachainSystemRelayChainState,
 } from './types.js';
 
 export interface RuntimeApis extends GenericRuntimeApis {
@@ -483,6 +477,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {U256 | undefined} nonce
      * @param {boolean} estimate
      * @param {Array<[H160, Array<H256>]> | undefined} access_list
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem> | undefined} authorization_list
      **/
     call: GenericRuntimeApiMethod<
       (
@@ -496,6 +491,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
         nonce: U256 | undefined,
         estimate: boolean,
         accessList?: Array<[H160, Array<H256>]> | undefined,
+        authorizationList?: Array<EthereumTransactionEip7702AuthorizationListItem> | undefined,
       ) => Promise<Result<FpEvmExecutionInfoV2, DispatchError>>
     >;
 
@@ -511,6 +507,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {U256 | undefined} nonce
      * @param {boolean} estimate
      * @param {Array<[H160, Array<H256>]> | undefined} access_list
+     * @param {Array<EthereumTransactionEip7702AuthorizationListItem> | undefined} authorization_list
      **/
     create: GenericRuntimeApiMethod<
       (
@@ -523,6 +520,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
         nonce: U256 | undefined,
         estimate: boolean,
         accessList?: Array<[H160, Array<H256>]> | undefined,
+        authorizationList?: Array<EthereumTransactionEip7702AuthorizationListItem> | undefined,
       ) => Promise<Result<FpEvmExecutionInfoV2H160, DispatchError>>
     >;
 
@@ -538,7 +536,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: EthereumRuntimeRPCApi_current_receipts
      **/
-    currentReceipts: GenericRuntimeApiMethod<() => Promise<Array<EthereumReceiptReceiptV3> | undefined>>;
+    currentReceipts: GenericRuntimeApiMethod<() => Promise<Array<EthereumReceiptReceiptV4> | undefined>>;
 
     /**
      * Return the current transaction status.
@@ -555,7 +553,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
       () => Promise<
         [
           EthereumBlock | undefined,
-          Array<EthereumReceiptReceiptV3> | undefined,
+          Array<EthereumReceiptReceiptV4> | undefined,
           Array<FpRpcTransactionStatus> | undefined,
         ]
       >
@@ -568,7 +566,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {Array<FpSelfContainedUncheckedExtrinsic>} xts
      **/
     extrinsicFilter: GenericRuntimeApiMethod<
-      (xts: Array<FpSelfContainedUncheckedExtrinsic>) => Promise<Array<EthereumTransactionTransactionV2>>
+      (xts: Array<FpSelfContainedUncheckedExtrinsic>) => Promise<Array<EthereumTransactionTransactionV3>>
     >;
 
     /**
@@ -622,10 +620,10 @@ export interface RuntimeApis extends GenericRuntimeApis {
     /**
      *
      * @callname: ConvertTransactionRuntimeApi_convert_transaction
-     * @param {EthereumTransactionTransactionV2} transaction
+     * @param {EthereumTransactionTransactionV3} transaction
      **/
     convertTransaction: GenericRuntimeApiMethod<
-      (transaction: EthereumTransactionTransactionV2) => Promise<FpSelfContainedUncheckedExtrinsic>
+      (transaction: EthereumTransactionTransactionV3) => Promise<FpSelfContainedUncheckedExtrinsic>
     >;
 
     /**
@@ -791,7 +789,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
     /**
      * Whether it is legal to extend the chain, assuming the given block is the most
      * recently included one as-of the relay parent that will be built against, and
-     * the given slot.
+     * the given relay chain slot.
      *
      * This should be consistent with the logic the runtime uses when validating blocks to
      * avoid issues.
@@ -816,16 +814,18 @@ export interface RuntimeApis extends GenericRuntimeApis {
    **/
   dryRunApi: {
     /**
-     * Dry run call.
+     * Dry run call V2.
      *
      * @callname: DryRunApi_dry_run_call
      * @param {HydradxRuntimeOriginCaller} origin
      * @param {HydradxRuntimeRuntimeCallLike} call
+     * @param {number} result_xcms_version
      **/
     dryRunCall: GenericRuntimeApiMethod<
       (
         origin: HydradxRuntimeOriginCaller,
         call: HydradxRuntimeRuntimeCallLike,
+        resultXcmsVersion: number,
       ) => Promise<Result<XcmRuntimeApisDryRunCallDryRunEffects, XcmRuntimeApisDryRunError>>
     >;
 
@@ -942,109 +942,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
     [method: string]: GenericRuntimeApiMethod;
   };
   /**
-   * @runtimeapi: IsmpRuntimeApi - 0x0ebc8fd84ae20ada
-   **/
-  ismpRuntimeApi: {
-    /**
-     * Should return the host's state machine identifier
-     *
-     * @callname: IsmpRuntimeApi_host_state_machine
-     **/
-    hostStateMachine: GenericRuntimeApiMethod<() => Promise<IsmpHostStateMachine>>;
-
-    /**
-     * Fetch all ISMP events
-     *
-     * @callname: IsmpRuntimeApi_block_events
-     **/
-    blockEvents: GenericRuntimeApiMethod<() => Promise<Array<IsmpEventsEvent>>>;
-
-    /**
-     * Fetch all ISMP events and their extrinsic metadata
-     *
-     * @callname: IsmpRuntimeApi_block_events_with_metadata
-     **/
-    blockEventsWithMetadata: GenericRuntimeApiMethod<() => Promise<Array<[IsmpEventsEvent, number | undefined]>>>;
-
-    /**
-     * Return the scale encoded consensus state
-     *
-     * @callname: IsmpRuntimeApi_consensus_state
-     * @param {FixedBytes<4>} id
-     **/
-    consensusState: GenericRuntimeApiMethod<(id: FixedBytes<4>) => Promise<Bytes | undefined>>;
-
-    /**
-     * Return the timestamp this client was last updated in seconds
-     *
-     * @callname: IsmpRuntimeApi_state_machine_update_time
-     * @param {IsmpConsensusStateMachineHeight} id
-     **/
-    stateMachineUpdateTime: GenericRuntimeApiMethod<
-      (id: IsmpConsensusStateMachineHeight) => Promise<bigint | undefined>
-    >;
-
-    /**
-     * Return the challenge period timestamp
-     *
-     * @callname: IsmpRuntimeApi_challenge_period
-     * @param {IsmpConsensusStateMachineId} id
-     **/
-    challengePeriod: GenericRuntimeApiMethod<(id: IsmpConsensusStateMachineId) => Promise<bigint | undefined>>;
-
-    /**
-     * Return the latest height of the state machine
-     *
-     * @callname: IsmpRuntimeApi_latest_state_machine_height
-     * @param {IsmpConsensusStateMachineId} id
-     **/
-    latestStateMachineHeight: GenericRuntimeApiMethod<(id: IsmpConsensusStateMachineId) => Promise<bigint | undefined>>;
-
-    /**
-     * Fetch the requests for the given commitments.
-     *
-     * @callname: IsmpRuntimeApi_requests
-     * @param {Array<H256>} request_commitments
-     **/
-    requests: GenericRuntimeApiMethod<(requestCommitments: Array<H256>) => Promise<Array<IsmpRouterRequest>>>;
-
-    /**
-     * Fetch the responses for the given commitments.
-     *
-     * @callname: IsmpRuntimeApi_responses
-     * @param {Array<H256>} response_commitments
-     **/
-    responses: GenericRuntimeApiMethod<(responseCommitments: Array<H256>) => Promise<Array<IsmpRouterResponse>>>;
-
-    /**
-     * Generic runtime api call
-     **/
-    [method: string]: GenericRuntimeApiMethod;
-  };
-  /**
-   * @runtimeapi: IsmpParachainApi - 0x5d1df2fe7d4f6bc8
-   **/
-  ismpParachainApi: {
-    /**
-     * Return all the para_ids this runtime is interested in. Used by the inherent provider
-     *
-     * @callname: IsmpParachainApi_para_ids
-     **/
-    paraIds: GenericRuntimeApiMethod<() => Promise<Array<number>>>;
-
-    /**
-     * Return the current relay chain state.
-     *
-     * @callname: IsmpParachainApi_current_relay_chain_state
-     **/
-    currentRelayChainState: GenericRuntimeApiMethod<() => Promise<CumulusPalletParachainSystemRelayChainState>>;
-
-    /**
-     * Generic runtime api call
-     **/
-    [method: string]: GenericRuntimeApiMethod;
-  };
-  /**
    * @runtimeapi: GenesisBuilder - 0xfbc577b9d747efd6
    **/
   genesisBuilder: {
@@ -1052,9 +949,10 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Build `RuntimeGenesisConfig` from a JSON blob not using any defaults and store it in the
      * storage.
      *
-     * In the case of a FRAME-based runtime, this function deserializes the full `RuntimeGenesisConfig` from the given JSON blob and
-     * puts it into the storage. If the provided JSON blob is incorrect or incomplete or the
-     * deserialization fails, an error is returned.
+     * In the case of a FRAME-based runtime, this function deserializes the full
+     * `RuntimeGenesisConfig` from the given JSON blob and puts it into the storage. If the
+     * provided JSON blob is incorrect or incomplete or the deserialization fails, an error
+     * is returned.
      *
      * Please note that provided JSON blob must contain all `RuntimeGenesisConfig` fields, no
      * defaults will be used.
@@ -1068,7 +966,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Returns a JSON blob representation of the built-in `RuntimeGenesisConfig` identified by
      * `id`.
      *
-     * If `id` is `None` the function returns JSON blob representation of the default
+     * If `id` is `None` the function should return JSON blob representation of the default
      * `RuntimeGenesisConfig` struct of the runtime. Implementation must provide default
      * `RuntimeGenesisConfig`.
      *

@@ -195,20 +195,6 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
-   * Pallet `MultiBlockMigrations`'s errors
-   **/
-  multiBlockMigrations: {
-    /**
-     * The operation cannot complete since some MBMs are ongoing.
-     **/
-    Ongoing: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
    * Pallet `Balances`'s errors
    **/
   balances: {
@@ -3133,20 +3119,6 @@ export interface ChainErrors extends GenericChainErrors {
      * called or if their caller was being delegate called.
      **/
     PrecompileDelegateDenied: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `Sudo`'s errors
-   **/
-  sudo: {
-    /**
-     * Sender must be the Sudo account.
-     **/
-    RequireSudo: GenericPalletError;
 
     /**
      * Generic pallet error

@@ -7,19 +7,19 @@ import type {
   H256,
   FixedBytes,
   Result,
-  Bytes,
   EthereumAddress,
   FixedU128,
+  Bytes,
   Permill,
   Perbill,
   H160,
 } from 'dedot/codecs';
 import type {
   FrameSystemDispatchEventInfo,
-  AssetHubPaseoRuntimeRuntimeTask,
+  AssetHubPolkadotRuntimeRuntimeTask,
   SpWeightsWeightV2Weight,
-  AssetHubPaseoRuntimeRuntimeParametersKey,
-  AssetHubPaseoRuntimeRuntimeParametersValue,
+  AssetHubPolkadotRuntimeRuntimeParametersKey,
+  AssetHubPolkadotRuntimeRuntimeParametersValue,
   FrameSupportTokensMiscBalanceStatus,
   PalletBalancesUnexpectedKind,
   StagingXcmV5Location,
@@ -35,7 +35,7 @@ import type {
   FrameSupportMessagesProcessMessageError,
   SnowbridgeCoreOperatingModeBasicOperatingMode,
   PalletMultisigTimepoint,
-  AssetHubPaseoRuntimeProxyType,
+  AssetHubPolkadotRuntimeProxyType,
   PalletProxyDepositKind,
   PalletNftsAttributeNamespace,
   PalletNftsPriceWithDirection,
@@ -109,12 +109,12 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * A [`Task`] has started executing
      **/
-    TaskStarted: GenericPalletEvent<'System', 'TaskStarted', { task: AssetHubPaseoRuntimeRuntimeTask }>;
+    TaskStarted: GenericPalletEvent<'System', 'TaskStarted', { task: AssetHubPolkadotRuntimeRuntimeTask }>;
 
     /**
      * A [`Task`] has finished executing.
      **/
-    TaskCompleted: GenericPalletEvent<'System', 'TaskCompleted', { task: AssetHubPaseoRuntimeRuntimeTask }>;
+    TaskCompleted: GenericPalletEvent<'System', 'TaskCompleted', { task: AssetHubPolkadotRuntimeRuntimeTask }>;
 
     /**
      * A [`Task`] failed during execution.
@@ -122,7 +122,7 @@ export interface ChainEvents extends GenericChainEvents {
     TaskFailed: GenericPalletEvent<
       'System',
       'TaskFailed',
-      { task: AssetHubPaseoRuntimeRuntimeTask; err: DispatchError }
+      { task: AssetHubPolkadotRuntimeRuntimeTask; err: DispatchError }
     >;
 
     /**
@@ -323,146 +323,17 @@ export interface ChainEvents extends GenericChainEvents {
         /**
          * The key that was updated.
          **/
-        key: AssetHubPaseoRuntimeRuntimeParametersKey;
+        key: AssetHubPolkadotRuntimeRuntimeParametersKey;
 
         /**
          * The old value before this call.
          **/
-        oldValue?: AssetHubPaseoRuntimeRuntimeParametersValue | undefined;
+        oldValue?: AssetHubPolkadotRuntimeRuntimeParametersValue | undefined;
 
         /**
          * The new value after this call.
          **/
-        newValue?: AssetHubPaseoRuntimeRuntimeParametersValue | undefined;
-      }
-    >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
-   * Pallet `MultiBlockMigrations`'s events
-   **/
-  multiBlockMigrations: {
-    /**
-     * A Runtime upgrade started.
-     *
-     * Its end is indicated by `UpgradeCompleted` or `UpgradeFailed`.
-     **/
-    UpgradeStarted: GenericPalletEvent<
-      'MultiBlockMigrations',
-      'UpgradeStarted',
-      {
-        /**
-         * The number of migrations that this upgrade contains.
-         *
-         * This can be used to design a progress indicator in combination with counting the
-         * `MigrationCompleted` and `MigrationSkipped` events.
-         **/
-        migrations: number;
-      }
-    >;
-
-    /**
-     * The current runtime upgrade completed.
-     *
-     * This implies that all of its migrations completed successfully as well.
-     **/
-    UpgradeCompleted: GenericPalletEvent<'MultiBlockMigrations', 'UpgradeCompleted', null>;
-
-    /**
-     * Runtime upgrade failed.
-     *
-     * This is very bad and will require governance intervention.
-     **/
-    UpgradeFailed: GenericPalletEvent<'MultiBlockMigrations', 'UpgradeFailed', null>;
-
-    /**
-     * A migration was skipped since it was already executed in the past.
-     **/
-    MigrationSkipped: GenericPalletEvent<
-      'MultiBlockMigrations',
-      'MigrationSkipped',
-      {
-        /**
-         * The index of the skipped migration within the [`Config::Migrations`] list.
-         **/
-        index: number;
-      }
-    >;
-
-    /**
-     * A migration progressed.
-     **/
-    MigrationAdvanced: GenericPalletEvent<
-      'MultiBlockMigrations',
-      'MigrationAdvanced',
-      {
-        /**
-         * The index of the migration within the [`Config::Migrations`] list.
-         **/
-        index: number;
-
-        /**
-         * The number of blocks that this migration took so far.
-         **/
-        took: number;
-      }
-    >;
-
-    /**
-     * A Migration completed.
-     **/
-    MigrationCompleted: GenericPalletEvent<
-      'MultiBlockMigrations',
-      'MigrationCompleted',
-      {
-        /**
-         * The index of the migration within the [`Config::Migrations`] list.
-         **/
-        index: number;
-
-        /**
-         * The number of blocks that this migration took so far.
-         **/
-        took: number;
-      }
-    >;
-
-    /**
-     * A Migration failed.
-     *
-     * This implies that the whole upgrade failed and governance intervention is required.
-     **/
-    MigrationFailed: GenericPalletEvent<
-      'MultiBlockMigrations',
-      'MigrationFailed',
-      {
-        /**
-         * The index of the migration within the [`Config::Migrations`] list.
-         **/
-        index: number;
-
-        /**
-         * The number of blocks that this migration took so far.
-         **/
-        took: number;
-      }
-    >;
-
-    /**
-     * The set of historical migrations has been cleared.
-     **/
-    HistoricCleared: GenericPalletEvent<
-      'MultiBlockMigrations',
-      'HistoricCleared',
-      {
-        /**
-         * Should be passed to `clear_historic` in a successive call.
-         **/
-        nextCursor?: Bytes | undefined;
+        newValue?: AssetHubPolkadotRuntimeRuntimeParametersValue | undefined;
       }
     >;
 
@@ -1468,7 +1339,7 @@ export interface ChainEvents extends GenericChainEvents {
     PureCreated: GenericPalletEvent<
       'Proxy',
       'PureCreated',
-      { pure: AccountId32; who: AccountId32; proxyType: AssetHubPaseoRuntimeProxyType; disambiguationIndex: number }
+      { pure: AccountId32; who: AccountId32; proxyType: AssetHubPolkadotRuntimeProxyType; disambiguationIndex: number }
     >;
 
     /**
@@ -1477,7 +1348,12 @@ export interface ChainEvents extends GenericChainEvents {
     PureKilled: GenericPalletEvent<
       'Proxy',
       'PureKilled',
-      { pure: AccountId32; spawner: AccountId32; proxyType: AssetHubPaseoRuntimeProxyType; disambiguationIndex: number }
+      {
+        pure: AccountId32;
+        spawner: AccountId32;
+        proxyType: AssetHubPolkadotRuntimeProxyType;
+        disambiguationIndex: number;
+      }
     >;
 
     /**
@@ -1491,7 +1367,7 @@ export interface ChainEvents extends GenericChainEvents {
     ProxyAdded: GenericPalletEvent<
       'Proxy',
       'ProxyAdded',
-      { delegator: AccountId32; delegatee: AccountId32; proxyType: AssetHubPaseoRuntimeProxyType; delay: number }
+      { delegator: AccountId32; delegatee: AccountId32; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number }
     >;
 
     /**
@@ -1500,7 +1376,7 @@ export interface ChainEvents extends GenericChainEvents {
     ProxyRemoved: GenericPalletEvent<
       'Proxy',
       'ProxyRemoved',
-      { delegator: AccountId32; delegatee: AccountId32; proxyType: AssetHubPaseoRuntimeProxyType; delay: number }
+      { delegator: AccountId32; delegatee: AccountId32; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number }
     >;
 
     /**
@@ -4156,67 +4032,6 @@ export interface ChainEvents extends GenericChainEvents {
      * for failed Ethereum transactions.
      **/
     EthExtrinsicRevert: GenericPalletEvent<'Revive', 'EthExtrinsicRevert', { dispatchError: DispatchError }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
-   * Pallet `Sudo`'s events
-   **/
-  sudo: {
-    /**
-     * A sudo call just took place.
-     **/
-    Sudid: GenericPalletEvent<
-      'Sudo',
-      'Sudid',
-      {
-        /**
-         * The result of the call made by the sudo user.
-         **/
-        sudoResult: Result<[], DispatchError>;
-      }
-    >;
-
-    /**
-     * The sudo key has been updated.
-     **/
-    KeyChanged: GenericPalletEvent<
-      'Sudo',
-      'KeyChanged',
-      {
-        /**
-         * The old sudo key (if one was previously set).
-         **/
-        old?: AccountId32 | undefined;
-
-        /**
-         * The new sudo key (if one was set).
-         **/
-        new: AccountId32;
-      }
-    >;
-
-    /**
-     * The key was permanently removed.
-     **/
-    KeyRemoved: GenericPalletEvent<'Sudo', 'KeyRemoved', null>;
-
-    /**
-     * A [sudo_as](Pallet::sudo_as) call just took place.
-     **/
-    SudoAsDone: GenericPalletEvent<
-      'Sudo',
-      'SudoAsDone',
-      {
-        /**
-         * The result of the call made by the sudo user.
-         **/
-        sudoResult: Result<[], DispatchError>;
-      }
-    >;
 
     /**
      * Generic pallet event

@@ -1404,7 +1404,7 @@ export interface ChainErrors extends GenericChainErrors {
     SameAssetTradeNotAllowed: GenericPalletError;
 
     /**
-     * LRNA update after trade results in positive value.
+     * Hub asset reserve update after trade resulted in unexpected Decrease.
      **/
     HubAssetUpdateError: GenericPalletError;
 

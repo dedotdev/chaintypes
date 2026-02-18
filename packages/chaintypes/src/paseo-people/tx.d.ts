@@ -8,7 +8,16 @@ import type {
   ISubmittableResult,
   IRuntimeTxCall,
 } from 'dedot/types';
-import type { MultiAddressLike, Extrinsic, BytesLike, H256, AccountId32Like, FixedBytes, Data } from 'dedot/codecs';
+import type {
+  MultiAddressLike,
+  Extrinsic,
+  BytesLike,
+  H256,
+  AccountId32Like,
+  FixedU128,
+  FixedBytes,
+  Data,
+} from 'dedot/codecs';
 import type {
   PeoplePaseoRuntimeRuntimeCallLike,
   SpRuntimeMultiSignature,
@@ -18,12 +27,12 @@ import type {
   PalletMigrationsMigrationCursor,
   PalletMigrationsHistoricCleanupSelector,
   PalletBalancesAdjustmentDirection,
+  StagingXcmV5Location,
   PeoplePaseoRuntimeSessionKeys,
   XcmVersionedLocation,
   XcmVersionedXcm,
   XcmVersionedAssets,
   SpWeightsWeightV2Weight,
-  StagingXcmV5Location,
   XcmV3WeightLimit,
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
@@ -740,6 +749,1281 @@ export interface ChainTx<
           palletCall: {
             name: 'Burn';
             params: { value: bigint; keepAlive: boolean };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Assets`'s transaction calls
+   **/
+  assets: {
+    /**
+     * Issue a new class of fungible assets from a public origin.
+     *
+     * This new asset class has no assets initially and its owner is the origin.
+     *
+     * The origin must conform to the configured `CreateOrigin` and have sufficient funds free.
+     *
+     * Funds of sender are reserved by `AssetDeposit`.
+     *
+     * Parameters:
+     * - `id`: The identifier of the new asset. This must not be currently in use to identify
+     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * - `admin`: The admin of this class of assets. The admin is the initial address of each
+     * member of the asset class's admin team.
+     * - `min_balance`: The minimum balance of this new asset that any single account must
+     * have. If an account's balance is reduced below this, then it collapses to zero.
+     *
+     * Emits `Created` event when successful.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} admin
+     * @param {bigint} minBalance
+     **/
+    create: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        admin: MultiAddressLike,
+        minBalance: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'Create';
+            params: { id: StagingXcmV5Location; admin: MultiAddressLike; minBalance: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Issue a new class of fungible assets from a privileged origin.
+     *
+     * This new asset class has no assets initially.
+     *
+     * The origin must conform to `ForceOrigin`.
+     *
+     * Unlike `create`, no funds are reserved.
+     *
+     * - `id`: The identifier of the new asset. This must not be currently in use to identify
+     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * - `owner`: The owner of this class of assets. The owner has full superuser permissions
+     * over this asset, but may later change and configure the permissions using
+     * `transfer_ownership` and `set_team`.
+     * - `min_balance`: The minimum balance of this new asset that any single account must
+     * have. If an account's balance is reduced below this, then it collapses to zero.
+     *
+     * Emits `ForceCreated` event when successful.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} owner
+     * @param {boolean} isSufficient
+     * @param {bigint} minBalance
+     **/
+    forceCreate: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        owner: MultiAddressLike,
+        isSufficient: boolean,
+        minBalance: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'ForceCreate';
+            params: { id: StagingXcmV5Location; owner: MultiAddressLike; isSufficient: boolean; minBalance: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Start the process of destroying a fungible asset class.
+     *
+     * `start_destroy` is the first in a series of extrinsics that should be called, to allow
+     * destruction of an asset class.
+     *
+     * The origin must conform to `ForceOrigin` or must be `Signed` by the asset's `owner`.
+     *
+     * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+     * asset.
+     *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * an account contains holds or freezes in place.
+     *
+     * @param {StagingXcmV5Location} id
+     **/
+    startDestroy: GenericTxCall<
+      (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'StartDestroy';
+            params: { id: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Destroy all accounts associated with a given asset.
+     *
+     * `destroy_accounts` should only be called after `start_destroy` has been called, and the
+     * asset is in a `Destroying` state.
+     *
+     * Due to weight restrictions, this function may need to be called multiple times to fully
+     * destroy all accounts. It will destroy `RemoveItemsLimit` accounts at a time.
+     *
+     * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+     * asset.
+     *
+     * Each call emits the `Event::DestroyedAccounts` event.
+     *
+     * @param {StagingXcmV5Location} id
+     **/
+    destroyAccounts: GenericTxCall<
+      (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'DestroyAccounts';
+            params: { id: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Destroy all approvals associated with a given asset up to the max (T::RemoveItemsLimit).
+     *
+     * `destroy_approvals` should only be called after `start_destroy` has been called, and the
+     * asset is in a `Destroying` state.
+     *
+     * Due to weight restrictions, this function may need to be called multiple times to fully
+     * destroy all approvals. It will destroy `RemoveItemsLimit` approvals at a time.
+     *
+     * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+     * asset.
+     *
+     * Each call emits the `Event::DestroyedApprovals` event.
+     *
+     * @param {StagingXcmV5Location} id
+     **/
+    destroyApprovals: GenericTxCall<
+      (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'DestroyApprovals';
+            params: { id: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Complete destroying asset and unreserve currency.
+     *
+     * `finish_destroy` should only be called after `start_destroy` has been called, and the
+     * asset is in a `Destroying` state. All accounts or approvals should be destroyed before
+     * hand.
+     *
+     * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+     * asset.
+     *
+     * Each successful call emits the `Event::Destroyed` event.
+     *
+     * @param {StagingXcmV5Location} id
+     **/
+    finishDestroy: GenericTxCall<
+      (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'FinishDestroy';
+            params: { id: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Mint assets of a particular class.
+     *
+     * The origin must be Signed and the sender must be the Issuer of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to have some amount minted.
+     * - `beneficiary`: The account to be credited with the minted assets.
+     * - `amount`: The amount of the asset to be minted.
+     *
+     * Emits `Issued` event when successful.
+     *
+     * Weight: `O(1)`
+     * Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} beneficiary
+     * @param {bigint} amount
+     **/
+    mint: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        beneficiary: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'Mint';
+            params: { id: StagingXcmV5Location; beneficiary: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
+     *
+     * Origin must be Signed and the sender should be the Manager of the asset `id`.
+     *
+     * Bails with `NoAccount` if the `who` is already dead.
+     *
+     * - `id`: The identifier of the asset to have some amount burned.
+     * - `who`: The account to be debited from.
+     * - `amount`: The maximum amount by which `who`'s balance should be reduced.
+     *
+     * Emits `Burned` with the actual amount burned. If this takes the balance to below the
+     * minimum for the asset, then the amount burned is increased to take it to zero.
+     *
+     * Weight: `O(1)`
+     * Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} who
+     * @param {bigint} amount
+     **/
+    burn: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        who: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'Burn';
+            params: { id: StagingXcmV5Location; who: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Move some assets from the sender account to another.
+     *
+     * Origin must be Signed.
+     *
+     * - `id`: The identifier of the asset to have some amount transferred.
+     * - `target`: The account to be credited.
+     * - `amount`: The amount by which the sender's balance of assets should be reduced and
+     * `target`'s balance increased. The amount actually transferred may be slightly greater in
+     * the case that the transfer would otherwise take the sender balance above zero but below
+     * the minimum balance. Must be greater than zero.
+     *
+     * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+     * to below the minimum for the asset, then the amount transferred is increased to take it
+     * to zero.
+     *
+     * Weight: `O(1)`
+     * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
+     * `target`.
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} target
+     * @param {bigint} amount
+     **/
+    transfer: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        target: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'Transfer';
+            params: { id: StagingXcmV5Location; target: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Move some assets from the sender account to another, keeping the sender account alive.
+     *
+     * Origin must be Signed.
+     *
+     * - `id`: The identifier of the asset to have some amount transferred.
+     * - `target`: The account to be credited.
+     * - `amount`: The amount by which the sender's balance of assets should be reduced and
+     * `target`'s balance increased. The amount actually transferred may be slightly greater in
+     * the case that the transfer would otherwise take the sender balance above zero but below
+     * the minimum balance. Must be greater than zero.
+     *
+     * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+     * to below the minimum for the asset, then the amount transferred is increased to take it
+     * to zero.
+     *
+     * Weight: `O(1)`
+     * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
+     * `target`.
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} target
+     * @param {bigint} amount
+     **/
+    transferKeepAlive: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        target: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'TransferKeepAlive';
+            params: { id: StagingXcmV5Location; target: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Move some assets from one account to another.
+     *
+     * Origin must be Signed and the sender should be the Admin of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to have some amount transferred.
+     * - `source`: The account to be debited.
+     * - `dest`: The account to be credited.
+     * - `amount`: The amount by which the `source`'s balance of assets should be reduced and
+     * `dest`'s balance increased. The amount actually transferred may be slightly greater in
+     * the case that the transfer would otherwise take the `source` balance above zero but
+     * below the minimum balance. Must be greater than zero.
+     *
+     * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+     * to below the minimum for the asset, then the amount transferred is increased to take it
+     * to zero.
+     *
+     * Weight: `O(1)`
+     * Modes: Pre-existence of `dest`; Post-existence of `source`; Account pre-existence of
+     * `dest`.
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} source
+     * @param {MultiAddressLike} dest
+     * @param {bigint} amount
+     **/
+    forceTransfer: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        source: MultiAddressLike,
+        dest: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'ForceTransfer';
+            params: { id: StagingXcmV5Location; source: MultiAddressLike; dest: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
+     * must already exist as an entry in `Account`s of the asset. If you want to freeze an
+     * account that does not have an entry, use `touch_other` first.
+     *
+     * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be frozen.
+     * - `who`: The account to be frozen.
+     *
+     * Emits `Frozen`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} who
+     **/
+    freeze: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        who: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'Freeze';
+            params: { id: StagingXcmV5Location; who: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Allow unprivileged transfers to and from an account again.
+     *
+     * Origin must be Signed and the sender should be the Admin of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be frozen.
+     * - `who`: The account to be unfrozen.
+     *
+     * Emits `Thawed`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} who
+     **/
+    thaw: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        who: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'Thaw';
+            params: { id: StagingXcmV5Location; who: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Disallow further unprivileged transfers for the asset class.
+     *
+     * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be frozen.
+     *
+     * Emits `Frozen`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     **/
+    freezeAsset: GenericTxCall<
+      (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'FreezeAsset';
+            params: { id: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Allow unprivileged transfers for the asset again.
+     *
+     * Origin must be Signed and the sender should be the Admin of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be thawed.
+     *
+     * Emits `Thawed`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     **/
+    thawAsset: GenericTxCall<
+      (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'ThawAsset';
+            params: { id: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Change the Owner of an asset.
+     *
+     * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * - `id`: The identifier of the asset.
+     * - `owner`: The new Owner of this asset.
+     *
+     * Emits `OwnerChanged`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} owner
+     **/
+    transferOwnership: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        owner: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'TransferOwnership';
+            params: { id: StagingXcmV5Location; owner: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Change the Issuer, Admin and Freezer of an asset.
+     *
+     * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be frozen.
+     * - `issuer`: The new Issuer of this asset.
+     * - `admin`: The new Admin of this asset.
+     * - `freezer`: The new Freezer of this asset.
+     *
+     * Emits `TeamChanged`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} issuer
+     * @param {MultiAddressLike} admin
+     * @param {MultiAddressLike} freezer
+     **/
+    setTeam: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        issuer: MultiAddressLike,
+        admin: MultiAddressLike,
+        freezer: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'SetTeam';
+            params: {
+              id: StagingXcmV5Location;
+              issuer: MultiAddressLike;
+              admin: MultiAddressLike;
+              freezer: MultiAddressLike;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the metadata for an asset.
+     *
+     * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * Funds of sender are reserved according to the formula:
+     * `MetadataDepositBase + MetadataDepositPerByte * (name.len + symbol.len)` taking into
+     * account any already reserved funds.
+     *
+     * - `id`: The identifier of the asset to update.
+     * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+     * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+     * - `decimals`: The number of decimals this asset uses to represent one unit.
+     *
+     * Emits `MetadataSet`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {BytesLike} name
+     * @param {BytesLike} symbol
+     * @param {number} decimals
+     **/
+    setMetadata: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        name: BytesLike,
+        symbol: BytesLike,
+        decimals: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'SetMetadata';
+            params: { id: StagingXcmV5Location; name: BytesLike; symbol: BytesLike; decimals: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clear the metadata for an asset.
+     *
+     * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * Any deposit is freed for the asset owner.
+     *
+     * - `id`: The identifier of the asset to clear.
+     *
+     * Emits `MetadataCleared`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     **/
+    clearMetadata: GenericTxCall<
+      (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'ClearMetadata';
+            params: { id: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Force the metadata for an asset to some value.
+     *
+     * Origin must be ForceOrigin.
+     *
+     * Any deposit is left alone.
+     *
+     * - `id`: The identifier of the asset to update.
+     * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+     * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+     * - `decimals`: The number of decimals this asset uses to represent one unit.
+     *
+     * Emits `MetadataSet`.
+     *
+     * Weight: `O(N + S)` where N and S are the length of the name and symbol respectively.
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {BytesLike} name
+     * @param {BytesLike} symbol
+     * @param {number} decimals
+     * @param {boolean} isFrozen
+     **/
+    forceSetMetadata: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        name: BytesLike,
+        symbol: BytesLike,
+        decimals: number,
+        isFrozen: boolean,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'ForceSetMetadata';
+            params: {
+              id: StagingXcmV5Location;
+              name: BytesLike;
+              symbol: BytesLike;
+              decimals: number;
+              isFrozen: boolean;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clear the metadata for an asset.
+     *
+     * Origin must be ForceOrigin.
+     *
+     * Any deposit is returned.
+     *
+     * - `id`: The identifier of the asset to clear.
+     *
+     * Emits `MetadataCleared`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     **/
+    forceClearMetadata: GenericTxCall<
+      (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'ForceClearMetadata';
+            params: { id: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Alter the attributes of a given asset.
+     *
+     * Origin must be `ForceOrigin`.
+     *
+     * - `id`: The identifier of the asset.
+     * - `owner`: The new Owner of this asset.
+     * - `issuer`: The new Issuer of this asset.
+     * - `admin`: The new Admin of this asset.
+     * - `freezer`: The new Freezer of this asset.
+     * - `min_balance`: The minimum balance of this new asset that any single account must
+     * have. If an account's balance is reduced below this, then it collapses to zero.
+     * - `is_sufficient`: Whether a non-zero balance of this asset is deposit of sufficient
+     * value to account for the state bloat associated with its balance storage. If set to
+     * `true`, then non-zero balances may be stored without a `consumer` reference (and thus
+     * an ED in the Balances pallet or whatever else is used to control user-account state
+     * growth).
+     * - `is_frozen`: Whether this asset class is frozen except for permissioned/admin
+     * instructions.
+     *
+     * Emits `AssetStatusChanged` with the identity of the asset.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} owner
+     * @param {MultiAddressLike} issuer
+     * @param {MultiAddressLike} admin
+     * @param {MultiAddressLike} freezer
+     * @param {bigint} minBalance
+     * @param {boolean} isSufficient
+     * @param {boolean} isFrozen
+     **/
+    forceAssetStatus: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        owner: MultiAddressLike,
+        issuer: MultiAddressLike,
+        admin: MultiAddressLike,
+        freezer: MultiAddressLike,
+        minBalance: bigint,
+        isSufficient: boolean,
+        isFrozen: boolean,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'ForceAssetStatus';
+            params: {
+              id: StagingXcmV5Location;
+              owner: MultiAddressLike;
+              issuer: MultiAddressLike;
+              admin: MultiAddressLike;
+              freezer: MultiAddressLike;
+              minBalance: bigint;
+              isSufficient: boolean;
+              isFrozen: boolean;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Approve an amount of asset for transfer by a delegated third-party account.
+     *
+     * Origin must be Signed.
+     *
+     * Ensures that `ApprovalDeposit` worth of `Currency` is reserved from signing account
+     * for the purpose of holding the approval. If some non-zero amount of assets is already
+     * approved from signing account to `delegate`, then it is topped up or unreserved to
+     * meet the right value.
+     *
+     * NOTE: The signing account does not need to own `amount` of assets at the point of
+     * making this call.
+     *
+     * - `id`: The identifier of the asset.
+     * - `delegate`: The account to delegate permission to transfer asset.
+     * - `amount`: The amount of asset that may be transferred by `delegate`. If there is
+     * already an approval in place, then this acts additively.
+     *
+     * Emits `ApprovedTransfer` on success.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} delegate
+     * @param {bigint} amount
+     **/
+    approveTransfer: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        delegate: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'ApproveTransfer';
+            params: { id: StagingXcmV5Location; delegate: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Cancel all of some asset approved for delegated transfer by a third-party account.
+     *
+     * Origin must be Signed and there must be an approval in place between signer and
+     * `delegate`.
+     *
+     * Unreserves any deposit previously reserved by `approve_transfer` for the approval.
+     *
+     * - `id`: The identifier of the asset.
+     * - `delegate`: The account delegated permission to transfer asset.
+     *
+     * Emits `ApprovalCancelled` on success.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} delegate
+     **/
+    cancelApproval: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        delegate: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'CancelApproval';
+            params: { id: StagingXcmV5Location; delegate: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Cancel all of some asset approved for delegated transfer by a third-party account.
+     *
+     * Origin must be either ForceOrigin or Signed origin with the signer being the Admin
+     * account of the asset `id`.
+     *
+     * Unreserves any deposit previously reserved by `approve_transfer` for the approval.
+     *
+     * - `id`: The identifier of the asset.
+     * - `delegate`: The account delegated permission to transfer asset.
+     *
+     * Emits `ApprovalCancelled` on success.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} owner
+     * @param {MultiAddressLike} delegate
+     **/
+    forceCancelApproval: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        owner: MultiAddressLike,
+        delegate: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'ForceCancelApproval';
+            params: { id: StagingXcmV5Location; owner: MultiAddressLike; delegate: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Transfer some asset balance from a previously delegated account to some third-party
+     * account.
+     *
+     * Origin must be Signed and there must be an approval in place by the `owner` to the
+     * signer.
+     *
+     * If the entire amount approved for transfer is transferred, then any deposit previously
+     * reserved by `approve_transfer` is unreserved.
+     *
+     * - `id`: The identifier of the asset.
+     * - `owner`: The account which previously approved for a transfer of at least `amount` and
+     * from which the asset balance will be withdrawn.
+     * - `destination`: The account to which the asset balance of `amount` will be transferred.
+     * - `amount`: The amount of assets to transfer.
+     *
+     * Emits `TransferredApproved` on success.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} owner
+     * @param {MultiAddressLike} destination
+     * @param {bigint} amount
+     **/
+    transferApproved: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        owner: MultiAddressLike,
+        destination: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'TransferApproved';
+            params: {
+              id: StagingXcmV5Location;
+              owner: MultiAddressLike;
+              destination: MultiAddressLike;
+              amount: bigint;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Create an asset account for non-provider assets.
+     *
+     * A deposit will be taken from the signer account.
+     *
+     * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+     * to be taken.
+     * - `id`: The identifier of the asset for the account to be created.
+     *
+     * Emits `Touched` event when successful.
+     *
+     * @param {StagingXcmV5Location} id
+     **/
+    touch: GenericTxCall<
+      (id: StagingXcmV5Location) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'Touch';
+            params: { id: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Return the deposit (if any) of an asset account or a consumer reference (if any) of an
+     * account.
+     *
+     * The origin must be Signed.
+     *
+     * - `id`: The identifier of the asset for which the caller would like the deposit
+     * refunded.
+     * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
+     *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * the asset account contains holds or freezes in place.
+     *
+     * Emits `Refunded` event when successful.
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {boolean} allowBurn
+     **/
+    refund: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        allowBurn: boolean,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'Refund';
+            params: { id: StagingXcmV5Location; allowBurn: boolean };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Sets the minimum balance of an asset.
+     *
+     * Only works if there aren't any accounts that are holding the asset or if
+     * the new value of `min_balance` is less than the old one.
+     *
+     * Origin must be Signed and the sender has to be the Owner of the
+     * asset `id`.
+     *
+     * - `id`: The identifier of the asset.
+     * - `min_balance`: The new value of `min_balance`.
+     *
+     * Emits `AssetMinBalanceChanged` event when successful.
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {bigint} minBalance
+     **/
+    setMinBalance: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        minBalance: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'SetMinBalance';
+            params: { id: StagingXcmV5Location; minBalance: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Create an asset account for `who`.
+     *
+     * A deposit will be taken from the signer account.
+     *
+     * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+     * to be taken.
+     * - `id`: The identifier of the asset for the account to be created, the asset status must
+     * be live.
+     * - `who`: The account to be created.
+     *
+     * Emits `Touched` event when successful.
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} who
+     **/
+    touchOther: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        who: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'TouchOther';
+            params: { id: StagingXcmV5Location; who: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Return the deposit (if any) of a target asset account. Useful if you are the depositor.
+     *
+     * The origin must be Signed and either the account owner, depositor, or asset `Admin`. In
+     * order to burn a non-zero balance of the asset, the caller must be the account and should
+     * use `refund`.
+     *
+     * - `id`: The identifier of the asset for the account holding a deposit.
+     * - `who`: The account to refund.
+     *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * the asset account contains holds or freezes in place.
+     *
+     * Emits `Refunded` event when successful.
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} who
+     **/
+    refundOther: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        who: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'RefundOther';
+            params: { id: StagingXcmV5Location; who: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
+     *
+     * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+     *
+     * - `id`: The identifier of the account's asset.
+     * - `who`: The account to be unblocked.
+     *
+     * Emits `Blocked`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} who
+     **/
+    block: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        who: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'Block';
+            params: { id: StagingXcmV5Location; who: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Transfer the entire transferable balance from the caller asset account.
+     *
+     * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+     * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+     * transferred by this function. To ensure that this function results in a killed account,
+     * you might need to prepare the account by removing any reference counters, storage
+     * deposits, etc...
+     *
+     * The dispatch origin of this call must be Signed.
+     *
+     * - `id`: The identifier of the asset for the account holding a deposit.
+     * - `dest`: The recipient of the transfer.
+     * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+     * of the funds the asset account has, causing the sender asset account to be killed
+     * (false), or transfer everything except at least the minimum balance, which will
+     * guarantee to keep the sender asset account alive (true).
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {MultiAddressLike} dest
+     * @param {boolean} keepAlive
+     **/
+    transferAll: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        dest: MultiAddressLike,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'TransferAll';
+            params: { id: StagingXcmV5Location; dest: MultiAddressLike; keepAlive: boolean };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `AssetRate`'s transaction calls
+   **/
+  assetRate: {
+    /**
+     * Initialize a conversion rate to native balance for the given asset.
+     *
+     * ## Complexity
+     * - O(1)
+     *
+     * @param {StagingXcmV5Location} assetKind
+     * @param {FixedU128} rate
+     **/
+    create: GenericTxCall<
+      (
+        assetKind: StagingXcmV5Location,
+        rate: FixedU128,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetRate';
+          palletCall: {
+            name: 'Create';
+            params: { assetKind: StagingXcmV5Location; rate: FixedU128 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Update the conversion rate to native balance for the given asset.
+     *
+     * ## Complexity
+     * - O(1)
+     *
+     * @param {StagingXcmV5Location} assetKind
+     * @param {FixedU128} rate
+     **/
+    update: GenericTxCall<
+      (
+        assetKind: StagingXcmV5Location,
+        rate: FixedU128,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetRate';
+          palletCall: {
+            name: 'Update';
+            params: { assetKind: StagingXcmV5Location; rate: FixedU128 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove an existing conversion rate to native balance for the given asset.
+     *
+     * ## Complexity
+     * - O(1)
+     *
+     * @param {StagingXcmV5Location} assetKind
+     **/
+    remove: GenericTxCall<
+      (assetKind: StagingXcmV5Location) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetRate';
+          palletCall: {
+            name: 'Remove';
+            params: { assetKind: StagingXcmV5Location };
           };
         },
         ChainKnownTypes

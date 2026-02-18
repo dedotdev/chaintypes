@@ -143,31 +143,6 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
-   * Pallet `MultiBlockMigrations`'s constants
-   **/
-  multiBlockMigrations: {
-    /**
-     * The maximal length of an encoded cursor.
-     *
-     * A good default needs to selected such that no migration will ever have a cursor with MEL
-     * above this limit. This is statically checked in `integrity_test`.
-     **/
-    cursorMaxLen: number;
-
-    /**
-     * The maximal length of an encoded identifier.
-     *
-     * A good default needs to selected such that no migration will ever have an identifier
-     * with MEL above this limit. This is statically checked in `integrity_test`.
-     **/
-    identifierMaxLen: number;
-
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
    * Pallet `WeightReclaim`'s constants
    **/
   weightReclaim: {
@@ -1663,15 +1638,6 @@ export interface ChainConsts extends GenericChainConsts {
      **/
     gasScale: number;
 
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `Sudo`'s constants
-   **/
-  sudo: {
     /**
      * Generic pallet constant
      **/

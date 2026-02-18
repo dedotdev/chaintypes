@@ -9,8 +9,9 @@ import type {
   AccountId32,
   MultiAddressLike,
   AccountId32Like,
-  FixedBytes,
   FixedArray,
+  FixedBytes,
+  FixedU128,
   Data,
   Era,
   Phase,
@@ -27,6 +28,8 @@ export type PeoplePaseoRuntimeRuntimeCall =
   | { pallet: 'ParachainInfo'; palletCall: StagingParachainInfoCall }
   | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCall }
   | { pallet: 'Balances'; palletCall: PalletBalancesCall }
+  | { pallet: 'Assets'; palletCall: PalletAssetsCall }
+  | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCall }
   | { pallet: 'Session'; palletCall: PalletSessionCall }
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCall }
@@ -46,6 +49,8 @@ export type PeoplePaseoRuntimeRuntimeCallLike =
   | { pallet: 'ParachainInfo'; palletCall: StagingParachainInfoCallLike }
   | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCallLike }
   | { pallet: 'Balances'; palletCall: PalletBalancesCallLike }
+  | { pallet: 'Assets'; palletCall: PalletAssetsCallLike }
+  | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCallLike }
   | { pallet: 'Session'; palletCall: PalletSessionCallLike }
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCallLike }
@@ -610,6 +615,1276 @@ export type PalletBalancesCallLike =
   | { name: 'Burn'; params: { value: bigint; keepAlive: boolean } };
 
 export type PalletBalancesAdjustmentDirection = 'Increase' | 'Decrease';
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletAssetsCall =
+  /**
+   * Issue a new class of fungible assets from a public origin.
+   *
+   * This new asset class has no assets initially and its owner is the origin.
+   *
+   * The origin must conform to the configured `CreateOrigin` and have sufficient funds free.
+   *
+   * Funds of sender are reserved by `AssetDeposit`.
+   *
+   * Parameters:
+   * - `id`: The identifier of the new asset. This must not be currently in use to identify
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * - `admin`: The admin of this class of assets. The admin is the initial address of each
+   * member of the asset class's admin team.
+   * - `min_balance`: The minimum balance of this new asset that any single account must
+   * have. If an account's balance is reduced below this, then it collapses to zero.
+   *
+   * Emits `Created` event when successful.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Create'; params: { id: StagingXcmV5Location; admin: MultiAddress; minBalance: bigint } }
+  /**
+   * Issue a new class of fungible assets from a privileged origin.
+   *
+   * This new asset class has no assets initially.
+   *
+   * The origin must conform to `ForceOrigin`.
+   *
+   * Unlike `create`, no funds are reserved.
+   *
+   * - `id`: The identifier of the new asset. This must not be currently in use to identify
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * - `owner`: The owner of this class of assets. The owner has full superuser permissions
+   * over this asset, but may later change and configure the permissions using
+   * `transfer_ownership` and `set_team`.
+   * - `min_balance`: The minimum balance of this new asset that any single account must
+   * have. If an account's balance is reduced below this, then it collapses to zero.
+   *
+   * Emits `ForceCreated` event when successful.
+   *
+   * Weight: `O(1)`
+   **/
+  | {
+      name: 'ForceCreate';
+      params: { id: StagingXcmV5Location; owner: MultiAddress; isSufficient: boolean; minBalance: bigint };
+    }
+  /**
+   * Start the process of destroying a fungible asset class.
+   *
+   * `start_destroy` is the first in a series of extrinsics that should be called, to allow
+   * destruction of an asset class.
+   *
+   * The origin must conform to `ForceOrigin` or must be `Signed` by the asset's `owner`.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
+   **/
+  | { name: 'StartDestroy'; params: { id: StagingXcmV5Location } }
+  /**
+   * Destroy all accounts associated with a given asset.
+   *
+   * `destroy_accounts` should only be called after `start_destroy` has been called, and the
+   * asset is in a `Destroying` state.
+   *
+   * Due to weight restrictions, this function may need to be called multiple times to fully
+   * destroy all accounts. It will destroy `RemoveItemsLimit` accounts at a time.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * Each call emits the `Event::DestroyedAccounts` event.
+   **/
+  | { name: 'DestroyAccounts'; params: { id: StagingXcmV5Location } }
+  /**
+   * Destroy all approvals associated with a given asset up to the max (T::RemoveItemsLimit).
+   *
+   * `destroy_approvals` should only be called after `start_destroy` has been called, and the
+   * asset is in a `Destroying` state.
+   *
+   * Due to weight restrictions, this function may need to be called multiple times to fully
+   * destroy all approvals. It will destroy `RemoveItemsLimit` approvals at a time.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * Each call emits the `Event::DestroyedApprovals` event.
+   **/
+  | { name: 'DestroyApprovals'; params: { id: StagingXcmV5Location } }
+  /**
+   * Complete destroying asset and unreserve currency.
+   *
+   * `finish_destroy` should only be called after `start_destroy` has been called, and the
+   * asset is in a `Destroying` state. All accounts or approvals should be destroyed before
+   * hand.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * Each successful call emits the `Event::Destroyed` event.
+   **/
+  | { name: 'FinishDestroy'; params: { id: StagingXcmV5Location } }
+  /**
+   * Mint assets of a particular class.
+   *
+   * The origin must be Signed and the sender must be the Issuer of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to have some amount minted.
+   * - `beneficiary`: The account to be credited with the minted assets.
+   * - `amount`: The amount of the asset to be minted.
+   *
+   * Emits `Issued` event when successful.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
+   **/
+  | { name: 'Mint'; params: { id: StagingXcmV5Location; beneficiary: MultiAddress; amount: bigint } }
+  /**
+   * Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
+   *
+   * Origin must be Signed and the sender should be the Manager of the asset `id`.
+   *
+   * Bails with `NoAccount` if the `who` is already dead.
+   *
+   * - `id`: The identifier of the asset to have some amount burned.
+   * - `who`: The account to be debited from.
+   * - `amount`: The maximum amount by which `who`'s balance should be reduced.
+   *
+   * Emits `Burned` with the actual amount burned. If this takes the balance to below the
+   * minimum for the asset, then the amount burned is increased to take it to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
+   **/
+  | { name: 'Burn'; params: { id: StagingXcmV5Location; who: MultiAddress; amount: bigint } }
+  /**
+   * Move some assets from the sender account to another.
+   *
+   * Origin must be Signed.
+   *
+   * - `id`: The identifier of the asset to have some amount transferred.
+   * - `target`: The account to be credited.
+   * - `amount`: The amount by which the sender's balance of assets should be reduced and
+   * `target`'s balance increased. The amount actually transferred may be slightly greater in
+   * the case that the transfer would otherwise take the sender balance above zero but below
+   * the minimum balance. Must be greater than zero.
+   *
+   * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+   * to below the minimum for the asset, then the amount transferred is increased to take it
+   * to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
+   * `target`.
+   **/
+  | { name: 'Transfer'; params: { id: StagingXcmV5Location; target: MultiAddress; amount: bigint } }
+  /**
+   * Move some assets from the sender account to another, keeping the sender account alive.
+   *
+   * Origin must be Signed.
+   *
+   * - `id`: The identifier of the asset to have some amount transferred.
+   * - `target`: The account to be credited.
+   * - `amount`: The amount by which the sender's balance of assets should be reduced and
+   * `target`'s balance increased. The amount actually transferred may be slightly greater in
+   * the case that the transfer would otherwise take the sender balance above zero but below
+   * the minimum balance. Must be greater than zero.
+   *
+   * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+   * to below the minimum for the asset, then the amount transferred is increased to take it
+   * to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
+   * `target`.
+   **/
+  | { name: 'TransferKeepAlive'; params: { id: StagingXcmV5Location; target: MultiAddress; amount: bigint } }
+  /**
+   * Move some assets from one account to another.
+   *
+   * Origin must be Signed and the sender should be the Admin of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to have some amount transferred.
+   * - `source`: The account to be debited.
+   * - `dest`: The account to be credited.
+   * - `amount`: The amount by which the `source`'s balance of assets should be reduced and
+   * `dest`'s balance increased. The amount actually transferred may be slightly greater in
+   * the case that the transfer would otherwise take the `source` balance above zero but
+   * below the minimum balance. Must be greater than zero.
+   *
+   * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+   * to below the minimum for the asset, then the amount transferred is increased to take it
+   * to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existence of `dest`; Post-existence of `source`; Account pre-existence of
+   * `dest`.
+   **/
+  | {
+      name: 'ForceTransfer';
+      params: { id: StagingXcmV5Location; source: MultiAddress; dest: MultiAddress; amount: bigint };
+    }
+  /**
+   * Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
+   * must already exist as an entry in `Account`s of the asset. If you want to freeze an
+   * account that does not have an entry, use `touch_other` first.
+   *
+   * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   * - `who`: The account to be frozen.
+   *
+   * Emits `Frozen`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Freeze'; params: { id: StagingXcmV5Location; who: MultiAddress } }
+  /**
+   * Allow unprivileged transfers to and from an account again.
+   *
+   * Origin must be Signed and the sender should be the Admin of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   * - `who`: The account to be unfrozen.
+   *
+   * Emits `Thawed`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Thaw'; params: { id: StagingXcmV5Location; who: MultiAddress } }
+  /**
+   * Disallow further unprivileged transfers for the asset class.
+   *
+   * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   *
+   * Emits `Frozen`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'FreezeAsset'; params: { id: StagingXcmV5Location } }
+  /**
+   * Allow unprivileged transfers for the asset again.
+   *
+   * Origin must be Signed and the sender should be the Admin of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be thawed.
+   *
+   * Emits `Thawed`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ThawAsset'; params: { id: StagingXcmV5Location } }
+  /**
+   * Change the Owner of an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * - `id`: The identifier of the asset.
+   * - `owner`: The new Owner of this asset.
+   *
+   * Emits `OwnerChanged`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'TransferOwnership'; params: { id: StagingXcmV5Location; owner: MultiAddress } }
+  /**
+   * Change the Issuer, Admin and Freezer of an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   * - `issuer`: The new Issuer of this asset.
+   * - `admin`: The new Admin of this asset.
+   * - `freezer`: The new Freezer of this asset.
+   *
+   * Emits `TeamChanged`.
+   *
+   * Weight: `O(1)`
+   **/
+  | {
+      name: 'SetTeam';
+      params: { id: StagingXcmV5Location; issuer: MultiAddress; admin: MultiAddress; freezer: MultiAddress };
+    }
+  /**
+   * Set the metadata for an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * Funds of sender are reserved according to the formula:
+   * `MetadataDepositBase + MetadataDepositPerByte * (name.len + symbol.len)` taking into
+   * account any already reserved funds.
+   *
+   * - `id`: The identifier of the asset to update.
+   * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+   * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+   * - `decimals`: The number of decimals this asset uses to represent one unit.
+   *
+   * Emits `MetadataSet`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'SetMetadata'; params: { id: StagingXcmV5Location; name: Bytes; symbol: Bytes; decimals: number } }
+  /**
+   * Clear the metadata for an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * Any deposit is freed for the asset owner.
+   *
+   * - `id`: The identifier of the asset to clear.
+   *
+   * Emits `MetadataCleared`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ClearMetadata'; params: { id: StagingXcmV5Location } }
+  /**
+   * Force the metadata for an asset to some value.
+   *
+   * Origin must be ForceOrigin.
+   *
+   * Any deposit is left alone.
+   *
+   * - `id`: The identifier of the asset to update.
+   * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+   * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+   * - `decimals`: The number of decimals this asset uses to represent one unit.
+   *
+   * Emits `MetadataSet`.
+   *
+   * Weight: `O(N + S)` where N and S are the length of the name and symbol respectively.
+   **/
+  | {
+      name: 'ForceSetMetadata';
+      params: { id: StagingXcmV5Location; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean };
+    }
+  /**
+   * Clear the metadata for an asset.
+   *
+   * Origin must be ForceOrigin.
+   *
+   * Any deposit is returned.
+   *
+   * - `id`: The identifier of the asset to clear.
+   *
+   * Emits `MetadataCleared`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ForceClearMetadata'; params: { id: StagingXcmV5Location } }
+  /**
+   * Alter the attributes of a given asset.
+   *
+   * Origin must be `ForceOrigin`.
+   *
+   * - `id`: The identifier of the asset.
+   * - `owner`: The new Owner of this asset.
+   * - `issuer`: The new Issuer of this asset.
+   * - `admin`: The new Admin of this asset.
+   * - `freezer`: The new Freezer of this asset.
+   * - `min_balance`: The minimum balance of this new asset that any single account must
+   * have. If an account's balance is reduced below this, then it collapses to zero.
+   * - `is_sufficient`: Whether a non-zero balance of this asset is deposit of sufficient
+   * value to account for the state bloat associated with its balance storage. If set to
+   * `true`, then non-zero balances may be stored without a `consumer` reference (and thus
+   * an ED in the Balances pallet or whatever else is used to control user-account state
+   * growth).
+   * - `is_frozen`: Whether this asset class is frozen except for permissioned/admin
+   * instructions.
+   *
+   * Emits `AssetStatusChanged` with the identity of the asset.
+   *
+   * Weight: `O(1)`
+   **/
+  | {
+      name: 'ForceAssetStatus';
+      params: {
+        id: StagingXcmV5Location;
+        owner: MultiAddress;
+        issuer: MultiAddress;
+        admin: MultiAddress;
+        freezer: MultiAddress;
+        minBalance: bigint;
+        isSufficient: boolean;
+        isFrozen: boolean;
+      };
+    }
+  /**
+   * Approve an amount of asset for transfer by a delegated third-party account.
+   *
+   * Origin must be Signed.
+   *
+   * Ensures that `ApprovalDeposit` worth of `Currency` is reserved from signing account
+   * for the purpose of holding the approval. If some non-zero amount of assets is already
+   * approved from signing account to `delegate`, then it is topped up or unreserved to
+   * meet the right value.
+   *
+   * NOTE: The signing account does not need to own `amount` of assets at the point of
+   * making this call.
+   *
+   * - `id`: The identifier of the asset.
+   * - `delegate`: The account to delegate permission to transfer asset.
+   * - `amount`: The amount of asset that may be transferred by `delegate`. If there is
+   * already an approval in place, then this acts additively.
+   *
+   * Emits `ApprovedTransfer` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ApproveTransfer'; params: { id: StagingXcmV5Location; delegate: MultiAddress; amount: bigint } }
+  /**
+   * Cancel all of some asset approved for delegated transfer by a third-party account.
+   *
+   * Origin must be Signed and there must be an approval in place between signer and
+   * `delegate`.
+   *
+   * Unreserves any deposit previously reserved by `approve_transfer` for the approval.
+   *
+   * - `id`: The identifier of the asset.
+   * - `delegate`: The account delegated permission to transfer asset.
+   *
+   * Emits `ApprovalCancelled` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'CancelApproval'; params: { id: StagingXcmV5Location; delegate: MultiAddress } }
+  /**
+   * Cancel all of some asset approved for delegated transfer by a third-party account.
+   *
+   * Origin must be either ForceOrigin or Signed origin with the signer being the Admin
+   * account of the asset `id`.
+   *
+   * Unreserves any deposit previously reserved by `approve_transfer` for the approval.
+   *
+   * - `id`: The identifier of the asset.
+   * - `delegate`: The account delegated permission to transfer asset.
+   *
+   * Emits `ApprovalCancelled` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ForceCancelApproval'; params: { id: StagingXcmV5Location; owner: MultiAddress; delegate: MultiAddress } }
+  /**
+   * Transfer some asset balance from a previously delegated account to some third-party
+   * account.
+   *
+   * Origin must be Signed and there must be an approval in place by the `owner` to the
+   * signer.
+   *
+   * If the entire amount approved for transfer is transferred, then any deposit previously
+   * reserved by `approve_transfer` is unreserved.
+   *
+   * - `id`: The identifier of the asset.
+   * - `owner`: The account which previously approved for a transfer of at least `amount` and
+   * from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `amount`: The amount of assets to transfer.
+   *
+   * Emits `TransferredApproved` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | {
+      name: 'TransferApproved';
+      params: { id: StagingXcmV5Location; owner: MultiAddress; destination: MultiAddress; amount: bigint };
+    }
+  /**
+   * Create an asset account for non-provider assets.
+   *
+   * A deposit will be taken from the signer account.
+   *
+   * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+   * to be taken.
+   * - `id`: The identifier of the asset for the account to be created.
+   *
+   * Emits `Touched` event when successful.
+   **/
+  | { name: 'Touch'; params: { id: StagingXcmV5Location } }
+  /**
+   * Return the deposit (if any) of an asset account or a consumer reference (if any) of an
+   * account.
+   *
+   * The origin must be Signed.
+   *
+   * - `id`: The identifier of the asset for which the caller would like the deposit
+   * refunded.
+   * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
+   * Emits `Refunded` event when successful.
+   **/
+  | { name: 'Refund'; params: { id: StagingXcmV5Location; allowBurn: boolean } }
+  /**
+   * Sets the minimum balance of an asset.
+   *
+   * Only works if there aren't any accounts that are holding the asset or if
+   * the new value of `min_balance` is less than the old one.
+   *
+   * Origin must be Signed and the sender has to be the Owner of the
+   * asset `id`.
+   *
+   * - `id`: The identifier of the asset.
+   * - `min_balance`: The new value of `min_balance`.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetMinBalance'; params: { id: StagingXcmV5Location; minBalance: bigint } }
+  /**
+   * Create an asset account for `who`.
+   *
+   * A deposit will be taken from the signer account.
+   *
+   * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+   * to be taken.
+   * - `id`: The identifier of the asset for the account to be created, the asset status must
+   * be live.
+   * - `who`: The account to be created.
+   *
+   * Emits `Touched` event when successful.
+   **/
+  | { name: 'TouchOther'; params: { id: StagingXcmV5Location; who: MultiAddress } }
+  /**
+   * Return the deposit (if any) of a target asset account. Useful if you are the depositor.
+   *
+   * The origin must be Signed and either the account owner, depositor, or asset `Admin`. In
+   * order to burn a non-zero balance of the asset, the caller must be the account and should
+   * use `refund`.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
+   * Emits `Refunded` event when successful.
+   **/
+  | { name: 'RefundOther'; params: { id: StagingXcmV5Location; who: MultiAddress } }
+  /**
+   * Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
+   *
+   * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+   *
+   * - `id`: The identifier of the account's asset.
+   * - `who`: The account to be unblocked.
+   *
+   * Emits `Blocked`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Block'; params: { id: StagingXcmV5Location; who: MultiAddress } }
+  /**
+   * Transfer the entire transferable balance from the caller asset account.
+   *
+   * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+   * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+   * transferred by this function. To ensure that this function results in a killed account,
+   * you might need to prepare the account by removing any reference counters, storage
+   * deposits, etc...
+   *
+   * The dispatch origin of this call must be Signed.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `dest`: The recipient of the transfer.
+   * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+   * of the funds the asset account has, causing the sender asset account to be killed
+   * (false), or transfer everything except at least the minimum balance, which will
+   * guarantee to keep the sender asset account alive (true).
+   **/
+  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddress; keepAlive: boolean } };
+
+export type PalletAssetsCallLike =
+  /**
+   * Issue a new class of fungible assets from a public origin.
+   *
+   * This new asset class has no assets initially and its owner is the origin.
+   *
+   * The origin must conform to the configured `CreateOrigin` and have sufficient funds free.
+   *
+   * Funds of sender are reserved by `AssetDeposit`.
+   *
+   * Parameters:
+   * - `id`: The identifier of the new asset. This must not be currently in use to identify
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * - `admin`: The admin of this class of assets. The admin is the initial address of each
+   * member of the asset class's admin team.
+   * - `min_balance`: The minimum balance of this new asset that any single account must
+   * have. If an account's balance is reduced below this, then it collapses to zero.
+   *
+   * Emits `Created` event when successful.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Create'; params: { id: StagingXcmV5Location; admin: MultiAddressLike; minBalance: bigint } }
+  /**
+   * Issue a new class of fungible assets from a privileged origin.
+   *
+   * This new asset class has no assets initially.
+   *
+   * The origin must conform to `ForceOrigin`.
+   *
+   * Unlike `create`, no funds are reserved.
+   *
+   * - `id`: The identifier of the new asset. This must not be currently in use to identify
+   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * - `owner`: The owner of this class of assets. The owner has full superuser permissions
+   * over this asset, but may later change and configure the permissions using
+   * `transfer_ownership` and `set_team`.
+   * - `min_balance`: The minimum balance of this new asset that any single account must
+   * have. If an account's balance is reduced below this, then it collapses to zero.
+   *
+   * Emits `ForceCreated` event when successful.
+   *
+   * Weight: `O(1)`
+   **/
+  | {
+      name: 'ForceCreate';
+      params: { id: StagingXcmV5Location; owner: MultiAddressLike; isSufficient: boolean; minBalance: bigint };
+    }
+  /**
+   * Start the process of destroying a fungible asset class.
+   *
+   * `start_destroy` is the first in a series of extrinsics that should be called, to allow
+   * destruction of an asset class.
+   *
+   * The origin must conform to `ForceOrigin` or must be `Signed` by the asset's `owner`.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * an account contains holds or freezes in place.
+   **/
+  | { name: 'StartDestroy'; params: { id: StagingXcmV5Location } }
+  /**
+   * Destroy all accounts associated with a given asset.
+   *
+   * `destroy_accounts` should only be called after `start_destroy` has been called, and the
+   * asset is in a `Destroying` state.
+   *
+   * Due to weight restrictions, this function may need to be called multiple times to fully
+   * destroy all accounts. It will destroy `RemoveItemsLimit` accounts at a time.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * Each call emits the `Event::DestroyedAccounts` event.
+   **/
+  | { name: 'DestroyAccounts'; params: { id: StagingXcmV5Location } }
+  /**
+   * Destroy all approvals associated with a given asset up to the max (T::RemoveItemsLimit).
+   *
+   * `destroy_approvals` should only be called after `start_destroy` has been called, and the
+   * asset is in a `Destroying` state.
+   *
+   * Due to weight restrictions, this function may need to be called multiple times to fully
+   * destroy all approvals. It will destroy `RemoveItemsLimit` approvals at a time.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * Each call emits the `Event::DestroyedApprovals` event.
+   **/
+  | { name: 'DestroyApprovals'; params: { id: StagingXcmV5Location } }
+  /**
+   * Complete destroying asset and unreserve currency.
+   *
+   * `finish_destroy` should only be called after `start_destroy` has been called, and the
+   * asset is in a `Destroying` state. All accounts or approvals should be destroyed before
+   * hand.
+   *
+   * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+   * asset.
+   *
+   * Each successful call emits the `Event::Destroyed` event.
+   **/
+  | { name: 'FinishDestroy'; params: { id: StagingXcmV5Location } }
+  /**
+   * Mint assets of a particular class.
+   *
+   * The origin must be Signed and the sender must be the Issuer of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to have some amount minted.
+   * - `beneficiary`: The account to be credited with the minted assets.
+   * - `amount`: The amount of the asset to be minted.
+   *
+   * Emits `Issued` event when successful.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
+   **/
+  | { name: 'Mint'; params: { id: StagingXcmV5Location; beneficiary: MultiAddressLike; amount: bigint } }
+  /**
+   * Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
+   *
+   * Origin must be Signed and the sender should be the Manager of the asset `id`.
+   *
+   * Bails with `NoAccount` if the `who` is already dead.
+   *
+   * - `id`: The identifier of the asset to have some amount burned.
+   * - `who`: The account to be debited from.
+   * - `amount`: The maximum amount by which `who`'s balance should be reduced.
+   *
+   * Emits `Burned` with the actual amount burned. If this takes the balance to below the
+   * minimum for the asset, then the amount burned is increased to take it to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
+   **/
+  | { name: 'Burn'; params: { id: StagingXcmV5Location; who: MultiAddressLike; amount: bigint } }
+  /**
+   * Move some assets from the sender account to another.
+   *
+   * Origin must be Signed.
+   *
+   * - `id`: The identifier of the asset to have some amount transferred.
+   * - `target`: The account to be credited.
+   * - `amount`: The amount by which the sender's balance of assets should be reduced and
+   * `target`'s balance increased. The amount actually transferred may be slightly greater in
+   * the case that the transfer would otherwise take the sender balance above zero but below
+   * the minimum balance. Must be greater than zero.
+   *
+   * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+   * to below the minimum for the asset, then the amount transferred is increased to take it
+   * to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
+   * `target`.
+   **/
+  | { name: 'Transfer'; params: { id: StagingXcmV5Location; target: MultiAddressLike; amount: bigint } }
+  /**
+   * Move some assets from the sender account to another, keeping the sender account alive.
+   *
+   * Origin must be Signed.
+   *
+   * - `id`: The identifier of the asset to have some amount transferred.
+   * - `target`: The account to be credited.
+   * - `amount`: The amount by which the sender's balance of assets should be reduced and
+   * `target`'s balance increased. The amount actually transferred may be slightly greater in
+   * the case that the transfer would otherwise take the sender balance above zero but below
+   * the minimum balance. Must be greater than zero.
+   *
+   * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+   * to below the minimum for the asset, then the amount transferred is increased to take it
+   * to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
+   * `target`.
+   **/
+  | { name: 'TransferKeepAlive'; params: { id: StagingXcmV5Location; target: MultiAddressLike; amount: bigint } }
+  /**
+   * Move some assets from one account to another.
+   *
+   * Origin must be Signed and the sender should be the Admin of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to have some amount transferred.
+   * - `source`: The account to be debited.
+   * - `dest`: The account to be credited.
+   * - `amount`: The amount by which the `source`'s balance of assets should be reduced and
+   * `dest`'s balance increased. The amount actually transferred may be slightly greater in
+   * the case that the transfer would otherwise take the `source` balance above zero but
+   * below the minimum balance. Must be greater than zero.
+   *
+   * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+   * to below the minimum for the asset, then the amount transferred is increased to take it
+   * to zero.
+   *
+   * Weight: `O(1)`
+   * Modes: Pre-existence of `dest`; Post-existence of `source`; Account pre-existence of
+   * `dest`.
+   **/
+  | {
+      name: 'ForceTransfer';
+      params: { id: StagingXcmV5Location; source: MultiAddressLike; dest: MultiAddressLike; amount: bigint };
+    }
+  /**
+   * Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
+   * must already exist as an entry in `Account`s of the asset. If you want to freeze an
+   * account that does not have an entry, use `touch_other` first.
+   *
+   * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   * - `who`: The account to be frozen.
+   *
+   * Emits `Frozen`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Freeze'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
+  /**
+   * Allow unprivileged transfers to and from an account again.
+   *
+   * Origin must be Signed and the sender should be the Admin of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   * - `who`: The account to be unfrozen.
+   *
+   * Emits `Thawed`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Thaw'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
+  /**
+   * Disallow further unprivileged transfers for the asset class.
+   *
+   * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   *
+   * Emits `Frozen`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'FreezeAsset'; params: { id: StagingXcmV5Location } }
+  /**
+   * Allow unprivileged transfers for the asset again.
+   *
+   * Origin must be Signed and the sender should be the Admin of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be thawed.
+   *
+   * Emits `Thawed`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ThawAsset'; params: { id: StagingXcmV5Location } }
+  /**
+   * Change the Owner of an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * - `id`: The identifier of the asset.
+   * - `owner`: The new Owner of this asset.
+   *
+   * Emits `OwnerChanged`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'TransferOwnership'; params: { id: StagingXcmV5Location; owner: MultiAddressLike } }
+  /**
+   * Change the Issuer, Admin and Freezer of an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * - `id`: The identifier of the asset to be frozen.
+   * - `issuer`: The new Issuer of this asset.
+   * - `admin`: The new Admin of this asset.
+   * - `freezer`: The new Freezer of this asset.
+   *
+   * Emits `TeamChanged`.
+   *
+   * Weight: `O(1)`
+   **/
+  | {
+      name: 'SetTeam';
+      params: {
+        id: StagingXcmV5Location;
+        issuer: MultiAddressLike;
+        admin: MultiAddressLike;
+        freezer: MultiAddressLike;
+      };
+    }
+  /**
+   * Set the metadata for an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * Funds of sender are reserved according to the formula:
+   * `MetadataDepositBase + MetadataDepositPerByte * (name.len + symbol.len)` taking into
+   * account any already reserved funds.
+   *
+   * - `id`: The identifier of the asset to update.
+   * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+   * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+   * - `decimals`: The number of decimals this asset uses to represent one unit.
+   *
+   * Emits `MetadataSet`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'SetMetadata'; params: { id: StagingXcmV5Location; name: BytesLike; symbol: BytesLike; decimals: number } }
+  /**
+   * Clear the metadata for an asset.
+   *
+   * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * Any deposit is freed for the asset owner.
+   *
+   * - `id`: The identifier of the asset to clear.
+   *
+   * Emits `MetadataCleared`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ClearMetadata'; params: { id: StagingXcmV5Location } }
+  /**
+   * Force the metadata for an asset to some value.
+   *
+   * Origin must be ForceOrigin.
+   *
+   * Any deposit is left alone.
+   *
+   * - `id`: The identifier of the asset to update.
+   * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+   * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+   * - `decimals`: The number of decimals this asset uses to represent one unit.
+   *
+   * Emits `MetadataSet`.
+   *
+   * Weight: `O(N + S)` where N and S are the length of the name and symbol respectively.
+   **/
+  | {
+      name: 'ForceSetMetadata';
+      params: { id: StagingXcmV5Location; name: BytesLike; symbol: BytesLike; decimals: number; isFrozen: boolean };
+    }
+  /**
+   * Clear the metadata for an asset.
+   *
+   * Origin must be ForceOrigin.
+   *
+   * Any deposit is returned.
+   *
+   * - `id`: The identifier of the asset to clear.
+   *
+   * Emits `MetadataCleared`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ForceClearMetadata'; params: { id: StagingXcmV5Location } }
+  /**
+   * Alter the attributes of a given asset.
+   *
+   * Origin must be `ForceOrigin`.
+   *
+   * - `id`: The identifier of the asset.
+   * - `owner`: The new Owner of this asset.
+   * - `issuer`: The new Issuer of this asset.
+   * - `admin`: The new Admin of this asset.
+   * - `freezer`: The new Freezer of this asset.
+   * - `min_balance`: The minimum balance of this new asset that any single account must
+   * have. If an account's balance is reduced below this, then it collapses to zero.
+   * - `is_sufficient`: Whether a non-zero balance of this asset is deposit of sufficient
+   * value to account for the state bloat associated with its balance storage. If set to
+   * `true`, then non-zero balances may be stored without a `consumer` reference (and thus
+   * an ED in the Balances pallet or whatever else is used to control user-account state
+   * growth).
+   * - `is_frozen`: Whether this asset class is frozen except for permissioned/admin
+   * instructions.
+   *
+   * Emits `AssetStatusChanged` with the identity of the asset.
+   *
+   * Weight: `O(1)`
+   **/
+  | {
+      name: 'ForceAssetStatus';
+      params: {
+        id: StagingXcmV5Location;
+        owner: MultiAddressLike;
+        issuer: MultiAddressLike;
+        admin: MultiAddressLike;
+        freezer: MultiAddressLike;
+        minBalance: bigint;
+        isSufficient: boolean;
+        isFrozen: boolean;
+      };
+    }
+  /**
+   * Approve an amount of asset for transfer by a delegated third-party account.
+   *
+   * Origin must be Signed.
+   *
+   * Ensures that `ApprovalDeposit` worth of `Currency` is reserved from signing account
+   * for the purpose of holding the approval. If some non-zero amount of assets is already
+   * approved from signing account to `delegate`, then it is topped up or unreserved to
+   * meet the right value.
+   *
+   * NOTE: The signing account does not need to own `amount` of assets at the point of
+   * making this call.
+   *
+   * - `id`: The identifier of the asset.
+   * - `delegate`: The account to delegate permission to transfer asset.
+   * - `amount`: The amount of asset that may be transferred by `delegate`. If there is
+   * already an approval in place, then this acts additively.
+   *
+   * Emits `ApprovedTransfer` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'ApproveTransfer'; params: { id: StagingXcmV5Location; delegate: MultiAddressLike; amount: bigint } }
+  /**
+   * Cancel all of some asset approved for delegated transfer by a third-party account.
+   *
+   * Origin must be Signed and there must be an approval in place between signer and
+   * `delegate`.
+   *
+   * Unreserves any deposit previously reserved by `approve_transfer` for the approval.
+   *
+   * - `id`: The identifier of the asset.
+   * - `delegate`: The account delegated permission to transfer asset.
+   *
+   * Emits `ApprovalCancelled` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'CancelApproval'; params: { id: StagingXcmV5Location; delegate: MultiAddressLike } }
+  /**
+   * Cancel all of some asset approved for delegated transfer by a third-party account.
+   *
+   * Origin must be either ForceOrigin or Signed origin with the signer being the Admin
+   * account of the asset `id`.
+   *
+   * Unreserves any deposit previously reserved by `approve_transfer` for the approval.
+   *
+   * - `id`: The identifier of the asset.
+   * - `delegate`: The account delegated permission to transfer asset.
+   *
+   * Emits `ApprovalCancelled` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | {
+      name: 'ForceCancelApproval';
+      params: { id: StagingXcmV5Location; owner: MultiAddressLike; delegate: MultiAddressLike };
+    }
+  /**
+   * Transfer some asset balance from a previously delegated account to some third-party
+   * account.
+   *
+   * Origin must be Signed and there must be an approval in place by the `owner` to the
+   * signer.
+   *
+   * If the entire amount approved for transfer is transferred, then any deposit previously
+   * reserved by `approve_transfer` is unreserved.
+   *
+   * - `id`: The identifier of the asset.
+   * - `owner`: The account which previously approved for a transfer of at least `amount` and
+   * from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `amount`: The amount of assets to transfer.
+   *
+   * Emits `TransferredApproved` on success.
+   *
+   * Weight: `O(1)`
+   **/
+  | {
+      name: 'TransferApproved';
+      params: { id: StagingXcmV5Location; owner: MultiAddressLike; destination: MultiAddressLike; amount: bigint };
+    }
+  /**
+   * Create an asset account for non-provider assets.
+   *
+   * A deposit will be taken from the signer account.
+   *
+   * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+   * to be taken.
+   * - `id`: The identifier of the asset for the account to be created.
+   *
+   * Emits `Touched` event when successful.
+   **/
+  | { name: 'Touch'; params: { id: StagingXcmV5Location } }
+  /**
+   * Return the deposit (if any) of an asset account or a consumer reference (if any) of an
+   * account.
+   *
+   * The origin must be Signed.
+   *
+   * - `id`: The identifier of the asset for which the caller would like the deposit
+   * refunded.
+   * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
+   * Emits `Refunded` event when successful.
+   **/
+  | { name: 'Refund'; params: { id: StagingXcmV5Location; allowBurn: boolean } }
+  /**
+   * Sets the minimum balance of an asset.
+   *
+   * Only works if there aren't any accounts that are holding the asset or if
+   * the new value of `min_balance` is less than the old one.
+   *
+   * Origin must be Signed and the sender has to be the Owner of the
+   * asset `id`.
+   *
+   * - `id`: The identifier of the asset.
+   * - `min_balance`: The new value of `min_balance`.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetMinBalance'; params: { id: StagingXcmV5Location; minBalance: bigint } }
+  /**
+   * Create an asset account for `who`.
+   *
+   * A deposit will be taken from the signer account.
+   *
+   * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+   * to be taken.
+   * - `id`: The identifier of the asset for the account to be created, the asset status must
+   * be live.
+   * - `who`: The account to be created.
+   *
+   * Emits `Touched` event when successful.
+   **/
+  | { name: 'TouchOther'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
+  /**
+   * Return the deposit (if any) of a target asset account. Useful if you are the depositor.
+   *
+   * The origin must be Signed and either the account owner, depositor, or asset `Admin`. In
+   * order to burn a non-zero balance of the asset, the caller must be the account and should
+   * use `refund`.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `who`: The account to refund.
+   *
+   * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+   * the asset account contains holds or freezes in place.
+   *
+   * Emits `Refunded` event when successful.
+   **/
+  | { name: 'RefundOther'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
+  /**
+   * Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
+   *
+   * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+   *
+   * - `id`: The identifier of the account's asset.
+   * - `who`: The account to be unblocked.
+   *
+   * Emits `Blocked`.
+   *
+   * Weight: `O(1)`
+   **/
+  | { name: 'Block'; params: { id: StagingXcmV5Location; who: MultiAddressLike } }
+  /**
+   * Transfer the entire transferable balance from the caller asset account.
+   *
+   * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+   * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+   * transferred by this function. To ensure that this function results in a killed account,
+   * you might need to prepare the account by removing any reference counters, storage
+   * deposits, etc...
+   *
+   * The dispatch origin of this call must be Signed.
+   *
+   * - `id`: The identifier of the asset for the account holding a deposit.
+   * - `dest`: The recipient of the transfer.
+   * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+   * of the funds the asset account has, causing the sender asset account to be killed
+   * (false), or transfer everything except at least the minimum balance, which will
+   * guarantee to keep the sender asset account alive (true).
+   **/
+  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddressLike; keepAlive: boolean } };
+
+export type StagingXcmV5Location = { parents: number; interior: StagingXcmV5Junctions };
+
+export type StagingXcmV5Junctions =
+  | { type: 'Here' }
+  | { type: 'X1'; value: FixedArray<StagingXcmV5Junction, 1> }
+  | { type: 'X2'; value: FixedArray<StagingXcmV5Junction, 2> }
+  | { type: 'X3'; value: FixedArray<StagingXcmV5Junction, 3> }
+  | { type: 'X4'; value: FixedArray<StagingXcmV5Junction, 4> }
+  | { type: 'X5'; value: FixedArray<StagingXcmV5Junction, 5> }
+  | { type: 'X6'; value: FixedArray<StagingXcmV5Junction, 6> }
+  | { type: 'X7'; value: FixedArray<StagingXcmV5Junction, 7> }
+  | { type: 'X8'; value: FixedArray<StagingXcmV5Junction, 8> };
+
+export type StagingXcmV5Junction =
+  | { type: 'Parachain'; value: number }
+  | { type: 'AccountId32'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; key: FixedBytes<20> } }
+  | { type: 'PalletInstance'; value: number }
+  | { type: 'GeneralIndex'; value: bigint }
+  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
+  | { type: 'OnlyChild' }
+  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
+  | { type: 'GlobalConsensus'; value: StagingXcmV5JunctionNetworkId };
+
+export type StagingXcmV5JunctionNetworkId =
+  | { type: 'ByGenesis'; value: FixedBytes<32> }
+  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
+  | { type: 'Polkadot' }
+  | { type: 'Kusama' }
+  | { type: 'Ethereum'; value: { chainId: bigint } }
+  | { type: 'BitcoinCore' }
+  | { type: 'BitcoinCash' }
+  | { type: 'PolkadotBulletin' };
+
+export type XcmV3JunctionBodyId =
+  | { type: 'Unit' }
+  | { type: 'Moniker'; value: FixedBytes<4> }
+  | { type: 'Index'; value: number }
+  | { type: 'Executive' }
+  | { type: 'Technical' }
+  | { type: 'Legislative' }
+  | { type: 'Judicial' }
+  | { type: 'Defense' }
+  | { type: 'Administration' }
+  | { type: 'Treasury' };
+
+export type XcmV3JunctionBodyPart =
+  | { type: 'Voice' }
+  | { type: 'Members'; value: { count: number } }
+  | { type: 'Fraction'; value: { nom: number; denom: number } }
+  | { type: 'AtLeastProportion'; value: { nom: number; denom: number } }
+  | { type: 'MoreThanProportion'; value: { nom: number; denom: number } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletAssetRateCall =
+  /**
+   * Initialize a conversion rate to native balance for the given asset.
+   *
+   * ## Complexity
+   * - O(1)
+   **/
+  | { name: 'Create'; params: { assetKind: StagingXcmV5Location; rate: FixedU128 } }
+  /**
+   * Update the conversion rate to native balance for the given asset.
+   *
+   * ## Complexity
+   * - O(1)
+   **/
+  | { name: 'Update'; params: { assetKind: StagingXcmV5Location; rate: FixedU128 } }
+  /**
+   * Remove an existing conversion rate to native balance for the given asset.
+   *
+   * ## Complexity
+   * - O(1)
+   **/
+  | { name: 'Remove'; params: { assetKind: StagingXcmV5Location } };
+
+export type PalletAssetRateCallLike =
+  /**
+   * Initialize a conversion rate to native balance for the given asset.
+   *
+   * ## Complexity
+   * - O(1)
+   **/
+  | { name: 'Create'; params: { assetKind: StagingXcmV5Location; rate: FixedU128 } }
+  /**
+   * Update the conversion rate to native balance for the given asset.
+   *
+   * ## Complexity
+   * - O(1)
+   **/
+  | { name: 'Update'; params: { assetKind: StagingXcmV5Location; rate: FixedU128 } }
+  /**
+   * Remove an existing conversion rate to native balance for the given asset.
+   *
+   * ## Complexity
+   * - O(1)
+   **/
+  | { name: 'Remove'; params: { assetKind: StagingXcmV5Location } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -1665,25 +2940,6 @@ export type XcmV3JunctionNetworkId =
   | { type: 'BitcoinCash' }
   | { type: 'PolkadotBulletin' };
 
-export type XcmV3JunctionBodyId =
-  | { type: 'Unit' }
-  | { type: 'Moniker'; value: FixedBytes<4> }
-  | { type: 'Index'; value: number }
-  | { type: 'Executive' }
-  | { type: 'Technical' }
-  | { type: 'Legislative' }
-  | { type: 'Judicial' }
-  | { type: 'Defense' }
-  | { type: 'Administration' }
-  | { type: 'Treasury' };
-
-export type XcmV3JunctionBodyPart =
-  | { type: 'Voice' }
-  | { type: 'Members'; value: { count: number } }
-  | { type: 'Fraction'; value: { nom: number; denom: number } }
-  | { type: 'AtLeastProportion'; value: { nom: number; denom: number } }
-  | { type: 'MoreThanProportion'; value: { nom: number; denom: number } };
-
 export type StagingXcmV4Location = { parents: number; interior: StagingXcmV4Junctions };
 
 export type StagingXcmV4Junctions =
@@ -1717,41 +2973,6 @@ export type StagingXcmV4JunctionNetworkId =
   | { type: 'Westend' }
   | { type: 'Rococo' }
   | { type: 'Wococo' }
-  | { type: 'Ethereum'; value: { chainId: bigint } }
-  | { type: 'BitcoinCore' }
-  | { type: 'BitcoinCash' }
-  | { type: 'PolkadotBulletin' };
-
-export type StagingXcmV5Location = { parents: number; interior: StagingXcmV5Junctions };
-
-export type StagingXcmV5Junctions =
-  | { type: 'Here' }
-  | { type: 'X1'; value: FixedArray<StagingXcmV5Junction, 1> }
-  | { type: 'X2'; value: FixedArray<StagingXcmV5Junction, 2> }
-  | { type: 'X3'; value: FixedArray<StagingXcmV5Junction, 3> }
-  | { type: 'X4'; value: FixedArray<StagingXcmV5Junction, 4> }
-  | { type: 'X5'; value: FixedArray<StagingXcmV5Junction, 5> }
-  | { type: 'X6'; value: FixedArray<StagingXcmV5Junction, 6> }
-  | { type: 'X7'; value: FixedArray<StagingXcmV5Junction, 7> }
-  | { type: 'X8'; value: FixedArray<StagingXcmV5Junction, 8> };
-
-export type StagingXcmV5Junction =
-  | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; index: bigint } }
-  | { type: 'AccountKey20'; value: { network?: StagingXcmV5JunctionNetworkId | undefined; key: FixedBytes<20> } }
-  | { type: 'PalletInstance'; value: number }
-  | { type: 'GeneralIndex'; value: bigint }
-  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
-  | { type: 'OnlyChild' }
-  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
-  | { type: 'GlobalConsensus'; value: StagingXcmV5JunctionNetworkId };
-
-export type StagingXcmV5JunctionNetworkId =
-  | { type: 'ByGenesis'; value: FixedBytes<32> }
-  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
-  | { type: 'Polkadot' }
-  | { type: 'Kusama' }
   | { type: 'Ethereum'; value: { chainId: bigint } }
   | { type: 'BitcoinCore' }
   | { type: 'BitcoinCash' }
@@ -4022,7 +5243,7 @@ export type FrameSystemExtensionsCheckNonce = number;
 
 export type FrameSystemExtensionsCheckWeight = {};
 
-export type PalletTransactionPaymentChargeTransactionPayment = bigint;
+export type PalletAssetTxPaymentChargeAssetTxPayment = { tip: bigint; assetId?: StagingXcmV5Location | undefined };
 
 export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
 
@@ -4059,6 +5280,10 @@ export type PeoplePaseoRuntimeRuntimeEvent =
   | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent }
   | { pallet: 'Balances'; palletEvent: PalletBalancesEvent }
   | { pallet: 'TransactionPayment'; palletEvent: PalletTransactionPaymentEvent }
+  | { pallet: 'Assets'; palletEvent: PalletAssetsEvent }
+  | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
+  | { pallet: 'AssetTxPayment'; palletEvent: PalletAssetTxPaymentEvent }
+  | { pallet: 'AssetsHolder'; palletEvent: PalletAssetsHolderEvent }
   | { pallet: 'CollatorSelection'; palletEvent: PalletCollatorSelectionEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
@@ -4394,6 +5619,210 @@ export type PalletTransactionPaymentEvent =
    * has been paid by `who`.
    **/
   { name: 'TransactionFeePaid'; data: { who: AccountId32; actualFee: bigint; tip: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAssetsEvent =
+  /**
+   * Some asset class was created.
+   **/
+  | { name: 'Created'; data: { assetId: StagingXcmV5Location; creator: AccountId32; owner: AccountId32 } }
+  /**
+   * Some assets were issued.
+   **/
+  | { name: 'Issued'; data: { assetId: StagingXcmV5Location; owner: AccountId32; amount: bigint } }
+  /**
+   * Some assets were transferred.
+   **/
+  | { name: 'Transferred'; data: { assetId: StagingXcmV5Location; from: AccountId32; to: AccountId32; amount: bigint } }
+  /**
+   * Some assets were destroyed.
+   **/
+  | { name: 'Burned'; data: { assetId: StagingXcmV5Location; owner: AccountId32; balance: bigint } }
+  /**
+   * The management team changed.
+   **/
+  | {
+      name: 'TeamChanged';
+      data: { assetId: StagingXcmV5Location; issuer: AccountId32; admin: AccountId32; freezer: AccountId32 };
+    }
+  /**
+   * The owner changed.
+   **/
+  | { name: 'OwnerChanged'; data: { assetId: StagingXcmV5Location; owner: AccountId32 } }
+  /**
+   * Some account `who` was frozen.
+   **/
+  | { name: 'Frozen'; data: { assetId: StagingXcmV5Location; who: AccountId32 } }
+  /**
+   * Some account `who` was thawed.
+   **/
+  | { name: 'Thawed'; data: { assetId: StagingXcmV5Location; who: AccountId32 } }
+  /**
+   * Some asset `asset_id` was frozen.
+   **/
+  | { name: 'AssetFrozen'; data: { assetId: StagingXcmV5Location } }
+  /**
+   * Some asset `asset_id` was thawed.
+   **/
+  | { name: 'AssetThawed'; data: { assetId: StagingXcmV5Location } }
+  /**
+   * Accounts were destroyed for given asset.
+   **/
+  | {
+      name: 'AccountsDestroyed';
+      data: { assetId: StagingXcmV5Location; accountsDestroyed: number; accountsRemaining: number };
+    }
+  /**
+   * Approvals were destroyed for given asset.
+   **/
+  | {
+      name: 'ApprovalsDestroyed';
+      data: { assetId: StagingXcmV5Location; approvalsDestroyed: number; approvalsRemaining: number };
+    }
+  /**
+   * An asset class is in the process of being destroyed.
+   **/
+  | { name: 'DestructionStarted'; data: { assetId: StagingXcmV5Location } }
+  /**
+   * An asset class was destroyed.
+   **/
+  | { name: 'Destroyed'; data: { assetId: StagingXcmV5Location } }
+  /**
+   * Some asset class was force-created.
+   **/
+  | { name: 'ForceCreated'; data: { assetId: StagingXcmV5Location; owner: AccountId32 } }
+  /**
+   * New metadata has been set for an asset.
+   **/
+  | {
+      name: 'MetadataSet';
+      data: { assetId: StagingXcmV5Location; name: Bytes; symbol: Bytes; decimals: number; isFrozen: boolean };
+    }
+  /**
+   * Metadata has been cleared for an asset.
+   **/
+  | { name: 'MetadataCleared'; data: { assetId: StagingXcmV5Location } }
+  /**
+   * (Additional) funds have been approved for transfer to a destination account.
+   **/
+  | {
+      name: 'ApprovedTransfer';
+      data: { assetId: StagingXcmV5Location; source: AccountId32; delegate: AccountId32; amount: bigint };
+    }
+  /**
+   * An approval for account `delegate` was cancelled by `owner`.
+   **/
+  | { name: 'ApprovalCancelled'; data: { assetId: StagingXcmV5Location; owner: AccountId32; delegate: AccountId32 } }
+  /**
+   * An `amount` was transferred in its entirety from `owner` to `destination` by
+   * the approved `delegate`.
+   **/
+  | {
+      name: 'TransferredApproved';
+      data: {
+        assetId: StagingXcmV5Location;
+        owner: AccountId32;
+        delegate: AccountId32;
+        destination: AccountId32;
+        amount: bigint;
+      };
+    }
+  /**
+   * An asset has had its attributes changed by the `Force` origin.
+   **/
+  | { name: 'AssetStatusChanged'; data: { assetId: StagingXcmV5Location } }
+  /**
+   * The min_balance of an asset has been updated by the asset owner.
+   **/
+  | { name: 'AssetMinBalanceChanged'; data: { assetId: StagingXcmV5Location; newMinBalance: bigint } }
+  /**
+   * Some account `who` was created with a deposit from `depositor`.
+   **/
+  | { name: 'Touched'; data: { assetId: StagingXcmV5Location; who: AccountId32; depositor: AccountId32 } }
+  /**
+   * Some account `who` was blocked.
+   **/
+  | { name: 'Blocked'; data: { assetId: StagingXcmV5Location; who: AccountId32 } }
+  /**
+   * Some assets were deposited (e.g. for transaction fees).
+   **/
+  | { name: 'Deposited'; data: { assetId: StagingXcmV5Location; who: AccountId32; amount: bigint } }
+  /**
+   * Some assets were withdrawn from the account (e.g. for transaction fees).
+   **/
+  | { name: 'Withdrawn'; data: { assetId: StagingXcmV5Location; who: AccountId32; amount: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAssetRateEvent =
+  | { name: 'AssetRateCreated'; data: { assetKind: StagingXcmV5Location; rate: FixedU128 } }
+  | { name: 'AssetRateRemoved'; data: { assetKind: StagingXcmV5Location } }
+  | { name: 'AssetRateUpdated'; data: { assetKind: StagingXcmV5Location; old: FixedU128; new: FixedU128 } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAssetTxPaymentEvent =
+  /**
+   * A transaction fee `actual_fee`, of which `tip` was added to the minimum inclusion fee,
+   * has been paid by `who` in an asset `asset_id`.
+   **/
+  {
+    name: 'AssetTxFeePaid';
+    data: { who: AccountId32; actualFee: bigint; tip: bigint; assetId?: StagingXcmV5Location | undefined };
+  };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAssetsHolderEvent =
+  /**
+   * `who`s balance on hold was increased by `amount`.
+   **/
+  | {
+      name: 'Held';
+      data: {
+        who: AccountId32;
+        assetId: StagingXcmV5Location;
+        reason: PeoplePaseoRuntimeRuntimeHoldReason;
+        amount: bigint;
+      };
+    }
+  /**
+   * `who`s balance on hold was decreased by `amount`.
+   **/
+  | {
+      name: 'Released';
+      data: {
+        who: AccountId32;
+        assetId: StagingXcmV5Location;
+        reason: PeoplePaseoRuntimeRuntimeHoldReason;
+        amount: bigint;
+      };
+    }
+  /**
+   * `who`s balance on hold was burned by `amount`.
+   **/
+  | {
+      name: 'Burned';
+      data: {
+        who: AccountId32;
+        assetId: StagingXcmV5Location;
+        reason: PeoplePaseoRuntimeRuntimeHoldReason;
+        amount: bigint;
+      };
+    };
+
+export type PeoplePaseoRuntimeRuntimeHoldReason =
+  | { type: 'Session'; value: PalletSessionHoldReason }
+  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason };
+
+export type PalletSessionHoldReason = 'Keys';
+
+export type PalletXcmHoldReason = 'AuthorizeAlias';
 
 /**
  * The `Event` enum of this pallet
@@ -5219,7 +6648,7 @@ export type CumulusPalletWeightReclaimStorageWeightReclaim = [
   FrameSystemExtensionsCheckMortality,
   FrameSystemExtensionsCheckNonce,
   FrameSystemExtensionsCheckWeight,
-  PalletTransactionPaymentChargeTransactionPayment,
+  PalletAssetTxPaymentChargeAssetTxPayment,
   FrameMetadataHashExtensionCheckMetadataHash,
 ];
 
@@ -5344,14 +6773,6 @@ export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
 export type FrameSupportTokensMiscIdAmount = { id: PeoplePaseoRuntimeRuntimeHoldReason; amount: bigint };
 
-export type PeoplePaseoRuntimeRuntimeHoldReason =
-  | { type: 'Session'; value: PalletSessionHoldReason }
-  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason };
-
-export type PalletSessionHoldReason = 'Keys';
-
-export type PalletXcmHoldReason = 'AuthorizeAlias';
-
 export type FrameSupportTokensMiscIdAmount002 = { id: []; amount: bigint };
 
 /**
@@ -5412,6 +6833,175 @@ export type PalletTransactionPaymentReleases = 'V1Ancient' | 'V2';
 export type FrameSupportStorageNoDrop = FrameSupportTokensFungibleImbalance;
 
 export type FrameSupportTokensFungibleImbalance = { amount: bigint };
+
+export type PalletAssetsAssetDetails = {
+  owner: AccountId32;
+  issuer: AccountId32;
+  admin: AccountId32;
+  freezer: AccountId32;
+  supply: bigint;
+  deposit: bigint;
+  minBalance: bigint;
+  isSufficient: boolean;
+  accounts: number;
+  sufficients: number;
+  approvals: number;
+  status: PalletAssetsAssetStatus;
+};
+
+export type PalletAssetsAssetStatus = 'Live' | 'Frozen' | 'Destroying';
+
+export type PalletAssetsAssetAccount = {
+  balance: bigint;
+  status: PalletAssetsAccountStatus;
+  reason: PalletAssetsExistenceReason;
+  extra: [];
+};
+
+export type PalletAssetsAccountStatus = 'Liquid' | 'Frozen' | 'Blocked';
+
+export type PalletAssetsExistenceReason =
+  | { type: 'Consumer' }
+  | { type: 'Sufficient' }
+  | { type: 'DepositHeld'; value: bigint }
+  | { type: 'DepositRefunded' }
+  | { type: 'DepositFrom'; value: [AccountId32, bigint] };
+
+export type PalletAssetsApproval = { amount: bigint; deposit: bigint };
+
+export type PalletAssetsAssetMetadata = {
+  deposit: bigint;
+  name: Bytes;
+  symbol: Bytes;
+  decimals: number;
+  isFrozen: boolean;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletAssetsError =
+  /**
+   * Account balance must be greater than or equal to the transfer amount.
+   **/
+  | 'BalanceLow'
+  /**
+   * The account to alter does not exist.
+   **/
+  | 'NoAccount'
+  /**
+   * The signing account has no permission to do the operation.
+   **/
+  | 'NoPermission'
+  /**
+   * The given asset ID is unknown.
+   **/
+  | 'Unknown'
+  /**
+   * The origin account is frozen.
+   **/
+  | 'Frozen'
+  /**
+   * The asset ID is already taken.
+   **/
+  | 'InUse'
+  /**
+   * Invalid witness data given.
+   **/
+  | 'BadWitness'
+  /**
+   * Minimum balance should be non-zero.
+   **/
+  | 'MinBalanceZero'
+  /**
+   * Unable to increment the consumer reference counters on the account. Either no provider
+   * reference exists to allow a non-zero balance of a non-self-sufficient asset, or one
+   * fewer then the maximum number of consumers has been reached.
+   **/
+  | 'UnavailableConsumer'
+  /**
+   * Invalid metadata given.
+   **/
+  | 'BadMetadata'
+  /**
+   * No approval exists that would allow the transfer.
+   **/
+  | 'Unapproved'
+  /**
+   * The source account would not survive the transfer and it needs to stay alive.
+   **/
+  | 'WouldDie'
+  /**
+   * The asset-account already exists.
+   **/
+  | 'AlreadyExists'
+  /**
+   * The asset-account doesn't have an associated deposit.
+   **/
+  | 'NoDeposit'
+  /**
+   * The operation would result in funds being burned.
+   **/
+  | 'WouldBurn'
+  /**
+   * The asset is a live asset and is actively being used. Usually emit for operations such
+   * as `start_destroy` which require the asset to be in a destroying state.
+   **/
+  | 'LiveAsset'
+  /**
+   * The asset is not live, and likely being destroyed.
+   **/
+  | 'AssetNotLive'
+  /**
+   * The asset status is not the expected status.
+   **/
+  | 'IncorrectStatus'
+  /**
+   * The asset should be frozen before the given operation.
+   **/
+  | 'NotFrozen'
+  /**
+   * Callback action resulted in error
+   **/
+  | 'CallbackFailed'
+  /**
+   * The asset ID must be equal to the [`NextAssetId`].
+   **/
+  | 'BadAssetId'
+  /**
+   * The asset cannot be destroyed because some accounts for this asset contain freezes.
+   **/
+  | 'ContainsFreezes'
+  /**
+   * The asset cannot be destroyed because some accounts for this asset contain holds.
+   **/
+  | 'ContainsHolds';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletAssetRateError =
+  /**
+   * The given asset ID is unknown.
+   **/
+  | 'UnknownAssetKind'
+  /**
+   * The given asset ID already has an assigned conversion rate and cannot be re-created.
+   **/
+  | 'AlreadyExists'
+  /**
+   * Overflow ocurred when calculating the inverse rate.
+   **/
+  | 'Overflow';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletAssetsHolderError =
+  /**
+   * Number of holds on an account would exceed the count of `RuntimeHoldReason`.
+   **/
+  'TooManyHolds';
 
 export type PalletCollatorSelectionCandidateInfo = { who: AccountId32; deposit: bigint };
 
@@ -6240,6 +7830,9 @@ export type PeoplePaseoRuntimeRuntimeError =
   | { pallet: 'ParachainSystem'; palletError: CumulusPalletParachainSystemError }
   | { pallet: 'MultiBlockMigrations'; palletError: PalletMigrationsError }
   | { pallet: 'Balances'; palletError: PalletBalancesError }
+  | { pallet: 'Assets'; palletError: PalletAssetsError }
+  | { pallet: 'AssetRate'; palletError: PalletAssetRateError }
+  | { pallet: 'AssetsHolder'; palletError: PalletAssetsHolderError }
   | { pallet: 'CollatorSelection'; palletError: PalletCollatorSelectionError }
   | { pallet: 'Session'; palletError: PalletSessionError }
   | { pallet: 'XcmpQueue'; palletError: CumulusPalletXcmpQueueError }

@@ -2,7 +2,7 @@
 
 import type { GenericChainViewFunctions, GenericViewFunction } from 'dedot/types';
 import type { AccountId32Like } from 'dedot/codecs';
-import type { AssetHubPaseoRuntimeRuntimeCallLike, AssetHubPaseoRuntimeProxyType } from './types.js';
+import type { AssetHubPolkadotRuntimeRuntimeCallLike, AssetHubPolkadotRuntimeProxyType } from './types.js';
 
 export interface ChainViewFunctions extends GenericChainViewFunctions {
   /**
@@ -12,21 +12,21 @@ export interface ChainViewFunctions extends GenericChainViewFunctions {
     /**
      * Check if a `RuntimeCall` is allowed for a given `ProxyType`.
      *
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
-     * @param {AssetHubPaseoRuntimeProxyType} proxyType
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeProxyType} proxyType
      **/
     checkPermissions: GenericViewFunction<
-      (call: AssetHubPaseoRuntimeRuntimeCallLike, proxyType: AssetHubPaseoRuntimeProxyType) => Promise<boolean>
+      (call: AssetHubPolkadotRuntimeRuntimeCallLike, proxyType: AssetHubPolkadotRuntimeProxyType) => Promise<boolean>
     >;
 
     /**
      * Check if one `ProxyType` is a subset of another `ProxyType`.
      *
-     * @param {AssetHubPaseoRuntimeProxyType} toCheck
-     * @param {AssetHubPaseoRuntimeProxyType} against
+     * @param {AssetHubPolkadotRuntimeProxyType} toCheck
+     * @param {AssetHubPolkadotRuntimeProxyType} against
      **/
     isSuperset: GenericViewFunction<
-      (toCheck: AssetHubPaseoRuntimeProxyType, against: AssetHubPaseoRuntimeProxyType) => Promise<boolean>
+      (toCheck: AssetHubPolkadotRuntimeProxyType, against: AssetHubPolkadotRuntimeProxyType) => Promise<boolean>
     >;
 
     /**

@@ -23,20 +23,18 @@ import type {
   U256,
 } from 'dedot/codecs';
 import type {
-  AssetHubPaseoRuntimeRuntimeCallLike,
+  AssetHubPolkadotRuntimeRuntimeCallLike,
   SpRuntimeMultiSignature,
   FrameSystemEventRecord,
-  AssetHubPaseoRuntimeRuntimeTask,
+  AssetHubPolkadotRuntimeRuntimeTask,
   CumulusPalletParachainSystemParachainInherentBasicParachainInherentData,
   CumulusPalletParachainSystemParachainInherentInboundMessagesData,
-  AssetHubPaseoRuntimeRuntimeParameters,
-  PalletMigrationsMigrationCursor,
-  PalletMigrationsHistoricCleanupSelector,
+  AssetHubPolkadotRuntimeRuntimeParameters,
   PalletBalancesAdjustmentDirection,
   PalletVestingVestingInfo,
   PolkadotRuntimeCommonClaimsEcdsaSignature,
   PolkadotRuntimeCommonClaimsStatementKind,
-  AssetHubPaseoRuntimeSessionKeys,
+  AssetHubPolkadotRuntimeSessionKeys,
   XcmVersionedLocation,
   XcmVersionedXcm,
   XcmVersionedAssets,
@@ -50,9 +48,9 @@ import type {
   SnowbridgeCoreAssetMetadata,
   StagingXcmV5Asset,
   SnowbridgeCoreRewardMessageId,
-  AssetHubPaseoRuntimeOriginCaller,
+  AssetHubPolkadotRuntimeOriginCaller,
   PalletMultisigTimepoint,
-  AssetHubPaseoRuntimeProxyType,
+  AssetHubPolkadotRuntimeProxyType,
   PalletUniquesDestroyWitness,
   PalletNftsCollectionConfig,
   PalletNftsDestroyWitness,
@@ -86,10 +84,11 @@ import type {
   PalletNominationPoolsCommissionClaimPermission,
   PalletStakingAsyncRcClientSessionReport,
   PalletStakingAsyncRcClientOffence,
+  PalletElectionProviderMultiBlockManagerOperation,
   PalletElectionProviderMultiBlockAdminOperation,
   PalletElectionProviderMultiBlockPagedRawSolution,
   SpNposElectionsElectionScore,
-  AssetHubPaseoRuntimeStakingNposCompactSolution16,
+  AssetHubPolkadotRuntimeStakingNposCompactSolution16,
   PalletStakingAsyncRewardDestination,
   PalletStakingAsyncValidatorPrefs,
   PalletStakingAsyncPalletConfigOp,
@@ -127,14 +126,14 @@ import type {
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
-  T extends IRuntimeTxCall = AssetHubPaseoRuntimeRuntimeCallLike,
+  T extends IRuntimeTxCall = AssetHubPolkadotRuntimeRuntimeCallLike,
   ChainKnownTypes extends GenericChainKnownTypes = GenericChainKnownTypes,
 > = Extrinsic<MultiAddressLike, T, SpRuntimeMultiSignature, ChainKnownTypes['Extra']> &
   ISubmittableExtrinsic<ISubmittableResult<FrameSystemEventRecord>, ChainKnownTypes['AssetId']>;
 
 export type TxCall<ChainKnownTypes extends GenericChainKnownTypes = GenericChainKnownTypes> = (
   ...args: any[]
-) => ChainSubmittableExtrinsic<AssetHubPaseoRuntimeRuntimeCallLike, ChainKnownTypes>;
+) => ChainSubmittableExtrinsic<AssetHubPolkadotRuntimeRuntimeCallLike, ChainKnownTypes>;
 
 export interface ChainTx<
   ChainKnownTypes extends GenericChainKnownTypes = GenericChainKnownTypes,
@@ -301,15 +300,15 @@ export interface ChainTx<
 
     /**
      *
-     * @param {AssetHubPaseoRuntimeRuntimeTask} task
+     * @param {AssetHubPolkadotRuntimeRuntimeTask} task
      **/
     doTask: GenericTxCall<
-      (task: AssetHubPaseoRuntimeRuntimeTask) => ChainSubmittableExtrinsic<
+      (task: AssetHubPolkadotRuntimeRuntimeTask) => ChainSubmittableExtrinsic<
         {
           pallet: 'System';
           palletCall: {
             name: 'DoTask';
-            params: { task: AssetHubPaseoRuntimeRuntimeTask };
+            params: { task: AssetHubPolkadotRuntimeRuntimeTask };
           };
         },
         ChainKnownTypes
@@ -630,14 +629,14 @@ export interface ChainTx<
      * @param {number} when
      * @param {[number, number] | undefined} maybePeriodic
      * @param {number} priority
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      **/
     schedule: GenericTxCall<
       (
         when: number,
         maybePeriodic: [number, number] | undefined,
         priority: number,
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Scheduler';
@@ -647,7 +646,7 @@ export interface ChainTx<
               when: number;
               maybePeriodic: [number, number] | undefined;
               priority: number;
-              call: AssetHubPaseoRuntimeRuntimeCallLike;
+              call: AssetHubPolkadotRuntimeRuntimeCallLike;
             };
           };
         },
@@ -684,7 +683,7 @@ export interface ChainTx<
      * @param {number} when
      * @param {[number, number] | undefined} maybePeriodic
      * @param {number} priority
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      **/
     scheduleNamed: GenericTxCall<
       (
@@ -692,7 +691,7 @@ export interface ChainTx<
         when: number,
         maybePeriodic: [number, number] | undefined,
         priority: number,
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Scheduler';
@@ -703,7 +702,7 @@ export interface ChainTx<
               when: number;
               maybePeriodic: [number, number] | undefined;
               priority: number;
-              call: AssetHubPaseoRuntimeRuntimeCallLike;
+              call: AssetHubPolkadotRuntimeRuntimeCallLike;
             };
           };
         },
@@ -735,14 +734,14 @@ export interface ChainTx<
      * @param {number} after
      * @param {[number, number] | undefined} maybePeriodic
      * @param {number} priority
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      **/
     scheduleAfter: GenericTxCall<
       (
         after: number,
         maybePeriodic: [number, number] | undefined,
         priority: number,
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Scheduler';
@@ -752,7 +751,7 @@ export interface ChainTx<
               after: number;
               maybePeriodic: [number, number] | undefined;
               priority: number;
-              call: AssetHubPaseoRuntimeRuntimeCallLike;
+              call: AssetHubPolkadotRuntimeRuntimeCallLike;
             };
           };
         },
@@ -767,7 +766,7 @@ export interface ChainTx<
      * @param {number} after
      * @param {[number, number] | undefined} maybePeriodic
      * @param {number} priority
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      **/
     scheduleNamedAfter: GenericTxCall<
       (
@@ -775,7 +774,7 @@ export interface ChainTx<
         after: number,
         maybePeriodic: [number, number] | undefined,
         priority: number,
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Scheduler';
@@ -786,7 +785,7 @@ export interface ChainTx<
               after: number;
               maybePeriodic: [number, number] | undefined;
               priority: number;
-              call: AssetHubPaseoRuntimeRuntimeCallLike;
+              call: AssetHubPolkadotRuntimeRuntimeCallLike;
             };
           };
         },
@@ -915,116 +914,15 @@ export interface ChainTx<
      * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
      * deleted by setting them to `None`.
      *
-     * @param {AssetHubPaseoRuntimeRuntimeParameters} keyValue
+     * @param {AssetHubPolkadotRuntimeRuntimeParameters} keyValue
      **/
     setParameter: GenericTxCall<
-      (keyValue: AssetHubPaseoRuntimeRuntimeParameters) => ChainSubmittableExtrinsic<
+      (keyValue: AssetHubPolkadotRuntimeRuntimeParameters) => ChainSubmittableExtrinsic<
         {
           pallet: 'Parameters';
           palletCall: {
             name: 'SetParameter';
-            params: { keyValue: AssetHubPaseoRuntimeRuntimeParameters };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
-   * Pallet `MultiBlockMigrations`'s transaction calls
-   **/
-  multiBlockMigrations: {
-    /**
-     * Allows root to set a cursor to forcefully start, stop or forward the migration process.
-     *
-     * Should normally not be needed and is only in place as emergency measure. Note that
-     * restarting the migration process in this manner will not call the
-     * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
-     *
-     * @param {PalletMigrationsMigrationCursor | undefined} cursor
-     **/
-    forceSetCursor: GenericTxCall<
-      (cursor: PalletMigrationsMigrationCursor | undefined) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'MultiBlockMigrations';
-          palletCall: {
-            name: 'ForceSetCursor';
-            params: { cursor: PalletMigrationsMigrationCursor | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Allows root to set an active cursor to forcefully start/forward the migration process.
-     *
-     * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
-     * `started_at` value to the next block number. Otherwise this would not be possible, since
-     * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
-     * indicates that the current block number plus one should be used.
-     *
-     * @param {number} index
-     * @param {BytesLike | undefined} innerCursor
-     * @param {number | undefined} startedAt
-     **/
-    forceSetActiveCursor: GenericTxCall<
-      (
-        index: number,
-        innerCursor: BytesLike | undefined,
-        startedAt: number | undefined,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'MultiBlockMigrations';
-          palletCall: {
-            name: 'ForceSetActiveCursor';
-            params: { index: number; innerCursor: BytesLike | undefined; startedAt: number | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Forces the onboarding of the migrations.
-     *
-     * This process happens automatically on a runtime upgrade. It is in place as an emergency
-     * measurement. The cursor needs to be `None` for this to succeed.
-     *
-     **/
-    forceOnboardMbms: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'MultiBlockMigrations';
-          palletCall: {
-            name: 'ForceOnboardMbms';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Clears the `Historic` set.
-     *
-     * `map_cursor` must be set to the last value that was returned by the
-     * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
-     * way that will result in a sensible weight.
-     *
-     * @param {PalletMigrationsHistoricCleanupSelector} selector
-     **/
-    clearHistoric: GenericTxCall<
-      (selector: PalletMigrationsHistoricCleanupSelector) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'MultiBlockMigrations';
-          palletCall: {
-            name: 'ClearHistoric';
-            params: { selector: PalletMigrationsHistoricCleanupSelector };
+            params: { keyValue: AssetHubPolkadotRuntimeRuntimeParameters };
           };
         },
         ChainKnownTypes
@@ -1934,19 +1832,19 @@ export interface ChainTx<
      * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
      * fixed.
      *
-     * @param {AssetHubPaseoRuntimeSessionKeys} keys
+     * @param {AssetHubPolkadotRuntimeSessionKeys} keys
      * @param {BytesLike} proof
      **/
     setKeys: GenericTxCall<
       (
-        keys: AssetHubPaseoRuntimeSessionKeys,
+        keys: AssetHubPolkadotRuntimeSessionKeys,
         proof: BytesLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Session';
           palletCall: {
             name: 'SetKeys';
-            params: { keys: AssetHubPaseoRuntimeSessionKeys; proof: BytesLike };
+            params: { keys: AssetHubPolkadotRuntimeSessionKeys; proof: BytesLike };
           };
         },
         ChainKnownTypes
@@ -2967,15 +2865,15 @@ export interface ChainTx<
      * and the error of the failed call. If all were successful, then the `BatchCompleted`
      * event is deposited.
      *
-     * @param {Array<AssetHubPaseoRuntimeRuntimeCallLike>} calls
+     * @param {Array<AssetHubPolkadotRuntimeRuntimeCallLike>} calls
      **/
     batch: GenericTxCall<
-      (calls: Array<AssetHubPaseoRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
+      (calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'Batch';
-            params: { calls: Array<AssetHubPaseoRuntimeRuntimeCallLike> };
+            params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike> };
           };
         },
         ChainKnownTypes
@@ -2998,18 +2896,18 @@ export interface ChainTx<
      * The dispatch origin for this call must be _Signed_.
      *
      * @param {number} index
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      **/
     asDerivative: GenericTxCall<
       (
         index: number,
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'AsDerivative';
-            params: { index: number; call: AssetHubPaseoRuntimeRuntimeCallLike };
+            params: { index: number; call: AssetHubPolkadotRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes
@@ -3031,15 +2929,15 @@ export interface ChainTx<
      * ## Complexity
      * - O(C) where C is the number of calls to be batched.
      *
-     * @param {Array<AssetHubPaseoRuntimeRuntimeCallLike>} calls
+     * @param {Array<AssetHubPolkadotRuntimeRuntimeCallLike>} calls
      **/
     batchAll: GenericTxCall<
-      (calls: Array<AssetHubPaseoRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
+      (calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'BatchAll';
-            params: { calls: Array<AssetHubPaseoRuntimeRuntimeCallLike> };
+            params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike> };
           };
         },
         ChainKnownTypes
@@ -3054,19 +2952,19 @@ export interface ChainTx<
      * ## Complexity
      * - O(1).
      *
-     * @param {AssetHubPaseoRuntimeOriginCaller} asOrigin
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeOriginCaller} asOrigin
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      **/
     dispatchAs: GenericTxCall<
       (
-        asOrigin: AssetHubPaseoRuntimeOriginCaller,
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        asOrigin: AssetHubPolkadotRuntimeOriginCaller,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'DispatchAs';
-            params: { asOrigin: AssetHubPaseoRuntimeOriginCaller; call: AssetHubPaseoRuntimeRuntimeCallLike };
+            params: { asOrigin: AssetHubPolkadotRuntimeOriginCaller; call: AssetHubPolkadotRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes
@@ -3088,15 +2986,15 @@ export interface ChainTx<
      * ## Complexity
      * - O(C) where C is the number of calls to be batched.
      *
-     * @param {Array<AssetHubPaseoRuntimeRuntimeCallLike>} calls
+     * @param {Array<AssetHubPolkadotRuntimeRuntimeCallLike>} calls
      **/
     forceBatch: GenericTxCall<
-      (calls: Array<AssetHubPaseoRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
+      (calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike>) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'ForceBatch';
-            params: { calls: Array<AssetHubPaseoRuntimeRuntimeCallLike> };
+            params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike> };
           };
         },
         ChainKnownTypes
@@ -3111,19 +3009,19 @@ export interface ChainTx<
      *
      * The dispatch origin for this call must be _Root_.
      *
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      * @param {SpWeightsWeightV2Weight} weight
      **/
     withWeight: GenericTxCall<
       (
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
         weight: SpWeightsWeightV2Weight,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'WithWeight';
-            params: { call: AssetHubPaseoRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight };
+            params: { call: AssetHubPolkadotRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight };
           };
         },
         ChainKnownTypes
@@ -3155,19 +3053,19 @@ export interface ChainTx<
      * - Some use cases might involve submitting a `batch` type call in either main, fallback
      * or both.
      *
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} main
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} fallback
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} main
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} fallback
      **/
     ifElse: GenericTxCall<
       (
-        main: AssetHubPaseoRuntimeRuntimeCallLike,
-        fallback: AssetHubPaseoRuntimeRuntimeCallLike,
+        main: AssetHubPolkadotRuntimeRuntimeCallLike,
+        fallback: AssetHubPolkadotRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'IfElse';
-            params: { main: AssetHubPaseoRuntimeRuntimeCallLike; fallback: AssetHubPaseoRuntimeRuntimeCallLike };
+            params: { main: AssetHubPolkadotRuntimeRuntimeCallLike; fallback: AssetHubPolkadotRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes
@@ -3181,19 +3079,19 @@ export interface ChainTx<
      *
      * The dispatch origin for this call must be _Root_.
      *
-     * @param {AssetHubPaseoRuntimeOriginCaller} asOrigin
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeOriginCaller} asOrigin
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      **/
     dispatchAsFallible: GenericTxCall<
       (
-        asOrigin: AssetHubPaseoRuntimeOriginCaller,
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        asOrigin: AssetHubPolkadotRuntimeOriginCaller,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Utility';
           palletCall: {
             name: 'DispatchAsFallible';
-            params: { asOrigin: AssetHubPaseoRuntimeOriginCaller; call: AssetHubPaseoRuntimeRuntimeCallLike };
+            params: { asOrigin: AssetHubPolkadotRuntimeOriginCaller; call: AssetHubPolkadotRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes
@@ -3224,18 +3122,18 @@ export interface ChainTx<
      * O(Z + C) where Z is the length of the call and C its execution weight.
      *
      * @param {Array<AccountId32Like>} otherSignatories
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      **/
     asMultiThreshold1: GenericTxCall<
       (
         otherSignatories: Array<AccountId32Like>,
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Multisig';
           palletCall: {
             name: 'AsMultiThreshold1';
-            params: { otherSignatories: Array<AccountId32Like>; call: AssetHubPaseoRuntimeRuntimeCallLike };
+            params: { otherSignatories: Array<AccountId32Like>; call: AssetHubPolkadotRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes
@@ -3286,7 +3184,7 @@ export interface ChainTx<
      * @param {number} threshold
      * @param {Array<AccountId32Like>} otherSignatories
      * @param {PalletMultisigTimepoint | undefined} maybeTimepoint
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      * @param {SpWeightsWeightV2Weight} maxWeight
      **/
     asMulti: GenericTxCall<
@@ -3294,7 +3192,7 @@ export interface ChainTx<
         threshold: number,
         otherSignatories: Array<AccountId32Like>,
         maybeTimepoint: PalletMultisigTimepoint | undefined,
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
         maxWeight: SpWeightsWeightV2Weight,
       ) => ChainSubmittableExtrinsic<
         {
@@ -3305,7 +3203,7 @@ export interface ChainTx<
               threshold: number;
               otherSignatories: Array<AccountId32Like>;
               maybeTimepoint: PalletMultisigTimepoint | undefined;
-              call: AssetHubPaseoRuntimeRuntimeCallLike;
+              call: AssetHubPolkadotRuntimeRuntimeCallLike;
               maxWeight: SpWeightsWeightV2Weight;
             };
           };
@@ -3485,14 +3383,14 @@ export interface ChainTx<
      * - `call`: The call to be made by the `real` account.
      *
      * @param {MultiAddressLike} real
-     * @param {AssetHubPaseoRuntimeProxyType | undefined} forceProxyType
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeProxyType | undefined} forceProxyType
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      **/
     proxy: GenericTxCall<
       (
         real: MultiAddressLike,
-        forceProxyType: AssetHubPaseoRuntimeProxyType | undefined,
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        forceProxyType: AssetHubPolkadotRuntimeProxyType | undefined,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Proxy';
@@ -3500,8 +3398,8 @@ export interface ChainTx<
             name: 'Proxy';
             params: {
               real: MultiAddressLike;
-              forceProxyType: AssetHubPaseoRuntimeProxyType | undefined;
-              call: AssetHubPaseoRuntimeRuntimeCallLike;
+              forceProxyType: AssetHubPolkadotRuntimeProxyType | undefined;
+              call: AssetHubPolkadotRuntimeRuntimeCallLike;
             };
           };
         },
@@ -3521,20 +3419,20 @@ export interface ChainTx<
      * zero.
      *
      * @param {MultiAddressLike} delegate
-     * @param {AssetHubPaseoRuntimeProxyType} proxyType
+     * @param {AssetHubPolkadotRuntimeProxyType} proxyType
      * @param {number} delay
      **/
     addProxy: GenericTxCall<
       (
         delegate: MultiAddressLike,
-        proxyType: AssetHubPaseoRuntimeProxyType,
+        proxyType: AssetHubPolkadotRuntimeProxyType,
         delay: number,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Proxy';
           palletCall: {
             name: 'AddProxy';
-            params: { delegate: MultiAddressLike; proxyType: AssetHubPaseoRuntimeProxyType; delay: number };
+            params: { delegate: MultiAddressLike; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number };
           };
         },
         ChainKnownTypes
@@ -3551,20 +3449,20 @@ export interface ChainTx<
      * - `proxy_type`: The permissions currently enabled for the removed proxy account.
      *
      * @param {MultiAddressLike} delegate
-     * @param {AssetHubPaseoRuntimeProxyType} proxyType
+     * @param {AssetHubPolkadotRuntimeProxyType} proxyType
      * @param {number} delay
      **/
     removeProxy: GenericTxCall<
       (
         delegate: MultiAddressLike,
-        proxyType: AssetHubPaseoRuntimeProxyType,
+        proxyType: AssetHubPolkadotRuntimeProxyType,
         delay: number,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Proxy';
           palletCall: {
             name: 'RemoveProxy';
-            params: { delegate: MultiAddressLike; proxyType: AssetHubPaseoRuntimeProxyType; delay: number };
+            params: { delegate: MultiAddressLike; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number };
           };
         },
         ChainKnownTypes
@@ -3612,13 +3510,13 @@ export interface ChainTx<
      *
      * Fails if there are insufficient funds to pay for deposit.
      *
-     * @param {AssetHubPaseoRuntimeProxyType} proxyType
+     * @param {AssetHubPolkadotRuntimeProxyType} proxyType
      * @param {number} delay
      * @param {number} index
      **/
     createPure: GenericTxCall<
       (
-        proxyType: AssetHubPaseoRuntimeProxyType,
+        proxyType: AssetHubPolkadotRuntimeProxyType,
         delay: number,
         index: number,
       ) => ChainSubmittableExtrinsic<
@@ -3626,7 +3524,7 @@ export interface ChainTx<
           pallet: 'Proxy';
           palletCall: {
             name: 'CreatePure';
-            params: { proxyType: AssetHubPaseoRuntimeProxyType; delay: number; index: number };
+            params: { proxyType: AssetHubPolkadotRuntimeProxyType; delay: number; index: number };
           };
         },
         ChainKnownTypes
@@ -3652,7 +3550,7 @@ export interface ChainTx<
      * account whose `create_pure` call has corresponding parameters.
      *
      * @param {MultiAddressLike} spawner
-     * @param {AssetHubPaseoRuntimeProxyType} proxyType
+     * @param {AssetHubPolkadotRuntimeProxyType} proxyType
      * @param {number} index
      * @param {number} height
      * @param {number} extIndex
@@ -3660,7 +3558,7 @@ export interface ChainTx<
     killPure: GenericTxCall<
       (
         spawner: MultiAddressLike,
-        proxyType: AssetHubPaseoRuntimeProxyType,
+        proxyType: AssetHubPolkadotRuntimeProxyType,
         index: number,
         height: number,
         extIndex: number,
@@ -3671,7 +3569,7 @@ export interface ChainTx<
             name: 'KillPure';
             params: {
               spawner: MultiAddressLike;
-              proxyType: AssetHubPaseoRuntimeProxyType;
+              proxyType: AssetHubPolkadotRuntimeProxyType;
               index: number;
               height: number;
               extIndex: number;
@@ -3795,15 +3693,15 @@ export interface ChainTx<
      *
      * @param {MultiAddressLike} delegate
      * @param {MultiAddressLike} real
-     * @param {AssetHubPaseoRuntimeProxyType | undefined} forceProxyType
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeProxyType | undefined} forceProxyType
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      **/
     proxyAnnounced: GenericTxCall<
       (
         delegate: MultiAddressLike,
         real: MultiAddressLike,
-        forceProxyType: AssetHubPaseoRuntimeProxyType | undefined,
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        forceProxyType: AssetHubPolkadotRuntimeProxyType | undefined,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Proxy';
@@ -3812,8 +3710,8 @@ export interface ChainTx<
             params: {
               delegate: MultiAddressLike;
               real: MultiAddressLike;
-              forceProxyType: AssetHubPaseoRuntimeProxyType | undefined;
-              call: AssetHubPaseoRuntimeRuntimeCallLike;
+              forceProxyType: AssetHubPolkadotRuntimeProxyType | undefined;
+              call: AssetHubPolkadotRuntimeRuntimeCallLike;
             };
           };
         },
@@ -10730,13 +10628,13 @@ export interface ChainTx<
      *
      * Emits `Submitted`.
      *
-     * @param {AssetHubPaseoRuntimeOriginCaller} proposalOrigin
+     * @param {AssetHubPolkadotRuntimeOriginCaller} proposalOrigin
      * @param {FrameSupportPreimagesBounded} proposal
      * @param {FrameSupportScheduleDispatchTime} enactmentMoment
      **/
     submit: GenericTxCall<
       (
-        proposalOrigin: AssetHubPaseoRuntimeOriginCaller,
+        proposalOrigin: AssetHubPolkadotRuntimeOriginCaller,
         proposal: FrameSupportPreimagesBounded,
         enactmentMoment: FrameSupportScheduleDispatchTime,
       ) => ChainSubmittableExtrinsic<
@@ -10745,7 +10643,7 @@ export interface ChainTx<
           palletCall: {
             name: 'Submit';
             params: {
-              proposalOrigin: AssetHubPaseoRuntimeOriginCaller;
+              proposalOrigin: AssetHubPolkadotRuntimeOriginCaller;
               proposal: FrameSupportPreimagesBounded;
               enactmentMoment: FrameSupportScheduleDispatchTime;
             };
@@ -11017,15 +10915,15 @@ export interface ChainTx<
 
     /**
      *
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      **/
     dispatchWhitelistedCallWithPreimage: GenericTxCall<
-      (call: AssetHubPaseoRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+      (call: AssetHubPolkadotRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
         {
           pallet: 'Whitelist';
           palletCall: {
             name: 'DispatchWhitelistedCallWithPreimage';
-            params: { call: AssetHubPaseoRuntimeRuntimeCallLike };
+            params: { call: AssetHubPolkadotRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes
@@ -12886,18 +12784,35 @@ export interface ChainTx<
     /**
      * Manage this pallet.
      *
-     * The origin of this call must be [`Config::AdminOrigin`].
+     * The origin of this call must be [`Config::ManagerOrigin`].
      *
-     * See [`AdminOperation`] for various operations that are possible.
+     * See [`ManagerOperation`] for various operations that are possible.
      *
-     * @param {PalletElectionProviderMultiBlockAdminOperation} op
+     * @param {PalletElectionProviderMultiBlockManagerOperation} op
      **/
     manage: GenericTxCall<
-      (op: PalletElectionProviderMultiBlockAdminOperation) => ChainSubmittableExtrinsic<
+      (op: PalletElectionProviderMultiBlockManagerOperation) => ChainSubmittableExtrinsic<
         {
           pallet: 'MultiBlockElection';
           palletCall: {
             name: 'Manage';
+            params: { op: PalletElectionProviderMultiBlockManagerOperation };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     * @param {PalletElectionProviderMultiBlockAdminOperation} op
+     **/
+    admin: GenericTxCall<
+      (op: PalletElectionProviderMultiBlockAdminOperation) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockElection';
+          palletCall: {
+            name: 'Admin';
             params: { op: PalletElectionProviderMultiBlockAdminOperation };
           };
         },
@@ -12993,18 +12908,18 @@ export interface ChainTx<
      * [`Config::DepositPerPage`].
      *
      * @param {number} page
-     * @param {AssetHubPaseoRuntimeStakingNposCompactSolution16 | undefined} maybeSolution
+     * @param {AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined} maybeSolution
      **/
     submitPage: GenericTxCall<
       (
         page: number,
-        maybeSolution: AssetHubPaseoRuntimeStakingNposCompactSolution16 | undefined,
+        maybeSolution: AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'MultiBlockElectionSigned';
           palletCall: {
             name: 'SubmitPage';
-            params: { page: number; maybeSolution: AssetHubPaseoRuntimeStakingNposCompactSolution16 | undefined };
+            params: { page: number; maybeSolution: AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined };
           };
         },
         ChainKnownTypes
@@ -14368,19 +14283,19 @@ export interface ChainTx<
      * * `call`: The Substrate runtime call to execute.
      * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
      *
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      * @param {BytesLike} transactionEncoded
      **/
     ethSubstrateCall: GenericTxCall<
       (
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
         transactionEncoded: BytesLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Revive';
           palletCall: {
             name: 'EthSubstrateCall';
-            params: { call: AssetHubPaseoRuntimeRuntimeCallLike; transactionEncoded: BytesLike };
+            params: { call: AssetHubPolkadotRuntimeRuntimeCallLike; transactionEncoded: BytesLike };
           };
         },
         ChainKnownTypes
@@ -14519,130 +14434,15 @@ export interface ChainTx<
      * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
      * recovery function in case an `AccountId20` was used without creating a mapping first.
      *
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      **/
     dispatchAsFallbackAccount: GenericTxCall<
-      (call: AssetHubPaseoRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+      (call: AssetHubPolkadotRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
         {
           pallet: 'Revive';
           palletCall: {
             name: 'DispatchAsFallbackAccount';
-            params: { call: AssetHubPaseoRuntimeRuntimeCallLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
-   * Pallet `Sudo`'s transaction calls
-   **/
-  sudo: {
-    /**
-     * Authenticates the sudo key and dispatches a function call with `Root` origin.
-     *
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
-     **/
-    sudo: GenericTxCall<
-      (call: AssetHubPaseoRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Sudo';
-          palletCall: {
-            name: 'Sudo';
-            params: { call: AssetHubPaseoRuntimeRuntimeCallLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Authenticates the sudo key and dispatches a function call with `Root` origin.
-     * This function does not check the weight of the call, and instead allows the
-     * Sudo user to specify the weight of the call.
-     *
-     * The dispatch origin for this call must be _Signed_.
-     *
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
-     * @param {SpWeightsWeightV2Weight} weight
-     **/
-    sudoUncheckedWeight: GenericTxCall<
-      (
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
-        weight: SpWeightsWeightV2Weight,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Sudo';
-          palletCall: {
-            name: 'SudoUncheckedWeight';
-            params: { call: AssetHubPaseoRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
-     * key.
-     *
-     * @param {MultiAddressLike} new_
-     **/
-    setKey: GenericTxCall<
-      (new_: MultiAddressLike) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Sudo';
-          palletCall: {
-            name: 'SetKey';
-            params: { new: MultiAddressLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Authenticates the sudo key and dispatches a function call with `Signed` origin from
-     * a given account.
-     *
-     * The dispatch origin for this call must be _Signed_.
-     *
-     * @param {MultiAddressLike} who
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
-     **/
-    sudoAs: GenericTxCall<
-      (
-        who: MultiAddressLike,
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Sudo';
-          palletCall: {
-            name: 'SudoAs';
-            params: { who: MultiAddressLike; call: AssetHubPaseoRuntimeRuntimeCallLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Permanently removes the sudo key.
-     *
-     * **This cannot be un-done.**
-     *
-     **/
-    removeKey: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Sudo';
-          palletCall: {
-            name: 'RemoveKey';
+            params: { call: AssetHubPolkadotRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes

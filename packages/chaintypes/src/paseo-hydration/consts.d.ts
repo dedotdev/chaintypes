@@ -773,6 +773,11 @@ export interface ChainConsts extends GenericChainConsts {
     burnProtocolFee: Permill;
 
     /**
+     * Destination account when hub asset is sold
+     **/
+    hubDestination: AccountId32;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;

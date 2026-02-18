@@ -40,6 +40,11 @@ import type {
   FrameSupportTokensMiscIdAmount002,
   PalletTransactionPaymentReleases,
   FrameSupportStorageNoDrop,
+  PalletAssetsAssetDetails,
+  StagingXcmV5Location,
+  PalletAssetsAssetAccount,
+  PalletAssetsApproval,
+  PalletAssetsAssetMetadata,
   PalletCollatorSelectionCandidateInfo,
   PeoplePaseoRuntimeSessionKeys,
   SpStakingOffenceOffenceSeverity,
@@ -690,6 +695,126 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<FrameSupportStorageNoDrop | undefined> =} callback
      **/
     txPaymentCredit: GenericStorageQuery<() => FrameSupportStorageNoDrop | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Assets`'s storage queries
+   **/
+  assets: {
+    /**
+     * Details of an asset.
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<PalletAssetsAssetDetails | undefined> =} callback
+     **/
+    asset: GenericStorageQuery<
+      (arg: StagingXcmV5Location) => PalletAssetsAssetDetails | undefined,
+      StagingXcmV5Location
+    >;
+
+    /**
+     * The holdings of a specific account for a specific asset.
+     *
+     * @param {[StagingXcmV5Location, AccountId32Like]} arg
+     * @param {Callback<PalletAssetsAssetAccount | undefined> =} callback
+     **/
+    account: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, AccountId32Like]) => PalletAssetsAssetAccount | undefined,
+      [StagingXcmV5Location, AccountId32]
+    >;
+
+    /**
+     * Approved balance transfers. First balance is the amount approved for transfer. Second
+     * is the amount of `T::Currency` reserved for storing this.
+     * First key is the asset ID, second key is the owner and third key is the delegate.
+     *
+     * @param {[StagingXcmV5Location, AccountId32Like, AccountId32Like]} arg
+     * @param {Callback<PalletAssetsApproval | undefined> =} callback
+     **/
+    approvals: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, AccountId32Like, AccountId32Like]) => PalletAssetsApproval | undefined,
+      [StagingXcmV5Location, AccountId32, AccountId32]
+    >;
+
+    /**
+     * Metadata of an asset.
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<PalletAssetsAssetMetadata> =} callback
+     **/
+    metadata: GenericStorageQuery<(arg: StagingXcmV5Location) => PalletAssetsAssetMetadata, StagingXcmV5Location>;
+
+    /**
+     * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
+     * item has no effect.
+     *
+     * This can be useful for setting up constraints for IDs of the new assets. For example, by
+     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
+     * auto-increment model can be applied to all new asset IDs.
+     *
+     * The initial next asset ID can be set using the [`GenesisConfig`] or the
+     * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
+     *
+     * @param {Callback<StagingXcmV5Location | undefined> =} callback
+     **/
+    nextAssetId: GenericStorageQuery<() => StagingXcmV5Location | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetRate`'s storage queries
+   **/
+  assetRate: {
+    /**
+     * Maps an asset to its fixed point representation in the native balance.
+     *
+     * E.g. `native_amount = asset_amount * ConversionRateToNative::<T>::get(asset_kind)`
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<FixedU128 | undefined> =} callback
+     **/
+    conversionRateToNative: GenericStorageQuery<
+      (arg: StagingXcmV5Location) => FixedU128 | undefined,
+      StagingXcmV5Location
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetsHolder`'s storage queries
+   **/
+  assetsHolder: {
+    /**
+     * A map that stores holds applied on an account for a given AssetId.
+     *
+     * @param {[StagingXcmV5Location, AccountId32Like]} arg
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
+     **/
+    holds: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, AccountId32Like]) => Array<FrameSupportTokensMiscIdAmount>,
+      [StagingXcmV5Location, AccountId32]
+    >;
+
+    /**
+     * A map that stores the current total balance on hold for every account on a given AssetId.
+     *
+     * @param {[StagingXcmV5Location, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    balancesOnHold: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, AccountId32Like]) => bigint | undefined,
+      [StagingXcmV5Location, AccountId32]
+    >;
 
     /**
      * Generic pallet storage query

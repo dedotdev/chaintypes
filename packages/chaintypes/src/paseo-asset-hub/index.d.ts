@@ -4,7 +4,7 @@ import type { GenericSubstrateApi, GenericChainKnownTypes } from 'dedot/types';
 import type { MultiAddress } from 'dedot/codecs';
 import type {
   FrameSystemEventRecord,
-  AssetHubPaseoRuntimeRuntimeCall,
+  AssetHubPolkadotRuntimeRuntimeCall,
   SpRuntimeMultiSignature,
   FrameSystemExtensionsCheckNonZeroSender,
   FrameSystemExtensionsCheckSpecVersion,
@@ -32,7 +32,7 @@ export * from './types.js';
 interface ChainKnownTypes extends GenericChainKnownTypes {
   Address: MultiAddress;
   Signature: SpRuntimeMultiSignature;
-  RuntimeCall: AssetHubPaseoRuntimeRuntimeCall;
+  RuntimeCall: AssetHubPolkadotRuntimeRuntimeCall;
   Extra: [
     FrameSystemExtensionsCheckNonZeroSender,
     FrameSystemExtensionsCheckSpecVersion,
@@ -52,7 +52,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PaseoAssetHubApi
- * @specVersion: 2000005
+ * @specVersion: 2000006
  **/
 export interface PaseoAssetHubApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

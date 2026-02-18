@@ -29,7 +29,7 @@ import type {
   Perquintill,
 } from 'dedot/codecs';
 
-export type AssetHubPaseoRuntimeRuntimeCall =
+export type AssetHubPolkadotRuntimeRuntimeCall =
   | { pallet: 'System'; palletCall: FrameSystemCall }
   | { pallet: 'ParachainSystem'; palletCall: CumulusPalletParachainSystemCall }
   | { pallet: 'Timestamp'; palletCall: PalletTimestampCall }
@@ -37,7 +37,6 @@ export type AssetHubPaseoRuntimeRuntimeCall =
   | { pallet: 'Preimage'; palletCall: PalletPreimageCall }
   | { pallet: 'Scheduler'; palletCall: PalletSchedulerCall }
   | { pallet: 'Parameters'; palletCall: PalletParametersCall }
-  | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCall }
   | { pallet: 'Balances'; palletCall: PalletBalancesCall }
   | { pallet: 'Vesting'; palletCall: PalletVestingCall }
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCall }
@@ -76,11 +75,10 @@ export type AssetHubPaseoRuntimeRuntimeCall =
   | { pallet: 'MultiBlockElectionSigned'; palletCall: PalletElectionProviderMultiBlockSignedPalletCall }
   | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCall }
   | { pallet: 'Revive'; palletCall: PalletReviveCall }
-  | { pallet: 'Sudo'; palletCall: PalletSudoCall }
   | { pallet: 'AhOps'; palletCall: PalletAhOpsCall }
   | { pallet: 'AhMigrator'; palletCall: PalletAhMigratorCall };
 
-export type AssetHubPaseoRuntimeRuntimeCallLike =
+export type AssetHubPolkadotRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
   | { pallet: 'ParachainSystem'; palletCall: CumulusPalletParachainSystemCallLike }
   | { pallet: 'Timestamp'; palletCall: PalletTimestampCallLike }
@@ -88,7 +86,6 @@ export type AssetHubPaseoRuntimeRuntimeCallLike =
   | { pallet: 'Preimage'; palletCall: PalletPreimageCallLike }
   | { pallet: 'Scheduler'; palletCall: PalletSchedulerCallLike }
   | { pallet: 'Parameters'; palletCall: PalletParametersCallLike }
-  | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCallLike }
   | { pallet: 'Balances'; palletCall: PalletBalancesCallLike }
   | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCallLike }
@@ -127,7 +124,6 @@ export type AssetHubPaseoRuntimeRuntimeCallLike =
   | { pallet: 'MultiBlockElectionSigned'; palletCall: PalletElectionProviderMultiBlockSignedPalletCallLike }
   | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCallLike }
   | { pallet: 'Revive'; palletCall: PalletReviveCallLike }
-  | { pallet: 'Sudo'; palletCall: PalletSudoCallLike }
   | { pallet: 'AhOps'; palletCall: PalletAhOpsCallLike }
   | { pallet: 'AhMigrator'; palletCall: PalletAhMigratorCallLike };
 
@@ -175,7 +171,7 @@ export type FrameSystemCall =
    * Make some on-chain remark and emit event.
    **/
   | { name: 'RemarkWithEvent'; params: { remark: Bytes } }
-  | { name: 'DoTask'; params: { task: AssetHubPaseoRuntimeRuntimeTask } }
+  | { name: 'DoTask'; params: { task: AssetHubPolkadotRuntimeRuntimeTask } }
   /**
    * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
    * later.
@@ -248,7 +244,7 @@ export type FrameSystemCallLike =
    * Make some on-chain remark and emit event.
    **/
   | { name: 'RemarkWithEvent'; params: { remark: BytesLike } }
-  | { name: 'DoTask'; params: { task: AssetHubPaseoRuntimeRuntimeTask } }
+  | { name: 'DoTask'; params: { task: AssetHubPolkadotRuntimeRuntimeTask } }
   /**
    * Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied
    * later.
@@ -280,7 +276,7 @@ export type FrameSystemCallLike =
    **/
   | { name: 'ApplyAuthorizedUpgrade'; params: { code: BytesLike } };
 
-export type AssetHubPaseoRuntimeRuntimeTask = null;
+export type AssetHubPolkadotRuntimeRuntimeTask = null;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -516,7 +512,7 @@ export type PalletSchedulerCall =
         when: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPaseoRuntimeRuntimeCall;
+        call: AssetHubPolkadotRuntimeRuntimeCall;
       };
     }
   /**
@@ -533,7 +529,7 @@ export type PalletSchedulerCall =
         when: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPaseoRuntimeRuntimeCall;
+        call: AssetHubPolkadotRuntimeRuntimeCall;
       };
     }
   /**
@@ -549,7 +545,7 @@ export type PalletSchedulerCall =
         after: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPaseoRuntimeRuntimeCall;
+        call: AssetHubPolkadotRuntimeRuntimeCall;
       };
     }
   /**
@@ -562,7 +558,7 @@ export type PalletSchedulerCall =
         after: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPaseoRuntimeRuntimeCall;
+        call: AssetHubPolkadotRuntimeRuntimeCall;
       };
     }
   /**
@@ -614,7 +610,7 @@ export type PalletSchedulerCallLike =
         when: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPaseoRuntimeRuntimeCallLike;
+        call: AssetHubPolkadotRuntimeRuntimeCallLike;
       };
     }
   /**
@@ -631,7 +627,7 @@ export type PalletSchedulerCallLike =
         when: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPaseoRuntimeRuntimeCallLike;
+        call: AssetHubPolkadotRuntimeRuntimeCallLike;
       };
     }
   /**
@@ -647,7 +643,7 @@ export type PalletSchedulerCallLike =
         after: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPaseoRuntimeRuntimeCallLike;
+        call: AssetHubPolkadotRuntimeRuntimeCallLike;
       };
     }
   /**
@@ -660,7 +656,7 @@ export type PalletSchedulerCallLike =
         after: number;
         maybePeriodic?: [number, number] | undefined;
         priority: number;
-        call: AssetHubPaseoRuntimeRuntimeCallLike;
+        call: AssetHubPolkadotRuntimeRuntimeCallLike;
       };
     }
   /**
@@ -712,7 +708,7 @@ export type PalletParametersCall =
    * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
    * deleted by setting them to `None`.
    **/
-  { name: 'SetParameter'; params: { keyValue: AssetHubPaseoRuntimeRuntimeParameters } };
+  { name: 'SetParameter'; params: { keyValue: AssetHubPolkadotRuntimeRuntimeParameters } };
 
 export type PalletParametersCallLike =
   /**
@@ -721,173 +717,86 @@ export type PalletParametersCallLike =
    * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
    * deleted by setting them to `None`.
    **/
-  { name: 'SetParameter'; params: { keyValue: AssetHubPaseoRuntimeRuntimeParameters } };
+  { name: 'SetParameter'; params: { keyValue: AssetHubPolkadotRuntimeRuntimeParameters } };
 
-export type AssetHubPaseoRuntimeRuntimeParameters =
-  | { type: 'StakingElection'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionParameters }
-  | { type: 'Scheduler'; value: AssetHubPaseoRuntimeDynamicParamsSchedulerParameters }
-  | { type: 'MessageQueue'; value: AssetHubPaseoRuntimeDynamicParamsMessageQueueParameters };
+export type AssetHubPolkadotRuntimeRuntimeParameters =
+  | { type: 'StakingElection'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionParameters }
+  | { type: 'Scheduler'; value: AssetHubPolkadotRuntimeDynamicParamsSchedulerParameters }
+  | { type: 'MessageQueue'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueParameters };
 
-export type AssetHubPaseoRuntimeDynamicParamsStakingElectionParameters =
-  | { type: 'SignedPhase'; value: [AssetHubPaseoRuntimeDynamicParamsStakingElectionSignedPhase, number | undefined] }
+export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionParameters =
+  | { type: 'SignedPhase'; value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionSignedPhase, number | undefined] }
   | {
       type: 'MaxSignedSubmissions';
-      value: [AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxSignedSubmissions, number | undefined];
+      value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxSignedSubmissions, number | undefined];
     }
   | {
       type: 'UnsignedPhase';
-      value: [AssetHubPaseoRuntimeDynamicParamsStakingElectionUnsignedPhase, number | undefined];
+      value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionUnsignedPhase, number | undefined];
     }
-  | { type: 'MinerPages'; value: [AssetHubPaseoRuntimeDynamicParamsStakingElectionMinerPages, number | undefined] }
+  | { type: 'MinerPages'; value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionMinerPages, number | undefined] }
   | {
       type: 'MaxElectingVoters';
-      value: [AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxElectingVoters, number | undefined];
+      value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxElectingVoters, number | undefined];
     }
   | {
       type: 'TargetSnapshotPerBlock';
-      value: [AssetHubPaseoRuntimeDynamicParamsStakingElectionTargetSnapshotPerBlock, number | undefined];
+      value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionTargetSnapshotPerBlock, number | undefined];
     }
   | {
       type: 'MaxEraDuration';
-      value: [AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxEraDuration, bigint | undefined];
+      value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxEraDuration, bigint | undefined];
     };
 
-export type AssetHubPaseoRuntimeDynamicParamsStakingElectionSignedPhase = {};
+export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionSignedPhase = {};
 
-export type AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxSignedSubmissions = {};
+export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxSignedSubmissions = {};
 
-export type AssetHubPaseoRuntimeDynamicParamsStakingElectionUnsignedPhase = {};
+export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionUnsignedPhase = {};
 
-export type AssetHubPaseoRuntimeDynamicParamsStakingElectionMinerPages = {};
+export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionMinerPages = {};
 
-export type AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxElectingVoters = {};
+export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxElectingVoters = {};
 
-export type AssetHubPaseoRuntimeDynamicParamsStakingElectionTargetSnapshotPerBlock = {};
+export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionTargetSnapshotPerBlock = {};
 
-export type AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxEraDuration = {};
+export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxEraDuration = {};
 
-export type AssetHubPaseoRuntimeDynamicParamsSchedulerParameters =
+export type AssetHubPolkadotRuntimeDynamicParamsSchedulerParameters =
   | {
       type: 'MaxScheduledPerBlock';
-      value: [AssetHubPaseoRuntimeDynamicParamsSchedulerMaxScheduledPerBlock, number | undefined];
+      value: [AssetHubPolkadotRuntimeDynamicParamsSchedulerMaxScheduledPerBlock, number | undefined];
     }
   | {
       type: 'MaximumWeight';
-      value: [AssetHubPaseoRuntimeDynamicParamsSchedulerMaximumWeight, SpWeightsWeightV2Weight | undefined];
+      value: [AssetHubPolkadotRuntimeDynamicParamsSchedulerMaximumWeight, SpWeightsWeightV2Weight | undefined];
     };
 
-export type AssetHubPaseoRuntimeDynamicParamsSchedulerMaxScheduledPerBlock = {};
+export type AssetHubPolkadotRuntimeDynamicParamsSchedulerMaxScheduledPerBlock = {};
 
-export type AssetHubPaseoRuntimeDynamicParamsSchedulerMaximumWeight = {};
+export type AssetHubPolkadotRuntimeDynamicParamsSchedulerMaximumWeight = {};
 
 export type SpWeightsWeightV2Weight = { refTime: bigint; proofSize: bigint };
 
-export type AssetHubPaseoRuntimeDynamicParamsMessageQueueParameters =
+export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueParameters =
   | {
       type: 'MaxOnInitWeight';
       value: [
-        AssetHubPaseoRuntimeDynamicParamsMessageQueueMaxOnInitWeight,
+        AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnInitWeight,
         SpWeightsWeightV2Weight | undefined | undefined,
       ];
     }
   | {
       type: 'MaxOnIdleWeight';
       value: [
-        AssetHubPaseoRuntimeDynamicParamsMessageQueueMaxOnIdleWeight,
+        AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnIdleWeight,
         SpWeightsWeightV2Weight | undefined | undefined,
       ];
     };
 
-export type AssetHubPaseoRuntimeDynamicParamsMessageQueueMaxOnInitWeight = {};
+export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnInitWeight = {};
 
-export type AssetHubPaseoRuntimeDynamicParamsMessageQueueMaxOnIdleWeight = {};
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletMigrationsCall =
-  /**
-   * Allows root to set a cursor to forcefully start, stop or forward the migration process.
-   *
-   * Should normally not be needed and is only in place as emergency measure. Note that
-   * restarting the migration process in this manner will not call the
-   * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
-   **/
-  | { name: 'ForceSetCursor'; params: { cursor?: PalletMigrationsMigrationCursor | undefined } }
-  /**
-   * Allows root to set an active cursor to forcefully start/forward the migration process.
-   *
-   * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
-   * `started_at` value to the next block number. Otherwise this would not be possible, since
-   * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
-   * indicates that the current block number plus one should be used.
-   **/
-  | {
-      name: 'ForceSetActiveCursor';
-      params: { index: number; innerCursor?: Bytes | undefined; startedAt?: number | undefined };
-    }
-  /**
-   * Forces the onboarding of the migrations.
-   *
-   * This process happens automatically on a runtime upgrade. It is in place as an emergency
-   * measurement. The cursor needs to be `None` for this to succeed.
-   **/
-  | { name: 'ForceOnboardMbms' }
-  /**
-   * Clears the `Historic` set.
-   *
-   * `map_cursor` must be set to the last value that was returned by the
-   * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
-   * way that will result in a sensible weight.
-   **/
-  | { name: 'ClearHistoric'; params: { selector: PalletMigrationsHistoricCleanupSelector } };
-
-export type PalletMigrationsCallLike =
-  /**
-   * Allows root to set a cursor to forcefully start, stop or forward the migration process.
-   *
-   * Should normally not be needed and is only in place as emergency measure. Note that
-   * restarting the migration process in this manner will not call the
-   * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
-   **/
-  | { name: 'ForceSetCursor'; params: { cursor?: PalletMigrationsMigrationCursor | undefined } }
-  /**
-   * Allows root to set an active cursor to forcefully start/forward the migration process.
-   *
-   * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
-   * `started_at` value to the next block number. Otherwise this would not be possible, since
-   * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
-   * indicates that the current block number plus one should be used.
-   **/
-  | {
-      name: 'ForceSetActiveCursor';
-      params: { index: number; innerCursor?: BytesLike | undefined; startedAt?: number | undefined };
-    }
-  /**
-   * Forces the onboarding of the migrations.
-   *
-   * This process happens automatically on a runtime upgrade. It is in place as an emergency
-   * measurement. The cursor needs to be `None` for this to succeed.
-   **/
-  | { name: 'ForceOnboardMbms' }
-  /**
-   * Clears the `Historic` set.
-   *
-   * `map_cursor` must be set to the last value that was returned by the
-   * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
-   * way that will result in a sensible weight.
-   **/
-  | { name: 'ClearHistoric'; params: { selector: PalletMigrationsHistoricCleanupSelector } };
-
-export type PalletMigrationsMigrationCursor =
-  | { type: 'Active'; value: PalletMigrationsActiveCursor }
-  | { type: 'Stuck' };
-
-export type PalletMigrationsActiveCursor = { index: number; innerCursor?: Bytes | undefined; startedAt: number };
-
-export type PalletMigrationsHistoricCleanupSelector =
-  | { type: 'Specific'; value: Array<Bytes> }
-  | { type: 'Wildcard'; value: { limit?: number | undefined; previousCursor?: Bytes | undefined } };
+export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnIdleWeight = {};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -1690,7 +1599,7 @@ export type PalletSessionCall =
    * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
    * fixed.
    **/
-  | { name: 'SetKeys'; params: { keys: AssetHubPaseoRuntimeSessionKeys; proof: Bytes } }
+  | { name: 'SetKeys'; params: { keys: AssetHubPolkadotRuntimeSessionKeys; proof: Bytes } }
   /**
    * Removes any session key(s) of the function caller.
    *
@@ -1719,7 +1628,7 @@ export type PalletSessionCallLike =
    * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
    * fixed.
    **/
-  | { name: 'SetKeys'; params: { keys: AssetHubPaseoRuntimeSessionKeys; proof: BytesLike } }
+  | { name: 'SetKeys'; params: { keys: AssetHubPolkadotRuntimeSessionKeys; proof: BytesLike } }
   /**
    * Removes any session key(s) of the function caller.
    *
@@ -1736,9 +1645,9 @@ export type PalletSessionCallLike =
    **/
   | { name: 'PurgeKeys' };
 
-export type AssetHubPaseoRuntimeSessionKeys = { aura: SpConsensusAuraSr25519AppSr25519Public };
+export type AssetHubPolkadotRuntimeSessionKeys = { aura: SpConsensusAuraEd25519AppEd25519Public };
 
-export type SpConsensusAuraSr25519AppSr25519Public = FixedBytes<32>;
+export type SpConsensusAuraEd25519AppEd25519Public = FixedBytes<32>;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3410,7 +3319,7 @@ export type PalletUtilityCall =
    * and the error of the failed call. If all were successful, then the `BatchCompleted`
    * event is deposited.
    **/
-  | { name: 'Batch'; params: { calls: Array<AssetHubPaseoRuntimeRuntimeCall> } }
+  | { name: 'Batch'; params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCall> } }
   /**
    * Send a call through an indexed pseudonym of the sender.
    *
@@ -3426,7 +3335,7 @@ export type PalletUtilityCall =
    *
    * The dispatch origin for this call must be _Signed_.
    **/
-  | { name: 'AsDerivative'; params: { index: number; call: AssetHubPaseoRuntimeRuntimeCall } }
+  | { name: 'AsDerivative'; params: { index: number; call: AssetHubPolkadotRuntimeRuntimeCall } }
   /**
    * Send a batch of dispatch calls and atomically execute them.
    * The whole transaction will rollback and fail if any of the calls failed.
@@ -3442,7 +3351,7 @@ export type PalletUtilityCall =
    * ## Complexity
    * - O(C) where C is the number of calls to be batched.
    **/
-  | { name: 'BatchAll'; params: { calls: Array<AssetHubPaseoRuntimeRuntimeCall> } }
+  | { name: 'BatchAll'; params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCall> } }
   /**
    * Dispatches a function call with a provided origin.
    *
@@ -3453,7 +3362,7 @@ export type PalletUtilityCall =
    **/
   | {
       name: 'DispatchAs';
-      params: { asOrigin: AssetHubPaseoRuntimeOriginCaller; call: AssetHubPaseoRuntimeRuntimeCall };
+      params: { asOrigin: AssetHubPolkadotRuntimeOriginCaller; call: AssetHubPolkadotRuntimeRuntimeCall };
     }
   /**
    * Send a batch of dispatch calls.
@@ -3470,7 +3379,7 @@ export type PalletUtilityCall =
    * ## Complexity
    * - O(C) where C is the number of calls to be batched.
    **/
-  | { name: 'ForceBatch'; params: { calls: Array<AssetHubPaseoRuntimeRuntimeCall> } }
+  | { name: 'ForceBatch'; params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCall> } }
   /**
    * Dispatch a function call with a specified weight.
    *
@@ -3479,136 +3388,7 @@ export type PalletUtilityCall =
    *
    * The dispatch origin for this call must be _Root_.
    **/
-  | { name: 'WithWeight'; params: { call: AssetHubPaseoRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } }
-  /**
-   * Dispatch a fallback call in the event the main call fails to execute.
-   * May be called from any origin except `None`.
-   *
-   * This function first attempts to dispatch the `main` call.
-   * If the `main` call fails, the `fallback` is attemted.
-   * if the fallback is successfully dispatched, the weights of both calls
-   * are accumulated and an event containing the main call error is deposited.
-   *
-   * In the event of a fallback failure the whole call fails
-   * with the weights returned.
-   *
-   * - `main`: The main call to be dispatched. This is the primary action to execute.
-   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
-   *
-   * ## Dispatch Logic
-   * - If the origin is `root`, both the main and fallback calls are executed without
-   * applying any origin filters.
-   * - If the origin is not `root`, the origin filter is applied to both the `main` and
-   * `fallback` calls.
-   *
-   * ## Use Case
-   * - Some use cases might involve submitting a `batch` type call in either main, fallback
-   * or both.
-   **/
-  | { name: 'IfElse'; params: { main: AssetHubPaseoRuntimeRuntimeCall; fallback: AssetHubPaseoRuntimeRuntimeCall } }
-  /**
-   * Dispatches a function call with a provided origin.
-   *
-   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
-   *
-   * The dispatch origin for this call must be _Root_.
-   **/
-  | {
-      name: 'DispatchAsFallible';
-      params: { asOrigin: AssetHubPaseoRuntimeOriginCaller; call: AssetHubPaseoRuntimeRuntimeCall };
-    };
-
-export type PalletUtilityCallLike =
-  /**
-   * Send a batch of dispatch calls.
-   *
-   * May be called from any origin except `None`.
-   *
-   * - `calls`: The calls to be dispatched from the same origin. The number of call must not
-   * exceed the constant: `batched_calls_limit` (available in constant metadata).
-   *
-   * If origin is root then the calls are dispatched without checking origin filter. (This
-   * includes bypassing `frame_system::Config::BaseCallFilter`).
-   *
-   * ## Complexity
-   * - O(C) where C is the number of calls to be batched.
-   *
-   * This will return `Ok` in all circumstances. To determine the success of the batch, an
-   * event is deposited. If a call failed and the batch was interrupted, then the
-   * `BatchInterrupted` event is deposited, along with the number of successful calls made
-   * and the error of the failed call. If all were successful, then the `BatchCompleted`
-   * event is deposited.
-   **/
-  | { name: 'Batch'; params: { calls: Array<AssetHubPaseoRuntimeRuntimeCallLike> } }
-  /**
-   * Send a call through an indexed pseudonym of the sender.
-   *
-   * Filter from origin are passed along. The call will be dispatched with an origin which
-   * use the same filter as the origin of this call.
-   *
-   * NOTE: If you need to ensure that any account-based filtering is not honored (i.e.
-   * because you expect `proxy` to have been used prior in the call stack and you do not want
-   * the call restrictions to apply to any sub-accounts), then use `as_multi_threshold_1`
-   * in the Multisig pallet instead.
-   *
-   * NOTE: Prior to version *12, this was called `as_limited_sub`.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   **/
-  | { name: 'AsDerivative'; params: { index: number; call: AssetHubPaseoRuntimeRuntimeCallLike } }
-  /**
-   * Send a batch of dispatch calls and atomically execute them.
-   * The whole transaction will rollback and fail if any of the calls failed.
-   *
-   * May be called from any origin except `None`.
-   *
-   * - `calls`: The calls to be dispatched from the same origin. The number of call must not
-   * exceed the constant: `batched_calls_limit` (available in constant metadata).
-   *
-   * If origin is root then the calls are dispatched without checking origin filter. (This
-   * includes bypassing `frame_system::Config::BaseCallFilter`).
-   *
-   * ## Complexity
-   * - O(C) where C is the number of calls to be batched.
-   **/
-  | { name: 'BatchAll'; params: { calls: Array<AssetHubPaseoRuntimeRuntimeCallLike> } }
-  /**
-   * Dispatches a function call with a provided origin.
-   *
-   * The dispatch origin for this call must be _Root_.
-   *
-   * ## Complexity
-   * - O(1).
-   **/
-  | {
-      name: 'DispatchAs';
-      params: { asOrigin: AssetHubPaseoRuntimeOriginCaller; call: AssetHubPaseoRuntimeRuntimeCallLike };
-    }
-  /**
-   * Send a batch of dispatch calls.
-   * Unlike `batch`, it allows errors and won't interrupt.
-   *
-   * May be called from any origin except `None`.
-   *
-   * - `calls`: The calls to be dispatched from the same origin. The number of call must not
-   * exceed the constant: `batched_calls_limit` (available in constant metadata).
-   *
-   * If origin is root then the calls are dispatch without checking origin filter. (This
-   * includes bypassing `frame_system::Config::BaseCallFilter`).
-   *
-   * ## Complexity
-   * - O(C) where C is the number of calls to be batched.
-   **/
-  | { name: 'ForceBatch'; params: { calls: Array<AssetHubPaseoRuntimeRuntimeCallLike> } }
-  /**
-   * Dispatch a function call with a specified weight.
-   *
-   * This function does not check the weight of the call, and instead allows the
-   * Root origin to specify the weight of the call.
-   *
-   * The dispatch origin for this call must be _Root_.
-   **/
-  | { name: 'WithWeight'; params: { call: AssetHubPaseoRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } }
+  | { name: 'WithWeight'; params: { call: AssetHubPolkadotRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } }
   /**
    * Dispatch a fallback call in the event the main call fails to execute.
    * May be called from any origin except `None`.
@@ -3636,7 +3416,7 @@ export type PalletUtilityCallLike =
    **/
   | {
       name: 'IfElse';
-      params: { main: AssetHubPaseoRuntimeRuntimeCallLike; fallback: AssetHubPaseoRuntimeRuntimeCallLike };
+      params: { main: AssetHubPolkadotRuntimeRuntimeCall; fallback: AssetHubPolkadotRuntimeRuntimeCall };
     }
   /**
    * Dispatches a function call with a provided origin.
@@ -3647,14 +3427,146 @@ export type PalletUtilityCallLike =
    **/
   | {
       name: 'DispatchAsFallible';
-      params: { asOrigin: AssetHubPaseoRuntimeOriginCaller; call: AssetHubPaseoRuntimeRuntimeCallLike };
+      params: { asOrigin: AssetHubPolkadotRuntimeOriginCaller; call: AssetHubPolkadotRuntimeRuntimeCall };
     };
 
-export type AssetHubPaseoRuntimeOriginCaller =
+export type PalletUtilityCallLike =
+  /**
+   * Send a batch of dispatch calls.
+   *
+   * May be called from any origin except `None`.
+   *
+   * - `calls`: The calls to be dispatched from the same origin. The number of call must not
+   * exceed the constant: `batched_calls_limit` (available in constant metadata).
+   *
+   * If origin is root then the calls are dispatched without checking origin filter. (This
+   * includes bypassing `frame_system::Config::BaseCallFilter`).
+   *
+   * ## Complexity
+   * - O(C) where C is the number of calls to be batched.
+   *
+   * This will return `Ok` in all circumstances. To determine the success of the batch, an
+   * event is deposited. If a call failed and the batch was interrupted, then the
+   * `BatchInterrupted` event is deposited, along with the number of successful calls made
+   * and the error of the failed call. If all were successful, then the `BatchCompleted`
+   * event is deposited.
+   **/
+  | { name: 'Batch'; params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike> } }
+  /**
+   * Send a call through an indexed pseudonym of the sender.
+   *
+   * Filter from origin are passed along. The call will be dispatched with an origin which
+   * use the same filter as the origin of this call.
+   *
+   * NOTE: If you need to ensure that any account-based filtering is not honored (i.e.
+   * because you expect `proxy` to have been used prior in the call stack and you do not want
+   * the call restrictions to apply to any sub-accounts), then use `as_multi_threshold_1`
+   * in the Multisig pallet instead.
+   *
+   * NOTE: Prior to version *12, this was called `as_limited_sub`.
+   *
+   * The dispatch origin for this call must be _Signed_.
+   **/
+  | { name: 'AsDerivative'; params: { index: number; call: AssetHubPolkadotRuntimeRuntimeCallLike } }
+  /**
+   * Send a batch of dispatch calls and atomically execute them.
+   * The whole transaction will rollback and fail if any of the calls failed.
+   *
+   * May be called from any origin except `None`.
+   *
+   * - `calls`: The calls to be dispatched from the same origin. The number of call must not
+   * exceed the constant: `batched_calls_limit` (available in constant metadata).
+   *
+   * If origin is root then the calls are dispatched without checking origin filter. (This
+   * includes bypassing `frame_system::Config::BaseCallFilter`).
+   *
+   * ## Complexity
+   * - O(C) where C is the number of calls to be batched.
+   **/
+  | { name: 'BatchAll'; params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike> } }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * The dispatch origin for this call must be _Root_.
+   *
+   * ## Complexity
+   * - O(1).
+   **/
+  | {
+      name: 'DispatchAs';
+      params: { asOrigin: AssetHubPolkadotRuntimeOriginCaller; call: AssetHubPolkadotRuntimeRuntimeCallLike };
+    }
+  /**
+   * Send a batch of dispatch calls.
+   * Unlike `batch`, it allows errors and won't interrupt.
+   *
+   * May be called from any origin except `None`.
+   *
+   * - `calls`: The calls to be dispatched from the same origin. The number of call must not
+   * exceed the constant: `batched_calls_limit` (available in constant metadata).
+   *
+   * If origin is root then the calls are dispatch without checking origin filter. (This
+   * includes bypassing `frame_system::Config::BaseCallFilter`).
+   *
+   * ## Complexity
+   * - O(C) where C is the number of calls to be batched.
+   **/
+  | { name: 'ForceBatch'; params: { calls: Array<AssetHubPolkadotRuntimeRuntimeCallLike> } }
+  /**
+   * Dispatch a function call with a specified weight.
+   *
+   * This function does not check the weight of the call, and instead allows the
+   * Root origin to specify the weight of the call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | { name: 'WithWeight'; params: { call: AssetHubPolkadotRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight } }
+  /**
+   * Dispatch a fallback call in the event the main call fails to execute.
+   * May be called from any origin except `None`.
+   *
+   * This function first attempts to dispatch the `main` call.
+   * If the `main` call fails, the `fallback` is attemted.
+   * if the fallback is successfully dispatched, the weights of both calls
+   * are accumulated and an event containing the main call error is deposited.
+   *
+   * In the event of a fallback failure the whole call fails
+   * with the weights returned.
+   *
+   * - `main`: The main call to be dispatched. This is the primary action to execute.
+   * - `fallback`: The fallback call to be dispatched in case the `main` call fails.
+   *
+   * ## Dispatch Logic
+   * - If the origin is `root`, both the main and fallback calls are executed without
+   * applying any origin filters.
+   * - If the origin is not `root`, the origin filter is applied to both the `main` and
+   * `fallback` calls.
+   *
+   * ## Use Case
+   * - Some use cases might involve submitting a `batch` type call in either main, fallback
+   * or both.
+   **/
+  | {
+      name: 'IfElse';
+      params: { main: AssetHubPolkadotRuntimeRuntimeCallLike; fallback: AssetHubPolkadotRuntimeRuntimeCallLike };
+    }
+  /**
+   * Dispatches a function call with a provided origin.
+   *
+   * Almost the same as [`Pallet::dispatch_as`] but forwards any error of the inner call.
+   *
+   * The dispatch origin for this call must be _Root_.
+   **/
+  | {
+      name: 'DispatchAsFallible';
+      params: { asOrigin: AssetHubPolkadotRuntimeOriginCaller; call: AssetHubPolkadotRuntimeRuntimeCallLike };
+    };
+
+export type AssetHubPolkadotRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
   | { type: 'PolkadotXcm'; value: PalletXcmOrigin }
   | { type: 'CumulusXcm'; value: CumulusPalletXcmOrigin }
-  | { type: 'Origins'; value: AssetHubPaseoRuntimeGovernanceOriginsPalletCustomOriginsOrigin }
+  | { type: 'Origins'; value: AssetHubPolkadotRuntimeGovernanceOriginsPalletCustomOriginsOrigin }
   | { type: 'Revive'; value: PalletReviveOrigin };
 
 export type FrameSupportDispatchRawOrigin =
@@ -3671,7 +3583,7 @@ export type CumulusPalletXcmOrigin =
   | { type: 'Relay' }
   | { type: 'SiblingParachain'; value: PolkadotParachainPrimitivesPrimitivesId };
 
-export type AssetHubPaseoRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
+export type AssetHubPolkadotRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
   | 'StakingAdmin'
   | 'Treasurer'
   | 'FellowshipAdmin'
@@ -3690,7 +3602,7 @@ export type AssetHubPaseoRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
 
 export type PalletReviveOrigin = { type: 'EthTransaction'; value: AccountId32 };
 
-export type AssetHubPaseoRuntimeRuntime = {};
+export type AssetHubPolkadotRuntimeRuntime = {};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3712,7 +3624,7 @@ export type PalletMultisigCall =
    **/
   | {
       name: 'AsMultiThreshold1';
-      params: { otherSignatories: Array<AccountId32>; call: AssetHubPaseoRuntimeRuntimeCall };
+      params: { otherSignatories: Array<AccountId32>; call: AssetHubPolkadotRuntimeRuntimeCall };
     }
   /**
    * Register approval for a dispatch to be made from a deterministic composite account if
@@ -3761,7 +3673,7 @@ export type PalletMultisigCall =
         threshold: number;
         otherSignatories: Array<AccountId32>;
         maybeTimepoint?: PalletMultisigTimepoint | undefined;
-        call: AssetHubPaseoRuntimeRuntimeCall;
+        call: AssetHubPolkadotRuntimeRuntimeCall;
         maxWeight: SpWeightsWeightV2Weight;
       };
     }
@@ -3876,7 +3788,7 @@ export type PalletMultisigCallLike =
    **/
   | {
       name: 'AsMultiThreshold1';
-      params: { otherSignatories: Array<AccountId32Like>; call: AssetHubPaseoRuntimeRuntimeCallLike };
+      params: { otherSignatories: Array<AccountId32Like>; call: AssetHubPolkadotRuntimeRuntimeCallLike };
     }
   /**
    * Register approval for a dispatch to be made from a deterministic composite account if
@@ -3925,7 +3837,7 @@ export type PalletMultisigCallLike =
         threshold: number;
         otherSignatories: Array<AccountId32Like>;
         maybeTimepoint?: PalletMultisigTimepoint | undefined;
-        call: AssetHubPaseoRuntimeRuntimeCallLike;
+        call: AssetHubPolkadotRuntimeRuntimeCallLike;
         maxWeight: SpWeightsWeightV2Weight;
       };
     }
@@ -4044,8 +3956,8 @@ export type PalletProxyCall =
       name: 'Proxy';
       params: {
         real: MultiAddress;
-        forceProxyType?: AssetHubPaseoRuntimeProxyType | undefined;
-        call: AssetHubPaseoRuntimeRuntimeCall;
+        forceProxyType?: AssetHubPolkadotRuntimeProxyType | undefined;
+        call: AssetHubPolkadotRuntimeRuntimeCall;
       };
     }
   /**
@@ -4059,7 +3971,7 @@ export type PalletProxyCall =
    * - `delay`: The announcement period required of the initial proxy. Will generally be
    * zero.
    **/
-  | { name: 'AddProxy'; params: { delegate: MultiAddress; proxyType: AssetHubPaseoRuntimeProxyType; delay: number } }
+  | { name: 'AddProxy'; params: { delegate: MultiAddress; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number } }
   /**
    * Unregister a proxy account for the sender.
    *
@@ -4069,7 +3981,10 @@ export type PalletProxyCall =
    * - `proxy`: The account that the `caller` would like to remove as a proxy.
    * - `proxy_type`: The permissions currently enabled for the removed proxy account.
    **/
-  | { name: 'RemoveProxy'; params: { delegate: MultiAddress; proxyType: AssetHubPaseoRuntimeProxyType; delay: number } }
+  | {
+      name: 'RemoveProxy';
+      params: { delegate: MultiAddress; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number };
+    }
   /**
    * Unregister all proxy accounts for the sender.
    *
@@ -4099,7 +4014,7 @@ export type PalletProxyCall =
    *
    * Fails if there are insufficient funds to pay for deposit.
    **/
-  | { name: 'CreatePure'; params: { proxyType: AssetHubPaseoRuntimeProxyType; delay: number; index: number } }
+  | { name: 'CreatePure'; params: { proxyType: AssetHubPolkadotRuntimeProxyType; delay: number; index: number } }
   /**
    * Removes a previously spawned pure proxy.
    *
@@ -4122,7 +4037,7 @@ export type PalletProxyCall =
       name: 'KillPure';
       params: {
         spawner: MultiAddress;
-        proxyType: AssetHubPaseoRuntimeProxyType;
+        proxyType: AssetHubPolkadotRuntimeProxyType;
         index: number;
         height: number;
         extIndex: number;
@@ -4190,8 +4105,8 @@ export type PalletProxyCall =
       params: {
         delegate: MultiAddress;
         real: MultiAddress;
-        forceProxyType?: AssetHubPaseoRuntimeProxyType | undefined;
-        call: AssetHubPaseoRuntimeRuntimeCall;
+        forceProxyType?: AssetHubPolkadotRuntimeProxyType | undefined;
+        call: AssetHubPolkadotRuntimeRuntimeCall;
       };
     }
   /**
@@ -4222,8 +4137,8 @@ export type PalletProxyCallLike =
       name: 'Proxy';
       params: {
         real: MultiAddressLike;
-        forceProxyType?: AssetHubPaseoRuntimeProxyType | undefined;
-        call: AssetHubPaseoRuntimeRuntimeCallLike;
+        forceProxyType?: AssetHubPolkadotRuntimeProxyType | undefined;
+        call: AssetHubPolkadotRuntimeRuntimeCallLike;
       };
     }
   /**
@@ -4239,7 +4154,7 @@ export type PalletProxyCallLike =
    **/
   | {
       name: 'AddProxy';
-      params: { delegate: MultiAddressLike; proxyType: AssetHubPaseoRuntimeProxyType; delay: number };
+      params: { delegate: MultiAddressLike; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number };
     }
   /**
    * Unregister a proxy account for the sender.
@@ -4252,7 +4167,7 @@ export type PalletProxyCallLike =
    **/
   | {
       name: 'RemoveProxy';
-      params: { delegate: MultiAddressLike; proxyType: AssetHubPaseoRuntimeProxyType; delay: number };
+      params: { delegate: MultiAddressLike; proxyType: AssetHubPolkadotRuntimeProxyType; delay: number };
     }
   /**
    * Unregister all proxy accounts for the sender.
@@ -4283,7 +4198,7 @@ export type PalletProxyCallLike =
    *
    * Fails if there are insufficient funds to pay for deposit.
    **/
-  | { name: 'CreatePure'; params: { proxyType: AssetHubPaseoRuntimeProxyType; delay: number; index: number } }
+  | { name: 'CreatePure'; params: { proxyType: AssetHubPolkadotRuntimeProxyType; delay: number; index: number } }
   /**
    * Removes a previously spawned pure proxy.
    *
@@ -4306,7 +4221,7 @@ export type PalletProxyCallLike =
       name: 'KillPure';
       params: {
         spawner: MultiAddressLike;
-        proxyType: AssetHubPaseoRuntimeProxyType;
+        proxyType: AssetHubPolkadotRuntimeProxyType;
         index: number;
         height: number;
         extIndex: number;
@@ -4374,8 +4289,8 @@ export type PalletProxyCallLike =
       params: {
         delegate: MultiAddressLike;
         real: MultiAddressLike;
-        forceProxyType?: AssetHubPaseoRuntimeProxyType | undefined;
-        call: AssetHubPaseoRuntimeRuntimeCallLike;
+        forceProxyType?: AssetHubPolkadotRuntimeProxyType | undefined;
+        call: AssetHubPolkadotRuntimeRuntimeCallLike;
       };
     }
   /**
@@ -4390,7 +4305,7 @@ export type PalletProxyCallLike =
    **/
   | { name: 'PokeDeposit' };
 
-export type AssetHubPaseoRuntimeProxyType =
+export type AssetHubPolkadotRuntimeProxyType =
   | 'Any'
   | 'NonTransfer'
   | 'CancelProxy'
@@ -11245,7 +11160,7 @@ export type PalletReferendaCall =
   | {
       name: 'Submit';
       params: {
-        proposalOrigin: AssetHubPaseoRuntimeOriginCaller;
+        proposalOrigin: AssetHubPolkadotRuntimeOriginCaller;
         proposal: FrameSupportPreimagesBounded;
         enactmentMoment: FrameSupportScheduleDispatchTime;
       };
@@ -11344,7 +11259,7 @@ export type PalletReferendaCallLike =
   | {
       name: 'Submit';
       params: {
-        proposalOrigin: AssetHubPaseoRuntimeOriginCaller;
+        proposalOrigin: AssetHubPolkadotRuntimeOriginCaller;
         proposal: FrameSupportPreimagesBounded;
         enactmentMoment: FrameSupportScheduleDispatchTime;
       };
@@ -11447,7 +11362,7 @@ export type PalletWhitelistCall =
       name: 'DispatchWhitelistedCall';
       params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
-  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubPaseoRuntimeRuntimeCall } };
+  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubPolkadotRuntimeRuntimeCall } };
 
 export type PalletWhitelistCallLike =
   | { name: 'WhitelistCall'; params: { callHash: H256 } }
@@ -11456,7 +11371,7 @@ export type PalletWhitelistCallLike =
       name: 'DispatchWhitelistedCall';
       params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
-  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubPaseoRuntimeRuntimeCallLike } };
+  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubPolkadotRuntimeRuntimeCallLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -13198,28 +13113,28 @@ export type PalletElectionProviderMultiBlockCall =
   /**
    * Manage this pallet.
    *
-   * The origin of this call must be [`Config::AdminOrigin`].
+   * The origin of this call must be [`Config::ManagerOrigin`].
    *
-   * See [`AdminOperation`] for various operations that are possible.
+   * See [`ManagerOperation`] for various operations that are possible.
    **/
-  { name: 'Manage'; params: { op: PalletElectionProviderMultiBlockAdminOperation } };
+  | { name: 'Manage'; params: { op: PalletElectionProviderMultiBlockManagerOperation } }
+  | { name: 'Admin'; params: { op: PalletElectionProviderMultiBlockAdminOperation } };
 
 export type PalletElectionProviderMultiBlockCallLike =
   /**
    * Manage this pallet.
    *
-   * The origin of this call must be [`Config::AdminOrigin`].
+   * The origin of this call must be [`Config::ManagerOrigin`].
    *
-   * See [`AdminOperation`] for various operations that are possible.
+   * See [`ManagerOperation`] for various operations that are possible.
    **/
-  { name: 'Manage'; params: { op: PalletElectionProviderMultiBlockAdminOperation } };
+  | { name: 'Manage'; params: { op: PalletElectionProviderMultiBlockManagerOperation } }
+  | { name: 'Admin'; params: { op: PalletElectionProviderMultiBlockAdminOperation } };
 
-export type PalletElectionProviderMultiBlockAdminOperation =
+export type PalletElectionProviderMultiBlockManagerOperation =
   | { type: 'ForceRotateRound' }
   | { type: 'ForceSetPhase'; value: PalletElectionProviderMultiBlockPhase }
-  | { type: 'EmergencySetSolution'; value: [FrameElectionProviderSupportBoundedSupports, SpNposElectionsElectionScore] }
-  | { type: 'EmergencyFallback' }
-  | { type: 'SetMinUntrustedScore'; value: SpNposElectionsElectionScore };
+  | { type: 'EmergencyFallback' };
 
 export type PalletElectionProviderMultiBlockPhase =
   | { type: 'Off' }
@@ -13230,6 +13145,10 @@ export type PalletElectionProviderMultiBlockPhase =
   | { type: 'Done' }
   | { type: 'Export'; value: number }
   | { type: 'Emergency' };
+
+export type PalletElectionProviderMultiBlockAdminOperation =
+  | { type: 'EmergencySetSolution'; value: [FrameElectionProviderSupportBoundedSupports, SpNposElectionsElectionScore] }
+  | { type: 'SetMinUntrustedScore'; value: SpNposElectionsElectionScore };
 
 export type FrameElectionProviderSupportBoundedSupports = Array<
   [AccountId32, FrameElectionProviderSupportBoundedSupport]
@@ -13290,12 +13209,12 @@ export type PalletElectionProviderMultiBlockUnsignedPalletCallLike =
   { name: 'SubmitUnsigned'; params: { pagedSolution: PalletElectionProviderMultiBlockPagedRawSolution } };
 
 export type PalletElectionProviderMultiBlockPagedRawSolution = {
-  solutionPages: Array<AssetHubPaseoRuntimeStakingNposCompactSolution16>;
+  solutionPages: Array<AssetHubPolkadotRuntimeStakingNposCompactSolution16>;
   score: SpNposElectionsElectionScore;
   round: number;
 };
 
-export type AssetHubPaseoRuntimeStakingNposCompactSolution16 = {
+export type AssetHubPolkadotRuntimeStakingNposCompactSolution16 = {
   votes1: Array<[number, number]>;
   votes2: Array<[number, [number, PerU16], number]>;
   votes3: Array<[number, FixedArray<[number, PerU16], 2>, number]>;
@@ -13334,7 +13253,7 @@ export type PalletElectionProviderMultiBlockSignedPalletCall =
    **/
   | {
       name: 'SubmitPage';
-      params: { page: number; maybeSolution?: AssetHubPaseoRuntimeStakingNposCompactSolution16 | undefined };
+      params: { page: number; maybeSolution?: AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined };
     }
   /**
    * Retract a submission.
@@ -13377,7 +13296,7 @@ export type PalletElectionProviderMultiBlockSignedPalletCallLike =
    **/
   | {
       name: 'SubmitPage';
-      params: { page: number; maybeSolution?: AssetHubPaseoRuntimeStakingNposCompactSolution16 | undefined };
+      params: { page: number; maybeSolution?: AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined };
     }
   /**
    * Retract a submission.
@@ -14540,7 +14459,7 @@ export type PalletReviveCall =
    * * `call`: The Substrate runtime call to execute.
    * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
    **/
-  | { name: 'EthSubstrateCall'; params: { call: AssetHubPaseoRuntimeRuntimeCall; transactionEncoded: Bytes } }
+  | { name: 'EthSubstrateCall'; params: { call: AssetHubPolkadotRuntimeRuntimeCall; transactionEncoded: Bytes } }
   /**
    * Upload new `code` without instantiating a contract from it.
    *
@@ -14599,7 +14518,7 @@ export type PalletReviveCall =
    * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
    * recovery function in case an `AccountId20` was used without creating a mapping first.
    **/
-  | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubPaseoRuntimeRuntimeCall } };
+  | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubPolkadotRuntimeRuntimeCall } };
 
 export type PalletReviveCallLike =
   /**
@@ -14782,7 +14701,10 @@ export type PalletReviveCallLike =
    * * `call`: The Substrate runtime call to execute.
    * * `transaction_encoded`: The RLP encoding of the Ethereum transaction,
    **/
-  | { name: 'EthSubstrateCall'; params: { call: AssetHubPaseoRuntimeRuntimeCallLike; transactionEncoded: BytesLike } }
+  | {
+      name: 'EthSubstrateCall';
+      params: { call: AssetHubPolkadotRuntimeRuntimeCallLike; transactionEncoded: BytesLike };
+    }
   /**
    * Upload new `code` without instantiating a contract from it.
    *
@@ -14841,77 +14763,7 @@ export type PalletReviveCallLike =
    * is the `AccountId20` with the last 12 bytes set to `0xEE`. This is essentially a
    * recovery function in case an `AccountId20` was used without creating a mapping first.
    **/
-  | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubPaseoRuntimeRuntimeCallLike } };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletSudoCall =
-  /**
-   * Authenticates the sudo key and dispatches a function call with `Root` origin.
-   **/
-  | { name: 'Sudo'; params: { call: AssetHubPaseoRuntimeRuntimeCall } }
-  /**
-   * Authenticates the sudo key and dispatches a function call with `Root` origin.
-   * This function does not check the weight of the call, and instead allows the
-   * Sudo user to specify the weight of the call.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   **/
-  | { name: 'SudoUncheckedWeight'; params: { call: AssetHubPaseoRuntimeRuntimeCall; weight: SpWeightsWeightV2Weight } }
-  /**
-   * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
-   * key.
-   **/
-  | { name: 'SetKey'; params: { new: MultiAddress } }
-  /**
-   * Authenticates the sudo key and dispatches a function call with `Signed` origin from
-   * a given account.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   **/
-  | { name: 'SudoAs'; params: { who: MultiAddress; call: AssetHubPaseoRuntimeRuntimeCall } }
-  /**
-   * Permanently removes the sudo key.
-   *
-   * **This cannot be un-done.**
-   **/
-  | { name: 'RemoveKey' };
-
-export type PalletSudoCallLike =
-  /**
-   * Authenticates the sudo key and dispatches a function call with `Root` origin.
-   **/
-  | { name: 'Sudo'; params: { call: AssetHubPaseoRuntimeRuntimeCallLike } }
-  /**
-   * Authenticates the sudo key and dispatches a function call with `Root` origin.
-   * This function does not check the weight of the call, and instead allows the
-   * Sudo user to specify the weight of the call.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   **/
-  | {
-      name: 'SudoUncheckedWeight';
-      params: { call: AssetHubPaseoRuntimeRuntimeCallLike; weight: SpWeightsWeightV2Weight };
-    }
-  /**
-   * Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo
-   * key.
-   **/
-  | { name: 'SetKey'; params: { new: MultiAddressLike } }
-  /**
-   * Authenticates the sudo key and dispatches a function call with `Signed` origin from
-   * a given account.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   **/
-  | { name: 'SudoAs'; params: { who: MultiAddressLike; call: AssetHubPaseoRuntimeRuntimeCallLike } }
-  /**
-   * Permanently removes the sudo key.
-   *
-   * **This cannot be un-done.**
-   **/
-  | { name: 'RemoveKey' };
+  | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubPolkadotRuntimeRuntimeCallLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -15377,7 +15229,7 @@ export type PalletRcMigratorProxyRcProxy = {
   proxies: Array<PalletProxyProxyDefinition>;
 };
 
-export type PaseoRuntimeConstantsProxyProxyType =
+export type PolkadotRuntimeConstantsProxyProxyType =
   | 'Any'
   | 'NonTransfer'
   | 'Governance'
@@ -15389,7 +15241,7 @@ export type PaseoRuntimeConstantsProxyProxyType =
 
 export type PalletProxyProxyDefinition = {
   delegate: AccountId32;
-  proxyType: PaseoRuntimeConstantsProxyProxyType;
+  proxyType: PolkadotRuntimeConstantsProxyProxyType;
   delay: number;
 };
 
@@ -15502,15 +15354,15 @@ export type PalletReferendaReferendumInfo =
   | { type: 'TimedOut'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
   | { type: 'Killed'; value: number };
 
-export type AssetHubPaseoRuntimeAhMigrationRcPalletsOrigin =
+export type AssetHubPolkadotRuntimeAhMigrationRcPalletsOrigin =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
-  | { type: 'Origins'; value: AssetHubPaseoRuntimeGovernanceOriginsPalletCustomOriginsOrigin };
+  | { type: 'Origins'; value: AssetHubPolkadotRuntimeGovernanceOriginsPalletCustomOriginsOrigin };
 
 export type PalletConvictionVotingTally = { ayes: bigint; nays: bigint; support: bigint };
 
 export type PalletReferendaReferendumStatus = {
   track: number;
-  origin: AssetHubPaseoRuntimeAhMigrationRcPalletsOrigin;
+  origin: AssetHubPolkadotRuntimeAhMigrationRcPalletsOrigin;
   proposal: FrameSupportPreimagesBounded;
   enactment: FrameSupportScheduleDispatchTime;
   submitted: number;
@@ -15680,7 +15532,7 @@ export type PalletRcMigratorSchedulerAliasScheduled = {
   priority: number;
   call: FrameSupportPreimagesBounded;
   maybePeriodic?: [number, number] | undefined;
-  origin: AssetHubPaseoRuntimeAhMigrationRcPalletsOrigin;
+  origin: AssetHubPolkadotRuntimeAhMigrationRcPalletsOrigin;
 };
 
 export type PalletRcMigratorStakingDelegatedStakingPortableDelegatedStakingMessage =
@@ -15901,15 +15753,14 @@ export type FrameSupportDispatchPerDispatchClass = {
   mandatory: SpWeightsWeightV2Weight;
 };
 
-export type FrameSystemEventRecord = { phase: Phase; event: AssetHubPaseoRuntimeRuntimeEvent; topics: Array<H256> };
+export type FrameSystemEventRecord = { phase: Phase; event: AssetHubPolkadotRuntimeRuntimeEvent; topics: Array<H256> };
 
-export type AssetHubPaseoRuntimeRuntimeEvent =
+export type AssetHubPolkadotRuntimeRuntimeEvent =
   | { pallet: 'System'; palletEvent: FrameSystemEvent }
   | { pallet: 'ParachainSystem'; palletEvent: CumulusPalletParachainSystemEvent }
   | { pallet: 'Preimage'; palletEvent: PalletPreimageEvent }
   | { pallet: 'Scheduler'; palletEvent: PalletSchedulerEvent }
   | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
-  | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent }
   | { pallet: 'Balances'; palletEvent: PalletBalancesEvent }
   | { pallet: 'TransactionPayment'; palletEvent: PalletTransactionPaymentEvent }
   | { pallet: 'AssetTxPayment'; palletEvent: PalletAssetConversionTxPaymentEvent }
@@ -15950,7 +15801,6 @@ export type AssetHubPaseoRuntimeRuntimeEvent =
   | { pallet: 'MultiBlockElectionSigned'; palletEvent: PalletElectionProviderMultiBlockSignedPalletEvent }
   | { pallet: 'Staking'; palletEvent: PalletStakingAsyncPalletEvent }
   | { pallet: 'Revive'; palletEvent: PalletReviveEvent }
-  | { pallet: 'Sudo'; palletEvent: PalletSudoEvent }
   | { pallet: 'AhOps'; palletEvent: PalletAhOpsEvent }
   | { pallet: 'AhMigrator'; palletEvent: PalletAhMigratorEvent };
 
@@ -15985,15 +15835,15 @@ export type FrameSystemEvent =
   /**
    * A [`Task`] has started executing
    **/
-  | { name: 'TaskStarted'; data: { task: AssetHubPaseoRuntimeRuntimeTask } }
+  | { name: 'TaskStarted'; data: { task: AssetHubPolkadotRuntimeRuntimeTask } }
   /**
    * A [`Task`] has finished executing.
    **/
-  | { name: 'TaskCompleted'; data: { task: AssetHubPaseoRuntimeRuntimeTask } }
+  | { name: 'TaskCompleted'; data: { task: AssetHubPolkadotRuntimeRuntimeTask } }
   /**
    * A [`Task`] failed during execution.
    **/
-  | { name: 'TaskFailed'; data: { task: AssetHubPaseoRuntimeRuntimeTask; err: DispatchError } }
+  | { name: 'TaskFailed'; data: { task: AssetHubPolkadotRuntimeRuntimeTask; err: DispatchError } }
   /**
    * An upgrade was authorized.
    **/
@@ -16142,48 +15992,48 @@ export type PalletParametersEvent =
       /**
        * The key that was updated.
        **/
-      key: AssetHubPaseoRuntimeRuntimeParametersKey;
+      key: AssetHubPolkadotRuntimeRuntimeParametersKey;
 
       /**
        * The old value before this call.
        **/
-      oldValue?: AssetHubPaseoRuntimeRuntimeParametersValue | undefined;
+      oldValue?: AssetHubPolkadotRuntimeRuntimeParametersValue | undefined;
 
       /**
        * The new value after this call.
        **/
-      newValue?: AssetHubPaseoRuntimeRuntimeParametersValue | undefined;
+      newValue?: AssetHubPolkadotRuntimeRuntimeParametersValue | undefined;
     };
   };
 
-export type AssetHubPaseoRuntimeRuntimeParametersKey =
-  | { type: 'StakingElection'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionParametersKey }
-  | { type: 'Scheduler'; value: AssetHubPaseoRuntimeDynamicParamsSchedulerParametersKey }
-  | { type: 'MessageQueue'; value: AssetHubPaseoRuntimeDynamicParamsMessageQueueParametersKey };
+export type AssetHubPolkadotRuntimeRuntimeParametersKey =
+  | { type: 'StakingElection'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionParametersKey }
+  | { type: 'Scheduler'; value: AssetHubPolkadotRuntimeDynamicParamsSchedulerParametersKey }
+  | { type: 'MessageQueue'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueParametersKey };
 
-export type AssetHubPaseoRuntimeDynamicParamsStakingElectionParametersKey =
-  | { type: 'SignedPhase'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionSignedPhase }
-  | { type: 'MaxSignedSubmissions'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxSignedSubmissions }
-  | { type: 'UnsignedPhase'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionUnsignedPhase }
-  | { type: 'MinerPages'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionMinerPages }
-  | { type: 'MaxElectingVoters'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxElectingVoters }
-  | { type: 'TargetSnapshotPerBlock'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionTargetSnapshotPerBlock }
-  | { type: 'MaxEraDuration'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionMaxEraDuration };
+export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionParametersKey =
+  | { type: 'SignedPhase'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionSignedPhase }
+  | { type: 'MaxSignedSubmissions'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxSignedSubmissions }
+  | { type: 'UnsignedPhase'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionUnsignedPhase }
+  | { type: 'MinerPages'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionMinerPages }
+  | { type: 'MaxElectingVoters'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxElectingVoters }
+  | { type: 'TargetSnapshotPerBlock'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionTargetSnapshotPerBlock }
+  | { type: 'MaxEraDuration'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionMaxEraDuration };
 
-export type AssetHubPaseoRuntimeDynamicParamsSchedulerParametersKey =
-  | { type: 'MaxScheduledPerBlock'; value: AssetHubPaseoRuntimeDynamicParamsSchedulerMaxScheduledPerBlock }
-  | { type: 'MaximumWeight'; value: AssetHubPaseoRuntimeDynamicParamsSchedulerMaximumWeight };
+export type AssetHubPolkadotRuntimeDynamicParamsSchedulerParametersKey =
+  | { type: 'MaxScheduledPerBlock'; value: AssetHubPolkadotRuntimeDynamicParamsSchedulerMaxScheduledPerBlock }
+  | { type: 'MaximumWeight'; value: AssetHubPolkadotRuntimeDynamicParamsSchedulerMaximumWeight };
 
-export type AssetHubPaseoRuntimeDynamicParamsMessageQueueParametersKey =
-  | { type: 'MaxOnInitWeight'; value: AssetHubPaseoRuntimeDynamicParamsMessageQueueMaxOnInitWeight }
-  | { type: 'MaxOnIdleWeight'; value: AssetHubPaseoRuntimeDynamicParamsMessageQueueMaxOnIdleWeight };
+export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueParametersKey =
+  | { type: 'MaxOnInitWeight'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnInitWeight }
+  | { type: 'MaxOnIdleWeight'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnIdleWeight };
 
-export type AssetHubPaseoRuntimeRuntimeParametersValue =
-  | { type: 'StakingElection'; value: AssetHubPaseoRuntimeDynamicParamsStakingElectionParametersValue }
-  | { type: 'Scheduler'; value: AssetHubPaseoRuntimeDynamicParamsSchedulerParametersValue }
-  | { type: 'MessageQueue'; value: AssetHubPaseoRuntimeDynamicParamsMessageQueueParametersValue };
+export type AssetHubPolkadotRuntimeRuntimeParametersValue =
+  | { type: 'StakingElection'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionParametersValue }
+  | { type: 'Scheduler'; value: AssetHubPolkadotRuntimeDynamicParamsSchedulerParametersValue }
+  | { type: 'MessageQueue'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueParametersValue };
 
-export type AssetHubPaseoRuntimeDynamicParamsStakingElectionParametersValue =
+export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionParametersValue =
   | { type: 'SignedPhase'; value: number }
   | { type: 'MaxSignedSubmissions'; value: number }
   | { type: 'UnsignedPhase'; value: number }
@@ -16192,124 +16042,13 @@ export type AssetHubPaseoRuntimeDynamicParamsStakingElectionParametersValue =
   | { type: 'TargetSnapshotPerBlock'; value: number }
   | { type: 'MaxEraDuration'; value: bigint };
 
-export type AssetHubPaseoRuntimeDynamicParamsSchedulerParametersValue =
+export type AssetHubPolkadotRuntimeDynamicParamsSchedulerParametersValue =
   | { type: 'MaxScheduledPerBlock'; value: number }
   | { type: 'MaximumWeight'; value: SpWeightsWeightV2Weight };
 
-export type AssetHubPaseoRuntimeDynamicParamsMessageQueueParametersValue =
+export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueParametersValue =
   | { type: 'MaxOnInitWeight'; value?: SpWeightsWeightV2Weight | undefined }
   | { type: 'MaxOnIdleWeight'; value?: SpWeightsWeightV2Weight | undefined };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletMigrationsEvent =
-  /**
-   * A Runtime upgrade started.
-   *
-   * Its end is indicated by `UpgradeCompleted` or `UpgradeFailed`.
-   **/
-  | {
-      name: 'UpgradeStarted';
-      data: {
-        /**
-         * The number of migrations that this upgrade contains.
-         *
-         * This can be used to design a progress indicator in combination with counting the
-         * `MigrationCompleted` and `MigrationSkipped` events.
-         **/
-        migrations: number;
-      };
-    }
-  /**
-   * The current runtime upgrade completed.
-   *
-   * This implies that all of its migrations completed successfully as well.
-   **/
-  | { name: 'UpgradeCompleted' }
-  /**
-   * Runtime upgrade failed.
-   *
-   * This is very bad and will require governance intervention.
-   **/
-  | { name: 'UpgradeFailed' }
-  /**
-   * A migration was skipped since it was already executed in the past.
-   **/
-  | {
-      name: 'MigrationSkipped';
-      data: {
-        /**
-         * The index of the skipped migration within the [`Config::Migrations`] list.
-         **/
-        index: number;
-      };
-    }
-  /**
-   * A migration progressed.
-   **/
-  | {
-      name: 'MigrationAdvanced';
-      data: {
-        /**
-         * The index of the migration within the [`Config::Migrations`] list.
-         **/
-        index: number;
-
-        /**
-         * The number of blocks that this migration took so far.
-         **/
-        took: number;
-      };
-    }
-  /**
-   * A Migration completed.
-   **/
-  | {
-      name: 'MigrationCompleted';
-      data: {
-        /**
-         * The index of the migration within the [`Config::Migrations`] list.
-         **/
-        index: number;
-
-        /**
-         * The number of blocks that this migration took so far.
-         **/
-        took: number;
-      };
-    }
-  /**
-   * A Migration failed.
-   *
-   * This implies that the whole upgrade failed and governance intervention is required.
-   **/
-  | {
-      name: 'MigrationFailed';
-      data: {
-        /**
-         * The index of the migration within the [`Config::Migrations`] list.
-         **/
-        index: number;
-
-        /**
-         * The number of blocks that this migration took so far.
-         **/
-        took: number;
-      };
-    }
-  /**
-   * The set of historical migrations has been cleared.
-   **/
-  | {
-      name: 'HistoricCleared';
-      data: {
-        /**
-         * Should be passed to `clear_historic` in a successive call.
-         **/
-        nextCursor?: Bytes | undefined;
-      };
-    };
 
 /**
  * The `Event` enum of this pallet
@@ -17075,7 +16814,7 @@ export type PalletProxyEvent =
       data: {
         pure: AccountId32;
         who: AccountId32;
-        proxyType: AssetHubPaseoRuntimeProxyType;
+        proxyType: AssetHubPolkadotRuntimeProxyType;
         disambiguationIndex: number;
       };
     }
@@ -17087,7 +16826,7 @@ export type PalletProxyEvent =
       data: {
         pure: AccountId32;
         spawner: AccountId32;
-        proxyType: AssetHubPaseoRuntimeProxyType;
+        proxyType: AssetHubPolkadotRuntimeProxyType;
         disambiguationIndex: number;
       };
     }
@@ -17100,14 +16839,24 @@ export type PalletProxyEvent =
    **/
   | {
       name: 'ProxyAdded';
-      data: { delegator: AccountId32; delegatee: AccountId32; proxyType: AssetHubPaseoRuntimeProxyType; delay: number };
+      data: {
+        delegator: AccountId32;
+        delegatee: AccountId32;
+        proxyType: AssetHubPolkadotRuntimeProxyType;
+        delay: number;
+      };
     }
   /**
    * A proxy was removed.
    **/
   | {
       name: 'ProxyRemoved';
-      data: { delegator: AccountId32; delegatee: AccountId32; proxyType: AssetHubPaseoRuntimeProxyType; delay: number };
+      data: {
+        delegator: AccountId32;
+        delegatee: AccountId32;
+        proxyType: AssetHubPolkadotRuntimeProxyType;
+        delay: number;
+      };
     }
   /**
    * A deposit stored for proxies or announcements was poked / updated.
@@ -18985,56 +18734,6 @@ export type PalletReviveEvent =
 /**
  * The `Event` enum of this pallet
  **/
-export type PalletSudoEvent =
-  /**
-   * A sudo call just took place.
-   **/
-  | {
-      name: 'Sudid';
-      data: {
-        /**
-         * The result of the call made by the sudo user.
-         **/
-        sudoResult: Result<[], DispatchError>;
-      };
-    }
-  /**
-   * The sudo key has been updated.
-   **/
-  | {
-      name: 'KeyChanged';
-      data: {
-        /**
-         * The old sudo key (if one was previously set).
-         **/
-        old?: AccountId32 | undefined;
-
-        /**
-         * The new sudo key (if one was set).
-         **/
-        new: AccountId32;
-      };
-    }
-  /**
-   * The key was permanently removed.
-   **/
-  | { name: 'KeyRemoved' }
-  /**
-   * A [sudo_as](Pallet::sudo_as) call just took place.
-   **/
-  | {
-      name: 'SudoAsDone';
-      data: {
-        /**
-         * The result of the call made by the sudo user.
-         **/
-        sudoResult: Result<[], DispatchError>;
-      };
-    };
-
-/**
- * The `Event` enum of this pallet
- **/
 export type PalletAhOpsEvent =
   /**
    * Some lease reserve could not be unreserved and needs manual cleanup.
@@ -19553,7 +19252,7 @@ export type PalletSchedulerScheduled = {
   priority: number;
   call: FrameSupportPreimagesBounded;
   maybePeriodic?: [number, number] | undefined;
-  origin: AssetHubPaseoRuntimeOriginCaller;
+  origin: AssetHubPolkadotRuntimeOriginCaller;
 };
 
 /**
@@ -19581,23 +19280,14 @@ export type PalletSchedulerError =
    **/
   | 'Named';
 
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletMigrationsError =
-  /**
-   * The operation cannot complete since some MBMs are ongoing.
-   **/
-  'Ongoing';
-
 export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
 export type FrameSupportTokensMiscIdAmountRuntimeHoldReason = {
-  id: AssetHubPaseoRuntimeRuntimeHoldReason;
+  id: AssetHubPolkadotRuntimeRuntimeHoldReason;
   amount: bigint;
 };
 
-export type AssetHubPaseoRuntimeRuntimeHoldReason =
+export type AssetHubPolkadotRuntimeRuntimeHoldReason =
   | { type: 'Preimage'; value: PalletPreimageHoldReason }
   | { type: 'Session'; value: PalletSessionHoldReason }
   | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
@@ -19614,11 +19304,11 @@ export type PalletStakingAsyncPalletHoldReason = 'Staking';
 export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
 
 export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
-  id: AssetHubPaseoRuntimeRuntimeFreezeReason;
+  id: AssetHubPolkadotRuntimeRuntimeFreezeReason;
   amount: bigint;
 };
 
-export type AssetHubPaseoRuntimeRuntimeFreezeReason = {
+export type AssetHubPolkadotRuntimeRuntimeFreezeReason = {
   type: 'NominationPools';
   value: PalletNominationPoolsFreezeReason;
 };
@@ -20306,7 +19996,7 @@ export type PalletMultisigError =
 
 export type PalletProxyProxyDefinitionProxyType = {
   delegate: AccountId32;
-  proxyType: AssetHubPaseoRuntimeProxyType;
+  proxyType: AssetHubPolkadotRuntimeProxyType;
   delay: number;
 };
 
@@ -21089,7 +20779,7 @@ export type PalletReferendaReferendumInfoOriginCaller =
 
 export type PalletReferendaReferendumStatusOriginCaller = {
   track: number;
-  origin: AssetHubPaseoRuntimeOriginCaller;
+  origin: AssetHubPolkadotRuntimeOriginCaller;
   proposal: FrameSupportPreimagesBounded;
   enactment: FrameSupportScheduleDispatchTime;
   submitted: number;
@@ -22379,15 +22069,6 @@ export type PalletReviveError =
   | 'PrecompileDelegateDenied';
 
 /**
- * Error for the Sudo pallet.
- **/
-export type PalletSudoError =
-  /**
-   * Sender must be the Sudo account.
-   **/
-  'RequireSudo';
-
-/**
  * The `Error` enum of this pallet.
  **/
 export type PalletAhOpsError =
@@ -22609,7 +22290,7 @@ export type XcmRuntimeApisFeesError =
 
 export type XcmRuntimeApisDryRunCallDryRunEffects = {
   executionResult: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
-  emittedEvents: Array<AssetHubPaseoRuntimeRuntimeEvent>;
+  emittedEvents: Array<AssetHubPolkadotRuntimeRuntimeEvent>;
   localXcm?: XcmVersionedXcm | undefined;
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };
@@ -22618,7 +22299,7 @@ export type XcmRuntimeApisDryRunError = 'Unimplemented' | 'VersionedConversionFa
 
 export type XcmRuntimeApisDryRunXcmDryRunEffects = {
   executionResult: StagingXcmV5TraitsOutcome;
-  emittedEvents: Array<AssetHubPaseoRuntimeRuntimeEvent>;
+  emittedEvents: Array<AssetHubPolkadotRuntimeRuntimeEvent>;
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };
 
@@ -22797,12 +22478,11 @@ export type PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo = {
 
 export type PalletRevivePrimitivesBalanceConversionError = 'Value' | 'Dust';
 
-export type AssetHubPaseoRuntimeRuntimeError =
+export type AssetHubPolkadotRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }
   | { pallet: 'ParachainSystem'; palletError: CumulusPalletParachainSystemError }
   | { pallet: 'Preimage'; palletError: PalletPreimageError }
   | { pallet: 'Scheduler'; palletError: PalletSchedulerError }
-  | { pallet: 'MultiBlockMigrations'; palletError: PalletMigrationsError }
   | { pallet: 'Balances'; palletError: PalletBalancesError }
   | { pallet: 'Vesting'; palletError: PalletVestingError }
   | { pallet: 'Claims'; palletError: PolkadotRuntimeCommonClaimsPalletError }
@@ -22837,6 +22517,5 @@ export type AssetHubPaseoRuntimeRuntimeError =
   | { pallet: 'MultiBlockElectionSigned'; palletError: PalletElectionProviderMultiBlockSignedPalletError }
   | { pallet: 'Staking'; palletError: PalletStakingAsyncPalletError }
   | { pallet: 'Revive'; palletError: PalletReviveError }
-  | { pallet: 'Sudo'; palletError: PalletSudoError }
   | { pallet: 'AhOps'; palletError: PalletAhOpsError }
   | { pallet: 'AhMigrator'; palletError: PalletAhMigratorError };

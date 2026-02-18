@@ -19,7 +19,7 @@ import type {
 } from 'dedot/codecs';
 import type {
   SpConsensusSlotsSlotDuration,
-  SpConsensusAuraSr25519AppSr25519Public,
+  SpConsensusAuraEd25519AppEd25519Public,
   SpConsensusSlotsSlot,
   SpRuntimeBlock,
   SpRuntimeExtrinsicInclusionMode,
@@ -35,7 +35,7 @@ import type {
   PalletTransactionPaymentRuntimeDispatchInfo,
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
-  AssetHubPaseoRuntimeRuntimeCallLike,
+  AssetHubPolkadotRuntimeRuntimeCallLike,
   XcmVersionedAssetId,
   XcmRuntimeApisFeesError,
   XcmVersionedXcm,
@@ -43,7 +43,7 @@ import type {
   XcmVersionedLocation,
   XcmRuntimeApisDryRunCallDryRunEffects,
   XcmRuntimeApisDryRunError,
-  AssetHubPaseoRuntimeOriginCaller,
+  AssetHubPolkadotRuntimeOriginCaller,
   XcmRuntimeApisDryRunXcmDryRunEffects,
   XcmRuntimeApisConversionsError,
   XcmRuntimeApisTrustedQueryError,
@@ -90,7 +90,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * @callname: AuraApi_authorities
      **/
-    authorities: GenericRuntimeApiMethod<() => Promise<Array<SpConsensusAuraSr25519AppSr25519Public>>>;
+    authorities: GenericRuntimeApiMethod<() => Promise<Array<SpConsensusAuraEd25519AppEd25519Public>>>;
 
     /**
      * Generic runtime api call
@@ -438,22 +438,25 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Query information of a dispatch class, weight, and fee of a given encoded `Call`.
      *
      * @callname: TransactionPaymentCallApi_query_call_info
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      * @param {number} len
      **/
     queryCallInfo: GenericRuntimeApiMethod<
-      (call: AssetHubPaseoRuntimeRuntimeCallLike, len: number) => Promise<PalletTransactionPaymentRuntimeDispatchInfo>
+      (
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
+        len: number,
+      ) => Promise<PalletTransactionPaymentRuntimeDispatchInfo>
     >;
 
     /**
      * Query fee details of a given encoded `Call`.
      *
      * @callname: TransactionPaymentCallApi_query_call_fee_details
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      * @param {number} len
      **/
     queryCallFeeDetails: GenericRuntimeApiMethod<
-      (call: AssetHubPaseoRuntimeRuntimeCallLike, len: number) => Promise<PalletTransactionPaymentFeeDetails>
+      (call: AssetHubPolkadotRuntimeRuntimeCallLike, len: number) => Promise<PalletTransactionPaymentFeeDetails>
     >;
 
     /**
@@ -559,14 +562,14 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Dry run call V2.
      *
      * @callname: DryRunApi_dry_run_call
-     * @param {AssetHubPaseoRuntimeOriginCaller} origin
-     * @param {AssetHubPaseoRuntimeRuntimeCallLike} call
+     * @param {AssetHubPolkadotRuntimeOriginCaller} origin
+     * @param {AssetHubPolkadotRuntimeRuntimeCallLike} call
      * @param {number} result_xcms_version
      **/
     dryRunCall: GenericRuntimeApiMethod<
       (
-        origin: AssetHubPaseoRuntimeOriginCaller,
-        call: AssetHubPaseoRuntimeRuntimeCallLike,
+        origin: AssetHubPolkadotRuntimeOriginCaller,
+        call: AssetHubPolkadotRuntimeRuntimeCallLike,
         resultXcmsVersion: number,
       ) => Promise<Result<XcmRuntimeApisDryRunCallDryRunEffects, XcmRuntimeApisDryRunError>>
     >;

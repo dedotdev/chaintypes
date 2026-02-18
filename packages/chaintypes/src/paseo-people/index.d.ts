@@ -13,8 +13,9 @@ import type {
   FrameSystemExtensionsCheckMortality,
   FrameSystemExtensionsCheckNonce,
   FrameSystemExtensionsCheckWeight,
-  PalletTransactionPaymentChargeTransactionPayment,
+  PalletAssetTxPaymentChargeAssetTxPayment,
   FrameMetadataHashExtensionCheckMetadataHash,
+  StagingXcmV5Location,
 } from './types.js';
 import { ChainConsts } from './consts.js';
 import { ChainStorage } from './query.js';
@@ -39,17 +40,17 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     FrameSystemExtensionsCheckMortality,
     FrameSystemExtensionsCheckNonce,
     FrameSystemExtensionsCheckWeight,
-    PalletTransactionPaymentChargeTransactionPayment,
+    PalletAssetTxPaymentChargeAssetTxPayment,
     FrameMetadataHashExtensionCheckMetadataHash,
     [],
   ];
-  AssetId: undefined;
+  AssetId: StagingXcmV5Location;
   EventRecord: FrameSystemEventRecord;
 }
 
 /**
  * @name: PaseoPeopleApi
- * @specVersion: 2000005
+ * @specVersion: 2000006
  **/
 export interface PaseoPeopleApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

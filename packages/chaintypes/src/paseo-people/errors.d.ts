@@ -185,6 +185,171 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `Assets`'s errors
+   **/
+  assets: {
+    /**
+     * Account balance must be greater than or equal to the transfer amount.
+     **/
+    BalanceLow: GenericPalletError;
+
+    /**
+     * The account to alter does not exist.
+     **/
+    NoAccount: GenericPalletError;
+
+    /**
+     * The signing account has no permission to do the operation.
+     **/
+    NoPermission: GenericPalletError;
+
+    /**
+     * The given asset ID is unknown.
+     **/
+    Unknown: GenericPalletError;
+
+    /**
+     * The origin account is frozen.
+     **/
+    Frozen: GenericPalletError;
+
+    /**
+     * The asset ID is already taken.
+     **/
+    InUse: GenericPalletError;
+
+    /**
+     * Invalid witness data given.
+     **/
+    BadWitness: GenericPalletError;
+
+    /**
+     * Minimum balance should be non-zero.
+     **/
+    MinBalanceZero: GenericPalletError;
+
+    /**
+     * Unable to increment the consumer reference counters on the account. Either no provider
+     * reference exists to allow a non-zero balance of a non-self-sufficient asset, or one
+     * fewer then the maximum number of consumers has been reached.
+     **/
+    UnavailableConsumer: GenericPalletError;
+
+    /**
+     * Invalid metadata given.
+     **/
+    BadMetadata: GenericPalletError;
+
+    /**
+     * No approval exists that would allow the transfer.
+     **/
+    Unapproved: GenericPalletError;
+
+    /**
+     * The source account would not survive the transfer and it needs to stay alive.
+     **/
+    WouldDie: GenericPalletError;
+
+    /**
+     * The asset-account already exists.
+     **/
+    AlreadyExists: GenericPalletError;
+
+    /**
+     * The asset-account doesn't have an associated deposit.
+     **/
+    NoDeposit: GenericPalletError;
+
+    /**
+     * The operation would result in funds being burned.
+     **/
+    WouldBurn: GenericPalletError;
+
+    /**
+     * The asset is a live asset and is actively being used. Usually emit for operations such
+     * as `start_destroy` which require the asset to be in a destroying state.
+     **/
+    LiveAsset: GenericPalletError;
+
+    /**
+     * The asset is not live, and likely being destroyed.
+     **/
+    AssetNotLive: GenericPalletError;
+
+    /**
+     * The asset status is not the expected status.
+     **/
+    IncorrectStatus: GenericPalletError;
+
+    /**
+     * The asset should be frozen before the given operation.
+     **/
+    NotFrozen: GenericPalletError;
+
+    /**
+     * Callback action resulted in error
+     **/
+    CallbackFailed: GenericPalletError;
+
+    /**
+     * The asset ID must be equal to the [`NextAssetId`].
+     **/
+    BadAssetId: GenericPalletError;
+
+    /**
+     * The asset cannot be destroyed because some accounts for this asset contain freezes.
+     **/
+    ContainsFreezes: GenericPalletError;
+
+    /**
+     * The asset cannot be destroyed because some accounts for this asset contain holds.
+     **/
+    ContainsHolds: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `AssetRate`'s errors
+   **/
+  assetRate: {
+    /**
+     * The given asset ID is unknown.
+     **/
+    UnknownAssetKind: GenericPalletError;
+
+    /**
+     * The given asset ID already has an assigned conversion rate and cannot be re-created.
+     **/
+    AlreadyExists: GenericPalletError;
+
+    /**
+     * Overflow ocurred when calculating the inverse rate.
+     **/
+    Overflow: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `AssetsHolder`'s errors
+   **/
+  assetsHolder: {
+    /**
+     * Number of holds on an account would exceed the count of `RuntimeHoldReason`.
+     **/
+    TooManyHolds: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `CollatorSelection`'s errors
    **/
   collatorSelection: {

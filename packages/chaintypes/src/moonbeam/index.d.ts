@@ -51,7 +51,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: MoonbeamApi
- * @specVersion: 4102
+ * @specVersion: 4103
  **/
 export interface MoonbeamApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

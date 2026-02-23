@@ -46,6 +46,7 @@ import type {
   PalletParachainStakingDelegator,
   PalletParachainStakingCandidateMetadata,
   PalletParachainStakingDelegationRequestsScheduledRequest,
+  PalletParachainStakingDelegationRequestsDelegationAction,
   PalletParachainStakingAutoCompoundAutoCompoundConfig,
   PalletParachainStakingDelegations,
   PalletParachainStakingSetBoundedOrderedSet,
@@ -786,6 +787,22 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<number> =} callback
      **/
     delegationScheduledRequestsPerCollator: GenericStorageQuery<(arg: AccountId20Like) => number, AccountId20>;
+
+    /**
+     * Summary of pending delegation actions for a (collator, delegator) pair.
+     *
+     * Stores `DelegationAction::Revoke(bond)` when a revocation is pending, or
+     * `DelegationAction::Decrease(total)` with the aggregated sum of all pending
+     * decrease amounts. Used during round transitions to adjust reward
+     * calculations without reading the full `DelegationScheduledRequests`.
+     *
+     * @param {[AccountId20Like, AccountId20Like]} arg
+     * @param {Callback<PalletParachainStakingDelegationRequestsDelegationAction | undefined> =} callback
+     **/
+    delegationScheduledRequestsSummaryMap: GenericStorageQuery<
+      (arg: [AccountId20Like, AccountId20Like]) => PalletParachainStakingDelegationRequestsDelegationAction | undefined,
+      [AccountId20, AccountId20]
+    >;
 
     /**
      * Stores auto-compounding configuration per collator.

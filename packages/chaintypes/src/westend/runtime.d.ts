@@ -76,6 +76,7 @@ import type {
   SpConsensusBabeAppPublic,
   SpConsensusSlotsEquivocationProof,
   SpAuthorityDiscoveryAppPublic,
+  SpSessionRuntimeApiOpaqueGeneratedSessionKeys,
   SpCoreCryptoKeyTypeId,
   PalletTransactionPaymentRuntimeDispatchInfo,
   PalletTransactionPaymentFeeDetails,
@@ -1097,9 +1098,12 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Returns the concatenated SCALE encoded public keys.
      *
      * @callname: SessionKeys_generate_session_keys
+     * @param {BytesLike} owner
      * @param {BytesLike | undefined} seed
      **/
-    generateSessionKeys: GenericRuntimeApiMethod<(seed?: BytesLike | undefined) => Promise<Bytes>>;
+    generateSessionKeys: GenericRuntimeApiMethod<
+      (owner: BytesLike, seed?: BytesLike | undefined) => Promise<SpSessionRuntimeApiOpaqueGeneratedSessionKeys>
+    >;
 
     /**
      * Decode the given public session keys.

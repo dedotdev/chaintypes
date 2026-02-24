@@ -3829,14 +3829,37 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * Target snapshot creation failed
+     * Target snapshot creation failed.
      **/
     UnexpectedTargetSnapshotFailed: GenericPalletEvent<'MultiBlockElection', 'UnexpectedTargetSnapshotFailed', null>;
 
     /**
-     * Voter snapshot creation failed
+     * Voter snapshot creation failed.
      **/
     UnexpectedVoterSnapshotFailed: GenericPalletEvent<'MultiBlockElection', 'UnexpectedVoterSnapshotFailed', null>;
+
+    /**
+     * Phase transition could not proceed due to being out of weight.
+     **/
+    UnexpectedPhaseTransitionOutOfWeight: GenericPalletEvent<
+      'MultiBlockElection',
+      'UnexpectedPhaseTransitionOutOfWeight',
+      {
+        from: PalletElectionProviderMultiBlockPhase;
+        to: PalletElectionProviderMultiBlockPhase;
+        required: SpWeightsWeightV2Weight;
+        had: SpWeightsWeightV2Weight;
+      }
+    >;
+
+    /**
+     * Phase transition could not even begin becaseu of being out of weight.
+     **/
+    UnexpectedPhaseTransitionHalt: GenericPalletEvent<
+      'MultiBlockElection',
+      'UnexpectedPhaseTransitionHalt',
+      { required: SpWeightsWeightV2Weight; had: SpWeightsWeightV2Weight }
+    >;
 
     /**
      * Generic pallet event

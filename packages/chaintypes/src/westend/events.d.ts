@@ -2690,6 +2690,16 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * Session key update from AssetHub failed on the relay chain.
+     * Logged as an event for fail-safe observability.
+     **/
+    SessionKeysUpdateFailed: GenericPalletEvent<
+      'StakingAhClient',
+      'SessionKeysUpdateFailed',
+      { stash: AccountId32; update: PalletStakingAsyncAhClientSessionKeysUpdate; error: DispatchError }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;

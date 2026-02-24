@@ -103,11 +103,13 @@ export interface ChainStorage extends GenericChainStorage {
     blockWeight: GenericStorageQuery<() => FrameSupportDispatchPerDispatchClass>;
 
     /**
-     * Total length (in bytes) for all extrinsics put together, for the current block.
+     * Total size (in bytes) of the current block.
+     *
+     * Tracks the size of the header and all extrinsics.
      *
      * @param {Callback<number | undefined> =} callback
      **/
-    allExtrinsicsLen: GenericStorageQuery<() => number | undefined>;
+    blockSize: GenericStorageQuery<() => number | undefined>;
 
     /**
      * Map of block numbers to block hashes.

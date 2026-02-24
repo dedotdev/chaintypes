@@ -874,14 +874,16 @@ export interface ChainTx<
   session: {
     /**
      * Sets the session key(s) of the function caller to `keys`.
+     *
      * Allows an account to set its session key prior to becoming a validator.
      * This doesn't take effect until the next session.
      *
-     * The dispatch origin of this function must be signed.
-     *
-     * ## Complexity
-     * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
-     * fixed.
+     * - `origin`: The dispatch origin of this function must be signed.
+     * - `keys`: The new session keys to set. These are the public keys of all sessions keys
+     * setup in the runtime.
+     * - `proof`: The proof that `origin` has access to the private keys of `keys`. See
+     * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
+     * proof format.
      *
      * @param {PeopleWestendRuntimeSessionKeys} keys
      * @param {BytesLike} proof
@@ -911,10 +913,6 @@ export interface ChainTx<
      * convertible to a validator ID using the chain's typical addressing system (this usually
      * means being a controller account) or directly convertible into a validator ID (which
      * usually means being a stash account).
-     *
-     * ## Complexity
-     * - `O(1)` in number of key types. Actual cost depends on the number of length of
-     * `T::Keys::key_ids()` which is fixed.
      *
      **/
     purgeKeys: GenericTxCall<
@@ -2080,7 +2078,9 @@ export interface ChainTx<
      * Register approval for a dispatch to be made from a deterministic composite account if
      * approved by a total of `threshold - 1` of `other_signatories`.
      *
-     * If there are enough, then dispatch the call.
+     * **If the approval threshold is met (including the sender's approval), this will
+     * immediately execute the call.** This is the only way to execute a multisig call -
+     * `approve_as_multi` will never trigger execution.
      *
      * Payment: `DepositBase` will be reserved if this is the first approval, plus
      * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
@@ -2096,8 +2096,9 @@ export interface ChainTx<
      * transaction index) of the first approval transaction.
      * - `call`: The call to be executed.
      *
-     * NOTE: Unless this is the final approval, you will generally want to use
-     * `approve_as_multi` instead, since it only requires a hash of the call.
+     * NOTE: For intermediate approvals (not the final approval), you should generally use
+     * `approve_as_multi` instead, since it only requires a hash of the call and is more
+     * efficient.
      *
      * Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise
      * on success, result is `Ok` and the result from the interior call, if it was executed,
@@ -2152,6 +2153,13 @@ export interface ChainTx<
      * Register approval for a dispatch to be made from a deterministic composite account if
      * approved by a total of `threshold - 1` of `other_signatories`.
      *
+     * **This function will NEVER execute the call, even if the approval threshold is
+     * reached.** It only registers approval. To actually execute the call, `as_multi` must
+     * be called with the full call data by any of the signatories.
+     *
+     * This function is more efficient than `as_multi` for intermediate approvals since it
+     * only requires the call hash, not the full call data.
+     *
      * Payment: `DepositBase` will be reserved if this is the first approval, plus
      * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
      * is cancelled.
@@ -2166,7 +2174,8 @@ export interface ChainTx<
      * transaction index) of the first approval transaction.
      * - `call_hash`: The hash of the call to be executed.
      *
-     * NOTE: If this is the final approval, you will want to use `as_multi` instead.
+     * NOTE: To execute the call after approvals are gathered, any signatory must call
+     * `as_multi` with the full call data. This function cannot execute the call.
      *
      * ## Complexity
      * - `O(S)`.

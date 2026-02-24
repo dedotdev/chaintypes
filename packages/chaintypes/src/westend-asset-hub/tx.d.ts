@@ -712,7 +712,10 @@ export interface ChainTx<
     >;
 
     /**
-     * Cancel an anonymously scheduled task.
+     * Cancel a scheduled task (named or anonymous), by providing the block it is scheduled for
+     * execution in, as well as the index of the task in that block's agenda.
+     *
+     * In the case of a named task, it will remove it from the lookup table as well.
      *
      * @param {number} when
      * @param {number} index
@@ -864,6 +867,8 @@ export interface ChainTx<
      * original task's configuration, but will have a lower value for `remaining` than the
      * original `total_retries`.
      *
+     * This call **cannot** be used to set a retry configuration for a named task.
+     *
      * @param {[number, number]} task
      * @param {number} retries
      * @param {number} period
@@ -898,6 +903,8 @@ export interface ChainTx<
      * clones of the original task. Their retry configuration will be derived from the
      * original task's configuration, but will have a lower value for `remaining` than the
      * original `total_retries`.
+     *
+     * This is the only way to set a retry configuration for a named task.
      *
      * @param {FixedBytes<32>} id
      * @param {number} retries
@@ -1753,14 +1760,16 @@ export interface ChainTx<
   session: {
     /**
      * Sets the session key(s) of the function caller to `keys`.
+     *
      * Allows an account to set its session key prior to becoming a validator.
      * This doesn't take effect until the next session.
      *
-     * The dispatch origin of this function must be signed.
-     *
-     * ## Complexity
-     * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
-     * fixed.
+     * - `origin`: The dispatch origin of this function must be signed.
+     * - `keys`: The new session keys to set. These are the public keys of all sessions keys
+     * setup in the runtime.
+     * - `proof`: The proof that `origin` has access to the private keys of `keys`. See
+     * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
+     * proof format.
      *
      * @param {AssetHubWestendRuntimeSessionKeys} keys
      * @param {BytesLike} proof
@@ -1790,10 +1799,6 @@ export interface ChainTx<
      * convertible to a validator ID using the chain's typical addressing system (this usually
      * means being a controller account) or directly convertible into a validator ID (which
      * usually means being a stash account).
-     *
-     * ## Complexity
-     * - `O(1)` in number of key types. Actual cost depends on the number of length of
-     * `T::Keys::key_ids()` which is fixed.
      *
      **/
     purgeKeys: GenericTxCall<
@@ -3074,7 +3079,9 @@ export interface ChainTx<
      * Register approval for a dispatch to be made from a deterministic composite account if
      * approved by a total of `threshold - 1` of `other_signatories`.
      *
-     * If there are enough, then dispatch the call.
+     * **If the approval threshold is met (including the sender's approval), this will
+     * immediately execute the call.** This is the only way to execute a multisig call -
+     * `approve_as_multi` will never trigger execution.
      *
      * Payment: `DepositBase` will be reserved if this is the first approval, plus
      * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
@@ -3090,8 +3097,9 @@ export interface ChainTx<
      * transaction index) of the first approval transaction.
      * - `call`: The call to be executed.
      *
-     * NOTE: Unless this is the final approval, you will generally want to use
-     * `approve_as_multi` instead, since it only requires a hash of the call.
+     * NOTE: For intermediate approvals (not the final approval), you should generally use
+     * `approve_as_multi` instead, since it only requires a hash of the call and is more
+     * efficient.
      *
      * Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise
      * on success, result is `Ok` and the result from the interior call, if it was executed,
@@ -3146,6 +3154,13 @@ export interface ChainTx<
      * Register approval for a dispatch to be made from a deterministic composite account if
      * approved by a total of `threshold - 1` of `other_signatories`.
      *
+     * **This function will NEVER execute the call, even if the approval threshold is
+     * reached.** It only registers approval. To actually execute the call, `as_multi` must
+     * be called with the full call data by any of the signatories.
+     *
+     * This function is more efficient than `as_multi` for intermediate approvals since it
+     * only requires the call hash, not the full call data.
+     *
      * Payment: `DepositBase` will be reserved if this is the first approval, plus
      * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
      * is cancelled.
@@ -3160,7 +3175,8 @@ export interface ChainTx<
      * transaction index) of the first approval transaction.
      * - `call_hash`: The hash of the call to be executed.
      *
-     * NOTE: If this is the final approval, you will want to use `as_multi` instead.
+     * NOTE: To execute the call after approvals are gathered, any signatory must call
+     * `as_multi` with the full call data. This function cannot execute the call.
      *
      * ## Complexity
      * - `O(S)`.
@@ -11537,26 +11553,6 @@ export interface ChainTx<
     >;
 
     /**
-     * Set the validators who cannot be slashed (if any).
-     *
-     * The dispatch origin must be Root.
-     *
-     * @param {Array<AccountId32Like>} invulnerables
-     **/
-    setInvulnerables: GenericTxCall<
-      (invulnerables: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'SetInvulnerables';
-            params: { invulnerables: Array<AccountId32Like> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
      * Force a current staker to become completely unstaked, immediately.
      *
      * The dispatch origin must be Root.
@@ -13089,15 +13085,16 @@ export interface ChainTx<
      * Set session keys for a validator. Keys are validated on AssetHub and forwarded to RC.
      *
      * **Validation on AssetHub:**
-     * Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
-     * format. This prevents malicious validators from bloating the XCM queue with garbage
-     * data.
+     * - Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
+     * format.
+     * - Ownership proof is validated using `OpaqueKeys::ownership_proof_is_valid`.
+     *
+     * If validation passes, only the validated keys are sent to RC (with empty proof),
+     * since RC trusts AH's validation. This prevents malicious validators from bloating
+     * the XCM queue with garbage data.
      *
      * This, combined with the enforcement of a high minimum validator bond, makes it
      * reasonable not to require a deposit.
-     *
-     * Note: Ownership proof validation requires PR #1739 which is not backported to
-     * stable2512. The proof parameter will be added when that PR is backported.
      *
      * **Fees:**
      * The actual cost of this call is higher than what the weight-based fee estimate shows.
@@ -13119,18 +13116,20 @@ export interface ChainTx<
      * set keys before declaring intent to validate will fail with NotValidator.
      *
      * @param {BytesLike} keys
+     * @param {BytesLike} proof
      * @param {bigint | undefined} maxDeliveryAndRemoteExecutionFee
      **/
     setKeys: GenericTxCall<
       (
         keys: BytesLike,
+        proof: BytesLike,
         maxDeliveryAndRemoteExecutionFee: bigint | undefined,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'StakingRcClient';
           palletCall: {
             name: 'SetKeys';
-            params: { keys: BytesLike; maxDeliveryAndRemoteExecutionFee: bigint | undefined };
+            params: { keys: BytesLike; proof: BytesLike; maxDeliveryAndRemoteExecutionFee: bigint | undefined };
           };
         },
         ChainKnownTypes

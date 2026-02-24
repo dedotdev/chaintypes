@@ -1037,19 +1037,6 @@ export interface ChainConsts extends GenericChainConsts {
     codeHashLockupDepositPercent: Perbill;
 
     /**
-     * Make contract callable functions marked as `#[unstable]` available.
-     *
-     * Contracts that use `#[unstable]` functions won't be able to be uploaded unless
-     * this is set to `true`. This is only meant for testnets and dev nodes in order to
-     * experiment with new features.
-     *
-     * # Warning
-     *
-     * Do **not** set to `true` on productions chains.
-     **/
-    unsafeUnstableInterface: boolean;
-
-    /**
      * Allow EVM bytecode to be uploaded and instantiated.
      **/
     allowEVMBytecode: boolean;
@@ -1275,11 +1262,6 @@ export interface ChainConsts extends GenericChainConsts {
     maxUnlockingChunks: number;
 
     /**
-     * Maximum number of invulnerable validators.
-     **/
-    maxInvulnerables: number;
-
-    /**
      * Maximum allowed era duration in milliseconds.
      *
      * This provides a defensive upper bound to cap the effective era duration, preventing
@@ -1428,11 +1410,6 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   stakingRcClient: {
     /**
-     * Maximum length of encoded session keys.
-     **/
-    maxSessionKeysLength: number;
-
-    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -1455,8 +1432,7 @@ export interface ChainConsts extends GenericChainConsts {
      * Duration of the singed validation phase.
      *
      * The duration of this should not be less than `T::Pages`, and there is no point in it
-     * being more than `SignedPhase::MaxSubmission::get() * T::Pages`. TODO: integrity test for
-     * it.
+     * being more than `SignedPhase::MaxSubmission::get() * T::Pages`.
      **/
     signedValidationPhase: number;
 
@@ -1489,12 +1465,6 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `MultiBlockElectionVerifier`'s constants
    **/
   multiBlockElectionVerifier: {
-    /**
-     * The minimum amount of improvement to the solution score that defines a solution as
-     * "better".
-     **/
-    solutionImprovementThreshold: Perbill;
-
     /**
      * Maximum number of backers, per winner, among all pages of an election.
      *

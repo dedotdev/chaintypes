@@ -598,7 +598,10 @@ export type PalletSchedulerCall =
       };
     }
   /**
-   * Cancel an anonymously scheduled task.
+   * Cancel a scheduled task (named or anonymous), by providing the block it is scheduled for
+   * execution in, as well as the index of the task in that block's agenda.
+   *
+   * In the case of a named task, it will remove it from the lookup table as well.
    **/
   | { name: 'Cancel'; params: { when: number; index: number } }
   /**
@@ -656,6 +659,8 @@ export type PalletSchedulerCall =
    * clones of the original task. Their retry configuration will be derived from the
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
+   *
+   * This call **cannot** be used to set a retry configuration for a named task.
    **/
   | { name: 'SetRetry'; params: { task: [number, number]; retries: number; period: number } }
   /**
@@ -671,6 +676,8 @@ export type PalletSchedulerCall =
    * clones of the original task. Their retry configuration will be derived from the
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
+   *
+   * This is the only way to set a retry configuration for a named task.
    **/
   | { name: 'SetRetryNamed'; params: { id: FixedBytes<32>; retries: number; period: number } }
   /**
@@ -696,7 +703,10 @@ export type PalletSchedulerCallLike =
       };
     }
   /**
-   * Cancel an anonymously scheduled task.
+   * Cancel a scheduled task (named or anonymous), by providing the block it is scheduled for
+   * execution in, as well as the index of the task in that block's agenda.
+   *
+   * In the case of a named task, it will remove it from the lookup table as well.
    **/
   | { name: 'Cancel'; params: { when: number; index: number } }
   /**
@@ -754,6 +764,8 @@ export type PalletSchedulerCallLike =
    * clones of the original task. Their retry configuration will be derived from the
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
+   *
+   * This call **cannot** be used to set a retry configuration for a named task.
    **/
   | { name: 'SetRetry'; params: { task: [number, number]; retries: number; period: number } }
   /**
@@ -769,6 +781,8 @@ export type PalletSchedulerCallLike =
    * clones of the original task. Their retry configuration will be derived from the
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
+   *
+   * This is the only way to set a retry configuration for a named task.
    **/
   | { name: 'SetRetryNamed'; params: { id: FixedBytes<32>; retries: number; period: number } }
   /**
@@ -1408,14 +1422,16 @@ export type PalletCollatorSelectionCallLike =
 export type PalletSessionCall =
   /**
    * Sets the session key(s) of the function caller to `keys`.
+   *
    * Allows an account to set its session key prior to becoming a validator.
    * This doesn't take effect until the next session.
    *
-   * The dispatch origin of this function must be signed.
-   *
-   * ## Complexity
-   * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
-   * fixed.
+   * - `origin`: The dispatch origin of this function must be signed.
+   * - `keys`: The new session keys to set. These are the public keys of all sessions keys
+   * setup in the runtime.
+   * - `proof`: The proof that `origin` has access to the private keys of `keys`. See
+   * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
+   * proof format.
    **/
   | { name: 'SetKeys'; params: { keys: AssetHubWestendRuntimeSessionKeys; proof: Bytes } }
   /**
@@ -1427,24 +1443,22 @@ export type PalletSessionCall =
    * convertible to a validator ID using the chain's typical addressing system (this usually
    * means being a controller account) or directly convertible into a validator ID (which
    * usually means being a stash account).
-   *
-   * ## Complexity
-   * - `O(1)` in number of key types. Actual cost depends on the number of length of
-   * `T::Keys::key_ids()` which is fixed.
    **/
   | { name: 'PurgeKeys' };
 
 export type PalletSessionCallLike =
   /**
    * Sets the session key(s) of the function caller to `keys`.
+   *
    * Allows an account to set its session key prior to becoming a validator.
    * This doesn't take effect until the next session.
    *
-   * The dispatch origin of this function must be signed.
-   *
-   * ## Complexity
-   * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
-   * fixed.
+   * - `origin`: The dispatch origin of this function must be signed.
+   * - `keys`: The new session keys to set. These are the public keys of all sessions keys
+   * setup in the runtime.
+   * - `proof`: The proof that `origin` has access to the private keys of `keys`. See
+   * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
+   * proof format.
    **/
   | { name: 'SetKeys'; params: { keys: AssetHubWestendRuntimeSessionKeys; proof: BytesLike } }
   /**
@@ -1456,10 +1470,6 @@ export type PalletSessionCallLike =
    * convertible to a validator ID using the chain's typical addressing system (this usually
    * means being a controller account) or directly convertible into a validator ID (which
    * usually means being a stash account).
-   *
-   * ## Complexity
-   * - `O(1)` in number of key types. Actual cost depends on the number of length of
-   * `T::Keys::key_ids()` which is fixed.
    **/
   | { name: 'PurgeKeys' };
 
@@ -3444,7 +3454,9 @@ export type PalletMultisigCall =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
-   * If there are enough, then dispatch the call.
+   * **If the approval threshold is met (including the sender's approval), this will
+   * immediately execute the call.** This is the only way to execute a multisig call -
+   * `approve_as_multi` will never trigger execution.
    *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
@@ -3460,8 +3472,9 @@ export type PalletMultisigCall =
    * transaction index) of the first approval transaction.
    * - `call`: The call to be executed.
    *
-   * NOTE: Unless this is the final approval, you will generally want to use
-   * `approve_as_multi` instead, since it only requires a hash of the call.
+   * NOTE: For intermediate approvals (not the final approval), you should generally use
+   * `approve_as_multi` instead, since it only requires a hash of the call and is more
+   * efficient.
    *
    * Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise
    * on success, result is `Ok` and the result from the interior call, if it was executed,
@@ -3495,6 +3508,13 @@ export type PalletMultisigCall =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
+   * **This function will NEVER execute the call, even if the approval threshold is
+   * reached.** It only registers approval. To actually execute the call, `as_multi` must
+   * be called with the full call data by any of the signatories.
+   *
+   * This function is more efficient than `as_multi` for intermediate approvals since it
+   * only requires the call hash, not the full call data.
+   *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
    * is cancelled.
@@ -3509,7 +3529,8 @@ export type PalletMultisigCall =
    * transaction index) of the first approval transaction.
    * - `call_hash`: The hash of the call to be executed.
    *
-   * NOTE: If this is the final approval, you will want to use `as_multi` instead.
+   * NOTE: To execute the call after approvals are gathered, any signatory must call
+   * `as_multi` with the full call data. This function cannot execute the call.
    *
    * ## Complexity
    * - `O(S)`.
@@ -3608,7 +3629,9 @@ export type PalletMultisigCallLike =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
-   * If there are enough, then dispatch the call.
+   * **If the approval threshold is met (including the sender's approval), this will
+   * immediately execute the call.** This is the only way to execute a multisig call -
+   * `approve_as_multi` will never trigger execution.
    *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
@@ -3624,8 +3647,9 @@ export type PalletMultisigCallLike =
    * transaction index) of the first approval transaction.
    * - `call`: The call to be executed.
    *
-   * NOTE: Unless this is the final approval, you will generally want to use
-   * `approve_as_multi` instead, since it only requires a hash of the call.
+   * NOTE: For intermediate approvals (not the final approval), you should generally use
+   * `approve_as_multi` instead, since it only requires a hash of the call and is more
+   * efficient.
    *
    * Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise
    * on success, result is `Ok` and the result from the interior call, if it was executed,
@@ -3659,6 +3683,13 @@ export type PalletMultisigCallLike =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
+   * **This function will NEVER execute the call, even if the approval threshold is
+   * reached.** It only registers approval. To actually execute the call, `as_multi` must
+   * be called with the full call data by any of the signatories.
+   *
+   * This function is more efficient than `as_multi` for intermediate approvals since it
+   * only requires the call hash, not the full call data.
+   *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
    * is cancelled.
@@ -3673,7 +3704,8 @@ export type PalletMultisigCallLike =
    * transaction index) of the first approval transaction.
    * - `call_hash`: The hash of the call to be executed.
    *
-   * NOTE: If this is the final approval, you will want to use `as_multi` instead.
+   * NOTE: To execute the call after approvals are gathered, any signatory must call
+   * `as_multi` with the full call data. This function cannot execute the call.
    *
    * ## Complexity
    * - `O(S)`.
@@ -11586,12 +11618,6 @@ export type PalletStakingAsyncPalletCall =
    **/
   | { name: 'ForceNewEra' }
   /**
-   * Set the validators who cannot be slashed (if any).
-   *
-   * The dispatch origin must be Root.
-   **/
-  | { name: 'SetInvulnerables'; params: { invulnerables: Array<AccountId32> } }
-  /**
    * Force a current staker to become completely unstaked, immediately.
    *
    * The dispatch origin must be Root.
@@ -12047,12 +12073,6 @@ export type PalletStakingAsyncPalletCallLike =
    * have enough blocks to get a result.
    **/
   | { name: 'ForceNewEra' }
-  /**
-   * Set the validators who cannot be slashed (if any).
-   *
-   * The dispatch origin must be Root.
-   **/
-  | { name: 'SetInvulnerables'; params: { invulnerables: Array<AccountId32Like> } }
   /**
    * Force a current staker to become completely unstaked, immediately.
    *
@@ -13240,15 +13260,16 @@ export type PalletStakingAsyncRcClientCall =
    * Set session keys for a validator. Keys are validated on AssetHub and forwarded to RC.
    *
    * **Validation on AssetHub:**
-   * Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
-   * format. This prevents malicious validators from bloating the XCM queue with garbage
-   * data.
+   * - Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
+   * format.
+   * - Ownership proof is validated using `OpaqueKeys::ownership_proof_is_valid`.
+   *
+   * If validation passes, only the validated keys are sent to RC (with empty proof),
+   * since RC trusts AH's validation. This prevents malicious validators from bloating
+   * the XCM queue with garbage data.
    *
    * This, combined with the enforcement of a high minimum validator bond, makes it
    * reasonable not to require a deposit.
-   *
-   * Note: Ownership proof validation requires PR #1739 which is not backported to
-   * stable2512. The proof parameter will be added when that PR is backported.
    *
    * **Fees:**
    * The actual cost of this call is higher than what the weight-based fee estimate shows.
@@ -13269,7 +13290,7 @@ export type PalletStakingAsyncRcClientCall =
    * users on Asset Hub MUST call bond and validate BEFORE calling set_keys. Attempting to
    * set keys before declaring intent to validate will fail with NotValidator.
    **/
-  | { name: 'SetKeys'; params: { keys: Bytes; maxDeliveryAndRemoteExecutionFee?: bigint | undefined } }
+  | { name: 'SetKeys'; params: { keys: Bytes; proof: Bytes; maxDeliveryAndRemoteExecutionFee?: bigint | undefined } }
   /**
    * Remove session keys for a validator.
    *
@@ -13310,15 +13331,16 @@ export type PalletStakingAsyncRcClientCallLike =
    * Set session keys for a validator. Keys are validated on AssetHub and forwarded to RC.
    *
    * **Validation on AssetHub:**
-   * Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
-   * format. This prevents malicious validators from bloating the XCM queue with garbage
-   * data.
+   * - Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
+   * format.
+   * - Ownership proof is validated using `OpaqueKeys::ownership_proof_is_valid`.
+   *
+   * If validation passes, only the validated keys are sent to RC (with empty proof),
+   * since RC trusts AH's validation. This prevents malicious validators from bloating
+   * the XCM queue with garbage data.
    *
    * This, combined with the enforcement of a high minimum validator bond, makes it
    * reasonable not to require a deposit.
-   *
-   * Note: Ownership proof validation requires PR #1739 which is not backported to
-   * stable2512. The proof parameter will be added when that PR is backported.
    *
    * **Fees:**
    * The actual cost of this call is higher than what the weight-based fee estimate shows.
@@ -13339,7 +13361,10 @@ export type PalletStakingAsyncRcClientCallLike =
    * users on Asset Hub MUST call bond and validate BEFORE calling set_keys. Attempting to
    * set keys before declaring intent to validate will fail with NotValidator.
    **/
-  | { name: 'SetKeys'; params: { keys: BytesLike; maxDeliveryAndRemoteExecutionFee?: bigint | undefined } }
+  | {
+      name: 'SetKeys';
+      params: { keys: BytesLike; proof: BytesLike; maxDeliveryAndRemoteExecutionFee?: bigint | undefined };
+    }
   /**
    * Remove session keys for a validator.
    *
@@ -17740,7 +17765,13 @@ export type PalletStakingAsyncPalletEvent =
 
 export type PalletStakingAsyncForcing = 'NotForcing' | 'ForceNew' | 'ForceNone' | 'ForceAlways';
 
-export type PalletStakingAsyncPalletUnexpectedKind = 'EraDurationBoundExceeded' | 'UnknownValidatorActivation';
+export type PalletStakingAsyncPalletUnexpectedKind =
+  | { type: 'EraDurationBoundExceeded' }
+  | { type: 'UnknownValidatorActivation' }
+  | {
+      type: 'PagedElectionOutOfWeight';
+      value: { page: number; required: SpWeightsWeightV2Weight; had: SpWeightsWeightV2Weight };
+    };
 
 /**
  * Events of this pallet.
@@ -17979,13 +18010,32 @@ export type PalletElectionProviderMultiBlockEvent =
       };
     }
   /**
-   * Target snapshot creation failed
+   * Target snapshot creation failed.
    **/
   | { name: 'UnexpectedTargetSnapshotFailed' }
   /**
-   * Voter snapshot creation failed
+   * Voter snapshot creation failed.
    **/
-  | { name: 'UnexpectedVoterSnapshotFailed' };
+  | { name: 'UnexpectedVoterSnapshotFailed' }
+  /**
+   * Phase transition could not proceed due to being out of weight.
+   **/
+  | {
+      name: 'UnexpectedPhaseTransitionOutOfWeight';
+      data: {
+        from: PalletElectionProviderMultiBlockPhase;
+        to: PalletElectionProviderMultiBlockPhase;
+        required: SpWeightsWeightV2Weight;
+        had: SpWeightsWeightV2Weight;
+      };
+    }
+  /**
+   * Phase transition could not even begin becaseu of being out of weight.
+   **/
+  | {
+      name: 'UnexpectedPhaseTransitionHalt';
+      data: { required: SpWeightsWeightV2Weight; had: SpWeightsWeightV2Weight };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -18655,7 +18705,10 @@ export type FrameSystemLimitsWeightsPerClass = {
   reserved?: SpWeightsWeightV2Weight | undefined;
 };
 
-export type FrameSystemLimitsBlockLength = { max: FrameSupportDispatchPerDispatchClassU32 };
+export type FrameSystemLimitsBlockLength = {
+  max: FrameSupportDispatchPerDispatchClassU32;
+  maxHeaderSize?: number | undefined;
+};
 
 export type FrameSupportDispatchPerDispatchClassU32 = { normal: number; operational: number; mandatory: number };
 
@@ -18834,6 +18887,21 @@ export type PalletMigrationsError =
    * The operation cannot complete since some MBMs are ongoing.
    **/
   'Ongoing';
+
+export type PalletMigrationsMbmIsOngoing = 'Yes' | 'No' | 'Stuck';
+
+export type PalletMigrationsMbmProgress = {
+  currentMigration: number;
+  totalMigrations: number;
+  currentMigrationSteps: number;
+  currentMigrationMaxSteps?: number | undefined;
+};
+
+export type PalletMigrationsMbmStatus = {
+  ongoing: PalletMigrationsMbmIsOngoing;
+  progress?: PalletMigrationsMbmProgress | undefined;
+  prefixes: Array<Bytes>;
+};
 
 export type PalletPreimageOldRequestStatus =
   | { type: 'Unrequested'; value: { deposit: [AccountId32, bigint]; len: number } }
@@ -20545,6 +20613,7 @@ export type PalletReviveDebugDebugSettings = {
   allowUnlimitedContractSize: boolean;
   bypassEip3607: boolean;
   pvmLogs: boolean;
+  disableExecutionTracing: boolean;
 };
 
 /**
@@ -21410,6 +21479,10 @@ export type PalletStakingAsyncRcClientError =
    **/
   | 'InvalidKeys'
   /**
+   * Invalid ownership proof for the session keys.
+   **/
+  | 'InvalidProof'
+  /**
    * Delivery fees exceeded the specified maximum.
    **/
   | 'FeesExceededMax';
@@ -22041,6 +22114,8 @@ export type SpRuntimeTransactionValidityValidTransaction = {
   propagate: boolean;
 };
 
+export type SpSessionRuntimeApiOpaqueGeneratedSessionKeys = { keys: Bytes; proof: Bytes };
+
 export type PalletTransactionPaymentRuntimeDispatchInfo = {
   weight: SpWeightsWeightV2Weight;
   class: FrameSupportDispatchDispatchClass;
@@ -22186,7 +22261,8 @@ export type PalletRevivePrimitivesContractAccessError =
 
 export type PalletReviveEvmApiDebugRpcTypesTracerType =
   | { type: 'CallTracer'; value?: PalletReviveEvmApiDebugRpcTypesCallTracerConfig | undefined }
-  | { type: 'PrestateTracer'; value?: PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig | undefined };
+  | { type: 'PrestateTracer'; value?: PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig | undefined }
+  | { type: 'ExecutionTracer'; value?: PalletReviveEvmApiDebugRpcTypesExecutionTracerConfig | undefined };
 
 export type PalletReviveEvmApiDebugRpcTypesCallTracerConfig = { withLogs: boolean; onlyTopCall: boolean };
 
@@ -22196,14 +22272,25 @@ export type PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig = {
   disableCode: boolean;
 };
 
+export type PalletReviveEvmApiDebugRpcTypesExecutionTracerConfig = {
+  enableMemory: boolean;
+  disableStack: boolean;
+  disableStorage: boolean;
+  enableReturnData: boolean;
+  disableSyscallDetails: boolean;
+  limit?: bigint | undefined;
+  memoryWordLimit: number;
+};
+
 export type PalletReviveEvmApiDebugRpcTypesTrace =
   | { type: 'Call'; value: PalletReviveEvmApiDebugRpcTypesCallTrace }
-  | { type: 'Prestate'; value: PalletReviveEvmApiDebugRpcTypesPrestateTrace };
+  | { type: 'Prestate'; value: PalletReviveEvmApiDebugRpcTypesPrestateTrace }
+  | { type: 'Execution'; value: PalletReviveEvmApiDebugRpcTypesExecutionTrace };
 
 export type PalletReviveEvmApiDebugRpcTypesCallTrace = {
   from: H160;
-  gas: U256;
-  gasUsed: U256;
+  gas: bigint;
+  gasUsed: bigint;
   to: H160;
   input: PalletReviveEvmApiByteBytes;
   output: PalletReviveEvmApiByteBytes;
@@ -22247,6 +22334,38 @@ export type PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo = {
   code?: PalletReviveEvmApiByteBytes | undefined;
   storage: Array<[PalletReviveEvmApiByteBytes, PalletReviveEvmApiByteBytes | undefined]>;
 };
+
+export type PalletReviveEvmApiDebugRpcTypesExecutionTrace = {
+  gas: bigint;
+  weightConsumed: SpWeightsWeightV2Weight;
+  baseCallWeight: SpWeightsWeightV2Weight;
+  failed: boolean;
+  returnValue: PalletReviveEvmApiByteBytes;
+  structLogs: Array<PalletReviveEvmApiDebugRpcTypesExecutionStep>;
+};
+
+export type PalletReviveEvmApiDebugRpcTypesExecutionStep = {
+  gas: bigint;
+  gasCost: bigint;
+  weightCost: SpWeightsWeightV2Weight;
+  depth: number;
+  returnData: PalletReviveEvmApiByteBytes;
+  error?: string | undefined;
+  kind: PalletReviveEvmApiDebugRpcTypesExecutionStepKind;
+};
+
+export type PalletReviveEvmApiDebugRpcTypesExecutionStepKind =
+  | {
+      type: 'EvmOpcode';
+      value: {
+        pc: number;
+        op: number;
+        stack: Array<PalletReviveEvmApiByteBytes>;
+        memory: Array<PalletReviveEvmApiByteBytes>;
+        storage?: Array<[PalletReviveEvmApiByteBytes, PalletReviveEvmApiByteBytes]> | undefined;
+      };
+    }
+  | { type: 'PvmSyscall'; value: { op: number; args: Array<bigint>; returned?: bigint | undefined } };
 
 export type PalletRevivePrimitivesBalanceConversionError = 'Value' | 'Dust';
 

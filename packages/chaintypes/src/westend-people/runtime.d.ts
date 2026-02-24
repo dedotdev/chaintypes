@@ -9,8 +9,8 @@ import type {
   Result,
   UncheckedExtrinsicLike,
   UncheckedExtrinsic,
-  Bytes,
   BytesLike,
+  Bytes,
   AccountId32Like,
   AccountId32,
 } from 'dedot/codecs';
@@ -26,6 +26,7 @@ import type {
   SpInherentsCheckInherentsResult,
   SpRuntimeTransactionValidityValidTransaction,
   SpRuntimeTransactionValidityTransactionSource,
+  SpSessionRuntimeApiOpaqueGeneratedSessionKeys,
   SpCoreCryptoKeyTypeId,
   PalletTransactionPaymentRuntimeDispatchInfo,
   PalletTransactionPaymentFeeDetails,
@@ -47,10 +48,6 @@ import type {
   XcmRuntimeApisAuthorizedAliasesError,
   CumulusPrimitivesCoreCollationInfo,
   PolkadotParachainPrimitivesPrimitivesId,
-  SpStatementStoreRuntimeApiValidStatement,
-  SpStatementStoreRuntimeApiInvalidStatement,
-  SpStatementStoreRuntimeApiStatementSource,
-  SpStatementStoreStatement,
 } from './types.js';
 
 export interface RuntimeApis extends GenericRuntimeApis {
@@ -308,9 +305,12 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Returns the concatenated SCALE encoded public keys.
      *
      * @callname: SessionKeys_generate_session_keys
+     * @param {BytesLike} owner
      * @param {BytesLike | undefined} seed
      **/
-    generateSessionKeys: GenericRuntimeApiMethod<(seed?: BytesLike | undefined) => Promise<Bytes>>;
+    generateSessionKeys: GenericRuntimeApiMethod<
+      (owner: BytesLike, seed?: BytesLike | undefined) => Promise<SpSessionRuntimeApiOpaqueGeneratedSessionKeys>
+    >;
 
     /**
      * Decode the given public session keys.
@@ -757,29 +757,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: TargetBlockRate_target_block_rate
      **/
     targetBlockRate: GenericRuntimeApiMethod<() => Promise<number>>;
-
-    /**
-     * Generic runtime api call
-     **/
-    [method: string]: GenericRuntimeApiMethod;
-  };
-  /**
-   * @runtimeapi: ValidateStatement - 0xbe9fb0c91a8046cf
-   **/
-  validateStatement: {
-    /**
-     * Validate the statement.
-     *
-     * @callname: ValidateStatement_validate_statement
-     * @param {SpStatementStoreRuntimeApiStatementSource} source
-     * @param {SpStatementStoreStatement} statement
-     **/
-    validateStatement: GenericRuntimeApiMethod<
-      (
-        source: SpStatementStoreRuntimeApiStatementSource,
-        statement: SpStatementStoreStatement,
-      ) => Promise<Result<SpStatementStoreRuntimeApiValidStatement, SpStatementStoreRuntimeApiInvalidStatement>>
-    >;
 
     /**
      * Generic runtime api call

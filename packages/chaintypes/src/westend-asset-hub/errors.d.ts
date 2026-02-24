@@ -2833,6 +2833,11 @@ export interface ChainErrors extends GenericChainErrors {
     InvalidKeys: GenericPalletError;
 
     /**
+     * Invalid ownership proof for the session keys.
+     **/
+    InvalidProof: GenericPalletError;
+
+    /**
      * Delivery fees exceeded the specified maximum.
      **/
     FeesExceededMax: GenericPalletError;

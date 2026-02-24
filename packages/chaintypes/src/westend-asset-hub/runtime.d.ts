@@ -9,8 +9,8 @@ import type {
   Result,
   UncheckedExtrinsicLike,
   UncheckedExtrinsic,
-  Bytes,
   BytesLike,
+  Bytes,
   AccountId32Like,
   AccountId32,
   U256,
@@ -30,6 +30,7 @@ import type {
   SpInherentsCheckInherentsResult,
   SpRuntimeTransactionValidityValidTransaction,
   SpRuntimeTransactionValidityTransactionSource,
+  SpSessionRuntimeApiOpaqueGeneratedSessionKeys,
   SpCoreCryptoKeyTypeId,
   StagingXcmV5Location,
   PalletTransactionPaymentRuntimeDispatchInfo,
@@ -358,9 +359,12 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Returns the concatenated SCALE encoded public keys.
      *
      * @callname: SessionKeys_generate_session_keys
+     * @param {BytesLike} owner
      * @param {BytesLike | undefined} seed
      **/
-    generateSessionKeys: GenericRuntimeApiMethod<(seed?: BytesLike | undefined) => Promise<Bytes>>;
+    generateSessionKeys: GenericRuntimeApiMethod<
+      (owner: BytesLike, seed?: BytesLike | undefined) => Promise<SpSessionRuntimeApiOpaqueGeneratedSessionKeys>
+    >;
 
     /**
      * Decode the given public session keys.

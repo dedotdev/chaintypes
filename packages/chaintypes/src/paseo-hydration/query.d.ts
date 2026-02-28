@@ -71,6 +71,7 @@ import type {
   PalletCircuitBreakerTradeVolumeLimit,
   PalletCircuitBreakerLiquidityLimit,
   PalletCircuitBreakerLockdownStatus,
+  PalletCircuitBreakerGlobalAssetCategory,
   HydradxTraitsRouterTrade,
   HydradxTraitsRouterAssetPair,
   PalletDynamicFeesFeeEntry,
@@ -1547,6 +1548,53 @@ export interface ChainStorage extends GenericChainStorage {
      **/
     allowedRemoveLiquidityAmountPerAsset: GenericStorageQuery<
       (arg: number) => PalletCircuitBreakerLiquidityLimit | undefined,
+      number
+    >;
+
+    /**
+     * Configured global limit in reference currency
+     *
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    globalWithdrawLimit: GenericStorageQuery<() => bigint | undefined>;
+
+    /**
+     * Tuple of (current_accumulator_in_ref, last_update_timestamp_ms)
+     *
+     * @param {Callback<[bigint, bigint]> =} callback
+     **/
+    withdrawLimitAccumulator: GenericStorageQuery<() => [bigint, bigint]>;
+
+    /**
+     * If some, global lockdown is active until this timestamp.
+     *
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    withdrawLockdownUntil: GenericStorageQuery<() => bigint | undefined>;
+
+    /**
+     * A map of accounts that are considered egress sinks.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    egressAccounts: GenericStorageQuery<(arg: AccountId32Like) => [] | undefined, AccountId32>;
+
+    /**
+     * When set to true, egress accounting is skipped.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    ignoreWithdrawLimit: GenericStorageQuery<() => boolean>;
+
+    /**
+     * Overrides for global asset categorization.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletCircuitBreakerGlobalAssetCategory | undefined> =} callback
+     **/
+    globalAssetOverrides: GenericStorageQuery<
+      (arg: number) => PalletCircuitBreakerGlobalAssetCategory | undefined,
       number
     >;
 

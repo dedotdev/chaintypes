@@ -919,6 +919,11 @@ export interface ChainConsts extends GenericChainConsts {
     defaultMaxRemoveLiquidityLimitPerBlock: [number, number] | undefined;
 
     /**
+     * Time window for global withdraw accumulator in milliseconds (e.g., 86_400_000 for 24h).
+     **/
+    globalWithdrawWindow: bigint;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;

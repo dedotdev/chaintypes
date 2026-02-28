@@ -8186,7 +8186,24 @@ export type PalletCircuitBreakerCall =
    *
    * Emits `DepositReleased` event when successful.
    **/
-  | { name: 'ReleaseDeposit'; params: { who: AccountId32; assetId: number } };
+  | { name: 'ReleaseDeposit'; params: { who: AccountId32; assetId: number } }
+  /**
+   * Set the global withdraw limit (reference currency units)
+   * Can be called only by authority origin.
+   **/
+  | { name: 'SetGlobalWithdrawLimit'; params: { limit: bigint } }
+  /**
+   * Reset the global lockdown and accumulator to zero at current block.
+   * Can be called only by authority origin.
+   **/
+  | { name: 'ResetWithdrawLockdown' }
+  | { name: 'AddEgressAccounts'; params: { accounts: Array<AccountId32> } }
+  | { name: 'RemoveEgressAccounts'; params: { accounts: Array<AccountId32> } }
+  | { name: 'SetGlobalWithdrawLockdown'; params: { until: bigint } }
+  | {
+      name: 'SetAssetCategory';
+      params: { assetId: number; category?: PalletCircuitBreakerGlobalAssetCategory | undefined };
+    };
 
 export type PalletCircuitBreakerCallLike =
   /**
@@ -8267,7 +8284,26 @@ export type PalletCircuitBreakerCallLike =
    *
    * Emits `DepositReleased` event when successful.
    **/
-  | { name: 'ReleaseDeposit'; params: { who: AccountId32Like; assetId: number } };
+  | { name: 'ReleaseDeposit'; params: { who: AccountId32Like; assetId: number } }
+  /**
+   * Set the global withdraw limit (reference currency units)
+   * Can be called only by authority origin.
+   **/
+  | { name: 'SetGlobalWithdrawLimit'; params: { limit: bigint } }
+  /**
+   * Reset the global lockdown and accumulator to zero at current block.
+   * Can be called only by authority origin.
+   **/
+  | { name: 'ResetWithdrawLockdown' }
+  | { name: 'AddEgressAccounts'; params: { accounts: Array<AccountId32Like> } }
+  | { name: 'RemoveEgressAccounts'; params: { accounts: Array<AccountId32Like> } }
+  | { name: 'SetGlobalWithdrawLockdown'; params: { until: bigint } }
+  | {
+      name: 'SetAssetCategory';
+      params: { assetId: number; category?: PalletCircuitBreakerGlobalAssetCategory | undefined };
+    };
+
+export type PalletCircuitBreakerGlobalAssetCategory = 'External' | 'Local';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -15056,7 +15092,42 @@ export type PalletCircuitBreakerEvent =
   /**
    * All reserved amount of deposit was released
    **/
-  | { name: 'DepositReleased'; data: { who: AccountId32; assetId: number } };
+  | { name: 'DepositReleased'; data: { who: AccountId32; assetId: number } }
+  /**
+   * Global lockdown triggered until given timestamp (ms).
+   **/
+  | { name: 'GlobalLockdownTriggered'; data: { until: bigint } }
+  /**
+   * Global lockdown was lifted (either automatically or by reset).
+   **/
+  | { name: 'GlobalLockdownLifted' }
+  /**
+   * Global lockdown accumulator and state were reset by governance.
+   **/
+  | { name: 'GlobalLockdownReset' }
+  /**
+   * Global limit value updated by governance (in reference currency).
+   **/
+  | { name: 'GlobalLimitUpdated'; data: { newLimit: bigint } }
+  /**
+   * Global withdraw lockdown was set by governance.
+   **/
+  | { name: 'GlobalLockdownSet'; data: { until: bigint } }
+  /**
+   * A number of egress accounts added to a list.
+   **/
+  | { name: 'EgressAccountsAdded'; data: { count: number } }
+  /**
+   * A number of egress accounts removed from a list.
+   **/
+  | { name: 'EgressAccountsRemoved'; data: { count: number } }
+  /**
+   * Asset category override updated.
+   **/
+  | {
+      name: 'AssetCategoryUpdated';
+      data: { assetId: number; category?: PalletCircuitBreakerGlobalAssetCategory | undefined };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -18614,7 +18685,19 @@ export type PalletCircuitBreakerError =
    * Deposit limit would be exceeded for a whitelisted account.
    * Operation rejected to prevent funds being locked on system accounts.
    **/
-  | 'DepositLimitExceededForWhitelistedAccount';
+  | 'DepositLimitExceededForWhitelistedAccount'
+  /**
+   * Global lockdown is active and withdrawals that participate in the global limit are blocked.
+   **/
+  | 'WithdrawLockdownActive'
+  /**
+   * Applying the increment would exceed the configured global limit -> lockdown is triggered and operation fails.
+   **/
+  | 'GlobalWithdrawLimitExceeded'
+  /**
+   * Asset to withdraw cannot be converted to reference currency.
+   **/
+  | 'FailedToConvertAsset';
 
 /**
  * The `Error` enum of this pallet.

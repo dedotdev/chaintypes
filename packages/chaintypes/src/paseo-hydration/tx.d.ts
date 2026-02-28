@@ -50,6 +50,7 @@ import type {
   PalletOmnipoolTradability,
   PalletLiquidityMiningLoyaltyCurve,
   HydradxTraitsStableswapAssetAmount,
+  PalletCircuitBreakerGlobalAssetCategory,
   HydradxTraitsRouterTrade,
   HydradxTraitsRouterAssetPair,
   PalletDynamicFeesAssetFeeConfig,
@@ -7353,6 +7354,114 @@ export interface ChainTx<
           palletCall: {
             name: 'ReleaseDeposit';
             params: { who: AccountId32Like; assetId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the global withdraw limit (reference currency units)
+     * Can be called only by authority origin.
+     *
+     * @param {bigint} limit
+     **/
+    setGlobalWithdrawLimit: GenericTxCall<
+      (limit: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'SetGlobalWithdrawLimit';
+            params: { limit: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Reset the global lockdown and accumulator to zero at current block.
+     * Can be called only by authority origin.
+     *
+     **/
+    resetWithdrawLockdown: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'ResetWithdrawLockdown';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<AccountId32Like>} accounts
+     **/
+    addEgressAccounts: GenericTxCall<
+      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'AddEgressAccounts';
+            params: { accounts: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<AccountId32Like>} accounts
+     **/
+    removeEgressAccounts: GenericTxCall<
+      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'RemoveEgressAccounts';
+            params: { accounts: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     * @param {bigint} until
+     **/
+    setGlobalWithdrawLockdown: GenericTxCall<
+      (until: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'SetGlobalWithdrawLockdown';
+            params: { until: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     * @param {number} assetId
+     * @param {PalletCircuitBreakerGlobalAssetCategory | undefined} category
+     **/
+    setAssetCategory: GenericTxCall<
+      (
+        assetId: number,
+        category: PalletCircuitBreakerGlobalAssetCategory | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'SetAssetCategory';
+            params: { assetId: number; category: PalletCircuitBreakerGlobalAssetCategory | undefined };
           };
         },
         ChainKnownTypes

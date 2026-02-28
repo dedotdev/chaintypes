@@ -1871,6 +1871,21 @@ export interface ChainErrors extends GenericChainErrors {
     DepositLimitExceededForWhitelistedAccount: GenericPalletError;
 
     /**
+     * Global lockdown is active and withdrawals that participate in the global limit are blocked.
+     **/
+    WithdrawLockdownActive: GenericPalletError;
+
+    /**
+     * Applying the increment would exceed the configured global limit -> lockdown is triggered and operation fails.
+     **/
+    GlobalWithdrawLimitExceeded: GenericPalletError;
+
+    /**
+     * Asset to withdraw cannot be converted to reference currency.
+     **/
+    FailedToConvertAsset: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;

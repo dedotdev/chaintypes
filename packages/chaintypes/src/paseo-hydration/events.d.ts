@@ -35,6 +35,7 @@ import type {
   PalletClaimsEthereumAddress,
   PalletOmnipoolTradability,
   PalletLiquidityMiningLoyaltyCurve,
+  PalletCircuitBreakerGlobalAssetCategory,
   PalletDynamicFeesAssetFeeConfig,
   NonZeroU16,
   PalletStableswapPoolPegInfo,
@@ -2187,6 +2188,50 @@ export interface ChainEvents extends GenericChainEvents {
      * All reserved amount of deposit was released
      **/
     DepositReleased: GenericPalletEvent<'CircuitBreaker', 'DepositReleased', { who: AccountId32; assetId: number }>;
+
+    /**
+     * Global lockdown triggered until given timestamp (ms).
+     **/
+    GlobalLockdownTriggered: GenericPalletEvent<'CircuitBreaker', 'GlobalLockdownTriggered', { until: bigint }>;
+
+    /**
+     * Global lockdown was lifted (either automatically or by reset).
+     **/
+    GlobalLockdownLifted: GenericPalletEvent<'CircuitBreaker', 'GlobalLockdownLifted', null>;
+
+    /**
+     * Global lockdown accumulator and state were reset by governance.
+     **/
+    GlobalLockdownReset: GenericPalletEvent<'CircuitBreaker', 'GlobalLockdownReset', null>;
+
+    /**
+     * Global limit value updated by governance (in reference currency).
+     **/
+    GlobalLimitUpdated: GenericPalletEvent<'CircuitBreaker', 'GlobalLimitUpdated', { newLimit: bigint }>;
+
+    /**
+     * Global withdraw lockdown was set by governance.
+     **/
+    GlobalLockdownSet: GenericPalletEvent<'CircuitBreaker', 'GlobalLockdownSet', { until: bigint }>;
+
+    /**
+     * A number of egress accounts added to a list.
+     **/
+    EgressAccountsAdded: GenericPalletEvent<'CircuitBreaker', 'EgressAccountsAdded', { count: number }>;
+
+    /**
+     * A number of egress accounts removed from a list.
+     **/
+    EgressAccountsRemoved: GenericPalletEvent<'CircuitBreaker', 'EgressAccountsRemoved', { count: number }>;
+
+    /**
+     * Asset category override updated.
+     **/
+    AssetCategoryUpdated: GenericPalletEvent<
+      'CircuitBreaker',
+      'AssetCategoryUpdated',
+      { assetId: number; category?: PalletCircuitBreakerGlobalAssetCategory | undefined }
+    >;
 
     /**
      * Generic pallet event

@@ -28,11 +28,6 @@ import type {
   PalletTransactionPaymentReleases,
   PalletTreasuryProposal,
   PalletTreasurySpendStatus,
-  FrameSupportPreimagesBounded,
-  PalletDemocracyReferendumInfo,
-  PalletDemocracyVoteVoting,
-  PalletDemocracyVoteThreshold,
-  PalletDemocracyMetadataOwner,
   BasiliskRuntimeRuntimeCall,
   PalletCollectiveVotes,
   OrmlVestingVestingSchedule,
@@ -100,6 +95,7 @@ import type {
   PalletLiquidityMiningYieldFarmData,
   PalletLiquidityMiningDepositData,
   PalletBroadcastExecutionType,
+  PalletMigrationsMigrationCursor,
   PalletEmaOracleOracleEntry,
   BasiliskTraitsOracleOraclePeriod,
   OrmlTokensBalanceLock,
@@ -525,126 +521,6 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
-   * Pallet `Democracy`'s storage queries
-   **/
-  democracy: {
-    /**
-     * The number of (public) proposals that have been made so far.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    publicPropCount: GenericStorageQuery<() => number>;
-
-    /**
-     * The public proposals. Unsorted. The second item is the proposal.
-     *
-     * @param {Callback<Array<[number, FrameSupportPreimagesBounded, AccountId32]>> =} callback
-     **/
-    publicProps: GenericStorageQuery<() => Array<[number, FrameSupportPreimagesBounded, AccountId32]>>;
-
-    /**
-     * Those who have locked a deposit.
-     *
-     * TWOX-NOTE: Safe, as increasing integer keys are safe.
-     *
-     * @param {number} arg
-     * @param {Callback<[Array<AccountId32>, bigint] | undefined> =} callback
-     **/
-    depositOf: GenericStorageQuery<(arg: number) => [Array<AccountId32>, bigint] | undefined, number>;
-
-    /**
-     * The next free referendum index, aka the number of referenda started so far.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    referendumCount: GenericStorageQuery<() => number>;
-
-    /**
-     * The lowest referendum index representing an unbaked referendum. Equal to
-     * `ReferendumCount` if there isn't a unbaked referendum.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    lowestUnbaked: GenericStorageQuery<() => number>;
-
-    /**
-     * Information concerning any given referendum.
-     *
-     * TWOX-NOTE: SAFE as indexes are not under an attacker’s control.
-     *
-     * @param {number} arg
-     * @param {Callback<PalletDemocracyReferendumInfo | undefined> =} callback
-     **/
-    referendumInfoOf: GenericStorageQuery<(arg: number) => PalletDemocracyReferendumInfo | undefined, number>;
-
-    /**
-     * All votes for a particular voter. We store the balance for the number of votes that we
-     * have recorded. The second item is the total amount of delegations, that will be added.
-     *
-     * TWOX-NOTE: SAFE as `AccountId`s are crypto hashes anyway.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<PalletDemocracyVoteVoting> =} callback
-     **/
-    votingOf: GenericStorageQuery<(arg: AccountId32Like) => PalletDemocracyVoteVoting, AccountId32>;
-
-    /**
-     * True if the last referendum tabled was submitted externally. False if it was a public
-     * proposal.
-     *
-     * @param {Callback<boolean> =} callback
-     **/
-    lastTabledWasExternal: GenericStorageQuery<() => boolean>;
-
-    /**
-     * The referendum to be tabled whenever it would be valid to table an external proposal.
-     * This happens when a referendum needs to be tabled and one of two conditions are met:
-     * - `LastTabledWasExternal` is `false`; or
-     * - `PublicProps` is empty.
-     *
-     * @param {Callback<[FrameSupportPreimagesBounded, PalletDemocracyVoteThreshold] | undefined> =} callback
-     **/
-    nextExternal: GenericStorageQuery<() => [FrameSupportPreimagesBounded, PalletDemocracyVoteThreshold] | undefined>;
-
-    /**
-     * A record of who vetoed what. Maps proposal hash to a possible existent block number
-     * (until when it may not be resubmitted) and who vetoed it.
-     *
-     * @param {H256} arg
-     * @param {Callback<[number, Array<AccountId32>] | undefined> =} callback
-     **/
-    blacklist: GenericStorageQuery<(arg: H256) => [number, Array<AccountId32>] | undefined, H256>;
-
-    /**
-     * Record of all proposals that have been subject to emergency cancellation.
-     *
-     * @param {H256} arg
-     * @param {Callback<boolean> =} callback
-     **/
-    cancellations: GenericStorageQuery<(arg: H256) => boolean, H256>;
-
-    /**
-     * General information concerning any proposal or referendum.
-     * The `Hash` refers to the preimage of the `Preimages` provider which can be a JSON
-     * dump or IPFS hash of a JSON file.
-     *
-     * Consider a garbage collection for a metadata of finished referendums to `unrequest` (remove)
-     * large preimages.
-     *
-     * @param {PalletDemocracyMetadataOwner} arg
-     * @param {Callback<H256 | undefined> =} callback
-     **/
-    metadataOf: GenericStorageQuery<
-      (arg: PalletDemocracyMetadataOwner) => H256 | undefined,
-      PalletDemocracyMetadataOwner
-    >;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
    * Pallet `TechnicalCommittee`'s storage queries
    **/
   technicalCommittee: {
@@ -925,6 +801,8 @@ export interface ChainStorage extends GenericChainStorage {
      *
      * @param {H256} arg
      * @param {Callback<PalletPreimageOldRequestStatus | undefined> =} callback
+     *
+     * @deprecated RequestStatusFor
      **/
     statusFor: GenericStorageQuery<(arg: H256) => PalletPreimageOldRequestStatus | undefined, H256>;
 
@@ -2246,6 +2124,35 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<AccountId32 | undefined> =} callback
      **/
     swapper: GenericStorageQuery<() => AccountId32 | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s storage queries
+   **/
+  multiBlockMigrations: {
+    /**
+     * The currently active migration to run and its cursor.
+     *
+     * `None` indicates that no migration is running.
+     *
+     * @param {Callback<PalletMigrationsMigrationCursor | undefined> =} callback
+     **/
+    cursor: GenericStorageQuery<() => PalletMigrationsMigrationCursor | undefined>;
+
+    /**
+     * Set of all successfully executed migrations.
+     *
+     * This is used as blacklist, to not re-execute migrations that have not been removed from the
+     * codebase yet. Governance can regularly clear this out via `clear_historic`.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    historic: GenericStorageQuery<(arg: BytesLike) => [] | undefined, Bytes>;
 
     /**
      * Generic pallet storage query

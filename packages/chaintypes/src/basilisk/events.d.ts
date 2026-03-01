@@ -5,9 +5,6 @@ import type { DispatchError, AccountId32, H256, Result, Bytes, FixedBytes, Perqu
 import type {
   FrameSystemDispatchEventInfo,
   FrameSupportTokensMiscBalanceStatus,
-  PalletDemocracyVoteThreshold,
-  PalletDemocracyVoteAccountVote,
-  PalletDemocracyMetadataOwner,
   OrmlVestingVestingSchedule,
   BasiliskRuntimeSystemProxyType,
   PalletProxyDepositKind,
@@ -423,151 +420,6 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
-   * Pallet `Democracy`'s events
-   **/
-  democracy: {
-    /**
-     * A motion has been proposed by a public account.
-     **/
-    Proposed: GenericPalletEvent<'Democracy', 'Proposed', { proposalIndex: number; deposit: bigint }>;
-
-    /**
-     * A public proposal has been tabled for referendum vote.
-     **/
-    Tabled: GenericPalletEvent<'Democracy', 'Tabled', { proposalIndex: number; deposit: bigint }>;
-
-    /**
-     * An external proposal has been tabled.
-     **/
-    ExternalTabled: GenericPalletEvent<'Democracy', 'ExternalTabled', null>;
-
-    /**
-     * A referendum has begun.
-     **/
-    Started: GenericPalletEvent<'Democracy', 'Started', { refIndex: number; threshold: PalletDemocracyVoteThreshold }>;
-
-    /**
-     * A proposal has been approved by referendum.
-     **/
-    Passed: GenericPalletEvent<'Democracy', 'Passed', { refIndex: number }>;
-
-    /**
-     * A proposal has been rejected by referendum.
-     **/
-    NotPassed: GenericPalletEvent<'Democracy', 'NotPassed', { refIndex: number }>;
-
-    /**
-     * A referendum has been cancelled.
-     **/
-    Cancelled: GenericPalletEvent<'Democracy', 'Cancelled', { refIndex: number }>;
-
-    /**
-     * An account has delegated their vote to another account.
-     **/
-    Delegated: GenericPalletEvent<'Democracy', 'Delegated', { who: AccountId32; target: AccountId32 }>;
-
-    /**
-     * An account has cancelled a previous delegation operation.
-     **/
-    Undelegated: GenericPalletEvent<'Democracy', 'Undelegated', { account: AccountId32 }>;
-
-    /**
-     * An external proposal has been vetoed.
-     **/
-    Vetoed: GenericPalletEvent<'Democracy', 'Vetoed', { who: AccountId32; proposalHash: H256; until: number }>;
-
-    /**
-     * A proposal_hash has been blacklisted permanently.
-     **/
-    Blacklisted: GenericPalletEvent<'Democracy', 'Blacklisted', { proposalHash: H256 }>;
-
-    /**
-     * An account has voted in a referendum
-     **/
-    Voted: GenericPalletEvent<
-      'Democracy',
-      'Voted',
-      { voter: AccountId32; refIndex: number; vote: PalletDemocracyVoteAccountVote }
-    >;
-
-    /**
-     * An account has seconded a proposal
-     **/
-    Seconded: GenericPalletEvent<'Democracy', 'Seconded', { seconder: AccountId32; propIndex: number }>;
-
-    /**
-     * A proposal got canceled.
-     **/
-    ProposalCanceled: GenericPalletEvent<'Democracy', 'ProposalCanceled', { propIndex: number }>;
-
-    /**
-     * Metadata for a proposal or a referendum has been set.
-     **/
-    MetadataSet: GenericPalletEvent<
-      'Democracy',
-      'MetadataSet',
-      {
-        /**
-         * Metadata owner.
-         **/
-        owner: PalletDemocracyMetadataOwner;
-
-        /**
-         * Preimage hash.
-         **/
-        hash: H256;
-      }
-    >;
-
-    /**
-     * Metadata for a proposal or a referendum has been cleared.
-     **/
-    MetadataCleared: GenericPalletEvent<
-      'Democracy',
-      'MetadataCleared',
-      {
-        /**
-         * Metadata owner.
-         **/
-        owner: PalletDemocracyMetadataOwner;
-
-        /**
-         * Preimage hash.
-         **/
-        hash: H256;
-      }
-    >;
-
-    /**
-     * Metadata has been transferred to new owner.
-     **/
-    MetadataTransferred: GenericPalletEvent<
-      'Democracy',
-      'MetadataTransferred',
-      {
-        /**
-         * Previous metadata owner.
-         **/
-        prevOwner: PalletDemocracyMetadataOwner;
-
-        /**
-         * New metadata owner.
-         **/
-        owner: PalletDemocracyMetadataOwner;
-
-        /**
-         * Preimage hash.
-         **/
-        hash: H256;
-      }
-    >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
    * Pallet `TechnicalCommittee`'s events
    **/
   technicalCommittee: {
@@ -700,6 +552,20 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * A pure proxy was killed by its spawner.
+     **/
+    PureKilled: GenericPalletEvent<
+      'Proxy',
+      'PureKilled',
+      {
+        pure: AccountId32;
+        spawner: AccountId32;
+        proxyType: BasiliskRuntimeSystemProxyType;
+        disambiguationIndex: number;
+      }
+    >;
+
+    /**
      * An announcement was placed to make a call in the future.
      **/
     Announced: GenericPalletEvent<'Proxy', 'Announced', { real: AccountId32; proxy: AccountId32; callHash: H256 }>;
@@ -829,6 +695,12 @@ export interface ChainEvents extends GenericChainEvents {
      * block number as the type might suggest.
      **/
     NewSession: GenericPalletEvent<'Session', 'NewSession', { sessionIndex: number }>;
+
+    /**
+     * The `NewSession` event in the current block also implies a new validator set to be
+     * queued.
+     **/
+    NewQueued: GenericPalletEvent<'Session', 'NewQueued', null>;
 
     /**
      * Validator has been disabled.
@@ -2984,6 +2856,135 @@ export interface ChainEvents extends GenericChainEvents {
         outputs: Array<PalletBroadcastAsset>;
         fees: Array<PalletBroadcastFee>;
         operationStack: Array<PalletBroadcastExecutionType>;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s events
+   **/
+  multiBlockMigrations: {
+    /**
+     * A Runtime upgrade started.
+     *
+     * Its end is indicated by `UpgradeCompleted` or `UpgradeFailed`.
+     **/
+    UpgradeStarted: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'UpgradeStarted',
+      {
+        /**
+         * The number of migrations that this upgrade contains.
+         *
+         * This can be used to design a progress indicator in combination with counting the
+         * `MigrationCompleted` and `MigrationSkipped` events.
+         **/
+        migrations: number;
+      }
+    >;
+
+    /**
+     * The current runtime upgrade completed.
+     *
+     * This implies that all of its migrations completed successfully as well.
+     **/
+    UpgradeCompleted: GenericPalletEvent<'MultiBlockMigrations', 'UpgradeCompleted', null>;
+
+    /**
+     * Runtime upgrade failed.
+     *
+     * This is very bad and will require governance intervention.
+     **/
+    UpgradeFailed: GenericPalletEvent<'MultiBlockMigrations', 'UpgradeFailed', null>;
+
+    /**
+     * A migration was skipped since it was already executed in the past.
+     **/
+    MigrationSkipped: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationSkipped',
+      {
+        /**
+         * The index of the skipped migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+      }
+    >;
+
+    /**
+     * A migration progressed.
+     **/
+    MigrationAdvanced: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationAdvanced',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * A Migration completed.
+     **/
+    MigrationCompleted: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationCompleted',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * A Migration failed.
+     *
+     * This implies that the whole upgrade failed and governance intervention is required.
+     **/
+    MigrationFailed: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationFailed',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * The set of historical migrations has been cleared.
+     **/
+    HistoricCleared: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'HistoricCleared',
+      {
+        /**
+         * Should be passed to `clear_historic` in a successive call.
+         **/
+        nextCursor?: Bytes | undefined;
       }
     >;
 

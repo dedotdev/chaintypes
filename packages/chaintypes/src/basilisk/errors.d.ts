@@ -279,136 +279,6 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
-   * Pallet `Democracy`'s errors
-   **/
-  democracy: {
-    /**
-     * Value too low
-     **/
-    ValueLow: GenericPalletError;
-
-    /**
-     * Proposal does not exist
-     **/
-    ProposalMissing: GenericPalletError;
-
-    /**
-     * Cannot cancel the same proposal twice
-     **/
-    AlreadyCanceled: GenericPalletError;
-
-    /**
-     * Proposal already made
-     **/
-    DuplicateProposal: GenericPalletError;
-
-    /**
-     * Proposal still blacklisted
-     **/
-    ProposalBlacklisted: GenericPalletError;
-
-    /**
-     * Next external proposal not simple majority
-     **/
-    NotSimpleMajority: GenericPalletError;
-
-    /**
-     * Invalid hash
-     **/
-    InvalidHash: GenericPalletError;
-
-    /**
-     * No external proposal
-     **/
-    NoProposal: GenericPalletError;
-
-    /**
-     * Identity may not veto a proposal twice
-     **/
-    AlreadyVetoed: GenericPalletError;
-
-    /**
-     * Vote given for invalid referendum
-     **/
-    ReferendumInvalid: GenericPalletError;
-
-    /**
-     * No proposals waiting
-     **/
-    NoneWaiting: GenericPalletError;
-
-    /**
-     * The given account did not vote on the referendum.
-     **/
-    NotVoter: GenericPalletError;
-
-    /**
-     * The actor has no permission to conduct the action.
-     **/
-    NoPermission: GenericPalletError;
-
-    /**
-     * The account is already delegating.
-     **/
-    AlreadyDelegating: GenericPalletError;
-
-    /**
-     * Too high a balance was provided that the account cannot afford.
-     **/
-    InsufficientFunds: GenericPalletError;
-
-    /**
-     * The account is not currently delegating.
-     **/
-    NotDelegating: GenericPalletError;
-
-    /**
-     * The account currently has votes attached to it and the operation cannot succeed until
-     * these are removed, either through `unvote` or `reap_vote`.
-     **/
-    VotesExist: GenericPalletError;
-
-    /**
-     * The instant referendum origin is currently disallowed.
-     **/
-    InstantNotAllowed: GenericPalletError;
-
-    /**
-     * Delegation to oneself makes no sense.
-     **/
-    Nonsense: GenericPalletError;
-
-    /**
-     * Invalid upper bound.
-     **/
-    WrongUpperBound: GenericPalletError;
-
-    /**
-     * Maximum number of votes reached.
-     **/
-    MaxVotesReached: GenericPalletError;
-
-    /**
-     * Maximum number of items reached.
-     **/
-    TooMany: GenericPalletError;
-
-    /**
-     * Voting period too low
-     **/
-    VotingPeriodLow: GenericPalletError;
-
-    /**
-     * The preimage does not exist.
-     **/
-    PreimageNotExist: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
    * Pallet `TechnicalCommittee`'s errors
    **/
   technicalCommittee: {
@@ -835,6 +705,26 @@ export interface ChainErrors extends GenericChainErrors {
      * The provided bid is too low.
      **/
     BidTooLow: GenericPalletError;
+
+    /**
+     * No metadata is found.
+     **/
+    NoMetadata: GenericPalletError;
+
+    /**
+     * Wrong metadata key/value bytes supplied.
+     **/
+    WrongMetadata: GenericPalletError;
+
+    /**
+     * An attribute is not found.
+     **/
+    AttributeNotFound: GenericPalletError;
+
+    /**
+     * Wrong attribute key/value bytes supplied.
+     **/
+    WrongAttribute: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1521,6 +1411,8 @@ export interface ChainErrors extends GenericChainErrors {
 
     /**
      * Too many locations authorized to alias origin.
+     *
+     * @deprecated Use `LocalExecutionIncompleteWithError` instead (since 20.0.0)
      **/
     TooManyAuthorizedAliases: GenericPalletError;
 
@@ -1533,6 +1425,12 @@ export interface ChainErrors extends GenericChainErrors {
      * The alias to remove authorization for was not found.
      **/
     AliasNotFound: GenericPalletError;
+
+    /**
+     * Local XCM execution incomplete with the actual XCM error and the index of the
+     * instruction that caused the error.
+     **/
+    LocalExecutionIncompleteWithError: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2414,6 +2312,20 @@ export interface ChainErrors extends GenericChainErrors {
      * The execution context call stack is empty, unable to decrease level
      **/
     ExecutionCallStackUnderflow: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s errors
+   **/
+  multiBlockMigrations: {
+    /**
+     * The operation cannot complete since some MBMs are ongoing.
+     **/
+    Ongoing: GenericPalletError;
 
     /**
      * Generic pallet error

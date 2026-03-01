@@ -27,10 +27,6 @@ import type {
   PalletBalancesAdjustmentDirection,
   BasiliskRuntimeOriginCaller,
   SpWeightsWeightV2Weight,
-  FrameSupportPreimagesBounded,
-  PalletDemocracyVoteAccountVote,
-  PalletDemocracyConviction,
-  PalletDemocracyMetadataOwner,
   OrmlVestingVestingSchedule,
   BasiliskRuntimeSystemProxyType,
   BasiliskRuntimeOpaqueSessionKeys,
@@ -43,6 +39,7 @@ import type {
   PalletStateTrieMigrationProgress,
   PalletConvictionVotingVoteAccountVote,
   PalletConvictionVotingConviction,
+  FrameSupportPreimagesBounded,
   FrameSupportScheduleDispatchTime,
   CumulusPrimitivesParachainInherentParachainInherentData,
   XcmVersionedLocation,
@@ -62,6 +59,8 @@ import type {
   BasiliskTraitsRouterAssetPair,
   PalletXykAssetPair,
   PalletLiquidityMiningLoyaltyCurve,
+  PalletMigrationsMigrationCursor,
+  PalletMigrationsHistoricCleanupSelector,
   XcmVersionedAsset,
 } from './types.js';
 
@@ -926,6 +925,8 @@ export interface ChainTx<
      * Emits [`Event::Paid`] if successful.
      *
      * @param {number} index
+     *
+     * @deprecated The `spend_local` call will be removed by May 2025. Migrate to the new flow and use the `spend` call.
      **/
     payout: GenericTxCall<
       (index: number) => ChainSubmittableExtrinsic<
@@ -962,6 +963,8 @@ export interface ChainTx<
      * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
      *
      * @param {number} index
+     *
+     * @deprecated The `remove_approval` call will be removed by May 2025. It associated with the deprecated `spend_local` call.
      **/
     checkStatus: GenericTxCall<
       (index: number) => ChainSubmittableExtrinsic<
@@ -1265,579 +1268,6 @@ export interface ChainTx<
           palletCall: {
             name: 'DispatchAsFallible';
             params: { asOrigin: BasiliskRuntimeOriginCaller; call: BasiliskRuntimeRuntimeCallLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
-   * Pallet `Democracy`'s transaction calls
-   **/
-  democracy: {
-    /**
-     * Propose a sensitive action to be taken.
-     *
-     * The dispatch origin of this call must be _Signed_ and the sender must
-     * have funds to cover the deposit.
-     *
-     * - `proposal_hash`: The hash of the proposal preimage.
-     * - `value`: The amount of deposit (must be at least `MinimumDeposit`).
-     *
-     * Emits `Proposed`.
-     *
-     * @param {FrameSupportPreimagesBounded} proposal
-     * @param {bigint} value
-     **/
-    propose: GenericTxCall<
-      (
-        proposal: FrameSupportPreimagesBounded,
-        value: bigint,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'Propose';
-            params: { proposal: FrameSupportPreimagesBounded; value: bigint };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Signals agreement with a particular proposal.
-     *
-     * The dispatch origin of this call must be _Signed_ and the sender
-     * must have funds to cover the deposit, equal to the original deposit.
-     *
-     * - `proposal`: The index of the proposal to second.
-     *
-     * @param {number} proposal
-     **/
-    second: GenericTxCall<
-      (proposal: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'Second';
-            params: { proposal: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Vote in a referendum. If `vote.is_aye()`, the vote is to enact the proposal;
-     * otherwise it is a vote to keep the status quo.
-     *
-     * The dispatch origin of this call must be _Signed_.
-     *
-     * - `ref_index`: The index of the referendum to vote for.
-     * - `vote`: The vote configuration.
-     *
-     * @param {number} refIndex
-     * @param {PalletDemocracyVoteAccountVote} vote
-     **/
-    vote: GenericTxCall<
-      (
-        refIndex: number,
-        vote: PalletDemocracyVoteAccountVote,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'Vote';
-            params: { refIndex: number; vote: PalletDemocracyVoteAccountVote };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Schedule an emergency cancellation of a referendum. Cannot happen twice to the same
-     * referendum.
-     *
-     * The dispatch origin of this call must be `CancellationOrigin`.
-     *
-     * -`ref_index`: The index of the referendum to cancel.
-     *
-     * Weight: `O(1)`.
-     *
-     * @param {number} refIndex
-     **/
-    emergencyCancel: GenericTxCall<
-      (refIndex: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'EmergencyCancel';
-            params: { refIndex: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Schedule a referendum to be tabled once it is legal to schedule an external
-     * referendum.
-     *
-     * The dispatch origin of this call must be `ExternalOrigin`.
-     *
-     * - `proposal_hash`: The preimage hash of the proposal.
-     *
-     * @param {FrameSupportPreimagesBounded} proposal
-     **/
-    externalPropose: GenericTxCall<
-      (proposal: FrameSupportPreimagesBounded) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'ExternalPropose';
-            params: { proposal: FrameSupportPreimagesBounded };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Schedule a majority-carries referendum to be tabled next once it is legal to schedule
-     * an external referendum.
-     *
-     * The dispatch of this call must be `ExternalMajorityOrigin`.
-     *
-     * - `proposal_hash`: The preimage hash of the proposal.
-     *
-     * Unlike `external_propose`, blacklisting has no effect on this and it may replace a
-     * pre-scheduled `external_propose` call.
-     *
-     * Weight: `O(1)`
-     *
-     * @param {FrameSupportPreimagesBounded} proposal
-     **/
-    externalProposeMajority: GenericTxCall<
-      (proposal: FrameSupportPreimagesBounded) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'ExternalProposeMajority';
-            params: { proposal: FrameSupportPreimagesBounded };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Schedule a negative-turnout-bias referendum to be tabled next once it is legal to
-     * schedule an external referendum.
-     *
-     * The dispatch of this call must be `ExternalDefaultOrigin`.
-     *
-     * - `proposal_hash`: The preimage hash of the proposal.
-     *
-     * Unlike `external_propose`, blacklisting has no effect on this and it may replace a
-     * pre-scheduled `external_propose` call.
-     *
-     * Weight: `O(1)`
-     *
-     * @param {FrameSupportPreimagesBounded} proposal
-     **/
-    externalProposeDefault: GenericTxCall<
-      (proposal: FrameSupportPreimagesBounded) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'ExternalProposeDefault';
-            params: { proposal: FrameSupportPreimagesBounded };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Schedule the currently externally-proposed majority-carries referendum to be tabled
-     * immediately. If there is no externally-proposed referendum currently, or if there is one
-     * but it is not a majority-carries referendum then it fails.
-     *
-     * The dispatch of this call must be `FastTrackOrigin`.
-     *
-     * - `proposal_hash`: The hash of the current external proposal.
-     * - `voting_period`: The period that is allowed for voting on this proposal. Increased to
-     * Must be always greater than zero.
-     * For `FastTrackOrigin` must be equal or greater than `FastTrackVotingPeriod`.
-     * - `delay`: The number of block after voting has ended in approval and this should be
-     * enacted. This doesn't have a minimum amount.
-     *
-     * Emits `Started`.
-     *
-     * Weight: `O(1)`
-     *
-     * @param {H256} proposalHash
-     * @param {number} votingPeriod
-     * @param {number} delay
-     **/
-    fastTrack: GenericTxCall<
-      (
-        proposalHash: H256,
-        votingPeriod: number,
-        delay: number,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'FastTrack';
-            params: { proposalHash: H256; votingPeriod: number; delay: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Veto and blacklist the external proposal hash.
-     *
-     * The dispatch origin of this call must be `VetoOrigin`.
-     *
-     * - `proposal_hash`: The preimage hash of the proposal to veto and blacklist.
-     *
-     * Emits `Vetoed`.
-     *
-     * Weight: `O(V + log(V))` where V is number of `existing vetoers`
-     *
-     * @param {H256} proposalHash
-     **/
-    vetoExternal: GenericTxCall<
-      (proposalHash: H256) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'VetoExternal';
-            params: { proposalHash: H256 };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove a referendum.
-     *
-     * The dispatch origin of this call must be _Root_.
-     *
-     * - `ref_index`: The index of the referendum to cancel.
-     *
-     * # Weight: `O(1)`.
-     *
-     * @param {number} refIndex
-     **/
-    cancelReferendum: GenericTxCall<
-      (refIndex: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'CancelReferendum';
-            params: { refIndex: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Delegate the voting power (with some given conviction) of the sending account.
-     *
-     * The balance delegated is locked for as long as it's delegated, and thereafter for the
-     * time appropriate for the conviction's lock period.
-     *
-     * The dispatch origin of this call must be _Signed_, and the signing account must either:
-     * - be delegating already; or
-     * - have no voting activity (if there is, then it will need to be removed/consolidated
-     * through `reap_vote` or `unvote`).
-     *
-     * - `to`: The account whose voting the `target` account's voting power will follow.
-     * - `conviction`: The conviction that will be attached to the delegated votes. When the
-     * account is undelegated, the funds will be locked for the corresponding period.
-     * - `balance`: The amount of the account's balance to be used in delegating. This must not
-     * be more than the account's current balance.
-     *
-     * Emits `Delegated`.
-     *
-     * Weight: `O(R)` where R is the number of referendums the voter delegating to has
-     * voted on. Weight is charged as if maximum votes.
-     *
-     * @param {AccountId32Like} to
-     * @param {PalletDemocracyConviction} conviction
-     * @param {bigint} balance
-     **/
-    delegate: GenericTxCall<
-      (
-        to: AccountId32Like,
-        conviction: PalletDemocracyConviction,
-        balance: bigint,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'Delegate';
-            params: { to: AccountId32Like; conviction: PalletDemocracyConviction; balance: bigint };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Undelegate the voting power of the sending account.
-     *
-     * Tokens may be unlocked following once an amount of time consistent with the lock period
-     * of the conviction with which the delegation was issued.
-     *
-     * The dispatch origin of this call must be _Signed_ and the signing account must be
-     * currently delegating.
-     *
-     * Emits `Undelegated`.
-     *
-     * Weight: `O(R)` where R is the number of referendums the voter delegating to has
-     * voted on. Weight is charged as if maximum votes.
-     *
-     **/
-    undelegate: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'Undelegate';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Clears all public proposals.
-     *
-     * The dispatch origin of this call must be _Root_.
-     *
-     * Weight: `O(1)`.
-     *
-     **/
-    clearPublicProposals: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'ClearPublicProposals';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Unlock tokens that have an expired lock.
-     *
-     * The dispatch origin of this call must be _Signed_.
-     *
-     * - `target`: The account to remove the lock on.
-     *
-     * Weight: `O(R)` with R number of vote of target.
-     *
-     * @param {AccountId32Like} target
-     **/
-    unlock: GenericTxCall<
-      (target: AccountId32Like) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'Unlock';
-            params: { target: AccountId32Like };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove a vote for a referendum.
-     *
-     * If:
-     * - the referendum was cancelled, or
-     * - the referendum is ongoing, or
-     * - the referendum has ended such that
-     * - the vote of the account was in opposition to the result; or
-     * - there was no conviction to the account's vote; or
-     * - the account made a split vote
-     * ...then the vote is removed cleanly and a following call to `unlock` may result in more
-     * funds being available.
-     *
-     * If, however, the referendum has ended and:
-     * - it finished corresponding to the vote of the account, and
-     * - the account made a standard vote with conviction, and
-     * - the lock period of the conviction is not over
-     * ...then the lock will be aggregated into the overall account's lock, which may involve
-     * *overlocking* (where the two locks are combined into a single lock that is the maximum
-     * of both the amount locked and the time is it locked for).
-     *
-     * The dispatch origin of this call must be _Signed_, and the signer must have a vote
-     * registered for referendum `index`.
-     *
-     * - `index`: The index of referendum of the vote to be removed.
-     *
-     * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
-     * Weight is calculated for the maximum number of vote.
-     *
-     * @param {number} index
-     **/
-    removeVote: GenericTxCall<
-      (index: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'RemoveVote';
-            params: { index: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove a vote for a referendum.
-     *
-     * If the `target` is equal to the signer, then this function is exactly equivalent to
-     * `remove_vote`. If not equal to the signer, then the vote must have expired,
-     * either because the referendum was cancelled, because the voter lost the referendum or
-     * because the conviction period is over.
-     *
-     * The dispatch origin of this call must be _Signed_.
-     *
-     * - `target`: The account of the vote to be removed; this account must have voted for
-     * referendum `index`.
-     * - `index`: The index of referendum of the vote to be removed.
-     *
-     * Weight: `O(R + log R)` where R is the number of referenda that `target` has voted on.
-     * Weight is calculated for the maximum number of vote.
-     *
-     * @param {AccountId32Like} target
-     * @param {number} index
-     **/
-    removeOtherVote: GenericTxCall<
-      (
-        target: AccountId32Like,
-        index: number,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'RemoveOtherVote';
-            params: { target: AccountId32Like; index: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Permanently place a proposal into the blacklist. This prevents it from ever being
-     * proposed again.
-     *
-     * If called on a queued public or external proposal, then this will result in it being
-     * removed. If the `ref_index` supplied is an active referendum with the proposal hash,
-     * then it will be cancelled.
-     *
-     * The dispatch origin of this call must be `BlacklistOrigin`.
-     *
-     * - `proposal_hash`: The proposal hash to blacklist permanently.
-     * - `ref_index`: An ongoing referendum whose hash is `proposal_hash`, which will be
-     * cancelled.
-     *
-     * Weight: `O(p)` (though as this is an high-privilege dispatch, we assume it has a
-     * reasonable value).
-     *
-     * @param {H256} proposalHash
-     * @param {number | undefined} maybeRefIndex
-     **/
-    blacklist: GenericTxCall<
-      (
-        proposalHash: H256,
-        maybeRefIndex: number | undefined,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'Blacklist';
-            params: { proposalHash: H256; maybeRefIndex: number | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove a proposal.
-     *
-     * The dispatch origin of this call must be `CancelProposalOrigin`.
-     *
-     * - `prop_index`: The index of the proposal to cancel.
-     *
-     * Weight: `O(p)` where `p = PublicProps::<T>::decode_len()`
-     *
-     * @param {number} propIndex
-     **/
-    cancelProposal: GenericTxCall<
-      (propIndex: number) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'CancelProposal';
-            params: { propIndex: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set or clear a metadata of a proposal or a referendum.
-     *
-     * Parameters:
-     * - `origin`: Must correspond to the `MetadataOwner`.
-     * - `ExternalOrigin` for an external proposal with the `SuperMajorityApprove`
-     * threshold.
-     * - `ExternalDefaultOrigin` for an external proposal with the `SuperMajorityAgainst`
-     * threshold.
-     * - `ExternalMajorityOrigin` for an external proposal with the `SimpleMajority`
-     * threshold.
-     * - `Signed` by a creator for a public proposal.
-     * - `Signed` to clear a metadata for a finished referendum.
-     * - `Root` to set a metadata for an ongoing referendum.
-     * - `owner`: an identifier of a metadata owner.
-     * - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
-     *
-     * @param {PalletDemocracyMetadataOwner} owner
-     * @param {H256 | undefined} maybeHash
-     **/
-    setMetadata: GenericTxCall<
-      (
-        owner: PalletDemocracyMetadataOwner,
-        maybeHash: H256 | undefined,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Democracy';
-          palletCall: {
-            name: 'SetMetadata';
-            params: { owner: PalletDemocracyMetadataOwner; maybeHash: H256 | undefined };
           };
         },
         ChainKnownTypes
@@ -2392,7 +1822,7 @@ export interface ChainTx<
      * `pure` with corresponding parameters.
      *
      * - `spawner`: The account that originally called `pure` to create this account.
-     * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+     * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
      * - `proxy_type`: The proxy type originally passed to `pure`.
      * - `height`: The height of the chain when the call to `pure` was processed.
      * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
@@ -6021,6 +5451,8 @@ export interface ChainTx<
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_teleport_assets` or `transfer_assets`
      **/
     teleportAssets: GenericTxCall<
       (
@@ -6081,6 +5513,8 @@ export interface ChainTx<
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_reserve_transfer_assets` or `transfer_assets`
      **/
     reserveTransferAssets: GenericTxCall<
       (
@@ -7031,7 +6465,8 @@ export interface ChainTx<
      * IF account balance is < min. existential deposit of given currency, and account is allowed to
      * be dusted, the remaining balance is transferred to treasury account.
      *
-     * In case of AToken, we perform an erc20 dust, which does a wihtdraw all then supply atoken on behalf of the dust receiver
+     * In case of AToken, we perform an erc20 dust, which does a wihtdraw all to the treasury account
+     * Note that in this case, the treasury will just receive the underlying token, not the atoken variant.
      *
      * The transaction fee is returned back in case of successful dusting.
      *
@@ -8542,6 +7977,107 @@ export interface ChainTx<
    * Pallet `Broadcast`'s transaction calls
    **/
   broadcast: {
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s transaction calls
+   **/
+  multiBlockMigrations: {
+    /**
+     * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+     *
+     * Should normally not be needed and is only in place as emergency measure. Note that
+     * restarting the migration process in this manner will not call the
+     * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+     *
+     * @param {PalletMigrationsMigrationCursor | undefined} cursor
+     **/
+    forceSetCursor: GenericTxCall<
+      (cursor: PalletMigrationsMigrationCursor | undefined) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceSetCursor';
+            params: { cursor: PalletMigrationsMigrationCursor | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Allows root to set an active cursor to forcefully start/forward the migration process.
+     *
+     * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+     * `started_at` value to the next block number. Otherwise this would not be possible, since
+     * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+     * indicates that the current block number plus one should be used.
+     *
+     * @param {number} index
+     * @param {BytesLike | undefined} innerCursor
+     * @param {number | undefined} startedAt
+     **/
+    forceSetActiveCursor: GenericTxCall<
+      (
+        index: number,
+        innerCursor: BytesLike | undefined,
+        startedAt: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceSetActiveCursor';
+            params: { index: number; innerCursor: BytesLike | undefined; startedAt: number | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Forces the onboarding of the migrations.
+     *
+     * This process happens automatically on a runtime upgrade. It is in place as an emergency
+     * measurement. The cursor needs to be `None` for this to succeed.
+     *
+     **/
+    forceOnboardMbms: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceOnboardMbms';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clears the `Historic` set.
+     *
+     * `map_cursor` must be set to the last value that was returned by the
+     * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+     * way that will result in a sensible weight.
+     *
+     * @param {PalletMigrationsHistoricCleanupSelector} selector
+     **/
+    clearHistoric: GenericTxCall<
+      (selector: PalletMigrationsHistoricCleanupSelector) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ClearHistoric';
+            params: { selector: PalletMigrationsHistoricCleanupSelector };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
     /**
      * Generic pallet tx call
      **/

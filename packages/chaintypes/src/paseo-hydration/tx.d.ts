@@ -48,8 +48,10 @@ import type {
   HydradxRuntimeXcmAssetLocation,
   PalletClaimsEcdsaSignature,
   PalletOmnipoolTradability,
+  PalletOmnipoolSlipFeeConfig,
   PalletLiquidityMiningLoyaltyCurve,
   HydradxTraitsStableswapAssetAmount,
+  PalletCircuitBreakerGlobalWithdrawLimitParameters,
   PalletCircuitBreakerGlobalAssetCategory,
   HydradxTraitsRouterTrade,
   HydradxTraitsRouterAssetPair,
@@ -6154,6 +6156,31 @@ export interface ChainTx<
     >;
 
     /**
+     * Set or clear slip fee configuration.
+     *
+     * When set to `Some(config)`, slip fees are enabled with the given parameters.
+     * When set to `None`, slip fees are disabled.
+     *
+     * Can only be called by `UpdateTradabilityOrigin`.
+     *
+     * Emits `SlipFeeSet` event.
+     *
+     * @param {PalletOmnipoolSlipFeeConfig | undefined} slipFee
+     **/
+    setSlipFee: GenericTxCall<
+      (slipFee: PalletOmnipoolSlipFeeConfig | undefined) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Omnipool';
+          palletCall: {
+            name: 'SetSlipFee';
+            params: { slipFee: PalletOmnipoolSlipFeeConfig | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -7364,15 +7391,15 @@ export interface ChainTx<
      * Set the global withdraw limit (reference currency units)
      * Can be called only by authority origin.
      *
-     * @param {bigint} limit
+     * @param {PalletCircuitBreakerGlobalWithdrawLimitParameters} parameters
      **/
-    setGlobalWithdrawLimit: GenericTxCall<
-      (limit: bigint) => ChainSubmittableExtrinsic<
+    setGlobalWithdrawLimitParams: GenericTxCall<
+      (parameters: PalletCircuitBreakerGlobalWithdrawLimitParameters) => ChainSubmittableExtrinsic<
         {
           pallet: 'CircuitBreaker';
           palletCall: {
-            name: 'SetGlobalWithdrawLimit';
-            params: { limit: bigint };
+            name: 'SetGlobalWithdrawLimitParams';
+            params: { parameters: PalletCircuitBreakerGlobalWithdrawLimitParameters };
           };
         },
         ChainKnownTypes

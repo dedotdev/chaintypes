@@ -1484,6 +1484,11 @@ export interface ChainErrors extends GenericChainErrors {
     ProtocolFeeNotConsumed: GenericPalletError;
 
     /**
+     * Slip fee configuration exceeds the allowed maximum (50%).
+     **/
+    MaxSlipFeeTooHigh: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;

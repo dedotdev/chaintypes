@@ -6841,7 +6841,18 @@ export type PalletOmnipoolCall =
    *
    * Emits `TokenRemoved` event when successful.
    **/
-  | { name: 'RemoveToken'; params: { assetId: number; beneficiary: AccountId32 } };
+  | { name: 'RemoveToken'; params: { assetId: number; beneficiary: AccountId32 } }
+  /**
+   * Set or clear slip fee configuration.
+   *
+   * When set to `Some(config)`, slip fees are enabled with the given parameters.
+   * When set to `None`, slip fees are disabled.
+   *
+   * Can only be called by `UpdateTradabilityOrigin`.
+   *
+   * Emits `SlipFeeSet` event.
+   **/
+  | { name: 'SetSlipFee'; params: { slipFee?: PalletOmnipoolSlipFeeConfig | undefined } };
 
 export type PalletOmnipoolCallLike =
   /**
@@ -7099,9 +7110,22 @@ export type PalletOmnipoolCallLike =
    *
    * Emits `TokenRemoved` event when successful.
    **/
-  | { name: 'RemoveToken'; params: { assetId: number; beneficiary: AccountId32Like } };
+  | { name: 'RemoveToken'; params: { assetId: number; beneficiary: AccountId32Like } }
+  /**
+   * Set or clear slip fee configuration.
+   *
+   * When set to `Some(config)`, slip fees are enabled with the given parameters.
+   * When set to `None`, slip fees are disabled.
+   *
+   * Can only be called by `UpdateTradabilityOrigin`.
+   *
+   * Emits `SlipFeeSet` event.
+   **/
+  | { name: 'SetSlipFee'; params: { slipFee?: PalletOmnipoolSlipFeeConfig | undefined } };
 
 export type PalletOmnipoolTradability = { bits: number };
+
+export type PalletOmnipoolSlipFeeConfig = { maxSlipFee: Permill };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8191,7 +8215,7 @@ export type PalletCircuitBreakerCall =
    * Set the global withdraw limit (reference currency units)
    * Can be called only by authority origin.
    **/
-  | { name: 'SetGlobalWithdrawLimit'; params: { limit: bigint } }
+  | { name: 'SetGlobalWithdrawLimitParams'; params: { parameters: PalletCircuitBreakerGlobalWithdrawLimitParameters } }
   /**
    * Reset the global lockdown and accumulator to zero at current block.
    * Can be called only by authority origin.
@@ -8289,7 +8313,7 @@ export type PalletCircuitBreakerCallLike =
    * Set the global withdraw limit (reference currency units)
    * Can be called only by authority origin.
    **/
-  | { name: 'SetGlobalWithdrawLimit'; params: { limit: bigint } }
+  | { name: 'SetGlobalWithdrawLimitParams'; params: { parameters: PalletCircuitBreakerGlobalWithdrawLimitParameters } }
   /**
    * Reset the global lockdown and accumulator to zero at current block.
    * Can be called only by authority origin.
@@ -8302,6 +8326,8 @@ export type PalletCircuitBreakerCallLike =
       name: 'SetAssetCategory';
       params: { assetId: number; category?: PalletCircuitBreakerGlobalAssetCategory | undefined };
     };
+
+export type PalletCircuitBreakerGlobalWithdrawLimitParameters = { limit: bigint; window: bigint };
 
 export type PalletCircuitBreakerGlobalAssetCategory = 'External' | 'Local';
 
@@ -14847,7 +14873,11 @@ export type PalletOmnipoolEvent =
   /**
    * Asset's weight cap has been updated.
    **/
-  | { name: 'AssetWeightCapUpdated'; data: { assetId: number; cap: Permill } };
+  | { name: 'AssetWeightCapUpdated'; data: { assetId: number; cap: Permill } }
+  /**
+   * Slip fee configuration was updated.
+   **/
+  | { name: 'SlipFeeSet'; data: { slipFee?: PalletOmnipoolSlipFeeConfig | undefined } };
 
 /**
  * The `Event` enum of this pallet
@@ -15108,7 +15138,7 @@ export type PalletCircuitBreakerEvent =
   /**
    * Global limit value updated by governance (in reference currency).
    **/
-  | { name: 'GlobalLimitUpdated'; data: { newLimit: bigint } }
+  | { name: 'GlobalWithdrawLimitConfigUpdated'; data: { newLimit: bigint; newPeriod: bigint } }
   /**
    * Global withdraw lockdown was set by governance.
    **/
@@ -18163,6 +18193,10 @@ export type PalletOmnipoolAssetState = {
 
 export type PalletOmnipoolPosition = { assetId: number; amount: bigint; shares: bigint; price: [bigint, bigint] };
 
+export type HydraDxMathOmnipoolTypesSignedBalance =
+  | { type: 'Positive'; value: bigint }
+  | { type: 'Negative'; value: bigint };
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -18294,7 +18328,11 @@ export type PalletOmnipoolError =
   /**
    * Extra protocol fee has not been consumed.
    **/
-  | 'ProtocolFeeNotConsumed';
+  | 'ProtocolFeeNotConsumed'
+  /**
+   * Slip fee configuration exceeds the allowed maximum (50%).
+   **/
+  | 'MaxSlipFeeTooHigh';
 
 /**
  * The `Error` enum of this pallet.

@@ -34,6 +34,7 @@ import type {
   HydradxRuntimeXcmAssetLocation,
   PalletClaimsEthereumAddress,
   PalletOmnipoolTradability,
+  PalletOmnipoolSlipFeeConfig,
   PalletLiquidityMiningLoyaltyCurve,
   PalletCircuitBreakerGlobalAssetCategory,
   PalletDynamicFeesAssetFeeConfig,
@@ -1840,6 +1841,11 @@ export interface ChainEvents extends GenericChainEvents {
     AssetWeightCapUpdated: GenericPalletEvent<'Omnipool', 'AssetWeightCapUpdated', { assetId: number; cap: Permill }>;
 
     /**
+     * Slip fee configuration was updated.
+     **/
+    SlipFeeSet: GenericPalletEvent<'Omnipool', 'SlipFeeSet', { slipFee?: PalletOmnipoolSlipFeeConfig | undefined }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -2207,7 +2213,11 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * Global limit value updated by governance (in reference currency).
      **/
-    GlobalLimitUpdated: GenericPalletEvent<'CircuitBreaker', 'GlobalLimitUpdated', { newLimit: bigint }>;
+    GlobalWithdrawLimitConfigUpdated: GenericPalletEvent<
+      'CircuitBreaker',
+      'GlobalWithdrawLimitConfigUpdated',
+      { newLimit: bigint; newPeriod: bigint }
+    >;
 
     /**
      * Global withdraw lockdown was set by governance.

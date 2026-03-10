@@ -1484,6 +1484,11 @@ export interface ChainErrors extends GenericChainErrors {
     ProtocolFeeNotConsumed: GenericPalletError;
 
     /**
+     * Slip fee configuration exceeds the allowed maximum (50%).
+     **/
+    MaxSlipFeeTooHigh: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1869,6 +1874,21 @@ export interface ChainErrors extends GenericChainErrors {
      * Operation rejected to prevent funds being locked on system accounts.
      **/
     DepositLimitExceededForWhitelistedAccount: GenericPalletError;
+
+    /**
+     * Global lockdown is active and withdrawals that participate in the global limit are blocked.
+     **/
+    WithdrawLockdownActive: GenericPalletError;
+
+    /**
+     * Applying the increment would exceed the configured global limit -> lockdown is triggered and operation fails.
+     **/
+    GlobalWithdrawLimitExceeded: GenericPalletError;
+
+    /**
+     * Asset to withdraw cannot be converted to reference currency.
+     **/
+    FailedToConvertAsset: GenericPalletError;
 
     /**
      * Generic pallet error

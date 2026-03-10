@@ -34,7 +34,9 @@ import type {
   HydradxRuntimeXcmAssetLocation,
   PalletClaimsEthereumAddress,
   PalletOmnipoolTradability,
+  PalletOmnipoolSlipFeeConfig,
   PalletLiquidityMiningLoyaltyCurve,
+  PalletCircuitBreakerGlobalAssetCategory,
   PalletDynamicFeesAssetFeeConfig,
   NonZeroU16,
   PalletStableswapPoolPegInfo,
@@ -1839,6 +1841,11 @@ export interface ChainEvents extends GenericChainEvents {
     AssetWeightCapUpdated: GenericPalletEvent<'Omnipool', 'AssetWeightCapUpdated', { assetId: number; cap: Permill }>;
 
     /**
+     * Slip fee configuration was updated.
+     **/
+    SlipFeeSet: GenericPalletEvent<'Omnipool', 'SlipFeeSet', { slipFee?: PalletOmnipoolSlipFeeConfig | undefined }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -2187,6 +2194,49 @@ export interface ChainEvents extends GenericChainEvents {
      * All reserved amount of deposit was released
      **/
     DepositReleased: GenericPalletEvent<'CircuitBreaker', 'DepositReleased', { who: AccountId32; assetId: number }>;
+
+    /**
+     * Global withdraw lockdown was lifted (either automatically or by reset).
+     **/
+    WithdrawLockdownLifted: GenericPalletEvent<'CircuitBreaker', 'WithdrawLockdownLifted', null>;
+
+    /**
+     * Withdraw lockdown accumulator and states were reset by governance.
+     **/
+    WithdrawLockdownReset: GenericPalletEvent<'CircuitBreaker', 'WithdrawLockdownReset', null>;
+
+    /**
+     * Global withdraw limit config parameters were updated.
+     **/
+    WithdrawLimitConfigUpdated: GenericPalletEvent<
+      'CircuitBreaker',
+      'WithdrawLimitConfigUpdated',
+      { limit: bigint; window: bigint }
+    >;
+
+    /**
+     * Global withdraw lockdown was set by governance.
+     **/
+    WithdrawLockdownTriggered: GenericPalletEvent<'CircuitBreaker', 'WithdrawLockdownTriggered', { until: bigint }>;
+
+    /**
+     * A number of egress accounts added to a list.
+     **/
+    EgressAccountsAdded: GenericPalletEvent<'CircuitBreaker', 'EgressAccountsAdded', { count: number }>;
+
+    /**
+     * A number of egress accounts removed from a list.
+     **/
+    EgressAccountsRemoved: GenericPalletEvent<'CircuitBreaker', 'EgressAccountsRemoved', { count: number }>;
+
+    /**
+     * Asset category override updated.
+     **/
+    AssetCategoryUpdated: GenericPalletEvent<
+      'CircuitBreaker',
+      'AssetCategoryUpdated',
+      { assetId: number; category?: PalletCircuitBreakerGlobalAssetCategory | undefined }
+    >;
 
     /**
      * Generic pallet event

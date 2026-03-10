@@ -6841,7 +6841,18 @@ export type PalletOmnipoolCall =
    *
    * Emits `TokenRemoved` event when successful.
    **/
-  | { name: 'RemoveToken'; params: { assetId: number; beneficiary: AccountId32 } };
+  | { name: 'RemoveToken'; params: { assetId: number; beneficiary: AccountId32 } }
+  /**
+   * Set or clear slip fee configuration.
+   *
+   * When set to `Some(config)`, slip fees are enabled with the given parameters.
+   * When set to `None`, slip fees are disabled.
+   *
+   * Can only be called by `UpdateTradabilityOrigin`.
+   *
+   * Emits `SlipFeeSet` event.
+   **/
+  | { name: 'SetSlipFee'; params: { slipFee?: PalletOmnipoolSlipFeeConfig | undefined } };
 
 export type PalletOmnipoolCallLike =
   /**
@@ -7099,9 +7110,22 @@ export type PalletOmnipoolCallLike =
    *
    * Emits `TokenRemoved` event when successful.
    **/
-  | { name: 'RemoveToken'; params: { assetId: number; beneficiary: AccountId32Like } };
+  | { name: 'RemoveToken'; params: { assetId: number; beneficiary: AccountId32Like } }
+  /**
+   * Set or clear slip fee configuration.
+   *
+   * When set to `Some(config)`, slip fees are enabled with the given parameters.
+   * When set to `None`, slip fees are disabled.
+   *
+   * Can only be called by `UpdateTradabilityOrigin`.
+   *
+   * Emits `SlipFeeSet` event.
+   **/
+  | { name: 'SetSlipFee'; params: { slipFee?: PalletOmnipoolSlipFeeConfig | undefined } };
 
 export type PalletOmnipoolTradability = { bits: number };
+
+export type PalletOmnipoolSlipFeeConfig = { maxSlipFee: Permill };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8186,7 +8210,24 @@ export type PalletCircuitBreakerCall =
    *
    * Emits `DepositReleased` event when successful.
    **/
-  | { name: 'ReleaseDeposit'; params: { who: AccountId32; assetId: number } };
+  | { name: 'ReleaseDeposit'; params: { who: AccountId32; assetId: number } }
+  /**
+   * Set the global withdraw limit (reference currency units)
+   * Can be called only by authority origin.
+   **/
+  | { name: 'SetGlobalWithdrawLimitParams'; params: { parameters: PalletCircuitBreakerGlobalWithdrawLimitParameters } }
+  /**
+   * Reset the global lockdown and accumulator to zero at current block.
+   * Can be called only by authority origin.
+   **/
+  | { name: 'ResetWithdrawLockdown' }
+  | { name: 'AddEgressAccounts'; params: { accounts: Array<AccountId32> } }
+  | { name: 'RemoveEgressAccounts'; params: { accounts: Array<AccountId32> } }
+  | { name: 'SetGlobalWithdrawLockdown'; params: { until: bigint } }
+  | {
+      name: 'SetAssetCategory';
+      params: { assetId: number; category?: PalletCircuitBreakerGlobalAssetCategory | undefined };
+    };
 
 export type PalletCircuitBreakerCallLike =
   /**
@@ -8267,7 +8308,28 @@ export type PalletCircuitBreakerCallLike =
    *
    * Emits `DepositReleased` event when successful.
    **/
-  | { name: 'ReleaseDeposit'; params: { who: AccountId32Like; assetId: number } };
+  | { name: 'ReleaseDeposit'; params: { who: AccountId32Like; assetId: number } }
+  /**
+   * Set the global withdraw limit (reference currency units)
+   * Can be called only by authority origin.
+   **/
+  | { name: 'SetGlobalWithdrawLimitParams'; params: { parameters: PalletCircuitBreakerGlobalWithdrawLimitParameters } }
+  /**
+   * Reset the global lockdown and accumulator to zero at current block.
+   * Can be called only by authority origin.
+   **/
+  | { name: 'ResetWithdrawLockdown' }
+  | { name: 'AddEgressAccounts'; params: { accounts: Array<AccountId32Like> } }
+  | { name: 'RemoveEgressAccounts'; params: { accounts: Array<AccountId32Like> } }
+  | { name: 'SetGlobalWithdrawLockdown'; params: { until: bigint } }
+  | {
+      name: 'SetAssetCategory';
+      params: { assetId: number; category?: PalletCircuitBreakerGlobalAssetCategory | undefined };
+    };
+
+export type PalletCircuitBreakerGlobalWithdrawLimitParameters = { limit: bigint; window: bigint };
+
+export type PalletCircuitBreakerGlobalAssetCategory = 'External' | 'Local';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -14811,7 +14873,11 @@ export type PalletOmnipoolEvent =
   /**
    * Asset's weight cap has been updated.
    **/
-  | { name: 'AssetWeightCapUpdated'; data: { assetId: number; cap: Permill } };
+  | { name: 'AssetWeightCapUpdated'; data: { assetId: number; cap: Permill } }
+  /**
+   * Slip fee configuration was updated.
+   **/
+  | { name: 'SlipFeeSet'; data: { slipFee?: PalletOmnipoolSlipFeeConfig | undefined } };
 
 /**
  * The `Event` enum of this pallet
@@ -15056,7 +15122,38 @@ export type PalletCircuitBreakerEvent =
   /**
    * All reserved amount of deposit was released
    **/
-  | { name: 'DepositReleased'; data: { who: AccountId32; assetId: number } };
+  | { name: 'DepositReleased'; data: { who: AccountId32; assetId: number } }
+  /**
+   * Global withdraw lockdown was lifted (either automatically or by reset).
+   **/
+  | { name: 'WithdrawLockdownLifted' }
+  /**
+   * Withdraw lockdown accumulator and states were reset by governance.
+   **/
+  | { name: 'WithdrawLockdownReset' }
+  /**
+   * Global withdraw limit config parameters were updated.
+   **/
+  | { name: 'WithdrawLimitConfigUpdated'; data: { limit: bigint; window: bigint } }
+  /**
+   * Global withdraw lockdown was set by governance.
+   **/
+  | { name: 'WithdrawLockdownTriggered'; data: { until: bigint } }
+  /**
+   * A number of egress accounts added to a list.
+   **/
+  | { name: 'EgressAccountsAdded'; data: { count: number } }
+  /**
+   * A number of egress accounts removed from a list.
+   **/
+  | { name: 'EgressAccountsRemoved'; data: { count: number } }
+  /**
+   * Asset category override updated.
+   **/
+  | {
+      name: 'AssetCategoryUpdated';
+      data: { assetId: number; category?: PalletCircuitBreakerGlobalAssetCategory | undefined };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -18092,6 +18189,10 @@ export type PalletOmnipoolAssetState = {
 
 export type PalletOmnipoolPosition = { assetId: number; amount: bigint; shares: bigint; price: [bigint, bigint] };
 
+export type HydraDxMathOmnipoolTypesSignedBalance =
+  | { type: 'Positive'; value: bigint }
+  | { type: 'Negative'; value: bigint };
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -18223,7 +18324,11 @@ export type PalletOmnipoolError =
   /**
    * Extra protocol fee has not been consumed.
    **/
-  | 'ProtocolFeeNotConsumed';
+  | 'ProtocolFeeNotConsumed'
+  /**
+   * Slip fee configuration exceeds the allowed maximum (50%).
+   **/
+  | 'MaxSlipFeeTooHigh';
 
 /**
  * The `Error` enum of this pallet.
@@ -18614,7 +18719,19 @@ export type PalletCircuitBreakerError =
    * Deposit limit would be exceeded for a whitelisted account.
    * Operation rejected to prevent funds being locked on system accounts.
    **/
-  | 'DepositLimitExceededForWhitelistedAccount';
+  | 'DepositLimitExceededForWhitelistedAccount'
+  /**
+   * Global lockdown is active and withdrawals that participate in the global limit are blocked.
+   **/
+  | 'WithdrawLockdownActive'
+  /**
+   * Applying the increment would exceed the configured global limit -> lockdown is triggered and operation fails.
+   **/
+  | 'GlobalWithdrawLimitExceeded'
+  /**
+   * Asset to withdraw cannot be converted to reference currency.
+   **/
+  | 'FailedToConvertAsset';
 
 /**
  * The `Error` enum of this pallet.

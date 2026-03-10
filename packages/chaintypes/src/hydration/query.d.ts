@@ -64,6 +64,8 @@ import type {
   PalletOmnipoolAssetState,
   PalletOmnipoolTradability,
   PalletOmnipoolPosition,
+  PalletOmnipoolSlipFeeConfig,
+  HydraDxMathOmnipoolTypesSignedBalance,
   PalletLiquidityMiningGlobalFarmData,
   PalletLiquidityMiningYieldFarmData,
   PalletLiquidityMiningDepositData,
@@ -71,6 +73,8 @@ import type {
   PalletCircuitBreakerTradeVolumeLimit,
   PalletCircuitBreakerLiquidityLimit,
   PalletCircuitBreakerLockdownStatus,
+  PalletCircuitBreakerGlobalWithdrawLimitParameters,
+  PalletCircuitBreakerGlobalAssetCategory,
   HydradxTraitsRouterTrade,
   HydradxTraitsRouterAssetPair,
   PalletDynamicFeesFeeEntry,
@@ -1343,6 +1347,34 @@ export interface ChainStorage extends GenericChainStorage {
     nextPositionId: GenericStorageQuery<() => bigint>;
 
     /**
+     * Global slip fee configuration.
+     * `None` = slip fees disabled (default). `Some(config)` = enabled.
+     * Set via `set_slip_fee` extrinsic (governance).
+     *
+     * @param {Callback<PalletOmnipoolSlipFeeConfig | undefined> =} callback
+     **/
+    slipFee: GenericStorageQuery<() => PalletOmnipoolSlipFeeConfig | undefined>;
+
+    /**
+     * Snapshot of each asset's hub_reserve at the start of the current block.
+     * Lazily populated on first trade per asset per block, cleared in on_finalize.
+     *
+     * @param {number} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    slipFeeHubReserveAtBlockStart: GenericStorageQuery<(arg: number) => bigint | undefined, number>;
+
+    /**
+     * Cumulative net hub asset delta per asset in the current block.
+     * Negative = net hub asset outflow, positive = net hub asset inflow.
+     * Cleared in on_finalize.
+     *
+     * @param {number} arg
+     * @param {Callback<HydraDxMathOmnipoolTypesSignedBalance> =} callback
+     **/
+    slipFeeDelta: GenericStorageQuery<(arg: number) => HydraDxMathOmnipoolTypesSignedBalance, number>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
@@ -1547,6 +1579,53 @@ export interface ChainStorage extends GenericChainStorage {
      **/
     allowedRemoveLiquidityAmountPerAsset: GenericStorageQuery<
       (arg: number) => PalletCircuitBreakerLiquidityLimit | undefined,
+      number
+    >;
+
+    /**
+     * Configured global withdraw limit parameters
+     *
+     * @param {Callback<PalletCircuitBreakerGlobalWithdrawLimitParameters | undefined> =} callback
+     **/
+    globalWithdrawLimitConfig: GenericStorageQuery<() => PalletCircuitBreakerGlobalWithdrawLimitParameters | undefined>;
+
+    /**
+     * Tuple of (current_accumulator_in_ref, last_update_timestamp_ms)
+     *
+     * @param {Callback<[bigint, bigint]> =} callback
+     **/
+    withdrawLimitAccumulator: GenericStorageQuery<() => [bigint, bigint]>;
+
+    /**
+     * If some, global lockdown is active until this timestamp.
+     *
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    withdrawLockdownUntil: GenericStorageQuery<() => bigint | undefined>;
+
+    /**
+     * A map of accounts that are considered egress sinks.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    egressAccounts: GenericStorageQuery<(arg: AccountId32Like) => [] | undefined, AccountId32>;
+
+    /**
+     * When set to true, egress accounting is skipped.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    ignoreWithdrawLimit: GenericStorageQuery<() => boolean>;
+
+    /**
+     * Overrides for global asset categorization.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletCircuitBreakerGlobalAssetCategory | undefined> =} callback
+     **/
+    globalAssetOverrides: GenericStorageQuery<
+      (arg: number) => PalletCircuitBreakerGlobalAssetCategory | undefined,
       number
     >;
 

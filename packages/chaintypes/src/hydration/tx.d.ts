@@ -48,8 +48,11 @@ import type {
   HydradxRuntimeXcmAssetLocation,
   PalletClaimsEcdsaSignature,
   PalletOmnipoolTradability,
+  PalletOmnipoolSlipFeeConfig,
   PalletLiquidityMiningLoyaltyCurve,
   HydradxTraitsStableswapAssetAmount,
+  PalletCircuitBreakerGlobalWithdrawLimitParameters,
+  PalletCircuitBreakerGlobalAssetCategory,
   HydradxTraitsRouterTrade,
   HydradxTraitsRouterAssetPair,
   PalletDynamicFeesAssetFeeConfig,
@@ -6153,6 +6156,31 @@ export interface ChainTx<
     >;
 
     /**
+     * Set or clear slip fee configuration.
+     *
+     * When set to `Some(config)`, slip fees are enabled with the given parameters.
+     * When set to `None`, slip fees are disabled.
+     *
+     * Can only be called by `UpdateTradabilityOrigin`.
+     *
+     * Emits `SlipFeeSet` event.
+     *
+     * @param {PalletOmnipoolSlipFeeConfig | undefined} slipFee
+     **/
+    setSlipFee: GenericTxCall<
+      (slipFee: PalletOmnipoolSlipFeeConfig | undefined) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Omnipool';
+          palletCall: {
+            name: 'SetSlipFee';
+            params: { slipFee: PalletOmnipoolSlipFeeConfig | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -7353,6 +7381,114 @@ export interface ChainTx<
           palletCall: {
             name: 'ReleaseDeposit';
             params: { who: AccountId32Like; assetId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the global withdraw limit (reference currency units)
+     * Can be called only by authority origin.
+     *
+     * @param {PalletCircuitBreakerGlobalWithdrawLimitParameters} parameters
+     **/
+    setGlobalWithdrawLimitParams: GenericTxCall<
+      (parameters: PalletCircuitBreakerGlobalWithdrawLimitParameters) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'SetGlobalWithdrawLimitParams';
+            params: { parameters: PalletCircuitBreakerGlobalWithdrawLimitParameters };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Reset the global lockdown and accumulator to zero at current block.
+     * Can be called only by authority origin.
+     *
+     **/
+    resetWithdrawLockdown: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'ResetWithdrawLockdown';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<AccountId32Like>} accounts
+     **/
+    addEgressAccounts: GenericTxCall<
+      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'AddEgressAccounts';
+            params: { accounts: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     * @param {Array<AccountId32Like>} accounts
+     **/
+    removeEgressAccounts: GenericTxCall<
+      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'RemoveEgressAccounts';
+            params: { accounts: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     * @param {bigint} until
+     **/
+    setGlobalWithdrawLockdown: GenericTxCall<
+      (until: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'SetGlobalWithdrawLockdown';
+            params: { until: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     * @param {number} assetId
+     * @param {PalletCircuitBreakerGlobalAssetCategory | undefined} category
+     **/
+    setAssetCategory: GenericTxCall<
+      (
+        assetId: number,
+        category: PalletCircuitBreakerGlobalAssetCategory | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'CircuitBreaker';
+          palletCall: {
+            name: 'SetAssetCategory';
+            params: { assetId: number; category: PalletCircuitBreakerGlobalAssetCategory | undefined };
           };
         },
         ChainKnownTypes

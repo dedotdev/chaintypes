@@ -6,6 +6,7 @@ import type {
   FrameSystemDispatchEventInfo,
   SpWeightsWeightV2Weight,
   FrameSupportTokensMiscBalanceStatus,
+  PeopleKusamaRuntimeRuntimeHoldReason,
   PalletBalancesUnexpectedKind,
   StagingXcmV5TraitsOutcome,
   StagingXcmV5Location,
@@ -327,9 +328,19 @@ export interface ChainEvents extends GenericChainEvents {
     Minted: GenericPalletEvent<'Balances', 'Minted', { who: AccountId32; amount: bigint }>;
 
     /**
+     * Some credit was balanced and added to the TotalIssuance.
+     **/
+    MintedCredit: GenericPalletEvent<'Balances', 'MintedCredit', { amount: bigint }>;
+
+    /**
      * Some amount was burned from an account.
      **/
     Burned: GenericPalletEvent<'Balances', 'Burned', { who: AccountId32; amount: bigint }>;
+
+    /**
+     * Some debt has been dropped from the Total Issuance.
+     **/
+    BurnedDebt: GenericPalletEvent<'Balances', 'BurnedDebt', { amount: bigint }>;
 
     /**
      * Some amount was suspended from an account (it can be restored later).
@@ -380,6 +391,51 @@ export interface ChainEvents extends GenericChainEvents {
      * The `TotalIssuance` was forcefully changed.
      **/
     TotalIssuanceForced: GenericPalletEvent<'Balances', 'TotalIssuanceForced', { old: bigint; new: bigint }>;
+
+    /**
+     * Some balance was placed on hold.
+     **/
+    Held: GenericPalletEvent<
+      'Balances',
+      'Held',
+      { reason: PeopleKusamaRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Held balance was burned from an account.
+     **/
+    BurnedHeld: GenericPalletEvent<
+      'Balances',
+      'BurnedHeld',
+      { reason: PeopleKusamaRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * A transfer of `amount` on hold from `source` to `dest` was initiated.
+     **/
+    TransferOnHold: GenericPalletEvent<
+      'Balances',
+      'TransferOnHold',
+      { reason: PeopleKusamaRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * The `transferred` balance is placed on hold at the `dest` account.
+     **/
+    TransferAndHold: GenericPalletEvent<
+      'Balances',
+      'TransferAndHold',
+      { reason: PeopleKusamaRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; transferred: bigint }
+    >;
+
+    /**
+     * Some balance was released from hold.
+     **/
+    Released: GenericPalletEvent<
+      'Balances',
+      'Released',
+      { reason: PeopleKusamaRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
 
     /**
      * An unexpected/defensive event was triggered.
@@ -1122,7 +1178,14 @@ export interface ChainEvents extends GenericChainEvents {
     PureCreated: GenericPalletEvent<
       'Proxy',
       'PureCreated',
-      { pure: AccountId32; who: AccountId32; proxyType: PeopleKusamaRuntimeProxyType; disambiguationIndex: number }
+      {
+        pure: AccountId32;
+        who: AccountId32;
+        proxyType: PeopleKusamaRuntimeProxyType;
+        disambiguationIndex: number;
+        at: number;
+        extrinsicIndex: number;
+      }
     >;
 
     /**

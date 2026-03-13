@@ -66,19 +66,19 @@ import type {
   PalletNominationPoolsCommissionClaimPermission,
   PalletStakingAsyncRcClientValidatorSetReport,
   PalletStakingAsyncAhClientOperatingMode,
-  PolkadotPrimitivesV8AsyncBackingAsyncBackingParams,
-  PolkadotPrimitivesV8ExecutorParams,
-  PolkadotPrimitivesV8ApprovalVotingParams,
-  PolkadotPrimitivesV8SchedulerParams,
-  PolkadotPrimitivesVstagingInherentData,
+  PolkadotPrimitivesV9AsyncBackingAsyncBackingParams,
+  PolkadotPrimitivesV9ExecutorParams,
+  PolkadotPrimitivesV9ApprovalVotingParams,
+  PolkadotPrimitivesV9SchedulerParams,
+  PolkadotPrimitivesV9InherentData,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
-  PolkadotPrimitivesV8PvfCheckStatement,
-  PolkadotPrimitivesV8ValidatorAppSignature,
+  PolkadotPrimitivesV9PvfCheckStatement,
+  PolkadotPrimitivesV9ValidatorAppSignature,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
-  PolkadotPrimitivesVstagingDisputeProof,
+  PolkadotPrimitivesV9SlashingDisputeProof,
   SpRuntimeMultiSigner,
   PalletBrokerCoretimeInterfaceCoreAssignment,
   PolkadotRuntimeParachainsAssignerCoretimePartsOf57600,
@@ -4357,6 +4357,30 @@ export interface ChainTx<
     >;
 
     /**
+     * Kick a member from the society. Callable only by the Signed origin of the Founder.
+     *
+     * The member is fully removed (not suspended). All unclaimed payouts are slashed and
+     * returned to the society pot.
+     *
+     * Parameters:
+     * - `who`: The member to be removed.
+     *
+     * @param {MultiAddressLike} who
+     **/
+    kickMember: GenericTxCall<
+      (who: MultiAddressLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Society';
+          palletCall: {
+            name: 'KickMember';
+            params: { who: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -7763,6 +7787,55 @@ export interface ChainTx<
     >;
 
     /**
+     * Set session keys for a validator, forwarded from AssetHub.
+     *
+     * This is called when a validator sets their session keys on AssetHub, which forwards
+     * the request to the RelayChain via XCM.
+     *
+     * AssetHub validates both keys and ownership proof before sending.
+     * RC trusts AH's validation and does not re-validate.
+     *
+     * @param {AccountId32Like} stash
+     * @param {BytesLike} keys
+     **/
+    setKeysFromAh: GenericTxCall<
+      (
+        stash: AccountId32Like,
+        keys: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'StakingAhClient';
+          palletCall: {
+            name: 'SetKeysFromAh';
+            params: { stash: AccountId32Like; keys: BytesLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Purge session keys for a validator, forwarded from AssetHub.
+     *
+     * This is called when a validator purges their session keys on AssetHub, which forwards
+     * the request to the RelayChain via XCM.
+     *
+     * @param {AccountId32Like} stash
+     **/
+    purgeKeysFromAh: GenericTxCall<
+      (stash: AccountId32Like) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'StakingAhClient';
+          palletCall: {
+            name: 'PurgeKeysFromAh';
+            params: { stash: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -8432,15 +8505,15 @@ export interface ChainTx<
     /**
      * Set the asynchronous backing parameters.
      *
-     * @param {PolkadotPrimitivesV8AsyncBackingAsyncBackingParams} new_
+     * @param {PolkadotPrimitivesV9AsyncBackingAsyncBackingParams} new_
      **/
     setAsyncBackingParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV9AsyncBackingAsyncBackingParams) => ChainSubmittableExtrinsic<
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetAsyncBackingParams';
-            params: { new: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams };
+            params: { new: PolkadotPrimitivesV9AsyncBackingAsyncBackingParams };
           };
         },
         ChainKnownTypes
@@ -8450,15 +8523,15 @@ export interface ChainTx<
     /**
      * Set PVF executor parameters.
      *
-     * @param {PolkadotPrimitivesV8ExecutorParams} new_
+     * @param {PolkadotPrimitivesV9ExecutorParams} new_
      **/
     setExecutorParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV8ExecutorParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV9ExecutorParams) => ChainSubmittableExtrinsic<
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetExecutorParams';
-            params: { new: PolkadotPrimitivesV8ExecutorParams };
+            params: { new: PolkadotPrimitivesV9ExecutorParams };
           };
         },
         ChainKnownTypes
@@ -8580,15 +8653,15 @@ export interface ChainTx<
     /**
      * Set approval-voting-params.
      *
-     * @param {PolkadotPrimitivesV8ApprovalVotingParams} new_
+     * @param {PolkadotPrimitivesV9ApprovalVotingParams} new_
      **/
     setApprovalVotingParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV8ApprovalVotingParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV9ApprovalVotingParams) => ChainSubmittableExtrinsic<
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetApprovalVotingParams';
-            params: { new: PolkadotPrimitivesV8ApprovalVotingParams };
+            params: { new: PolkadotPrimitivesV9ApprovalVotingParams };
           };
         },
         ChainKnownTypes
@@ -8598,15 +8671,15 @@ export interface ChainTx<
     /**
      * Set scheduler-params.
      *
-     * @param {PolkadotPrimitivesV8SchedulerParams} new_
+     * @param {PolkadotPrimitivesV9SchedulerParams} new_
      **/
     setSchedulerParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV8SchedulerParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesV9SchedulerParams) => ChainSubmittableExtrinsic<
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetSchedulerParams';
-            params: { new: PolkadotPrimitivesV8SchedulerParams };
+            params: { new: PolkadotPrimitivesV9SchedulerParams };
           };
         },
         ChainKnownTypes
@@ -8643,15 +8716,15 @@ export interface ChainTx<
     /**
      * Enter the paras inherent. This will process bitfields and backed candidates.
      *
-     * @param {PolkadotPrimitivesVstagingInherentData} data
+     * @param {PolkadotPrimitivesV9InherentData} data
      **/
     enter: GenericTxCall<
-      (data: PolkadotPrimitivesVstagingInherentData) => ChainSubmittableExtrinsic<
+      (data: PolkadotPrimitivesV9InherentData) => ChainSubmittableExtrinsic<
         {
           pallet: 'ParaInherent';
           palletCall: {
             name: 'Enter';
-            params: { data: PolkadotPrimitivesVstagingInherentData };
+            params: { data: PolkadotPrimitivesV9InherentData };
           };
         },
         ChainKnownTypes
@@ -8847,21 +8920,21 @@ export interface ChainTx<
      * Includes a statement for a PVF pre-checking vote. Potentially, finalizes the vote and
      * enacts the results if that was the last vote before achieving the supermajority.
      *
-     * @param {PolkadotPrimitivesV8PvfCheckStatement} stmt
-     * @param {PolkadotPrimitivesV8ValidatorAppSignature} signature
+     * @param {PolkadotPrimitivesV9PvfCheckStatement} stmt
+     * @param {PolkadotPrimitivesV9ValidatorAppSignature} signature
      **/
     includePvfCheckStatement: GenericTxCall<
       (
-        stmt: PolkadotPrimitivesV8PvfCheckStatement,
-        signature: PolkadotPrimitivesV8ValidatorAppSignature,
+        stmt: PolkadotPrimitivesV9PvfCheckStatement,
+        signature: PolkadotPrimitivesV9ValidatorAppSignature,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Paras';
           palletCall: {
             name: 'IncludePvfCheckStatement';
             params: {
-              stmt: PolkadotPrimitivesV8PvfCheckStatement;
-              signature: PolkadotPrimitivesV8ValidatorAppSignature;
+              stmt: PolkadotPrimitivesV9PvfCheckStatement;
+              signature: PolkadotPrimitivesV9ValidatorAppSignature;
             };
           };
         },
@@ -9365,19 +9438,19 @@ export interface ChainTx<
   parasSlashing: {
     /**
      *
-     * @param {PolkadotPrimitivesVstagingDisputeProof} disputeProof
+     * @param {PolkadotPrimitivesV9SlashingDisputeProof} disputeProof
      * @param {SpSessionMembershipProof} keyOwnerProof
      **/
     reportDisputeLostUnsigned: GenericTxCall<
       (
-        disputeProof: PolkadotPrimitivesVstagingDisputeProof,
+        disputeProof: PolkadotPrimitivesV9SlashingDisputeProof,
         keyOwnerProof: SpSessionMembershipProof,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'ParasSlashing';
           palletCall: {
             name: 'ReportDisputeLostUnsigned';
-            params: { disputeProof: PolkadotPrimitivesVstagingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
+            params: { disputeProof: PolkadotPrimitivesV9SlashingDisputeProof; keyOwnerProof: SpSessionMembershipProof };
           };
         },
         ChainKnownTypes

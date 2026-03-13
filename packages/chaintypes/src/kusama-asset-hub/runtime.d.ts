@@ -21,7 +21,7 @@ import type {
   SpConsensusSlotsSlotDuration,
   SpConsensusAuraSr25519AppSr25519Public,
   SpConsensusSlotsSlot,
-  SpRuntimeBlock,
+  SpRuntimeBlockLazyBlock,
   SpRuntimeExtrinsicInclusionMode,
   SpCoreOpaqueMetadata,
   SpRuntimeTransactionValidityTransactionValidityError,
@@ -67,6 +67,7 @@ import type {
   PalletRevivePrimitivesCodeUploadReturnValue,
   PalletRevivePrimitivesContractAccessError,
   PalletReviveEvmApiDebugRpcTypesTrace,
+  SpRuntimeBlock,
   PalletReviveEvmApiDebugRpcTypesTracerType,
   PalletRevivePrimitivesBalanceConversionError,
 } from './types.js';
@@ -155,9 +156,9 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Execute the given block.
      *
      * @callname: Core_execute_block
-     * @param {SpRuntimeBlock} block
+     * @param {SpRuntimeBlockLazyBlock} block
      **/
-    executeBlock: GenericRuntimeApiMethod<(block: SpRuntimeBlock) => Promise<[]>>;
+    executeBlock: GenericRuntimeApiMethod<(block: SpRuntimeBlockLazyBlock) => Promise<[]>>;
 
     /**
      * Initialize a block with the given header and return the runtime executive mode.
@@ -248,11 +249,11 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Check that the inherents are valid. The inherent data will vary from chain to chain.
      *
      * @callname: BlockBuilder_check_inherents
-     * @param {SpRuntimeBlock} block
+     * @param {SpRuntimeBlockLazyBlock} block
      * @param {SpInherentsInherentData} data
      **/
     checkInherents: GenericRuntimeApiMethod<
-      (block: SpRuntimeBlock, data: SpInherentsInherentData) => Promise<SpInherentsCheckInherentsResult>
+      (block: SpRuntimeBlockLazyBlock, data: SpInherentsInherentData) => Promise<SpInherentsCheckInherentsResult>
     >;
 
     /**
@@ -588,6 +589,8 @@ export interface RuntimeApis extends GenericRuntimeApis {
     >;
 
     /**
+     * Query delivery fees V2.
+     *
      * Get delivery fees for sending a specific `message` to a `destination`.
      * These always come in a specific asset, defined by the chain.
      *
@@ -600,11 +603,13 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: XcmPaymentApi_query_delivery_fees
      * @param {XcmVersionedLocation} destination
      * @param {XcmVersionedXcm} message
+     * @param {XcmVersionedAssetId} asset_id
      **/
     queryDeliveryFees: GenericRuntimeApiMethod<
       (
         destination: XcmVersionedLocation,
         message: XcmVersionedXcm,
+        assetId: XcmVersionedAssetId,
       ) => Promise<Result<XcmVersionedAssets, XcmRuntimeApisFeesError>>
     >;
 
@@ -992,7 +997,7 @@ export interface RuntimeApis extends GenericRuntimeApis {
     erasStakersPageCount: GenericRuntimeApiMethod<(era: number, account: AccountId32Like) => Promise<number>>;
 
     /**
-     * Returns true if validator `account` has pages to be claimed for the given era.
+     * Returns true if a validator `account` has pages to be claimed for the given era.
      *
      * @callname: StakingApi_pending_rewards
      * @param {number} era

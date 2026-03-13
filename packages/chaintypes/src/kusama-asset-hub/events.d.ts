@@ -21,6 +21,7 @@ import type {
   AssetHubKusamaRuntimeRuntimeParametersKey,
   AssetHubKusamaRuntimeRuntimeParametersValue,
   FrameSupportTokensMiscBalanceStatus,
+  AssetHubKusamaRuntimeRuntimeHoldReason,
   PalletBalancesUnexpectedKind,
   StagingXcmV5Location,
   StagingXcmV5TraitsOutcome,
@@ -39,6 +40,7 @@ import type {
   PalletNftsAttributeNamespace,
   PalletNftsPriceWithDirection,
   PalletNftsPalletAttributes,
+  AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
   PalletRecoveryDepositKind,
   PalletSocietyGroupParams,
   PalletStateTrieMigrationMigrationCompute,
@@ -538,9 +540,19 @@ export interface ChainEvents extends GenericChainEvents {
     Minted: GenericPalletEvent<'Balances', 'Minted', { who: AccountId32; amount: bigint }>;
 
     /**
+     * Some credit was balanced and added to the TotalIssuance.
+     **/
+    MintedCredit: GenericPalletEvent<'Balances', 'MintedCredit', { amount: bigint }>;
+
+    /**
      * Some amount was burned from an account.
      **/
     Burned: GenericPalletEvent<'Balances', 'Burned', { who: AccountId32; amount: bigint }>;
+
+    /**
+     * Some debt has been dropped from the Total Issuance.
+     **/
+    BurnedDebt: GenericPalletEvent<'Balances', 'BurnedDebt', { amount: bigint }>;
 
     /**
      * Some amount was suspended from an account (it can be restored later).
@@ -591,6 +603,51 @@ export interface ChainEvents extends GenericChainEvents {
      * The `TotalIssuance` was forcefully changed.
      **/
     TotalIssuanceForced: GenericPalletEvent<'Balances', 'TotalIssuanceForced', { old: bigint; new: bigint }>;
+
+    /**
+     * Some balance was placed on hold.
+     **/
+    Held: GenericPalletEvent<
+      'Balances',
+      'Held',
+      { reason: AssetHubKusamaRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Held balance was burned from an account.
+     **/
+    BurnedHeld: GenericPalletEvent<
+      'Balances',
+      'BurnedHeld',
+      { reason: AssetHubKusamaRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * A transfer of `amount` on hold from `source` to `dest` was initiated.
+     **/
+    TransferOnHold: GenericPalletEvent<
+      'Balances',
+      'TransferOnHold',
+      { reason: AssetHubKusamaRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * The `transferred` balance is placed on hold at the `dest` account.
+     **/
+    TransferAndHold: GenericPalletEvent<
+      'Balances',
+      'TransferAndHold',
+      { reason: AssetHubKusamaRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; transferred: bigint }
+    >;
+
+    /**
+     * Some balance was released from hold.
+     **/
+    Released: GenericPalletEvent<
+      'Balances',
+      'Released',
+      { reason: AssetHubKusamaRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
 
     /**
      * An unexpected/defensive event was triggered.
@@ -1437,7 +1494,14 @@ export interface ChainEvents extends GenericChainEvents {
     PureCreated: GenericPalletEvent<
       'Proxy',
       'PureCreated',
-      { pure: AccountId32; who: AccountId32; proxyType: AssetHubKusamaRuntimeProxyType; disambiguationIndex: number }
+      {
+        pure: AccountId32;
+        who: AccountId32;
+        proxyType: AssetHubKusamaRuntimeProxyType;
+        disambiguationIndex: number;
+        at: number;
+        extrinsicIndex: number;
+      }
     >;
 
     /**
@@ -1694,6 +1758,16 @@ export interface ChainEvents extends GenericChainEvents {
      * Some assets were withdrawn from the account (e.g. for transaction fees).
      **/
     Withdrawn: GenericPalletEvent<'Assets', 'Withdrawn', { assetId: number; who: AccountId32; amount: bigint }>;
+
+    /**
+     * Reserve information was set or updated for `asset_id`.
+     **/
+    ReservesUpdated: GenericPalletEvent<'Assets', 'ReservesUpdated', { assetId: number; reserves: Array<[]> }>;
+
+    /**
+     * Reserve information was removed for `asset_id`.
+     **/
+    ReservesRemoved: GenericPalletEvent<'Assets', 'ReservesRemoved', { assetId: number }>;
 
     /**
      * Generic pallet event
@@ -2424,6 +2498,20 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * Reserve information was set or updated for `asset_id`.
+     **/
+    ReservesUpdated: GenericPalletEvent<
+      'ForeignAssets',
+      'ReservesUpdated',
+      { assetId: StagingXcmV5Location; reserves: Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData> }
+    >;
+
+    /**
+     * Reserve information was removed for `asset_id`.
+     **/
+    ReservesRemoved: GenericPalletEvent<'ForeignAssets', 'ReservesRemoved', { assetId: StagingXcmV5Location }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -2625,6 +2713,16 @@ export interface ChainEvents extends GenericChainEvents {
      * Some assets were withdrawn from the account (e.g. for transaction fees).
      **/
     Withdrawn: GenericPalletEvent<'PoolAssets', 'Withdrawn', { assetId: number; who: AccountId32; amount: bigint }>;
+
+    /**
+     * Reserve information was set or updated for `asset_id`.
+     **/
+    ReservesUpdated: GenericPalletEvent<'PoolAssets', 'ReservesUpdated', { assetId: number; reserves: Array<[]> }>;
+
+    /**
+     * Reserve information was removed for `asset_id`.
+     **/
+    ReservesRemoved: GenericPalletEvent<'PoolAssets', 'ReservesRemoved', { assetId: number }>;
 
     /**
      * Generic pallet event
@@ -3012,6 +3110,11 @@ export interface ChainEvents extends GenericChainEvents {
       'DepositPoked',
       { who: AccountId32; oldDeposit: bigint; newDeposit: bigint }
     >;
+
+    /**
+     * A member was kicked by the founder.
+     **/
+    MemberKicked: GenericPalletEvent<'Society', 'MemberKicked', { member: AccountId32 }>;
 
     /**
      * Generic pallet event
@@ -3416,6 +3519,13 @@ export interface ChainEvents extends GenericChainEvents {
       'OffenceReceived',
       { slashSession: number; offencesCount: number }
     >;
+
+    /**
+     * Fees were charged for a user operation (set_keys or purge_keys).
+     *
+     * The fee includes both XCM delivery fee and relay chain execution cost.
+     **/
+    FeesPaid: GenericPalletEvent<'StakingRcClient', 'FeesPaid', { who: AccountId32; fees: bigint }>;
 
     /**
      * Something occurred that should never happen under normal operation.
@@ -3826,12 +3936,12 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * An account has delegated their vote to another account. \[who, target\]
      **/
-    Delegated: GenericPalletEvent<'ConvictionVoting', 'Delegated', [AccountId32, AccountId32]>;
+    Delegated: GenericPalletEvent<'ConvictionVoting', 'Delegated', [AccountId32, AccountId32, number]>;
 
     /**
      * An \[account\] has cancelled a previous delegation operation.
      **/
-    Undelegated: GenericPalletEvent<'ConvictionVoting', 'Undelegated', AccountId32>;
+    Undelegated: GenericPalletEvent<'ConvictionVoting', 'Undelegated', [AccountId32, number]>;
 
     /**
      * An account has voted
@@ -3839,7 +3949,7 @@ export interface ChainEvents extends GenericChainEvents {
     Voted: GenericPalletEvent<
       'ConvictionVoting',
       'Voted',
-      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number }
     >;
 
     /**
@@ -3848,7 +3958,7 @@ export interface ChainEvents extends GenericChainEvents {
     VoteRemoved: GenericPalletEvent<
       'ConvictionVoting',
       'VoteRemoved',
-      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number }
     >;
 
     /**
@@ -4330,6 +4440,125 @@ export interface ChainEvents extends GenericChainEvents {
       'AssetRate',
       'AssetRateUpdated',
       { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; old: FixedU128; new: FixedU128 }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `MultiAssetBounties`'s events
+   **/
+  multiAssetBounties: {
+    /**
+     * A new bounty was created and funding has been initiated.
+     **/
+    BountyCreated: GenericPalletEvent<'MultiAssetBounties', 'BountyCreated', { index: number }>;
+
+    /**
+     * A new child-bounty was created and funding has been initiated.
+     **/
+    ChildBountyCreated: GenericPalletEvent<
+      'MultiAssetBounties',
+      'ChildBountyCreated',
+      { index: number; childIndex: number }
+    >;
+
+    /**
+     * The curator accepted role and child-/bounty became active.
+     **/
+    BountyBecameActive: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyBecameActive',
+      { index: number; childIndex?: number | undefined; curator: AccountId32 }
+    >;
+
+    /**
+     * A child-/bounty was awarded to a beneficiary.
+     **/
+    BountyAwarded: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyAwarded',
+      { index: number; childIndex?: number | undefined; beneficiary: ParachainsCommonPayVersionedLocatableAccount }
+    >;
+
+    /**
+     * Payout payment to the beneficiary has concluded successfully.
+     **/
+    BountyPayoutProcessed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyPayoutProcessed',
+      {
+        index: number;
+        childIndex?: number | undefined;
+        assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
+        value: bigint;
+        beneficiary: ParachainsCommonPayVersionedLocatableAccount;
+      }
+    >;
+
+    /**
+     * Funding payment has concluded successfully.
+     **/
+    BountyFundingProcessed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyFundingProcessed',
+      { index: number; childIndex?: number | undefined }
+    >;
+
+    /**
+     * Refund payment has concluded successfully.
+     **/
+    BountyRefundProcessed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyRefundProcessed',
+      { index: number; childIndex?: number | undefined }
+    >;
+
+    /**
+     * A child-/bounty was cancelled.
+     **/
+    BountyCanceled: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyCanceled',
+      { index: number; childIndex?: number | undefined }
+    >;
+
+    /**
+     * A child-/bounty curator was unassigned.
+     **/
+    CuratorUnassigned: GenericPalletEvent<
+      'MultiAssetBounties',
+      'CuratorUnassigned',
+      { index: number; childIndex?: number | undefined }
+    >;
+
+    /**
+     * A child-/bounty curator was proposed.
+     **/
+    CuratorProposed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'CuratorProposed',
+      { index: number; childIndex?: number | undefined; curator: AccountId32 }
+    >;
+
+    /**
+     * A payment failed and can be retried.
+     **/
+    PaymentFailed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'PaymentFailed',
+      { index: number; childIndex?: number | undefined; paymentId: bigint }
+    >;
+
+    /**
+     * A payment happened and can be checked.
+     **/
+    Paid: GenericPalletEvent<
+      'MultiAssetBounties',
+      'Paid',
+      { index: number; childIndex?: number | undefined; paymentId: bigint }
     >;
 
     /**

@@ -249,13 +249,13 @@ export type CumulusPalletParachainSystemCallLike =
   | { name: 'SudoSendUpwardMessage'; params: { message: BytesLike } };
 
 export type CumulusPalletParachainSystemParachainInherentBasicParachainInherentData = {
-  validationData: PolkadotPrimitivesV8PersistedValidationData;
+  validationData: PolkadotPrimitivesV9PersistedValidationData;
   relayChainState: SpTrieStorageProof;
   relayParentDescendants: Array<Header>;
   collatorPeerId?: Bytes | undefined;
 };
 
-export type PolkadotPrimitivesV8PersistedValidationData = {
+export type PolkadotPrimitivesV9PersistedValidationData = {
   parentHead: PolkadotParachainPrimitivesPrimitivesHeadData;
   relayParentNumber: number;
   relayParentStorageRoot: H256;
@@ -3940,7 +3940,8 @@ export type PalletIdentityJudgement =
 export type SpRuntimeMultiSignature =
   | { type: 'Ed25519'; value: FixedBytes<64> }
   | { type: 'Sr25519'; value: FixedBytes<64> }
-  | { type: 'Ecdsa'; value: FixedBytes<65> };
+  | { type: 'Ecdsa'; value: FixedBytes<65> }
+  | { type: 'Eth'; value: FixedBytes<65> };
 
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
@@ -4266,9 +4267,17 @@ export type PalletBalancesEvent =
    **/
   | { name: 'Minted'; data: { who: AccountId32; amount: bigint } }
   /**
+   * Some credit was balanced and added to the TotalIssuance.
+   **/
+  | { name: 'MintedCredit'; data: { amount: bigint } }
+  /**
    * Some amount was burned from an account.
    **/
   | { name: 'Burned'; data: { who: AccountId32; amount: bigint } }
+  /**
+   * Some debt has been dropped from the Total Issuance.
+   **/
+  | { name: 'BurnedDebt'; data: { amount: bigint } }
   /**
    * Some amount was suspended from an account (it can be restored later).
    **/
@@ -4310,11 +4319,50 @@ export type PalletBalancesEvent =
    **/
   | { name: 'TotalIssuanceForced'; data: { old: bigint; new: bigint } }
   /**
+   * Some balance was placed on hold.
+   **/
+  | { name: 'Held'; data: { reason: PeopleKusamaRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
+   * Held balance was burned from an account.
+   **/
+  | { name: 'BurnedHeld'; data: { reason: PeopleKusamaRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
+   * A transfer of `amount` on hold from `source` to `dest` was initiated.
+   **/
+  | {
+      name: 'TransferOnHold';
+      data: { reason: PeopleKusamaRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint };
+    }
+  /**
+   * The `transferred` balance is placed on hold at the `dest` account.
+   **/
+  | {
+      name: 'TransferAndHold';
+      data: {
+        reason: PeopleKusamaRuntimeRuntimeHoldReason;
+        source: AccountId32;
+        dest: AccountId32;
+        transferred: bigint;
+      };
+    }
+  /**
+   * Some balance was released from hold.
+   **/
+  | { name: 'Released'; data: { reason: PeopleKusamaRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
    * An unexpected/defensive event was triggered.
    **/
   | { name: 'Unexpected'; data: PalletBalancesUnexpectedKind };
 
 export type FrameSupportTokensMiscBalanceStatus = 'Free' | 'Reserved';
+
+export type PeopleKusamaRuntimeRuntimeHoldReason =
+  | { type: 'Session'; value: PalletSessionHoldReason }
+  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason };
+
+export type PalletSessionHoldReason = 'Keys';
+
+export type PalletXcmHoldReason = 'AuthorizeAlias';
 
 export type PalletBalancesUnexpectedKind = 'BalanceUpdated' | 'FailedToMutateAccount';
 
@@ -4879,6 +4927,8 @@ export type PalletProxyEvent =
         who: AccountId32;
         proxyType: PeopleKusamaRuntimeProxyType;
         disambiguationIndex: number;
+        at: number;
+        extrinsicIndex: number;
       };
     }
   /**
@@ -5109,7 +5159,7 @@ export type CumulusPalletWeightReclaimStorageWeightReclaim = [
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV9UpgradeGoAhead | undefined;
 };
 
 export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
@@ -5122,21 +5172,21 @@ export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
 
 export type CumulusPalletParachainSystemUnincludedSegmentHrmpChannelUpdate = { msgCount: number; totalBytes: number };
 
-export type PolkadotPrimitivesV8UpgradeGoAhead = 'Abort' | 'GoAhead';
+export type PolkadotPrimitivesV9UpgradeGoAhead = 'Abort' | 'GoAhead';
 
 export type CumulusPalletParachainSystemUnincludedSegmentSegmentTracker = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   hrmpWatermark?: number | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV9UpgradeGoAhead | undefined;
 };
 
-export type PolkadotPrimitivesV8UpgradeRestriction = 'Present';
+export type PolkadotPrimitivesV9UpgradeRestriction = 'Present';
 
 export type CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot = {
   dmqMqcHead: H256;
   relayDispatchQueueRemainingCapacity: CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity;
-  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
-  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
+  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV9AbridgedHrmpChannel]>;
+  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV9AbridgedHrmpChannel]>;
 };
 
 export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity = {
@@ -5144,7 +5194,7 @@ export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRema
   remainingSize: number;
 };
 
-export type PolkadotPrimitivesV8AbridgedHrmpChannel = {
+export type PolkadotPrimitivesV9AbridgedHrmpChannel = {
   maxCapacity: number;
   maxTotalSize: number;
   maxMessageSize: number;
@@ -5153,7 +5203,7 @@ export type PolkadotPrimitivesV8AbridgedHrmpChannel = {
   mqcHead?: H256 | undefined;
 };
 
-export type PolkadotPrimitivesV8AbridgedHostConfiguration = {
+export type PolkadotPrimitivesV9AbridgedHostConfiguration = {
   maxCodeSize: number;
   maxHeadDataSize: number;
   maxUpwardQueueCount: number;
@@ -5163,10 +5213,10 @@ export type PolkadotPrimitivesV8AbridgedHostConfiguration = {
   hrmpMaxMessageNumPerCandidate: number;
   validationUpgradeCooldown: number;
   validationUpgradeDelay: number;
-  asyncBackingParams: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams;
+  asyncBackingParams: PolkadotPrimitivesV9AsyncBackingAsyncBackingParams;
 };
 
-export type PolkadotPrimitivesV8AsyncBackingAsyncBackingParams = {
+export type PolkadotPrimitivesV9AsyncBackingAsyncBackingParams = {
   maxCandidateDepth: number;
   allowedAncestryLen: number;
 };
@@ -5226,14 +5276,6 @@ export type PalletBalancesReasons = 'Fee' | 'Misc' | 'All';
 export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
 export type FrameSupportTokensMiscIdAmount = { id: PeopleKusamaRuntimeRuntimeHoldReason; amount: bigint };
-
-export type PeopleKusamaRuntimeRuntimeHoldReason =
-  | { type: 'Session'; value: PalletSessionHoldReason }
-  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason };
-
-export type PalletSessionHoldReason = 'Keys';
-
-export type PalletXcmHoldReason = 'AuthorizeAlias';
 
 export type FrameSupportTokensMiscIdAmount002 = { id: []; amount: bigint };
 
@@ -5991,6 +6033,10 @@ export type PalletIdentityError =
   | 'InsufficientPrivileges';
 
 export type SpConsensusSlotsSlotDuration = bigint;
+
+export type SpRuntimeBlockLazyBlock = { header: Header; extrinsics: Array<SpRuntimeOpaqueExtrinsic> };
+
+export type SpRuntimeOpaqueExtrinsic = Bytes;
 
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 

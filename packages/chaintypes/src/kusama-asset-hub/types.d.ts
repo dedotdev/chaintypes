@@ -79,6 +79,7 @@ export type AssetHubKusamaRuntimeRuntimeCall =
   | { pallet: 'Bounties'; palletCall: PalletBountiesCall }
   | { pallet: 'ChildBounties'; palletCall: PalletChildBountiesCall }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
+  | { pallet: 'MultiAssetBounties'; palletCall: PalletMultiAssetBountiesCall }
   | { pallet: 'AhOps'; palletCall: PalletAhOpsCall }
   | { pallet: 'AhMigrator'; palletCall: PalletAhMigratorCall };
 
@@ -132,6 +133,7 @@ export type AssetHubKusamaRuntimeRuntimeCallLike =
   | { pallet: 'Bounties'; palletCall: PalletBountiesCallLike }
   | { pallet: 'ChildBounties'; palletCall: PalletChildBountiesCallLike }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
+  | { pallet: 'MultiAssetBounties'; palletCall: PalletMultiAssetBountiesCallLike }
   | { pallet: 'AhOps'; palletCall: PalletAhOpsCallLike }
   | { pallet: 'AhMigrator'; palletCall: PalletAhMigratorCallLike };
 
@@ -332,13 +334,13 @@ export type CumulusPalletParachainSystemCallLike =
   | { name: 'SudoSendUpwardMessage'; params: { message: BytesLike } };
 
 export type CumulusPalletParachainSystemParachainInherentBasicParachainInherentData = {
-  validationData: PolkadotPrimitivesV8PersistedValidationData;
+  validationData: PolkadotPrimitivesV9PersistedValidationData;
   relayChainState: SpTrieStorageProof;
   relayParentDescendants: Array<Header>;
   collatorPeerId?: Bytes | undefined;
 };
 
-export type PolkadotPrimitivesV8PersistedValidationData = {
+export type PolkadotPrimitivesV9PersistedValidationData = {
   parentHead: PolkadotParachainPrimitivesPrimitivesHeadData;
   relayParentNumber: number;
   relayParentStorageRoot: H256;
@@ -4399,7 +4401,8 @@ export type AssetHubKusamaRuntimeProxyType =
   | 'Auction'
   | 'ParaRegistration'
   | 'Society'
-  | 'Spokesperson';
+  | 'Spokesperson'
+  | 'StakingOperator';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5312,7 +5315,19 @@ export type PalletAssetsCall =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: number; dest: MultiAddress; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: number; dest: MultiAddress; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetReserves'; params: { id: number; reserves: Array<[]> } };
 
 export type PalletAssetsCallLike =
   /**
@@ -5884,7 +5899,19 @@ export type PalletAssetsCallLike =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: number; dest: MultiAddressLike; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: number; dest: MultiAddressLike; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetReserves'; params: { id: number; reserves: Array<[]> } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8287,7 +8314,8 @@ export type PalletNftsPreSignedMint = {
 export type SpRuntimeMultiSignature =
   | { type: 'Ed25519'; value: FixedBytes<64> }
   | { type: 'Sr25519'; value: FixedBytes<64> }
-  | { type: 'Ecdsa'; value: FixedBytes<65> };
+  | { type: 'Ecdsa'; value: FixedBytes<65> }
+  | { type: 'Eth'; value: FixedBytes<65> };
 
 export type PalletNftsPreSignedAttributes = {
   collection: number;
@@ -8876,7 +8904,22 @@ export type PalletAssetsCall002 =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddress; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddress; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | {
+      name: 'SetReserves';
+      params: { id: StagingXcmV5Location; reserves: Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData> };
+    };
 
 export type PalletAssetsCallLike002 =
   /**
@@ -9462,7 +9505,27 @@ export type PalletAssetsCallLike002 =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddressLike; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddressLike; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | {
+      name: 'SetReserves';
+      params: { id: StagingXcmV5Location; reserves: Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData> };
+    };
+
+export type AssetsCommonLocalAndForeignAssetsForeignAssetReserveData = {
+  reserve: StagingXcmV5Location;
+  teleportable: boolean;
+};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10131,7 +10194,19 @@ export type PalletAssetsCall003 =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: number; dest: MultiAddress; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: number; dest: MultiAddress; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetReserves'; params: { id: number; reserves: Array<[]> } };
 
 export type PalletAssetsCallLike003 =
   /**
@@ -10703,7 +10778,19 @@ export type PalletAssetsCallLike003 =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: number; dest: MultiAddressLike; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: number; dest: MultiAddressLike; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetReserves'; params: { id: number; reserves: Array<[]> } };
 
 /**
  * Pallet's callable functions.
@@ -11440,7 +11527,17 @@ export type PalletSocietyCall =
    *
    * Emits `DepositPoked` if successful.
    **/
-  | { name: 'PokeDeposit' };
+  | { name: 'PokeDeposit' }
+  /**
+   * Kick a member from the society. Callable only by the Signed origin of the Founder.
+   *
+   * The member is fully removed (not suspended). All unclaimed payouts are slashed and
+   * returned to the society pot.
+   *
+   * Parameters:
+   * - `who`: The member to be removed.
+   **/
+  | { name: 'KickMember'; params: { who: MultiAddress } };
 
 export type PalletSocietyCallLike =
   /**
@@ -11666,7 +11763,17 @@ export type PalletSocietyCallLike =
    *
    * Emits `DepositPoked` if successful.
    **/
-  | { name: 'PokeDeposit' };
+  | { name: 'PokeDeposit' }
+  /**
+   * Kick a member from the society. Callable only by the Signed origin of the Founder.
+   *
+   * The member is fully removed (not suspended). All unclaimed payouts are slashed and
+   * returned to the society pot.
+   *
+   * Parameters:
+   * - `who`: The member to be removed.
+   **/
+  | { name: 'KickMember'; params: { who: MultiAddressLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -13180,14 +13287,147 @@ export type PalletStakingAsyncRcClientCall =
    * Called to indicate the start of a new session on the relay chain.
    **/
   | { name: 'RelaySessionReport'; params: { report: PalletStakingAsyncRcClientSessionReport } }
-  | { name: 'RelayNewOffencePaged'; params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> } };
+  | { name: 'RelayNewOffencePaged'; params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> } }
+  /**
+   * Set session keys for a validator. Keys are validated on AssetHub and forwarded to RC.
+   *
+   * On the first call, a deposit of `KeyDeposit` is held from the stash. Subsequent calls
+   * do not charge again. The deposit is released on `purge_keys`.
+   *
+   * **Validation on AssetHub:**
+   * - Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
+   * format.
+   *
+   * If validation passes, only the validated keys are sent to RC (with empty proof),
+   * since RC trusts AH's validation.
+   *
+   * Note: Ownership proof validation requires PR #1739 which is not backported to
+   * stable2512. The proof parameter will be added when that PR is backported.
+   *
+   * **Fees:**
+   * The actual cost of this call is higher than what the weight-based fee estimate shows.
+   * In addition to the local transaction weight fee, the stash account is charged an XCM
+   * fee (delivery + RC execution cost) via `XcmExecutor::charge_fees`. The relay chain
+   * uses `UnpaidExecution`, so the full remote cost is charged upfront on AssetHub.
+   *
+   * When called via a staking proxy, the proxy pays the transaction weight fee,
+   * while the stash (delegating account) pays the XCM fee.
+   *
+   * **Max Fee Limit:**
+   * Users can optionally specify `max_delivery_and_remote_execution_fee` to limit the
+   * delivery + RC execution fee. This does not include the local transaction weight fee. If
+   * the fee exceeds this limit, the operation fails with `FeesExceededMax`. Pass `None` for
+   * unlimited (no cap).
+   *
+   * NOTE: unlike the current flow for new validators on RC (bond -> set_keys -> validate),
+   * users on Asset Hub MUST call bond and validate BEFORE calling set_keys. Attempting to
+   * set keys before declaring intent to validate will fail with NotValidator.
+   **/
+  | { name: 'SetKeys'; params: { keys: Bytes; proof: Bytes; maxDeliveryAndRemoteExecutionFee?: bigint | undefined } }
+  /**
+   * Remove session keys for a validator and release the key deposit.
+   *
+   * This purges the keys from the Relay Chain.
+   *
+   * Unlike `set_keys`, this does not require the caller to be a registered validator.
+   * This is intentional: a validator who has chilled (stopped validating) should still
+   * be able to purge their session keys. This matches the behavior of the original
+   * `pallet-session::purge_keys` which allows anyone to call it.
+   *
+   * The Relay Chain will reject the call with `NoKeys` error if the account has no
+   * keys set.
+   *
+   * **Fees:**
+   * The actual cost of this call is higher than what the weight-based fee estimate shows.
+   * In addition to the local transaction weight fee, the caller is charged an XCM fee
+   * (delivery + RC execution cost) via `XcmExecutor::charge_fees`. The relay chain uses
+   * `UnpaidExecution`, so the full remote cost is charged upfront on AssetHub.
+   *
+   * When called via a staking proxy, the proxy pays the transaction weight fee,
+   * while the delegating account pays the XCM fee.
+   *
+   * **Max Fee Limit:**
+   * Users can optionally specify `max_delivery_and_remote_execution_fee` to limit the
+   * delivery + RC execution fee. This does not include the local transaction weight fee. If
+   * the fee exceeds this limit, the operation fails with `FeesExceededMax`. Pass `None` for
+   * unlimited (no cap).
+   **/
+  | { name: 'PurgeKeys'; params: { maxDeliveryAndRemoteExecutionFee?: bigint | undefined } };
 
 export type PalletStakingAsyncRcClientCallLike =
   /**
    * Called to indicate the start of a new session on the relay chain.
    **/
   | { name: 'RelaySessionReport'; params: { report: PalletStakingAsyncRcClientSessionReport } }
-  | { name: 'RelayNewOffencePaged'; params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> } };
+  | { name: 'RelayNewOffencePaged'; params: { offences: Array<[number, PalletStakingAsyncRcClientOffence]> } }
+  /**
+   * Set session keys for a validator. Keys are validated on AssetHub and forwarded to RC.
+   *
+   * On the first call, a deposit of `KeyDeposit` is held from the stash. Subsequent calls
+   * do not charge again. The deposit is released on `purge_keys`.
+   *
+   * **Validation on AssetHub:**
+   * - Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
+   * format.
+   *
+   * If validation passes, only the validated keys are sent to RC (with empty proof),
+   * since RC trusts AH's validation.
+   *
+   * Note: Ownership proof validation requires PR #1739 which is not backported to
+   * stable2512. The proof parameter will be added when that PR is backported.
+   *
+   * **Fees:**
+   * The actual cost of this call is higher than what the weight-based fee estimate shows.
+   * In addition to the local transaction weight fee, the stash account is charged an XCM
+   * fee (delivery + RC execution cost) via `XcmExecutor::charge_fees`. The relay chain
+   * uses `UnpaidExecution`, so the full remote cost is charged upfront on AssetHub.
+   *
+   * When called via a staking proxy, the proxy pays the transaction weight fee,
+   * while the stash (delegating account) pays the XCM fee.
+   *
+   * **Max Fee Limit:**
+   * Users can optionally specify `max_delivery_and_remote_execution_fee` to limit the
+   * delivery + RC execution fee. This does not include the local transaction weight fee. If
+   * the fee exceeds this limit, the operation fails with `FeesExceededMax`. Pass `None` for
+   * unlimited (no cap).
+   *
+   * NOTE: unlike the current flow for new validators on RC (bond -> set_keys -> validate),
+   * users on Asset Hub MUST call bond and validate BEFORE calling set_keys. Attempting to
+   * set keys before declaring intent to validate will fail with NotValidator.
+   **/
+  | {
+      name: 'SetKeys';
+      params: { keys: BytesLike; proof: BytesLike; maxDeliveryAndRemoteExecutionFee?: bigint | undefined };
+    }
+  /**
+   * Remove session keys for a validator and release the key deposit.
+   *
+   * This purges the keys from the Relay Chain.
+   *
+   * Unlike `set_keys`, this does not require the caller to be a registered validator.
+   * This is intentional: a validator who has chilled (stopped validating) should still
+   * be able to purge their session keys. This matches the behavior of the original
+   * `pallet-session::purge_keys` which allows anyone to call it.
+   *
+   * The Relay Chain will reject the call with `NoKeys` error if the account has no
+   * keys set.
+   *
+   * **Fees:**
+   * The actual cost of this call is higher than what the weight-based fee estimate shows.
+   * In addition to the local transaction weight fee, the caller is charged an XCM fee
+   * (delivery + RC execution cost) via `XcmExecutor::charge_fees`. The relay chain uses
+   * `UnpaidExecution`, so the full remote cost is charged upfront on AssetHub.
+   *
+   * When called via a staking proxy, the proxy pays the transaction weight fee,
+   * while the delegating account pays the XCM fee.
+   *
+   * **Max Fee Limit:**
+   * Users can optionally specify `max_delivery_and_remote_execution_fee` to limit the
+   * delivery + RC execution fee. This does not include the local transaction weight fee. If
+   * the fee exceeds this limit, the operation fails with `FeesExceededMax`. Pass `None` for
+   * unlimited (no cap).
+   **/
+  | { name: 'PurgeKeys'; params: { maxDeliveryAndRemoteExecutionFee?: bigint | undefined } };
 
 export type PalletStakingAsyncRcClientSessionReport = {
   endIndex: number;
@@ -13362,7 +13602,7 @@ export type PalletElectionProviderMultiBlockSignedPalletCall =
   /**
    * Retract a submission.
    *
-   * A portion of the deposit may be returned, based on the [`Config::BailoutGraceRatio`].
+   * A portion of the deposit may be returned, based on the [`Config::EjectGraceRatio`].
    *
    * This will fully remove the solution from storage.
    **/
@@ -13405,7 +13645,7 @@ export type PalletElectionProviderMultiBlockSignedPalletCallLike =
   /**
    * Retract a submission.
    *
-   * A portion of the deposit may be returned, based on the [`Config::BailoutGraceRatio`].
+   * A portion of the deposit may be returned, based on the [`Config::EjectGraceRatio`].
    *
    * This will fully remove the solution from storage.
    **/
@@ -13724,6 +13964,7 @@ export type PalletStakingAsyncPalletCall =
         chillThreshold: PalletStakingAsyncPalletConfigOpPercent;
         minCommission: PalletStakingAsyncPalletConfigOpPerbill;
         maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
+        areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool;
       };
     }
   /**
@@ -14185,6 +14426,7 @@ export type PalletStakingAsyncPalletCallLike =
         chillThreshold: PalletStakingAsyncPalletConfigOpPercent;
         minCommission: PalletStakingAsyncPalletConfigOpPerbill;
         maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
+        areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool;
       };
     }
   /**
@@ -14375,6 +14617,11 @@ export type PalletStakingAsyncPalletConfigOpPercent =
 export type PalletStakingAsyncPalletConfigOpPerbill =
   | { type: 'Noop' }
   | { type: 'Set'; value: Perbill }
+  | { type: 'Remove' };
+
+export type PalletStakingAsyncPalletConfigOpBool =
+  | { type: 'Noop' }
+  | { type: 'Set'; value: boolean }
   | { type: 'Remove' };
 
 export type PalletStakingAsyncLedgerUnlockChunk = { value: bigint; era: number };
@@ -15868,6 +16115,527 @@ export type PalletAssetRateCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletMultiAssetBountiesCall =
+  /**
+   * Fund a new bounty with a proposed curator, initiating the payment from the
+   * funding source to the bounty account/location.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::SpendOrigin`] with the `Success` value being at least
+   * the bounty value converted to native balance using [`Config::BalanceConverter`].
+   * The converted native amount is validated against the maximum spendable amount
+   * returned by [`Config::SpendOrigin`].
+   *
+   * ## Details
+   *
+   * - The `SpendOrigin` must have sufficient permissions to fund the bounty.
+   * - The bounty `value` (in asset balance) is converted to native balance for validation.
+   * - In case of a funding failure, the bounty status must be updated with the
+   * `check_status` call before retrying with `retry_payment` call.
+   *
+   * ### Parameters
+   * - `asset_kind`: An indicator of the specific asset class to be funded.
+   * - `value`: The total payment amount of this bounty.
+   * - `curator`: Address of bounty curator.
+   * - `metadata`: The hash of an on-chain stored preimage with bounty metadata.
+   *
+   * ## Events
+   *
+   * Emits [`Event::BountyCreated`] and [`Event::Paid`] if successful.
+   **/
+  | {
+      name: 'FundBounty';
+      params: {
+        assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
+        value: bigint;
+        curator: MultiAddress;
+        metadata: H256;
+      };
+    }
+  /**
+   * Fund a new child-bounty with a proposed curator, initiating the payment from the parent
+   * bounty to the child-bounty account/location.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed by the parent curator.
+   *
+   * ## Details
+   *
+   * - If `curator` is not provided, the child-bounty will default to using the parent
+   * curator, allowing the parent curator to immediately call `check_status` and
+   * `award_bounty` to payout the child-bounty.
+   * - In case of a funding failure, the child-/bounty status must be updated with the
+   * `check_status` call before retrying with `retry_payment` call.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of parent bounty for which child-bounty is being added.
+   * - `value`: The payment amount of this child-bounty.
+   * - `metadata`: The hash of an on-chain stored preimage with child-bounty metadata.
+   * - `curator`: Address of child-bounty curator.
+   *
+   * ## Events
+   *
+   * Emits [`Event::ChildBountyCreated`] and [`Event::Paid`] if successful.
+   **/
+  | {
+      name: 'FundChildBounty';
+      params: { parentBountyId: number; value: bigint; metadata: H256; curator?: MultiAddress | undefined };
+    }
+  /**
+   * Propose a new curator for a child-/bounty after the previous was unassigned.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed by `T::SpendOrigin` for a bounty, or by the parent bounty curator
+   * for a child-bounty.
+   *
+   * ## Details
+   *
+   * - The child-/bounty must be in the `CuratorUnassigned` state.
+   * - For a bounty, the `SpendOrigin` must have sufficient permissions to propose the
+   * curator.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of bounty.
+   * - `child_bounty_id`: Index of child-bounty.
+   * - `curator`: Account to be proposed as the curator.
+   *
+   * ## Events
+   *
+   * Emits [`Event::CuratorProposed`] if successful.
+   **/
+  | {
+      name: 'ProposeCurator';
+      params: { parentBountyId: number; childBountyId?: number | undefined; curator: MultiAddress };
+    }
+  /**
+   * Accept the curator role for a child-/bounty.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed by the proposed curator.
+   *
+   * ## Details
+   *
+   * - The child-/bounty must be in the `Funded` state.
+   * - The curator must accept the role by calling this function.
+   * - A deposit will be reserved from the curator and refunded upon successful payout.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of parent bounty.
+   * - `child_bounty_id`: Index of child-bounty.
+   *
+   * ## Events
+   *
+   * Emits [`Event::BountyBecameActive`] if successful.
+   **/
+  | { name: 'AcceptCurator'; params: { parentBountyId: number; childBountyId?: number | undefined } }
+  /**
+   * Unassign curator from a child-/bounty.
+   *
+   * ## Dispatch Origin
+   *
+   * This function can only be called by the `RejectOrigin` or the child-/bounty curator.
+   *
+   * ## Details
+   *
+   * - If this function is called by the `RejectOrigin`, or by the parent curator in the case
+   * of a child bounty, we assume that the curator is malicious or inactive. As a result,
+   * we will slash the curator when possible.
+   * - If the origin is the child-/bounty curator, we take this as a sign they are unable to
+   * do their job and they willingly give up. We could slash them, but for now we allow
+   * them to recover their deposit and exit without issue. (We may want to change this if
+   * it is abused).
+   * - If successful, the child-/bounty status is updated to `CuratorUnassigned`. To
+   * reactivate the bounty, a new curator must be proposed and must accept the role.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of parent bounty.
+   * - `child_bounty_id`: Index of child-bounty.
+   *
+   * ## Events
+   *
+   * Emits [`Event::CuratorUnassigned`] if successful.
+   **/
+  | { name: 'UnassignCurator'; params: { parentBountyId: number; childBountyId?: number | undefined } }
+  /**
+   * Awards the child-/bounty to a beneficiary account/location,
+   * initiating the payout payments to both the beneficiary and the curator.
+   *
+   * ## Dispatch Origin
+   *
+   * This function can only be called by the `RejectOrigin` or the child-/bounty curator.
+   *
+   * ## Details
+   *
+   * - The child-/bounty must be in the `Active` state.
+   * - if awarding a parent bounty it must not have active or funded child bounties.
+   * - Initiates payout payment from the child-/bounty to the beneficiary account/location.
+   * - If successful the child-/bounty status is updated to `PayoutAttempted`.
+   * - In case of a payout failure, the child-/bounty status must be updated with
+   * `check_status` call before retrying with `retry_payment` call.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of parent bounty.
+   * - `child_bounty_id`: Index of child-bounty.
+   * - `beneficiary`: Account/location to be awarded the child-/bounty.
+   *
+   * ## Events
+   *
+   * Emits [`Event::BountyAwarded`] and [`Event::Paid`] if successful.
+   **/
+  | {
+      name: 'AwardBounty';
+      params: {
+        parentBountyId: number;
+        childBountyId?: number | undefined;
+        beneficiary: ParachainsCommonPayVersionedLocatableAccount;
+      };
+    }
+  /**
+   * Cancel an active child-/bounty. A payment to send all the funds to the funding source is
+   * initialized.
+   *
+   * ## Dispatch Origin
+   *
+   * This function can only be called by the `RejectOrigin` or the parent bounty curator.
+   *
+   * ## Details
+   *
+   * - If the child-/bounty is in the `Funded` state, a refund payment is initiated.
+   * - If the child-/bounty is in the `Active` state, a refund payment is initiated and the
+   * child-/bounty status is updated with the curator account/location.
+   * - If the child-/bounty is in the funding or payout phase, it cannot be canceled.
+   * - In case of a refund failure, the child-/bounty status must be updated with the
+   * `check_status` call before retrying with `retry_payment` call.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of parent bounty.
+   * - `child_bounty_id`: Index of child-bounty.
+   *
+   * ## Events
+   *
+   * Emits [`Event::BountyCanceled`] and [`Event::Paid`] if successful.
+   **/
+  | { name: 'CloseBounty'; params: { parentBountyId: number; childBountyId?: number | undefined } }
+  /**
+   * Check and update the payment status of a child-/bounty.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed.
+   *
+   * ## Details
+   *
+   * - If the child-/bounty status is `FundingAttempted`, it checks if the funding payment
+   * has succeeded. If successful, the bounty status becomes `Funded`.
+   * - If the child-/bounty status is `RefundAttempted`, it checks if the refund payment has
+   * succeeded. If successful, the child-/bounty is removed from storage.
+   * - If the child-/bounty status is `PayoutAttempted`, it checks if the payout payment has
+   * succeeded. If successful, the child-/bounty is removed from storage.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of parent bounty.
+   * - `child_bounty_id`: Index of child-bounty.
+   *
+   * ## Events
+   *
+   * Emits [`Event::BountyBecameActive`] if the child/bounty status transitions to `Active`.
+   * Emits [`Event::BountyRefundProcessed`] if the refund payment has succeed.
+   * Emits [`Event::BountyPayoutProcessed`] if the payout payment has succeed.
+   * Emits [`Event::PaymentFailed`] if the funding, refund our payment payment has failed.
+   **/
+  | { name: 'CheckStatus'; params: { parentBountyId: number; childBountyId?: number | undefined } }
+  /**
+   * Retry the funding, refund or payout payments.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed.
+   *
+   * ## Details
+   *
+   * - If the child-/bounty status is `FundingAttempted`, it retries the funding payment from
+   * funding source the child-/bounty account/location.
+   * - If the child-/bounty status is `RefundAttempted`, it retries the refund payment from
+   * the child-/bounty account/location to the funding source.
+   * - If the child-/bounty status is `PayoutAttempted`, it retries the payout payment from
+   * the child-/bounty account/location to the beneficiary account/location.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of parent bounty.
+   * - `child_bounty_id`: Index of child-bounty.
+   *
+   * ## Events
+   *
+   * Emits [`Event::Paid`] if the funding, refund or payout payment has initiated.
+   **/
+  | { name: 'RetryPayment'; params: { parentBountyId: number; childBountyId?: number | undefined } };
+
+export type PalletMultiAssetBountiesCallLike =
+  /**
+   * Fund a new bounty with a proposed curator, initiating the payment from the
+   * funding source to the bounty account/location.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::SpendOrigin`] with the `Success` value being at least
+   * the bounty value converted to native balance using [`Config::BalanceConverter`].
+   * The converted native amount is validated against the maximum spendable amount
+   * returned by [`Config::SpendOrigin`].
+   *
+   * ## Details
+   *
+   * - The `SpendOrigin` must have sufficient permissions to fund the bounty.
+   * - The bounty `value` (in asset balance) is converted to native balance for validation.
+   * - In case of a funding failure, the bounty status must be updated with the
+   * `check_status` call before retrying with `retry_payment` call.
+   *
+   * ### Parameters
+   * - `asset_kind`: An indicator of the specific asset class to be funded.
+   * - `value`: The total payment amount of this bounty.
+   * - `curator`: Address of bounty curator.
+   * - `metadata`: The hash of an on-chain stored preimage with bounty metadata.
+   *
+   * ## Events
+   *
+   * Emits [`Event::BountyCreated`] and [`Event::Paid`] if successful.
+   **/
+  | {
+      name: 'FundBounty';
+      params: {
+        assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
+        value: bigint;
+        curator: MultiAddressLike;
+        metadata: H256;
+      };
+    }
+  /**
+   * Fund a new child-bounty with a proposed curator, initiating the payment from the parent
+   * bounty to the child-bounty account/location.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed by the parent curator.
+   *
+   * ## Details
+   *
+   * - If `curator` is not provided, the child-bounty will default to using the parent
+   * curator, allowing the parent curator to immediately call `check_status` and
+   * `award_bounty` to payout the child-bounty.
+   * - In case of a funding failure, the child-/bounty status must be updated with the
+   * `check_status` call before retrying with `retry_payment` call.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of parent bounty for which child-bounty is being added.
+   * - `value`: The payment amount of this child-bounty.
+   * - `metadata`: The hash of an on-chain stored preimage with child-bounty metadata.
+   * - `curator`: Address of child-bounty curator.
+   *
+   * ## Events
+   *
+   * Emits [`Event::ChildBountyCreated`] and [`Event::Paid`] if successful.
+   **/
+  | {
+      name: 'FundChildBounty';
+      params: { parentBountyId: number; value: bigint; metadata: H256; curator?: MultiAddressLike | undefined };
+    }
+  /**
+   * Propose a new curator for a child-/bounty after the previous was unassigned.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed by `T::SpendOrigin` for a bounty, or by the parent bounty curator
+   * for a child-bounty.
+   *
+   * ## Details
+   *
+   * - The child-/bounty must be in the `CuratorUnassigned` state.
+   * - For a bounty, the `SpendOrigin` must have sufficient permissions to propose the
+   * curator.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of bounty.
+   * - `child_bounty_id`: Index of child-bounty.
+   * - `curator`: Account to be proposed as the curator.
+   *
+   * ## Events
+   *
+   * Emits [`Event::CuratorProposed`] if successful.
+   **/
+  | {
+      name: 'ProposeCurator';
+      params: { parentBountyId: number; childBountyId?: number | undefined; curator: MultiAddressLike };
+    }
+  /**
+   * Accept the curator role for a child-/bounty.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed by the proposed curator.
+   *
+   * ## Details
+   *
+   * - The child-/bounty must be in the `Funded` state.
+   * - The curator must accept the role by calling this function.
+   * - A deposit will be reserved from the curator and refunded upon successful payout.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of parent bounty.
+   * - `child_bounty_id`: Index of child-bounty.
+   *
+   * ## Events
+   *
+   * Emits [`Event::BountyBecameActive`] if successful.
+   **/
+  | { name: 'AcceptCurator'; params: { parentBountyId: number; childBountyId?: number | undefined } }
+  /**
+   * Unassign curator from a child-/bounty.
+   *
+   * ## Dispatch Origin
+   *
+   * This function can only be called by the `RejectOrigin` or the child-/bounty curator.
+   *
+   * ## Details
+   *
+   * - If this function is called by the `RejectOrigin`, or by the parent curator in the case
+   * of a child bounty, we assume that the curator is malicious or inactive. As a result,
+   * we will slash the curator when possible.
+   * - If the origin is the child-/bounty curator, we take this as a sign they are unable to
+   * do their job and they willingly give up. We could slash them, but for now we allow
+   * them to recover their deposit and exit without issue. (We may want to change this if
+   * it is abused).
+   * - If successful, the child-/bounty status is updated to `CuratorUnassigned`. To
+   * reactivate the bounty, a new curator must be proposed and must accept the role.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of parent bounty.
+   * - `child_bounty_id`: Index of child-bounty.
+   *
+   * ## Events
+   *
+   * Emits [`Event::CuratorUnassigned`] if successful.
+   **/
+  | { name: 'UnassignCurator'; params: { parentBountyId: number; childBountyId?: number | undefined } }
+  /**
+   * Awards the child-/bounty to a beneficiary account/location,
+   * initiating the payout payments to both the beneficiary and the curator.
+   *
+   * ## Dispatch Origin
+   *
+   * This function can only be called by the `RejectOrigin` or the child-/bounty curator.
+   *
+   * ## Details
+   *
+   * - The child-/bounty must be in the `Active` state.
+   * - if awarding a parent bounty it must not have active or funded child bounties.
+   * - Initiates payout payment from the child-/bounty to the beneficiary account/location.
+   * - If successful the child-/bounty status is updated to `PayoutAttempted`.
+   * - In case of a payout failure, the child-/bounty status must be updated with
+   * `check_status` call before retrying with `retry_payment` call.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of parent bounty.
+   * - `child_bounty_id`: Index of child-bounty.
+   * - `beneficiary`: Account/location to be awarded the child-/bounty.
+   *
+   * ## Events
+   *
+   * Emits [`Event::BountyAwarded`] and [`Event::Paid`] if successful.
+   **/
+  | {
+      name: 'AwardBounty';
+      params: {
+        parentBountyId: number;
+        childBountyId?: number | undefined;
+        beneficiary: ParachainsCommonPayVersionedLocatableAccount;
+      };
+    }
+  /**
+   * Cancel an active child-/bounty. A payment to send all the funds to the funding source is
+   * initialized.
+   *
+   * ## Dispatch Origin
+   *
+   * This function can only be called by the `RejectOrigin` or the parent bounty curator.
+   *
+   * ## Details
+   *
+   * - If the child-/bounty is in the `Funded` state, a refund payment is initiated.
+   * - If the child-/bounty is in the `Active` state, a refund payment is initiated and the
+   * child-/bounty status is updated with the curator account/location.
+   * - If the child-/bounty is in the funding or payout phase, it cannot be canceled.
+   * - In case of a refund failure, the child-/bounty status must be updated with the
+   * `check_status` call before retrying with `retry_payment` call.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of parent bounty.
+   * - `child_bounty_id`: Index of child-bounty.
+   *
+   * ## Events
+   *
+   * Emits [`Event::BountyCanceled`] and [`Event::Paid`] if successful.
+   **/
+  | { name: 'CloseBounty'; params: { parentBountyId: number; childBountyId?: number | undefined } }
+  /**
+   * Check and update the payment status of a child-/bounty.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed.
+   *
+   * ## Details
+   *
+   * - If the child-/bounty status is `FundingAttempted`, it checks if the funding payment
+   * has succeeded. If successful, the bounty status becomes `Funded`.
+   * - If the child-/bounty status is `RefundAttempted`, it checks if the refund payment has
+   * succeeded. If successful, the child-/bounty is removed from storage.
+   * - If the child-/bounty status is `PayoutAttempted`, it checks if the payout payment has
+   * succeeded. If successful, the child-/bounty is removed from storage.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of parent bounty.
+   * - `child_bounty_id`: Index of child-bounty.
+   *
+   * ## Events
+   *
+   * Emits [`Event::BountyBecameActive`] if the child/bounty status transitions to `Active`.
+   * Emits [`Event::BountyRefundProcessed`] if the refund payment has succeed.
+   * Emits [`Event::BountyPayoutProcessed`] if the payout payment has succeed.
+   * Emits [`Event::PaymentFailed`] if the funding, refund our payment payment has failed.
+   **/
+  | { name: 'CheckStatus'; params: { parentBountyId: number; childBountyId?: number | undefined } }
+  /**
+   * Retry the funding, refund or payout payments.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed.
+   *
+   * ## Details
+   *
+   * - If the child-/bounty status is `FundingAttempted`, it retries the funding payment from
+   * funding source the child-/bounty account/location.
+   * - If the child-/bounty status is `RefundAttempted`, it retries the refund payment from
+   * the child-/bounty account/location to the funding source.
+   * - If the child-/bounty status is `PayoutAttempted`, it retries the payout payment from
+   * the child-/bounty account/location to the beneficiary account/location.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of parent bounty.
+   * - `child_bounty_id`: Index of child-bounty.
+   *
+   * ## Events
+   *
+   * Emits [`Event::Paid`] if the funding, refund or payout payment has initiated.
+   **/
+  | { name: 'RetryPayment'; params: { parentBountyId: number; childBountyId?: number | undefined } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletAhOpsCall =
   /**
    * Unreserve the deposit that was taken for creating a crowdloan.
@@ -16901,6 +17669,8 @@ export type PalletRcMigratorQueuePriority =
 
 export type PalletRcMigratorMigrationFinishedData = { rcBalanceKept: bigint };
 
+export type FrameSystemExtensionsAuthorizeCall = {};
+
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
 export type FrameSystemExtensionsCheckSpecVersion = {};
@@ -17000,6 +17770,7 @@ export type AssetHubKusamaRuntimeRuntimeEvent =
   | { pallet: 'Bounties'; palletEvent: PalletBountiesEvent }
   | { pallet: 'ChildBounties'; palletEvent: PalletChildBountiesEvent }
   | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
+  | { pallet: 'MultiAssetBounties'; palletEvent: PalletMultiAssetBountiesEvent }
   | { pallet: 'AhOps'; palletEvent: PalletAhOpsEvent }
   | { pallet: 'AhMigrator'; palletEvent: PalletAhMigratorEvent };
 
@@ -17443,9 +18214,17 @@ export type PalletBalancesEvent =
    **/
   | { name: 'Minted'; data: { who: AccountId32; amount: bigint } }
   /**
+   * Some credit was balanced and added to the TotalIssuance.
+   **/
+  | { name: 'MintedCredit'; data: { amount: bigint } }
+  /**
    * Some amount was burned from an account.
    **/
   | { name: 'Burned'; data: { who: AccountId32; amount: bigint } }
+  /**
+   * Some debt has been dropped from the Total Issuance.
+   **/
+  | { name: 'BurnedDebt'; data: { amount: bigint } }
   /**
    * Some amount was suspended from an account (it can be restored later).
    **/
@@ -17487,11 +18266,67 @@ export type PalletBalancesEvent =
    **/
   | { name: 'TotalIssuanceForced'; data: { old: bigint; new: bigint } }
   /**
+   * Some balance was placed on hold.
+   **/
+  | { name: 'Held'; data: { reason: AssetHubKusamaRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
+   * Held balance was burned from an account.
+   **/
+  | { name: 'BurnedHeld'; data: { reason: AssetHubKusamaRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
+   * A transfer of `amount` on hold from `source` to `dest` was initiated.
+   **/
+  | {
+      name: 'TransferOnHold';
+      data: { reason: AssetHubKusamaRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint };
+    }
+  /**
+   * The `transferred` balance is placed on hold at the `dest` account.
+   **/
+  | {
+      name: 'TransferAndHold';
+      data: {
+        reason: AssetHubKusamaRuntimeRuntimeHoldReason;
+        source: AccountId32;
+        dest: AccountId32;
+        transferred: bigint;
+      };
+    }
+  /**
+   * Some balance was released from hold.
+   **/
+  | { name: 'Released'; data: { reason: AssetHubKusamaRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
    * An unexpected/defensive event was triggered.
    **/
   | { name: 'Unexpected'; data: PalletBalancesUnexpectedKind };
 
 export type FrameSupportTokensMiscBalanceStatus = 'Free' | 'Reserved';
+
+export type AssetHubKusamaRuntimeRuntimeHoldReason =
+  | { type: 'Preimage'; value: PalletPreimageHoldReason }
+  | { type: 'Session'; value: PalletSessionHoldReason }
+  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
+  | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
+  | { type: 'Revive'; value: PalletReviveHoldReason }
+  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
+  | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
+  | { type: 'StakingRcClient'; value: PalletStakingAsyncRcClientHoldReason }
+  | { type: 'MultiBlockElectionSigned'; value: PalletElectionProviderMultiBlockSignedPalletHoldReason }
+  | { type: 'Staking'; value: PalletStakingAsyncPalletHoldReason }
+  | { type: 'MultiAssetBounties'; value: PalletMultiAssetBountiesHoldReason };
+
+export type PalletNftFractionalizationHoldReason = 'Fractionalized';
+
+export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
+
+export type PalletStakingAsyncRcClientHoldReason = 'Keys';
+
+export type PalletElectionProviderMultiBlockSignedPalletHoldReason = 'SignedSubmission';
+
+export type PalletStakingAsyncPalletHoldReason = 'Staking';
+
+export type PalletMultiAssetBountiesHoldReason = 'CuratorDeposit';
 
 export type PalletBalancesUnexpectedKind = 'BalanceUpdated' | 'FailedToMutateAccount';
 
@@ -18129,6 +18964,8 @@ export type PalletProxyEvent =
         who: AccountId32;
         proxyType: AssetHubKusamaRuntimeProxyType;
         disambiguationIndex: number;
+        at: number;
+        extrinsicIndex: number;
       };
     }
   /**
@@ -18313,7 +19150,15 @@ export type PalletAssetsEvent =
   /**
    * Some assets were withdrawn from the account (e.g. for transaction fees).
    **/
-  | { name: 'Withdrawn'; data: { assetId: number; who: AccountId32; amount: bigint } };
+  | { name: 'Withdrawn'; data: { assetId: number; who: AccountId32; amount: bigint } }
+  /**
+   * Reserve information was set or updated for `asset_id`.
+   **/
+  | { name: 'ReservesUpdated'; data: { assetId: number; reserves: Array<[]> } }
+  /**
+   * Reserve information was removed for `asset_id`.
+   **/
+  | { name: 'ReservesRemoved'; data: { assetId: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -18809,7 +19654,21 @@ export type PalletAssetsEvent002 =
   /**
    * Some assets were withdrawn from the account (e.g. for transaction fees).
    **/
-  | { name: 'Withdrawn'; data: { assetId: StagingXcmV5Location; who: AccountId32; amount: bigint } };
+  | { name: 'Withdrawn'; data: { assetId: StagingXcmV5Location; who: AccountId32; amount: bigint } }
+  /**
+   * Reserve information was set or updated for `asset_id`.
+   **/
+  | {
+      name: 'ReservesUpdated';
+      data: {
+        assetId: StagingXcmV5Location;
+        reserves: Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData>;
+      };
+    }
+  /**
+   * Reserve information was removed for `asset_id`.
+   **/
+  | { name: 'ReservesRemoved'; data: { assetId: StagingXcmV5Location } };
 
 /**
  * The `Event` enum of this pallet
@@ -19140,7 +19999,11 @@ export type PalletSocietyEvent =
   /**
    * A deposit was poked / adjusted.
    **/
-  | { name: 'DepositPoked'; data: { who: AccountId32; oldDeposit: bigint; newDeposit: bigint } };
+  | { name: 'DepositPoked'; data: { who: AccountId32; oldDeposit: bigint; newDeposit: bigint } }
+  /**
+   * A member was kicked by the founder.
+   **/
+  | { name: 'MemberKicked'; data: { member: AccountId32 } };
 
 export type PalletSocietyGroupParams = {
   maxMembers: number;
@@ -19444,6 +20307,12 @@ export type PalletStakingAsyncRcClientEvent =
    * A new offence was reported.
    **/
   | { name: 'OffenceReceived'; data: { slashSession: number; offencesCount: number } }
+  /**
+   * Fees were charged for a user operation (set_keys or purge_keys).
+   *
+   * The fee includes both XCM delivery fee and relay chain execution cost.
+   **/
+  | { name: 'FeesPaid'; data: { who: AccountId32; fees: bigint } }
   /**
    * Something occurred that should never happen under normal operation.
    * Logged as an event for fail-safe observability.
@@ -19769,19 +20638,19 @@ export type PalletConvictionVotingEvent =
   /**
    * An account has delegated their vote to another account. \[who, target\]
    **/
-  | { name: 'Delegated'; data: [AccountId32, AccountId32] }
+  | { name: 'Delegated'; data: [AccountId32, AccountId32, number] }
   /**
    * An \[account\] has cancelled a previous delegation operation.
    **/
-  | { name: 'Undelegated'; data: AccountId32 }
+  | { name: 'Undelegated'; data: [AccountId32, number] }
   /**
    * An account has voted
    **/
-  | { name: 'Voted'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } }
+  | { name: 'Voted'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number } }
   /**
    * A vote has been removed
    **/
-  | { name: 'VoteRemoved'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote } }
+  | { name: 'VoteRemoved'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number } }
   /**
    * The lockup period of a conviction vote expired, and the funds have been unlocked.
    **/
@@ -20188,6 +21057,75 @@ export type PalletAssetRateEvent =
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletMultiAssetBountiesEvent =
+  /**
+   * A new bounty was created and funding has been initiated.
+   **/
+  | { name: 'BountyCreated'; data: { index: number } }
+  /**
+   * A new child-bounty was created and funding has been initiated.
+   **/
+  | { name: 'ChildBountyCreated'; data: { index: number; childIndex: number } }
+  /**
+   * The curator accepted role and child-/bounty became active.
+   **/
+  | { name: 'BountyBecameActive'; data: { index: number; childIndex?: number | undefined; curator: AccountId32 } }
+  /**
+   * A child-/bounty was awarded to a beneficiary.
+   **/
+  | {
+      name: 'BountyAwarded';
+      data: {
+        index: number;
+        childIndex?: number | undefined;
+        beneficiary: ParachainsCommonPayVersionedLocatableAccount;
+      };
+    }
+  /**
+   * Payout payment to the beneficiary has concluded successfully.
+   **/
+  | {
+      name: 'BountyPayoutProcessed';
+      data: {
+        index: number;
+        childIndex?: number | undefined;
+        assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
+        value: bigint;
+        beneficiary: ParachainsCommonPayVersionedLocatableAccount;
+      };
+    }
+  /**
+   * Funding payment has concluded successfully.
+   **/
+  | { name: 'BountyFundingProcessed'; data: { index: number; childIndex?: number | undefined } }
+  /**
+   * Refund payment has concluded successfully.
+   **/
+  | { name: 'BountyRefundProcessed'; data: { index: number; childIndex?: number | undefined } }
+  /**
+   * A child-/bounty was cancelled.
+   **/
+  | { name: 'BountyCanceled'; data: { index: number; childIndex?: number | undefined } }
+  /**
+   * A child-/bounty curator was unassigned.
+   **/
+  | { name: 'CuratorUnassigned'; data: { index: number; childIndex?: number | undefined } }
+  /**
+   * A child-/bounty curator was proposed.
+   **/
+  | { name: 'CuratorProposed'; data: { index: number; childIndex?: number | undefined; curator: AccountId32 } }
+  /**
+   * A payment failed and can be retried.
+   **/
+  | { name: 'PaymentFailed'; data: { index: number; childIndex?: number | undefined; paymentId: bigint } }
+  /**
+   * A payment happened and can be checked.
+   **/
+  | { name: 'Paid'; data: { index: number; childIndex?: number | undefined; paymentId: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PalletAhOpsEvent =
   /**
    * Some lease reserve could not be unreserved and needs manual cleanup.
@@ -20528,6 +21466,7 @@ export type FrameSystemError =
 export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
 
 export type CumulusPalletWeightReclaimStorageWeightReclaim = [
+  FrameSystemExtensionsAuthorizeCall,
   FrameSystemExtensionsCheckNonZeroSender,
   FrameSystemExtensionsCheckSpecVersion,
   FrameSystemExtensionsCheckTxVersion,
@@ -20543,7 +21482,7 @@ export type CumulusPalletWeightReclaimStorageWeightReclaim = [
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV9UpgradeGoAhead | undefined;
 };
 
 export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
@@ -20556,21 +21495,21 @@ export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
 
 export type CumulusPalletParachainSystemUnincludedSegmentHrmpChannelUpdate = { msgCount: number; totalBytes: number };
 
-export type PolkadotPrimitivesV8UpgradeGoAhead = 'Abort' | 'GoAhead';
+export type PolkadotPrimitivesV9UpgradeGoAhead = 'Abort' | 'GoAhead';
 
 export type CumulusPalletParachainSystemUnincludedSegmentSegmentTracker = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   hrmpWatermark?: number | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV9UpgradeGoAhead | undefined;
 };
 
-export type PolkadotPrimitivesV8UpgradeRestriction = 'Present';
+export type PolkadotPrimitivesV9UpgradeRestriction = 'Present';
 
 export type CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot = {
   dmqMqcHead: H256;
   relayDispatchQueueRemainingCapacity: CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity;
-  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
-  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
+  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV9AbridgedHrmpChannel]>;
+  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV9AbridgedHrmpChannel]>;
 };
 
 export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity = {
@@ -20578,7 +21517,7 @@ export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRema
   remainingSize: number;
 };
 
-export type PolkadotPrimitivesV8AbridgedHrmpChannel = {
+export type PolkadotPrimitivesV9AbridgedHrmpChannel = {
   maxCapacity: number;
   maxTotalSize: number;
   maxMessageSize: number;
@@ -20587,7 +21526,7 @@ export type PolkadotPrimitivesV8AbridgedHrmpChannel = {
   mqcHead?: H256 | undefined;
 };
 
-export type PolkadotPrimitivesV8AbridgedHostConfiguration = {
+export type PolkadotPrimitivesV9AbridgedHostConfiguration = {
   maxCodeSize: number;
   maxHeadDataSize: number;
   maxUpwardQueueCount: number;
@@ -20597,10 +21536,10 @@ export type PolkadotPrimitivesV8AbridgedHostConfiguration = {
   hrmpMaxMessageNumPerCandidate: number;
   validationUpgradeCooldown: number;
   validationUpgradeDelay: number;
-  asyncBackingParams: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams;
+  asyncBackingParams: PolkadotPrimitivesV9AsyncBackingAsyncBackingParams;
 };
 
-export type PolkadotPrimitivesV8AsyncBackingAsyncBackingParams = {
+export type PolkadotPrimitivesV9AsyncBackingAsyncBackingParams = {
   maxCandidateDepth: number;
   allowedAncestryLen: number;
 };
@@ -20749,25 +21688,6 @@ export type FrameSupportTokensMiscIdAmountRuntimeHoldReason = {
   id: AssetHubKusamaRuntimeRuntimeHoldReason;
   amount: bigint;
 };
-
-export type AssetHubKusamaRuntimeRuntimeHoldReason =
-  | { type: 'Preimage'; value: PalletPreimageHoldReason }
-  | { type: 'Session'; value: PalletSessionHoldReason }
-  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
-  | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
-  | { type: 'Revive'; value: PalletReviveHoldReason }
-  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
-  | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
-  | { type: 'MultiBlockElectionSigned'; value: PalletElectionProviderMultiBlockSignedPalletHoldReason }
-  | { type: 'Staking'; value: PalletStakingAsyncPalletHoldReason };
-
-export type PalletNftFractionalizationHoldReason = 'Fractionalized';
-
-export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
-
-export type PalletElectionProviderMultiBlockSignedPalletHoldReason = 'SignedSubmission';
-
-export type PalletStakingAsyncPalletHoldReason = 'Staking';
 
 export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
   id: AssetHubKusamaRuntimeRuntimeFreezeReason;
@@ -21646,7 +22566,11 @@ export type PalletAssetsError =
   /**
    * The asset cannot be destroyed because some accounts for this asset contain holds.
    **/
-  | 'ContainsHolds';
+  | 'ContainsHolds'
+  /**
+   * Tried setting too many reserves.
+   **/
+  | 'TooManyReserves';
 
 export type PalletUniquesCollectionDetails = {
   owner: AccountId32;
@@ -22857,7 +23781,11 @@ export type PalletReviveError =
    * Some pre-compile functions will trap the caller context if being delegate
    * called or if their caller was being delegate called.
    **/
-  | 'PrecompileDelegateDenied';
+  | 'PrecompileDelegateDenied'
+  /**
+   * ECDSA public key recovery failed. Most probably wrong recovery id or signature.
+   **/
+  | 'EcdsaRecoveryFailed';
 
 export type PalletNominationPoolsRewardPool = {
   lastRecordedRewardCounter: FixedU128;
@@ -23148,6 +24076,35 @@ export type PalletStakingAsyncRcClientValidatorSetReport = {
 };
 
 /**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletStakingAsyncRcClientError =
+  /**
+   * Failed to send XCM message to the Relay Chain.
+   **/
+  | 'XcmSendFailed'
+  /**
+   * The origin account is not a registered validator.
+   *
+   * Only accounts that have called `validate()` can set or purge session keys. When called
+   * via a staking proxy, the origin is the delegating account (stash), which must be a
+   * registered validator.
+   **/
+  | 'NotValidator'
+  /**
+   * The session keys could not be decoded as the expected RelayChainSessionKeys type.
+   **/
+  | 'InvalidKeys'
+  /**
+   * The ownership proof for the session keys is invalid.
+   **/
+  | 'InvalidProof'
+  /**
+   * Delivery fees exceeded the specified maximum.
+   **/
+  | 'FeesExceededMax';
+
+/**
  * Error of the pallet that can be returned in response to dispatches.
  **/
 export type PalletElectionProviderMultiBlockError =
@@ -23270,7 +24227,8 @@ export type PalletStakingAsyncPalletPruningStep =
   | 'ClaimedRewards'
   | 'ErasValidatorReward'
   | 'ErasRewardPoints'
-  | 'ErasTotalStake';
+  | 'SingleEntryCleanups'
+  | 'ValidatorSlashInEra';
 
 /**
  * The `Error` enum of this pallet.
@@ -23781,6 +24739,121 @@ export type PalletAssetRateError =
    **/
   | 'Overflow';
 
+export type PalletMultiAssetBountiesBounty = {
+  assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
+  value: bigint;
+  metadata: H256;
+  status: PalletMultiAssetBountiesBountyStatus;
+};
+
+export type PalletMultiAssetBountiesBountyStatus =
+  | { type: 'FundingAttempted'; value: { curator: AccountId32; paymentStatus: PalletMultiAssetBountiesPaymentState } }
+  | { type: 'Funded'; value: { curator: AccountId32 } }
+  | { type: 'CuratorUnassigned' }
+  | { type: 'Active'; value: { curator: AccountId32 } }
+  | {
+      type: 'RefundAttempted';
+      value: { curator?: AccountId32 | undefined; paymentStatus: PalletMultiAssetBountiesPaymentState };
+    }
+  | {
+      type: 'PayoutAttempted';
+      value: {
+        curator: AccountId32;
+        beneficiary: ParachainsCommonPayVersionedLocatableAccount;
+        paymentStatus: PalletMultiAssetBountiesPaymentState;
+      };
+    };
+
+export type PalletMultiAssetBountiesPaymentState =
+  | { type: 'Pending' }
+  | { type: 'Attempted'; value: { id: bigint } }
+  | { type: 'Failed' }
+  | { type: 'Succeeded' };
+
+export type PalletMultiAssetBountiesChildBounty = {
+  parentBounty: number;
+  value: bigint;
+  metadata: H256;
+  status: PalletMultiAssetBountiesBountyStatus;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletMultiAssetBountiesError =
+  /**
+   * No child-/bounty at that index.
+   **/
+  | 'InvalidIndex'
+  /**
+   * The reason given is just too big.
+   **/
+  | 'ReasonTooBig'
+  /**
+   * Invalid child-/bounty value.
+   **/
+  | 'InvalidValue'
+  /**
+   * The balance of the asset kind is not convertible to the balance of the native asset for
+   * asserting the origin permissions.
+   **/
+  | 'FailedToConvertBalance'
+  /**
+   * The child-/bounty status is unexpected.
+   **/
+  | 'UnexpectedStatus'
+  /**
+   * Require child-/bounty curator.
+   **/
+  | 'RequireCurator'
+  /**
+   * The spend origin is valid but the amount it is allowed to spend is lower than the
+   * requested amount.
+   **/
+  | 'InsufficientPermission'
+  /**
+   * There was issue with funding the child-/bounty.
+   **/
+  | 'FundingError'
+  /**
+   * There was issue with refunding the child-/bounty.
+   **/
+  | 'RefundError'
+  | 'PayoutError'
+  /**
+   * Child-/bounty funding has not concluded yet.
+   **/
+  | 'FundingInconclusive'
+  /**
+   * Child-/bounty refund has not concluded yet.
+   **/
+  | 'RefundInconclusive'
+  /**
+   * Child-/bounty payout has not concluded yet.
+   **/
+  | 'PayoutInconclusive'
+  /**
+   * The child-/bounty or funding source account could not be derived from the indexes and
+   * asset kind.
+   **/
+  | 'FailedToConvertSource'
+  /**
+   * The parent bounty cannot be closed because it has active child bounties.
+   **/
+  | 'HasActiveChildBounty'
+  /**
+   * Number of child bounties exceeds limit `MaxActiveChildBountyCount`.
+   **/
+  | 'TooManyChildBounties'
+  /**
+   * The parent bounty value is not enough to add new child-bounty.
+   **/
+  | 'InsufficientBountyValue'
+  /**
+   * The preimage does not exist.
+   **/
+  | 'PreimageNotExist';
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -23930,6 +25003,10 @@ export type PalletAhMigratorError =
   | 'InvalidOrigin';
 
 export type SpConsensusSlotsSlotDuration = bigint;
+
+export type SpRuntimeBlockLazyBlock = { header: Header; extrinsics: Array<SpRuntimeOpaqueExtrinsic> };
+
+export type SpRuntimeOpaqueExtrinsic = Bytes;
 
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 
@@ -24224,6 +25301,7 @@ export type AssetHubKusamaRuntimeRuntimeError =
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }
   | { pallet: 'VoterList'; palletError: PalletBagsListError }
   | { pallet: 'DelegatedStaking'; palletError: PalletDelegatedStakingError }
+  | { pallet: 'StakingRcClient'; palletError: PalletStakingAsyncRcClientError }
   | { pallet: 'MultiBlockElection'; palletError: PalletElectionProviderMultiBlockError }
   | { pallet: 'MultiBlockElectionSigned'; palletError: PalletElectionProviderMultiBlockSignedPalletError }
   | { pallet: 'Staking'; palletError: PalletStakingAsyncPalletError }
@@ -24234,5 +25312,6 @@ export type AssetHubKusamaRuntimeRuntimeError =
   | { pallet: 'Bounties'; palletError: PalletBountiesError }
   | { pallet: 'ChildBounties'; palletError: PalletChildBountiesError }
   | { pallet: 'AssetRate'; palletError: PalletAssetRateError }
+  | { pallet: 'MultiAssetBounties'; palletError: PalletMultiAssetBountiesError }
   | { pallet: 'AhOps'; palletError: PalletAhOpsError }
   | { pallet: 'AhMigrator'; palletError: PalletAhMigratorError };

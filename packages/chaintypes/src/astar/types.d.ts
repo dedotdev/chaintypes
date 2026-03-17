@@ -2954,6 +2954,7 @@ export type PalletDappStakingTierParameters = {
   slotDistribution: Array<Permill>;
   tierThresholds: Array<PalletDappStakingTierThreshold>;
   slotNumberArgs: [bigint, bigint];
+  tierRankMultipliers: Array<number>;
 };
 
 export type PalletDappStakingTierThreshold =

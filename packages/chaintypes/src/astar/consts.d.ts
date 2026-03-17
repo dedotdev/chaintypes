@@ -418,6 +418,11 @@ export interface ChainConsts extends GenericChainConsts {
     maxNumberOfContracts: number;
 
     /**
+     * Legacy bound for backward compatibility with pre-v11 DAppTierRewards.
+     **/
+    maxNumberOfContractsLegacy: number;
+
+    /**
      * Maximum number of unlocking chunks that can exist per account at a time.
      **/
     maxUnlockingChunks: number;

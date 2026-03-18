@@ -97,12 +97,14 @@ import type {
   PolkadotRuntimeParachainsConfigurationHostConfiguration,
   PolkadotPrimitivesV9ValidatorIndex,
   PolkadotPrimitivesV9ValidatorAppPublic,
-  PolkadotRuntimeParachainsSharedAllowedRelayParentsTracker,
+  PolkadotRuntimeParachainsSharedAllowedSchedulingParentsTracker,
+  PolkadotPrimitivesVstagingRelayParentInfo,
   PolkadotRuntimeParachainsInclusionCandidatePendingAvailability,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotPrimitivesV9ScrapedOnChainVotes,
+  PolkadotRuntimeParachainsSchedulerAssignerCoretimeSchedule,
   PolkadotPrimitivesV9CoreIndex,
-  PolkadotRuntimeParachainsSchedulerCommonAssignment,
+  PolkadotRuntimeParachainsSchedulerAssignerCoretimeCoreDescriptor,
   PolkadotRuntimeParachainsParasPvfCheckActiveVoteState,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotRuntimeParachainsParasParaLifecycle,
@@ -125,11 +127,7 @@ import type {
   PolkadotPrimitivesV9DisputeState,
   PolkadotCorePrimitivesCandidateHash,
   PolkadotPrimitivesV9SlashingPendingSlashes,
-  PolkadotRuntimeParachainsOnDemandTypesCoreAffinityCount,
-  PolkadotRuntimeParachainsOnDemandTypesQueueStatusType,
-  BinaryHeapEnqueuedOrder,
-  PolkadotRuntimeParachainsAssignerCoretimeSchedule,
-  PolkadotRuntimeParachainsAssignerCoretimeCoreDescriptor,
+  PolkadotRuntimeParachainsOnDemandOrderStatus,
   PolkadotRuntimeCommonParasRegistrarParaInfo,
   PolkadotRuntimeCommonCrowdloanFundInfo,
   PolkadotRuntimeCommonAssignedSlotsParachainTemporarySlot,
@@ -276,6 +274,13 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<FrameSystemLastRuntimeUpgradeInfo | undefined> =} callback
      **/
     lastRuntimeUpgrade: GenericStorageQuery<() => FrameSystemLastRuntimeUpgradeInfo | undefined>;
+
+    /**
+     * Number of blocks till the pending code upgrade is applied.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    blocksTillUpgrade: GenericStorageQuery<() => number | undefined>;
 
     /**
      * True if we have upgraded so that `type RefCount` is `u32`. False (default) if not.
@@ -1272,6 +1277,17 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [SpCoreCryptoKeyTypeId, BytesLike]) => AccountId32 | undefined,
       [SpCoreCryptoKeyTypeId, Bytes]
     >;
+
+    /**
+     * Accounts whose keys were set via `SessionInterface` (external path) without
+     * incrementing the consumer reference or placing a key deposit. `do_purge_keys`
+     * only decrements consumers for accounts that were registered through the local
+     * session pallet.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    externallySetKeys: GenericStorageQuery<(arg: AccountId32Like) => [] | undefined, AccountId32>;
 
     /**
      * Generic pallet storage query
@@ -2405,11 +2421,41 @@ export interface ChainStorage extends GenericChainStorage {
     activeValidatorKeys: GenericStorageQuery<() => Array<PolkadotPrimitivesV9ValidatorAppPublic>>;
 
     /**
-     * All allowed relay-parents.
+     * All allowed scheduling parents.
      *
-     * @param {Callback<PolkadotRuntimeParachainsSharedAllowedRelayParentsTracker> =} callback
+     * @param {Callback<PolkadotRuntimeParachainsSharedAllowedSchedulingParentsTracker> =} callback
      **/
-    allowedRelayParents: GenericStorageQuery<() => PolkadotRuntimeParachainsSharedAllowedRelayParentsTracker>;
+    allowedSchedulingParents: GenericStorageQuery<() => PolkadotRuntimeParachainsSharedAllowedSchedulingParentsTracker>;
+
+    /**
+     * All allowed relay parents, keyed by (session_index, relay_parent_hash).
+     *
+     * @param {[number, H256]} arg
+     * @param {Callback<PolkadotPrimitivesVstagingRelayParentInfo | undefined> =} callback
+     **/
+    allowedRelayParents: GenericStorageQuery<
+      (arg: [number, H256]) => PolkadotPrimitivesVstagingRelayParentInfo | undefined,
+      [number, H256]
+    >;
+
+    /**
+     * The oldest session index for which we still have relay parent entries in
+     * `AllowedRelayParents`. Used to efficiently prune all expired sessions
+     * when `max_relay_parent_session_age` decreases.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    oldestRelayParentSession: GenericStorageQuery<() => number>;
+
+    /**
+     * The minimum relay parent block number for each session that has entries in
+     * `AllowedRelayParents`. This is the block number of the first relay parent
+     * added to each session.
+     *
+     * @param {number} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    minimumRelayParentNumber: GenericStorageQuery<(arg: number) => number | undefined, number>;
 
     /**
      * Generic pallet storage query
@@ -2501,13 +2547,34 @@ export interface ChainStorage extends GenericChainStorage {
     sessionStartBlock: GenericStorageQuery<() => number>;
 
     /**
-     * One entry for each availability core. The `VecDeque` represents the assignments to be
-     * scheduled on that core.
+     * Scheduled assignment sets for coretime cores.
      *
-     * @param {Callback<Array<[PolkadotPrimitivesV9CoreIndex, Array<PolkadotRuntimeParachainsSchedulerCommonAssignment>]>> =} callback
+     * Assignments as of the given block number. They will go into state once the block number is
+     * reached (and replace whatever was in there before).
+     *
+     * Managed by the `assigner_coretime` submodule.
+     *
+     * @param {[number, PolkadotPrimitivesV9CoreIndex]} arg
+     * @param {Callback<PolkadotRuntimeParachainsSchedulerAssignerCoretimeSchedule | undefined> =} callback
      **/
-    claimQueue: GenericStorageQuery<
-      () => Array<[PolkadotPrimitivesV9CoreIndex, Array<PolkadotRuntimeParachainsSchedulerCommonAssignment>]>
+    coreSchedules: GenericStorageQuery<
+      (
+        arg: [number, PolkadotPrimitivesV9CoreIndex],
+      ) => PolkadotRuntimeParachainsSchedulerAssignerCoretimeSchedule | undefined,
+      [number, PolkadotPrimitivesV9CoreIndex]
+    >;
+
+    /**
+     * Assignments which are currently active for each core.
+     *
+     * They will be picked from `CoreSchedules` once we reach the scheduled block number.
+     *
+     * Managed by the `assigner_coretime` submodule.
+     *
+     * @param {Callback<Array<[PolkadotPrimitivesV9CoreIndex, PolkadotRuntimeParachainsSchedulerAssignerCoretimeCoreDescriptor]>> =} callback
+     **/
+    coreDescriptors: GenericStorageQuery<
+      () => Array<[PolkadotPrimitivesV9CoreIndex, PolkadotRuntimeParachainsSchedulerAssignerCoretimeCoreDescriptor]>
     >;
 
     /**
@@ -3211,44 +3278,11 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   onDemandAssignmentProvider: {
     /**
-     * Maps a `ParaId` to `CoreIndex` and keeps track of how many assignments the scheduler has in
-     * it's lookahead. Keeping track of this affinity prevents parallel execution of the same
-     * `ParaId` on two or more `CoreIndex`es.
-     *
-     * @param {PolkadotParachainPrimitivesPrimitivesId} arg
-     * @param {Callback<PolkadotRuntimeParachainsOnDemandTypesCoreAffinityCount | undefined> =} callback
-     **/
-    paraIdAffinity: GenericStorageQuery<
-      (
-        arg: PolkadotParachainPrimitivesPrimitivesId,
-      ) => PolkadotRuntimeParachainsOnDemandTypesCoreAffinityCount | undefined,
-      PolkadotParachainPrimitivesPrimitivesId
-    >;
-
-    /**
-     * Overall status of queue (both free + affinity entries)
-     *
-     * @param {Callback<PolkadotRuntimeParachainsOnDemandTypesQueueStatusType> =} callback
-     **/
-    queueStatus: GenericStorageQuery<() => PolkadotRuntimeParachainsOnDemandTypesQueueStatusType>;
-
-    /**
      * Priority queue for all orders which don't yet (or not any more) have any core affinity.
      *
-     * @param {Callback<BinaryHeapEnqueuedOrder> =} callback
+     * @param {Callback<PolkadotRuntimeParachainsOnDemandOrderStatus> =} callback
      **/
-    freeEntries: GenericStorageQuery<() => BinaryHeapEnqueuedOrder>;
-
-    /**
-     * Queue entries that are currently bound to a particular core due to core affinity.
-     *
-     * @param {PolkadotPrimitivesV9CoreIndex} arg
-     * @param {Callback<BinaryHeapEnqueuedOrder> =} callback
-     **/
-    affinityEntries: GenericStorageQuery<
-      (arg: PolkadotPrimitivesV9CoreIndex) => BinaryHeapEnqueuedOrder,
-      PolkadotPrimitivesV9CoreIndex
-    >;
+    orderStatus: GenericStorageQuery<() => PolkadotRuntimeParachainsOnDemandOrderStatus>;
 
     /**
      * Keeps track of accumulated revenue from on demand order sales.
@@ -3264,43 +3298,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<bigint> =} callback
      **/
     credits: GenericStorageQuery<(arg: AccountId32Like) => bigint, AccountId32>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `CoretimeAssignmentProvider`'s storage queries
-   **/
-  coretimeAssignmentProvider: {
-    /**
-     * Scheduled assignment sets.
-     *
-     * Assignments as of the given block number. They will go into state once the block number is
-     * reached (and replace whatever was in there before).
-     *
-     * @param {[number, PolkadotPrimitivesV9CoreIndex]} arg
-     * @param {Callback<PolkadotRuntimeParachainsAssignerCoretimeSchedule | undefined> =} callback
-     **/
-    coreSchedules: GenericStorageQuery<
-      (arg: [number, PolkadotPrimitivesV9CoreIndex]) => PolkadotRuntimeParachainsAssignerCoretimeSchedule | undefined,
-      [number, PolkadotPrimitivesV9CoreIndex]
-    >;
-
-    /**
-     * Assignments which are currently active.
-     *
-     * They will be picked from `PendingAssignments` once we reach the scheduled block number in
-     * `PendingAssignments`.
-     *
-     * @param {PolkadotPrimitivesV9CoreIndex} arg
-     * @param {Callback<PolkadotRuntimeParachainsAssignerCoretimeCoreDescriptor> =} callback
-     **/
-    coreDescriptors: GenericStorageQuery<
-      (arg: PolkadotPrimitivesV9CoreIndex) => PolkadotRuntimeParachainsAssignerCoretimeCoreDescriptor,
-      PolkadotPrimitivesV9CoreIndex
-    >;
 
     /**
      * Generic pallet storage query

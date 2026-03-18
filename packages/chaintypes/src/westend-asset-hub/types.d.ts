@@ -11798,7 +11798,7 @@ export type PalletStakingAsyncPalletCall =
    *
    * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
    * them, then the list of nominators is paged, with each page being capped at
-   * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+   * [`Config::MaxExposurePageSize`]. If a validator has more than one page of nominators,
    * the call needs to be made for each page separately in order for all the nominators
    * backing a validator to receive the reward. The nominators are not sorted across pages
    * and so it should not be assumed the highest staker would be on the topmost page and vice
@@ -12254,7 +12254,7 @@ export type PalletStakingAsyncPalletCallLike =
    *
    * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
    * them, then the list of nominators is paged, with each page being capped at
-   * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+   * [`Config::MaxExposurePageSize`]. If a validator has more than one page of nominators,
    * the call needs to be made for each page separately in order for all the nominators
    * backing a validator to receive the reward. The nominators are not sorted across pages
    * and so it should not be assumed the highest staker would be on the topmost page and vice
@@ -13259,17 +13259,16 @@ export type PalletStakingAsyncRcClientCall =
   /**
    * Set session keys for a validator. Keys are validated on AssetHub and forwarded to RC.
    *
+   * On the first call, a deposit of `KeyDeposit` is held from the stash. Subsequent calls
+   * do not charge again. The deposit is released on `purge_keys`.
+   *
    * **Validation on AssetHub:**
    * - Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
    * format.
    * - Ownership proof is validated using `OpaqueKeys::ownership_proof_is_valid`.
    *
    * If validation passes, only the validated keys are sent to RC (with empty proof),
-   * since RC trusts AH's validation. This prevents malicious validators from bloating
-   * the XCM queue with garbage data.
-   *
-   * This, combined with the enforcement of a high minimum validator bond, makes it
-   * reasonable not to require a deposit.
+   * since RC trusts AH's validation.
    *
    * **Fees:**
    * The actual cost of this call is higher than what the weight-based fee estimate shows.
@@ -13292,7 +13291,7 @@ export type PalletStakingAsyncRcClientCall =
    **/
   | { name: 'SetKeys'; params: { keys: Bytes; proof: Bytes; maxDeliveryAndRemoteExecutionFee?: bigint | undefined } }
   /**
-   * Remove session keys for a validator.
+   * Remove session keys for a validator and release the key deposit.
    *
    * This purges the keys from the Relay Chain.
    *
@@ -13330,17 +13329,16 @@ export type PalletStakingAsyncRcClientCallLike =
   /**
    * Set session keys for a validator. Keys are validated on AssetHub and forwarded to RC.
    *
+   * On the first call, a deposit of `KeyDeposit` is held from the stash. Subsequent calls
+   * do not charge again. The deposit is released on `purge_keys`.
+   *
    * **Validation on AssetHub:**
    * - Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
    * format.
    * - Ownership proof is validated using `OpaqueKeys::ownership_proof_is_valid`.
    *
    * If validation passes, only the validated keys are sent to RC (with empty proof),
-   * since RC trusts AH's validation. This prevents malicious validators from bloating
-   * the XCM queue with garbage data.
-   *
-   * This, combined with the enforcement of a high minimum validator bond, makes it
-   * reasonable not to require a deposit.
+   * since RC trusts AH's validation.
    *
    * **Fees:**
    * The actual cost of this call is higher than what the weight-based fee estimate shows.
@@ -13366,7 +13364,7 @@ export type PalletStakingAsyncRcClientCallLike =
       params: { keys: BytesLike; proof: BytesLike; maxDeliveryAndRemoteExecutionFee?: bigint | undefined };
     }
   /**
-   * Remove session keys for a validator.
+   * Remove session keys for a validator and release the key deposit.
    *
    * This purges the keys from the Relay Chain.
    *
@@ -15169,6 +15167,7 @@ export type AssetHubWestendRuntimeRuntimeHoldReason =
   | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
   | { type: 'Staking'; value: PalletStakingAsyncPalletHoldReason }
   | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
+  | { type: 'StakingRcClient'; value: PalletStakingAsyncRcClientHoldReason }
   | { type: 'MultiBlockElectionSigned'; value: PalletElectionProviderMultiBlockSignedPalletHoldReason }
   | { type: 'MultiAssetBounties'; value: PalletMultiAssetBountiesHoldReason };
 
@@ -15189,6 +15188,8 @@ export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
 export type PalletStakingAsyncPalletHoldReason = 'Staking';
 
 export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
+
+export type PalletStakingAsyncRcClientHoldReason = 'Keys';
 
 export type PalletElectionProviderMultiBlockSignedPalletHoldReason = 'SignedSubmission';
 
@@ -16611,7 +16612,23 @@ export type PalletAssetsEvent =
   /**
    * Reserve information was removed for `asset_id`.
    **/
-  | { name: 'ReservesRemoved'; data: { assetId: number } };
+  | { name: 'ReservesRemoved'; data: { assetId: number } }
+  /**
+   * Some assets were issued as Credit (no owner yet).
+   **/
+  | { name: 'IssuedCredit'; data: { assetId: number; amount: bigint } }
+  /**
+   * Some assets Credit was destroyed.
+   **/
+  | { name: 'BurnedCredit'; data: { assetId: number; amount: bigint } }
+  /**
+   * Some assets were burned and a Debt was created.
+   **/
+  | { name: 'IssuedDebt'; data: { assetId: number; amount: bigint } }
+  /**
+   * Some assets Debt was destroyed (and assets issued).
+   **/
+  | { name: 'BurnedDebt'; data: { assetId: number; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -17121,7 +17138,23 @@ export type PalletAssetsEvent002 =
   /**
    * Reserve information was removed for `asset_id`.
    **/
-  | { name: 'ReservesRemoved'; data: { assetId: StagingXcmV5Location } };
+  | { name: 'ReservesRemoved'; data: { assetId: StagingXcmV5Location } }
+  /**
+   * Some assets were issued as Credit (no owner yet).
+   **/
+  | { name: 'IssuedCredit'; data: { assetId: StagingXcmV5Location; amount: bigint } }
+  /**
+   * Some assets Credit was destroyed.
+   **/
+  | { name: 'BurnedCredit'; data: { assetId: StagingXcmV5Location; amount: bigint } }
+  /**
+   * Some assets were burned and a Debt was created.
+   **/
+  | { name: 'IssuedDebt'; data: { assetId: StagingXcmV5Location; amount: bigint } }
+  /**
+   * Some assets Debt was destroyed (and assets issued).
+   **/
+  | { name: 'BurnedDebt'; data: { assetId: StagingXcmV5Location; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -18775,6 +18808,14 @@ export type CumulusPalletWeightReclaimStorageWeightReclaim = [
   PalletReviveEvmTxExtensionSetOrigin,
 ];
 
+export type CumulusPalletParachainSystemBlockWeightBlockWeightMode =
+  | { type: 'FullCore'; value: { context: number } }
+  | {
+      type: 'PotentialFullCore';
+      value: { context: number; firstTransactionIndex?: number | undefined; targetWeight: SpWeightsWeightV2Weight };
+    }
+  | { type: 'FractionOfCore'; value: { context: number; firstTransactionIndex?: number | undefined } };
+
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
@@ -18847,6 +18888,14 @@ export type CumulusPalletParachainSystemParachainInherentInboundMessageId = { se
 export type PolkadotCorePrimitivesOutboundHrmpMessage = {
   recipient: PolkadotParachainPrimitivesPrimitivesId;
   data: Bytes;
+};
+
+export type CumulusPalletParachainSystemPoVMessages = {
+  relayStorageRootOrHash: H256;
+  coreSelector: number;
+  bundleIndex: number;
+  umpMsgCount: number;
+  hrmpOutboundCount: number;
 };
 
 /**
@@ -19226,9 +19275,12 @@ export type CumulusPalletXcmpQueueOutboundChannelDetails = {
   signalsExist: boolean;
   firstIndex: number;
   lastIndex: number;
+  flags: CumulusPalletXcmpQueueOutboundChannelFlags;
 };
 
 export type CumulusPalletXcmpQueueOutboundState = 'Ok' | 'Suspended';
+
+export type CumulusPalletXcmpQueueOutboundChannelFlags = { bits: number };
 
 export type CumulusPalletXcmpQueueQueueConfigData = {
   suspendThreshold: number;
@@ -20473,7 +20525,6 @@ export type PalletReviveEvmApiRpcTypesGenTransaction7702Unsigned = {
   authorizationList: Array<PalletReviveEvmApiRpcTypesGenAuthorizationListEntry>;
   chainId: U256;
   gas: U256;
-  gasPrice: U256;
   input: PalletReviveEvmApiByteBytes;
   maxFeePerGas: U256;
   maxPriorityFeePerGas: U256;
@@ -20932,6 +20983,43 @@ export type PalletAssetRewardsError =
    * The pool still has staked tokens or rewards.
    **/
   | 'NonEmptyPool';
+
+/**
+ * Error types for the permit pallet.
+ **/
+export type PalletAssetsPrecompilesPermitPalletError =
+  /**
+   * The permit signature is invalid.
+   **/
+  | 'InvalidSignature'
+  /**
+   * The signer does not match the owner.
+   **/
+  | 'SignerMismatch'
+  /**
+   * The permit has expired (deadline passed).
+   **/
+  | 'PermitExpired'
+  /**
+   * The signature's `s` value is too high (malleability protection).
+   **/
+  | 'SignatureSValueTooHigh'
+  /**
+   * The signature's `v` value is invalid.
+   **/
+  | 'InvalidVValue'
+  /**
+   * Nonce overflow - account has used too many permits.
+   **/
+  | 'NonceOverflow'
+  /**
+   * The owner address is invalid (e.g., zero address).
+   **/
+  | 'InvalidOwner'
+  /**
+   * The spender address is invalid (e.g., zero address).
+   **/
+  | 'InvalidSpender';
 
 export type PalletStakingAsyncLedgerStakingLedger = {
   stash: AccountId32;
@@ -22400,6 +22488,7 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'PoolAssetsFreezer'; palletError: PalletAssetsFreezerError }
   | { pallet: 'Revive'; palletError: PalletReviveError }
   | { pallet: 'AssetRewards'; palletError: PalletAssetRewardsError }
+  | { pallet: 'AssetsPrecompilesPermit'; palletError: PalletAssetsPrecompilesPermitPalletError }
   | { pallet: 'StateTrieMigration'; palletError: PalletStateTrieMigrationError }
   | { pallet: 'Staking'; palletError: PalletStakingAsyncPalletError }
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }

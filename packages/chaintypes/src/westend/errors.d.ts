@@ -1704,8 +1704,13 @@ export interface ChainErrors extends GenericChainErrors {
     DisallowedRelayParent: GenericPalletError;
 
     /**
+     * The candidate's scheduling-parent was not allowed.
+     **/
+    DisallowedSchedulingParent: GenericPalletError;
+
+    /**
      * Failed to compute group index for the core: either it's out of bounds
-     * or the relay parent doesn't belong to the current session.
+     * or the scheduling parent doesn't belong to the current session.
      **/
     InvalidAssignment: GenericPalletError;
 
@@ -1790,6 +1795,25 @@ export interface ChainErrors extends GenericChainErrors {
      * Too many candidates supplied.
      **/
     UnscheduledCandidate: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `ParaScheduler`'s errors
+   **/
+  paraScheduler: {
+    /**
+     * assign_core was called with no assignments.
+     **/
+    AssignmentsEmpty: GenericPalletError;
+
+    /**
+     * assign_core with non allowed insertion.
+     **/
+    DisallowedInsert: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2107,23 +2131,6 @@ export interface ChainErrors extends GenericChainErrors {
      * The account doesn't have enough credits to purchase on-demand coretime.
      **/
     InsufficientCredits: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `CoretimeAssignmentProvider`'s errors
-   **/
-  coretimeAssignmentProvider: {
-    AssignmentsEmpty: GenericPalletError;
-
-    /**
-     * assign_core is only allowed to append new assignments at the end of already existing
-     * ones or update the last entry.
-     **/
-    DisallowedInsert: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2832,6 +2839,11 @@ export interface ChainErrors extends GenericChainErrors {
      * The meta transaction is invalid.
      **/
     Invalid: GenericPalletError;
+
+    /**
+     * The meta transaction length is invalid.
+     **/
+    InvalidLength: GenericPalletError;
 
     /**
      * Generic pallet error

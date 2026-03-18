@@ -343,7 +343,8 @@ export interface ChainConsts extends GenericChainConsts {
   aura: {
     /**
      * The slot duration Aura should run with, expressed in milliseconds.
-     * The effective value of this type should not change while the chain is running.
+     *
+     * The effective value of this type can be changed with a runtime upgrade.
      *
      * For backwards compatibility either use [`MinimumPeriodTimesTwo`] or a const.
      **/
@@ -1118,6 +1119,29 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `AssetsPrecompiles`'s constants
+   **/
+  assetsPrecompiles: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `AssetsPrecompilesPermit`'s constants
+   **/
+  assetsPrecompilesPermit: {
+    /**
+     * The chain ID used in EIP-712 domain separator.
+     **/
+    chainId: bigint;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `StateTrieMigration`'s constants
    **/
   stateTrieMigration: {
@@ -1409,6 +1433,11 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `StakingRcClient`'s constants
    **/
   stakingRcClient: {
+    /**
+     * Deposit held when a validator sets session keys. Released on `purge_keys`.
+     **/
+    keyDeposit: bigint;
+
     /**
      * Generic pallet constant
      **/

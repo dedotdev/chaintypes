@@ -6,8 +6,8 @@ import type {
   FrameSystemLimitsBlockWeights,
   FrameSystemLimitsBlockLength,
   SpWeightsRuntimeDbWeight,
-  SpWeightsWeightV2Weight,
   FrameSupportPalletId,
+  SpWeightsWeightV2Weight,
   PalletReferendaTrackDetails,
   StagingXcmV5Junctions,
 } from './types.js';
@@ -193,6 +193,23 @@ export interface ChainConsts extends GenericChainConsts {
      * transactions.
      **/
     operationalFeeMultiplier: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `DapSatellite`'s constants
+   **/
+  dapSatellite: {
+    /**
+     * The pallet ID used to derive the satellite account.
+     *
+     * Each runtime should configure a unique ID to avoid collisions if multiple
+     * DAP satellite instances are used.
+     **/
+    palletId: FrameSupportPalletId;
 
     /**
      * Generic pallet constant
@@ -1120,15 +1137,6 @@ export interface ChainConsts extends GenericChainConsts {
      **/
     palletId: FrameSupportPalletId;
 
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `CoretimeAssignmentProvider`'s constants
-   **/
-  coretimeAssignmentProvider: {
     /**
      * Generic pallet constant
      **/

@@ -67,7 +67,7 @@ import type {
   PolkadotPrimitivesV9AsyncBackingAsyncBackingParams,
   PolkadotPrimitivesV9ExecutorParams,
   PolkadotPrimitivesV9ApprovalVotingParams,
-  PolkadotPrimitivesV9SchedulerParams,
+  PolkadotPrimitivesVstagingSchedulerParams,
   PolkadotPrimitivesV9InherentData,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
@@ -82,7 +82,7 @@ import type {
   SpRuntimeMultiSigner,
   PolkadotRuntimeCommonAssignedSlotsSlotLeasePeriodStart,
   PalletBrokerCoretimeInterfaceCoreAssignment,
-  PolkadotRuntimeParachainsAssignerCoretimePartsOf57600,
+  PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600,
   PalletStakingAsyncRcClientValidatorSetReport,
   PalletStakingAsyncAhClientOperatingMode,
   PalletMigrationsMigrationCursor,
@@ -1711,7 +1711,7 @@ export interface ChainTx<
      *
      * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
      * them, then the list of nominators is paged, with each page being capped at
-     * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+     * [`Config::MaxExposurePageSize`]. If a validator has more than one page of nominators,
      * the call needs to be made for each page separately in order for all the nominators
      * backing a validator to receive the reward. The nominators are not sorted across pages
      * and so it should not be assumed the highest staker would be on the topmost page and vice
@@ -7475,15 +7475,33 @@ export interface ChainTx<
     /**
      * Set scheduler-params.
      *
-     * @param {PolkadotPrimitivesV9SchedulerParams} new_
+     * @param {PolkadotPrimitivesVstagingSchedulerParams} new_
      **/
     setSchedulerParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV9SchedulerParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesVstagingSchedulerParams) => ChainSubmittableExtrinsic<
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetSchedulerParams';
-            params: { new: PolkadotPrimitivesV9SchedulerParams };
+            params: { new: PolkadotPrimitivesVstagingSchedulerParams };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the maximum relay parent session age.
+     *
+     * @param {number} new_
+     **/
+    setMaxRelayParentSessionAge: GenericTxCall<
+      (new_: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Configuration';
+          palletCall: {
+            name: 'SetMaxRelayParentSessionAge';
+            params: { new: number };
           };
         },
         ChainKnownTypes
@@ -9473,7 +9491,7 @@ export interface ChainTx<
      *
      * @param {number} core
      * @param {number} begin
-     * @param {Array<[PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]>} assignment
+     * @param {Array<[PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600]>} assignment
      * @param {number | undefined} endHint
      **/
     assignCore: GenericTxCall<
@@ -9481,7 +9499,7 @@ export interface ChainTx<
         core: number,
         begin: number,
         assignment: Array<
-          [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]
+          [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600]
         >,
         endHint: number | undefined,
       ) => ChainSubmittableExtrinsic<
@@ -9493,7 +9511,10 @@ export interface ChainTx<
               core: number;
               begin: number;
               assignment: Array<
-                [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]
+                [
+                  PalletBrokerCoretimeInterfaceCoreAssignment,
+                  PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600,
+                ]
               >;
               endHint: number | undefined;
             };
@@ -10570,16 +10591,21 @@ export interface ChainTx<
      *
      * - `_origin`: Can be any kind of origin.
      * - `meta_tx`: Meta Transaction with a target call to be dispatched.
+     * - `meta_tx_encoded_len`: The size of the encoded meta transaction in bytes.
      *
      * @param {PalletMetaTxMetaTx} metaTx
+     * @param {number} metaTxEncodedLen
      **/
     dispatch: GenericTxCall<
-      (metaTx: PalletMetaTxMetaTx) => ChainSubmittableExtrinsic<
+      (
+        metaTx: PalletMetaTxMetaTx,
+        metaTxEncodedLen: number,
+      ) => ChainSubmittableExtrinsic<
         {
           pallet: 'MetaTx';
           palletCall: {
             name: 'Dispatch';
-            params: { metaTx: PalletMetaTxMetaTx };
+            params: { metaTx: PalletMetaTxMetaTx; metaTxEncodedLen: number };
           };
         },
         ChainKnownTypes

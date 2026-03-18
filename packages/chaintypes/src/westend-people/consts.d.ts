@@ -183,6 +183,23 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `DapSatellite`'s constants
+   **/
+  dapSatellite: {
+    /**
+     * The pallet ID used to derive the satellite account.
+     *
+     * Each runtime should configure a unique ID to avoid collisions if multiple
+     * DAP satellite instances are used.
+     **/
+    palletId: FrameSupportPalletId;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Authorship`'s constants
    **/
   authorship: {
@@ -250,7 +267,8 @@ export interface ChainConsts extends GenericChainConsts {
   aura: {
     /**
      * The slot duration Aura should run with, expressed in milliseconds.
-     * The effective value of this type should not change while the chain is running.
+     *
+     * The effective value of this type can be changed with a runtime upgrade.
      *
      * For backwards compatibility either use [`MinimumPeriodTimesTwo`] or a const.
      **/

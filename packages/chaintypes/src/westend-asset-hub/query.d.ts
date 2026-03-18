@@ -12,6 +12,7 @@ import type {
   BytesLike,
   FixedBytes,
   H160,
+  U256,
   Perbill,
   Percent,
 } from 'dedot/codecs';
@@ -22,6 +23,7 @@ import type {
   FrameSystemLastRuntimeUpgradeInfo,
   FrameSystemCodeUpgradeAuthorization,
   SpWeightsWeightV2Weight,
+  CumulusPalletParachainSystemBlockWeightBlockWeightMode,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
   PolkadotPrimitivesV9PersistedValidationData,
@@ -34,6 +36,7 @@ import type {
   PolkadotParachainPrimitivesPrimitivesId,
   CumulusPalletParachainSystemParachainInherentInboundMessageId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
+  CumulusPalletParachainSystemPoVMessages,
   PalletMigrationsMigrationCursor,
   PalletPreimageOldRequestStatus,
   PalletPreimageRequestStatus,
@@ -271,6 +274,13 @@ export interface ChainStorage extends GenericChainStorage {
     lastRuntimeUpgrade: GenericStorageQuery<() => FrameSystemLastRuntimeUpgradeInfo | undefined>;
 
     /**
+     * Number of blocks till the pending code upgrade is applied.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    blocksTillUpgrade: GenericStorageQuery<() => number | undefined>;
+
+    /**
      * True if we have upgraded so that `type RefCount` is `u32`. False (default) if not.
      *
      * @param {Callback<boolean> =} callback
@@ -322,6 +332,27 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   parachainSystem: {
     /**
+     * The current block weight mode.
+     *
+     * This is used to determine what is the maximum allowed block weight, for more information see
+     * [`block_weight`].
+     *
+     * Killed in [`Self::on_initialize`] and set by the [`block_weight`] logic.
+     *
+     * @param {Callback<CumulusPalletParachainSystemBlockWeightBlockWeightMode | undefined> =} callback
+     **/
+    blockWeightMode: GenericStorageQuery<() => CumulusPalletParachainSystemBlockWeightBlockWeightMode | undefined>;
+
+    /**
+     * The core count available to the parachain in the previous block.
+     *
+     * This is mainly used for offchain functionality to calculate the correct target block weight.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    previousCoreCount: GenericStorageQuery<() => number | undefined>;
+
+    /**
      * Latest included block descendants the runtime accepted. In other words, these are
      * ancestors of the currently executing block which have not been included in the observed
      * relay-chain state.
@@ -349,8 +380,8 @@ export interface ChainStorage extends GenericChainStorage {
      * applied.
      *
      * As soon as the relay chain gives us the go-ahead signal, we will overwrite the
-     * [`:code`][sp_core::storage::well_known_keys::CODE] which will result the next block process
-     * with the new validation code. This concludes the upgrade process.
+     * [`:pending_code`][sp_core::storage::well_known_keys::PENDING_CODE] which will result the
+     * next block to be processed with the new validation code. This concludes the upgrade process.
      *
      * @param {Callback<Bytes> =} callback
      **/
@@ -588,6 +619,15 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<Bytes | undefined> =} callback
      **/
     customValidationHeadData: GenericStorageQuery<() => Bytes | undefined>;
+
+    /**
+     * Tracks cumulative `UMP` and `HRMP` messages sent across blocks in the current `PoV`.
+     *
+     * Across different candidates/PoVs the budgets are tracked by [`AggregatedUnincludedSegment`].
+     *
+     * @param {Callback<CumulusPalletParachainSystemPoVMessages | undefined> =} callback
+     **/
+    poVMessagesTracker: GenericStorageQuery<() => CumulusPalletParachainSystemPoVMessages | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1039,6 +1079,17 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [SpCoreCryptoKeyTypeId, BytesLike]) => AccountId32 | undefined,
       [SpCoreCryptoKeyTypeId, Bytes]
     >;
+
+    /**
+     * Accounts whose keys were set via `SessionInterface` (external path) without
+     * incrementing the consumer reference or placing a key deposit. `do_purge_keys`
+     * only decrements consumers for accounts that were registered through the local
+     * session pallet.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    externallySetKeys: GenericStorageQuery<(arg: AccountId32Like) => [] | undefined, AccountId32>;
 
     /**
      * Generic pallet storage query
@@ -2272,6 +2323,65 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<number> =} callback
      **/
     nextPoolId: GenericStorageQuery<() => number>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetsPrecompiles`'s storage queries
+   **/
+  assetsPrecompiles: {
+    /**
+     * The next available asset index for foreign assets.
+     * This is incremented each time a new foreign asset mapping is created.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    nextAssetIndex: GenericStorageQuery<() => number>;
+
+    /**
+     * Mapping an asset index (derived from the precompile address) to a `ForeignAssetId`.
+     *
+     * @param {number} arg
+     * @param {Callback<StagingXcmV5Location | undefined> =} callback
+     **/
+    assetIndexToForeignAssetId: GenericStorageQuery<(arg: number) => StagingXcmV5Location | undefined, number>;
+
+    /**
+     * Mapping a `ForeignAssetId` to an asset index (used for deriving precompile addresses).
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    foreignAssetIdToAssetIndex: GenericStorageQuery<
+      (arg: StagingXcmV5Location) => number | undefined,
+      StagingXcmV5Location
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetsPrecompilesPermit`'s storage queries
+   **/
+  assetsPrecompilesPermit: {
+    /**
+     * Nonces for permit signatures.
+     * Mapping: (verifying_contract, owner_address) => nonce
+     *
+     * Uses Blake2_128Concat for the first key to prevent storage collision attacks
+     * when the verifying_contract address could be influenced by an attacker.
+     *
+     * Note: EIP-2612 specifies uint256 nonce. We store as U256 for compatibility.
+     *
+     * @param {[H160, H160]} arg
+     * @param {Callback<U256> =} callback
+     **/
+    nonces: GenericStorageQuery<(arg: [H160, H160]) => U256, [H160, H160]>;
 
     /**
      * Generic pallet storage query

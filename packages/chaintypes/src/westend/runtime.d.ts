@@ -56,6 +56,7 @@ import type {
   PolkadotPrimitivesV9CoreIndex,
   PolkadotPrimitivesV9AsyncBackingConstraints,
   PolkadotPrimitivesV9SlashingPendingSlashes,
+  PolkadotPrimitivesVstagingRelayParentInfo,
   SpConsensusBeefyValidatorSet,
   SpConsensusBeefyDoubleVotingProof,
   SpRuntimeOpaqueValue,
@@ -685,6 +686,26 @@ export interface RuntimeApis extends GenericRuntimeApis {
      **/
     unappliedSlashesV2: GenericRuntimeApiMethod<
       () => Promise<Array<[number, PolkadotCorePrimitivesCandidateHash, PolkadotPrimitivesV9SlashingPendingSlashes]>>
+    >;
+
+    /**
+     * Retrieve the maximum relay parent session age allowed for parachain blocks.
+     *
+     * @callname: ParachainHost_max_relay_parent_session_age
+     **/
+    maxRelayParentSessionAge: GenericRuntimeApiMethod<() => Promise<number>>;
+
+    /**
+     * Retrieve the relay parent info (block number and state root) for a given
+     * session index and relay parent hash. Returns `None` if the relay parent
+     * is not found in the allowed relay parents for that session.
+     *
+     * @callname: ParachainHost_allowed_relay_parent_info
+     * @param {number} session_index
+     * @param {H256} relay_parent
+     **/
+    allowedRelayParentInfo: GenericRuntimeApiMethod<
+      (sessionIndex: number, relayParent: H256) => Promise<PolkadotPrimitivesVstagingRelayParentInfo | undefined>
     >;
 
     /**

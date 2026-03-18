@@ -15,6 +15,7 @@ import type {
   FrameSystemExtensionsCheckNonce,
   FrameSystemExtensionsCheckWeight,
   PalletTransactionPaymentChargeTransactionPayment,
+  FrameMetadataHashExtensionCheckMetadataHash,
 } from './types.js';
 import { ChainConsts } from './consts.js';
 import { ChainStorage } from './query.js';
@@ -41,6 +42,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     FrameSystemExtensionsCheckNonce,
     FrameSystemExtensionsCheckWeight,
     PalletTransactionPaymentChargeTransactionPayment,
+    FrameMetadataHashExtensionCheckMetadataHash,
     [],
   ];
   AssetId: undefined;
@@ -49,7 +51,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: WestendPeopleApi
- * @specVersion: 1022000
+ * @specVersion: 1022001
  **/
 export interface WestendPeopleApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

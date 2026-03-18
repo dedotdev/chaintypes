@@ -11914,7 +11914,7 @@ export interface ChainTx<
      *
      * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
      * them, then the list of nominators is paged, with each page being capped at
-     * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+     * [`Config::MaxExposurePageSize`]. If a validator has more than one page of nominators,
      * the call needs to be made for each page separately in order for all the nominators
      * backing a validator to receive the reward. The nominators are not sorted across pages
      * and so it should not be assumed the highest staker would be on the topmost page and vice
@@ -13084,17 +13084,16 @@ export interface ChainTx<
     /**
      * Set session keys for a validator. Keys are validated on AssetHub and forwarded to RC.
      *
+     * On the first call, a deposit of `KeyDeposit` is held from the stash. Subsequent calls
+     * do not charge again. The deposit is released on `purge_keys`.
+     *
      * **Validation on AssetHub:**
      * - Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
      * format.
      * - Ownership proof is validated using `OpaqueKeys::ownership_proof_is_valid`.
      *
      * If validation passes, only the validated keys are sent to RC (with empty proof),
-     * since RC trusts AH's validation. This prevents malicious validators from bloating
-     * the XCM queue with garbage data.
-     *
-     * This, combined with the enforcement of a high minimum validator bond, makes it
-     * reasonable not to require a deposit.
+     * since RC trusts AH's validation.
      *
      * **Fees:**
      * The actual cost of this call is higher than what the weight-based fee estimate shows.
@@ -13137,7 +13136,7 @@ export interface ChainTx<
     >;
 
     /**
-     * Remove session keys for a validator.
+     * Remove session keys for a validator and release the key deposit.
      *
      * This purges the keys from the Relay Chain.
      *

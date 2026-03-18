@@ -2270,6 +2270,55 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `AssetsPrecompilesPermit`'s errors
+   **/
+  assetsPrecompilesPermit: {
+    /**
+     * The permit signature is invalid.
+     **/
+    InvalidSignature: GenericPalletError;
+
+    /**
+     * The signer does not match the owner.
+     **/
+    SignerMismatch: GenericPalletError;
+
+    /**
+     * The permit has expired (deadline passed).
+     **/
+    PermitExpired: GenericPalletError;
+
+    /**
+     * The signature's `s` value is too high (malleability protection).
+     **/
+    SignatureSValueTooHigh: GenericPalletError;
+
+    /**
+     * The signature's `v` value is invalid.
+     **/
+    InvalidVValue: GenericPalletError;
+
+    /**
+     * Nonce overflow - account has used too many permits.
+     **/
+    NonceOverflow: GenericPalletError;
+
+    /**
+     * The owner address is invalid (e.g., zero address).
+     **/
+    InvalidOwner: GenericPalletError;
+
+    /**
+     * The spender address is invalid (e.g., zero address).
+     **/
+    InvalidSpender: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `StateTrieMigration`'s errors
    **/
   stateTrieMigration: {

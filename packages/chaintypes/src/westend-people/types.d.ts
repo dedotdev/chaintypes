@@ -4014,6 +4014,10 @@ export type FrameSystemExtensionsCheckWeight = {};
 
 export type PalletTransactionPaymentChargeTransactionPayment = bigint;
 
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
+
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
+
 export type FrameSystemAccountInfo = {
   nonce: number;
   consumers: number;
@@ -5223,7 +5227,16 @@ export type CumulusPalletWeightReclaimStorageWeightReclaim = [
   FrameSystemExtensionsCheckNonce,
   FrameSystemExtensionsCheckWeight,
   PalletTransactionPaymentChargeTransactionPayment,
+  FrameMetadataHashExtensionCheckMetadataHash,
 ];
+
+export type CumulusPalletParachainSystemBlockWeightBlockWeightMode =
+  | { type: 'FullCore'; value: { context: number } }
+  | {
+      type: 'PotentialFullCore';
+      value: { context: number; firstTransactionIndex?: number | undefined; targetWeight: SpWeightsWeightV2Weight };
+    }
+  | { type: 'FractionOfCore'; value: { context: number; firstTransactionIndex?: number | undefined } };
 
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
@@ -5297,6 +5310,14 @@ export type CumulusPalletParachainSystemParachainInherentInboundMessageId = { se
 export type PolkadotCorePrimitivesOutboundHrmpMessage = {
   recipient: PolkadotParachainPrimitivesPrimitivesId;
   data: Bytes;
+};
+
+export type CumulusPalletParachainSystemPoVMessages = {
+  relayStorageRootOrHash: H256;
+  coreSelector: number;
+  bundleIndex: number;
+  umpMsgCount: number;
+  hrmpOutboundCount: number;
 };
 
 /**
@@ -5398,9 +5419,9 @@ export type FrameSupportStorageNoDrop = FrameSupportTokensFungibleImbalance;
 
 export type FrameSupportTokensFungibleImbalance = { amount: bigint };
 
-export type PalletCollatorSelectionCandidateInfo = { who: AccountId32; deposit: bigint };
-
 export type FrameSupportPalletId = FixedBytes<8>;
+
+export type PalletCollatorSelectionCandidateInfo = { who: AccountId32; deposit: bigint };
 
 /**
  * The `Error` enum of this pallet.
@@ -5512,9 +5533,12 @@ export type CumulusPalletXcmpQueueOutboundChannelDetails = {
   signalsExist: boolean;
   firstIndex: number;
   lastIndex: number;
+  flags: CumulusPalletXcmpQueueOutboundChannelFlags;
 };
 
 export type CumulusPalletXcmpQueueOutboundState = 'Ok' | 'Suspended';
+
+export type CumulusPalletXcmpQueueOutboundChannelFlags = { bits: number };
 
 export type CumulusPalletXcmpQueueQueueConfigData = {
   suspendThreshold: number;

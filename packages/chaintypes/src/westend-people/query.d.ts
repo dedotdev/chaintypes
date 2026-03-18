@@ -20,6 +20,7 @@ import type {
   FrameSystemLastRuntimeUpgradeInfo,
   FrameSystemCodeUpgradeAuthorization,
   SpWeightsWeightV2Weight,
+  CumulusPalletParachainSystemBlockWeightBlockWeightMode,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
   PolkadotPrimitivesV9PersistedValidationData,
@@ -32,6 +33,7 @@ import type {
   PolkadotParachainPrimitivesPrimitivesId,
   CumulusPalletParachainSystemParachainInherentInboundMessageId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
+  CumulusPalletParachainSystemPoVMessages,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
@@ -193,6 +195,13 @@ export interface ChainStorage extends GenericChainStorage {
     lastRuntimeUpgrade: GenericStorageQuery<() => FrameSystemLastRuntimeUpgradeInfo | undefined>;
 
     /**
+     * Number of blocks till the pending code upgrade is applied.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    blocksTillUpgrade: GenericStorageQuery<() => number | undefined>;
+
+    /**
      * True if we have upgraded so that `type RefCount` is `u32`. False (default) if not.
      *
      * @param {Callback<boolean> =} callback
@@ -244,6 +253,27 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   parachainSystem: {
     /**
+     * The current block weight mode.
+     *
+     * This is used to determine what is the maximum allowed block weight, for more information see
+     * [`block_weight`].
+     *
+     * Killed in [`Self::on_initialize`] and set by the [`block_weight`] logic.
+     *
+     * @param {Callback<CumulusPalletParachainSystemBlockWeightBlockWeightMode | undefined> =} callback
+     **/
+    blockWeightMode: GenericStorageQuery<() => CumulusPalletParachainSystemBlockWeightBlockWeightMode | undefined>;
+
+    /**
+     * The core count available to the parachain in the previous block.
+     *
+     * This is mainly used for offchain functionality to calculate the correct target block weight.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    previousCoreCount: GenericStorageQuery<() => number | undefined>;
+
+    /**
      * Latest included block descendants the runtime accepted. In other words, these are
      * ancestors of the currently executing block which have not been included in the observed
      * relay-chain state.
@@ -271,8 +301,8 @@ export interface ChainStorage extends GenericChainStorage {
      * applied.
      *
      * As soon as the relay chain gives us the go-ahead signal, we will overwrite the
-     * [`:code`][sp_core::storage::well_known_keys::CODE] which will result the next block process
-     * with the new validation code. This concludes the upgrade process.
+     * [`:pending_code`][sp_core::storage::well_known_keys::PENDING_CODE] which will result the
+     * next block to be processed with the new validation code. This concludes the upgrade process.
      *
      * @param {Callback<Bytes> =} callback
      **/
@@ -510,6 +540,15 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<Bytes | undefined> =} callback
      **/
     customValidationHeadData: GenericStorageQuery<() => Bytes | undefined>;
+
+    /**
+     * Tracks cumulative `UMP` and `HRMP` messages sent across blocks in the current `PoV`.
+     *
+     * Across different candidates/PoVs the budgets are tracked by [`AggregatedUnincludedSegment`].
+     *
+     * @param {Callback<CumulusPalletParachainSystemPoVMessages | undefined> =} callback
+     **/
+    poVMessagesTracker: GenericStorageQuery<() => CumulusPalletParachainSystemPoVMessages | undefined>;
 
     /**
      * Generic pallet storage query
@@ -810,6 +849,17 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [SpCoreCryptoKeyTypeId, BytesLike]) => AccountId32 | undefined,
       [SpCoreCryptoKeyTypeId, Bytes]
     >;
+
+    /**
+     * Accounts whose keys were set via `SessionInterface` (external path) without
+     * incrementing the consumer reference or placing a key deposit. `do_purge_keys`
+     * only decrements consumers for accounts that were registered through the local
+     * session pallet.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    externallySetKeys: GenericStorageQuery<(arg: AccountId32Like) => [] | undefined, AccountId32>;
 
     /**
      * Generic pallet storage query

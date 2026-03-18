@@ -1189,7 +1189,7 @@ export type PalletStakingPalletCall =
    *
    * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
    * them, then the list of nominators is paged, with each page being capped at
-   * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+   * [`Config::MaxExposurePageSize`]. If a validator has more than one page of nominators,
    * the call needs to be made for each page separately in order for all the nominators
    * backing a validator to receive the reward. The nominators are not sorted across pages
    * and so it should not be assumed the highest staker would be on the topmost page and vice
@@ -1672,7 +1672,7 @@ export type PalletStakingPalletCallLike =
    *
    * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
    * them, then the list of nominators is paged, with each page being capped at
-   * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+   * [`Config::MaxExposurePageSize`]. If a validator has more than one page of nominators,
    * the call needs to be made for each page separately in order for all the nominators
    * backing a validator to receive the reward. The nominators are not sorted across pages
    * and so it should not be assumed the highest staker would be on the topmost page and vice
@@ -6733,7 +6733,11 @@ export type PolkadotRuntimeParachainsConfigurationPalletCall =
   /**
    * Set scheduler-params.
    **/
-  | { name: 'SetSchedulerParams'; params: { new: PolkadotPrimitivesV9SchedulerParams } };
+  | { name: 'SetSchedulerParams'; params: { new: PolkadotPrimitivesVstagingSchedulerParams } }
+  /**
+   * Set the maximum relay parent session age.
+   **/
+  | { name: 'SetMaxRelayParentSessionAge'; params: { new: number } };
 
 export type PolkadotRuntimeParachainsConfigurationPalletCallLike =
   /**
@@ -6929,7 +6933,11 @@ export type PolkadotRuntimeParachainsConfigurationPalletCallLike =
   /**
    * Set scheduler-params.
    **/
-  | { name: 'SetSchedulerParams'; params: { new: PolkadotPrimitivesV9SchedulerParams } };
+  | { name: 'SetSchedulerParams'; params: { new: PolkadotPrimitivesVstagingSchedulerParams } }
+  /**
+   * Set the maximum relay parent session age.
+   **/
+  | { name: 'SetMaxRelayParentSessionAge'; params: { new: number } };
 
 export type PolkadotPrimitivesV9AsyncBackingAsyncBackingParams = {
   maxCandidateDepth: number;
@@ -6953,18 +6961,16 @@ export type PolkadotPrimitivesV9PvfExecKind = 'Backing' | 'Approval';
 
 export type PolkadotPrimitivesV9ApprovalVotingParams = { maxApprovalCoalesceCount: number };
 
-export type PolkadotPrimitivesV9SchedulerParams = {
+export type PolkadotPrimitivesVstagingSchedulerParams = {
   groupRotationFrequency: number;
   parasAvailabilityPeriod: number;
   maxValidatorsPerCore?: number | undefined;
   lookahead: number;
   numCores: number;
-  maxAvailabilityTimeouts: number;
   onDemandQueueMaxSize: number;
   onDemandTargetQueueUtilization: Perbill;
   onDemandFeeVariability: Perbill;
   onDemandBaseFee: bigint;
-  ttl: number;
 };
 
 /**
@@ -7031,19 +7037,19 @@ export type PolkadotPrimitivesV9CommittedCandidateReceiptV2 = {
 export type PolkadotPrimitivesV9CandidateDescriptorV2 = {
   paraId: PolkadotParachainPrimitivesPrimitivesId;
   relayParent: H256;
-  version: PolkadotPrimitivesV9InternalVersion;
+  version: number;
   coreIndex: number;
   sessionIndex: number;
-  reserved1: FixedBytes<25>;
+  schedulingSessionOffset: number;
+  reserved1: FixedBytes<24>;
   persistedValidationDataHash: H256;
   povHash: H256;
   erasureRoot: H256;
-  reserved2: FixedBytes<64>;
+  schedulingParent: H256;
+  reserved2: FixedBytes<32>;
   paraHead: H256;
   validationCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
 };
-
-export type PolkadotPrimitivesV9InternalVersion = number;
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCodeHash = H256;
 
@@ -9220,7 +9226,7 @@ export type PolkadotRuntimeCommonAssignedSlotsPalletCallLike =
 export type PolkadotRuntimeCommonAssignedSlotsSlotLeasePeriodStart = 'Current' | 'Next';
 
 /**
- * Contains a variant per dispatchable extrinsic that this pallet has.
+ * Extrinsics to be called by the Coretime chain.
  **/
 export type PolkadotRuntimeParachainsCoretimePalletCall =
   /**
@@ -9257,7 +9263,7 @@ export type PolkadotRuntimeParachainsCoretimePalletCall =
         core: number;
         begin: number;
         assignment: Array<
-          [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]
+          [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600]
         >;
         endHint?: number | undefined;
       };
@@ -9298,7 +9304,7 @@ export type PolkadotRuntimeParachainsCoretimePalletCallLike =
         core: number;
         begin: number;
         assignment: Array<
-          [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]
+          [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600]
         >;
         endHint?: number | undefined;
       };
@@ -9309,7 +9315,7 @@ export type PalletBrokerCoretimeInterfaceCoreAssignment =
   | { type: 'Pool' }
   | { type: 'Task'; value: number };
 
-export type PolkadotRuntimeParachainsAssignerCoretimePartsOf57600 = number;
+export type PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600 = number;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10309,8 +10315,9 @@ export type PalletMetaTxCall =
    *
    * - `_origin`: Can be any kind of origin.
    * - `meta_tx`: Meta Transaction with a target call to be dispatched.
+   * - `meta_tx_encoded_len`: The size of the encoded meta transaction in bytes.
    **/
-  { name: 'Dispatch'; params: { metaTx: PalletMetaTxMetaTx } };
+  { name: 'Dispatch'; params: { metaTx: PalletMetaTxMetaTx; metaTxEncodedLen: number } };
 
 export type PalletMetaTxCallLike =
   /**
@@ -10318,8 +10325,9 @@ export type PalletMetaTxCallLike =
    *
    * - `_origin`: Can be any kind of origin.
    * - `meta_tx`: Meta Transaction with a target call to be dispatched.
+   * - `meta_tx_encoded_len`: The size of the encoded meta transaction in bytes.
    **/
-  { name: 'Dispatch'; params: { metaTx: PalletMetaTxMetaTx } };
+  { name: 'Dispatch'; params: { metaTx: PalletMetaTxMetaTx; metaTxEncodedLen: number } };
 
 export type PalletMetaTxMetaTx = {
   call: WestendRuntimeRuntimeCall;
@@ -13518,6 +13526,8 @@ export type FrameSupportStorageNoDrop = FrameSupportTokensFungibleImbalance;
 
 export type FrameSupportTokensFungibleImbalance = { amount: bigint };
 
+export type FrameSupportPalletId = FixedBytes<8>;
+
 export type PalletStakingStakingLedger = {
   stash: AccountId32;
   total: bigint;
@@ -14409,8 +14419,6 @@ export type PalletNominationPoolsSubPools = {
 
 export type PalletNominationPoolsUnbondPool = { points: bigint; balance: bigint };
 
-export type FrameSupportPalletId = FixedBytes<8>;
-
 /**
  * The `Error` enum of this pallet.
  **/
@@ -14991,7 +14999,8 @@ export type PolkadotRuntimeParachainsConfigurationHostConfiguration = {
   minimumBackingVotes: number;
   nodeFeatures: BitSequence;
   approvalVotingParams: PolkadotPrimitivesV9ApprovalVotingParams;
-  schedulerParams: PolkadotPrimitivesV9SchedulerParams;
+  schedulerParams: PolkadotPrimitivesVstagingSchedulerParams;
+  maxRelayParentSessionAge: number;
 };
 
 /**
@@ -15003,16 +15012,17 @@ export type PolkadotRuntimeParachainsConfigurationPalletError =
    **/
   'InvalidNewValue';
 
-export type PolkadotRuntimeParachainsSharedAllowedRelayParentsTracker = {
-  buffer: Array<PolkadotRuntimeParachainsSharedRelayParentInfo>;
+export type PolkadotRuntimeParachainsSharedAllowedSchedulingParentsTracker = {
+  buffer: Array<PolkadotRuntimeParachainsSharedSchedulingParentInfo>;
   latestNumber: number;
 };
 
-export type PolkadotRuntimeParachainsSharedRelayParentInfo = {
-  relayParent: H256;
-  stateRoot: H256;
+export type PolkadotRuntimeParachainsSharedSchedulingParentInfo = {
+  schedulingParent: H256;
   claimQueue: Array<[PolkadotParachainPrimitivesPrimitivesId, Array<[number, Array<PolkadotPrimitivesV9CoreIndex>]>]>;
 };
+
+export type PolkadotPrimitivesVstagingRelayParentInfo = { number: number; stateRoot: H256 };
 
 export type PolkadotRuntimeParachainsInclusionCandidatePendingAvailability = {
   core: PolkadotPrimitivesV9CoreIndex;
@@ -15056,8 +15066,12 @@ export type PolkadotRuntimeParachainsInclusionPalletError =
    **/
   | 'DisallowedRelayParent'
   /**
+   * The candidate's scheduling-parent was not allowed.
+   **/
+  | 'DisallowedSchedulingParent'
+  /**
    * Failed to compute group index for the core: either it's out of bounds
-   * or the relay parent doesn't belong to the current session.
+   * or the scheduling parent doesn't belong to the current session.
    **/
   | 'InvalidAssignment'
   /**
@@ -15136,12 +15150,47 @@ export type PolkadotRuntimeParachainsParasInherentPalletError =
    **/
   | 'UnscheduledCandidate';
 
-export type PolkadotRuntimeParachainsSchedulerCommonAssignment =
-  | {
-      type: 'Pool';
-      value: { paraId: PolkadotParachainPrimitivesPrimitivesId; coreIndex: PolkadotPrimitivesV9CoreIndex };
-    }
-  | { type: 'Bulk'; value: PolkadotParachainPrimitivesPrimitivesId };
+export type PolkadotRuntimeParachainsSchedulerAssignerCoretimeSchedule = {
+  assignments: Array<
+    [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600]
+  >;
+  endHint?: number | undefined;
+  nextSchedule?: number | undefined;
+};
+
+export type PolkadotRuntimeParachainsSchedulerAssignerCoretimeCoreDescriptor = {
+  queue?: PolkadotRuntimeParachainsSchedulerAssignerCoretimeQueueDescriptor | undefined;
+  currentWork?: PolkadotRuntimeParachainsSchedulerAssignerCoretimeWorkState | undefined;
+};
+
+export type PolkadotRuntimeParachainsSchedulerAssignerCoretimeQueueDescriptor = { first: number; last: number };
+
+export type PolkadotRuntimeParachainsSchedulerAssignerCoretimeWorkState = {
+  assignments: Array<
+    [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsSchedulerAssignerCoretimeAssignmentState]
+  >;
+  endHint?: number | undefined;
+  pos: number;
+  step: PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600;
+};
+
+export type PolkadotRuntimeParachainsSchedulerAssignerCoretimeAssignmentState = {
+  ratio: PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600;
+  remaining: PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PolkadotRuntimeParachainsSchedulerPalletError =
+  /**
+   * assign_core was called with no assignments.
+   **/
+  | 'AssignmentsEmpty'
+  /**
+   * assign_core with non allowed insertion.
+   **/
+  | 'DisallowedInsert';
 
 export type PolkadotRuntimeParachainsParasPvfCheckActiveVoteState = {
   votesAccept: BitSequence;
@@ -15476,29 +15525,18 @@ export type PolkadotRuntimeParachainsDisputesSlashingPalletError =
    **/
   | 'DuplicateSlashingReport';
 
-export type PolkadotRuntimeParachainsOnDemandTypesCoreAffinityCount = {
-  coreIndex: PolkadotPrimitivesV9CoreIndex;
-  count: number;
-};
-
-export type PolkadotRuntimeParachainsOnDemandTypesQueueStatusType = {
+export type PolkadotRuntimeParachainsOnDemandOrderStatus = {
   traffic: FixedU128;
-  nextIndex: PolkadotRuntimeParachainsOnDemandTypesQueueIndex;
-  smallestIndex: PolkadotRuntimeParachainsOnDemandTypesQueueIndex;
-  freedIndices: BinaryHeap;
+  queue: PolkadotRuntimeParachainsOnDemandOrderQueue;
 };
 
-export type PolkadotRuntimeParachainsOnDemandTypesQueueIndex = number;
+export type PolkadotRuntimeParachainsOnDemandOrderQueue = {
+  queue: Array<PolkadotRuntimeParachainsOnDemandEnqueuedOrder>;
+};
 
-export type BinaryHeap = Array<PolkadotRuntimeParachainsOnDemandTypesReverseQueueIndex>;
-
-export type PolkadotRuntimeParachainsOnDemandTypesReverseQueueIndex = number;
-
-export type BinaryHeapEnqueuedOrder = Array<PolkadotRuntimeParachainsOnDemandTypesEnqueuedOrder>;
-
-export type PolkadotRuntimeParachainsOnDemandTypesEnqueuedOrder = {
+export type PolkadotRuntimeParachainsOnDemandEnqueuedOrder = {
   paraId: PolkadotParachainPrimitivesPrimitivesId;
-  idx: PolkadotRuntimeParachainsOnDemandTypesQueueIndex;
+  orderedAt: number;
 };
 
 /**
@@ -15518,46 +15556,6 @@ export type PolkadotRuntimeParachainsOnDemandPalletError =
    * The account doesn't have enough credits to purchase on-demand coretime.
    **/
   | 'InsufficientCredits';
-
-export type PolkadotRuntimeParachainsAssignerCoretimeSchedule = {
-  assignments: Array<
-    [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]
-  >;
-  endHint?: number | undefined;
-  nextSchedule?: number | undefined;
-};
-
-export type PolkadotRuntimeParachainsAssignerCoretimeCoreDescriptor = {
-  queue?: PolkadotRuntimeParachainsAssignerCoretimeQueueDescriptor | undefined;
-  currentWork?: PolkadotRuntimeParachainsAssignerCoretimeWorkState | undefined;
-};
-
-export type PolkadotRuntimeParachainsAssignerCoretimeQueueDescriptor = { first: number; last: number };
-
-export type PolkadotRuntimeParachainsAssignerCoretimeWorkState = {
-  assignments: Array<
-    [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimeAssignmentState]
-  >;
-  endHint?: number | undefined;
-  pos: number;
-  step: PolkadotRuntimeParachainsAssignerCoretimePartsOf57600;
-};
-
-export type PolkadotRuntimeParachainsAssignerCoretimeAssignmentState = {
-  ratio: PolkadotRuntimeParachainsAssignerCoretimePartsOf57600;
-  remaining: PolkadotRuntimeParachainsAssignerCoretimePartsOf57600;
-};
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PolkadotRuntimeParachainsAssignerCoretimePalletError =
-  | 'AssignmentsEmpty'
-  /**
-   * assign_core is only allowed to append new assignments at the end of already existing
-   * ones or update the last entry.
-   **/
-  | 'DisallowedInsert';
 
 export type PolkadotRuntimeCommonParasRegistrarParaInfo = {
   manager: AccountId32;
@@ -16268,7 +16266,11 @@ export type PalletMetaTxError =
   /**
    * The meta transaction is invalid.
    **/
-  | 'Invalid';
+  | 'Invalid'
+  /**
+   * The meta transaction length is invalid.
+   **/
+  | 'InvalidLength';
 
 /**
  * The `Error` enum of this pallet.
@@ -16608,12 +16610,12 @@ export type WestendRuntimeRuntimeError =
   | { pallet: 'Configuration'; palletError: PolkadotRuntimeParachainsConfigurationPalletError }
   | { pallet: 'ParaInclusion'; palletError: PolkadotRuntimeParachainsInclusionPalletError }
   | { pallet: 'ParaInherent'; palletError: PolkadotRuntimeParachainsParasInherentPalletError }
+  | { pallet: 'ParaScheduler'; palletError: PolkadotRuntimeParachainsSchedulerPalletError }
   | { pallet: 'Paras'; palletError: PolkadotRuntimeParachainsParasPalletError }
   | { pallet: 'Hrmp'; palletError: PolkadotRuntimeParachainsHrmpPalletError }
   | { pallet: 'ParasDisputes'; palletError: PolkadotRuntimeParachainsDisputesPalletError }
   | { pallet: 'ParasSlashing'; palletError: PolkadotRuntimeParachainsDisputesSlashingPalletError }
   | { pallet: 'OnDemandAssignmentProvider'; palletError: PolkadotRuntimeParachainsOnDemandPalletError }
-  | { pallet: 'CoretimeAssignmentProvider'; palletError: PolkadotRuntimeParachainsAssignerCoretimePalletError }
   | { pallet: 'Registrar'; palletError: PolkadotRuntimeCommonParasRegistrarPalletError }
   | { pallet: 'Slots'; palletError: PolkadotRuntimeCommonSlotsPalletError }
   | { pallet: 'ParasSudoWrapper'; palletError: PolkadotRuntimeCommonParasSudoWrapperPalletError }

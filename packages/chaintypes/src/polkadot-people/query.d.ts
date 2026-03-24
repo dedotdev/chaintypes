@@ -22,12 +22,12 @@ import type {
   SpWeightsWeightV2Weight,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
-  PolkadotPrimitivesV8PersistedValidationData,
-  PolkadotPrimitivesV8UpgradeRestriction,
-  PolkadotPrimitivesV8UpgradeGoAhead,
+  PolkadotPrimitivesV9PersistedValidationData,
+  PolkadotPrimitivesV9UpgradeRestriction,
+  PolkadotPrimitivesV9UpgradeGoAhead,
   SpTrieStorageProof,
   CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot,
-  PolkadotPrimitivesV8AbridgedHostConfiguration,
+  PolkadotPrimitivesV9AbridgedHostConfiguration,
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   CumulusPalletParachainSystemParachainInherentInboundMessageId,
@@ -40,6 +40,11 @@ import type {
   FrameSupportTokensMiscIdAmount002,
   PalletTransactionPaymentReleases,
   FrameSupportStorageNoDrop,
+  PalletAssetsAssetDetails,
+  StagingXcmV5Location,
+  PalletAssetsAssetAccount,
+  PalletAssetsApproval,
+  PalletAssetsAssetMetadata,
   PalletCollatorSelectionCandidateInfo,
   PeoplePolkadotRuntimeSessionKeys,
   SpStakingOffenceOffenceSeverity,
@@ -289,12 +294,12 @@ export interface ChainStorage extends GenericChainStorage {
 
     /**
      * The [`PersistedValidationData`] set for this block.
-     * This value is expected to be set only once per block and it's never stored
-     * in the trie.
      *
-     * @param {Callback<PolkadotPrimitivesV8PersistedValidationData | undefined> =} callback
+     * This value is expected to be set only once by the [`Pallet::set_validation_data`] inherent.
+     *
+     * @param {Callback<PolkadotPrimitivesV9PersistedValidationData | undefined> =} callback
      **/
-    validationData: GenericStorageQuery<() => PolkadotPrimitivesV8PersistedValidationData | undefined>;
+    validationData: GenericStorageQuery<() => PolkadotPrimitivesV9PersistedValidationData | undefined>;
 
     /**
      * Were the validation data set to notify the relay chain?
@@ -321,9 +326,9 @@ export interface ChainStorage extends GenericChainStorage {
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV8UpgradeRestriction | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV9UpgradeRestriction | undefined> =} callback
      **/
-    upgradeRestrictionSignal: GenericStorageQuery<() => PolkadotPrimitivesV8UpgradeRestriction | undefined>;
+    upgradeRestrictionSignal: GenericStorageQuery<() => PolkadotPrimitivesV9UpgradeRestriction | undefined>;
 
     /**
      * Optional upgrade go-ahead signal from the relay-chain.
@@ -332,9 +337,9 @@ export interface ChainStorage extends GenericChainStorage {
      * relay-chain. This value is ephemeral which means it doesn't hit the storage. This value is
      * set after the inherent.
      *
-     * @param {Callback<PolkadotPrimitivesV8UpgradeGoAhead | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV9UpgradeGoAhead | undefined> =} callback
      **/
-    upgradeGoAhead: GenericStorageQuery<() => PolkadotPrimitivesV8UpgradeGoAhead | undefined>;
+    upgradeGoAhead: GenericStorageQuery<() => PolkadotPrimitivesV9UpgradeGoAhead | undefined>;
 
     /**
      * The state proof for the last relay parent block.
@@ -371,9 +376,9 @@ export interface ChainStorage extends GenericChainStorage {
      *
      * This data is also absent from the genesis.
      *
-     * @param {Callback<PolkadotPrimitivesV8AbridgedHostConfiguration | undefined> =} callback
+     * @param {Callback<PolkadotPrimitivesV9AbridgedHostConfiguration | undefined> =} callback
      **/
-    hostConfiguration: GenericStorageQuery<() => PolkadotPrimitivesV8AbridgedHostConfiguration | undefined>;
+    hostConfiguration: GenericStorageQuery<() => PolkadotPrimitivesV9AbridgedHostConfiguration | undefined>;
 
     /**
      * The last downward message queue chain head we have observed.
@@ -447,18 +452,27 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * Upward messages that were sent in a block.
      *
-     * This will be cleared in `on_initialize` of each new block.
+     * This will be cleared in `on_initialize` for each new block.
      *
      * @param {Callback<Array<Bytes>> =} callback
      **/
     upwardMessages: GenericStorageQuery<() => Array<Bytes>>;
 
     /**
-     * Upward messages that are still pending and not yet send to the relay chain.
+     * Upward messages that are still pending and not yet sent to the relay chain.
      *
      * @param {Callback<Array<Bytes>> =} callback
      **/
     pendingUpwardMessages: GenericStorageQuery<() => Array<Bytes>>;
+
+    /**
+     * Upward signals that are still pending and not yet sent to the relay chain.
+     *
+     * This will be cleared in `on_finalize` for each block.
+     *
+     * @param {Callback<Array<Bytes>> =} callback
+     **/
+    pendingUpwardSignals: GenericStorageQuery<() => Array<Bytes>>;
 
     /**
      * The factor to multiply the base delivery fee by for UMP.
@@ -697,6 +711,134 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
+   * Pallet `Assets`'s storage queries
+   **/
+  assets: {
+    /**
+     * Details of an asset.
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<PalletAssetsAssetDetails | undefined> =} callback
+     **/
+    asset: GenericStorageQuery<
+      (arg: StagingXcmV5Location) => PalletAssetsAssetDetails | undefined,
+      StagingXcmV5Location
+    >;
+
+    /**
+     * The holdings of a specific account for a specific asset.
+     *
+     * @param {[StagingXcmV5Location, AccountId32Like]} arg
+     * @param {Callback<PalletAssetsAssetAccount | undefined> =} callback
+     **/
+    account: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, AccountId32Like]) => PalletAssetsAssetAccount | undefined,
+      [StagingXcmV5Location, AccountId32]
+    >;
+
+    /**
+     * Approved balance transfers. First balance is the amount approved for transfer. Second
+     * is the amount of `T::Currency` reserved for storing this.
+     * First key is the asset ID, second key is the owner and third key is the delegate.
+     *
+     * @param {[StagingXcmV5Location, AccountId32Like, AccountId32Like]} arg
+     * @param {Callback<PalletAssetsApproval | undefined> =} callback
+     **/
+    approvals: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, AccountId32Like, AccountId32Like]) => PalletAssetsApproval | undefined,
+      [StagingXcmV5Location, AccountId32, AccountId32]
+    >;
+
+    /**
+     * Metadata of an asset.
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<PalletAssetsAssetMetadata> =} callback
+     **/
+    metadata: GenericStorageQuery<(arg: StagingXcmV5Location) => PalletAssetsAssetMetadata, StagingXcmV5Location>;
+
+    /**
+     * Maps an asset to a list of its configured reserve information.
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<Array<[]>> =} callback
+     **/
+    reserves: GenericStorageQuery<(arg: StagingXcmV5Location) => Array<[]>, StagingXcmV5Location>;
+
+    /**
+     * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
+     * item has no effect.
+     *
+     * This can be useful for setting up constraints for IDs of the new assets. For example, by
+     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
+     * auto-increment model can be applied to all new asset IDs.
+     *
+     * The initial next asset ID can be set using the [`GenesisConfig`] or the
+     * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
+     *
+     * @param {Callback<StagingXcmV5Location | undefined> =} callback
+     **/
+    nextAssetId: GenericStorageQuery<() => StagingXcmV5Location | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetRate`'s storage queries
+   **/
+  assetRate: {
+    /**
+     * Maps an asset to its fixed point representation in the native balance.
+     *
+     * E.g. `native_amount = asset_amount * ConversionRateToNative::<T>::get(asset_kind)`
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<FixedU128 | undefined> =} callback
+     **/
+    conversionRateToNative: GenericStorageQuery<
+      (arg: StagingXcmV5Location) => FixedU128 | undefined,
+      StagingXcmV5Location
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetsHolder`'s storage queries
+   **/
+  assetsHolder: {
+    /**
+     * A map that stores holds applied on an account for a given AssetId.
+     *
+     * @param {[StagingXcmV5Location, AccountId32Like]} arg
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
+     **/
+    holds: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, AccountId32Like]) => Array<FrameSupportTokensMiscIdAmount>,
+      [StagingXcmV5Location, AccountId32]
+    >;
+
+    /**
+     * A map that stores the current total balance on hold for every account on a given AssetId.
+     *
+     * @param {[StagingXcmV5Location, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    balancesOnHold: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, AccountId32Like]) => bigint | undefined,
+      [StagingXcmV5Location, AccountId32]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
    * Pallet `Authorship`'s storage queries
    **/
   authorship: {
@@ -828,6 +970,17 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [SpCoreCryptoKeyTypeId, BytesLike]) => AccountId32 | undefined,
       [SpCoreCryptoKeyTypeId, Bytes]
     >;
+
+    /**
+     * Accounts whose keys were set via `SessionInterface` (external path) without
+     * incrementing the consumer reference or placing a key deposit. `do_purge_keys`
+     * only decrements consumers for accounts that were registered through the local
+     * session pallet.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    externallySetKeys: GenericStorageQuery<(arg: AccountId32Like) => [] | undefined, AccountId32>;
 
     /**
      * Generic pallet storage query

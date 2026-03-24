@@ -195,6 +195,20 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `MultiBlockMigrations`'s errors
+   **/
+  multiBlockMigrations: {
+    /**
+     * The operation cannot complete since some MBMs are ongoing.
+     **/
+    Ongoing: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `Balances`'s errors
    **/
   balances: {
@@ -1090,6 +1104,11 @@ export interface ChainErrors extends GenericChainErrors {
     ContainsHolds: GenericPalletError;
 
     /**
+     * Tried setting too many reserves.
+     **/
+    TooManyReserves: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1570,6 +1589,11 @@ export interface ChainErrors extends GenericChainErrors {
     ContainsHolds: GenericPalletError;
 
     /**
+     * Tried setting too many reserves.
+     **/
+    TooManyReserves: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1695,6 +1719,11 @@ export interface ChainErrors extends GenericChainErrors {
      * The asset cannot be destroyed because some accounts for this asset contain holds.
      **/
     ContainsHolds: GenericPalletError;
+
+    /**
+     * Tried setting too many reserves.
+     **/
+    TooManyReserves: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2195,6 +2224,104 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `MultiAssetBounties`'s errors
+   **/
+  multiAssetBounties: {
+    /**
+     * No child-/bounty at that index.
+     **/
+    InvalidIndex: GenericPalletError;
+
+    /**
+     * The reason given is just too big.
+     **/
+    ReasonTooBig: GenericPalletError;
+
+    /**
+     * Invalid child-/bounty value.
+     **/
+    InvalidValue: GenericPalletError;
+
+    /**
+     * The balance of the asset kind is not convertible to the balance of the native asset for
+     * asserting the origin permissions.
+     **/
+    FailedToConvertBalance: GenericPalletError;
+
+    /**
+     * The child-/bounty status is unexpected.
+     **/
+    UnexpectedStatus: GenericPalletError;
+
+    /**
+     * Require child-/bounty curator.
+     **/
+    RequireCurator: GenericPalletError;
+
+    /**
+     * The spend origin is valid but the amount it is allowed to spend is lower than the
+     * requested amount.
+     **/
+    InsufficientPermission: GenericPalletError;
+
+    /**
+     * There was issue with funding the child-/bounty.
+     **/
+    FundingError: GenericPalletError;
+
+    /**
+     * There was issue with refunding the child-/bounty.
+     **/
+    RefundError: GenericPalletError;
+    PayoutError: GenericPalletError;
+
+    /**
+     * Child-/bounty funding has not concluded yet.
+     **/
+    FundingInconclusive: GenericPalletError;
+
+    /**
+     * Child-/bounty refund has not concluded yet.
+     **/
+    RefundInconclusive: GenericPalletError;
+
+    /**
+     * Child-/bounty payout has not concluded yet.
+     **/
+    PayoutInconclusive: GenericPalletError;
+
+    /**
+     * The child-/bounty or funding source account could not be derived from the indexes and
+     * asset kind.
+     **/
+    FailedToConvertSource: GenericPalletError;
+
+    /**
+     * The parent bounty cannot be closed because it has active child bounties.
+     **/
+    HasActiveChildBounty: GenericPalletError;
+
+    /**
+     * Number of child bounties exceeds limit `MaxActiveChildBountyCount`.
+     **/
+    TooManyChildBounties: GenericPalletError;
+
+    /**
+     * The parent bounty value is not enough to add new child-bounty.
+     **/
+    InsufficientBountyValue: GenericPalletError;
+
+    /**
+     * The preimage does not exist.
+     **/
+    PreimageNotExist: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `StateTrieMigration`'s errors
    **/
   stateTrieMigration: {
@@ -2533,6 +2660,44 @@ export interface ChainErrors extends GenericChainErrors {
      * Operation not supported by this pallet.
      **/
     NotSupported: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `StakingRcClient`'s errors
+   **/
+  stakingRcClient: {
+    /**
+     * Failed to send XCM message to the Relay Chain.
+     **/
+    XcmSendFailed: GenericPalletError;
+
+    /**
+     * The origin account is not a registered validator.
+     *
+     * Only accounts that have called `validate()` can set or purge session keys. When called
+     * via a staking proxy, the origin is the delegating account (stash), which must be a
+     * registered validator.
+     **/
+    NotValidator: GenericPalletError;
+
+    /**
+     * The session keys could not be decoded as the expected RelayChainSessionKeys type.
+     **/
+    InvalidKeys: GenericPalletError;
+
+    /**
+     * The ownership proof for the session keys is invalid.
+     **/
+    InvalidProof: GenericPalletError;
+
+    /**
+     * Delivery fees exceeded the specified maximum.
+     **/
+    FeesExceededMax: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3119,6 +3284,11 @@ export interface ChainErrors extends GenericChainErrors {
      * called or if their caller was being delegate called.
      **/
     PrecompileDelegateDenied: GenericPalletError;
+
+    /**
+     * ECDSA public key recovery failed. Most probably wrong recovery id or signature.
+     **/
+    EcdsaRecoveryFailed: GenericPalletError;
 
     /**
      * Generic pallet error

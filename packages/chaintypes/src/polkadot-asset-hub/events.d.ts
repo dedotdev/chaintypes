@@ -7,9 +7,9 @@ import type {
   H256,
   FixedBytes,
   Result,
+  Bytes,
   EthereumAddress,
   FixedU128,
-  Bytes,
   Permill,
   Perbill,
   H160,
@@ -21,6 +21,7 @@ import type {
   AssetHubPolkadotRuntimeRuntimeParametersKey,
   AssetHubPolkadotRuntimeRuntimeParametersValue,
   FrameSupportTokensMiscBalanceStatus,
+  AssetHubPolkadotRuntimeRuntimeHoldReason,
   PalletBalancesUnexpectedKind,
   StagingXcmV5Location,
   StagingXcmV5TraitsOutcome,
@@ -40,6 +41,7 @@ import type {
   PalletNftsAttributeNamespace,
   PalletNftsPriceWithDirection,
   PalletNftsPalletAttributes,
+  AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   ParachainsCommonPayVersionedLocatableAccount,
   PalletConvictionVotingVoteAccountVote,
@@ -343,6 +345,135 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `MultiBlockMigrations`'s events
+   **/
+  multiBlockMigrations: {
+    /**
+     * A Runtime upgrade started.
+     *
+     * Its end is indicated by `UpgradeCompleted` or `UpgradeFailed`.
+     **/
+    UpgradeStarted: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'UpgradeStarted',
+      {
+        /**
+         * The number of migrations that this upgrade contains.
+         *
+         * This can be used to design a progress indicator in combination with counting the
+         * `MigrationCompleted` and `MigrationSkipped` events.
+         **/
+        migrations: number;
+      }
+    >;
+
+    /**
+     * The current runtime upgrade completed.
+     *
+     * This implies that all of its migrations completed successfully as well.
+     **/
+    UpgradeCompleted: GenericPalletEvent<'MultiBlockMigrations', 'UpgradeCompleted', null>;
+
+    /**
+     * Runtime upgrade failed.
+     *
+     * This is very bad and will require governance intervention.
+     **/
+    UpgradeFailed: GenericPalletEvent<'MultiBlockMigrations', 'UpgradeFailed', null>;
+
+    /**
+     * A migration was skipped since it was already executed in the past.
+     **/
+    MigrationSkipped: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationSkipped',
+      {
+        /**
+         * The index of the skipped migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+      }
+    >;
+
+    /**
+     * A migration progressed.
+     **/
+    MigrationAdvanced: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationAdvanced',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * A Migration completed.
+     **/
+    MigrationCompleted: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationCompleted',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * A Migration failed.
+     *
+     * This implies that the whole upgrade failed and governance intervention is required.
+     **/
+    MigrationFailed: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationFailed',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * The set of historical migrations has been cleared.
+     **/
+    HistoricCleared: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'HistoricCleared',
+      {
+        /**
+         * Should be passed to `clear_historic` in a successive call.
+         **/
+        nextCursor?: Bytes | undefined;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `Balances`'s events
    **/
   balances: {
@@ -408,9 +539,19 @@ export interface ChainEvents extends GenericChainEvents {
     Minted: GenericPalletEvent<'Balances', 'Minted', { who: AccountId32; amount: bigint }>;
 
     /**
+     * Some credit was balanced and added to the TotalIssuance.
+     **/
+    MintedCredit: GenericPalletEvent<'Balances', 'MintedCredit', { amount: bigint }>;
+
+    /**
      * Some amount was burned from an account.
      **/
     Burned: GenericPalletEvent<'Balances', 'Burned', { who: AccountId32; amount: bigint }>;
+
+    /**
+     * Some debt has been dropped from the Total Issuance.
+     **/
+    BurnedDebt: GenericPalletEvent<'Balances', 'BurnedDebt', { amount: bigint }>;
 
     /**
      * Some amount was suspended from an account (it can be restored later).
@@ -461,6 +602,51 @@ export interface ChainEvents extends GenericChainEvents {
      * The `TotalIssuance` was forcefully changed.
      **/
     TotalIssuanceForced: GenericPalletEvent<'Balances', 'TotalIssuanceForced', { old: bigint; new: bigint }>;
+
+    /**
+     * Some balance was placed on hold.
+     **/
+    Held: GenericPalletEvent<
+      'Balances',
+      'Held',
+      { reason: AssetHubPolkadotRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Held balance was burned from an account.
+     **/
+    BurnedHeld: GenericPalletEvent<
+      'Balances',
+      'BurnedHeld',
+      { reason: AssetHubPolkadotRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * A transfer of `amount` on hold from `source` to `dest` was initiated.
+     **/
+    TransferOnHold: GenericPalletEvent<
+      'Balances',
+      'TransferOnHold',
+      { reason: AssetHubPolkadotRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * The `transferred` balance is placed on hold at the `dest` account.
+     **/
+    TransferAndHold: GenericPalletEvent<
+      'Balances',
+      'TransferAndHold',
+      { reason: AssetHubPolkadotRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; transferred: bigint }
+    >;
+
+    /**
+     * Some balance was released from hold.
+     **/
+    Released: GenericPalletEvent<
+      'Balances',
+      'Released',
+      { reason: AssetHubPolkadotRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
 
     /**
      * An unexpected/defensive event was triggered.
@@ -1339,7 +1525,14 @@ export interface ChainEvents extends GenericChainEvents {
     PureCreated: GenericPalletEvent<
       'Proxy',
       'PureCreated',
-      { pure: AccountId32; who: AccountId32; proxyType: AssetHubPolkadotRuntimeProxyType; disambiguationIndex: number }
+      {
+        pure: AccountId32;
+        who: AccountId32;
+        proxyType: AssetHubPolkadotRuntimeProxyType;
+        disambiguationIndex: number;
+        at: number;
+        extrinsicIndex: number;
+      }
     >;
 
     /**
@@ -1596,6 +1789,16 @@ export interface ChainEvents extends GenericChainEvents {
      * Some assets were withdrawn from the account (e.g. for transaction fees).
      **/
     Withdrawn: GenericPalletEvent<'Assets', 'Withdrawn', { assetId: number; who: AccountId32; amount: bigint }>;
+
+    /**
+     * Reserve information was set or updated for `asset_id`.
+     **/
+    ReservesUpdated: GenericPalletEvent<'Assets', 'ReservesUpdated', { assetId: number; reserves: Array<[]> }>;
+
+    /**
+     * Reserve information was removed for `asset_id`.
+     **/
+    ReservesRemoved: GenericPalletEvent<'Assets', 'ReservesRemoved', { assetId: number }>;
 
     /**
      * Generic pallet event
@@ -2326,6 +2529,20 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * Reserve information was set or updated for `asset_id`.
+     **/
+    ReservesUpdated: GenericPalletEvent<
+      'ForeignAssets',
+      'ReservesUpdated',
+      { assetId: StagingXcmV5Location; reserves: Array<AssetsCommonLocalAndForeignAssetsForeignAssetReserveData> }
+    >;
+
+    /**
+     * Reserve information was removed for `asset_id`.
+     **/
+    ReservesRemoved: GenericPalletEvent<'ForeignAssets', 'ReservesRemoved', { assetId: StagingXcmV5Location }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -2500,6 +2717,16 @@ export interface ChainEvents extends GenericChainEvents {
      * Some assets were withdrawn from the account (e.g. for transaction fees).
      **/
     Withdrawn: GenericPalletEvent<'PoolAssets', 'Withdrawn', { assetId: number; who: AccountId32; amount: bigint }>;
+
+    /**
+     * Reserve information was set or updated for `asset_id`.
+     **/
+    ReservesUpdated: GenericPalletEvent<'PoolAssets', 'ReservesUpdated', { assetId: number; reserves: Array<[]> }>;
+
+    /**
+     * Reserve information was removed for `asset_id`.
+     **/
+    ReservesRemoved: GenericPalletEvent<'PoolAssets', 'ReservesRemoved', { assetId: number }>;
 
     /**
      * Generic pallet event
@@ -2811,12 +3038,12 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * An account has delegated their vote to another account. \[who, target\]
      **/
-    Delegated: GenericPalletEvent<'ConvictionVoting', 'Delegated', [AccountId32, AccountId32]>;
+    Delegated: GenericPalletEvent<'ConvictionVoting', 'Delegated', [AccountId32, AccountId32, number]>;
 
     /**
      * An \[account\] has cancelled a previous delegation operation.
      **/
-    Undelegated: GenericPalletEvent<'ConvictionVoting', 'Undelegated', AccountId32>;
+    Undelegated: GenericPalletEvent<'ConvictionVoting', 'Undelegated', [AccountId32, number]>;
 
     /**
      * An account has voted
@@ -2824,7 +3051,7 @@ export interface ChainEvents extends GenericChainEvents {
     Voted: GenericPalletEvent<
       'ConvictionVoting',
       'Voted',
-      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number }
     >;
 
     /**
@@ -2833,7 +3060,7 @@ export interface ChainEvents extends GenericChainEvents {
     VoteRemoved: GenericPalletEvent<
       'ConvictionVoting',
       'VoteRemoved',
-      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number }
     >;
 
     /**
@@ -3323,6 +3550,125 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `MultiAssetBounties`'s events
+   **/
+  multiAssetBounties: {
+    /**
+     * A new bounty was created and funding has been initiated.
+     **/
+    BountyCreated: GenericPalletEvent<'MultiAssetBounties', 'BountyCreated', { index: number }>;
+
+    /**
+     * A new child-bounty was created and funding has been initiated.
+     **/
+    ChildBountyCreated: GenericPalletEvent<
+      'MultiAssetBounties',
+      'ChildBountyCreated',
+      { index: number; childIndex: number }
+    >;
+
+    /**
+     * The curator accepted role and child-/bounty became active.
+     **/
+    BountyBecameActive: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyBecameActive',
+      { index: number; childIndex?: number | undefined; curator: AccountId32 }
+    >;
+
+    /**
+     * A child-/bounty was awarded to a beneficiary.
+     **/
+    BountyAwarded: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyAwarded',
+      { index: number; childIndex?: number | undefined; beneficiary: ParachainsCommonPayVersionedLocatableAccount }
+    >;
+
+    /**
+     * Payout payment to the beneficiary has concluded successfully.
+     **/
+    BountyPayoutProcessed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyPayoutProcessed',
+      {
+        index: number;
+        childIndex?: number | undefined;
+        assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
+        value: bigint;
+        beneficiary: ParachainsCommonPayVersionedLocatableAccount;
+      }
+    >;
+
+    /**
+     * Funding payment has concluded successfully.
+     **/
+    BountyFundingProcessed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyFundingProcessed',
+      { index: number; childIndex?: number | undefined }
+    >;
+
+    /**
+     * Refund payment has concluded successfully.
+     **/
+    BountyRefundProcessed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyRefundProcessed',
+      { index: number; childIndex?: number | undefined }
+    >;
+
+    /**
+     * A child-/bounty was cancelled.
+     **/
+    BountyCanceled: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyCanceled',
+      { index: number; childIndex?: number | undefined }
+    >;
+
+    /**
+     * A child-/bounty curator was unassigned.
+     **/
+    CuratorUnassigned: GenericPalletEvent<
+      'MultiAssetBounties',
+      'CuratorUnassigned',
+      { index: number; childIndex?: number | undefined }
+    >;
+
+    /**
+     * A child-/bounty curator was proposed.
+     **/
+    CuratorProposed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'CuratorProposed',
+      { index: number; childIndex?: number | undefined; curator: AccountId32 }
+    >;
+
+    /**
+     * A payment failed and can be retried.
+     **/
+    PaymentFailed: GenericPalletEvent<
+      'MultiAssetBounties',
+      'PaymentFailed',
+      { index: number; childIndex?: number | undefined; paymentId: bigint }
+    >;
+
+    /**
+     * A payment happened and can be checked.
+     **/
+    Paid: GenericPalletEvent<
+      'MultiAssetBounties',
+      'Paid',
+      { index: number; childIndex?: number | undefined; paymentId: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `StateTrieMigration`'s events
    **/
   stateTrieMigration: {
@@ -3670,6 +4016,13 @@ export interface ChainEvents extends GenericChainEvents {
       'OffenceReceived',
       { slashSession: number; offencesCount: number }
     >;
+
+    /**
+     * Fees were charged for a user operation (set_keys or purge_keys).
+     *
+     * The fee includes both XCM delivery fee and relay chain execution cost.
+     **/
+    FeesPaid: GenericPalletEvent<'StakingRcClient', 'FeesPaid', { who: AccountId32; fees: bigint }>;
 
     /**
      * Something occurred that should never happen under normal operation.

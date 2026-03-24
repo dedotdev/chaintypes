@@ -6,6 +6,7 @@ import type {
   FrameSystemEventRecord,
   AssetHubPolkadotRuntimeRuntimeCall,
   SpRuntimeMultiSignature,
+  FrameSystemExtensionsAuthorizeCall,
   FrameSystemExtensionsCheckNonZeroSender,
   FrameSystemExtensionsCheckSpecVersion,
   FrameSystemExtensionsCheckTxVersion,
@@ -34,6 +35,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
   Signature: SpRuntimeMultiSignature;
   RuntimeCall: AssetHubPolkadotRuntimeRuntimeCall;
   Extra: [
+    FrameSystemExtensionsAuthorizeCall,
     FrameSystemExtensionsCheckNonZeroSender,
     FrameSystemExtensionsCheckSpecVersion,
     FrameSystemExtensionsCheckTxVersion,
@@ -52,7 +54,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PolkadotAssetHubApi
- * @specVersion: 2000007
+ * @specVersion: 2001001
  **/
 export interface PolkadotAssetHubApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

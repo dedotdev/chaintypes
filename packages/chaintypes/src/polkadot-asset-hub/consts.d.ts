@@ -152,6 +152,31 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `MultiBlockMigrations`'s constants
+   **/
+  multiBlockMigrations: {
+    /**
+     * The maximal length of an encoded cursor.
+     *
+     * A good default needs to selected such that no migration will ever have a cursor with MEL
+     * above this limit. This is statically checked in `integrity_test`.
+     **/
+    cursorMaxLen: number;
+
+    /**
+     * The maximal length of an encoded identifier.
+     *
+     * A good default needs to selected such that no migration will ever have an identifier
+     * with MEL above this limit. This is statically checked in `integrity_test`.
+     **/
+    identifierMaxLen: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Balances`'s constants
    **/
   balances: {
@@ -255,6 +280,23 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   claims: {
     prefix: Bytes;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `Dap`'s constants
+   **/
+  dap: {
+    /**
+     * The pallet ID used to derive the buffer account.
+     *
+     * Each runtime should configure a unique ID to avoid collisions if multiple
+     * DAP instances are used.
+     **/
+    palletId: FrameSupportPalletId;
 
     /**
      * Generic pallet constant
@@ -1137,6 +1179,30 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `MultiAssetBounties`'s constants
+   **/
+  multiAssetBounties: {
+    /**
+     * Minimum value for a bounty.
+     **/
+    bountyValueMinimum: bigint;
+
+    /**
+     * Minimum value for a child-bounty.
+     **/
+    childBountyValueMinimum: bigint;
+
+    /**
+     * Maximum number of child bounties that can be added to a parent bounty.
+     **/
+    maxActiveChildBountyCount: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `StateTrieMigration`'s constants
    **/
   stateTrieMigration: {
@@ -1293,6 +1359,11 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   stakingRcClient: {
     /**
+     * Deposit held when a validator sets session keys. Released on `purge_keys`.
+     **/
+    keyDeposit: bigint;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -1444,8 +1515,24 @@ export interface ChainConsts extends GenericChainConsts {
 
     /**
      * Number of eras that staked funds must remain bonded for.
+     *
+     * This is the bonding duration for validators. Nominators may have a shorter bonding
+     * duration when [`AreNominatorsSlashable`] is set to `false` (see
+     * [`StakingInterface::nominator_bonding_duration`]).
      **/
     bondingDuration: number;
+
+    /**
+     * Number of eras nominators must wait to unbond when they are not slashable.
+     *
+     * This duration is used for nominators when [`AreNominatorsSlashable`] is `false`.
+     * When nominators are slashable, they use the full [`Config::BondingDuration`] to ensure
+     * slashes can be applied during the unbonding period.
+     *
+     * Setting this to a lower value (e.g., 1 era) allows for faster withdrawals when
+     * nominators are not subject to slashing risk.
+     **/
+    nominatorFastUnbondDuration: number;
 
     /**
      * Number of eras that slashes are deferred by, after computation.

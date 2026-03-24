@@ -208,6 +208,81 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `Assets`'s constants
+   **/
+  assets: {
+    /**
+     * Max number of items to destroy per `destroy_accounts` and `destroy_approvals` call.
+     *
+     * Must be configured to result in a weight that makes each call fit in a block.
+     **/
+    removeItemsLimit: number;
+
+    /**
+     * The basic amount of funds that must be reserved for an asset.
+     **/
+    assetDeposit: bigint;
+
+    /**
+     * The amount of funds that must be reserved for a non-provider asset account to be
+     * maintained.
+     **/
+    assetAccountDeposit: bigint;
+
+    /**
+     * The basic amount of funds that must be reserved when adding metadata to your asset.
+     **/
+    metadataDepositBase: bigint;
+
+    /**
+     * The additional funds that must be reserved for the number of bytes you store in your
+     * metadata.
+     **/
+    metadataDepositPerByte: bigint;
+
+    /**
+     * The amount of funds that must be reserved when creating a new approval.
+     **/
+    approvalDeposit: bigint;
+
+    /**
+     * The maximum length of a name or symbol stored on-chain.
+     **/
+    stringLimit: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `AssetRate`'s constants
+   **/
+  assetRate: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `AssetTxPayment`'s constants
+   **/
+  assetTxPayment: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `AssetsHolder`'s constants
+   **/
+  assetsHolder: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Authorship`'s constants
    **/
   authorship: {

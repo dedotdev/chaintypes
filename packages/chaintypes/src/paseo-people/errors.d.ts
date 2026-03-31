@@ -307,6 +307,11 @@ export interface ChainErrors extends GenericChainErrors {
     ContainsHolds: GenericPalletError;
 
     /**
+     * Tried setting too many reserves.
+     **/
+    TooManyReserves: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;

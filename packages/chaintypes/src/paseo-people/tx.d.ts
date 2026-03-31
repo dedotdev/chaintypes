@@ -1951,6 +1951,36 @@ export interface ChainTx<
     >;
 
     /**
+     * Sets the trusted reserve information of an asset.
+     *
+     * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+     * `CreateOrigin` or be the signed `owner` configured during asset creation.
+     *
+     * - `id`: The identifier of the asset.
+     * - `reserves`: The full list of trusted reserves information.
+     *
+     * Emits `AssetMinBalanceChanged` event when successful.
+     *
+     * @param {StagingXcmV5Location} id
+     * @param {Array<[]>} reserves
+     **/
+    setReserves: GenericTxCall<
+      (
+        id: StagingXcmV5Location,
+        reserves: Array<[]>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'SetReserves';
+            params: { id: StagingXcmV5Location; reserves: Array<[]> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;

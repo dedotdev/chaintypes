@@ -256,13 +256,13 @@ export type CumulusPalletParachainSystemCallLike =
   | { name: 'SudoSendUpwardMessage'; params: { message: BytesLike } };
 
 export type CumulusPalletParachainSystemParachainInherentBasicParachainInherentData = {
-  validationData: PolkadotPrimitivesV8PersistedValidationData;
+  validationData: PolkadotPrimitivesV9PersistedValidationData;
   relayChainState: SpTrieStorageProof;
   relayParentDescendants: Array<Header>;
   collatorPeerId?: Bytes | undefined;
 };
 
-export type PolkadotPrimitivesV8PersistedValidationData = {
+export type PolkadotPrimitivesV9PersistedValidationData = {
   parentHead: PolkadotParachainPrimitivesPrimitivesHeadData;
   relayParentNumber: number;
   relayParentStorageRoot: H256;
@@ -1195,7 +1195,19 @@ export type PalletAssetsCall =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddress; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddress; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetReserves'; params: { id: StagingXcmV5Location; reserves: Array<[]> } };
 
 export type PalletAssetsCallLike =
   /**
@@ -1781,7 +1793,19 @@ export type PalletAssetsCallLike =
    * (false), or transfer everything except at least the minimum balance, which will
    * guarantee to keep the sender asset account alive (true).
    **/
-  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddressLike; keepAlive: boolean } };
+  | { name: 'TransferAll'; params: { id: StagingXcmV5Location; dest: MultiAddressLike; keepAlive: boolean } }
+  /**
+   * Sets the trusted reserve information of an asset.
+   *
+   * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+   * `CreateOrigin` or be the signed `owner` configured during asset creation.
+   *
+   * - `id`: The identifier of the asset.
+   * - `reserves`: The full list of trusted reserves information.
+   *
+   * Emits `AssetMinBalanceChanged` event when successful.
+   **/
+  | { name: 'SetReserves'; params: { id: StagingXcmV5Location; reserves: Array<[]> } };
 
 export type StagingXcmV5Location = { parents: number; interior: StagingXcmV5Junctions };
 
@@ -5157,7 +5181,8 @@ export type PalletIdentityJudgement =
 export type SpRuntimeMultiSignature =
   | { type: 'Ed25519'; value: FixedBytes<64> }
   | { type: 'Sr25519'; value: FixedBytes<64> }
-  | { type: 'Ecdsa'; value: FixedBytes<65> };
+  | { type: 'Ecdsa'; value: FixedBytes<65> }
+  | { type: 'Eth'; value: FixedBytes<65> };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5558,9 +5583,17 @@ export type PalletBalancesEvent =
    **/
   | { name: 'Minted'; data: { who: AccountId32; amount: bigint } }
   /**
+   * Some credit was balanced and added to the TotalIssuance.
+   **/
+  | { name: 'MintedCredit'; data: { amount: bigint } }
+  /**
    * Some amount was burned from an account.
    **/
   | { name: 'Burned'; data: { who: AccountId32; amount: bigint } }
+  /**
+   * Some debt has been dropped from the Total Issuance.
+   **/
+  | { name: 'BurnedDebt'; data: { amount: bigint } }
   /**
    * Some amount was suspended from an account (it can be restored later).
    **/
@@ -5602,11 +5635,50 @@ export type PalletBalancesEvent =
    **/
   | { name: 'TotalIssuanceForced'; data: { old: bigint; new: bigint } }
   /**
+   * Some balance was placed on hold.
+   **/
+  | { name: 'Held'; data: { reason: PeoplePaseoRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
+   * Held balance was burned from an account.
+   **/
+  | { name: 'BurnedHeld'; data: { reason: PeoplePaseoRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
+   * A transfer of `amount` on hold from `source` to `dest` was initiated.
+   **/
+  | {
+      name: 'TransferOnHold';
+      data: { reason: PeoplePaseoRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint };
+    }
+  /**
+   * The `transferred` balance is placed on hold at the `dest` account.
+   **/
+  | {
+      name: 'TransferAndHold';
+      data: {
+        reason: PeoplePaseoRuntimeRuntimeHoldReason;
+        source: AccountId32;
+        dest: AccountId32;
+        transferred: bigint;
+      };
+    }
+  /**
+   * Some balance was released from hold.
+   **/
+  | { name: 'Released'; data: { reason: PeoplePaseoRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint } }
+  /**
    * An unexpected/defensive event was triggered.
    **/
   | { name: 'Unexpected'; data: PalletBalancesUnexpectedKind };
 
 export type FrameSupportTokensMiscBalanceStatus = 'Free' | 'Reserved';
+
+export type PeoplePaseoRuntimeRuntimeHoldReason =
+  | { type: 'Session'; value: PalletSessionHoldReason }
+  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason };
+
+export type PalletSessionHoldReason = 'Keys';
+
+export type PalletXcmHoldReason = 'AuthorizeAlias';
 
 export type PalletBalancesUnexpectedKind = 'BalanceUpdated' | 'FailedToMutateAccount';
 
@@ -5752,7 +5824,15 @@ export type PalletAssetsEvent =
   /**
    * Some assets were withdrawn from the account (e.g. for transaction fees).
    **/
-  | { name: 'Withdrawn'; data: { assetId: StagingXcmV5Location; who: AccountId32; amount: bigint } };
+  | { name: 'Withdrawn'; data: { assetId: StagingXcmV5Location; who: AccountId32; amount: bigint } }
+  /**
+   * Reserve information was set or updated for `asset_id`.
+   **/
+  | { name: 'ReservesUpdated'; data: { assetId: StagingXcmV5Location; reserves: Array<[]> } }
+  /**
+   * Reserve information was removed for `asset_id`.
+   **/
+  | { name: 'ReservesRemoved'; data: { assetId: StagingXcmV5Location } };
 
 /**
  * The `Event` enum of this pallet
@@ -5815,14 +5895,6 @@ export type PalletAssetsHolderEvent =
         amount: bigint;
       };
     };
-
-export type PeoplePaseoRuntimeRuntimeHoldReason =
-  | { type: 'Session'; value: PalletSessionHoldReason }
-  | { type: 'PolkadotXcm'; value: PalletXcmHoldReason };
-
-export type PalletSessionHoldReason = 'Keys';
-
-export type PalletXcmHoldReason = 'AuthorizeAlias';
 
 /**
  * The `Event` enum of this pallet
@@ -6375,6 +6447,8 @@ export type PalletProxyEvent =
         who: AccountId32;
         proxyType: PeoplePaseoRuntimeProxyType;
         disambiguationIndex: number;
+        at: number;
+        extrinsicIndex: number;
       };
     }
   /**
@@ -6655,7 +6729,7 @@ export type CumulusPalletWeightReclaimStorageWeightReclaim = [
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV9UpgradeGoAhead | undefined;
 };
 
 export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
@@ -6668,21 +6742,21 @@ export type CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth = {
 
 export type CumulusPalletParachainSystemUnincludedSegmentHrmpChannelUpdate = { msgCount: number; totalBytes: number };
 
-export type PolkadotPrimitivesV8UpgradeGoAhead = 'Abort' | 'GoAhead';
+export type PolkadotPrimitivesV9UpgradeGoAhead = 'Abort' | 'GoAhead';
 
 export type CumulusPalletParachainSystemUnincludedSegmentSegmentTracker = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   hrmpWatermark?: number | undefined;
-  consumedGoAheadSignal?: PolkadotPrimitivesV8UpgradeGoAhead | undefined;
+  consumedGoAheadSignal?: PolkadotPrimitivesV9UpgradeGoAhead | undefined;
 };
 
-export type PolkadotPrimitivesV8UpgradeRestriction = 'Present';
+export type PolkadotPrimitivesV9UpgradeRestriction = 'Present';
 
 export type CumulusPalletParachainSystemRelayStateSnapshotMessagingStateSnapshot = {
   dmqMqcHead: H256;
   relayDispatchQueueRemainingCapacity: CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity;
-  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
-  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV8AbridgedHrmpChannel]>;
+  ingressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV9AbridgedHrmpChannel]>;
+  egressChannels: Array<[PolkadotParachainPrimitivesPrimitivesId, PolkadotPrimitivesV9AbridgedHrmpChannel]>;
 };
 
 export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRemainingCapacity = {
@@ -6690,7 +6764,7 @@ export type CumulusPalletParachainSystemRelayStateSnapshotRelayDispatchQueueRema
   remainingSize: number;
 };
 
-export type PolkadotPrimitivesV8AbridgedHrmpChannel = {
+export type PolkadotPrimitivesV9AbridgedHrmpChannel = {
   maxCapacity: number;
   maxTotalSize: number;
   maxMessageSize: number;
@@ -6699,7 +6773,7 @@ export type PolkadotPrimitivesV8AbridgedHrmpChannel = {
   mqcHead?: H256 | undefined;
 };
 
-export type PolkadotPrimitivesV8AbridgedHostConfiguration = {
+export type PolkadotPrimitivesV9AbridgedHostConfiguration = {
   maxCodeSize: number;
   maxHeadDataSize: number;
   maxUpwardQueueCount: number;
@@ -6709,10 +6783,10 @@ export type PolkadotPrimitivesV8AbridgedHostConfiguration = {
   hrmpMaxMessageNumPerCandidate: number;
   validationUpgradeCooldown: number;
   validationUpgradeDelay: number;
-  asyncBackingParams: PolkadotPrimitivesV8AsyncBackingAsyncBackingParams;
+  asyncBackingParams: PolkadotPrimitivesV9AsyncBackingAsyncBackingParams;
 };
 
-export type PolkadotPrimitivesV8AsyncBackingAsyncBackingParams = {
+export type PolkadotPrimitivesV9AsyncBackingAsyncBackingParams = {
   maxCandidateDepth: number;
   allowedAncestryLen: number;
 };
@@ -6975,7 +7049,11 @@ export type PalletAssetsError =
   /**
    * The asset cannot be destroyed because some accounts for this asset contain holds.
    **/
-  | 'ContainsHolds';
+  | 'ContainsHolds'
+  /**
+   * Tried setting too many reserves.
+   **/
+  | 'TooManyReserves';
 
 /**
  * The `Error` enum of this pallet.
@@ -7707,6 +7785,10 @@ export type PalletSudoError =
   'RequireSudo';
 
 export type SpConsensusSlotsSlotDuration = bigint;
+
+export type SpRuntimeBlockLazyBlock = { header: Header; extrinsics: Array<SpRuntimeOpaqueExtrinsic> };
+
+export type SpRuntimeOpaqueExtrinsic = Bytes;
 
 export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 

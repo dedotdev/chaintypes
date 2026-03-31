@@ -15,6 +15,7 @@ import type {
 import type {
   FrameSystemDispatchEventInfo,
   FrameSupportTokensMiscBalanceStatus,
+  PaseoRuntimeRuntimeHoldReason,
   PalletBalancesUnexpectedKind,
   PalletStakingRewardDestination,
   PalletStakingValidatorPrefs,
@@ -38,10 +39,11 @@ import type {
   PalletNominationPoolsCommissionClaimPermission,
   PalletNominationPoolsClaimPermission,
   PalletStakingAsyncAhClientUnexpectedKind,
-  PolkadotPrimitivesVstagingCandidateReceiptV2,
+  PalletStakingAsyncAhClientSessionKeysUpdate,
+  PolkadotPrimitivesV9CandidateReceiptV2,
   PolkadotParachainPrimitivesPrimitivesHeadData,
-  PolkadotPrimitivesV8CoreIndex,
-  PolkadotPrimitivesV8GroupIndex,
+  PolkadotPrimitivesV9CoreIndex,
+  PolkadotPrimitivesV9GroupIndex,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
@@ -336,9 +338,19 @@ export interface ChainEvents extends GenericChainEvents {
     Minted: GenericPalletEvent<'Balances', 'Minted', { who: AccountId32; amount: bigint }>;
 
     /**
+     * Some credit was balanced and added to the TotalIssuance.
+     **/
+    MintedCredit: GenericPalletEvent<'Balances', 'MintedCredit', { amount: bigint }>;
+
+    /**
      * Some amount was burned from an account.
      **/
     Burned: GenericPalletEvent<'Balances', 'Burned', { who: AccountId32; amount: bigint }>;
+
+    /**
+     * Some debt has been dropped from the Total Issuance.
+     **/
+    BurnedDebt: GenericPalletEvent<'Balances', 'BurnedDebt', { amount: bigint }>;
 
     /**
      * Some amount was suspended from an account (it can be restored later).
@@ -389,6 +401,51 @@ export interface ChainEvents extends GenericChainEvents {
      * The `TotalIssuance` was forcefully changed.
      **/
     TotalIssuanceForced: GenericPalletEvent<'Balances', 'TotalIssuanceForced', { old: bigint; new: bigint }>;
+
+    /**
+     * Some balance was placed on hold.
+     **/
+    Held: GenericPalletEvent<
+      'Balances',
+      'Held',
+      { reason: PaseoRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Held balance was burned from an account.
+     **/
+    BurnedHeld: GenericPalletEvent<
+      'Balances',
+      'BurnedHeld',
+      { reason: PaseoRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * A transfer of `amount` on hold from `source` to `dest` was initiated.
+     **/
+    TransferOnHold: GenericPalletEvent<
+      'Balances',
+      'TransferOnHold',
+      { reason: PaseoRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * The `transferred` balance is placed on hold at the `dest` account.
+     **/
+    TransferAndHold: GenericPalletEvent<
+      'Balances',
+      'TransferAndHold',
+      { reason: PaseoRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; transferred: bigint }
+    >;
+
+    /**
+     * Some balance was released from hold.
+     **/
+    Released: GenericPalletEvent<
+      'Balances',
+      'Released',
+      { reason: PaseoRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
 
     /**
      * An unexpected/defensive event was triggered.
@@ -733,12 +790,12 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * An account has delegated their vote to another account. \[who, target\]
      **/
-    Delegated: GenericPalletEvent<'ConvictionVoting', 'Delegated', [AccountId32, AccountId32]>;
+    Delegated: GenericPalletEvent<'ConvictionVoting', 'Delegated', [AccountId32, AccountId32, number]>;
 
     /**
      * An \[account\] has cancelled a previous delegation operation.
      **/
-    Undelegated: GenericPalletEvent<'ConvictionVoting', 'Undelegated', AccountId32>;
+    Undelegated: GenericPalletEvent<'ConvictionVoting', 'Undelegated', [AccountId32, number]>;
 
     /**
      * An account has voted
@@ -746,7 +803,7 @@ export interface ChainEvents extends GenericChainEvents {
     Voted: GenericPalletEvent<
       'ConvictionVoting',
       'Voted',
-      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number }
     >;
 
     /**
@@ -755,7 +812,7 @@ export interface ChainEvents extends GenericChainEvents {
     VoteRemoved: GenericPalletEvent<
       'ConvictionVoting',
       'VoteRemoved',
-      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote }
+      { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number }
     >;
 
     /**
@@ -1219,6 +1276,8 @@ export interface ChainEvents extends GenericChainEvents {
         who: AccountId32;
         proxyType: PaseoRuntimeConstantsProxyProxyType;
         disambiguationIndex: number;
+        at: number;
+        extrinsicIndex: number;
       }
     >;
 
@@ -1869,6 +1928,25 @@ export interface ChainEvents extends GenericChainEvents {
     Unexpected: GenericPalletEvent<'StakingAhClient', 'Unexpected', PalletStakingAsyncAhClientUnexpectedKind>;
 
     /**
+     * Session keys updated for a validator.
+     **/
+    SessionKeysUpdated: GenericPalletEvent<
+      'StakingAhClient',
+      'SessionKeysUpdated',
+      { stash: AccountId32; update: PalletStakingAsyncAhClientSessionKeysUpdate }
+    >;
+
+    /**
+     * Session key update from AssetHub failed on the relay chain.
+     * Logged as an event for fail-safe observability.
+     **/
+    SessionKeysUpdateFailed: GenericPalletEvent<
+      'StakingAhClient',
+      'SessionKeysUpdateFailed',
+      { stash: AccountId32; update: PalletStakingAsyncAhClientSessionKeysUpdate; error: DispatchError }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -1884,10 +1962,10 @@ export interface ChainEvents extends GenericChainEvents {
       'ParaInclusion',
       'CandidateBacked',
       [
-        PolkadotPrimitivesVstagingCandidateReceiptV2,
+        PolkadotPrimitivesV9CandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV8CoreIndex,
-        PolkadotPrimitivesV8GroupIndex,
+        PolkadotPrimitivesV9CoreIndex,
+        PolkadotPrimitivesV9GroupIndex,
       ]
     >;
 
@@ -1898,10 +1976,10 @@ export interface ChainEvents extends GenericChainEvents {
       'ParaInclusion',
       'CandidateIncluded',
       [
-        PolkadotPrimitivesVstagingCandidateReceiptV2,
+        PolkadotPrimitivesV9CandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV8CoreIndex,
-        PolkadotPrimitivesV8GroupIndex,
+        PolkadotPrimitivesV9CoreIndex,
+        PolkadotPrimitivesV9GroupIndex,
       ]
     >;
 
@@ -1912,9 +1990,9 @@ export interface ChainEvents extends GenericChainEvents {
       'ParaInclusion',
       'CandidateTimedOut',
       [
-        PolkadotPrimitivesVstagingCandidateReceiptV2,
+        PolkadotPrimitivesV9CandidateReceiptV2,
         PolkadotParachainPrimitivesPrimitivesHeadData,
-        PolkadotPrimitivesV8CoreIndex,
+        PolkadotPrimitivesV9CoreIndex,
       ]
     >;
 
@@ -2415,7 +2493,7 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * A core has received a new assignment from the broker chain.
      **/
-    CoreAssigned: GenericPalletEvent<'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV8CoreIndex }>;
+    CoreAssigned: GenericPalletEvent<'Coretime', 'CoreAssigned', { core: PolkadotPrimitivesV9CoreIndex }>;
 
     /**
      * Generic pallet event

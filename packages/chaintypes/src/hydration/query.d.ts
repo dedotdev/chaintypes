@@ -566,6 +566,8 @@ export interface ChainStorage extends GenericChainStorage {
      *
      * @param {H256} arg
      * @param {Callback<PalletPreimageOldRequestStatus | undefined> =} callback
+     *
+     * @deprecated RequestStatusFor
      **/
     statusFor: GenericStorageQuery<(arg: H256) => PalletPreimageOldRequestStatus | undefined, H256>;
 
@@ -1628,6 +1630,14 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: number) => PalletCircuitBreakerGlobalAssetCategory | undefined,
       number
     >;
+
+    /**
+     * Per-XCM-message buffer of (withdrawn_hdx, deposited_hdx).
+     * None means buffer is inactive (not inside XCM message processing).
+     *
+     * @param {Callback<[bigint, bigint] | undefined> =} callback
+     **/
+    xcmEgressBuffer: GenericStorageQuery<() => [bigint, bigint] | undefined>;
 
     /**
      * Generic pallet storage query

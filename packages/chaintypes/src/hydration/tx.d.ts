@@ -946,6 +946,8 @@ export interface ChainTx<
      * Emits [`Event::Paid`] if successful.
      *
      * @param {number} index
+     *
+     * @deprecated The `spend_local` call will be removed by May 2025. Migrate to the new flow and use the `spend` call.
      **/
     payout: GenericTxCall<
       (index: number) => ChainSubmittableExtrinsic<
@@ -982,6 +984,8 @@ export interface ChainTx<
      * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
      *
      * @param {number} index
+     *
+     * @deprecated The `remove_approval` call will be removed by May 2025. It associated with the deprecated `spend_local` call.
      **/
     checkStatus: GenericTxCall<
       (index: number) => ChainSubmittableExtrinsic<
@@ -3115,7 +3119,7 @@ export interface ChainTx<
      * `pure` with corresponding parameters.
      *
      * - `spawner`: The account that originally called `pure` to create this account.
-     * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+     * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
      * - `proxy_type`: The proxy type originally passed to `pure`.
      * - `height`: The height of the chain when the call to `pure` was processed.
      * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
@@ -5419,6 +5423,35 @@ export interface ChainTx<
     >;
 
     /**
+     * Dispatch a call as the emergency admin account.
+     *
+     * This is a fast path for the Technical Committee to react to emergencies
+     * (e.g., pausing exploited markets) without waiting for a full referendum.
+     * The inner call is dispatched as a Signed origin from the configured
+     * emergency admin account.
+     *
+     * Parameters:
+     * - `origin`: Must satisfy `EmergencyAdminOrigin` (TC majority or Root).
+     * - `call`: The runtime call to dispatch as the emergency admin.
+     *
+     * Emits `EmergencyAdminCallDispatched` with the call hash and dispatch result.
+     *
+     * @param {HydradxRuntimeRuntimeCallLike} call
+     **/
+    dispatchAsEmergencyAdmin: GenericTxCall<
+      (call: HydradxRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Dispatcher';
+          palletCall: {
+            name: 'DispatchAsEmergencyAdmin';
+            params: { call: HydradxRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -5757,6 +5790,47 @@ export interface ChainTx<
           palletCall: {
             name: 'AddLiquidityWithLimit';
             params: { asset: number; amount: bigint; minSharesLimit: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Add all available liquidity of asset `asset` to Omnipool.
+     *
+     * Deposits the caller's entire free balance of `asset`. Equivalent to calling
+     * `do_add_liquidity` with `amount = free_balance(asset)`.
+     *
+     * Asset's tradable state must contain ADD_LIQUIDITY flag, otherwise `NotAllowed` error is returned.
+     *
+     * NFT is minted using NTFHandler which implements non-fungibles traits from frame_support.
+     *
+     * Asset weight cap must be respected, otherwise `AssetWeightExceeded` error is returned.
+     * Asset weight is ratio between new HubAsset reserve and total reserve of Hub asset in Omnipool.
+     *
+     * Fails if price difference between spot price and oracle price is higher than allowed by `PriceBarrier`.
+     *
+     * Parameters:
+     * - `asset`: The identifier of the asset to add. Must already be in the pool.
+     * - `min_shares_limit`: The minimum amount of shares the caller expects to receive in the position.
+     *
+     * Emits `LiquidityAdded` event when successful.
+     *
+     *
+     * @param {number} asset
+     * @param {bigint} minSharesLimit
+     **/
+    addAllLiquidity: GenericTxCall<
+      (
+        asset: number,
+        minSharesLimit: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Omnipool';
+          palletCall: {
+            name: 'AddAllLiquidity';
+            params: { asset: number; minSharesLimit: bigint };
           };
         },
         ChainKnownTypes
@@ -11997,6 +12071,8 @@ export interface ChainTx<
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_teleport_assets` or `transfer_assets`
      **/
     teleportAssets: GenericTxCall<
       (
@@ -12057,6 +12133,8 @@ export interface ChainTx<
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_reserve_transfer_assets` or `transfer_assets`
      **/
     reserveTransferAssets: GenericTxCall<
       (

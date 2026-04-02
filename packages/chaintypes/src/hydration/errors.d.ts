@@ -915,6 +915,26 @@ export interface ChainErrors extends GenericChainErrors {
     BidTooLow: GenericPalletError;
 
     /**
+     * No metadata is found.
+     **/
+    NoMetadata: GenericPalletError;
+
+    /**
+     * Wrong metadata key/value bytes supplied.
+     **/
+    WrongMetadata: GenericPalletError;
+
+    /**
+     * An attribute is not found.
+     **/
+    AttributeNotFound: GenericPalletError;
+
+    /**
+     * Wrong attribute key/value bytes supplied.
+     **/
+    WrongAttribute: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1196,6 +1216,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Aave - there is not enough collateral to cover a new borrow
      **/
     CollateralCannotCoverNewBorrow: GenericPalletError;
+
+    /**
+     * Aave - the reserve is paused and no operations are allowed
+     **/
+    AaveReservePaused: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3087,9 +3112,9 @@ export interface ChainErrors extends GenericChainErrors {
     GasLimitTooLow: GenericPalletError;
 
     /**
-     * Gas limit is too high.
+     * Gas limit exceeds block gas limit.
      **/
-    GasLimitTooHigh: GenericPalletError;
+    GasLimitExceedsBlockLimit: GenericPalletError;
 
     /**
      * The chain id is invalid.
@@ -3120,6 +3145,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Address not allowed to deploy contracts either via CREATE or CALL(CREATE).
      **/
     CreateOriginNotAllowed: GenericPalletError;
+
+    /**
+     * EIP-7825: Transaction gas limit exceeds protocol cap (2^24).
+     **/
+    TransactionGasLimitExceedsCap: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3740,6 +3770,8 @@ export interface ChainErrors extends GenericChainErrors {
 
     /**
      * Too many locations authorized to alias origin.
+     *
+     * @deprecated Use `LocalExecutionIncompleteWithError` instead (since 20.0.0)
      **/
     TooManyAuthorizedAliases: GenericPalletError;
 
@@ -3752,6 +3784,12 @@ export interface ChainErrors extends GenericChainErrors {
      * The alias to remove authorization for was not found.
      **/
     AliasNotFound: GenericPalletError;
+
+    /**
+     * Local XCM execution incomplete with the actual XCM error and the index of the
+     * instruction that caused the error.
+     **/
+    LocalExecutionIncompleteWithError: GenericPalletError;
 
     /**
      * Generic pallet error

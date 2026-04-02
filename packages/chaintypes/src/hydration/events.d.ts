@@ -879,6 +879,15 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * A pure proxy was killed by its spawner.
+     **/
+    PureKilled: GenericPalletEvent<
+      'Proxy',
+      'PureKilled',
+      { pure: AccountId32; spawner: AccountId32; proxyType: HydradxRuntimeSystemProxyType; disambiguationIndex: number }
+    >;
+
+    /**
      * An announcement was placed to make a call in the future.
      **/
     Announced: GenericPalletEvent<'Proxy', 'Announced', { real: AccountId32; proxy: AccountId32; callHash: H256 }>;
@@ -1594,6 +1603,11 @@ export interface ChainEvents extends GenericChainEvents {
     AaveManagerCallDispatched: GenericPalletEvent<
       'Dispatcher',
       'AaveManagerCallDispatched',
+      { callHash: H256; result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo> }
+    >;
+    EmergencyAdminCallDispatched: GenericPalletEvent<
+      'Dispatcher',
+      'EmergencyAdminCallDispatched',
       { callHash: H256; result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo> }
     >;
 
@@ -4495,6 +4509,12 @@ export interface ChainEvents extends GenericChainEvents {
      * block number as the type might suggest.
      **/
     NewSession: GenericPalletEvent<'Session', 'NewSession', { sessionIndex: number }>;
+
+    /**
+     * The `NewSession` event in the current block also implies a new validator set to be
+     * queued.
+     **/
+    NewQueued: GenericPalletEvent<'Session', 'NewQueued', null>;
 
     /**
      * Validator has been disabled.

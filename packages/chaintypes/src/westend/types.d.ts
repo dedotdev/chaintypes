@@ -6953,11 +6953,14 @@ export type PolkadotPrimitivesV9ExecutorParamsExecutorParam =
   | { type: 'PrecheckingMaxMemory'; value: bigint }
   | { type: 'PvfPrepTimeout'; value: [PolkadotPrimitivesV9PvfPrepKind, bigint] }
   | { type: 'PvfExecTimeout'; value: [PolkadotPrimitivesV9PvfExecKind, bigint] }
-  | { type: 'WasmExtBulkMemory' };
+  | { type: 'WasmExtBulkMemory' }
+  | { type: 'EnabledHostFunction'; value: PolkadotPrimitivesV9ExecutorParamsExecutorHostFunction };
 
 export type PolkadotPrimitivesV9PvfPrepKind = 'Precheck' | 'Prepare';
 
 export type PolkadotPrimitivesV9PvfExecKind = 'Backing' | 'Approval';
+
+export type PolkadotPrimitivesV9ExecutorParamsExecutorHostFunction = 'EccRfc163';
 
 export type PolkadotPrimitivesV9ApprovalVotingParams = { maxApprovalCoalesceCount: number };
 

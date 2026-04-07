@@ -20,6 +20,7 @@ export type ChainJsonRpcApis = Pick<
   | 'author_pendingExtrinsics'
   | 'author_removeExtrinsic'
   | 'author_rotateKeys'
+  | 'author_rotateKeysWithOwner'
   | 'author_submitAndWatchExtrinsic'
   | 'author_submitExtrinsic'
   | 'babe_epochAuthorship'

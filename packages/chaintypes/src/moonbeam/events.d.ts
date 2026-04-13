@@ -2423,24 +2423,6 @@ export interface ChainEvents extends GenericChainEvents {
     TransactInfoRemoved: GenericPalletEvent<'XcmTransactor', 'TransactInfoRemoved', { location: StagingXcmV5Location }>;
 
     /**
-     * Set dest fee per second
-     **/
-    DestFeePerSecondChanged: GenericPalletEvent<
-      'XcmTransactor',
-      'DestFeePerSecondChanged',
-      { location: StagingXcmV5Location; feePerSecond: bigint }
-    >;
-
-    /**
-     * Remove dest fee per second
-     **/
-    DestFeePerSecondRemoved: GenericPalletEvent<
-      'XcmTransactor',
-      'DestFeePerSecondRemoved',
-      { location: StagingXcmV5Location }
-    >;
-
-    /**
      * HRMP manage action succesfully sent
      **/
     HrmpManagementSent: GenericPalletEvent<
@@ -2622,6 +2604,24 @@ export interface ChainEvents extends GenericChainEvents {
      * Tokens have been locked for asset creation
      **/
     TokensLocked: GenericPalletEvent<'EvmForeignAssets', 'TokensLocked', [AccountId20, bigint, U256]>;
+
+    /**
+     * A deposit was recorded as pending because the asset is frozen
+     **/
+    PendingDepositRecorded: GenericPalletEvent<
+      'EvmForeignAssets',
+      'PendingDepositRecorded',
+      { assetId: bigint; beneficiary: H160; amount: U256; totalPending: U256 }
+    >;
+
+    /**
+     * A pending deposit was claimed and minted
+     **/
+    PendingDepositClaimed: GenericPalletEvent<
+      'EvmForeignAssets',
+      'PendingDepositClaimed',
+      { assetId: bigint; beneficiary: H160; amount: U256 }
+    >;
 
     /**
      * Generic pallet event

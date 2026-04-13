@@ -2118,18 +2118,6 @@ export interface ChainStorage extends GenericChainStorage {
     >;
 
     /**
-     * Stores the fee per second for an asset in its reserve chain. This allows us to convert
-     * from weight to fee
-     *
-     * @param {StagingXcmV5Location} arg
-     * @param {Callback<bigint | undefined> =} callback
-     **/
-    destinationAssetFeePerSecond: GenericStorageQuery<
-      (arg: StagingXcmV5Location) => bigint | undefined,
-      StagingXcmV5Location
-    >;
-
-    /**
      * Stores the indices of relay chain pallets
      *
      * @param {Callback<PalletXcmTransactorRelayIndicesRelayChainIndices> =} callback
@@ -2246,6 +2234,15 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: bigint) => PalletMoonbeamForeignAssetsAssetDepositDetails | undefined,
       bigint
     >;
+
+    /**
+     * Pending deposits for frozen assets, keyed by (asset_id, beneficiary).
+     * Deposits for the same (asset_id, beneficiary) accumulate via checked_add.
+     *
+     * @param {[bigint, H160]} arg
+     * @param {Callback<U256 | undefined> =} callback
+     **/
+    pendingDeposits: GenericStorageQuery<(arg: [bigint, H160]) => U256 | undefined, [bigint, H160]>;
 
     /**
      * Generic pallet storage query

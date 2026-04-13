@@ -6132,7 +6132,7 @@ export interface ChainTx<
     >;
 
     /**
-     * Transact the call through the a signed origin in this chain
+     * Transact the call through a signed origin in this chain
      * that should be converted to a transaction dispatch account in the destination chain
      * by any method implemented in the destination chains runtime
      *
@@ -6163,46 +6163,6 @@ export interface ChainTx<
               weightInfo: PalletXcmTransactorTransactWeights;
               refund: boolean;
             };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the fee per second of an asset on its reserve chain
-     *
-     * @param {XcmVersionedLocation} assetLocation
-     * @param {bigint} feePerSecond
-     **/
-    setFeePerSecond: GenericTxCall<
-      (
-        assetLocation: XcmVersionedLocation,
-        feePerSecond: bigint,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'XcmTransactor';
-          palletCall: {
-            name: 'SetFeePerSecond';
-            params: { assetLocation: XcmVersionedLocation; feePerSecond: bigint };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove the fee per second of an asset on its reserve chain
-     *
-     * @param {XcmVersionedLocation} assetLocation
-     **/
-    removeFeePerSecond: GenericTxCall<
-      (assetLocation: XcmVersionedLocation) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'XcmTransactor';
-          palletCall: {
-            name: 'RemoveFeePerSecond';
-            params: { assetLocation: XcmVersionedLocation };
           };
         },
         ChainKnownTypes
@@ -6529,6 +6489,30 @@ export interface ChainTx<
           palletCall: {
             name: 'UnfreezeForeignAsset';
             params: { assetId: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Claim a pending deposit for a given asset and beneficiary.
+     * Callable by any signed origin (permissionless). Tokens are minted to the
+     * beneficiary, not the caller. Requires the asset to be active (unfrozen).
+     *
+     * @param {bigint} assetId
+     * @param {H160} beneficiary
+     **/
+    claimPendingDeposit: GenericTxCall<
+      (
+        assetId: bigint,
+        beneficiary: H160,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EvmForeignAssets';
+          palletCall: {
+            name: 'ClaimPendingDeposit';
+            params: { assetId: bigint; beneficiary: H160 };
           };
         },
         ChainKnownTypes

@@ -7149,7 +7149,7 @@ export type PalletXcmTransactorCall =
    **/
   | { name: 'RemoveTransactInfo'; params: { location: XcmVersionedLocation } }
   /**
-   * Transact the call through the a signed origin in this chain
+   * Transact the call through a signed origin in this chain
    * that should be converted to a transaction dispatch account in the destination chain
    * by any method implemented in the destination chains runtime
    *
@@ -7165,14 +7165,6 @@ export type PalletXcmTransactorCall =
         refund: boolean;
       };
     }
-  /**
-   * Set the fee per second of an asset on its reserve chain
-   **/
-  | { name: 'SetFeePerSecond'; params: { assetLocation: XcmVersionedLocation; feePerSecond: bigint } }
-  /**
-   * Remove the fee per second of an asset on its reserve chain
-   **/
-  | { name: 'RemoveFeePerSecond'; params: { assetLocation: XcmVersionedLocation } }
   /**
    * Manage HRMP operations
    **/
@@ -7255,7 +7247,7 @@ export type PalletXcmTransactorCallLike =
    **/
   | { name: 'RemoveTransactInfo'; params: { location: XcmVersionedLocation } }
   /**
-   * Transact the call through the a signed origin in this chain
+   * Transact the call through a signed origin in this chain
    * that should be converted to a transaction dispatch account in the destination chain
    * by any method implemented in the destination chains runtime
    *
@@ -7271,14 +7263,6 @@ export type PalletXcmTransactorCallLike =
         refund: boolean;
       };
     }
-  /**
-   * Set the fee per second of an asset on its reserve chain
-   **/
-  | { name: 'SetFeePerSecond'; params: { assetLocation: XcmVersionedLocation; feePerSecond: bigint } }
-  /**
-   * Remove the fee per second of an asset on its reserve chain
-   **/
-  | { name: 'RemoveFeePerSecond'; params: { assetLocation: XcmVersionedLocation } }
   /**
    * Manage HRMP operations
    **/
@@ -7544,7 +7528,13 @@ export type PalletMoonbeamForeignAssetsCall =
   /**
    * Unfreeze a given foreign assetId
    **/
-  | { name: 'UnfreezeForeignAsset'; params: { assetId: bigint } };
+  | { name: 'UnfreezeForeignAsset'; params: { assetId: bigint } }
+  /**
+   * Claim a pending deposit for a given asset and beneficiary.
+   * Callable by any signed origin (permissionless). Tokens are minted to the
+   * beneficiary, not the caller. Requires the asset to be active (unfrozen).
+   **/
+  | { name: 'ClaimPendingDeposit'; params: { assetId: bigint; beneficiary: H160 } };
 
 export type PalletMoonbeamForeignAssetsCallLike =
   /**
@@ -7573,7 +7563,13 @@ export type PalletMoonbeamForeignAssetsCallLike =
   /**
    * Unfreeze a given foreign assetId
    **/
-  | { name: 'UnfreezeForeignAsset'; params: { assetId: bigint } };
+  | { name: 'UnfreezeForeignAsset'; params: { assetId: bigint } }
+  /**
+   * Claim a pending deposit for a given asset and beneficiary.
+   * Callable by any signed origin (permissionless). Tokens are minted to the
+   * beneficiary, not the caller. Requires the asset to be active (unfrozen).
+   **/
+  | { name: 'ClaimPendingDeposit'; params: { assetId: bigint; beneficiary: H160 } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -8789,14 +8785,6 @@ export type PalletXcmTransactorEvent =
    **/
   | { name: 'TransactInfoRemoved'; data: { location: StagingXcmV5Location } }
   /**
-   * Set dest fee per second
-   **/
-  | { name: 'DestFeePerSecondChanged'; data: { location: StagingXcmV5Location; feePerSecond: bigint } }
-  /**
-   * Remove dest fee per second
-   **/
-  | { name: 'DestFeePerSecondRemoved'; data: { location: StagingXcmV5Location } }
-  /**
    * HRMP manage action succesfully sent
    **/
   | { name: 'HrmpManagementSent'; data: { action: PalletXcmTransactorHrmpOperation } };
@@ -8953,7 +8941,15 @@ export type PalletMoonbeamForeignAssetsEvent =
   /**
    * Tokens have been locked for asset creation
    **/
-  | { name: 'TokensLocked'; data: [AccountId20, bigint, U256] };
+  | { name: 'TokensLocked'; data: [AccountId20, bigint, U256] }
+  /**
+   * A deposit was recorded as pending because the asset is frozen
+   **/
+  | { name: 'PendingDepositRecorded'; data: { assetId: bigint; beneficiary: H160; amount: U256; totalPending: U256 } }
+  /**
+   * A pending deposit was claimed and minted
+   **/
+  | { name: 'PendingDepositClaimed'; data: { assetId: bigint; beneficiary: H160; amount: U256 } };
 
 /**
  * The `Event` enum of this pallet
@@ -10304,9 +10300,9 @@ export type PalletEvmError =
    **/
   | 'GasLimitTooLow'
   /**
-   * Gas limit is too high.
+   * Gas limit exceeds block gas limit.
    **/
-  | 'GasLimitTooHigh'
+  | 'GasLimitExceedsBlockLimit'
   /**
    * The chain id is invalid.
    **/
@@ -10330,7 +10326,11 @@ export type PalletEvmError =
   /**
    * Address not allowed to deploy contracts either via CREATE or CALL(CREATE).
    **/
-  | 'CreateOriginNotAllowed';
+  | 'CreateOriginNotAllowed'
+  /**
+   * EIP-7825: Transaction gas limit exceeds protocol cap (2^24).
+   **/
+  | 'TransactionGasLimitExceedsCap';
 
 export type FpRpcTransactionStatus = {
   transactionHash: H256;
@@ -11193,7 +11193,6 @@ export type PalletXcmTransactorError =
   | 'BadVersion'
   | 'MaxWeightTransactReached'
   | 'UnableToWithdrawAsset'
-  | 'FeePerSecondNotSet'
   | 'SignedTransactNotAllowedForDestination'
   | 'FailedMultiLocationToJunction'
   | 'HrmpHandlerNotImplemented'
@@ -11312,6 +11311,8 @@ export type PalletMoonbeamForeignAssetsError =
   | 'InvalidSymbol'
   | 'InvalidTokenName'
   | 'LocationAlreadyExists'
+  | 'NoPendingDeposit'
+  | 'AssetNotActive'
   | 'TooManyForeignAssets';
 
 /**

@@ -1130,6 +1130,13 @@ export interface RuntimeApis extends GenericRuntimeApis {
     blockGasLimit: GenericRuntimeApiMethod<() => Promise<U256>>;
 
     /**
+     * Returns the block gas limit as calculated from the weights.
+     *
+     * @callname: ReviveApi_max_extrinsic_weight_in_gas
+     **/
+    maxExtrinsicWeightInGas: GenericRuntimeApiMethod<() => Promise<U256>>;
+
+    /**
      * Returns the free balance of the given `[H160]` address, using EVM decimals.
      *
      * @callname: ReviveApi_balance
@@ -1231,6 +1238,24 @@ export interface RuntimeApis extends GenericRuntimeApis {
         tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
         config: PalletReviveEvmApiRpcTypesDryRunConfig,
       ) => Promise<Result<PalletRevivePrimitivesEthTransactInfo, PalletRevivePrimitivesEthTransactError>>
+    >;
+
+    /**
+     * Estimates the amount of gas that a transactions requires.
+     *
+     * This function estimates the gas of the transaction according to the same binary search
+     * algorithm that's implemented in Geth. It stops when with an acceptable error ratio of
+     * 1.5% so that the algorithm terminates early.
+     *
+     * @callname: ReviveApi_eth_estimate_gas
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
+     * @param {PalletReviveEvmApiRpcTypesDryRunConfig} config
+     **/
+    ethEstimateGas: GenericRuntimeApiMethod<
+      (
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+        config: PalletReviveEvmApiRpcTypesDryRunConfig,
+      ) => Promise<Result<U256, PalletRevivePrimitivesEthTransactError>>
     >;
 
     /**

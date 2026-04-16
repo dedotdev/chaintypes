@@ -2807,50 +2807,6 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
-   * Pallet `MetaTx`'s errors
-   **/
-  metaTx: {
-    /**
-     * Invalid proof (e.g. signature).
-     **/
-    BadProof: GenericPalletError;
-
-    /**
-     * The meta transaction is not yet valid (e.g. nonce too high).
-     **/
-    Future: GenericPalletError;
-
-    /**
-     * The meta transaction is outdated (e.g. nonce too low).
-     **/
-    Stale: GenericPalletError;
-
-    /**
-     * The meta transactions's birth block is ancient.
-     **/
-    AncientBirthBlock: GenericPalletError;
-
-    /**
-     * The transaction extension did not authorize any origin.
-     **/
-    UnknownOrigin: GenericPalletError;
-
-    /**
-     * The meta transaction is invalid.
-     **/
-    Invalid: GenericPalletError;
-
-    /**
-     * The meta transaction length is invalid.
-     **/
-    InvalidLength: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
    * Pallet `RootOffences`'s errors
    **/
   rootOffences: {

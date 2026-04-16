@@ -34,10 +34,15 @@ import type {
   PalletMultisigTimepoint,
   AssetHubWestendRuntimeProxyType,
   PalletProxyDepositKind,
+  FrameSupportDispatchPostDispatchInfo,
+  SpRuntimeDispatchErrorWithPostInfo,
+  AssetHubWestendRuntimeRuntimeParametersKey,
+  AssetHubWestendRuntimeRuntimeParametersValue,
   PalletNftsAttributeNamespace,
   PalletNftsPriceWithDirection,
   PalletNftsPalletAttributes,
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
+  PalletPsmCircuitBreakerLevel,
   PalletStateTrieMigrationMigrationCompute,
   PalletStateTrieMigrationError,
   PalletStakingAsyncRewardDestination,
@@ -55,10 +60,9 @@ import type {
   PalletConvictionVotingVoteAccountVote,
   FrameSupportPreimagesBounded,
   PalletConvictionVotingTally,
-  FrameSupportDispatchPostDispatchInfo,
-  SpRuntimeDispatchErrorWithPostInfo,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   ParachainsCommonPayVersionedLocatableAccount,
+  PalletDapUnexpectedKind,
 } from './types.js';
 
 export interface ChainEvents extends GenericChainEvents {
@@ -1593,6 +1597,62 @@ export interface ChainEvents extends GenericChainEvents {
       'Indices',
       'DepositPoked',
       { who: AccountId32; index: number; oldDeposit: bigint; newDeposit: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `MetaTx`'s events
+   **/
+  metaTx: {
+    /**
+     * A meta transaction has been dispatched.
+     *
+     * Contains the dispatch result of the meta transaction along with post-dispatch
+     * information.
+     **/
+    Dispatched: GenericPalletEvent<
+      'MetaTx',
+      'Dispatched',
+      { result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo> }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Parameters`'s events
+   **/
+  parameters: {
+    /**
+     * A Parameter was set.
+     *
+     * Is also emitted when the value was not changed.
+     **/
+    Updated: GenericPalletEvent<
+      'Parameters',
+      'Updated',
+      {
+        /**
+         * The key that was updated.
+         **/
+        key: AssetHubWestendRuntimeRuntimeParametersKey;
+
+        /**
+         * The old value before this call.
+         **/
+        oldValue?: AssetHubWestendRuntimeRuntimeParametersValue | undefined;
+
+        /**
+         * The new value after this call.
+         **/
+        newValue?: AssetHubWestendRuntimeRuntimeParametersValue | undefined;
+      }
     >;
 
     /**
@@ -3323,6 +3383,88 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `Psm`'s events
+   **/
+  psm: {
+    /**
+     * User swapped external stablecoin for pUSD.
+     **/
+    Minted: GenericPalletEvent<
+      'Psm',
+      'Minted',
+      { who: AccountId32; assetId: number; externalAmount: bigint; pusdReceived: bigint; fee: bigint }
+    >;
+
+    /**
+     * User swapped pUSD for external stablecoin.
+     **/
+    Redeemed: GenericPalletEvent<
+      'Psm',
+      'Redeemed',
+      { who: AccountId32; assetId: number; pusdPaid: bigint; externalReceived: bigint; fee: bigint }
+    >;
+
+    /**
+     * Minting fee updated for an asset by governance.
+     **/
+    MintingFeeUpdated: GenericPalletEvent<
+      'Psm',
+      'MintingFeeUpdated',
+      { assetId: number; oldValue: Permill; newValue: Permill }
+    >;
+
+    /**
+     * Redemption fee updated for an asset by governance.
+     **/
+    RedemptionFeeUpdated: GenericPalletEvent<
+      'Psm',
+      'RedemptionFeeUpdated',
+      { assetId: number; oldValue: Permill; newValue: Permill }
+    >;
+
+    /**
+     * Max PSM debt ratio updated by governance.
+     **/
+    MaxPsmDebtOfTotalUpdated: GenericPalletEvent<
+      'Psm',
+      'MaxPsmDebtOfTotalUpdated',
+      { oldValue: Permill; newValue: Permill }
+    >;
+
+    /**
+     * Per-asset debt ceiling weight updated by governance.
+     **/
+    AssetCeilingWeightUpdated: GenericPalletEvent<
+      'Psm',
+      'AssetCeilingWeightUpdated',
+      { assetId: number; oldValue: Permill; newValue: Permill }
+    >;
+
+    /**
+     * Per-asset circuit breaker status updated.
+     **/
+    AssetStatusUpdated: GenericPalletEvent<
+      'Psm',
+      'AssetStatusUpdated',
+      { assetId: number; status: PalletPsmCircuitBreakerLevel }
+    >;
+
+    /**
+     * An external asset was added to the approved list.
+     **/
+    ExternalAssetAdded: GenericPalletEvent<'Psm', 'ExternalAssetAdded', { assetId: number }>;
+
+    /**
+     * An external asset was removed from the approved list.
+     **/
+    ExternalAssetRemoved: GenericPalletEvent<'Psm', 'ExternalAssetRemoved', { assetId: number }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `StateTrieMigration`'s events
    **/
   stateTrieMigration: {
@@ -3361,8 +3503,11 @@ export interface ChainEvents extends GenericChainEvents {
    **/
   staking: {
     /**
-     * The era payout has been set; the first balance is the validator-payout; the second is
-     * the remainder from the maximum amount of reward.
+     * The era payout has been set.
+     *
+     * In non-minting mode, `validator_payout` is the staker reward budget
+     * snapshotted from the general pot, and `remainder` is always zero.
+     * In legacy minting mode, both fields reflect the `EraPayout` computation.
      **/
     EraPaid: GenericPalletEvent<'Staking', 'EraPaid', { eraIndex: number; validatorPayout: bigint; remainder: bigint }>;
 
@@ -4620,6 +4765,53 @@ export interface ChainEvents extends GenericChainEvents {
       'Paid',
       { index: number; childIndex?: number | undefined; paymentId: bigint }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Dap`'s events
+   **/
+  dap: {
+    /**
+     * Inflation dripped and distributed to budget recipients.
+     **/
+    IssuanceMinted: GenericPalletEvent<
+      'Dap',
+      'IssuanceMinted',
+      {
+        /**
+         * Total amount minted in this drip.
+         **/
+        totalMinted: bigint;
+
+        /**
+         * Elapsed time (ms) since last drip.
+         **/
+        elapsedMillis: bigint;
+      }
+    >;
+
+    /**
+     * Budget allocation was updated via governance.
+     **/
+    BudgetAllocationUpdated: GenericPalletEvent<
+      'Dap',
+      'BudgetAllocationUpdated',
+      {
+        /**
+         * The new budget allocation map.
+         **/
+        allocations: Array<[Bytes, Perbill]>;
+      }
+    >;
+
+    /**
+     * An unexpected/defensive event was triggered.
+     **/
+    Unexpected: GenericPalletEvent<'Dap', 'Unexpected', PalletDapUnexpectedKind>;
 
     /**
      * Generic pallet event

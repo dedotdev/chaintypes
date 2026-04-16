@@ -616,6 +616,33 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `MetaTx`'s constants
+   **/
+  metaTx: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `VerifySignature`'s constants
+   **/
+  verifySignature: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `Parameters`'s constants
+   **/
+  parameters: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Assets`'s constants
    **/
   assets: {
@@ -1077,6 +1104,16 @@ export interface ChainConsts extends GenericChainConsts {
     debugEnabled: boolean;
 
     /**
+     * When enabled, accounts are automatically mapped on creation and unmapped on
+     * kill via [`AutoMapper`]. This removes the need for explicit `map_account` calls.
+     *
+     * Requires `frame_system::Config::OnNewAccount` and `OnKilledAccount` to be set
+     * to [`AutoMapper`]. When enabled, the `map_account` and `unmap_account`
+     * dispatchables are disabled.
+     **/
+    autoMap: boolean;
+
+    /**
      * This determines the relative scale of our gas price and gas estimates.
      *
      * By default, the gas price (in wei) is `FeeInfo::next_fee_multiplier()` multiplied by
@@ -1142,6 +1179,39 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `VestingPrecompiles`'s constants
+   **/
+  vestingPrecompiles: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `Psm`'s constants
+   **/
+  psm: {
+    /**
+     * PalletId for deriving the PSM account.
+     **/
+    palletId: FrameSupportPalletId;
+
+    /**
+     * Minimum swap amount.
+     **/
+    minSwapAmount: bigint;
+
+    /**
+     * Maximum number of approved external assets.
+     **/
+    maxExternalAssets: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `StateTrieMigration`'s constants
    **/
   stateTrieMigration: {
@@ -1166,7 +1236,7 @@ export interface ChainConsts extends GenericChainConsts {
      * - [`frame_support::storage::StorageDoubleMap`]: 96 byte
      *
      * For more info see
-     * <https://www.shawntabrizi.com/blog/substrate/querying-substrate-storage-via-rpc/>
+     * <https://www.shawntabrizi.com/blog/interacting-with-the-substrate-rpc-endpoint/>
      **/
     maxKeyLen: number;
 
@@ -1249,6 +1319,20 @@ export interface ChainConsts extends GenericChainConsts {
     slashDeferDuration: number;
 
     /**
+     * When `true`, staking does not mint. It expects an external source to fund
+     * the general reward pot. At era boundary, rewards are snapshotted from
+     * the pot. `EraPayout` is not called.
+     *
+     * When `false`, staking uses the legacy path: `EraPayout` computes inflation,
+     * tokens are minted on-the-fly during payout.
+     *
+     * **Irreversible**: once set to `true`, must never be switched back. Eras
+     * created in non-minting mode have funded reward pots — switching to legacy
+     * would orphan those pots and cause double-minting.
+     **/
+    disableMinting: boolean;
+
+    /**
      * The maximum size of each `T::ExposurePage`.
      *
      * An `ExposurePage` is weakly bounded to a maximum of `MaxExposurePageSize`
@@ -1294,6 +1378,8 @@ export interface ChainConsts extends GenericChainConsts {
      *
      * Example: For an ideal era duration of 24 hours (86,400,000 ms),
      * this can be set to 604,800,000 ms (7 days).
+     *
+     * Only used in legacy minting mode (`DisableMinting = false`).
      **/
     maxEraDuration: bigint;
 
@@ -1702,11 +1788,27 @@ export interface ChainConsts extends GenericChainConsts {
   dap: {
     /**
      * The pallet ID used to derive the buffer account.
-     *
-     * Each runtime should configure a unique ID to avoid collisions if multiple
-     * DAP instances are used.
      **/
     palletId: FrameSupportPalletId;
+
+    /**
+     * Minimum elapsed time (ms) between issuance drips.
+     *
+     * - `0` = drip every block
+     * - `60_000` = drip every minute (Recommended)
+     *
+     * Should be small relative to era length.
+     **/
+    issuanceCadence: bigint;
+
+    /**
+     * Safety ceiling: maximum elapsed time (ms) considered in a single drip.
+     *
+     * If more time has passed than this, elapsed is clamped to this value.
+     * Prevents accidental over-minting from bugs, misconfiguration, or long
+     * periods without blocks.
+     **/
+    maxElapsedPerDrip: bigint;
 
     /**
      * Generic pallet constant

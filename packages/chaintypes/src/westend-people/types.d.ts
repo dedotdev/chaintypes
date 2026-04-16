@@ -11,8 +11,8 @@ import type {
   AccountId32Like,
   FixedBytes,
   FixedArray,
-  Data,
   Era,
+  Data,
   Phase,
   DispatchError,
   Result,
@@ -35,6 +35,7 @@ export type PeopleWestendRuntimeRuntimeCall =
   | { pallet: 'Utility'; palletCall: PalletUtilityCall }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
   | { pallet: 'Proxy'; palletCall: PalletProxyCall }
+  | { pallet: 'MetaTx'; palletCall: PalletMetaTxCall }
   | { pallet: 'Identity'; palletCall: PalletIdentityCall }
   | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCall }
   | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCall };
@@ -54,6 +55,7 @@ export type PeopleWestendRuntimeRuntimeCallLike =
   | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
   | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
   | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
+  | { pallet: 'MetaTx'; palletCall: PalletMetaTxCallLike }
   | { pallet: 'Identity'; palletCall: PalletIdentityCallLike }
   | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCallLike }
   | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCallLike };
@@ -3346,6 +3348,73 @@ export type PeopleWestendRuntimeProxyType =
   | 'Collator';
 
 /**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletMetaTxCall =
+  /**
+   * Dispatch a given meta transaction.
+   *
+   * - `_origin`: Can be any kind of origin.
+   * - `meta_tx`: Meta Transaction with a target call to be dispatched.
+   * - `meta_tx_encoded_len`: The size of the encoded meta transaction in bytes.
+   **/
+  { name: 'Dispatch'; params: { metaTx: PalletMetaTxMetaTx; metaTxEncodedLen: number } };
+
+export type PalletMetaTxCallLike =
+  /**
+   * Dispatch a given meta transaction.
+   *
+   * - `_origin`: Can be any kind of origin.
+   * - `meta_tx`: Meta Transaction with a target call to be dispatched.
+   * - `meta_tx_encoded_len`: The size of the encoded meta transaction in bytes.
+   **/
+  { name: 'Dispatch'; params: { metaTx: PalletMetaTxMetaTx; metaTxEncodedLen: number } };
+
+export type PalletMetaTxMetaTx = {
+  call: PeopleWestendRuntimeRuntimeCall;
+  extensionVersion: number;
+  extension: [
+    PalletVerifySignatureExtensionVerifySignature,
+    PalletMetaTxExtensionMetaTxMarker,
+    FrameSystemExtensionsCheckNonZeroSender,
+    FrameSystemExtensionsCheckSpecVersion,
+    FrameSystemExtensionsCheckTxVersion,
+    FrameSystemExtensionsCheckGenesis,
+    FrameSystemExtensionsCheckMortality,
+    FrameSystemExtensionsCheckNonce,
+    FrameMetadataHashExtensionCheckMetadataHash,
+  ];
+};
+
+export type PalletVerifySignatureExtensionVerifySignature =
+  | { type: 'Signed'; value: { signature: SpRuntimeMultiSignature; account: AccountId32 } }
+  | { type: 'Disabled' };
+
+export type SpRuntimeMultiSignature =
+  | { type: 'Ed25519'; value: FixedBytes<64> }
+  | { type: 'Sr25519'; value: FixedBytes<64> }
+  | { type: 'Ecdsa'; value: FixedBytes<65> }
+  | { type: 'Eth'; value: FixedBytes<65> };
+
+export type PalletMetaTxExtensionMetaTxMarker = {};
+
+export type FrameSystemExtensionsCheckNonZeroSender = {};
+
+export type FrameSystemExtensionsCheckSpecVersion = {};
+
+export type FrameSystemExtensionsCheckTxVersion = {};
+
+export type FrameSystemExtensionsCheckGenesis = {};
+
+export type FrameSystemExtensionsCheckMortality = Era;
+
+export type FrameSystemExtensionsCheckNonce = number;
+
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
+
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
+
+/**
  * Identity pallet declaration.
  **/
 export type PalletIdentityCall =
@@ -3876,12 +3945,6 @@ export type PalletIdentityJudgement =
   | { type: 'LowQuality' }
   | { type: 'Erroneous' };
 
-export type SpRuntimeMultiSignature =
-  | { type: 'Ed25519'; value: FixedBytes<64> }
-  | { type: 'Sr25519'; value: FixedBytes<64> }
-  | { type: 'Ecdsa'; value: FixedBytes<65> }
-  | { type: 'Eth'; value: FixedBytes<65> };
-
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
@@ -3998,25 +4061,9 @@ export type PolkadotRuntimeCommonIdentityMigratorPalletCallLike =
 
 export type FrameSystemExtensionsAuthorizeCall = {};
 
-export type FrameSystemExtensionsCheckNonZeroSender = {};
-
-export type FrameSystemExtensionsCheckSpecVersion = {};
-
-export type FrameSystemExtensionsCheckTxVersion = {};
-
-export type FrameSystemExtensionsCheckGenesis = {};
-
-export type FrameSystemExtensionsCheckMortality = Era;
-
-export type FrameSystemExtensionsCheckNonce = number;
-
 export type FrameSystemExtensionsCheckWeight = {};
 
 export type PalletTransactionPaymentChargeTransactionPayment = bigint;
-
-export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
-
-export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
 export type FrameSystemAccountInfo = {
   nonce: number;
@@ -4057,6 +4104,7 @@ export type PeopleWestendRuntimeRuntimeEvent =
   | { pallet: 'Utility'; palletEvent: PalletUtilityEvent }
   | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
   | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
+  | { pallet: 'MetaTx'; palletEvent: PalletMetaTxEvent }
   | { pallet: 'Identity'; palletEvent: PalletIdentityEvent }
   | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent }
   | { pallet: 'IdentityMigrator'; palletEvent: PolkadotRuntimeCommonIdentityMigratorPalletEvent };
@@ -4915,6 +4963,31 @@ export type PalletProxyEvent =
     };
 
 export type PalletProxyDepositKind = 'Proxies' | 'Announcements';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletMetaTxEvent =
+  /**
+   * A meta transaction has been dispatched.
+   *
+   * Contains the dispatch result of the meta transaction along with post-dispatch
+   * information.
+   **/
+  {
+    name: 'Dispatched';
+    data: { result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo> };
+  };
+
+export type FrameSupportDispatchPostDispatchInfo = {
+  actualWeight?: SpWeightsWeightV2Weight | undefined;
+  paysFee: FrameSupportDispatchPays;
+};
+
+export type SpRuntimeDispatchErrorWithPostInfo = {
+  postInfo: FrameSupportDispatchPostDispatchInfo;
+  error: DispatchError;
+};
 
 /**
  * The `Event` enum of this pallet
@@ -5973,6 +6046,39 @@ export type PalletProxyError =
    **/
   | 'NoSelfProxy';
 
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletMetaTxError =
+  /**
+   * Invalid proof (e.g. signature).
+   **/
+  | 'BadProof'
+  /**
+   * The meta transaction is not yet valid (e.g. nonce too high).
+   **/
+  | 'Future'
+  /**
+   * The meta transaction is outdated (e.g. nonce too low).
+   **/
+  | 'Stale'
+  /**
+   * The meta transactions's birth block is ancient.
+   **/
+  | 'AncientBirthBlock'
+  /**
+   * The transaction extension did not authorize any origin.
+   **/
+  | 'UnknownOrigin'
+  /**
+   * The meta transaction is invalid.
+   **/
+  | 'Invalid'
+  /**
+   * The meta transaction length is invalid.
+   **/
+  | 'InvalidLength';
+
 export type PalletIdentityRegistration = {
   judgements: Array<[number, PalletIdentityJudgement]>;
   deposit: bigint;
@@ -6218,16 +6324,6 @@ export type XcmRuntimeApisDryRunCallDryRunEffects = {
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };
 
-export type FrameSupportDispatchPostDispatchInfo = {
-  actualWeight?: SpWeightsWeightV2Weight | undefined;
-  paysFee: FrameSupportDispatchPays;
-};
-
-export type SpRuntimeDispatchErrorWithPostInfo = {
-  postInfo: FrameSupportDispatchPostDispatchInfo;
-  error: DispatchError;
-};
-
 export type XcmRuntimeApisDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
 
 export type XcmRuntimeApisDryRunXcmDryRunEffects = {
@@ -6270,5 +6366,6 @@ export type PeopleWestendRuntimeRuntimeError =
   | { pallet: 'Utility'; palletError: PalletUtilityError }
   | { pallet: 'Multisig'; palletError: PalletMultisigError }
   | { pallet: 'Proxy'; palletError: PalletProxyError }
+  | { pallet: 'MetaTx'; palletError: PalletMetaTxError }
   | { pallet: 'Identity'; palletError: PalletIdentityError }
   | { pallet: 'MultiBlockMigrations'; palletError: PalletMigrationsError };

@@ -93,7 +93,6 @@ import type {
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
-  PalletMetaTxMetaTx,
   SpStakingExposure,
   SpConsensusBeefyDoubleVotingProof,
   SpConsensusBeefyForkVotingProof,
@@ -10571,41 +10570,6 @@ export interface ChainTx<
           pallet: 'RootTesting';
           palletCall: {
             name: 'TriggerDefensive';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
-   * Pallet `MetaTx`'s transaction calls
-   **/
-  metaTx: {
-    /**
-     * Dispatch a given meta transaction.
-     *
-     * - `_origin`: Can be any kind of origin.
-     * - `meta_tx`: Meta Transaction with a target call to be dispatched.
-     * - `meta_tx_encoded_len`: The size of the encoded meta transaction in bytes.
-     *
-     * @param {PalletMetaTxMetaTx} metaTx
-     * @param {number} metaTxEncodedLen
-     **/
-    dispatch: GenericTxCall<
-      (
-        metaTx: PalletMetaTxMetaTx,
-        metaTxEncodedLen: number,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'MetaTx';
-          palletCall: {
-            name: 'Dispatch';
-            params: { metaTx: PalletMetaTxMetaTx; metaTxEncodedLen: number };
           };
         },
         ChainKnownTypes

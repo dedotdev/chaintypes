@@ -1409,24 +1409,6 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
-   * Pallet `MetaTx`'s constants
-   **/
-  metaTx: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
-   * Pallet `VerifySignature`'s constants
-   **/
-  verifySignature: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
    * Pallet `RootOffences`'s constants
    **/
   rootOffences: {

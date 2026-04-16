@@ -11,17 +11,17 @@ import type {
   AccountId32,
   AccountId32Like,
   FixedArray,
+  Era,
   H160,
   U256,
+  Permill,
   Percent,
   Perbill,
   PerU16,
   FixedU128,
-  Era,
   Phase,
   DispatchError,
   Result,
-  Permill,
   UncheckedExtrinsic,
   FixedI64,
 } from 'dedot/codecs';
@@ -49,6 +49,8 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
   | { pallet: 'Proxy'; palletCall: PalletProxyCall }
   | { pallet: 'Indices'; palletCall: PalletIndicesCall }
+  | { pallet: 'MetaTx'; palletCall: PalletMetaTxCall }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCall }
   | { pallet: 'Assets'; palletCall: PalletAssetsCall }
   | { pallet: 'Uniques'; palletCall: PalletUniquesCall }
   | { pallet: 'Nfts'; palletCall: PalletNftsCall }
@@ -58,6 +60,7 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall }
   | { pallet: 'Revive'; palletCall: PalletReviveCall }
   | { pallet: 'AssetRewards'; palletCall: PalletAssetRewardsCall }
+  | { pallet: 'Psm'; palletCall: PalletPsmCall }
   | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall }
   | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCall }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
@@ -73,6 +76,7 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'Treasury'; palletCall: PalletTreasuryCall }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
   | { pallet: 'MultiAssetBounties'; palletCall: PalletMultiAssetBountiesCall }
+  | { pallet: 'Dap'; palletCall: PalletDapCall }
   | { pallet: 'AssetConversionMigration'; palletCall: PalletAssetConversionOpsCall }
   | { pallet: 'AhOps'; palletCall: PalletAhOpsCall };
 
@@ -99,6 +103,8 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
   | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
   | { pallet: 'Indices'; palletCall: PalletIndicesCallLike }
+  | { pallet: 'MetaTx'; palletCall: PalletMetaTxCallLike }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCallLike }
   | { pallet: 'Assets'; palletCall: PalletAssetsCallLike }
   | { pallet: 'Uniques'; palletCall: PalletUniquesCallLike }
   | { pallet: 'Nfts'; palletCall: PalletNftsCallLike }
@@ -108,6 +114,7 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike }
   | { pallet: 'Revive'; palletCall: PalletReviveCallLike }
   | { pallet: 'AssetRewards'; palletCall: PalletAssetRewardsCallLike }
+  | { pallet: 'Psm'; palletCall: PalletPsmCallLike }
   | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike }
   | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCallLike }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
@@ -123,6 +130,7 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'Treasury'; palletCall: PalletTreasuryCallLike }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
   | { pallet: 'MultiAssetBounties'; palletCall: PalletMultiAssetBountiesCallLike }
+  | { pallet: 'Dap'; palletCall: PalletDapCallLike }
   | { pallet: 'AssetConversionMigration'; palletCall: PalletAssetConversionOpsCallLike }
   | { pallet: 'AhOps'; palletCall: PalletAhOpsCallLike };
 
@@ -3426,7 +3434,8 @@ export type AssetHubWestendRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
   | 'SmallSpender'
   | 'MediumSpender'
   | 'BigSpender'
-  | 'WhitelistedCaller';
+  | 'WhitelistedCaller'
+  | 'MonetaryGuard';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4352,6 +4361,106 @@ export type PalletIndicesCallLike =
    * Emits `DepositPoked` if successful.
    **/
   | { name: 'PokeDeposit'; params: { index: number } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletMetaTxCall =
+  /**
+   * Dispatch a given meta transaction.
+   *
+   * - `_origin`: Can be any kind of origin.
+   * - `meta_tx`: Meta Transaction with a target call to be dispatched.
+   * - `meta_tx_encoded_len`: The size of the encoded meta transaction in bytes.
+   **/
+  { name: 'Dispatch'; params: { metaTx: PalletMetaTxMetaTx; metaTxEncodedLen: number } };
+
+export type PalletMetaTxCallLike =
+  /**
+   * Dispatch a given meta transaction.
+   *
+   * - `_origin`: Can be any kind of origin.
+   * - `meta_tx`: Meta Transaction with a target call to be dispatched.
+   * - `meta_tx_encoded_len`: The size of the encoded meta transaction in bytes.
+   **/
+  { name: 'Dispatch'; params: { metaTx: PalletMetaTxMetaTx; metaTxEncodedLen: number } };
+
+export type PalletMetaTxMetaTx = {
+  call: AssetHubWestendRuntimeRuntimeCall;
+  extensionVersion: number;
+  extension: [
+    PalletVerifySignatureExtensionVerifySignature,
+    PalletMetaTxExtensionMetaTxMarker,
+    FrameSystemExtensionsCheckNonZeroSender,
+    FrameSystemExtensionsCheckSpecVersion,
+    FrameSystemExtensionsCheckTxVersion,
+    FrameSystemExtensionsCheckGenesis,
+    FrameSystemExtensionsCheckMortality,
+    FrameSystemExtensionsCheckNonce,
+    FrameMetadataHashExtensionCheckMetadataHash,
+  ];
+};
+
+export type PalletVerifySignatureExtensionVerifySignature =
+  | { type: 'Signed'; value: { signature: SpRuntimeMultiSignature; account: AccountId32 } }
+  | { type: 'Disabled' };
+
+export type SpRuntimeMultiSignature =
+  | { type: 'Ed25519'; value: FixedBytes<64> }
+  | { type: 'Sr25519'; value: FixedBytes<64> }
+  | { type: 'Ecdsa'; value: FixedBytes<65> }
+  | { type: 'Eth'; value: FixedBytes<65> };
+
+export type PalletMetaTxExtensionMetaTxMarker = {};
+
+export type FrameSystemExtensionsCheckNonZeroSender = {};
+
+export type FrameSystemExtensionsCheckSpecVersion = {};
+
+export type FrameSystemExtensionsCheckTxVersion = {};
+
+export type FrameSystemExtensionsCheckGenesis = {};
+
+export type FrameSystemExtensionsCheckMortality = Era;
+
+export type FrameSystemExtensionsCheckNonce = number;
+
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
+
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletParametersCall =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: AssetHubWestendRuntimeRuntimeParameters } };
+
+export type PalletParametersCallLike =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: AssetHubWestendRuntimeRuntimeParameters } };
+
+export type AssetHubWestendRuntimeRuntimeParameters = {
+  type: 'Pusd';
+  value: AssetHubWestendRuntimeDynamicParamsPusdParameters;
+};
+
+export type AssetHubWestendRuntimeDynamicParamsPusdParameters = {
+  type: 'MaximumIssuance';
+  value: [AssetHubWestendRuntimeDynamicParamsPusdMaximumIssuance, bigint | undefined];
+};
+
+export type AssetHubWestendRuntimeDynamicParamsPusdMaximumIssuance = {};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -7916,12 +8025,6 @@ export type PalletNftsPreSignedMint = {
   mintPrice?: bigint | undefined;
 };
 
-export type SpRuntimeMultiSignature =
-  | { type: 'Ed25519'; value: FixedBytes<64> }
-  | { type: 'Sr25519'; value: FixedBytes<64> }
-  | { type: 'Ecdsa'; value: FixedBytes<65> }
-  | { type: 'Eth'; value: FixedBytes<65> };
-
 export type PalletNftsPreSignedAttributes = {
   collection: number;
   item: number;
@@ -10833,6 +10936,9 @@ export type PalletReviveCall =
    *
    * This will error if the origin is already mapped or is a eth native `Address20`. It will
    * take a deposit that can be released by calling [`Self::unmap_account`].
+   *
+   * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
+   * on creation via [`AutoMapper`].
    **/
   | { name: 'MapAccount' }
   /**
@@ -10840,6 +10946,9 @@ export type PalletReviveCall =
    *
    * There is no reason to ever call this function other than freeing up the deposit.
    * This is only useful when the account should no longer be used.
+   *
+   * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
+   * on kill via [`AutoMapper`].
    **/
   | { name: 'UnmapAccount' }
   /**
@@ -11075,6 +11184,9 @@ export type PalletReviveCallLike =
    *
    * This will error if the origin is already mapped or is a eth native `Address20`. It will
    * take a deposit that can be released by calling [`Self::unmap_account`].
+   *
+   * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
+   * on creation via [`AutoMapper`].
    **/
   | { name: 'MapAccount' }
   /**
@@ -11082,6 +11194,9 @@ export type PalletReviveCallLike =
    *
    * There is no reason to ever call this function other than freeing up the deposit.
    * This is only useful when the account should no longer be used.
+   *
+   * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
+   * on kill via [`AutoMapper`].
    **/
   | { name: 'UnmapAccount' }
   /**
@@ -11281,6 +11396,445 @@ export type PalletAssetRewardsCallLike =
   | { name: 'CleanupPool'; params: { poolId: number } };
 
 export type FrameSupportScheduleDispatchTime = { type: 'At'; value: number } | { type: 'After'; value: number };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletPsmCall =
+  /**
+   * Swap external stablecoin for pUSD.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be `Signed` by the user performing the swap.
+   *
+   * ## Details
+   *
+   * Transfers `external_amount` of the specified external stablecoin from the caller
+   * to the PSM account, then mints pUSD to the caller minus the minting fee.
+   * The fee is calculated using ceiling rounding (`mul_ceil`), ensuring the
+   * protocol never undercharges. The fee is transferred to [`Config::FeeDestination`].
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to deposit (must be in `ExternalAssets`)
+   * - `external_amount`: Amount of external stablecoin to deposit
+   *
+   * ## Errors
+   *
+   * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
+   * - [`Error::MintingStopped`]: If circuit breaker is at `MintingDisabled` or higher
+   * - [`Error::BelowMinimumSwap`]: If `external_amount` is below [`Config::MinSwapAmount`]
+   * - [`Error::ExceedsMaxIssuance`]: If minting would exceed system-wide pUSD issuance cap
+   * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed PSM debt ceiling (aggregate or
+   * per-asset)
+   *
+   * ## Events
+   *
+   * - [`Event::Minted`]: Emitted on successful mint
+   **/
+  | { name: 'Mint'; params: { assetId: number; externalAmount: bigint } }
+  /**
+   * Swap pUSD for external stablecoin.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be `Signed` by the user performing the swap.
+   *
+   * ## Details
+   *
+   * Burns `pusd_amount` pUSD from the caller minus fee (transferred to
+   * [`Config::FeeDestination`]), then transfers the resulting amount in external
+   * stablecoin from PSM to the caller. The fee is calculated using ceiling rounding
+   * (`mul_ceil`), ensuring the protocol never undercharges.
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to receive (must be in `ExternalAssets`)
+   * - `pusd_amount`: Amount of pUSD to redeem
+   *
+   * ## Errors
+   *
+   * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
+   * - [`Error::AllSwapsStopped`]: If circuit breaker is at `AllDisabled`
+   * - [`Error::BelowMinimumSwap`]: If `pusd_amount` is below [`Config::MinSwapAmount`]
+   * - [`Error::InsufficientReserve`]: If PSM has insufficient external stablecoin
+   *
+   * ## Events
+   *
+   * - [`Event::Redeemed`]: Emitted on successful redemption
+   **/
+  | { name: 'Redeem'; params: { assetId: number; pusdAmount: bigint } }
+  /**
+   * Set the minting fee for a specific asset (external → pUSD).
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ManagerOrigin`].
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to configure
+   * - `fee`: The new minting fee as a Permill
+   *
+   * ## Events
+   *
+   * - [`Event::MintingFeeUpdated`]: Emitted with old and new values
+   **/
+  | { name: 'SetMintingFee'; params: { assetId: number; fee: Permill } }
+  /**
+   * Set the redemption fee for a specific asset (pUSD → external).
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ManagerOrigin`].
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to configure
+   * - `fee`: The new redemption fee as a Permill
+   *
+   * ## Events
+   *
+   * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values
+   **/
+  | { name: 'SetRedemptionFee'; params: { assetId: number; fee: Permill } }
+  /**
+   * Set the maximum PSM debt as a percentage of total maximum issuance.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ManagerOrigin`].
+   *
+   * ## Events
+   *
+   * - [`Event::MaxPsmDebtOfTotalUpdated`]: Emitted with old and new values
+   **/
+  | { name: 'SetMaxPsmDebt'; params: { ratio: Permill } }
+  /**
+   * Set the circuit breaker status for a specific external asset.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ManagerOrigin`].
+   *
+   * ## Details
+   *
+   * Controls which operations are allowed for this asset:
+   * - [`CircuitBreakerLevel::AllEnabled`]: All swaps allowed
+   * - [`CircuitBreakerLevel::MintingDisabled`]: Only redemptions allowed (useful for
+   * draining debt)
+   * - [`CircuitBreakerLevel::AllDisabled`]: No swaps allowed
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to configure
+   * - `status`: The new circuit breaker level for this asset
+   *
+   * ## Errors
+   *
+   * - [`Error::AssetNotApproved`]: If the asset is not in the approved list
+   *
+   * ## Events
+   *
+   * - [`Event::AssetStatusUpdated`]: Emitted with the asset ID and new status
+   **/
+  | { name: 'SetAssetStatus'; params: { assetId: number; status: PalletPsmCircuitBreakerLevel } }
+  /**
+   * Set the per-asset debt ceiling weight.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ManagerOrigin`].
+   *
+   * ## Details
+   *
+   * Ratios act as weights normalized against the sum of all asset weights:
+   * `max_asset_debt = (ratio / sum_of_all_ratios) * MaxPsmDebtOfTotal * MaximumIssuance`
+   *
+   * With a single asset, the weight always normalizes to 100% of the PSM
+   * ceiling.
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to configure
+   * - `ratio`: Weight for this asset's share of the total PSM ceiling
+   *
+   * ## Events
+   *
+   * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values
+   **/
+  | { name: 'SetAssetCeilingWeight'; params: { assetId: number; weight: Permill } }
+  /**
+   * Add an external stablecoin to the approved list.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ManagerOrigin`].
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to add
+   *
+   * ## Errors
+   *
+   * - [`Error::AssetAlreadyApproved`]: If the asset is already in the approved list
+   *
+   * ## Events
+   *
+   * - [`Event::ExternalAssetAdded`]: Emitted on successful addition
+   **/
+  | { name: 'AddExternalAsset'; params: { assetId: number } }
+  /**
+   * Remove an external stablecoin from the approved list.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ManagerOrigin`].
+   *
+   * ## Details
+   *
+   * The asset cannot be removed if it has non-zero PSM debt outstanding.
+   * This prevents orphaned debt that cannot be redeemed.
+   *
+   * Upon removal, the associated configuration is also cleaned up:
+   * - `MintingFee` for this asset
+   * - `RedemptionFee` for this asset
+   * - `AssetCeilingWeight` for this asset
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to remove
+   *
+   * ## Errors
+   *
+   * - [`Error::AssetNotApproved`]: If the asset is not in the approved list
+   * - [`Error::AssetHasDebt`]: If the asset has non-zero PSM debt
+   *
+   * ## Events
+   *
+   * - [`Event::ExternalAssetRemoved`]: Emitted on successful removal
+   **/
+  | { name: 'RemoveExternalAsset'; params: { assetId: number } };
+
+export type PalletPsmCallLike =
+  /**
+   * Swap external stablecoin for pUSD.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be `Signed` by the user performing the swap.
+   *
+   * ## Details
+   *
+   * Transfers `external_amount` of the specified external stablecoin from the caller
+   * to the PSM account, then mints pUSD to the caller minus the minting fee.
+   * The fee is calculated using ceiling rounding (`mul_ceil`), ensuring the
+   * protocol never undercharges. The fee is transferred to [`Config::FeeDestination`].
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to deposit (must be in `ExternalAssets`)
+   * - `external_amount`: Amount of external stablecoin to deposit
+   *
+   * ## Errors
+   *
+   * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
+   * - [`Error::MintingStopped`]: If circuit breaker is at `MintingDisabled` or higher
+   * - [`Error::BelowMinimumSwap`]: If `external_amount` is below [`Config::MinSwapAmount`]
+   * - [`Error::ExceedsMaxIssuance`]: If minting would exceed system-wide pUSD issuance cap
+   * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed PSM debt ceiling (aggregate or
+   * per-asset)
+   *
+   * ## Events
+   *
+   * - [`Event::Minted`]: Emitted on successful mint
+   **/
+  | { name: 'Mint'; params: { assetId: number; externalAmount: bigint } }
+  /**
+   * Swap pUSD for external stablecoin.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be `Signed` by the user performing the swap.
+   *
+   * ## Details
+   *
+   * Burns `pusd_amount` pUSD from the caller minus fee (transferred to
+   * [`Config::FeeDestination`]), then transfers the resulting amount in external
+   * stablecoin from PSM to the caller. The fee is calculated using ceiling rounding
+   * (`mul_ceil`), ensuring the protocol never undercharges.
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to receive (must be in `ExternalAssets`)
+   * - `pusd_amount`: Amount of pUSD to redeem
+   *
+   * ## Errors
+   *
+   * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
+   * - [`Error::AllSwapsStopped`]: If circuit breaker is at `AllDisabled`
+   * - [`Error::BelowMinimumSwap`]: If `pusd_amount` is below [`Config::MinSwapAmount`]
+   * - [`Error::InsufficientReserve`]: If PSM has insufficient external stablecoin
+   *
+   * ## Events
+   *
+   * - [`Event::Redeemed`]: Emitted on successful redemption
+   **/
+  | { name: 'Redeem'; params: { assetId: number; pusdAmount: bigint } }
+  /**
+   * Set the minting fee for a specific asset (external → pUSD).
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ManagerOrigin`].
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to configure
+   * - `fee`: The new minting fee as a Permill
+   *
+   * ## Events
+   *
+   * - [`Event::MintingFeeUpdated`]: Emitted with old and new values
+   **/
+  | { name: 'SetMintingFee'; params: { assetId: number; fee: Permill } }
+  /**
+   * Set the redemption fee for a specific asset (pUSD → external).
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ManagerOrigin`].
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to configure
+   * - `fee`: The new redemption fee as a Permill
+   *
+   * ## Events
+   *
+   * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values
+   **/
+  | { name: 'SetRedemptionFee'; params: { assetId: number; fee: Permill } }
+  /**
+   * Set the maximum PSM debt as a percentage of total maximum issuance.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ManagerOrigin`].
+   *
+   * ## Events
+   *
+   * - [`Event::MaxPsmDebtOfTotalUpdated`]: Emitted with old and new values
+   **/
+  | { name: 'SetMaxPsmDebt'; params: { ratio: Permill } }
+  /**
+   * Set the circuit breaker status for a specific external asset.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ManagerOrigin`].
+   *
+   * ## Details
+   *
+   * Controls which operations are allowed for this asset:
+   * - [`CircuitBreakerLevel::AllEnabled`]: All swaps allowed
+   * - [`CircuitBreakerLevel::MintingDisabled`]: Only redemptions allowed (useful for
+   * draining debt)
+   * - [`CircuitBreakerLevel::AllDisabled`]: No swaps allowed
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to configure
+   * - `status`: The new circuit breaker level for this asset
+   *
+   * ## Errors
+   *
+   * - [`Error::AssetNotApproved`]: If the asset is not in the approved list
+   *
+   * ## Events
+   *
+   * - [`Event::AssetStatusUpdated`]: Emitted with the asset ID and new status
+   **/
+  | { name: 'SetAssetStatus'; params: { assetId: number; status: PalletPsmCircuitBreakerLevel } }
+  /**
+   * Set the per-asset debt ceiling weight.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ManagerOrigin`].
+   *
+   * ## Details
+   *
+   * Ratios act as weights normalized against the sum of all asset weights:
+   * `max_asset_debt = (ratio / sum_of_all_ratios) * MaxPsmDebtOfTotal * MaximumIssuance`
+   *
+   * With a single asset, the weight always normalizes to 100% of the PSM
+   * ceiling.
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to configure
+   * - `ratio`: Weight for this asset's share of the total PSM ceiling
+   *
+   * ## Events
+   *
+   * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values
+   **/
+  | { name: 'SetAssetCeilingWeight'; params: { assetId: number; weight: Permill } }
+  /**
+   * Add an external stablecoin to the approved list.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ManagerOrigin`].
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to add
+   *
+   * ## Errors
+   *
+   * - [`Error::AssetAlreadyApproved`]: If the asset is already in the approved list
+   *
+   * ## Events
+   *
+   * - [`Event::ExternalAssetAdded`]: Emitted on successful addition
+   **/
+  | { name: 'AddExternalAsset'; params: { assetId: number } }
+  /**
+   * Remove an external stablecoin from the approved list.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be [`Config::ManagerOrigin`].
+   *
+   * ## Details
+   *
+   * The asset cannot be removed if it has non-zero PSM debt outstanding.
+   * This prevents orphaned debt that cannot be redeemed.
+   *
+   * Upon removal, the associated configuration is also cleaned up:
+   * - `MintingFee` for this asset
+   * - `RedemptionFee` for this asset
+   * - `AssetCeilingWeight` for this asset
+   *
+   * ## Parameters
+   *
+   * - `asset_id`: The external stablecoin to remove
+   *
+   * ## Errors
+   *
+   * - [`Error::AssetNotApproved`]: If the asset is not in the approved list
+   * - [`Error::AssetHasDebt`]: If the asset has non-zero PSM debt
+   *
+   * ## Events
+   *
+   * - [`Event::ExternalAssetRemoved`]: Emitted on successful removal
+   **/
+  | { name: 'RemoveExternalAsset'; params: { assetId: number } };
+
+export type PalletPsmCircuitBreakerLevel = 'AllEnabled' | 'MintingDisabled' | 'AllDisabled';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11773,9 +12327,10 @@ export type PalletStakingAsyncPalletCall =
    **/
   | { name: 'ChillOther'; params: { stash: AccountId32 } }
   /**
-   * Force a validator to have at least the minimum commission. This will not affect a
-   * validator who already has a commission greater than or equal to the minimum. Any account
-   * can call this.
+   * Clamps a validator's commission to the `[MinCommission, MaxCommission]` range.
+   *
+   * Named `force_apply_min_commission` for legacy reasons — it also enforces the
+   * maximum. Any account can call this.
    **/
   | { name: 'ForceApplyMinCommission'; params: { validatorStash: AccountId32 } }
   /**
@@ -11803,6 +12358,10 @@ export type PalletStakingAsyncPalletCall =
    * backing a validator to receive the reward. The nominators are not sorted across pages
    * and so it should not be assumed the highest staker would be on the topmost page and vice
    * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
+   *
+   * The validator's own reward (commission + own-stake share) is prorated across pages
+   * proportional to each page's stake. The full validator reward is the sum across all
+   * pages.
    **/
   | { name: 'PayoutStakersByPage'; params: { validatorStash: AccountId32; era: number; page: number } }
   /**
@@ -11905,7 +12464,13 @@ export type PalletStakingAsyncPalletCall =
    * The era must be eligible for pruning (older than HistoryDepth + 1).
    * Check `EraPruningState` storage to see if an era needs pruning before calling.
    **/
-  | { name: 'PruneEraStep'; params: { era: number } };
+  | { name: 'PruneEraStep'; params: { era: number } }
+  /**
+   * Sets the maximum commission that validators can set.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   **/
+  | { name: 'SetMaxCommission'; params: { new: Perbill } };
 
 export type PalletStakingAsyncPalletCallLike =
   /**
@@ -12229,9 +12794,10 @@ export type PalletStakingAsyncPalletCallLike =
    **/
   | { name: 'ChillOther'; params: { stash: AccountId32Like } }
   /**
-   * Force a validator to have at least the minimum commission. This will not affect a
-   * validator who already has a commission greater than or equal to the minimum. Any account
-   * can call this.
+   * Clamps a validator's commission to the `[MinCommission, MaxCommission]` range.
+   *
+   * Named `force_apply_min_commission` for legacy reasons — it also enforces the
+   * maximum. Any account can call this.
    **/
   | { name: 'ForceApplyMinCommission'; params: { validatorStash: AccountId32Like } }
   /**
@@ -12259,6 +12825,10 @@ export type PalletStakingAsyncPalletCallLike =
    * backing a validator to receive the reward. The nominators are not sorted across pages
    * and so it should not be assumed the highest staker would be on the topmost page and vice
    * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
+   *
+   * The validator's own reward (commission + own-stake share) is prorated across pages
+   * proportional to each page's stake. The full validator reward is the sum across all
+   * pages.
    **/
   | { name: 'PayoutStakersByPage'; params: { validatorStash: AccountId32Like; era: number; page: number } }
   /**
@@ -12361,7 +12931,13 @@ export type PalletStakingAsyncPalletCallLike =
    * The era must be eligible for pruning (older than HistoryDepth + 1).
    * Check `EraPruningState` storage to see if an era needs pruning before calling.
    **/
-  | { name: 'PruneEraStep'; params: { era: number } };
+  | { name: 'PruneEraStep'; params: { era: number } }
+  /**
+   * Sets the maximum commission that validators can set.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   **/
+  | { name: 'SetMaxCommission'; params: { new: Perbill } };
 
 export type PalletStakingAsyncRewardDestination =
   | { type: 'Staked' }
@@ -14991,6 +15567,27 @@ export type PalletMultiAssetBountiesCallLike =
   | { name: 'RetryPayment'; params: { parentBountyId: number; childBountyId?: number | undefined } };
 
 /**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletDapCall =
+  /**
+   * Set the budget allocation map.
+   *
+   * Each key must match a registered `BudgetRecipient`. The sum of all percentages
+   * must be exactly 100%. Recipients not included in the map receive nothing.
+   **/
+  { name: 'SetBudgetAllocation'; params: { newAllocations: Array<[Bytes, Perbill]> } };
+
+export type PalletDapCallLike =
+  /**
+   * Set the budget allocation map.
+   *
+   * Each key must match a registered `BudgetRecipient`. The sum of all percentages
+   * must be exactly 100%. Recipients not included in the map receive nothing.
+   **/
+  { name: 'SetBudgetAllocation'; params: { newAllocations: Array<[BytesLike, Perbill]> } };
+
+/**
  * Pallet's callable functions.
  **/
 export type PalletAssetConversionOpsCall =
@@ -15197,28 +15794,12 @@ export type PalletMultiAssetBountiesHoldReason = 'CuratorDeposit';
 
 export type FrameSystemExtensionsAuthorizeCall = {};
 
-export type FrameSystemExtensionsCheckNonZeroSender = {};
-
-export type FrameSystemExtensionsCheckSpecVersion = {};
-
-export type FrameSystemExtensionsCheckTxVersion = {};
-
-export type FrameSystemExtensionsCheckGenesis = {};
-
-export type FrameSystemExtensionsCheckMortality = Era;
-
-export type FrameSystemExtensionsCheckNonce = number;
-
 export type FrameSystemExtensionsCheckWeight = {};
 
 export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
   tip: bigint;
   assetId?: StagingXcmV5Location | undefined;
 };
-
-export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
-
-export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
 export type PalletReviveEvmTxExtensionSetOrigin = {};
 
@@ -15270,6 +15851,8 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
   | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
   | { pallet: 'Indices'; palletEvent: PalletIndicesEvent }
+  | { pallet: 'MetaTx'; palletEvent: PalletMetaTxEvent }
+  | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
   | { pallet: 'Assets'; palletEvent: PalletAssetsEvent }
   | { pallet: 'Uniques'; palletEvent: PalletUniquesEvent }
   | { pallet: 'Nfts'; palletEvent: PalletNftsEvent }
@@ -15282,6 +15865,7 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'PoolAssetsFreezer'; palletEvent: PalletAssetsFreezerEvent }
   | { pallet: 'Revive'; palletEvent: PalletReviveEvent }
   | { pallet: 'AssetRewards'; palletEvent: PalletAssetRewardsEvent }
+  | { pallet: 'Psm'; palletEvent: PalletPsmEvent }
   | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent }
   | { pallet: 'Staking'; palletEvent: PalletStakingAsyncPalletEvent }
   | { pallet: 'NominationPools'; palletEvent: PalletNominationPoolsEvent }
@@ -15297,6 +15881,7 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'Treasury'; palletEvent: PalletTreasuryEvent }
   | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
   | { pallet: 'MultiAssetBounties'; palletEvent: PalletMultiAssetBountiesEvent }
+  | { pallet: 'Dap'; palletEvent: PalletDapEvent }
   | { pallet: 'AssetConversionMigration'; palletEvent: PalletAssetConversionOpsEvent }
   | { pallet: 'AhOps'; palletEvent: PalletAhOpsEvent };
 
@@ -16496,6 +17081,77 @@ export type PalletIndicesEvent =
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletMetaTxEvent =
+  /**
+   * A meta transaction has been dispatched.
+   *
+   * Contains the dispatch result of the meta transaction along with post-dispatch
+   * information.
+   **/
+  {
+    name: 'Dispatched';
+    data: { result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo> };
+  };
+
+export type FrameSupportDispatchPostDispatchInfo = {
+  actualWeight?: SpWeightsWeightV2Weight | undefined;
+  paysFee: FrameSupportDispatchPays;
+};
+
+export type SpRuntimeDispatchErrorWithPostInfo = {
+  postInfo: FrameSupportDispatchPostDispatchInfo;
+  error: DispatchError;
+};
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletParametersEvent =
+  /**
+   * A Parameter was set.
+   *
+   * Is also emitted when the value was not changed.
+   **/
+  {
+    name: 'Updated';
+    data: {
+      /**
+       * The key that was updated.
+       **/
+      key: AssetHubWestendRuntimeRuntimeParametersKey;
+
+      /**
+       * The old value before this call.
+       **/
+      oldValue?: AssetHubWestendRuntimeRuntimeParametersValue | undefined;
+
+      /**
+       * The new value after this call.
+       **/
+      newValue?: AssetHubWestendRuntimeRuntimeParametersValue | undefined;
+    };
+  };
+
+export type AssetHubWestendRuntimeRuntimeParametersKey = {
+  type: 'Pusd';
+  value: AssetHubWestendRuntimeDynamicParamsPusdParametersKey;
+};
+
+export type AssetHubWestendRuntimeDynamicParamsPusdParametersKey = {
+  type: 'MaximumIssuance';
+  value: AssetHubWestendRuntimeDynamicParamsPusdMaximumIssuance;
+};
+
+export type AssetHubWestendRuntimeRuntimeParametersValue = {
+  type: 'Pusd';
+  value: AssetHubWestendRuntimeDynamicParamsPusdParametersValue;
+};
+
+export type AssetHubWestendRuntimeDynamicParamsPusdParametersValue = { type: 'MaximumIssuance'; value: bigint };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PalletAssetsEvent =
   /**
    * Some asset class was created.
@@ -17612,6 +18268,53 @@ export type PalletAssetRewardsEvent =
     };
 
 /**
+ * The `Event` enum of this pallet
+ **/
+export type PalletPsmEvent =
+  /**
+   * User swapped external stablecoin for pUSD.
+   **/
+  | {
+      name: 'Minted';
+      data: { who: AccountId32; assetId: number; externalAmount: bigint; pusdReceived: bigint; fee: bigint };
+    }
+  /**
+   * User swapped pUSD for external stablecoin.
+   **/
+  | {
+      name: 'Redeemed';
+      data: { who: AccountId32; assetId: number; pusdPaid: bigint; externalReceived: bigint; fee: bigint };
+    }
+  /**
+   * Minting fee updated for an asset by governance.
+   **/
+  | { name: 'MintingFeeUpdated'; data: { assetId: number; oldValue: Permill; newValue: Permill } }
+  /**
+   * Redemption fee updated for an asset by governance.
+   **/
+  | { name: 'RedemptionFeeUpdated'; data: { assetId: number; oldValue: Permill; newValue: Permill } }
+  /**
+   * Max PSM debt ratio updated by governance.
+   **/
+  | { name: 'MaxPsmDebtOfTotalUpdated'; data: { oldValue: Permill; newValue: Permill } }
+  /**
+   * Per-asset debt ceiling weight updated by governance.
+   **/
+  | { name: 'AssetCeilingWeightUpdated'; data: { assetId: number; oldValue: Permill; newValue: Permill } }
+  /**
+   * Per-asset circuit breaker status updated.
+   **/
+  | { name: 'AssetStatusUpdated'; data: { assetId: number; status: PalletPsmCircuitBreakerLevel } }
+  /**
+   * An external asset was added to the approved list.
+   **/
+  | { name: 'ExternalAssetAdded'; data: { assetId: number } }
+  /**
+   * An external asset was removed from the approved list.
+   **/
+  | { name: 'ExternalAssetRemoved'; data: { assetId: number } };
+
+/**
  * Inner events of this pallet.
  **/
 export type PalletStateTrieMigrationEvent =
@@ -17675,8 +18378,11 @@ export type PalletStateTrieMigrationError =
  **/
 export type PalletStakingAsyncPalletEvent =
   /**
-   * The era payout has been set; the first balance is the validator-payout; the second is
-   * the remainder from the maximum amount of reward.
+   * The era payout has been set.
+   *
+   * In non-minting mode, `validator_payout` is the staker reward budget
+   * snapshotted from the general pot, and `remainder` is always zero.
+   * In legacy minting mode, both fields reflect the `EraPayout` computation.
    **/
   | { name: 'EraPaid'; data: { eraIndex: number; validatorPayout: bigint; remainder: bigint } }
   /**
@@ -17804,7 +18510,8 @@ export type PalletStakingAsyncPalletUnexpectedKind =
   | {
       type: 'PagedElectionOutOfWeight';
       value: { page: number; required: SpWeightsWeightV2Weight; had: SpWeightsWeightV2Weight };
-    };
+    }
+  | { type: 'MissingPayee'; value: { era: number; stash: AccountId32 } };
 
 /**
  * Events of this pallet.
@@ -18476,16 +19183,6 @@ export type PalletWhitelistEvent =
       };
     };
 
-export type FrameSupportDispatchPostDispatchInfo = {
-  actualWeight?: SpWeightsWeightV2Weight | undefined;
-  paysFee: FrameSupportDispatchPays;
-};
-
-export type SpRuntimeDispatchErrorWithPostInfo = {
-  postInfo: FrameSupportDispatchPostDispatchInfo;
-  error: DispatchError;
-};
-
 /**
  * The `Event` enum of this pallet
  **/
@@ -18632,6 +19329,48 @@ export type PalletMultiAssetBountiesEvent =
    * A payment happened and can be checked.
    **/
   | { name: 'Paid'; data: { index: number; childIndex?: number | undefined; paymentId: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletDapEvent =
+  /**
+   * Inflation dripped and distributed to budget recipients.
+   **/
+  | {
+      name: 'IssuanceMinted';
+      data: {
+        /**
+         * Total amount minted in this drip.
+         **/
+        totalMinted: bigint;
+
+        /**
+         * Elapsed time (ms) since last drip.
+         **/
+        elapsedMillis: bigint;
+      };
+    }
+  /**
+   * Budget allocation was updated via governance.
+   **/
+  | {
+      name: 'BudgetAllocationUpdated';
+      data: {
+        /**
+         * The new budget allocation map.
+         **/
+        allocations: Array<[Bytes, Perbill]>;
+      };
+    }
+  /**
+   * An unexpected/defensive event was triggered.
+   **/
+  | { name: 'Unexpected'; data: PalletDapUnexpectedKind };
+
+export type PalletDapUnexpectedKind =
+  | { type: 'MintFailed' }
+  | { type: 'ElapsedClamped'; value: { actualElapsed: bigint; ceiling: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -19798,6 +20537,39 @@ export type PalletIndicesError =
    **/
   | 'Permanent';
 
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletMetaTxError =
+  /**
+   * Invalid proof (e.g. signature).
+   **/
+  | 'BadProof'
+  /**
+   * The meta transaction is not yet valid (e.g. nonce too high).
+   **/
+  | 'Future'
+  /**
+   * The meta transaction is outdated (e.g. nonce too low).
+   **/
+  | 'Stale'
+  /**
+   * The meta transactions's birth block is ancient.
+   **/
+  | 'AncientBirthBlock'
+  /**
+   * The transaction extension did not authorize any origin.
+   **/
+  | 'UnknownOrigin'
+  /**
+   * The meta transaction is invalid.
+   **/
+  | 'Invalid'
+  /**
+   * The meta transaction length is invalid.
+   **/
+  | 'InvalidLength';
+
 export type PalletAssetsAssetDetails = {
   owner: AccountId32;
   issuer: AccountId32;
@@ -20923,7 +21695,11 @@ export type PalletReviveError =
   /**
    * ECDSA public key recovery failed. Most probably wrong recovery id or signature.
    **/
-  | 'EcdsaRecoveryFailed';
+  | 'EcdsaRecoveryFailed'
+  /**
+   * Manual mapping is disabled when auto-mapping is enabled.
+   **/
+  | 'AutoMappingEnabled';
 
 export type PalletAssetRewardsPoolStakerInfo = { amount: bigint; rewards: bigint; rewardPerTokenPaid: bigint };
 
@@ -21020,6 +21796,67 @@ export type PalletAssetsPrecompilesPermitPalletError =
    * The spender address is invalid (e.g., zero address).
    **/
   | 'InvalidSpender';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletPsmError =
+  /**
+   * PSM doesn't have enough external stablecoin for redemption.
+   **/
+  | 'InsufficientReserve'
+  /**
+   * Swap would exceed PSM debt ceiling.
+   **/
+  | 'ExceedsMaxPsmDebt'
+  /**
+   * Swap amount below minimum threshold.
+   **/
+  | 'BelowMinimumSwap'
+  /**
+   * Minting operations are disabled (circuit breaker level >= 1).
+   **/
+  | 'MintingStopped'
+  /**
+   * All swap operations are disabled (circuit breaker level = 2).
+   **/
+  | 'AllSwapsStopped'
+  /**
+   * Asset is not an approved external stablecoin.
+   **/
+  | 'UnsupportedAsset'
+  /**
+   * Mint would exceed system-wide maximum pUSD issuance.
+   **/
+  | 'ExceedsMaxIssuance'
+  /**
+   * Asset is already in the approved list.
+   **/
+  | 'AssetAlreadyApproved'
+  /**
+   * Cannot remove asset: not in approved list.
+   **/
+  | 'AssetNotApproved'
+  /**
+   * Cannot remove asset: has non-zero PSM debt.
+   **/
+  | 'AssetHasDebt'
+  /**
+   * Operation requires Full manager level (GeneralAdmin), not Emergency.
+   **/
+  | 'InsufficientPrivilege'
+  /**
+   * Maximum number of approved external assets reached.
+   **/
+  | 'TooManyAssets'
+  /**
+   * External asset decimals do not match the stable asset decimals.
+   **/
+  | 'DecimalsMismatch'
+  /**
+   * An unexpected invariant violation occurred. This should be reported.
+   **/
+  | 'Unexpected';
 
 export type PalletStakingAsyncLedgerStakingLedger = {
   stash: AccountId32;
@@ -21226,7 +22063,15 @@ export type PalletStakingAsyncPalletError =
   /**
    * The slash has been cancelled and cannot be applied.
    **/
-  | 'CancelledSlash';
+  | 'CancelledSlash'
+  /**
+   * Commission is higher than the allowed maximum `MaxCommission`.
+   **/
+  | 'CommissionTooHigh'
+  /**
+   * Era has no reward pot but legacy minting is disabled.
+   **/
+  | 'LegacyMintingDisabled';
 
 export type PalletNominationPoolsPoolMember = {
   poolId: number;
@@ -22055,6 +22900,19 @@ export type PalletMultiAssetBountiesError =
 /**
  * The `Error` enum of this pallet.
  **/
+export type PalletDapError =
+  /**
+   * A key in the budget allocation does not match any registered recipient.
+   **/
+  | 'UnknownBudgetKey'
+  /**
+   * Budget allocation percentages do not sum to exactly 100%.
+   **/
+  | 'BudgetNotExact';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
 export type PalletAssetConversionOpsError =
   /**
    * Provided asset pair is not supported for pool.
@@ -22337,8 +23195,23 @@ export type PalletRevivePrimitivesEthTransactError =
 
 export type PalletReviveEvmApiRpcTypesDryRunConfig = {
   timestampOverride?: bigint | undefined;
-  reserved?: [] | undefined;
+  performBalanceChecks?: boolean | undefined;
+  stateOverrides?: PalletReviveEvmApiRpcTypesGenStateOverrideSet | undefined;
 };
+
+export type PalletReviveEvmApiRpcTypesGenStateOverrideSet = Array<[H160, PalletReviveEvmApiRpcTypesGenStateOverride]>;
+
+export type PalletReviveEvmApiRpcTypesGenStateOverride = {
+  balance?: U256 | undefined;
+  nonce?: U256 | undefined;
+  code?: PalletReviveEvmApiByteBytes | undefined;
+  storage?: PalletReviveEvmApiRpcTypesGenStorageOverride | undefined;
+  movePrecompileToAddress?: H160 | undefined;
+};
+
+export type PalletReviveEvmApiRpcTypesGenStorageOverride =
+  | { type: 'State'; value: Array<[H256, H256]> }
+  | { type: 'StateDiff'; value: Array<[H256, H256]> };
 
 export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
 
@@ -22476,6 +23349,7 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'Multisig'; palletError: PalletMultisigError }
   | { pallet: 'Proxy'; palletError: PalletProxyError }
   | { pallet: 'Indices'; palletError: PalletIndicesError }
+  | { pallet: 'MetaTx'; palletError: PalletMetaTxError }
   | { pallet: 'Assets'; palletError: PalletAssetsError }
   | { pallet: 'Uniques'; palletError: PalletUniquesError }
   | { pallet: 'Nfts'; palletError: PalletNftsError }
@@ -22489,6 +23363,7 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'Revive'; palletError: PalletReviveError }
   | { pallet: 'AssetRewards'; palletError: PalletAssetRewardsError }
   | { pallet: 'AssetsPrecompilesPermit'; palletError: PalletAssetsPrecompilesPermitPalletError }
+  | { pallet: 'Psm'; palletError: PalletPsmError }
   | { pallet: 'StateTrieMigration'; palletError: PalletStateTrieMigrationError }
   | { pallet: 'Staking'; palletError: PalletStakingAsyncPalletError }
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }
@@ -22503,5 +23378,6 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'Treasury'; palletError: PalletTreasuryError }
   | { pallet: 'AssetRate'; palletError: PalletAssetRateError }
   | { pallet: 'MultiAssetBounties'; palletError: PalletMultiAssetBountiesError }
+  | { pallet: 'Dap'; palletError: PalletDapError }
   | { pallet: 'AssetConversionMigration'; palletError: PalletAssetConversionOpsError }
   | { pallet: 'AhOps'; palletError: PalletAhOpsError };

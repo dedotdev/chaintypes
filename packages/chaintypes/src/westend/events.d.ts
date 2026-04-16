@@ -3299,27 +3299,6 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
-   * Pallet `MetaTx`'s events
-   **/
-  metaTx: {
-    /**
-     * A meta transaction has been dispatched.
-     *
-     * Contains the dispatch result of the meta transaction along with post-dispatch
-     * information.
-     **/
-    Dispatched: GenericPalletEvent<
-      'MetaTx',
-      'Dispatched',
-      { result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo> }
-    >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
    * Pallet `RootOffences`'s events
    **/
   rootOffences: {

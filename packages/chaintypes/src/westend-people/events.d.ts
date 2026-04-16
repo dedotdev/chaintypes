@@ -22,6 +22,8 @@ import type {
   PalletMultisigTimepoint,
   PeopleWestendRuntimeProxyType,
   PalletProxyDepositKind,
+  FrameSupportDispatchPostDispatchInfo,
+  SpRuntimeDispatchErrorWithPostInfo,
 } from './types.js';
 
 export interface ChainEvents extends GenericChainEvents {
@@ -1098,6 +1100,27 @@ export interface ChainEvents extends GenericChainEvents {
       'Proxy',
       'DepositPoked',
       { who: AccountId32; kind: PalletProxyDepositKind; oldDeposit: bigint; newDeposit: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `MetaTx`'s events
+   **/
+  metaTx: {
+    /**
+     * A meta transaction has been dispatched.
+     *
+     * Contains the dispatch result of the meta transaction along with post-dispatch
+     * information.
+     **/
+    Dispatched: GenericPalletEvent<
+      'MetaTx',
+      'Dispatched',
+      { result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo> }
     >;
 
     /**

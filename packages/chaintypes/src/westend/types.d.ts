@@ -76,7 +76,6 @@ export type WestendRuntimeRuntimeCall =
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
   | { pallet: 'RootTesting'; palletCall: PalletRootTestingCall }
-  | { pallet: 'MetaTx'; palletCall: PalletMetaTxCall }
   | { pallet: 'RootOffences'; palletCall: PalletRootOffencesCall }
   | { pallet: 'Beefy'; palletCall: PalletBeefyCall }
   | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCall };
@@ -131,7 +130,6 @@ export type WestendRuntimeRuntimeCallLike =
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
   | { pallet: 'RootTesting'; palletCall: PalletRootTestingCallLike }
-  | { pallet: 'MetaTx'; palletCall: PalletMetaTxCallLike }
   | { pallet: 'RootOffences'; palletCall: PalletRootOffencesCallLike }
   | { pallet: 'Beefy'; palletCall: PalletBeefyCallLike }
   | { pallet: 'IdentityMigrator'; palletCall: PolkadotRuntimeCommonIdentityMigratorPalletCallLike };
@@ -10312,67 +10310,6 @@ export type PalletRootTestingCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletMetaTxCall =
-  /**
-   * Dispatch a given meta transaction.
-   *
-   * - `_origin`: Can be any kind of origin.
-   * - `meta_tx`: Meta Transaction with a target call to be dispatched.
-   * - `meta_tx_encoded_len`: The size of the encoded meta transaction in bytes.
-   **/
-  { name: 'Dispatch'; params: { metaTx: PalletMetaTxMetaTx; metaTxEncodedLen: number } };
-
-export type PalletMetaTxCallLike =
-  /**
-   * Dispatch a given meta transaction.
-   *
-   * - `_origin`: Can be any kind of origin.
-   * - `meta_tx`: Meta Transaction with a target call to be dispatched.
-   * - `meta_tx_encoded_len`: The size of the encoded meta transaction in bytes.
-   **/
-  { name: 'Dispatch'; params: { metaTx: PalletMetaTxMetaTx; metaTxEncodedLen: number } };
-
-export type PalletMetaTxMetaTx = {
-  call: WestendRuntimeRuntimeCall;
-  extensionVersion: number;
-  extension: [
-    PalletVerifySignatureExtensionVerifySignature,
-    PalletMetaTxExtensionMetaTxMarker,
-    FrameSystemExtensionsCheckNonZeroSender,
-    FrameSystemExtensionsCheckSpecVersion,
-    FrameSystemExtensionsCheckTxVersion,
-    FrameSystemExtensionsCheckGenesis,
-    FrameSystemExtensionsCheckMortality,
-    FrameSystemExtensionsCheckNonce,
-    FrameMetadataHashExtensionCheckMetadataHash,
-  ];
-};
-
-export type PalletVerifySignatureExtensionVerifySignature =
-  | { type: 'Signed'; value: { signature: SpRuntimeMultiSignature; account: AccountId32 } }
-  | { type: 'Disabled' };
-
-export type PalletMetaTxExtensionMetaTxMarker = {};
-
-export type FrameSystemExtensionsCheckNonZeroSender = {};
-
-export type FrameSystemExtensionsCheckSpecVersion = {};
-
-export type FrameSystemExtensionsCheckTxVersion = {};
-
-export type FrameSystemExtensionsCheckGenesis = {};
-
-export type FrameSystemExtensionsCheckMortality = Era;
-
-export type FrameSystemExtensionsCheckNonce = number;
-
-export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
-
-export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
 export type PalletRootOffencesCall =
   /**
    * Allows the `root`, for example sudo to create an offence.
@@ -10664,9 +10601,25 @@ export type PolkadotRuntimeCommonIdentityMigratorPalletCallLike =
 
 export type FrameSystemExtensionsAuthorizeCall = {};
 
+export type FrameSystemExtensionsCheckNonZeroSender = {};
+
+export type FrameSystemExtensionsCheckSpecVersion = {};
+
+export type FrameSystemExtensionsCheckTxVersion = {};
+
+export type FrameSystemExtensionsCheckGenesis = {};
+
+export type FrameSystemExtensionsCheckMortality = Era;
+
+export type FrameSystemExtensionsCheckNonce = number;
+
 export type FrameSystemExtensionsCheckWeight = {};
 
 export type PalletTransactionPaymentChargeTransactionPayment = bigint;
+
+export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
+
+export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
 export type FrameSystemExtensionsWeightReclaim = {};
 
@@ -10741,7 +10694,6 @@ export type WestendRuntimeRuntimeEvent =
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
   | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
   | { pallet: 'RootTesting'; palletEvent: PalletRootTestingEvent }
-  | { pallet: 'MetaTx'; palletEvent: PalletMetaTxEvent }
   | { pallet: 'RootOffences'; palletEvent: PalletRootOffencesEvent }
   | { pallet: 'IdentityMigrator'; palletEvent: PolkadotRuntimeCommonIdentityMigratorPalletEvent };
 
@@ -13266,21 +13218,6 @@ export type PalletRootTestingEvent =
    * Event dispatched when the trigger_defensive extrinsic is called.
    **/
   'DefensiveTestCall';
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletMetaTxEvent =
-  /**
-   * A meta transaction has been dispatched.
-   *
-   * Contains the dispatch result of the meta transaction along with post-dispatch
-   * information.
-   **/
-  {
-    name: 'Dispatched';
-    data: { result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo> };
-  };
 
 /**
  * The `Event` enum of this pallet
@@ -16245,39 +16182,6 @@ export type PalletAssetRateError =
 /**
  * The `Error` enum of this pallet.
  **/
-export type PalletMetaTxError =
-  /**
-   * Invalid proof (e.g. signature).
-   **/
-  | 'BadProof'
-  /**
-   * The meta transaction is not yet valid (e.g. nonce too high).
-   **/
-  | 'Future'
-  /**
-   * The meta transaction is outdated (e.g. nonce too low).
-   **/
-  | 'Stale'
-  /**
-   * The meta transactions's birth block is ancient.
-   **/
-  | 'AncientBirthBlock'
-  /**
-   * The transaction extension did not authorize any origin.
-   **/
-  | 'UnknownOrigin'
-  /**
-   * The meta transaction is invalid.
-   **/
-  | 'Invalid'
-  /**
-   * The meta transaction length is invalid.
-   **/
-  | 'InvalidLength';
-
-/**
- * The `Error` enum of this pallet.
- **/
 export type PalletRootOffencesError =
   /**
    * Failed to get the active era from the staking pallet.
@@ -16631,6 +16535,5 @@ export type WestendRuntimeRuntimeError =
   | { pallet: 'XcmPallet'; palletError: PalletXcmError }
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }
   | { pallet: 'AssetRate'; palletError: PalletAssetRateError }
-  | { pallet: 'MetaTx'; palletError: PalletMetaTxError }
   | { pallet: 'RootOffences'; palletError: PalletRootOffencesError }
   | { pallet: 'Beefy'; palletError: PalletBeefyError };

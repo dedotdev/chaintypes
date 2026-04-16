@@ -13,6 +13,7 @@ import type {
   FixedBytes,
   H160,
   U256,
+  Permill,
   Perbill,
   Percent,
 } from 'dedot/codecs';
@@ -74,6 +75,8 @@ import type {
   PalletMultisigMultisig,
   PalletProxyProxyDefinition,
   PalletProxyAnnouncement,
+  AssetHubWestendRuntimeRuntimeParametersValue,
+  AssetHubWestendRuntimeRuntimeParametersKey,
   PalletAssetsAssetDetails,
   PalletAssetsAssetAccount,
   PalletAssetsApproval,
@@ -106,6 +109,7 @@ import type {
   PalletAssetRewardsPoolStakerInfo,
   PalletAssetRewardsPoolInfo,
   FrameSupportTokensFungibleHoldConsideration,
+  PalletPsmCircuitBreakerLevel,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationMigrationLimits,
   PalletStakingAsyncLedgerStakingLedger,
@@ -1533,6 +1537,26 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
+   * Pallet `Parameters`'s storage queries
+   **/
+  parameters: {
+    /**
+     * Stored parameters.
+     *
+     * @param {AssetHubWestendRuntimeRuntimeParametersKey} arg
+     * @param {Callback<AssetHubWestendRuntimeRuntimeParametersValue | undefined> =} callback
+     **/
+    parameters: GenericStorageQuery<
+      (arg: AssetHubWestendRuntimeRuntimeParametersKey) => AssetHubWestendRuntimeRuntimeParametersValue | undefined,
+      AssetHubWestendRuntimeRuntimeParametersKey
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
    * Pallet `Assets`'s storage queries
    **/
   assets: {
@@ -2389,6 +2413,71 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
+   * Pallet `Psm`'s storage queries
+   **/
+  psm: {
+    /**
+     * pUSD minted through PSM per external asset.
+     *
+     * @param {number} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    psmDebt: GenericStorageQuery<(arg: number) => bigint, number>;
+
+    /**
+     * Fee for external → pUSD swaps (minting) per asset. Suggested value is 0.5%.
+     *
+     * @param {number} arg
+     * @param {Callback<Permill> =} callback
+     **/
+    mintingFee: GenericStorageQuery<(arg: number) => Permill, number>;
+
+    /**
+     * Fee for pUSD → external swaps (redemption) per asset. Suggested value is 0.5%.
+     *
+     * @param {number} arg
+     * @param {Callback<Permill> =} callback
+     **/
+    redemptionFee: GenericStorageQuery<(arg: number) => Permill, number>;
+
+    /**
+     * Max PSM debt as percentage of MaximumIssuance (global ceiling).
+     *
+     * @param {Callback<Permill> =} callback
+     **/
+    maxPsmDebtOfTotal: GenericStorageQuery<() => Permill>;
+
+    /**
+     * Per-asset ceiling weight. Weights are normalized against the sum of all weights.
+     * Zero means minting is disabled for this asset.
+     *
+     * @param {number} arg
+     * @param {Callback<Permill> =} callback
+     **/
+    assetCeilingWeight: GenericStorageQuery<(arg: number) => Permill, number>;
+
+    /**
+     * Set of approved external stablecoin asset IDs with their operational status.
+     * Key existence indicates the asset is approved; the value is the circuit breaker level.
+     *
+     * @param {number} arg
+     * @param {Callback<PalletPsmCircuitBreakerLevel | undefined> =} callback
+     **/
+    externalAssets: GenericStorageQuery<(arg: number) => PalletPsmCircuitBreakerLevel | undefined, number>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForExternalAssets: GenericStorageQuery<() => number>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
    * Pallet `StateTrieMigration`'s storage queries
    **/
   stateTrieMigration: {
@@ -2475,6 +2564,28 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<Perbill> =} callback
      **/
     minCommission: GenericStorageQuery<() => Perbill>;
+
+    /**
+     * The maximum commission that validators can set.
+     *
+     * If not set, defaults to `Perbill::one()` (100%), i.e. no upper limit.
+     *
+     * @param {Callback<Perbill> =} callback
+     **/
+    maxCommission: GenericStorageQuery<() => Perbill>;
+
+    /**
+     * Safety guard: the era from which legacy minting is permanently disabled on the
+     * payout side. **Irreversible** — once set, should never be cleared.
+     *
+     * Separate from [`Config::DisableMinting`] which controls the `end_era` path.
+     * This storage guards against minting during payout for eras that were created
+     * in DAP mode. Set automatically by `end_era_dap` on first successful pot snapshot.
+     * In legacy mode (Kusama), this is never set and the guard is inactive.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    disableMintingGuard: GenericStorageQuery<() => number | undefined>;
 
     /**
      * Whether nominators are slashable or not.
@@ -2731,9 +2842,11 @@ export interface ChainStorage extends GenericChainStorage {
     >;
 
     /**
-     * The total validator era payout for the last [`Config::HistoryDepth`] eras.
+     * The total staker reward budget for each era within [`Config::HistoryDepth`].
      *
-     * Eras that haven't finished yet or has been removed doesn't have reward.
+     * Set at era finalization:
+     * - in non-minting mode this is the snapshot of the era pot balance before any payouts.
+     * - in legacy mode it comes from `EraPayout`, with rewards minted on the fly.
      *
      * @param {number} arg
      * @param {Callback<bigint | undefined> =} callback
@@ -2768,7 +2881,8 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * Maximum staked rewards, i.e. the percentage of the era inflation that
      * is used for stake rewards.
-     * See [Era payout](./index.html#era-payout).
+     *
+     * Only used in legacy minting mode (`DisableMinting = false`).
      *
      * @param {Callback<Percent | undefined> =} callback
      **/
@@ -2819,7 +2933,8 @@ export interface ChainStorage extends GenericChainStorage {
      * - When a new offence is added to `OffenceQueue`, its era is **inserted in sorted order**
      * if not already present.
      * - When all offences for an era are processed, it is **removed** from this list.
-     * - The maximum length of this vector is bounded by `BondingDuration`.
+     * - The maximum length of this vector is bounded by `BondingDuration +
+     * OFFENCE_QUEUE_ERAS_BOUND`.
      *
      * This eliminates the need for expensive iteration and sorting when fetching the next offence
      * to process.
@@ -3795,6 +3910,35 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [number, number | undefined]) => FrameSupportTokensFungibleHoldConsideration | undefined,
       [number, number | undefined]
     >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Dap`'s storage queries
+   **/
+  dap: {
+    /**
+     * Budget allocation map: `BudgetKey -> Perbill`.
+     *
+     * Keys must correspond to registered `BudgetRecipients`. Sum of values must be
+     * exactly `Perbill::one()` (100%). Recipients not included receive nothing.
+     *
+     * @param {Callback<Array<[Bytes, Perbill]>> =} callback
+     **/
+    budgetAllocation: GenericStorageQuery<() => Array<[Bytes, Perbill]>>;
+
+    /**
+     * Timestamp (ms) of the last issuance drip.
+     *
+     * On existing chains, this must be seeded via
+     * [`migrations::MigrateV1ToV2`] to prevent incorrect minting on the first drip.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    lastIssuanceTimestamp: GenericStorageQuery<() => bigint>;
 
     /**
      * Generic pallet storage query

@@ -17,6 +17,7 @@ import type {
   AccountId32Like,
   H160,
   U256,
+  Permill,
   Percent,
   Perbill,
   FixedU128,
@@ -48,6 +49,8 @@ import type {
   AssetHubWestendRuntimeOriginCaller,
   PalletMultisigTimepoint,
   AssetHubWestendRuntimeProxyType,
+  PalletMetaTxMetaTx,
+  AssetHubWestendRuntimeRuntimeParameters,
   PalletUniquesDestroyWitness,
   PalletNftsCollectionConfig,
   PalletNftsDestroyWitness,
@@ -63,6 +66,7 @@ import type {
   PalletNftsPreSignedAttributes,
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
   FrameSupportScheduleDispatchTime,
+  PalletPsmCircuitBreakerLevel,
   PalletStateTrieMigrationMigrationLimits,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationProgress,
@@ -3874,6 +3878,71 @@ export interface ChainTx<
           palletCall: {
             name: 'PokeDeposit';
             params: { index: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `MetaTx`'s transaction calls
+   **/
+  metaTx: {
+    /**
+     * Dispatch a given meta transaction.
+     *
+     * - `_origin`: Can be any kind of origin.
+     * - `meta_tx`: Meta Transaction with a target call to be dispatched.
+     * - `meta_tx_encoded_len`: The size of the encoded meta transaction in bytes.
+     *
+     * @param {PalletMetaTxMetaTx} metaTx
+     * @param {number} metaTxEncodedLen
+     **/
+    dispatch: GenericTxCall<
+      (
+        metaTx: PalletMetaTxMetaTx,
+        metaTxEncodedLen: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MetaTx';
+          palletCall: {
+            name: 'Dispatch';
+            params: { metaTx: PalletMetaTxMetaTx; metaTxEncodedLen: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Parameters`'s transaction calls
+   **/
+  parameters: {
+    /**
+     * Set the value of a parameter.
+     *
+     * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+     * deleted by setting them to `None`.
+     *
+     * @param {AssetHubWestendRuntimeRuntimeParameters} keyValue
+     **/
+    setParameter: GenericTxCall<
+      (keyValue: AssetHubWestendRuntimeRuntimeParameters) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'SetParameter';
+            params: { keyValue: AssetHubWestendRuntimeRuntimeParameters };
           };
         },
         ChainKnownTypes
@@ -10691,6 +10760,9 @@ export interface ChainTx<
      * This will error if the origin is already mapped or is a eth native `Address20`. It will
      * take a deposit that can be released by calling [`Self::unmap_account`].
      *
+     * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
+     * on creation via [`AutoMapper`].
+     *
      **/
     mapAccount: GenericTxCall<
       () => ChainSubmittableExtrinsic<
@@ -10709,6 +10781,9 @@ export interface ChainTx<
      *
      * There is no reason to ever call this function other than freeing up the deposit.
      * This is only useful when the account should no longer be used.
+     *
+     * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
+     * on kill via [`AutoMapper`].
      *
      **/
     unmapAccount: GenericTxCall<
@@ -11001,6 +11076,380 @@ export interface ChainTx<
           palletCall: {
             name: 'CleanupPool';
             params: { poolId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Psm`'s transaction calls
+   **/
+  psm: {
+    /**
+     * Swap external stablecoin for pUSD.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be `Signed` by the user performing the swap.
+     *
+     * ## Details
+     *
+     * Transfers `external_amount` of the specified external stablecoin from the caller
+     * to the PSM account, then mints pUSD to the caller minus the minting fee.
+     * The fee is calculated using ceiling rounding (`mul_ceil`), ensuring the
+     * protocol never undercharges. The fee is transferred to [`Config::FeeDestination`].
+     *
+     * ## Parameters
+     *
+     * - `asset_id`: The external stablecoin to deposit (must be in `ExternalAssets`)
+     * - `external_amount`: Amount of external stablecoin to deposit
+     *
+     * ## Errors
+     *
+     * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
+     * - [`Error::MintingStopped`]: If circuit breaker is at `MintingDisabled` or higher
+     * - [`Error::BelowMinimumSwap`]: If `external_amount` is below [`Config::MinSwapAmount`]
+     * - [`Error::ExceedsMaxIssuance`]: If minting would exceed system-wide pUSD issuance cap
+     * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed PSM debt ceiling (aggregate or
+     * per-asset)
+     *
+     * ## Events
+     *
+     * - [`Event::Minted`]: Emitted on successful mint
+     *
+     * @param {number} assetId
+     * @param {bigint} externalAmount
+     **/
+    mint: GenericTxCall<
+      (
+        assetId: number,
+        externalAmount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'Mint';
+            params: { assetId: number; externalAmount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Swap pUSD for external stablecoin.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be `Signed` by the user performing the swap.
+     *
+     * ## Details
+     *
+     * Burns `pusd_amount` pUSD from the caller minus fee (transferred to
+     * [`Config::FeeDestination`]), then transfers the resulting amount in external
+     * stablecoin from PSM to the caller. The fee is calculated using ceiling rounding
+     * (`mul_ceil`), ensuring the protocol never undercharges.
+     *
+     * ## Parameters
+     *
+     * - `asset_id`: The external stablecoin to receive (must be in `ExternalAssets`)
+     * - `pusd_amount`: Amount of pUSD to redeem
+     *
+     * ## Errors
+     *
+     * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
+     * - [`Error::AllSwapsStopped`]: If circuit breaker is at `AllDisabled`
+     * - [`Error::BelowMinimumSwap`]: If `pusd_amount` is below [`Config::MinSwapAmount`]
+     * - [`Error::InsufficientReserve`]: If PSM has insufficient external stablecoin
+     *
+     * ## Events
+     *
+     * - [`Event::Redeemed`]: Emitted on successful redemption
+     *
+     * @param {number} assetId
+     * @param {bigint} pusdAmount
+     **/
+    redeem: GenericTxCall<
+      (
+        assetId: number,
+        pusdAmount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'Redeem';
+            params: { assetId: number; pusdAmount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the minting fee for a specific asset (external → pUSD).
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::ManagerOrigin`].
+     *
+     * ## Parameters
+     *
+     * - `asset_id`: The external stablecoin to configure
+     * - `fee`: The new minting fee as a Permill
+     *
+     * ## Events
+     *
+     * - [`Event::MintingFeeUpdated`]: Emitted with old and new values
+     *
+     * @param {number} assetId
+     * @param {Permill} fee
+     **/
+    setMintingFee: GenericTxCall<
+      (
+        assetId: number,
+        fee: Permill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetMintingFee';
+            params: { assetId: number; fee: Permill };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the redemption fee for a specific asset (pUSD → external).
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::ManagerOrigin`].
+     *
+     * ## Parameters
+     *
+     * - `asset_id`: The external stablecoin to configure
+     * - `fee`: The new redemption fee as a Permill
+     *
+     * ## Events
+     *
+     * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values
+     *
+     * @param {number} assetId
+     * @param {Permill} fee
+     **/
+    setRedemptionFee: GenericTxCall<
+      (
+        assetId: number,
+        fee: Permill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetRedemptionFee';
+            params: { assetId: number; fee: Permill };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the maximum PSM debt as a percentage of total maximum issuance.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::ManagerOrigin`].
+     *
+     * ## Events
+     *
+     * - [`Event::MaxPsmDebtOfTotalUpdated`]: Emitted with old and new values
+     *
+     * @param {Permill} ratio
+     **/
+    setMaxPsmDebt: GenericTxCall<
+      (ratio: Permill) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetMaxPsmDebt';
+            params: { ratio: Permill };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the circuit breaker status for a specific external asset.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::ManagerOrigin`].
+     *
+     * ## Details
+     *
+     * Controls which operations are allowed for this asset:
+     * - [`CircuitBreakerLevel::AllEnabled`]: All swaps allowed
+     * - [`CircuitBreakerLevel::MintingDisabled`]: Only redemptions allowed (useful for
+     * draining debt)
+     * - [`CircuitBreakerLevel::AllDisabled`]: No swaps allowed
+     *
+     * ## Parameters
+     *
+     * - `asset_id`: The external stablecoin to configure
+     * - `status`: The new circuit breaker level for this asset
+     *
+     * ## Errors
+     *
+     * - [`Error::AssetNotApproved`]: If the asset is not in the approved list
+     *
+     * ## Events
+     *
+     * - [`Event::AssetStatusUpdated`]: Emitted with the asset ID and new status
+     *
+     * @param {number} assetId
+     * @param {PalletPsmCircuitBreakerLevel} status
+     **/
+    setAssetStatus: GenericTxCall<
+      (
+        assetId: number,
+        status: PalletPsmCircuitBreakerLevel,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetAssetStatus';
+            params: { assetId: number; status: PalletPsmCircuitBreakerLevel };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the per-asset debt ceiling weight.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::ManagerOrigin`].
+     *
+     * ## Details
+     *
+     * Ratios act as weights normalized against the sum of all asset weights:
+     * `max_asset_debt = (ratio / sum_of_all_ratios) * MaxPsmDebtOfTotal * MaximumIssuance`
+     *
+     * With a single asset, the weight always normalizes to 100% of the PSM
+     * ceiling.
+     *
+     * ## Parameters
+     *
+     * - `asset_id`: The external stablecoin to configure
+     * - `ratio`: Weight for this asset's share of the total PSM ceiling
+     *
+     * ## Events
+     *
+     * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values
+     *
+     * @param {number} assetId
+     * @param {Permill} weight
+     **/
+    setAssetCeilingWeight: GenericTxCall<
+      (
+        assetId: number,
+        weight: Permill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetAssetCeilingWeight';
+            params: { assetId: number; weight: Permill };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Add an external stablecoin to the approved list.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::ManagerOrigin`].
+     *
+     * ## Parameters
+     *
+     * - `asset_id`: The external stablecoin to add
+     *
+     * ## Errors
+     *
+     * - [`Error::AssetAlreadyApproved`]: If the asset is already in the approved list
+     *
+     * ## Events
+     *
+     * - [`Event::ExternalAssetAdded`]: Emitted on successful addition
+     *
+     * @param {number} assetId
+     **/
+    addExternalAsset: GenericTxCall<
+      (assetId: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'AddExternalAsset';
+            params: { assetId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove an external stablecoin from the approved list.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be [`Config::ManagerOrigin`].
+     *
+     * ## Details
+     *
+     * The asset cannot be removed if it has non-zero PSM debt outstanding.
+     * This prevents orphaned debt that cannot be redeemed.
+     *
+     * Upon removal, the associated configuration is also cleaned up:
+     * - `MintingFee` for this asset
+     * - `RedemptionFee` for this asset
+     * - `AssetCeilingWeight` for this asset
+     *
+     * ## Parameters
+     *
+     * - `asset_id`: The external stablecoin to remove
+     *
+     * ## Errors
+     *
+     * - [`Error::AssetNotApproved`]: If the asset is not in the approved list
+     * - [`Error::AssetHasDebt`]: If the asset has non-zero PSM debt
+     *
+     * ## Events
+     *
+     * - [`Event::ExternalAssetRemoved`]: Emitted on successful removal
+     *
+     * @param {number} assetId
+     **/
+    removeExternalAsset: GenericTxCall<
+      (assetId: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'RemoveExternalAsset';
+            params: { assetId: number };
           };
         },
         ChainKnownTypes
@@ -11861,9 +12310,10 @@ export interface ChainTx<
     >;
 
     /**
-     * Force a validator to have at least the minimum commission. This will not affect a
-     * validator who already has a commission greater than or equal to the minimum. Any account
-     * can call this.
+     * Clamps a validator's commission to the `[MinCommission, MaxCommission]` range.
+     *
+     * Named `force_apply_min_commission` for legacy reasons — it also enforces the
+     * maximum. Any account can call this.
      *
      * @param {AccountId32Like} validatorStash
      **/
@@ -11919,6 +12369,10 @@ export interface ChainTx<
      * backing a validator to receive the reward. The nominators are not sorted across pages
      * and so it should not be assumed the highest staker would be on the topmost page and vice
      * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
+     *
+     * The validator's own reward (commission + own-stake share) is prorated across pages
+     * proportional to each page's stake. The full validator reward is the sum across all
+     * pages.
      *
      * @param {AccountId32Like} validatorStash
      * @param {number} era
@@ -12129,6 +12583,26 @@ export interface ChainTx<
           palletCall: {
             name: 'PruneEraStep';
             params: { era: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Sets the maximum commission that validators can set.
+     *
+     * The dispatch origin must be `T::AdminOrigin`.
+     *
+     * @param {Perbill} new_
+     **/
+    setMaxCommission: GenericTxCall<
+      (new_: Perbill) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetMaxCommission';
+            params: { new: Perbill };
           };
         },
         ChainKnownTypes
@@ -14715,6 +15189,36 @@ export interface ChainTx<
           palletCall: {
             name: 'RetryPayment';
             params: { parentBountyId: number; childBountyId: number | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Dap`'s transaction calls
+   **/
+  dap: {
+    /**
+     * Set the budget allocation map.
+     *
+     * Each key must match a registered `BudgetRecipient`. The sum of all percentages
+     * must be exactly 100%. Recipients not included in the map receive nothing.
+     *
+     * @param {Array<[BytesLike, Perbill]>} newAllocations
+     **/
+    setBudgetAllocation: GenericTxCall<
+      (newAllocations: Array<[BytesLike, Perbill]>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Dap';
+          palletCall: {
+            name: 'SetBudgetAllocation';
+            params: { newAllocations: Array<[BytesLike, Perbill]> };
           };
         },
         ChainKnownTypes

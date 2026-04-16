@@ -946,6 +946,50 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `MetaTx`'s errors
+   **/
+  metaTx: {
+    /**
+     * Invalid proof (e.g. signature).
+     **/
+    BadProof: GenericPalletError;
+
+    /**
+     * The meta transaction is not yet valid (e.g. nonce too high).
+     **/
+    Future: GenericPalletError;
+
+    /**
+     * The meta transaction is outdated (e.g. nonce too low).
+     **/
+    Stale: GenericPalletError;
+
+    /**
+     * The meta transactions's birth block is ancient.
+     **/
+    AncientBirthBlock: GenericPalletError;
+
+    /**
+     * The transaction extension did not authorize any origin.
+     **/
+    UnknownOrigin: GenericPalletError;
+
+    /**
+     * The meta transaction is invalid.
+     **/
+    Invalid: GenericPalletError;
+
+    /**
+     * The meta transaction length is invalid.
+     **/
+    InvalidLength: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `Assets`'s errors
    **/
   assets: {
@@ -2206,6 +2250,11 @@ export interface ChainErrors extends GenericChainErrors {
     EcdsaRecoveryFailed: GenericPalletError;
 
     /**
+     * Manual mapping is disabled when auto-mapping is enabled.
+     **/
+    AutoMappingEnabled: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -2312,6 +2361,85 @@ export interface ChainErrors extends GenericChainErrors {
      * The spender address is invalid (e.g., zero address).
      **/
     InvalidSpender: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Psm`'s errors
+   **/
+  psm: {
+    /**
+     * PSM doesn't have enough external stablecoin for redemption.
+     **/
+    InsufficientReserve: GenericPalletError;
+
+    /**
+     * Swap would exceed PSM debt ceiling.
+     **/
+    ExceedsMaxPsmDebt: GenericPalletError;
+
+    /**
+     * Swap amount below minimum threshold.
+     **/
+    BelowMinimumSwap: GenericPalletError;
+
+    /**
+     * Minting operations are disabled (circuit breaker level >= 1).
+     **/
+    MintingStopped: GenericPalletError;
+
+    /**
+     * All swap operations are disabled (circuit breaker level = 2).
+     **/
+    AllSwapsStopped: GenericPalletError;
+
+    /**
+     * Asset is not an approved external stablecoin.
+     **/
+    UnsupportedAsset: GenericPalletError;
+
+    /**
+     * Mint would exceed system-wide maximum pUSD issuance.
+     **/
+    ExceedsMaxIssuance: GenericPalletError;
+
+    /**
+     * Asset is already in the approved list.
+     **/
+    AssetAlreadyApproved: GenericPalletError;
+
+    /**
+     * Cannot remove asset: not in approved list.
+     **/
+    AssetNotApproved: GenericPalletError;
+
+    /**
+     * Cannot remove asset: has non-zero PSM debt.
+     **/
+    AssetHasDebt: GenericPalletError;
+
+    /**
+     * Operation requires Full manager level (GeneralAdmin), not Emergency.
+     **/
+    InsufficientPrivilege: GenericPalletError;
+
+    /**
+     * Maximum number of approved external assets reached.
+     **/
+    TooManyAssets: GenericPalletError;
+
+    /**
+     * External asset decimals do not match the stable asset decimals.
+     **/
+    DecimalsMismatch: GenericPalletError;
+
+    /**
+     * An unexpected invariant violation occurred. This should be reported.
+     **/
+    Unexpected: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2552,6 +2680,16 @@ export interface ChainErrors extends GenericChainErrors {
      * The slash has been cancelled and cannot be applied.
      **/
     CancelledSlash: GenericPalletError;
+
+    /**
+     * Commission is higher than the allowed maximum `MaxCommission`.
+     **/
+    CommissionTooHigh: GenericPalletError;
+
+    /**
+     * Era has no reward pot but legacy minting is disabled.
+     **/
+    LegacyMintingDisabled: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3338,6 +3476,25 @@ export interface ChainErrors extends GenericChainErrors {
      * The preimage does not exist.
      **/
     PreimageNotExist: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Dap`'s errors
+   **/
+  dap: {
+    /**
+     * A key in the budget allocation does not match any registered recipient.
+     **/
+    UnknownBudgetKey: GenericPalletError;
+
+    /**
+     * Budget allocation percentages do not sum to exactly 100%.
+     **/
+    BudgetNotExact: GenericPalletError;
 
     /**
      * Generic pallet error

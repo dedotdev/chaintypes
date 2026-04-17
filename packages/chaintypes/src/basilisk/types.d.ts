@@ -13852,6 +13852,10 @@ export type XcmRuntimeApisDryRunXcmDryRunEffects = {
 
 export type XcmRuntimeApisConversionsError = 'Unsupported' | 'VersionedConversionFailed';
 
+export type PolkadotPrimitivesVstagingCoreSelector = number;
+
+export type PolkadotPrimitivesVstagingClaimQueueOffset = number;
+
 export type BasiliskRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }
   | { pallet: 'Balances'; palletError: PalletBalancesError }

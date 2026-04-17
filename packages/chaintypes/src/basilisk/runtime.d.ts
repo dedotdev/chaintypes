@@ -42,6 +42,8 @@ import type {
   XcmRuntimeApisDryRunXcmDryRunEffects,
   XcmRuntimeApisConversionsError,
   SpConsensusSlotsSlot,
+  PolkadotPrimitivesVstagingCoreSelector,
+  PolkadotPrimitivesVstagingClaimQueueOffset,
 } from './types.js';
 
 export interface RuntimeApis extends GenericRuntimeApis {
@@ -567,6 +569,40 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {SpConsensusSlotsSlot} slot
      **/
     canBuildUpon: GenericRuntimeApiMethod<(includedHash: H256, slot: SpConsensusSlotsSlot) => Promise<boolean>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: RelayParentOffsetApi - 0x04e70521a0d3d2f8
+   **/
+  relayParentOffsetApi: {
+    /**
+     * Fetch the slot offset that is expected from the relay chain.
+     *
+     * @callname: RelayParentOffsetApi_relay_parent_offset
+     **/
+    relayParentOffset: GenericRuntimeApiMethod<() => Promise<number>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: GetCoreSelectorApi - 0x695c80446b8b3d4e
+   **/
+  getCoreSelectorApi: {
+    /**
+     * Retrieve core selector and claim queue offset for the next block.
+     *
+     * @callname: GetCoreSelectorApi_core_selector
+     **/
+    coreSelector: GenericRuntimeApiMethod<
+      () => Promise<[PolkadotPrimitivesVstagingCoreSelector, PolkadotPrimitivesVstagingClaimQueueOffset]>
+    >;
 
     /**
      * Generic runtime api call

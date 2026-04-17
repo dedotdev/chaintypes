@@ -1104,6 +1104,15 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `Parameters`'s constants
+   **/
+  parameters: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `EmaOracle`'s constants
    **/
   emaOracle: {

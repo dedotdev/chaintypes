@@ -44,7 +44,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: BasiliskApi
- * @specVersion: 129
+ * @specVersion: 130
  **/
 export interface BasiliskApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

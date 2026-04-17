@@ -2160,6 +2160,27 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
+   * Pallet `Parameters`'s storage queries
+   **/
+  parameters: {
+    /**
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    isTestnet: GenericStorageQuery<() => boolean>;
+
+    /**
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    relayParentOffsetOverride: GenericStorageQuery<() => boolean>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
    * Pallet `EmaOracle`'s storage queries
    **/
   emaOracle: {

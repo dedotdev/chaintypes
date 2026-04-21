@@ -1995,8 +1995,13 @@ export interface ChainErrors extends GenericChainErrors {
     DisallowedRelayParent: GenericPalletError;
 
     /**
+     * The candidate's scheduling-parent was not allowed.
+     **/
+    DisallowedSchedulingParent: GenericPalletError;
+
+    /**
      * Failed to compute group index for the core: either it's out of bounds
-     * or the relay parent doesn't belong to the current session.
+     * or the scheduling parent doesn't belong to the current session.
      **/
     InvalidAssignment: GenericPalletError;
 
@@ -2081,6 +2086,25 @@ export interface ChainErrors extends GenericChainErrors {
      * Too many candidates supplied.
      **/
     UnscheduledCandidate: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `ParaScheduler`'s errors
+   **/
+  paraScheduler: {
+    /**
+     * assign_core was called with no assignments.
+     **/
+    AssignmentsEmpty: GenericPalletError;
+
+    /**
+     * assign_core with non allowed insertion.
+     **/
+    DisallowedInsert: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2398,23 +2422,6 @@ export interface ChainErrors extends GenericChainErrors {
      * The account doesn't have enough credits to purchase on-demand coretime.
      **/
     InsufficientCredits: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `CoretimeAssignmentProvider`'s errors
-   **/
-  coretimeAssignmentProvider: {
-    AssignmentsEmpty: GenericPalletError;
-
-    /**
-     * assign_core is only allowed to append new assignments at the end of already existing
-     * ones or update the last entry.
-     **/
-    DisallowedInsert: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3007,96 +3014,6 @@ export interface ChainErrors extends GenericChainErrors {
    * Pallet `RcMigrator`'s errors
    **/
   rcMigrator: {
-    Unreachable: GenericPalletError;
-    OutOfWeight: GenericPalletError;
-
-    /**
-     * Failed to send XCM message to AH.
-     **/
-    XcmError: GenericPalletError;
-
-    /**
-     * Failed to withdraw account from RC for migration to AH.
-     **/
-    FailedToWithdrawAccount: GenericPalletError;
-
-    /**
-     * Indicates that the specified block number is in the past.
-     **/
-    PastBlockNumber: GenericPalletError;
-
-    /**
-     * Indicates that there is not enough time for staking to lock.
-     *
-     * Schedule the migration at least two sessions before the current era ends.
-     **/
-    EraEndsTooSoon: GenericPalletError;
-
-    /**
-     * Balance accounting overflow.
-     **/
-    BalanceOverflow: GenericPalletError;
-
-    /**
-     * Balance accounting underflow.
-     **/
-    BalanceUnderflow: GenericPalletError;
-
-    /**
-     * The query response is invalid.
-     **/
-    InvalidQueryResponse: GenericPalletError;
-
-    /**
-     * The xcm query was not found.
-     **/
-    QueryNotFound: GenericPalletError;
-
-    /**
-     * Failed to send XCM message.
-     **/
-    XcmSendError: GenericPalletError;
-
-    /**
-     * The migration stage is not reachable from the current stage.
-     **/
-    UnreachableStage: GenericPalletError;
-
-    /**
-     * Invalid parameter.
-     **/
-    InvalidParameter: GenericPalletError;
-
-    /**
-     * The AH UMP queue priority configuration is already set.
-     **/
-    AhUmpQueuePriorityAlreadySet: GenericPalletError;
-
-    /**
-     * The account is referenced by some other pallet. It might have freezes or holds.
-     **/
-    AccountReferenced: GenericPalletError;
-
-    /**
-     * The XCM version is invalid.
-     **/
-    BadXcmVersion: GenericPalletError;
-
-    /**
-     * The origin is invalid.
-     **/
-    InvalidOrigin: GenericPalletError;
-
-    /**
-     * The stage transition is invalid.
-     **/
-    InvalidStageTransition: GenericPalletError;
-
-    /**
-     * Unsigned validation failed.
-     **/
-    UnsignedValidationFailed: GenericPalletError;
-
     /**
      * Generic pallet error
      **/

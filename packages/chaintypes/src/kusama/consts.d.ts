@@ -1261,15 +1261,6 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
-   * Pallet `CoretimeAssignmentProvider`'s constants
-   **/
-  coretimeAssignmentProvider: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
    * Pallet `Registrar`'s constants
    **/
   registrar: {

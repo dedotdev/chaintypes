@@ -69,7 +69,7 @@ import type {
   PolkadotPrimitivesV9AsyncBackingAsyncBackingParams,
   PolkadotPrimitivesV9ExecutorParams,
   PolkadotPrimitivesV9ApprovalVotingParams,
-  PolkadotPrimitivesV9SchedulerParams,
+  PolkadotPrimitivesVstagingSchedulerParams,
   PolkadotPrimitivesV9InherentData,
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
@@ -81,7 +81,7 @@ import type {
   PolkadotPrimitivesV9SlashingDisputeProof,
   SpRuntimeMultiSigner,
   PalletBrokerCoretimeInterfaceCoreAssignment,
-  PolkadotRuntimeParachainsAssignerCoretimePartsOf57600,
+  PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600,
   XcmVersionedXcm,
   XcmVersionedAssets,
   StagingXcmV5Location,
@@ -92,11 +92,6 @@ import type {
   SpConsensusBeefyDoubleVotingProof,
   SpConsensusBeefyForkVotingProof,
   SpConsensusBeefyFutureBlockVotingProof,
-  PalletRcMigratorMigrationStage,
-  StagingXcmV5Response,
-  PalletRcMigratorQueuePriority,
-  PalletRcMigratorManagerMultisigVote,
-  PalletRcMigratorMigrationSettings,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -1710,7 +1705,7 @@ export interface ChainTx<
      *
      * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
      * them, then the list of nominators is paged, with each page being capped at
-     * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+     * [`Config::MaxExposurePageSize`]. If a validator has more than one page of nominators,
      * the call needs to be made for each page separately in order for all the nominators
      * backing a validator to receive the reward. The nominators are not sorted across pages
      * and so it should not be assumed the highest staker would be on the topmost page and vice
@@ -1904,14 +1899,16 @@ export interface ChainTx<
   session: {
     /**
      * Sets the session key(s) of the function caller to `keys`.
+     *
      * Allows an account to set its session key prior to becoming a validator.
      * This doesn't take effect until the next session.
      *
-     * The dispatch origin of this function must be signed.
-     *
-     * ## Complexity
-     * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
-     * fixed.
+     * - `origin`: The dispatch origin of this function must be signed.
+     * - `keys`: The new session keys to set. These are the public keys of all sessions keys
+     * setup in the runtime.
+     * - `proof`: The proof that `origin` has access to the private keys of `keys`. See
+     * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
+     * proof format.
      *
      * @param {StagingKusamaRuntimeSessionKeys} keys
      * @param {BytesLike} proof
@@ -1941,10 +1938,6 @@ export interface ChainTx<
      * convertible to a validator ID using the chain's typical addressing system (this usually
      * means being a controller account) or directly convertible into a validator ID (which
      * usually means being a stash account).
-     *
-     * ## Complexity
-     * - `O(1)` in number of key types. Actual cost depends on the number of length of
-     * `T::Keys::key_ids()` which is fixed.
      *
      **/
     purgeKeys: GenericTxCall<
@@ -4933,7 +4926,10 @@ export interface ChainTx<
     >;
 
     /**
-     * Cancel an anonymously scheduled task.
+     * Cancel a scheduled task (named or anonymous), by providing the block it is scheduled for
+     * execution in, as well as the index of the task in that block's agenda.
+     *
+     * In the case of a named task, it will remove it from the lookup table as well.
      *
      * @param {number} when
      * @param {number} index
@@ -5085,6 +5081,8 @@ export interface ChainTx<
      * original task's configuration, but will have a lower value for `remaining` than the
      * original `total_retries`.
      *
+     * This call **cannot** be used to set a retry configuration for a named task.
+     *
      * @param {[number, number]} task
      * @param {number} retries
      * @param {number} period
@@ -5119,6 +5117,8 @@ export interface ChainTx<
      * clones of the original task. Their retry configuration will be derived from the
      * original task's configuration, but will have a lower value for `remaining` than the
      * original `total_retries`.
+     *
+     * This is the only way to set a retry configuration for a named task.
      *
      * @param {FixedBytes<32>} id
      * @param {number} retries
@@ -5603,7 +5603,9 @@ export interface ChainTx<
      * Register approval for a dispatch to be made from a deterministic composite account if
      * approved by a total of `threshold - 1` of `other_signatories`.
      *
-     * If there are enough, then dispatch the call.
+     * **If the approval threshold is met (including the sender's approval), this will
+     * immediately execute the call.** This is the only way to execute a multisig call -
+     * `approve_as_multi` will never trigger execution.
      *
      * Payment: `DepositBase` will be reserved if this is the first approval, plus
      * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
@@ -5619,8 +5621,9 @@ export interface ChainTx<
      * transaction index) of the first approval transaction.
      * - `call`: The call to be executed.
      *
-     * NOTE: Unless this is the final approval, you will generally want to use
-     * `approve_as_multi` instead, since it only requires a hash of the call.
+     * NOTE: For intermediate approvals (not the final approval), you should generally use
+     * `approve_as_multi` instead, since it only requires a hash of the call and is more
+     * efficient.
      *
      * Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise
      * on success, result is `Ok` and the result from the interior call, if it was executed,
@@ -5675,6 +5678,13 @@ export interface ChainTx<
      * Register approval for a dispatch to be made from a deterministic composite account if
      * approved by a total of `threshold - 1` of `other_signatories`.
      *
+     * **This function will NEVER execute the call, even if the approval threshold is
+     * reached.** It only registers approval. To actually execute the call, `as_multi` must
+     * be called with the full call data by any of the signatories.
+     *
+     * This function is more efficient than `as_multi` for intermediate approvals since it
+     * only requires the call hash, not the full call data.
+     *
      * Payment: `DepositBase` will be reserved if this is the first approval, plus
      * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
      * is cancelled.
@@ -5689,7 +5699,8 @@ export interface ChainTx<
      * transaction index) of the first approval transaction.
      * - `call_hash`: The hash of the call to be executed.
      *
-     * NOTE: If this is the final approval, you will want to use `as_multi` instead.
+     * NOTE: To execute the call after approvals are gathered, any signatory must call
+     * `as_multi` with the full call data. This function cannot execute the call.
      *
      * ## Complexity
      * - `O(S)`.
@@ -8671,15 +8682,33 @@ export interface ChainTx<
     /**
      * Set scheduler-params.
      *
-     * @param {PolkadotPrimitivesV9SchedulerParams} new_
+     * @param {PolkadotPrimitivesVstagingSchedulerParams} new_
      **/
     setSchedulerParams: GenericTxCall<
-      (new_: PolkadotPrimitivesV9SchedulerParams) => ChainSubmittableExtrinsic<
+      (new_: PolkadotPrimitivesVstagingSchedulerParams) => ChainSubmittableExtrinsic<
         {
           pallet: 'Configuration';
           palletCall: {
             name: 'SetSchedulerParams';
-            params: { new: PolkadotPrimitivesV9SchedulerParams };
+            params: { new: PolkadotPrimitivesVstagingSchedulerParams };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the maximum relay parent session age.
+     *
+     * @param {number} new_
+     **/
+    setMaxRelayParentSessionAge: GenericTxCall<
+      (new_: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Configuration';
+          palletCall: {
+            name: 'SetMaxRelayParentSessionAge';
+            params: { new: number };
           };
         },
         ChainKnownTypes
@@ -10410,7 +10439,7 @@ export interface ChainTx<
      *
      * @param {number} core
      * @param {number} begin
-     * @param {Array<[PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]>} assignment
+     * @param {Array<[PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600]>} assignment
      * @param {number | undefined} endHint
      **/
     assignCore: GenericTxCall<
@@ -10418,7 +10447,7 @@ export interface ChainTx<
         core: number,
         begin: number,
         assignment: Array<
-          [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]
+          [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600]
         >,
         endHint: number | undefined,
       ) => ChainSubmittableExtrinsic<
@@ -10430,7 +10459,10 @@ export interface ChainTx<
               core: number;
               begin: number;
               assignment: Array<
-                [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]
+                [
+                  PalletBrokerCoretimeInterfaceCoreAssignment,
+                  PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600,
+                ]
               >;
               endHint: number | undefined;
             };
@@ -11432,353 +11464,6 @@ export interface ChainTx<
               equivocationProof: SpConsensusBeefyFutureBlockVotingProof;
               keyOwnerProof: SpSessionMembershipProof;
             };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
-   * Pallet `RcMigrator`'s transaction calls
-   **/
-  rcMigrator: {
-    /**
-     * Set the migration stage.
-     *
-     * This call is intended for emergency use only and is guarded by the
-     * [`Config::AdminOrigin`].
-     *
-     * @param {PalletRcMigratorMigrationStage} stage
-     **/
-    forceSetStage: GenericTxCall<
-      (stage: PalletRcMigratorMigrationStage) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'ForceSetStage';
-            params: { stage: PalletRcMigratorMigrationStage };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Schedule the migration to start at a given moment.
-     *
-     * ### Parameters:
-     * - `start`: The block number at which the migration will start. `DispatchTime` calculated
-     * at the moment of the extrinsic execution.
-     * - `warm_up`: Duration or timepoint that will be used to prepare for the migration. Calls
-     * are filtered during this period. It is intended to give enough time for UMP and DMP
-     * queues to empty. `DispatchTime` calculated at the moment of the transition to the
-     * warm-up stage.
-     * - `cool_off`: The block number at which the post migration cool-off period will end. The
-     * `DispatchTime` calculated at the moment of the transition to the cool-off stage.
-     * - `unsafe_ignore_staking_lock_check`: ONLY FOR TESTING. Ignore the check whether the
-     * scheduled time point is far enough in the future.
-     *
-     * Note: If the staking election for next era is already complete, and the next
-     * validator set is queued in `pallet-session`, we want to avoid starting the data
-     * migration at this point as it can lead to some missed validator rewards. To address
-     * this, we stop staking election at the start of migration and must wait atleast 1
-     * session (set via warm_up) before starting the data migration.
-     *
-     * Read [`MigrationStage::Scheduled`] documentation for more details.
-     *
-     * @param {FrameSupportScheduleDispatchTime} start
-     * @param {FrameSupportScheduleDispatchTime} warmUp
-     * @param {FrameSupportScheduleDispatchTime} coolOff
-     * @param {boolean} unsafeIgnoreStakingLockCheck
-     **/
-    scheduleMigration: GenericTxCall<
-      (
-        start: FrameSupportScheduleDispatchTime,
-        warmUp: FrameSupportScheduleDispatchTime,
-        coolOff: FrameSupportScheduleDispatchTime,
-        unsafeIgnoreStakingLockCheck: boolean,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'ScheduleMigration';
-            params: {
-              start: FrameSupportScheduleDispatchTime;
-              warmUp: FrameSupportScheduleDispatchTime;
-              coolOff: FrameSupportScheduleDispatchTime;
-              unsafeIgnoreStakingLockCheck: boolean;
-            };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Start the data migration.
-     *
-     * This is typically called by the Asset Hub to indicate it's readiness to receive the
-     * migration data.
-     *
-     **/
-    startDataMigration: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'StartDataMigration';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Receive a query response from the Asset Hub for a previously sent xcm message.
-     *
-     * @param {bigint} queryId
-     * @param {StagingXcmV5Response} response
-     **/
-    receiveQueryResponse: GenericTxCall<
-      (
-        queryId: bigint,
-        response: StagingXcmV5Response,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'ReceiveQueryResponse';
-            params: { queryId: bigint; response: StagingXcmV5Response };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Resend a previously sent and unconfirmed XCM message.
-     *
-     * @param {bigint} queryId
-     **/
-    resendXcm: GenericTxCall<
-      (queryId: bigint) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'ResendXcm';
-            params: { queryId: bigint };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the unprocessed message buffer size.
-     *
-     * `None` means to use the configuration value.
-     *
-     * @param {number | undefined} new_
-     **/
-    setUnprocessedMsgBuffer: GenericTxCall<
-      (new_: number | undefined) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'SetUnprocessedMsgBuffer';
-            params: { new: number | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the AH UMP queue priority configuration.
-     *
-     * Can only be called by the `AdminOrigin`.
-     *
-     * @param {PalletRcMigratorQueuePriority} new_
-     **/
-    setAhUmpQueuePriority: GenericTxCall<
-      (new_: PalletRcMigratorQueuePriority) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'SetAhUmpQueuePriority';
-            params: { new: PalletRcMigratorQueuePriority };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the manager account id.
-     *
-     * The manager has the similar to [`Config::AdminOrigin`] privileges except that it
-     * can not set the manager account id via `set_manager` call.
-     *
-     * @param {AccountId32Like | undefined} new_
-     **/
-    setManager: GenericTxCall<
-      (new_: AccountId32Like | undefined) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'SetManager';
-            params: { new: AccountId32Like | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * XCM send call identical to the [`pallet_xcm::Pallet::send`] call but with the
-     * [Config::SendXcm] router which will be able to send messages to the Asset Hub during
-     * the migration.
-     *
-     * @param {XcmVersionedLocation} dest
-     * @param {XcmVersionedXcm} message
-     **/
-    sendXcmMessage: GenericTxCall<
-      (
-        dest: XcmVersionedLocation,
-        message: XcmVersionedXcm,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'SendXcmMessage';
-            params: { dest: XcmVersionedLocation; message: XcmVersionedXcm };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the accounts to be preserved on Relay Chain during the migration.
-     *
-     * The accounts must have no consumers references.
-     *
-     * @param {Array<AccountId32Like>} accounts
-     **/
-    preserveAccounts: GenericTxCall<
-      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'PreserveAccounts';
-            params: { accounts: Array<AccountId32Like> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the canceller account id.
-     *
-     * The canceller can only stop scheduled migration.
-     *
-     * @param {AccountId32Like | undefined} new_
-     **/
-    setCanceller: GenericTxCall<
-      (new_: AccountId32Like | undefined) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'SetCanceller';
-            params: { new: AccountId32Like | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Pause the migration.
-     *
-     **/
-    pauseMigration: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'PauseMigration';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Cancel the migration.
-     *
-     * Migration can only be cancelled if it is in the [`MigrationStage::Scheduled`] state.
-     *
-     **/
-    cancelMigration: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'CancelMigration';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Vote on behalf of any of the members in `MultisigMembers`.
-     *
-     * Unsigned extrinsic, requiring the `payload` to be signed.
-     *
-     * Upon each call, a new entry is created in `ManagerMultisigs` map the `payload.call` to
-     * be dispatched. Once `MultisigThreshold` is reached, the entire map is deleted, and we
-     * move on to the next round.
-     *
-     * The round system ensures that signatures from older round cannot be reused.
-     *
-     * @param {PalletRcMigratorManagerMultisigVote} payload
-     * @param {SpRuntimeMultiSignature} sig
-     **/
-    voteManagerMultisig: GenericTxCall<
-      (
-        payload: PalletRcMigratorManagerMultisigVote,
-        sig: SpRuntimeMultiSignature,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'VoteManagerMultisig';
-            params: { payload: PalletRcMigratorManagerMultisigVote; sig: SpRuntimeMultiSignature };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the migration settings. Can only be done by admin or manager.
-     *
-     * @param {PalletRcMigratorMigrationSettings | undefined} settings
-     **/
-    setSettings: GenericTxCall<
-      (settings: PalletRcMigratorMigrationSettings | undefined) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'RcMigrator';
-          palletCall: {
-            name: 'SetSettings';
-            params: { settings: PalletRcMigratorMigrationSettings | undefined };
           };
         },
         ChainKnownTypes

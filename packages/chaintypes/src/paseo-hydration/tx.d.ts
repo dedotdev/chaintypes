@@ -946,6 +946,8 @@ export interface ChainTx<
      * Emits [`Event::Paid`] if successful.
      *
      * @param {number} index
+     *
+     * @deprecated The `spend_local` call will be removed by May 2025. Migrate to the new flow and use the `spend` call.
      **/
     payout: GenericTxCall<
       (index: number) => ChainSubmittableExtrinsic<
@@ -982,6 +984,8 @@ export interface ChainTx<
      * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
      *
      * @param {number} index
+     *
+     * @deprecated The `remove_approval` call will be removed by May 2025. It associated with the deprecated `spend_local` call.
      **/
     checkStatus: GenericTxCall<
       (index: number) => ChainSubmittableExtrinsic<
@@ -3115,7 +3119,7 @@ export interface ChainTx<
      * `pure` with corresponding parameters.
      *
      * - `spawner`: The account that originally called `pure` to create this account.
-     * - `index`: The disambiguation index originally passed to `pure`. Probably `0`.
+     * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
      * - `proxy_type`: The proxy type originally passed to `pure`.
      * - `height`: The height of the chain when the call to `pure` was processed.
      * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
@@ -5419,6 +5423,71 @@ export interface ChainTx<
     >;
 
     /**
+     * Dispatch a call as the emergency admin account.
+     *
+     * This is a fast path for the Technical Committee to react to emergencies
+     * (e.g., pausing exploited markets) without waiting for a full referendum.
+     * The inner call is dispatched as a Signed origin from the configured
+     * emergency admin account.
+     *
+     * Parameters:
+     * - `origin`: Must satisfy `EmergencyAdminOrigin` (TC majority or Root).
+     * - `call`: The runtime call to dispatch as the emergency admin.
+     *
+     * Emits `EmergencyAdminCallDispatched` with the call hash and dispatch result.
+     *
+     * @param {HydradxRuntimeRuntimeCallLike} call
+     **/
+    dispatchAsEmergencyAdmin: GenericTxCall<
+      (call: HydradxRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Dispatcher';
+          palletCall: {
+            name: 'DispatchAsEmergencyAdmin';
+            params: { call: HydradxRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Enable/pause the background ISMP storage cleanup. If enabled for the first time,
+     * starting from the first stage.
+     *
+     * @param {boolean} doPause
+     **/
+    pauseHyperbridgeCleanup: GenericTxCall<
+      (doPause: boolean) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Dispatcher';
+          palletCall: {
+            name: 'PauseHyperbridgeCleanup';
+            params: { doPause: boolean };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     * @param {HydradxRuntimeRuntimeCallLike} call
+     **/
+    dispatchWithFeePayer: GenericTxCall<
+      (call: HydradxRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Dispatcher';
+          palletCall: {
+            name: 'DispatchWithFeePayer';
+            params: { call: HydradxRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -5757,6 +5826,47 @@ export interface ChainTx<
           palletCall: {
             name: 'AddLiquidityWithLimit';
             params: { asset: number; amount: bigint; minSharesLimit: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Add all available liquidity of asset `asset` to Omnipool.
+     *
+     * Deposits the caller's entire free balance of `asset`. Equivalent to calling
+     * `do_add_liquidity` with `amount = free_balance(asset)`.
+     *
+     * Asset's tradable state must contain ADD_LIQUIDITY flag, otherwise `NotAllowed` error is returned.
+     *
+     * NFT is minted using NTFHandler which implements non-fungibles traits from frame_support.
+     *
+     * Asset weight cap must be respected, otherwise `AssetWeightExceeded` error is returned.
+     * Asset weight is ratio between new HubAsset reserve and total reserve of Hub asset in Omnipool.
+     *
+     * Fails if price difference between spot price and oracle price is higher than allowed by `PriceBarrier`.
+     *
+     * Parameters:
+     * - `asset`: The identifier of the asset to add. Must already be in the pool.
+     * - `min_shares_limit`: The minimum amount of shares the caller expects to receive in the position.
+     *
+     * Emits `LiquidityAdded` event when successful.
+     *
+     *
+     * @param {number} asset
+     * @param {bigint} minSharesLimit
+     **/
+    addAllLiquidity: GenericTxCall<
+      (
+        asset: number,
+        minSharesLimit: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Omnipool';
+          palletCall: {
+            name: 'AddAllLiquidity';
+            params: { asset: number; minSharesLimit: bigint };
           };
         },
         ChainKnownTypes
@@ -11997,6 +12107,8 @@ export interface ChainTx<
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_teleport_assets` or `transfer_assets`
      **/
     teleportAssets: GenericTxCall<
       (
@@ -12057,6 +12169,8 @@ export interface ChainTx<
      * @param {XcmVersionedLocation} beneficiary
      * @param {XcmVersionedAssets} assets
      * @param {number} feeAssetItem
+     *
+     * @deprecated This extrinsic uses `WeightLimit::Unlimited`, please migrate to `limited_reserve_transfer_assets` or `transfer_assets`
      **/
     reserveTransferAssets: GenericTxCall<
       (
@@ -13376,6 +13490,14 @@ export interface ChainTx<
    **/
   emaOracle: {
     /**
+     * Add an oracle to the whitelist so it is tracked by the pallet.
+     *
+     * Parameters:
+     * - `origin`: `AuthorityOrigin`
+     * - `source`: data source identifier
+     * - `assets`: the asset pair to track
+     *
+     * Emits `AddedToWhitelist` event when successful.
      *
      * @param {FixedBytes<8>} source
      * @param {[number, number]} assets
@@ -13397,6 +13519,14 @@ export interface ChainTx<
     >;
 
     /**
+     * Remove an oracle from the whitelist and delete all its stored entries.
+     *
+     * Parameters:
+     * - `origin`: `AuthorityOrigin`
+     * - `source`: data source identifier
+     * - `assets`: the asset pair to stop tracking
+     *
+     * Emits `RemovedFromWhitelist` event when successful.
      *
      * @param {FixedBytes<8>} source
      * @param {[number, number]} assets
@@ -13418,10 +13548,21 @@ export interface ChainTx<
     >;
 
     /**
+     * Update an oracle entry for BIFROST_SOURCE. Thin wrapper around `set_external_oracle`.
+     *
+     * Parameters:
+     * - `origin`: signed origin — must be authorized for the specific `(BIFROST_SOURCE, pair)`
+     * - `asset_a`: XCM location of the first asset
+     * - `asset_b`: XCM location of the second asset
+     * - `price`: price as `(numerator, denominator)`
+     *
+     * Emits `OracleUpdated` event on the next `on_finalize`.
      *
      * @param {XcmVersionedLocation} assetA
      * @param {XcmVersionedLocation} assetB
      * @param {[bigint, bigint]} price
+     *
+     * @deprecated Use `set_external_oracle` instead. Kept only for backward compatibility with bifrost and will be removed in the future
      **/
     updateBifrostOracle: GenericTxCall<
       (
@@ -13434,6 +13575,208 @@ export interface ChainTx<
           palletCall: {
             name: 'UpdateBifrostOracle';
             params: { assetA: XcmVersionedLocation; assetB: XcmVersionedLocation; price: [bigint, bigint] };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Submit an oracle price update for an external source.
+     *
+     * The call is feeless on success (`Pays::No`).
+     *
+     * Parameters:
+     * - `origin`: signed origin — must be authorized for the specific `(source, pair)` via
+     * `add_authorized_account`
+     * - `source`: external source identifier (must be registered via `register_external_source`)
+     * - `asset_a`: XCM location of the first asset
+     * - `asset_b`: XCM location of the second asset
+     * - `price`: price as `(numerator, denominator)` — both must be non-zero
+     *
+     * Emits `OracleUpdated` event on the next `on_finalize`.
+     *
+     * @param {FixedBytes<8>} source
+     * @param {XcmVersionedLocation} assetA
+     * @param {XcmVersionedLocation} assetB
+     * @param {[bigint, bigint]} price
+     **/
+    setExternalOracle: GenericTxCall<
+      (
+        source: FixedBytes<8>,
+        assetA: XcmVersionedLocation,
+        assetB: XcmVersionedLocation,
+        price: [bigint, bigint],
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EmaOracle';
+          palletCall: {
+            name: 'SetExternalOracle';
+            params: {
+              source: FixedBytes<8>;
+              assetA: XcmVersionedLocation;
+              assetB: XcmVersionedLocation;
+              price: [bigint, bigint];
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Update an external oracle entry using local `AssetId`s directly.
+     *
+     * Cheaper variant of `set_external_oracle` for callers that already know the local
+     * AssetIds — skips the `VersionedLocation` → `AssetId` conversion and the
+     * `AssetRegistry::LocationAssets` storage read. Authorization shares the same
+     * `AuthorizedAccounts` storage as the location variant.
+     *
+     * Parameters:
+     * - `origin`: signed origin — must be authorized for the specific `(source, pair)` via
+     * `add_authorized_account`
+     * - `source`: external source identifier (must be registered via `register_external_source`)
+     * - `asset_a`: local AssetId of the first asset
+     * - `asset_b`: local AssetId of the second asset
+     * - `price`: price as `(numerator, denominator)` — both must be non-zero
+     *
+     * The call is feeless on success (`Pays::No`).
+     *
+     * Emits `OracleUpdated` event on the next `on_finalize`.
+     *
+     * @param {FixedBytes<8>} source
+     * @param {number} assetA
+     * @param {number} assetB
+     * @param {[bigint, bigint]} price
+     **/
+    setExternalOracleByIds: GenericTxCall<
+      (
+        source: FixedBytes<8>,
+        assetA: number,
+        assetB: number,
+        price: [bigint, bigint],
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EmaOracle';
+          palletCall: {
+            name: 'SetExternalOracleByIds';
+            params: { source: FixedBytes<8>; assetA: number; assetB: number; price: [bigint, bigint] };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Register a new external oracle source.
+     *
+     * Parameters:
+     * - `origin`: `AuthorityOrigin`
+     * - `source`: 8-byte source identifier to register
+     *
+     * Emits `ExternalSourceRegistered` event when successful.
+     *
+     * @param {FixedBytes<8>} source
+     **/
+    registerExternalSource: GenericTxCall<
+      (source: FixedBytes<8>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EmaOracle';
+          palletCall: {
+            name: 'RegisterExternalSource';
+            params: { source: FixedBytes<8> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove an external oracle source, its per-pair authorizations, and ALL oracle data it
+     * ever wrote (both committed `Oracles` rows and any in-flight `Accumulator` entries).
+     *
+     * Parameters:
+     * - `origin`: `AuthorityOrigin`
+     * - `source`: source identifier to remove
+     *
+     * Emits `ExternalSourceRemoved` event when successful.
+     *
+     * @param {FixedBytes<8>} source
+     **/
+    removeExternalSource: GenericTxCall<
+      (source: FixedBytes<8>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EmaOracle';
+          palletCall: {
+            name: 'RemoveExternalSource';
+            params: { source: FixedBytes<8> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Authorize `account` to submit oracle updates for a specific `(source, pair)`.
+     *
+     * Authorization is scoped per-pair so a compromised account can only update the
+     * pairs it was explicitly granted, limiting DDoS blast radius.
+     *
+     * Parameters:
+     * - `origin`: `AuthorityOrigin`
+     * - `source`: external source identifier (must already be registered)
+     * - `assets`: the asset pair to authorize — stored in ordered form
+     * - `account`: the account to authorize
+     *
+     * Emits `AuthorizedAccountAdded` event when successful.
+     *
+     * @param {FixedBytes<8>} source
+     * @param {[number, number]} assets
+     * @param {AccountId32Like} account
+     **/
+    addAuthorizedAccount: GenericTxCall<
+      (
+        source: FixedBytes<8>,
+        assets: [number, number],
+        account: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EmaOracle';
+          palletCall: {
+            name: 'AddAuthorizedAccount';
+            params: { source: FixedBytes<8>; assets: [number, number]; account: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Revoke oracle-update authorization for `account` on a specific `(source, pair)`.
+     *
+     * Parameters:
+     * - `origin`: `AuthorityOrigin`
+     * - `source`: external source identifier (must already be registered)
+     * - `assets`: the asset pair to revoke — matched in ordered form
+     * - `account`: the account to revoke
+     *
+     * Emits `AuthorizedAccountRemoved` event when successful.
+     *
+     * @param {FixedBytes<8>} source
+     * @param {[number, number]} assets
+     * @param {AccountId32Like} account
+     **/
+    removeAuthorizedAccount: GenericTxCall<
+      (
+        source: FixedBytes<8>,
+        assets: [number, number],
+        account: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EmaOracle';
+          palletCall: {
+            name: 'RemoveAuthorizedAccount';
+            params: { source: FixedBytes<8>; assets: [number, number]; account: AccountId32Like };
           };
         },
         ChainKnownTypes

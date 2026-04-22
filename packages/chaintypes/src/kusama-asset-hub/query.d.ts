@@ -14,6 +14,7 @@ import type {
   EthereumAddress,
   EthereumAddressLike,
   H160,
+  U256,
   Perbill,
   Percent,
 } from 'dedot/codecs';
@@ -24,6 +25,7 @@ import type {
   FrameSystemLastRuntimeUpgradeInfo,
   FrameSystemCodeUpgradeAuthorization,
   SpWeightsWeightV2Weight,
+  CumulusPalletParachainSystemBlockWeightBlockWeightMode,
   CumulusPalletParachainSystemUnincludedSegmentAncestor,
   CumulusPalletParachainSystemUnincludedSegmentSegmentTracker,
   PolkadotPrimitivesV9PersistedValidationData,
@@ -36,6 +38,7 @@ import type {
   PolkadotParachainPrimitivesPrimitivesId,
   CumulusPalletParachainSystemParachainInherentInboundMessageId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
+  CumulusPalletParachainSystemPoVMessages,
   PalletMigrationsMigrationCursor,
   PalletPreimageOldRequestStatus,
   PalletPreimageRequestStatus,
@@ -46,7 +49,7 @@ import type {
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
-  FrameSupportTokensMiscIdAmountRuntimeHoldReason,
+  FrameSupportTokensMiscIdAmount,
   FrameSupportTokensMiscIdAmountRuntimeFreezeReason,
   PalletTransactionPaymentReleases,
   FrameSupportStorageNoDrop,
@@ -73,7 +76,7 @@ import type {
   CumulusPrimitivesCoreAggregateMessageOrigin,
   PalletMessageQueuePage,
   PalletMultisigMultisig,
-  PalletProxyProxyDefinitionProxyType,
+  PalletProxyProxyDefinition,
   PalletProxyAnnouncement,
   PalletAssetsAssetDetails,
   PalletAssetsAssetAccount,
@@ -151,17 +154,13 @@ import type {
   PalletTreasuryProposal,
   PalletTreasurySpendStatus,
   PalletConvictionVotingVoteVoting,
-  PalletReferendaReferendumInfoOriginCaller,
+  PalletReferendaReferendumInfo,
   PalletBountiesBounty,
   PalletChildBountiesChildBounty,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   PalletMultiAssetBountiesBounty,
   PalletMultiAssetBountiesChildBounty,
   FrameSupportTokensFungibleHoldConsideration,
-  PalletRcMigratorAccountsAccount,
-  PalletAhMigratorMigrationStage,
-  PalletAhMigratorBalancesBefore,
-  PalletRcMigratorQueuePriority,
 } from './types.js';
 
 export interface ChainStorage extends GenericChainStorage {
@@ -199,11 +198,13 @@ export interface ChainStorage extends GenericChainStorage {
     blockWeight: GenericStorageQuery<() => FrameSupportDispatchPerDispatchClass>;
 
     /**
-     * Total length (in bytes) for all extrinsics put together, for the current block.
+     * Total size (in bytes) of the current block.
+     *
+     * Tracks the size of the header and all extrinsics.
      *
      * @param {Callback<number | undefined> =} callback
      **/
-    allExtrinsicsLen: GenericStorageQuery<() => number | undefined>;
+    blockSize: GenericStorageQuery<() => number | undefined>;
 
     /**
      * Map of block numbers to block hashes.
@@ -287,6 +288,13 @@ export interface ChainStorage extends GenericChainStorage {
     lastRuntimeUpgrade: GenericStorageQuery<() => FrameSystemLastRuntimeUpgradeInfo | undefined>;
 
     /**
+     * Number of blocks till the pending code upgrade is applied.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    blocksTillUpgrade: GenericStorageQuery<() => number | undefined>;
+
+    /**
      * True if we have upgraded so that `type RefCount` is `u32`. False (default) if not.
      *
      * @param {Callback<boolean> =} callback
@@ -338,6 +346,27 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   parachainSystem: {
     /**
+     * The current block weight mode.
+     *
+     * This is used to determine what is the maximum allowed block weight, for more information see
+     * [`block_weight`].
+     *
+     * Killed in [`Self::on_initialize`] and set by the [`block_weight`] logic.
+     *
+     * @param {Callback<CumulusPalletParachainSystemBlockWeightBlockWeightMode | undefined> =} callback
+     **/
+    blockWeightMode: GenericStorageQuery<() => CumulusPalletParachainSystemBlockWeightBlockWeightMode | undefined>;
+
+    /**
+     * The core count available to the parachain in the previous block.
+     *
+     * This is mainly used for offchain functionality to calculate the correct target block weight.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    previousCoreCount: GenericStorageQuery<() => number | undefined>;
+
+    /**
      * Latest included block descendants the runtime accepted. In other words, these are
      * ancestors of the currently executing block which have not been included in the observed
      * relay-chain state.
@@ -365,8 +394,8 @@ export interface ChainStorage extends GenericChainStorage {
      * applied.
      *
      * As soon as the relay chain gives us the go-ahead signal, we will overwrite the
-     * [`:code`][sp_core::storage::well_known_keys::CODE] which will result the next block process
-     * with the new validation code. This concludes the upgrade process.
+     * [`:pending_code`][sp_core::storage::well_known_keys::PENDING_CODE] which will result the
+     * next block to be processed with the new validation code. This concludes the upgrade process.
      *
      * @param {Callback<Bytes> =} callback
      **/
@@ -604,6 +633,15 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<Bytes | undefined> =} callback
      **/
     customValidationHeadData: GenericStorageQuery<() => Bytes | undefined>;
+
+    /**
+     * Tracks cumulative `UMP` and `HRMP` messages sent across blocks in the current `PoV`.
+     *
+     * Across different candidates/PoVs the budgets are tracked by [`AggregatedUnincludedSegment`].
+     *
+     * @param {Callback<CumulusPalletParachainSystemPoVMessages | undefined> =} callback
+     **/
+    poVMessagesTracker: GenericStorageQuery<() => CumulusPalletParachainSystemPoVMessages | undefined>;
 
     /**
      * Generic pallet storage query
@@ -851,12 +889,9 @@ export interface ChainStorage extends GenericChainStorage {
      * Holds on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<FrameSupportTokensMiscIdAmountRuntimeHoldReason>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
      **/
-    holds: GenericStorageQuery<
-      (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmountRuntimeHoldReason>,
-      AccountId32
-    >;
+    holds: GenericStorageQuery<(arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount>, AccountId32>;
 
     /**
      * Freeze locks on account balances.
@@ -1517,12 +1552,9 @@ export interface ChainStorage extends GenericChainStorage {
      * which are being delegated to, together with the amount held on deposit.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<[Array<PalletProxyProxyDefinitionProxyType>, bigint]> =} callback
+     * @param {Callback<[Array<PalletProxyProxyDefinition>, bigint]> =} callback
      **/
-    proxies: GenericStorageQuery<
-      (arg: AccountId32Like) => [Array<PalletProxyProxyDefinitionProxyType>, bigint],
-      AccountId32
-    >;
+    proxies: GenericStorageQuery<(arg: AccountId32Like) => [Array<PalletProxyProxyDefinition>, bigint], AccountId32>;
 
     /**
      * The announcements made by the proxy (key).
@@ -2452,6 +2484,65 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
+   * Pallet `AssetsPrecompiles`'s storage queries
+   **/
+  assetsPrecompiles: {
+    /**
+     * The next available asset index for foreign assets.
+     * This is incremented each time a new foreign asset mapping is created.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    nextAssetIndex: GenericStorageQuery<() => number>;
+
+    /**
+     * Mapping an asset index (derived from the precompile address) to a `ForeignAssetId`.
+     *
+     * @param {number} arg
+     * @param {Callback<StagingXcmV5Location | undefined> =} callback
+     **/
+    assetIndexToForeignAssetId: GenericStorageQuery<(arg: number) => StagingXcmV5Location | undefined, number>;
+
+    /**
+     * Mapping a `ForeignAssetId` to an asset index (used for deriving precompile addresses).
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    foreignAssetIdToAssetIndex: GenericStorageQuery<
+      (arg: StagingXcmV5Location) => number | undefined,
+      StagingXcmV5Location
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetsPrecompilesPermit`'s storage queries
+   **/
+  assetsPrecompilesPermit: {
+    /**
+     * Nonces for permit signatures.
+     * Mapping: (verifying_contract, owner_address) => nonce
+     *
+     * Uses Blake2_128Concat for the first key to prevent storage collision attacks
+     * when the verifying_contract address could be influenced by an attacker.
+     *
+     * Note: EIP-2612 specifies uint256 nonce. We store as U256 for compatibility.
+     *
+     * @param {[H160, H160]} arg
+     * @param {Callback<U256> =} callback
+     **/
+    nonces: GenericStorageQuery<(arg: [H160, H160]) => U256, [H160, H160]>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
    * Pallet `StateTrieMigration`'s storage queries
    **/
   stateTrieMigration: {
@@ -3084,15 +3175,6 @@ export interface ChainStorage extends GenericChainStorage {
     validatorCount: GenericStorageQuery<() => number>;
 
     /**
-     * Any validators that may never be slashed or forcibly kicked. It's a Vec since they're
-     * easy to initialize and the performance hit is minimal (we expect no more than four
-     * invulnerables) and restricted to testnets.
-     *
-     * @param {Callback<Array<AccountId32>> =} callback
-     **/
-    invulnerables: GenericStorageQuery<() => Array<AccountId32>>;
-
-    /**
      * Map from all locked "stash" accounts to the controller account.
      *
      * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
@@ -3705,12 +3787,9 @@ export interface ChainStorage extends GenericChainStorage {
      * Information concerning any given referendum.
      *
      * @param {number} arg
-     * @param {Callback<PalletReferendaReferendumInfoOriginCaller | undefined> =} callback
+     * @param {Callback<PalletReferendaReferendumInfo | undefined> =} callback
      **/
-    referendumInfoFor: GenericStorageQuery<
-      (arg: number) => PalletReferendaReferendumInfoOriginCaller | undefined,
-      number
-    >;
+    referendumInfoFor: GenericStorageQuery<(arg: number) => PalletReferendaReferendumInfo | undefined, number>;
 
     /**
      * The sorted list of referenda ready to be decided but not yet being decided, ordered by
@@ -4058,83 +4137,6 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [number, PolkadotParachainPrimitivesPrimitivesId, AccountId32Like]) => bigint | undefined,
       [number, PolkadotParachainPrimitivesPrimitivesId, AccountId32]
     >;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `AhMigrator`'s storage queries
-   **/
-  ahMigrator: {
-    /**
-     * RC accounts that failed to migrate when were received on the Asset Hub.
-     *
-     * This is unlikely to happen, since we dry run the migration, but we keep it for completeness.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<PalletRcMigratorAccountsAccount | undefined> =} callback
-     **/
-    rcAccounts: GenericStorageQuery<(arg: AccountId32Like) => PalletRcMigratorAccountsAccount | undefined, AccountId32>;
-
-    /**
-     * The Asset Hub migration state.
-     *
-     * @param {Callback<PalletAhMigratorMigrationStage> =} callback
-     **/
-    ahMigrationStage: GenericStorageQuery<() => PalletAhMigratorMigrationStage>;
-
-    /**
-     * Helper storage item to store the total balance / total issuance of native token at the start
-     * of the migration. Since teleports are disabled during migration, the total issuance will not
-     * change for other reason than the migration itself.
-     *
-     * @param {Callback<PalletAhMigratorBalancesBefore> =} callback
-     **/
-    ahBalancesBefore: GenericStorageQuery<() => PalletAhMigratorBalancesBefore>;
-
-    /**
-     * The priority of the DMP queue during migration.
-     *
-     * Controls how the DMP (Downward Message Passing) queue is processed relative to other queues
-     * during the migration process. This helps ensure timely processing of migration messages.
-     * The default priority pattern is defined in the pallet configuration, but can be overridden
-     * by a storage value of this type.
-     *
-     * @param {Callback<PalletRcMigratorQueuePriority> =} callback
-     **/
-    dmpQueuePriorityConfig: GenericStorageQuery<() => PalletRcMigratorQueuePriority>;
-
-    /**
-     * An optional account id of a manager.
-     *
-     * This account id has similar privileges to [`Config::AdminOrigin`] except that it
-     * can not set the manager account id via `set_manager` call.
-     *
-     * @param {Callback<AccountId32 | undefined> =} callback
-     **/
-    manager: GenericStorageQuery<() => AccountId32 | undefined>;
-
-    /**
-     * The block number at which the migration began and the pallet's extrinsics were locked.
-     *
-     * This value is set when entering the `WaitingForAh` stage, i.e., when
-     * `RcMigrationStage::is_ongoing()` becomes `true`.
-     *
-     * @param {Callback<number | undefined> =} callback
-     **/
-    migrationStartBlock: GenericStorageQuery<() => number | undefined>;
-
-    /**
-     * Block number when migration finished and extrinsics were unlocked.
-     *
-     * This is set when entering the `MigrationDone` stage hence when
-     * `RcMigrationStage::is_finished()` becomes `true`.
-     *
-     * @param {Callback<number | undefined> =} callback
-     **/
-    migrationEndBlock: GenericStorageQuery<() => number | undefined>;
 
     /**
      * Generic pallet storage query

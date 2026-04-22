@@ -56,6 +56,7 @@ import type {
   PalletStateTrieMigrationMigrationLimits,
   PalletConvictionVotingVoteVoting,
   PalletReferendaReferendumInfo,
+  PalletDispatcherHyperbridgeCleanupStage,
   EvmCoreErrorExitReason,
   PalletAssetRegistryAssetDetails,
   HydradxRuntimeXcmAssetLocation,
@@ -566,6 +567,8 @@ export interface ChainStorage extends GenericChainStorage {
      *
      * @param {H256} arg
      * @param {Callback<PalletPreimageOldRequestStatus | undefined> =} callback
+     *
+     * @deprecated RequestStatusFor
      **/
     statusFor: GenericStorageQuery<(arg: H256) => PalletPreimageOldRequestStatus | undefined, H256>;
 
@@ -1186,6 +1189,20 @@ export interface ChainStorage extends GenericChainStorage {
     extraGas: GenericStorageQuery<() => bigint>;
 
     /**
+     * Whether the background ISMP storage cleanup is active.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    cleanupEnabled: GenericStorageQuery<() => boolean>;
+
+    /**
+     * Current stage of the background ISMP storage cleanup.
+     *
+     * @param {Callback<PalletDispatcherHyperbridgeCleanupStage | undefined> =} callback
+     **/
+    cleanupStage: GenericStorageQuery<() => PalletDispatcherHyperbridgeCleanupStage | undefined>;
+
+    /**
      *
      * @param {Callback<EvmCoreErrorExitReason | undefined> =} callback
      **/
@@ -1628,6 +1645,14 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: number) => PalletCircuitBreakerGlobalAssetCategory | undefined,
       number
     >;
+
+    /**
+     * Per-XCM-message buffer of (withdrawn_hdx, deposited_hdx).
+     * None means buffer is inactive (not inside XCM message processing).
+     *
+     * @param {Callback<[bigint, bigint] | undefined> =} callback
+     **/
+    xcmEgressBuffer: GenericStorageQuery<() => [bigint, bigint] | undefined>;
 
     /**
      * Generic pallet storage query
@@ -3375,6 +3400,29 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<Array<[FixedBytes<8>, [number, number]]>> =} callback
      **/
     whitelistedAssets: GenericStorageQuery<() => Array<[FixedBytes<8>, [number, number]]>>;
+
+    /**
+     * Registered external oracle sources.
+     *
+     * @param {FixedBytes<8>} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    externalSources: GenericStorageQuery<(arg: FixedBytes<8>) => [] | undefined, FixedBytes<8>>;
+
+    /**
+     * Authorized accounts per (external oracle source, asset pair).
+     *
+     * Authorization is scoped per-pair so that a compromised external oracle account can
+     * only update the specific pairs it was authorized for, limiting DDoS blast radius.
+     * The asset pair is stored in `ordered_pair` form.
+     *
+     * @param {[FixedBytes<8>, [number, number], AccountId32Like]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    authorizedAccounts: GenericStorageQuery<
+      (arg: [FixedBytes<8>, [number, number], AccountId32Like]) => [] | undefined,
+      [FixedBytes<8>, [number, number], AccountId32]
+    >;
 
     /**
      * Generic pallet storage query

@@ -773,11 +773,6 @@ export interface ChainConsts extends GenericChainConsts {
     burnProtocolFee: Permill;
 
     /**
-     * Destination account when hub asset is sold
-     **/
-    hubDestination: AccountId32;
-
-    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -1931,11 +1926,6 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `EmaOracle`'s constants
    **/
   emaOracle: {
-    /**
-     * Maximum allowed percentage difference for bifrost oracle price update
-     **/
-    maxAllowedPriceDifference: Permill;
-
     /**
      * Maximum number of unique oracle entries expected in one block.
      **/

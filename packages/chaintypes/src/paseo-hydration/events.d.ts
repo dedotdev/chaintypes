@@ -30,6 +30,7 @@ import type {
   PalletConvictionVotingTally,
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
+  PalletDispatcherHyperbridgeCleanupStage,
   PalletAssetRegistryAssetType,
   HydradxRuntimeXcmAssetLocation,
   PalletClaimsEthereumAddress,
@@ -879,6 +880,15 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * A pure proxy was killed by its spawner.
+     **/
+    PureKilled: GenericPalletEvent<
+      'Proxy',
+      'PureKilled',
+      { pure: AccountId32; spawner: AccountId32; proxyType: HydradxRuntimeSystemProxyType; disambiguationIndex: number }
+    >;
+
+    /**
      * An announcement was placed to make a call in the future.
      **/
     Announced: GenericPalletEvent<'Proxy', 'Announced', { real: AccountId32; proxy: AccountId32; callHash: H256 }>;
@@ -1596,6 +1606,43 @@ export interface ChainEvents extends GenericChainEvents {
       'AaveManagerCallDispatched',
       { callHash: H256; result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo> }
     >;
+    EmergencyAdminCallDispatched: GenericPalletEvent<
+      'Dispatcher',
+      'EmergencyAdminCallDispatched',
+      { callHash: H256; result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo> }
+    >;
+
+    /**
+     * Emitted each block when cleanup deletes a batch of keys.
+     **/
+    HyperbridgeCleanupProgress: GenericPalletEvent<
+      'Dispatcher',
+      'HyperbridgeCleanupProgress',
+      { stage: PalletDispatcherHyperbridgeCleanupStage; keysDeleted: number }
+    >;
+
+    /**
+     * Emitted when all keys in a stage are removed and cleanup advances.
+     **/
+    HyperbridgeCleanupStageCompleted: GenericPalletEvent<
+      'Dispatcher',
+      'HyperbridgeCleanupStageCompleted',
+      { stage: PalletDispatcherHyperbridgeCleanupStage }
+    >;
+
+    /**
+     * Emitted when all three stages are done and cleanup disables itself.
+     **/
+    HyperbridgeCleanupCompleted: GenericPalletEvent<'Dispatcher', 'HyperbridgeCleanupCompleted', null>;
+
+    /**
+     * Emitted when cleanup is paused or resumed via extrinsic.
+     **/
+    HyperbridgeCleanupStatusChanged: GenericPalletEvent<
+      'Dispatcher',
+      'HyperbridgeCleanupStatusChanged',
+      { paused: boolean }
+    >;
 
     /**
      * Generic pallet event
@@ -2196,33 +2243,28 @@ export interface ChainEvents extends GenericChainEvents {
     DepositReleased: GenericPalletEvent<'CircuitBreaker', 'DepositReleased', { who: AccountId32; assetId: number }>;
 
     /**
-     * Global lockdown triggered until given timestamp (ms).
+     * Global withdraw lockdown was lifted (either automatically or by reset).
      **/
-    GlobalLockdownTriggered: GenericPalletEvent<'CircuitBreaker', 'GlobalLockdownTriggered', { until: bigint }>;
+    WithdrawLockdownLifted: GenericPalletEvent<'CircuitBreaker', 'WithdrawLockdownLifted', null>;
 
     /**
-     * Global lockdown was lifted (either automatically or by reset).
+     * Withdraw lockdown accumulator and states were reset by governance.
      **/
-    GlobalLockdownLifted: GenericPalletEvent<'CircuitBreaker', 'GlobalLockdownLifted', null>;
+    WithdrawLockdownReset: GenericPalletEvent<'CircuitBreaker', 'WithdrawLockdownReset', null>;
 
     /**
-     * Global lockdown accumulator and state were reset by governance.
+     * Global withdraw limit config parameters were updated.
      **/
-    GlobalLockdownReset: GenericPalletEvent<'CircuitBreaker', 'GlobalLockdownReset', null>;
-
-    /**
-     * Global limit value updated by governance (in reference currency).
-     **/
-    GlobalWithdrawLimitConfigUpdated: GenericPalletEvent<
+    WithdrawLimitConfigUpdated: GenericPalletEvent<
       'CircuitBreaker',
-      'GlobalWithdrawLimitConfigUpdated',
-      { newLimit: bigint; newPeriod: bigint }
+      'WithdrawLimitConfigUpdated',
+      { limit: bigint; window: bigint }
     >;
 
     /**
      * Global withdraw lockdown was set by governance.
      **/
-    GlobalLockdownSet: GenericPalletEvent<'CircuitBreaker', 'GlobalLockdownSet', { until: bigint }>;
+    WithdrawLockdownTriggered: GenericPalletEvent<'CircuitBreaker', 'WithdrawLockdownTriggered', { until: bigint }>;
 
     /**
      * A number of egress accounts added to a list.
@@ -4502,6 +4544,12 @@ export interface ChainEvents extends GenericChainEvents {
     NewSession: GenericPalletEvent<'Session', 'NewSession', { sessionIndex: number }>;
 
     /**
+     * The `NewSession` event in the current block also implies a new validator set to be
+     * queued.
+     **/
+    NewQueued: GenericPalletEvent<'Session', 'NewQueued', null>;
+
+    /**
      * Validator has been disabled.
      **/
     ValidatorDisabled: GenericPalletEvent<'Session', 'ValidatorDisabled', { validator: AccountId32 }>;
@@ -4549,6 +4597,34 @@ export interface ChainEvents extends GenericChainEvents {
         assets: [number, number];
         updates: Array<[HydradxTraitsOracleOraclePeriod, HydraDxMathRatio]>;
       }
+    >;
+
+    /**
+     * An external oracle source was registered.
+     **/
+    ExternalSourceRegistered: GenericPalletEvent<'EmaOracle', 'ExternalSourceRegistered', { source: FixedBytes<8> }>;
+
+    /**
+     * An external oracle source was removed.
+     **/
+    ExternalSourceRemoved: GenericPalletEvent<'EmaOracle', 'ExternalSourceRemoved', { source: FixedBytes<8> }>;
+
+    /**
+     * An account was authorized to update the given (source, pair).
+     **/
+    AuthorizedAccountAdded: GenericPalletEvent<
+      'EmaOracle',
+      'AuthorizedAccountAdded',
+      { source: FixedBytes<8>; pair: [number, number]; account: AccountId32 }
+    >;
+
+    /**
+     * An authorization was removed for the given (source, pair, account).
+     **/
+    AuthorizedAccountRemoved: GenericPalletEvent<
+      'EmaOracle',
+      'AuthorizedAccountRemoved',
+      { source: FixedBytes<8>; pair: [number, number]; account: AccountId32 }
     >;
 
     /**

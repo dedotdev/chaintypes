@@ -65,9 +65,6 @@ import type {
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
   PolkadotParachainPrimitivesPrimitivesId,
-  PalletAhMigratorMigrationStage,
-  PalletAhMigratorPalletEventName,
-  PalletRcMigratorQueuePriority,
 } from './types.js';
 
 export interface ChainEvents extends GenericChainEvents {
@@ -1770,6 +1767,26 @@ export interface ChainEvents extends GenericChainEvents {
     ReservesRemoved: GenericPalletEvent<'Assets', 'ReservesRemoved', { assetId: number }>;
 
     /**
+     * Some assets were issued as Credit (no owner yet).
+     **/
+    IssuedCredit: GenericPalletEvent<'Assets', 'IssuedCredit', { assetId: number; amount: bigint }>;
+
+    /**
+     * Some assets Credit was destroyed.
+     **/
+    BurnedCredit: GenericPalletEvent<'Assets', 'BurnedCredit', { assetId: number; amount: bigint }>;
+
+    /**
+     * Some assets were burned and a Debt was created.
+     **/
+    IssuedDebt: GenericPalletEvent<'Assets', 'IssuedDebt', { assetId: number; amount: bigint }>;
+
+    /**
+     * Some assets Debt was destroyed (and assets issued).
+     **/
+    BurnedDebt: GenericPalletEvent<'Assets', 'BurnedDebt', { assetId: number; amount: bigint }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -2512,6 +2529,34 @@ export interface ChainEvents extends GenericChainEvents {
     ReservesRemoved: GenericPalletEvent<'ForeignAssets', 'ReservesRemoved', { assetId: StagingXcmV5Location }>;
 
     /**
+     * Some assets were issued as Credit (no owner yet).
+     **/
+    IssuedCredit: GenericPalletEvent<
+      'ForeignAssets',
+      'IssuedCredit',
+      { assetId: StagingXcmV5Location; amount: bigint }
+    >;
+
+    /**
+     * Some assets Credit was destroyed.
+     **/
+    BurnedCredit: GenericPalletEvent<
+      'ForeignAssets',
+      'BurnedCredit',
+      { assetId: StagingXcmV5Location; amount: bigint }
+    >;
+
+    /**
+     * Some assets were burned and a Debt was created.
+     **/
+    IssuedDebt: GenericPalletEvent<'ForeignAssets', 'IssuedDebt', { assetId: StagingXcmV5Location; amount: bigint }>;
+
+    /**
+     * Some assets Debt was destroyed (and assets issued).
+     **/
+    BurnedDebt: GenericPalletEvent<'ForeignAssets', 'BurnedDebt', { assetId: StagingXcmV5Location; amount: bigint }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -2723,6 +2768,26 @@ export interface ChainEvents extends GenericChainEvents {
      * Reserve information was removed for `asset_id`.
      **/
     ReservesRemoved: GenericPalletEvent<'PoolAssets', 'ReservesRemoved', { assetId: number }>;
+
+    /**
+     * Some assets were issued as Credit (no owner yet).
+     **/
+    IssuedCredit: GenericPalletEvent<'PoolAssets', 'IssuedCredit', { assetId: number; amount: bigint }>;
+
+    /**
+     * Some assets Credit was destroyed.
+     **/
+    BurnedCredit: GenericPalletEvent<'PoolAssets', 'BurnedCredit', { assetId: number; amount: bigint }>;
+
+    /**
+     * Some assets were burned and a Debt was created.
+     **/
+    IssuedDebt: GenericPalletEvent<'PoolAssets', 'IssuedDebt', { assetId: number; amount: bigint }>;
+
+    /**
+     * Some assets Debt was destroyed (and assets issued).
+     **/
+    BurnedDebt: GenericPalletEvent<'PoolAssets', 'BurnedDebt', { assetId: number; amount: bigint }>;
 
     /**
      * Generic pallet event
@@ -3563,14 +3628,37 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * Target snapshot creation failed
+     * Target snapshot creation failed.
      **/
     UnexpectedTargetSnapshotFailed: GenericPalletEvent<'MultiBlockElection', 'UnexpectedTargetSnapshotFailed', null>;
 
     /**
-     * Voter snapshot creation failed
+     * Voter snapshot creation failed.
      **/
     UnexpectedVoterSnapshotFailed: GenericPalletEvent<'MultiBlockElection', 'UnexpectedVoterSnapshotFailed', null>;
+
+    /**
+     * Phase transition could not proceed due to being out of weight.
+     **/
+    UnexpectedPhaseTransitionOutOfWeight: GenericPalletEvent<
+      'MultiBlockElection',
+      'UnexpectedPhaseTransitionOutOfWeight',
+      {
+        from: PalletElectionProviderMultiBlockPhase;
+        to: PalletElectionProviderMultiBlockPhase;
+        required: SpWeightsWeightV2Weight;
+        had: SpWeightsWeightV2Weight;
+      }
+    >;
+
+    /**
+     * Phase transition could not even begin becaseu of being out of weight.
+     **/
+    UnexpectedPhaseTransitionHalt: GenericPalletEvent<
+      'MultiBlockElection',
+      'UnexpectedPhaseTransitionHalt',
+      { required: SpWeightsWeightV2Weight; had: SpWeightsWeightV2Weight }
+    >;
 
     /**
      * Generic pallet event
@@ -4622,230 +4710,6 @@ export interface ChainEvents extends GenericChainEvents {
      * Failed to re-bond some migrated funds.
      **/
     FailedToBond: GenericPalletEvent<'AhOps', 'FailedToBond', { account: AccountId32; amount: bigint }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
-   * Pallet `AhMigrator`'s events
-   **/
-  ahMigrator: {
-    /**
-     * A stage transition has occurred.
-     **/
-    StageTransition: GenericPalletEvent<
-      'AhMigrator',
-      'StageTransition',
-      {
-        /**
-         * The old stage before the transition.
-         **/
-        old: PalletAhMigratorMigrationStage;
-
-        /**
-         * The new stage after the transition.
-         **/
-        new: PalletAhMigratorMigrationStage;
-      }
-    >;
-
-    /**
-     * We received a batch of messages that will be integrated into a pallet.
-     **/
-    BatchReceived: GenericPalletEvent<
-      'AhMigrator',
-      'BatchReceived',
-      { pallet: PalletAhMigratorPalletEventName; count: number }
-    >;
-
-    /**
-     * We processed a batch of messages for this pallet.
-     **/
-    BatchProcessed: GenericPalletEvent<
-      'AhMigrator',
-      'BatchProcessed',
-      { pallet: PalletAhMigratorPalletEventName; countGood: number; countBad: number }
-    >;
-
-    /**
-     * The Asset Hub Migration started and is active until `AssetHubMigrationFinished` is
-     * emitted.
-     *
-     * This event is equivalent to `StageTransition { new: DataMigrationOngoing, .. }` but is
-     * easier to understand. The activation is immediate and affects all events happening
-     * afterwards.
-     **/
-    AssetHubMigrationStarted: GenericPalletEvent<'AhMigrator', 'AssetHubMigrationStarted', null>;
-
-    /**
-     * The Asset Hub Migration finished.
-     *
-     * This event is equivalent to `StageTransition { new: MigrationDone, .. }` but is easier
-     * to understand. The finishing is immediate and affects all events happening
-     * afterwards.
-     **/
-    AssetHubMigrationFinished: GenericPalletEvent<'AhMigrator', 'AssetHubMigrationFinished', null>;
-
-    /**
-     * Whether the DMP queue was prioritized for the next block.
-     **/
-    DmpQueuePrioritySet: GenericPalletEvent<
-      'AhMigrator',
-      'DmpQueuePrioritySet',
-      {
-        /**
-         * Indicates if DMP queue was successfully set as priority.
-         * If `false`, it means we're in the round-robin phase of our priority pattern
-         * (see [`Config::DmpQueuePriorityPattern`]), where no queue gets priority.
-         **/
-        prioritized: boolean;
-
-        /**
-         * Current block number within the pattern cycle (1 to period).
-         **/
-        cycleBlock: number;
-
-        /**
-         * Total number of blocks in the pattern cycle
-         **/
-        cyclePeriod: number;
-      }
-    >;
-
-    /**
-     * The DMP queue priority config was set.
-     **/
-    DmpQueuePriorityConfigSet: GenericPalletEvent<
-      'AhMigrator',
-      'DmpQueuePriorityConfigSet',
-      {
-        /**
-         * The old priority pattern.
-         **/
-        old: PalletRcMigratorQueuePriority;
-
-        /**
-         * The new priority pattern.
-         **/
-        new: PalletRcMigratorQueuePriority;
-      }
-    >;
-
-    /**
-     * The balances before the migration were recorded.
-     **/
-    BalancesBeforeRecordSet: GenericPalletEvent<
-      'AhMigrator',
-      'BalancesBeforeRecordSet',
-      { checkingAccount: bigint; totalIssuance: bigint }
-    >;
-
-    /**
-     * The balances before the migration were consumed.
-     **/
-    BalancesBeforeRecordConsumed: GenericPalletEvent<
-      'AhMigrator',
-      'BalancesBeforeRecordConsumed',
-      { checkingAccount: bigint; totalIssuance: bigint }
-    >;
-
-    /**
-     * A referendum was cancelled because it could not be mapped.
-     **/
-    ReferendumCanceled: GenericPalletEvent<'AhMigrator', 'ReferendumCanceled', { id: number }>;
-
-    /**
-     * The manager account id was set.
-     **/
-    ManagerSet: GenericPalletEvent<
-      'AhMigrator',
-      'ManagerSet',
-      {
-        /**
-         * The old manager account id.
-         **/
-        old?: AccountId32 | undefined;
-
-        /**
-         * The new manager account id.
-         **/
-        new?: AccountId32 | undefined;
-      }
-    >;
-    AccountTranslatedParachainSovereign: GenericPalletEvent<
-      'AhMigrator',
-      'AccountTranslatedParachainSovereign',
-      { from: AccountId32; to: AccountId32 }
-    >;
-    AccountTranslatedParachainSovereignDerived: GenericPalletEvent<
-      'AhMigrator',
-      'AccountTranslatedParachainSovereignDerived',
-      { from: AccountId32; to: AccountId32; derivationIndex: number }
-    >;
-
-    /**
-     * An XCM message was sent.
-     **/
-    XcmSent: GenericPalletEvent<
-      'AhMigrator',
-      'XcmSent',
-      {
-        origin: StagingXcmV5Location;
-        destination: StagingXcmV5Location;
-        message: StagingXcmV5Xcm;
-        messageId: FixedBytes<32>;
-      }
-    >;
-
-    /**
-     * Failed to unreserve a multisig deposit.
-     **/
-    FailedToUnreserveMultisigDeposit: GenericPalletEvent<
-      'AhMigrator',
-      'FailedToUnreserveMultisigDeposit',
-      {
-        /**
-         * The expected amount of the deposit that was expected to be unreserved.
-         **/
-        expectedAmount: bigint;
-
-        /**
-         * The missing amount of the deposit.
-         **/
-        missingAmount: bigint;
-
-        /**
-         * The account that the deposit was unreserved from.
-         **/
-        account: AccountId32;
-      }
-    >;
-
-    /**
-     * Failed to unreserve a legacy status preimage deposit.
-     **/
-    FailedToUnreservePreimageDeposit: GenericPalletEvent<
-      'AhMigrator',
-      'FailedToUnreservePreimageDeposit',
-      {
-        /**
-         * The expected amount of the deposit that was expected to be unreserved.
-         **/
-        expectedAmount: bigint;
-
-        /**
-         * The missing amount of the deposit.
-         **/
-        missingAmount: bigint;
-
-        /**
-         * The account that the deposit was unreserved from.
-         **/
-        account: AccountId32;
-      }
-    >;
 
     /**
      * Generic pallet event

@@ -2437,6 +2437,55 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `AssetsPrecompilesPermit`'s errors
+   **/
+  assetsPrecompilesPermit: {
+    /**
+     * The permit signature is invalid.
+     **/
+    InvalidSignature: GenericPalletError;
+
+    /**
+     * The signer does not match the owner.
+     **/
+    SignerMismatch: GenericPalletError;
+
+    /**
+     * The permit has expired (deadline passed).
+     **/
+    PermitExpired: GenericPalletError;
+
+    /**
+     * The signature's `s` value is too high (malleability protection).
+     **/
+    SignatureSValueTooHigh: GenericPalletError;
+
+    /**
+     * The signature's `v` value is invalid.
+     **/
+    InvalidVValue: GenericPalletError;
+
+    /**
+     * Nonce overflow - account has used too many permits.
+     **/
+    NonceOverflow: GenericPalletError;
+
+    /**
+     * The owner address is invalid (e.g., zero address).
+     **/
+    InvalidOwner: GenericPalletError;
+
+    /**
+     * The spender address is invalid (e.g., zero address).
+     **/
+    InvalidSpender: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `StateTrieMigration`'s errors
    **/
   stateTrieMigration: {
@@ -2805,7 +2854,7 @@ export interface ChainErrors extends GenericChainErrors {
     InvalidKeys: GenericPalletError;
 
     /**
-     * The ownership proof for the session keys is invalid.
+     * Invalid ownership proof for the session keys.
      **/
     InvalidProof: GenericPalletError;
 
@@ -3634,110 +3683,6 @@ export interface ChainErrors extends GenericChainErrors {
      * Failed to force unstake.
      **/
     FailedToForceUnstake: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `AhMigrator`'s errors
-   **/
-  ahMigrator: {
-    /**
-     * Failed to unreserve deposit.
-     **/
-    FailedToUnreserveDeposit: GenericPalletError;
-
-    /**
-     * Failed to process an account data from RC.
-     **/
-    FailedToProcessAccount: GenericPalletError;
-
-    /**
-     * Some item could not be inserted because it already exists.
-     **/
-    InsertConflict: GenericPalletError;
-
-    /**
-     * Failed to convert RC type to AH type.
-     **/
-    FailedToConvertType: GenericPalletError;
-
-    /**
-     * Failed to fetch preimage.
-     **/
-    PreimageNotFound: GenericPalletError;
-
-    /**
-     * Failed to convert RC call to AH call.
-     **/
-    FailedToConvertCall: GenericPalletError;
-
-    /**
-     * Failed to bound a call.
-     **/
-    FailedToBoundCall: GenericPalletError;
-
-    /**
-     * Failed to send XCM message.
-     **/
-    XcmError: GenericPalletError;
-
-    /**
-     * Failed to integrate a vesting schedule.
-     **/
-    FailedToIntegrateVestingSchedule: GenericPalletError;
-
-    /**
-     * Checking account overflow or underflow.
-     **/
-    FailedToCalculateCheckingAccount: GenericPalletError;
-
-    /**
-     * Vector did not fit into its compile-time bound.
-     **/
-    FailedToBoundVector: GenericPalletError;
-
-    /**
-     * The DMP queue priority is already set to the same value.
-     **/
-    DmpQueuePriorityAlreadySet: GenericPalletError;
-
-    /**
-     * Invalid parameter.
-     **/
-    InvalidParameter: GenericPalletError;
-
-    /**
-     * Preimage missing.
-     **/
-    PreimageMissing: GenericPalletError;
-
-    /**
-     * Preimage too big.
-     **/
-    PreimageTooBig: GenericPalletError;
-
-    /**
-     * Preimage chunk missing.
-     **/
-    PreimageChunkMissing: GenericPalletError;
-
-    /**
-     * Preimage status invalid.
-     **/
-    PreimageStatusInvalid: GenericPalletError;
-
-    /**
-     * The XCM version is invalid.
-     **/
-    BadXcmVersion: GenericPalletError;
-
-    /**
-     * The origin is invalid.
-     **/
-    InvalidOrigin: GenericPalletError;
 
     /**
      * Generic pallet error

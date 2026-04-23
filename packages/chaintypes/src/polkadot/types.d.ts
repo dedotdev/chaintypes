@@ -72,8 +72,7 @@ export type PolkadotRuntimeRuntimeCall =
   | { pallet: 'XcmPallet'; palletCall: PalletXcmCall }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
-  | { pallet: 'Beefy'; palletCall: PalletBeefyCall }
-  | { pallet: 'RcMigrator'; palletCall: PalletRcMigratorCall };
+  | { pallet: 'Beefy'; palletCall: PalletBeefyCall };
 
 export type PolkadotRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -121,8 +120,7 @@ export type PolkadotRuntimeRuntimeCallLike =
   | { pallet: 'XcmPallet'; palletCall: PalletXcmCallLike }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
-  | { pallet: 'Beefy'; palletCall: PalletBeefyCallLike }
-  | { pallet: 'RcMigrator'; palletCall: PalletRcMigratorCallLike };
+  | { pallet: 'Beefy'; palletCall: PalletBeefyCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -288,7 +286,10 @@ export type PalletSchedulerCall =
       };
     }
   /**
-   * Cancel an anonymously scheduled task.
+   * Cancel a scheduled task (named or anonymous), by providing the block it is scheduled for
+   * execution in, as well as the index of the task in that block's agenda.
+   *
+   * In the case of a named task, it will remove it from the lookup table as well.
    **/
   | { name: 'Cancel'; params: { when: number; index: number } }
   /**
@@ -346,6 +347,8 @@ export type PalletSchedulerCall =
    * clones of the original task. Their retry configuration will be derived from the
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
+   *
+   * This call **cannot** be used to set a retry configuration for a named task.
    **/
   | { name: 'SetRetry'; params: { task: [number, number]; retries: number; period: number } }
   /**
@@ -361,6 +364,8 @@ export type PalletSchedulerCall =
    * clones of the original task. Their retry configuration will be derived from the
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
+   *
+   * This is the only way to set a retry configuration for a named task.
    **/
   | { name: 'SetRetryNamed'; params: { id: FixedBytes<32>; retries: number; period: number } }
   /**
@@ -386,7 +391,10 @@ export type PalletSchedulerCallLike =
       };
     }
   /**
-   * Cancel an anonymously scheduled task.
+   * Cancel a scheduled task (named or anonymous), by providing the block it is scheduled for
+   * execution in, as well as the index of the task in that block's agenda.
+   *
+   * In the case of a named task, it will remove it from the lookup table as well.
    **/
   | { name: 'Cancel'; params: { when: number; index: number } }
   /**
@@ -444,6 +452,8 @@ export type PalletSchedulerCallLike =
    * clones of the original task. Their retry configuration will be derived from the
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
+   *
+   * This call **cannot** be used to set a retry configuration for a named task.
    **/
   | { name: 'SetRetry'; params: { task: [number, number]; retries: number; period: number } }
   /**
@@ -459,6 +469,8 @@ export type PalletSchedulerCallLike =
    * clones of the original task. Their retry configuration will be derived from the
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
+   *
+   * This is the only way to set a retry configuration for a named task.
    **/
   | { name: 'SetRetryNamed'; params: { id: FixedBytes<32>; retries: number; period: number } }
   /**
@@ -1453,7 +1465,7 @@ export type PalletStakingPalletCall =
    *
    * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
    * them, then the list of nominators is paged, with each page being capped at
-   * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+   * [`Config::MaxExposurePageSize`]. If a validator has more than one page of nominators,
    * the call needs to be made for each page separately in order for all the nominators
    * backing a validator to receive the reward. The nominators are not sorted across pages
    * and so it should not be assumed the highest staker would be on the topmost page and vice
@@ -1936,7 +1948,7 @@ export type PalletStakingPalletCallLike =
    *
    * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
    * them, then the list of nominators is paged, with each page being capped at
-   * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+   * [`Config::MaxExposurePageSize`]. If a validator has more than one page of nominators,
    * the call needs to be made for each page separately in order for all the nominators
    * backing a validator to receive the reward. The nominators are not sorted across pages
    * and so it should not be assumed the highest staker would be on the topmost page and vice
@@ -2050,14 +2062,16 @@ export type PalletStakingUnlockChunk = { value: bigint; era: number };
 export type PalletSessionCall =
   /**
    * Sets the session key(s) of the function caller to `keys`.
+   *
    * Allows an account to set its session key prior to becoming a validator.
    * This doesn't take effect until the next session.
    *
-   * The dispatch origin of this function must be signed.
-   *
-   * ## Complexity
-   * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
-   * fixed.
+   * - `origin`: The dispatch origin of this function must be signed.
+   * - `keys`: The new session keys to set. These are the public keys of all sessions keys
+   * setup in the runtime.
+   * - `proof`: The proof that `origin` has access to the private keys of `keys`. See
+   * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
+   * proof format.
    **/
   | { name: 'SetKeys'; params: { keys: PolkadotRuntimeSessionKeys; proof: Bytes } }
   /**
@@ -2069,24 +2083,22 @@ export type PalletSessionCall =
    * convertible to a validator ID using the chain's typical addressing system (this usually
    * means being a controller account) or directly convertible into a validator ID (which
    * usually means being a stash account).
-   *
-   * ## Complexity
-   * - `O(1)` in number of key types. Actual cost depends on the number of length of
-   * `T::Keys::key_ids()` which is fixed.
    **/
   | { name: 'PurgeKeys' };
 
 export type PalletSessionCallLike =
   /**
    * Sets the session key(s) of the function caller to `keys`.
+   *
    * Allows an account to set its session key prior to becoming a validator.
    * This doesn't take effect until the next session.
    *
-   * The dispatch origin of this function must be signed.
-   *
-   * ## Complexity
-   * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
-   * fixed.
+   * - `origin`: The dispatch origin of this function must be signed.
+   * - `keys`: The new session keys to set. These are the public keys of all sessions keys
+   * setup in the runtime.
+   * - `proof`: The proof that `origin` has access to the private keys of `keys`. See
+   * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
+   * proof format.
    **/
   | { name: 'SetKeys'; params: { keys: PolkadotRuntimeSessionKeys; proof: BytesLike } }
   /**
@@ -2098,10 +2110,6 @@ export type PalletSessionCallLike =
    * convertible to a validator ID using the chain's typical addressing system (this usually
    * means being a controller account) or directly convertible into a validator ID (which
    * usually means being a stash account).
-   *
-   * ## Complexity
-   * - `O(1)` in number of key types. Actual cost depends on the number of length of
-   * `T::Keys::key_ids()` which is fixed.
    **/
   | { name: 'PurgeKeys' };
 
@@ -4327,7 +4335,9 @@ export type PalletMultisigCall =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
-   * If there are enough, then dispatch the call.
+   * **If the approval threshold is met (including the sender's approval), this will
+   * immediately execute the call.** This is the only way to execute a multisig call -
+   * `approve_as_multi` will never trigger execution.
    *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
@@ -4343,8 +4353,9 @@ export type PalletMultisigCall =
    * transaction index) of the first approval transaction.
    * - `call`: The call to be executed.
    *
-   * NOTE: Unless this is the final approval, you will generally want to use
-   * `approve_as_multi` instead, since it only requires a hash of the call.
+   * NOTE: For intermediate approvals (not the final approval), you should generally use
+   * `approve_as_multi` instead, since it only requires a hash of the call and is more
+   * efficient.
    *
    * Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise
    * on success, result is `Ok` and the result from the interior call, if it was executed,
@@ -4378,6 +4389,13 @@ export type PalletMultisigCall =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
+   * **This function will NEVER execute the call, even if the approval threshold is
+   * reached.** It only registers approval. To actually execute the call, `as_multi` must
+   * be called with the full call data by any of the signatories.
+   *
+   * This function is more efficient than `as_multi` for intermediate approvals since it
+   * only requires the call hash, not the full call data.
+   *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
    * is cancelled.
@@ -4392,7 +4410,8 @@ export type PalletMultisigCall =
    * transaction index) of the first approval transaction.
    * - `call_hash`: The hash of the call to be executed.
    *
-   * NOTE: If this is the final approval, you will want to use `as_multi` instead.
+   * NOTE: To execute the call after approvals are gathered, any signatory must call
+   * `as_multi` with the full call data. This function cannot execute the call.
    *
    * ## Complexity
    * - `O(S)`.
@@ -4491,7 +4510,9 @@ export type PalletMultisigCallLike =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
-   * If there are enough, then dispatch the call.
+   * **If the approval threshold is met (including the sender's approval), this will
+   * immediately execute the call.** This is the only way to execute a multisig call -
+   * `approve_as_multi` will never trigger execution.
    *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
@@ -4507,8 +4528,9 @@ export type PalletMultisigCallLike =
    * transaction index) of the first approval transaction.
    * - `call`: The call to be executed.
    *
-   * NOTE: Unless this is the final approval, you will generally want to use
-   * `approve_as_multi` instead, since it only requires a hash of the call.
+   * NOTE: For intermediate approvals (not the final approval), you should generally use
+   * `approve_as_multi` instead, since it only requires a hash of the call and is more
+   * efficient.
    *
    * Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise
    * on success, result is `Ok` and the result from the interior call, if it was executed,
@@ -4542,6 +4564,13 @@ export type PalletMultisigCallLike =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
+   * **This function will NEVER execute the call, even if the approval threshold is
+   * reached.** It only registers approval. To actually execute the call, `as_multi` must
+   * be called with the full call data by any of the signatories.
+   *
+   * This function is more efficient than `as_multi` for intermediate approvals since it
+   * only requires the call hash, not the full call data.
+   *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
    * is cancelled.
@@ -4556,7 +4585,8 @@ export type PalletMultisigCallLike =
    * transaction index) of the first approval transaction.
    * - `call_hash`: The hash of the call to be executed.
    *
-   * NOTE: If this is the final approval, you will want to use `as_multi` instead.
+   * NOTE: To execute the call after approvals are gathered, any signatory must call
+   * `as_multi` with the full call data. This function cannot execute the call.
    *
    * ## Complexity
    * - `O(S)`.
@@ -6686,7 +6716,11 @@ export type PolkadotRuntimeParachainsConfigurationPalletCall =
   /**
    * Set scheduler-params.
    **/
-  | { name: 'SetSchedulerParams'; params: { new: PolkadotPrimitivesV9SchedulerParams } };
+  | { name: 'SetSchedulerParams'; params: { new: PolkadotPrimitivesVstagingSchedulerParams } }
+  /**
+   * Set the maximum relay parent session age.
+   **/
+  | { name: 'SetMaxRelayParentSessionAge'; params: { new: number } };
 
 export type PolkadotRuntimeParachainsConfigurationPalletCallLike =
   /**
@@ -6882,7 +6916,11 @@ export type PolkadotRuntimeParachainsConfigurationPalletCallLike =
   /**
    * Set scheduler-params.
    **/
-  | { name: 'SetSchedulerParams'; params: { new: PolkadotPrimitivesV9SchedulerParams } };
+  | { name: 'SetSchedulerParams'; params: { new: PolkadotPrimitivesVstagingSchedulerParams } }
+  /**
+   * Set the maximum relay parent session age.
+   **/
+  | { name: 'SetMaxRelayParentSessionAge'; params: { new: number } };
 
 export type PolkadotPrimitivesV9AsyncBackingAsyncBackingParams = {
   maxCandidateDepth: number;
@@ -6898,26 +6936,27 @@ export type PolkadotPrimitivesV9ExecutorParamsExecutorParam =
   | { type: 'PrecheckingMaxMemory'; value: bigint }
   | { type: 'PvfPrepTimeout'; value: [PolkadotPrimitivesV9PvfPrepKind, bigint] }
   | { type: 'PvfExecTimeout'; value: [PolkadotPrimitivesV9PvfExecKind, bigint] }
-  | { type: 'WasmExtBulkMemory' };
+  | { type: 'WasmExtBulkMemory' }
+  | { type: 'EnabledHostFunction'; value: PolkadotPrimitivesV9ExecutorParamsExecutorHostFunction };
 
 export type PolkadotPrimitivesV9PvfPrepKind = 'Precheck' | 'Prepare';
 
 export type PolkadotPrimitivesV9PvfExecKind = 'Backing' | 'Approval';
 
+export type PolkadotPrimitivesV9ExecutorParamsExecutorHostFunction = 'EccRfc163';
+
 export type PolkadotPrimitivesV9ApprovalVotingParams = { maxApprovalCoalesceCount: number };
 
-export type PolkadotPrimitivesV9SchedulerParams = {
+export type PolkadotPrimitivesVstagingSchedulerParams = {
   groupRotationFrequency: number;
   parasAvailabilityPeriod: number;
   maxValidatorsPerCore?: number | undefined;
   lookahead: number;
   numCores: number;
-  maxAvailabilityTimeouts: number;
   onDemandQueueMaxSize: number;
   onDemandTargetQueueUtilization: Perbill;
   onDemandFeeVariability: Perbill;
   onDemandBaseFee: bigint;
-  ttl: number;
 };
 
 /**
@@ -6984,19 +7023,19 @@ export type PolkadotPrimitivesV9CommittedCandidateReceiptV2 = {
 export type PolkadotPrimitivesV9CandidateDescriptorV2 = {
   paraId: PolkadotParachainPrimitivesPrimitivesId;
   relayParent: H256;
-  version: PolkadotPrimitivesV9InternalVersion;
+  version: number;
   coreIndex: number;
   sessionIndex: number;
-  reserved1: FixedBytes<25>;
+  schedulingSessionOffset: number;
+  reserved1: FixedBytes<24>;
   persistedValidationDataHash: H256;
   povHash: H256;
   erasureRoot: H256;
-  reserved2: FixedBytes<64>;
+  schedulingParent: H256;
+  reserved2: FixedBytes<32>;
   paraHead: H256;
   validationCodeHash: PolkadotParachainPrimitivesPrimitivesValidationCodeHash;
 };
-
-export type PolkadotPrimitivesV9InternalVersion = number;
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCodeHash = H256;
 
@@ -8444,7 +8483,7 @@ export type SpRuntimeMultiSignature =
   | { type: 'Eth'; value: FixedBytes<65> };
 
 /**
- * Contains a variant per dispatchable extrinsic that this pallet has.
+ * Extrinsics to be called by the Coretime chain.
  **/
 export type PolkadotRuntimeParachainsCoretimePalletCall =
   /**
@@ -8481,7 +8520,7 @@ export type PolkadotRuntimeParachainsCoretimePalletCall =
         core: number;
         begin: number;
         assignment: Array<
-          [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]
+          [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600]
         >;
         endHint?: number | undefined;
       };
@@ -8522,7 +8561,7 @@ export type PolkadotRuntimeParachainsCoretimePalletCallLike =
         core: number;
         begin: number;
         assignment: Array<
-          [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]
+          [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600]
         >;
         endHint?: number | undefined;
       };
@@ -8533,7 +8572,7 @@ export type PalletBrokerCoretimeInterfaceCoreAssignment =
   | { type: 'Pool' }
   | { type: 'Task'; value: number };
 
-export type PolkadotRuntimeParachainsAssignerCoretimePartsOf57600 = number;
+export type PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600 = number;
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10286,460 +10325,7 @@ export type SpMmrPrimitivesAncestryProof = {
 
 export type SpConsensusBeefyFutureBlockVotingProof = { vote: SpConsensusBeefyVoteMessage };
 
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletRcMigratorCall =
-  /**
-   * Set the migration stage.
-   *
-   * This call is intended for emergency use only and is guarded by the
-   * [`Config::AdminOrigin`].
-   **/
-  | { name: 'ForceSetStage'; params: { stage: PalletRcMigratorMigrationStage } }
-  /**
-   * Schedule the migration to start at a given moment.
-   *
-   * ### Parameters:
-   * - `start`: The block number at which the migration will start. `DispatchTime` calculated
-   * at the moment of the extrinsic execution.
-   * - `warm_up`: Duration or timepoint that will be used to prepare for the migration. Calls
-   * are filtered during this period. It is intended to give enough time for UMP and DMP
-   * queues to empty. `DispatchTime` calculated at the moment of the transition to the
-   * warm-up stage.
-   * - `cool_off`: The block number at which the post migration cool-off period will end. The
-   * `DispatchTime` calculated at the moment of the transition to the cool-off stage.
-   * - `unsafe_ignore_staking_lock_check`: ONLY FOR TESTING. Ignore the check whether the
-   * scheduled time point is far enough in the future.
-   *
-   * Note: If the staking election for next era is already complete, and the next
-   * validator set is queued in `pallet-session`, we want to avoid starting the data
-   * migration at this point as it can lead to some missed validator rewards. To address
-   * this, we stop staking election at the start of migration and must wait atleast 1
-   * session (set via warm_up) before starting the data migration.
-   *
-   * Read [`MigrationStage::Scheduled`] documentation for more details.
-   **/
-  | {
-      name: 'ScheduleMigration';
-      params: {
-        start: FrameSupportScheduleDispatchTime;
-        warmUp: FrameSupportScheduleDispatchTime;
-        coolOff: FrameSupportScheduleDispatchTime;
-        unsafeIgnoreStakingLockCheck: boolean;
-      };
-    }
-  /**
-   * Start the data migration.
-   *
-   * This is typically called by the Asset Hub to indicate it's readiness to receive the
-   * migration data.
-   **/
-  | { name: 'StartDataMigration' }
-  /**
-   * Receive a query response from the Asset Hub for a previously sent xcm message.
-   **/
-  | { name: 'ReceiveQueryResponse'; params: { queryId: bigint; response: StagingXcmV5Response } }
-  /**
-   * Resend a previously sent and unconfirmed XCM message.
-   **/
-  | { name: 'ResendXcm'; params: { queryId: bigint } }
-  /**
-   * Set the unprocessed message buffer size.
-   *
-   * `None` means to use the configuration value.
-   **/
-  | { name: 'SetUnprocessedMsgBuffer'; params: { new?: number | undefined } }
-  /**
-   * Set the AH UMP queue priority configuration.
-   *
-   * Can only be called by the `AdminOrigin`.
-   **/
-  | { name: 'SetAhUmpQueuePriority'; params: { new: PalletRcMigratorQueuePriority } }
-  /**
-   * Set the manager account id.
-   *
-   * The manager has the similar to [`Config::AdminOrigin`] privileges except that it
-   * can not set the manager account id via `set_manager` call.
-   **/
-  | { name: 'SetManager'; params: { new?: AccountId32 | undefined } }
-  /**
-   * XCM send call identical to the [`pallet_xcm::Pallet::send`] call but with the
-   * [Config::SendXcm] router which will be able to send messages to the Asset Hub during
-   * the migration.
-   **/
-  | { name: 'SendXcmMessage'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
-  /**
-   * Set the accounts to be preserved on Relay Chain during the migration.
-   *
-   * The accounts must have no consumers references.
-   **/
-  | { name: 'PreserveAccounts'; params: { accounts: Array<AccountId32> } }
-  /**
-   * Set the canceller account id.
-   *
-   * The canceller can only stop scheduled migration.
-   **/
-  | { name: 'SetCanceller'; params: { new?: AccountId32 | undefined } }
-  /**
-   * Pause the migration.
-   **/
-  | { name: 'PauseMigration' }
-  /**
-   * Cancel the migration.
-   *
-   * Migration can only be cancelled if it is in the [`MigrationStage::Scheduled`] state.
-   **/
-  | { name: 'CancelMigration' }
-  /**
-   * Vote on behalf of any of the members in `MultisigMembers`.
-   *
-   * Unsigned extrinsic, requiring the `payload` to be signed.
-   *
-   * Upon each call, a new entry is created in `ManagerMultisigs` map the `payload.call` to
-   * be dispatched. Once `MultisigThreshold` is reached, the entire map is deleted, and we
-   * move on to the next round.
-   *
-   * The round system ensures that signatures from older round cannot be reused.
-   **/
-  | {
-      name: 'VoteManagerMultisig';
-      params: { payload: PalletRcMigratorManagerMultisigVote; sig: SpRuntimeMultiSignature };
-    }
-  /**
-   * Set the migration settings. Can only be done by admin or manager.
-   **/
-  | { name: 'SetSettings'; params: { settings?: PalletRcMigratorMigrationSettings | undefined } };
-
-export type PalletRcMigratorCallLike =
-  /**
-   * Set the migration stage.
-   *
-   * This call is intended for emergency use only and is guarded by the
-   * [`Config::AdminOrigin`].
-   **/
-  | { name: 'ForceSetStage'; params: { stage: PalletRcMigratorMigrationStage } }
-  /**
-   * Schedule the migration to start at a given moment.
-   *
-   * ### Parameters:
-   * - `start`: The block number at which the migration will start. `DispatchTime` calculated
-   * at the moment of the extrinsic execution.
-   * - `warm_up`: Duration or timepoint that will be used to prepare for the migration. Calls
-   * are filtered during this period. It is intended to give enough time for UMP and DMP
-   * queues to empty. `DispatchTime` calculated at the moment of the transition to the
-   * warm-up stage.
-   * - `cool_off`: The block number at which the post migration cool-off period will end. The
-   * `DispatchTime` calculated at the moment of the transition to the cool-off stage.
-   * - `unsafe_ignore_staking_lock_check`: ONLY FOR TESTING. Ignore the check whether the
-   * scheduled time point is far enough in the future.
-   *
-   * Note: If the staking election for next era is already complete, and the next
-   * validator set is queued in `pallet-session`, we want to avoid starting the data
-   * migration at this point as it can lead to some missed validator rewards. To address
-   * this, we stop staking election at the start of migration and must wait atleast 1
-   * session (set via warm_up) before starting the data migration.
-   *
-   * Read [`MigrationStage::Scheduled`] documentation for more details.
-   **/
-  | {
-      name: 'ScheduleMigration';
-      params: {
-        start: FrameSupportScheduleDispatchTime;
-        warmUp: FrameSupportScheduleDispatchTime;
-        coolOff: FrameSupportScheduleDispatchTime;
-        unsafeIgnoreStakingLockCheck: boolean;
-      };
-    }
-  /**
-   * Start the data migration.
-   *
-   * This is typically called by the Asset Hub to indicate it's readiness to receive the
-   * migration data.
-   **/
-  | { name: 'StartDataMigration' }
-  /**
-   * Receive a query response from the Asset Hub for a previously sent xcm message.
-   **/
-  | { name: 'ReceiveQueryResponse'; params: { queryId: bigint; response: StagingXcmV5Response } }
-  /**
-   * Resend a previously sent and unconfirmed XCM message.
-   **/
-  | { name: 'ResendXcm'; params: { queryId: bigint } }
-  /**
-   * Set the unprocessed message buffer size.
-   *
-   * `None` means to use the configuration value.
-   **/
-  | { name: 'SetUnprocessedMsgBuffer'; params: { new?: number | undefined } }
-  /**
-   * Set the AH UMP queue priority configuration.
-   *
-   * Can only be called by the `AdminOrigin`.
-   **/
-  | { name: 'SetAhUmpQueuePriority'; params: { new: PalletRcMigratorQueuePriority } }
-  /**
-   * Set the manager account id.
-   *
-   * The manager has the similar to [`Config::AdminOrigin`] privileges except that it
-   * can not set the manager account id via `set_manager` call.
-   **/
-  | { name: 'SetManager'; params: { new?: AccountId32Like | undefined } }
-  /**
-   * XCM send call identical to the [`pallet_xcm::Pallet::send`] call but with the
-   * [Config::SendXcm] router which will be able to send messages to the Asset Hub during
-   * the migration.
-   **/
-  | { name: 'SendXcmMessage'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
-  /**
-   * Set the accounts to be preserved on Relay Chain during the migration.
-   *
-   * The accounts must have no consumers references.
-   **/
-  | { name: 'PreserveAccounts'; params: { accounts: Array<AccountId32Like> } }
-  /**
-   * Set the canceller account id.
-   *
-   * The canceller can only stop scheduled migration.
-   **/
-  | { name: 'SetCanceller'; params: { new?: AccountId32Like | undefined } }
-  /**
-   * Pause the migration.
-   **/
-  | { name: 'PauseMigration' }
-  /**
-   * Cancel the migration.
-   *
-   * Migration can only be cancelled if it is in the [`MigrationStage::Scheduled`] state.
-   **/
-  | { name: 'CancelMigration' }
-  /**
-   * Vote on behalf of any of the members in `MultisigMembers`.
-   *
-   * Unsigned extrinsic, requiring the `payload` to be signed.
-   *
-   * Upon each call, a new entry is created in `ManagerMultisigs` map the `payload.call` to
-   * be dispatched. Once `MultisigThreshold` is reached, the entire map is deleted, and we
-   * move on to the next round.
-   *
-   * The round system ensures that signatures from older round cannot be reused.
-   **/
-  | {
-      name: 'VoteManagerMultisig';
-      params: { payload: PalletRcMigratorManagerMultisigVote; sig: SpRuntimeMultiSignature };
-    }
-  /**
-   * Set the migration settings. Can only be done by admin or manager.
-   **/
-  | { name: 'SetSettings'; params: { settings?: PalletRcMigratorMigrationSettings | undefined } };
-
-export type PalletRcMigratorMigrationStage =
-  | { type: 'Pending' }
-  | { type: 'MigrationPaused' }
-  | { type: 'Scheduled'; value: { start: number } }
-  | { type: 'WaitingForAh' }
-  | { type: 'WarmUp'; value: { endAt: number } }
-  | { type: 'Starting' }
-  | { type: 'PureProxyCandidatesMigrationInit' }
-  | { type: 'AccountsMigrationInit' }
-  | { type: 'AccountsMigrationOngoing'; value: { lastKey?: AccountId32 | undefined } }
-  | { type: 'AccountsMigrationDone' }
-  | { type: 'MultisigMigrationInit' }
-  | { type: 'MultisigMigrationOngoing'; value: { lastKey?: [AccountId32, FixedBytes<32>] | undefined } }
-  | { type: 'MultisigMigrationDone' }
-  | { type: 'ClaimsMigrationInit' }
-  | { type: 'ClaimsMigrationOngoing'; value: { currentKey?: PalletRcMigratorClaimsClaimsStage | undefined } }
-  | { type: 'ClaimsMigrationDone' }
-  | { type: 'ProxyMigrationInit' }
-  | { type: 'ProxyMigrationProxies'; value: { lastKey?: AccountId32 | undefined } }
-  | { type: 'ProxyMigrationAnnouncements'; value: { lastKey?: AccountId32 | undefined } }
-  | { type: 'ProxyMigrationDone' }
-  | { type: 'PreimageMigrationInit' }
-  | { type: 'PreimageMigrationChunksOngoing'; value: { lastKey?: [[H256, number], number] | undefined } }
-  | { type: 'PreimageMigrationChunksDone' }
-  | { type: 'PreimageMigrationRequestStatusOngoing'; value: { nextKey?: H256 | undefined } }
-  | { type: 'PreimageMigrationRequestStatusDone' }
-  | { type: 'PreimageMigrationLegacyRequestStatusInit' }
-  | { type: 'PreimageMigrationLegacyRequestStatusOngoing'; value: { nextKey?: H256 | undefined } }
-  | { type: 'PreimageMigrationLegacyRequestStatusDone' }
-  | { type: 'PreimageMigrationDone' }
-  | { type: 'NomPoolsMigrationInit' }
-  | { type: 'NomPoolsMigrationOngoing'; value: { nextKey?: PalletRcMigratorStakingNomPoolsNomPoolsStage | undefined } }
-  | { type: 'NomPoolsMigrationDone' }
-  | { type: 'VestingMigrationInit' }
-  | { type: 'VestingMigrationOngoing'; value: { nextKey?: AccountId32 | undefined } }
-  | { type: 'VestingMigrationDone' }
-  | { type: 'DelegatedStakingMigrationInit' }
-  | {
-      type: 'DelegatedStakingMigrationOngoing';
-      value: { nextKey?: PalletRcMigratorStakingDelegatedStakingDelegatedStakingStage | undefined };
-    }
-  | { type: 'DelegatedStakingMigrationDone' }
-  | { type: 'IndicesMigrationInit' }
-  | { type: 'IndicesMigrationOngoing'; value: { nextKey?: [] | undefined } }
-  | { type: 'IndicesMigrationDone' }
-  | { type: 'ReferendaMigrationInit' }
-  | { type: 'ReferendaMigrationOngoing'; value: { lastKey?: PalletRcMigratorReferendaReferendaStage | undefined } }
-  | { type: 'ReferendaMigrationDone' }
-  | { type: 'BagsListMigrationInit' }
-  | { type: 'BagsListMigrationOngoing'; value: { nextKey?: PalletRcMigratorStakingBagsListBagsListStage | undefined } }
-  | { type: 'BagsListMigrationDone' }
-  | { type: 'SchedulerMigrationInit' }
-  | { type: 'SchedulerMigrationOngoing'; value: { lastKey?: PalletRcMigratorSchedulerSchedulerStage | undefined } }
-  | { type: 'SchedulerAgendaMigrationOngoing'; value: { lastKey?: number | undefined } }
-  | { type: 'SchedulerMigrationDone' }
-  | { type: 'ConvictionVotingMigrationInit' }
-  | {
-      type: 'ConvictionVotingMigrationOngoing';
-      value: { lastKey?: PalletRcMigratorConvictionVotingConvictionVotingStage | undefined };
-    }
-  | { type: 'ConvictionVotingMigrationDone' }
-  | { type: 'BountiesMigrationInit' }
-  | { type: 'BountiesMigrationOngoing'; value: { lastKey?: PalletRcMigratorBountiesBountiesStage | undefined } }
-  | { type: 'BountiesMigrationDone' }
-  | { type: 'ChildBountiesMigrationInit' }
-  | {
-      type: 'ChildBountiesMigrationOngoing';
-      value: { lastKey?: PalletRcMigratorChildBountiesChildBountiesStage | undefined };
-    }
-  | { type: 'ChildBountiesMigrationDone' }
-  | { type: 'AssetRateMigrationInit' }
-  | {
-      type: 'AssetRateMigrationOngoing';
-      value: { lastKey?: PolkadotRuntimeCommonImplsVersionedLocatableAsset | undefined };
-    }
-  | { type: 'AssetRateMigrationDone' }
-  | { type: 'CrowdloanMigrationInit' }
-  | { type: 'CrowdloanMigrationOngoing'; value: { lastKey?: PalletRcMigratorCrowdloanCrowdloanStage | undefined } }
-  | { type: 'CrowdloanMigrationDone' }
-  | { type: 'TreasuryMigrationInit' }
-  | { type: 'TreasuryMigrationOngoing'; value: { lastKey?: PalletRcMigratorTreasuryTreasuryStage | undefined } }
-  | { type: 'TreasuryMigrationDone' }
-  | { type: 'StakingMigrationInit' }
-  | { type: 'StakingMigrationOngoing'; value: { nextKey?: PalletRcMigratorStakingStakingImplStakingStage | undefined } }
-  | { type: 'StakingMigrationDone' }
-  | { type: 'CoolOff'; value: { endAt: number } }
-  | { type: 'SignalMigrationFinish' }
-  | { type: 'MigrationDone' };
-
-export type PalletRcMigratorClaimsClaimsStage =
-  | { type: 'StorageValues' }
-  | { type: 'Claims'; value?: EthereumAddress | undefined }
-  | { type: 'Vesting'; value?: EthereumAddress | undefined }
-  | { type: 'Signing'; value?: EthereumAddress | undefined }
-  | { type: 'Preclaims'; value?: AccountId32 | undefined }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorStakingNomPoolsNomPoolsStage =
-  | { type: 'StorageValues' }
-  | { type: 'PoolMembers'; value?: AccountId32 | undefined }
-  | { type: 'BondedPools'; value?: number | undefined }
-  | { type: 'RewardPools'; value?: number | undefined }
-  | { type: 'SubPoolsStorage'; value?: number | undefined }
-  | { type: 'Metadata'; value?: number | undefined }
-  | { type: 'ReversePoolIdLookup'; value?: AccountId32 | undefined }
-  | { type: 'ClaimPermissions'; value?: AccountId32 | undefined }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorStakingDelegatedStakingDelegatedStakingStage =
-  | { type: 'Delegators'; value?: AccountId32 | undefined }
-  | { type: 'Agents'; value?: AccountId32 | undefined }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorReferendaReferendaStage =
-  | { type: 'StorageValues' }
-  | { type: 'Metadata'; value?: number | undefined }
-  | { type: 'ReferendumInfo'; value?: number | undefined };
-
-export type PalletRcMigratorStakingBagsListBagsListStage =
-  | { type: 'ListNodes'; value?: AccountId32 | undefined }
-  | { type: 'ListBags'; value?: bigint | undefined }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorSchedulerSchedulerStage =
-  | { type: 'IncompleteSince' }
-  | { type: 'Retries'; value?: [number, number] | undefined }
-  | { type: 'Lookup'; value?: FixedBytes<32> | undefined }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorConvictionVotingConvictionVotingStage =
-  | { type: 'VotingFor'; value?: [AccountId32, number] | undefined }
-  | { type: 'ClassLocksFor'; value?: AccountId32 | undefined }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorBountiesBountiesStage =
-  | { type: 'BountyCount' }
-  | { type: 'BountyApprovals' }
-  | { type: 'BountyDescriptions'; value: { lastKey?: number | undefined } }
-  | { type: 'Bounties'; value: { lastKey?: number | undefined } }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorChildBountiesChildBountiesStage =
-  | { type: 'ChildBountyCount' }
-  | { type: 'ParentChildBounties'; value: { parentId?: number | undefined } }
-  | { type: 'ParentTotalChildBounties'; value: { parentId?: number | undefined } }
-  | { type: 'ChildBounties'; value: { ids?: [number, number] | undefined } }
-  | { type: 'ChildBountyDescriptionsV1'; value: { ids?: [number, number] | undefined } }
-  | { type: 'V0ToV1ChildBountyIds'; value: { childId?: number | undefined } }
-  | { type: 'ChildrenCuratorFees'; value: { childId?: number | undefined } }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorCrowdloanCrowdloanStage =
-  | { type: 'Setup' }
-  | { type: 'LeaseReserve'; value: { lastKey?: PolkadotParachainPrimitivesPrimitivesId | undefined } }
-  | { type: 'CrowdloanContribution'; value: { lastKey?: PolkadotParachainPrimitivesPrimitivesId | undefined } }
-  | { type: 'CrowdloanReserve' }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorTreasuryTreasuryStage =
-  | { type: 'ProposalCount' }
-  | { type: 'Proposals'; value?: number | undefined }
-  | { type: 'Approvals' }
-  | { type: 'SpendCount' }
-  | { type: 'Spends'; value?: number | undefined }
-  | { type: 'LastSpendPeriod' }
-  | { type: 'Funds' }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorStakingStakingImplStakingStage =
-  | { type: 'Values' }
-  | { type: 'Invulnerables' }
-  | { type: 'Bonded'; value?: AccountId32 | undefined }
-  | { type: 'Ledger'; value?: AccountId32 | undefined }
-  | { type: 'Payee'; value?: AccountId32 | undefined }
-  | { type: 'Validators'; value?: AccountId32 | undefined }
-  | { type: 'Nominators'; value?: AccountId32 | undefined }
-  | { type: 'VirtualStakers'; value?: AccountId32 | undefined }
-  | { type: 'ErasStakersOverview'; value?: [number, AccountId32] | undefined }
-  | { type: 'ErasStakersPaged'; value?: [number, AccountId32, number] | undefined }
-  | { type: 'ClaimedRewards'; value?: [number, AccountId32] | undefined }
-  | { type: 'ErasValidatorPrefs'; value?: [number, AccountId32] | undefined }
-  | { type: 'ErasValidatorReward'; value?: number | undefined }
-  | { type: 'ErasRewardPoints'; value?: number | undefined }
-  | { type: 'ErasTotalStake'; value?: number | undefined }
-  | { type: 'UnappliedSlashes'; value?: number | undefined }
-  | { type: 'BondedEras' }
-  | { type: 'ValidatorSlashInEra'; value?: [number, AccountId32] | undefined }
-  | { type: 'NominatorSlashInEra'; value?: [number, AccountId32] | undefined }
-  | { type: 'SlashingSpans'; value?: AccountId32 | undefined }
-  | { type: 'SpanSlash'; value?: [AccountId32, number] | undefined }
-  | { type: 'Finished' };
-
-export type PalletRcMigratorQueuePriority =
-  | { type: 'Config' }
-  | { type: 'OverrideConfig'; value: [number, number] }
-  | { type: 'Disabled' };
-
-export type PalletRcMigratorManagerMultisigVote = {
-  who: SpRuntimeMultiSigner;
-  call: PolkadotRuntimeRuntimeCall;
-  round: number;
-};
-
-export type PalletRcMigratorMigrationSettings = {
-  maxAccountsPerBlock?: number | undefined;
-  maxItemsPerBlock?: number | undefined;
-};
+export type FrameSystemExtensionsAuthorizeCall = {};
 
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
@@ -10830,8 +10416,7 @@ export type PolkadotRuntimeRuntimeEvent =
   | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent }
   | { pallet: 'XcmPallet'; palletEvent: PalletXcmEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
-  | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
-  | { pallet: 'RcMigrator'; palletEvent: PalletRcMigratorEvent };
+  | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent };
 
 /**
  * Event for the System pallet.
@@ -13131,260 +12716,6 @@ export type PalletAssetRateEvent =
       data: { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; old: FixedU128; new: FixedU128 };
     };
 
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletRcMigratorEvent =
-  /**
-   * A stage transition has occurred.
-   **/
-  | {
-      name: 'StageTransition';
-      data: {
-        /**
-         * The old stage before the transition.
-         **/
-        old: PalletRcMigratorMigrationStage;
-
-        /**
-         * The new stage after the transition.
-         **/
-        new: PalletRcMigratorMigrationStage;
-      };
-    }
-  /**
-   * The Asset Hub Migration started and is active until `AssetHubMigrationFinished` is
-   * emitted.
-   *
-   * This event is equivalent to `StageTransition { new: Initializing, .. }` but is easier
-   * to understand. The activation is immediate and affects all events happening
-   * afterwards.
-   **/
-  | { name: 'AssetHubMigrationStarted' }
-  /**
-   * The Asset Hub Migration finished.
-   *
-   * This event is equivalent to `StageTransition { new: MigrationDone, .. }` but is easier
-   * to understand. The finishing is immediate and affects all events happening
-   * afterwards.
-   **/
-  | { name: 'AssetHubMigrationFinished' }
-  /**
-   * A query response has been received.
-   **/
-  | {
-      name: 'QueryResponseReceived';
-      data: {
-        /**
-         * The query ID.
-         **/
-        queryId: bigint;
-
-        /**
-         * The response.
-         **/
-        response: XcmV3MaybeErrorCode;
-      };
-    }
-  /**
-   * A XCM message has been resent.
-   **/
-  | {
-      name: 'XcmResendAttempt';
-      data: {
-        /**
-         * The query ID.
-         **/
-        queryId: bigint;
-
-        /**
-         * The error message.
-         **/
-        sendError?: XcmV3TraitsSendError | undefined;
-      };
-    }
-  /**
-   * The unprocessed message buffer size has been set.
-   **/
-  | {
-      name: 'UnprocessedMsgBufferSet';
-      data: {
-        /**
-         * The new size.
-         **/
-        new: number;
-
-        /**
-         * The old size.
-         **/
-        old: number;
-      };
-    }
-  /**
-   * Whether the AH UMP queue was prioritized for the next block.
-   **/
-  | {
-      name: 'AhUmpQueuePrioritySet';
-      data: {
-        /**
-         * Indicates if AH UMP queue was successfully set as priority.
-         * If `false`, it means we're in the round-robin phase of our priority pattern
-         * (see [`Config::AhUmpQueuePriorityPattern`]), where no queue gets priority.
-         **/
-        prioritized: boolean;
-
-        /**
-         * Current block number within the pattern cycle (1 to period).
-         **/
-        cycleBlock: number;
-
-        /**
-         * Total number of blocks in the pattern cycle
-         **/
-        cyclePeriod: number;
-      };
-    }
-  /**
-   * The AH UMP queue priority config was set.
-   **/
-  | {
-      name: 'AhUmpQueuePriorityConfigSet';
-      data: {
-        /**
-         * The old priority pattern.
-         **/
-        old: PalletRcMigratorQueuePriority;
-
-        /**
-         * The new priority pattern.
-         **/
-        new: PalletRcMigratorQueuePriority;
-      };
-    }
-  /**
-   * The total issuance was recorded.
-   **/
-  | { name: 'MigratedBalanceRecordSet'; data: { kept: bigint; migrated: bigint } }
-  /**
-   * The RC kept balance was consumed.
-   **/
-  | { name: 'MigratedBalanceConsumed'; data: { kept: bigint; migrated: bigint } }
-  /**
-   * The manager account id was set.
-   **/
-  | {
-      name: 'ManagerSet';
-      data: {
-        /**
-         * The old manager account id.
-         **/
-        old?: AccountId32 | undefined;
-
-        /**
-         * The new manager account id.
-         **/
-        new?: AccountId32 | undefined;
-      };
-    }
-  /**
-   * An XCM message was sent.
-   **/
-  | {
-      name: 'XcmSent';
-      data: {
-        origin: StagingXcmV5Location;
-        destination: StagingXcmV5Location;
-        message: StagingXcmV5Xcm;
-        messageId: FixedBytes<32>;
-      };
-    }
-  /**
-   * The staking elections were paused.
-   **/
-  | { name: 'StakingElectionsPaused' }
-  /**
-   * The accounts to be preserved on Relay Chain were set.
-   **/
-  | {
-      name: 'AccountsPreserved';
-      data: {
-        /**
-         * The accounts that will be preserved.
-         **/
-        accounts: Array<AccountId32>;
-      };
-    }
-  /**
-   * The canceller account id was set.
-   **/
-  | {
-      name: 'CancellerSet';
-      data: {
-        /**
-         * The old canceller account id.
-         **/
-        old?: AccountId32 | undefined;
-
-        /**
-         * The new canceller account id.
-         **/
-        new?: AccountId32 | undefined;
-      };
-    }
-  /**
-   * The migration was paused.
-   **/
-  | {
-      name: 'MigrationPaused';
-      data: {
-        /**
-         * The stage at which the migration was paused.
-         **/
-        pauseStage: PalletRcMigratorMigrationStage;
-      };
-    }
-  /**
-   * The migration was cancelled.
-   **/
-  | { name: 'MigrationCancelled' }
-  /**
-   * Some pure accounts were indexed for possibly receiving free `Any` proxies.
-   **/
-  | {
-      name: 'PureAccountsIndexed';
-      data: {
-        /**
-         * The number of indexed pure accounts.
-         **/
-        numPureAccounts: number;
-      };
-    }
-  /**
-   * The manager multisig dispatched something.
-   **/
-  | { name: 'ManagerMultisigDispatched'; data: { res: Result<[], DispatchError> } }
-  /**
-   * The manager multisig received a vote.
-   **/
-  | { name: 'ManagerMultisigVoted'; data: { votes: number } }
-  /**
-   * The migration settings were set.
-   **/
-  | {
-      name: 'MigrationSettingsSet';
-      data: {
-        /**
-         * The old migration settings.
-         **/
-        old?: PalletRcMigratorMigrationSettings | undefined;
-
-        /**
-         * The new migration settings.
-         **/
-        new?: PalletRcMigratorMigrationSettings | undefined;
-      };
-    };
-
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
 export type FrameSystemCodeUpgradeAuthorization = { codeHash: H256; checkVersion: boolean };
@@ -13408,7 +12739,10 @@ export type FrameSystemLimitsWeightsPerClass = {
   reserved?: SpWeightsWeightV2Weight | undefined;
 };
 
-export type FrameSystemLimitsBlockLength = { max: FrameSupportDispatchPerDispatchClassU32 };
+export type FrameSystemLimitsBlockLength = {
+  max: FrameSupportDispatchPerDispatchClassU32;
+  maxHeaderSize?: number | undefined;
+};
 
 export type FrameSupportDispatchPerDispatchClassU32 = { normal: number; operational: number; mandatory: number };
 
@@ -15012,7 +14346,8 @@ export type PolkadotRuntimeParachainsConfigurationHostConfiguration = {
   minimumBackingVotes: number;
   nodeFeatures: BitSequence;
   approvalVotingParams: PolkadotPrimitivesV9ApprovalVotingParams;
-  schedulerParams: PolkadotPrimitivesV9SchedulerParams;
+  schedulerParams: PolkadotPrimitivesVstagingSchedulerParams;
+  maxRelayParentSessionAge: number;
 };
 
 /**
@@ -15024,16 +14359,17 @@ export type PolkadotRuntimeParachainsConfigurationPalletError =
    **/
   'InvalidNewValue';
 
-export type PolkadotRuntimeParachainsSharedAllowedRelayParentsTracker = {
-  buffer: Array<PolkadotRuntimeParachainsSharedRelayParentInfo>;
+export type PolkadotRuntimeParachainsSharedAllowedSchedulingParentsTracker = {
+  buffer: Array<PolkadotRuntimeParachainsSharedSchedulingParentInfo>;
   latestNumber: number;
 };
 
-export type PolkadotRuntimeParachainsSharedRelayParentInfo = {
-  relayParent: H256;
-  stateRoot: H256;
+export type PolkadotRuntimeParachainsSharedSchedulingParentInfo = {
+  schedulingParent: H256;
   claimQueue: Array<[PolkadotParachainPrimitivesPrimitivesId, Array<[number, Array<PolkadotPrimitivesV9CoreIndex>]>]>;
 };
+
+export type PolkadotPrimitivesVstagingRelayParentInfo = { number: number; stateRoot: H256 };
 
 export type PolkadotRuntimeParachainsInclusionCandidatePendingAvailability = {
   core: PolkadotPrimitivesV9CoreIndex;
@@ -15077,8 +14413,12 @@ export type PolkadotRuntimeParachainsInclusionPalletError =
    **/
   | 'DisallowedRelayParent'
   /**
+   * The candidate's scheduling-parent was not allowed.
+   **/
+  | 'DisallowedSchedulingParent'
+  /**
    * Failed to compute group index for the core: either it's out of bounds
-   * or the relay parent doesn't belong to the current session.
+   * or the scheduling parent doesn't belong to the current session.
    **/
   | 'InvalidAssignment'
   /**
@@ -15157,12 +14497,47 @@ export type PolkadotRuntimeParachainsParasInherentPalletError =
    **/
   | 'UnscheduledCandidate';
 
-export type PolkadotRuntimeParachainsSchedulerCommonAssignment =
-  | {
-      type: 'Pool';
-      value: { paraId: PolkadotParachainPrimitivesPrimitivesId; coreIndex: PolkadotPrimitivesV9CoreIndex };
-    }
-  | { type: 'Bulk'; value: PolkadotParachainPrimitivesPrimitivesId };
+export type PolkadotRuntimeParachainsSchedulerAssignerCoretimeSchedule = {
+  assignments: Array<
+    [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600]
+  >;
+  endHint?: number | undefined;
+  nextSchedule?: number | undefined;
+};
+
+export type PolkadotRuntimeParachainsSchedulerAssignerCoretimeCoreDescriptor = {
+  queue?: PolkadotRuntimeParachainsSchedulerAssignerCoretimeQueueDescriptor | undefined;
+  currentWork?: PolkadotRuntimeParachainsSchedulerAssignerCoretimeWorkState | undefined;
+};
+
+export type PolkadotRuntimeParachainsSchedulerAssignerCoretimeQueueDescriptor = { first: number; last: number };
+
+export type PolkadotRuntimeParachainsSchedulerAssignerCoretimeWorkState = {
+  assignments: Array<
+    [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsSchedulerAssignerCoretimeAssignmentState]
+  >;
+  endHint?: number | undefined;
+  pos: number;
+  step: PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600;
+};
+
+export type PolkadotRuntimeParachainsSchedulerAssignerCoretimeAssignmentState = {
+  ratio: PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600;
+  remaining: PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PolkadotRuntimeParachainsSchedulerPalletError =
+  /**
+   * assign_core was called with no assignments.
+   **/
+  | 'AssignmentsEmpty'
+  /**
+   * assign_core with non allowed insertion.
+   **/
+  | 'DisallowedInsert';
 
 export type PolkadotRuntimeParachainsParasPvfCheckActiveVoteState = {
   votesAccept: BitSequence;
@@ -15503,29 +14878,18 @@ export type PolkadotRuntimeParachainsDisputesSlashingPalletError =
    **/
   | 'DuplicateSlashingReport';
 
-export type PolkadotRuntimeParachainsOnDemandTypesCoreAffinityCount = {
-  coreIndex: PolkadotPrimitivesV9CoreIndex;
-  count: number;
-};
-
-export type PolkadotRuntimeParachainsOnDemandTypesQueueStatusType = {
+export type PolkadotRuntimeParachainsOnDemandOrderStatus = {
   traffic: FixedU128;
-  nextIndex: PolkadotRuntimeParachainsOnDemandTypesQueueIndex;
-  smallestIndex: PolkadotRuntimeParachainsOnDemandTypesQueueIndex;
-  freedIndices: BinaryHeap;
+  queue: PolkadotRuntimeParachainsOnDemandOrderQueue;
 };
 
-export type PolkadotRuntimeParachainsOnDemandTypesQueueIndex = number;
+export type PolkadotRuntimeParachainsOnDemandOrderQueue = {
+  queue: Array<PolkadotRuntimeParachainsOnDemandEnqueuedOrder>;
+};
 
-export type BinaryHeap = Array<PolkadotRuntimeParachainsOnDemandTypesReverseQueueIndex>;
-
-export type PolkadotRuntimeParachainsOnDemandTypesReverseQueueIndex = number;
-
-export type BinaryHeapEnqueuedOrder = Array<PolkadotRuntimeParachainsOnDemandTypesEnqueuedOrder>;
-
-export type PolkadotRuntimeParachainsOnDemandTypesEnqueuedOrder = {
+export type PolkadotRuntimeParachainsOnDemandEnqueuedOrder = {
   paraId: PolkadotParachainPrimitivesPrimitivesId;
-  idx: PolkadotRuntimeParachainsOnDemandTypesQueueIndex;
+  orderedAt: number;
 };
 
 /**
@@ -15545,46 +14909,6 @@ export type PolkadotRuntimeParachainsOnDemandPalletError =
    * The account doesn't have enough credits to purchase on-demand coretime.
    **/
   | 'InsufficientCredits';
-
-export type PolkadotRuntimeParachainsAssignerCoretimeSchedule = {
-  assignments: Array<
-    [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimePartsOf57600]
-  >;
-  endHint?: number | undefined;
-  nextSchedule?: number | undefined;
-};
-
-export type PolkadotRuntimeParachainsAssignerCoretimeCoreDescriptor = {
-  queue?: PolkadotRuntimeParachainsAssignerCoretimeQueueDescriptor | undefined;
-  currentWork?: PolkadotRuntimeParachainsAssignerCoretimeWorkState | undefined;
-};
-
-export type PolkadotRuntimeParachainsAssignerCoretimeQueueDescriptor = { first: number; last: number };
-
-export type PolkadotRuntimeParachainsAssignerCoretimeWorkState = {
-  assignments: Array<
-    [PalletBrokerCoretimeInterfaceCoreAssignment, PolkadotRuntimeParachainsAssignerCoretimeAssignmentState]
-  >;
-  endHint?: number | undefined;
-  pos: number;
-  step: PolkadotRuntimeParachainsAssignerCoretimePartsOf57600;
-};
-
-export type PolkadotRuntimeParachainsAssignerCoretimeAssignmentState = {
-  ratio: PolkadotRuntimeParachainsAssignerCoretimePartsOf57600;
-  remaining: PolkadotRuntimeParachainsAssignerCoretimePartsOf57600;
-};
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PolkadotRuntimeParachainsAssignerCoretimePalletError =
-  | 'AssignmentsEmpty'
-  /**
-   * assign_core is only allowed to append new assignments at the end of already existing
-   * ones or update the last entry.
-   **/
-  | 'DisallowedInsert';
 
 export type PolkadotRuntimeCommonParasRegistrarParaInfo = {
   manager: AccountId32;
@@ -16170,89 +15494,15 @@ export type PalletBeefyError =
 
 export type SpConsensusBeefyMmrBeefyAuthoritySet = { id: bigint; len: number; keysetCommitment: H256 };
 
-export type PalletRcMigratorAccountsAccountState =
+export type PalletRcMigratorAccountState =
   | { type: 'Migrate' }
   | { type: 'Preserve' }
   | { type: 'Part'; value: { free: bigint; reserved: bigint; consumers: number } };
 
-export type PalletRcMigratorAccountsMigratedBalances = { kept: bigint; migrated: bigint };
-
 /**
  * The `Error` enum of this pallet.
  **/
-export type PalletRcMigratorError =
-  | 'Unreachable'
-  | 'OutOfWeight'
-  /**
-   * Failed to send XCM message to AH.
-   **/
-  | 'XcmError'
-  /**
-   * Failed to withdraw account from RC for migration to AH.
-   **/
-  | 'FailedToWithdrawAccount'
-  /**
-   * Indicates that the specified block number is in the past.
-   **/
-  | 'PastBlockNumber'
-  /**
-   * Indicates that there is not enough time for staking to lock.
-   *
-   * Schedule the migration at least two sessions before the current era ends.
-   **/
-  | 'EraEndsTooSoon'
-  /**
-   * Balance accounting overflow.
-   **/
-  | 'BalanceOverflow'
-  /**
-   * Balance accounting underflow.
-   **/
-  | 'BalanceUnderflow'
-  /**
-   * The query response is invalid.
-   **/
-  | 'InvalidQueryResponse'
-  /**
-   * The xcm query was not found.
-   **/
-  | 'QueryNotFound'
-  /**
-   * Failed to send XCM message.
-   **/
-  | 'XcmSendError'
-  /**
-   * The migration stage is not reachable from the current stage.
-   **/
-  | 'UnreachableStage'
-  /**
-   * Invalid parameter.
-   **/
-  | 'InvalidParameter'
-  /**
-   * The AH UMP queue priority configuration is already set.
-   **/
-  | 'AhUmpQueuePriorityAlreadySet'
-  /**
-   * The account is referenced by some other pallet. It might have freezes or holds.
-   **/
-  | 'AccountReferenced'
-  /**
-   * The XCM version is invalid.
-   **/
-  | 'BadXcmVersion'
-  /**
-   * The origin is invalid.
-   **/
-  | 'InvalidOrigin'
-  /**
-   * The stage transition is invalid.
-   **/
-  | 'InvalidStageTransition'
-  /**
-   * Unsigned validation failed.
-   **/
-  | 'UnsignedValidationFailed';
+export type PalletRcMigratorError = null;
 
 export type SpRuntimeBlockLazyBlock = { header: Header; extrinsics: Array<SpRuntimeOpaqueExtrinsic> };
 
@@ -16461,6 +15711,8 @@ export type SpConsensusBabeEpoch = {
 
 export type SpConsensusBabeOpaqueKeyOwnershipProof = Bytes;
 
+export type SpSessionRuntimeApiOpaqueGeneratedSessionKeys = { keys: Bytes; proof: Bytes };
+
 export type FrameSupportViewFunctionsViewFunctionId = { prefix: FixedBytes<16>; suffix: FixedBytes<16> };
 
 export type FrameSupportViewFunctionsViewFunctionDispatchError =
@@ -16536,12 +15788,12 @@ export type PolkadotRuntimeRuntimeError =
   | { pallet: 'Configuration'; palletError: PolkadotRuntimeParachainsConfigurationPalletError }
   | { pallet: 'ParaInclusion'; palletError: PolkadotRuntimeParachainsInclusionPalletError }
   | { pallet: 'ParaInherent'; palletError: PolkadotRuntimeParachainsParasInherentPalletError }
+  | { pallet: 'ParaScheduler'; palletError: PolkadotRuntimeParachainsSchedulerPalletError }
   | { pallet: 'Paras'; palletError: PolkadotRuntimeParachainsParasPalletError }
   | { pallet: 'Hrmp'; palletError: PolkadotRuntimeParachainsHrmpPalletError }
   | { pallet: 'ParasDisputes'; palletError: PolkadotRuntimeParachainsDisputesPalletError }
   | { pallet: 'ParasSlashing'; palletError: PolkadotRuntimeParachainsDisputesSlashingPalletError }
   | { pallet: 'OnDemand'; palletError: PolkadotRuntimeParachainsOnDemandPalletError }
-  | { pallet: 'CoretimeAssignmentProvider'; palletError: PolkadotRuntimeParachainsAssignerCoretimePalletError }
   | { pallet: 'Registrar'; palletError: PolkadotRuntimeCommonParasRegistrarPalletError }
   | { pallet: 'Slots'; palletError: PolkadotRuntimeCommonSlotsPalletError }
   | { pallet: 'Auctions'; palletError: PolkadotRuntimeCommonAuctionsPalletError }

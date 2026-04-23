@@ -9,8 +9,8 @@ import type {
   Result,
   UncheckedExtrinsicLike,
   UncheckedExtrinsic,
-  Bytes,
   BytesLike,
+  Bytes,
   AccountId32Like,
   AccountId32,
   U256,
@@ -29,6 +29,7 @@ import type {
   SpInherentsCheckInherentsResult,
   SpRuntimeTransactionValidityValidTransaction,
   SpRuntimeTransactionValidityTransactionSource,
+  SpSessionRuntimeApiOpaqueGeneratedSessionKeys,
   SpCoreCryptoKeyTypeId,
   FrameSupportViewFunctionsViewFunctionDispatchError,
   FrameSupportViewFunctionsViewFunctionId,
@@ -327,9 +328,12 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Returns the concatenated SCALE encoded public keys.
      *
      * @callname: SessionKeys_generate_session_keys
+     * @param {BytesLike} owner
      * @param {BytesLike | undefined} seed
      **/
-    generateSessionKeys: GenericRuntimeApiMethod<(seed?: BytesLike | undefined) => Promise<Bytes>>;
+    generateSessionKeys: GenericRuntimeApiMethod<
+      (owner: BytesLike, seed?: BytesLike | undefined) => Promise<SpSessionRuntimeApiOpaqueGeneratedSessionKeys>
+    >;
 
     /**
      * Decode the given public session keys.
@@ -787,6 +791,29 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: GenesisBuilder_preset_names
      **/
     presetNames: GenericRuntimeApiMethod<() => Promise<Array<string>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: AssetHubMigrationApi - 0xc1b8f0c037f97de8
+   **/
+  assetHubMigrationApi: {
+    /**
+     * Returns the block number when the migration started.
+     *
+     * @callname: AssetHubMigrationApi_migration_start_block
+     **/
+    migrationStartBlock: GenericRuntimeApiMethod<() => Promise<number>>;
+
+    /**
+     * Returns the block number when the migration ended.
+     *
+     * @callname: AssetHubMigrationApi_migration_end_block
+     **/
+    migrationEndBlock: GenericRuntimeApiMethod<() => Promise<number>>;
 
     /**
      * Generic runtime api call

@@ -682,6 +682,26 @@ export interface ChainEvents extends GenericChainEvents {
     ReservesRemoved: GenericPalletEvent<'Assets', 'ReservesRemoved', { assetId: StagingXcmV5Location }>;
 
     /**
+     * Some assets were issued as Credit (no owner yet).
+     **/
+    IssuedCredit: GenericPalletEvent<'Assets', 'IssuedCredit', { assetId: StagingXcmV5Location; amount: bigint }>;
+
+    /**
+     * Some assets Credit was destroyed.
+     **/
+    BurnedCredit: GenericPalletEvent<'Assets', 'BurnedCredit', { assetId: StagingXcmV5Location; amount: bigint }>;
+
+    /**
+     * Some assets were burned and a Debt was created.
+     **/
+    IssuedDebt: GenericPalletEvent<'Assets', 'IssuedDebt', { assetId: StagingXcmV5Location; amount: bigint }>;
+
+    /**
+     * Some assets Debt was destroyed (and assets issued).
+     **/
+    BurnedDebt: GenericPalletEvent<'Assets', 'BurnedDebt', { assetId: StagingXcmV5Location; amount: bigint }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;

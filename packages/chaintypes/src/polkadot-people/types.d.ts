@@ -2087,14 +2087,16 @@ export type PalletCollatorSelectionCallLike =
 export type PalletSessionCall =
   /**
    * Sets the session key(s) of the function caller to `keys`.
+   *
    * Allows an account to set its session key prior to becoming a validator.
    * This doesn't take effect until the next session.
    *
-   * The dispatch origin of this function must be signed.
-   *
-   * ## Complexity
-   * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
-   * fixed.
+   * - `origin`: The dispatch origin of this function must be signed.
+   * - `keys`: The new session keys to set. These are the public keys of all sessions keys
+   * setup in the runtime.
+   * - `proof`: The proof that `origin` has access to the private keys of `keys`. See
+   * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
+   * proof format.
    **/
   | { name: 'SetKeys'; params: { keys: PeoplePolkadotRuntimeSessionKeys; proof: Bytes } }
   /**
@@ -2106,24 +2108,22 @@ export type PalletSessionCall =
    * convertible to a validator ID using the chain's typical addressing system (this usually
    * means being a controller account) or directly convertible into a validator ID (which
    * usually means being a stash account).
-   *
-   * ## Complexity
-   * - `O(1)` in number of key types. Actual cost depends on the number of length of
-   * `T::Keys::key_ids()` which is fixed.
    **/
   | { name: 'PurgeKeys' };
 
 export type PalletSessionCallLike =
   /**
    * Sets the session key(s) of the function caller to `keys`.
+   *
    * Allows an account to set its session key prior to becoming a validator.
    * This doesn't take effect until the next session.
    *
-   * The dispatch origin of this function must be signed.
-   *
-   * ## Complexity
-   * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
-   * fixed.
+   * - `origin`: The dispatch origin of this function must be signed.
+   * - `keys`: The new session keys to set. These are the public keys of all sessions keys
+   * setup in the runtime.
+   * - `proof`: The proof that `origin` has access to the private keys of `keys`. See
+   * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
+   * proof format.
    **/
   | { name: 'SetKeys'; params: { keys: PeoplePolkadotRuntimeSessionKeys; proof: BytesLike } }
   /**
@@ -2135,10 +2135,6 @@ export type PalletSessionCallLike =
    * convertible to a validator ID using the chain's typical addressing system (this usually
    * means being a controller account) or directly convertible into a validator ID (which
    * usually means being a stash account).
-   *
-   * ## Complexity
-   * - `O(1)` in number of key types. Actual cost depends on the number of length of
-   * `T::Keys::key_ids()` which is fixed.
    **/
   | { name: 'PurgeKeys' };
 
@@ -3977,7 +3973,9 @@ export type PalletMultisigCall =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
-   * If there are enough, then dispatch the call.
+   * **If the approval threshold is met (including the sender's approval), this will
+   * immediately execute the call.** This is the only way to execute a multisig call -
+   * `approve_as_multi` will never trigger execution.
    *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
@@ -3993,8 +3991,9 @@ export type PalletMultisigCall =
    * transaction index) of the first approval transaction.
    * - `call`: The call to be executed.
    *
-   * NOTE: Unless this is the final approval, you will generally want to use
-   * `approve_as_multi` instead, since it only requires a hash of the call.
+   * NOTE: For intermediate approvals (not the final approval), you should generally use
+   * `approve_as_multi` instead, since it only requires a hash of the call and is more
+   * efficient.
    *
    * Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise
    * on success, result is `Ok` and the result from the interior call, if it was executed,
@@ -4028,6 +4027,13 @@ export type PalletMultisigCall =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
+   * **This function will NEVER execute the call, even if the approval threshold is
+   * reached.** It only registers approval. To actually execute the call, `as_multi` must
+   * be called with the full call data by any of the signatories.
+   *
+   * This function is more efficient than `as_multi` for intermediate approvals since it
+   * only requires the call hash, not the full call data.
+   *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
    * is cancelled.
@@ -4042,7 +4048,8 @@ export type PalletMultisigCall =
    * transaction index) of the first approval transaction.
    * - `call_hash`: The hash of the call to be executed.
    *
-   * NOTE: If this is the final approval, you will want to use `as_multi` instead.
+   * NOTE: To execute the call after approvals are gathered, any signatory must call
+   * `as_multi` with the full call data. This function cannot execute the call.
    *
    * ## Complexity
    * - `O(S)`.
@@ -4141,7 +4148,9 @@ export type PalletMultisigCallLike =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
-   * If there are enough, then dispatch the call.
+   * **If the approval threshold is met (including the sender's approval), this will
+   * immediately execute the call.** This is the only way to execute a multisig call -
+   * `approve_as_multi` will never trigger execution.
    *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
@@ -4157,8 +4166,9 @@ export type PalletMultisigCallLike =
    * transaction index) of the first approval transaction.
    * - `call`: The call to be executed.
    *
-   * NOTE: Unless this is the final approval, you will generally want to use
-   * `approve_as_multi` instead, since it only requires a hash of the call.
+   * NOTE: For intermediate approvals (not the final approval), you should generally use
+   * `approve_as_multi` instead, since it only requires a hash of the call and is more
+   * efficient.
    *
    * Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise
    * on success, result is `Ok` and the result from the interior call, if it was executed,
@@ -4192,6 +4202,13 @@ export type PalletMultisigCallLike =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
+   * **This function will NEVER execute the call, even if the approval threshold is
+   * reached.** It only registers approval. To actually execute the call, `as_multi` must
+   * be called with the full call data by any of the signatories.
+   *
+   * This function is more efficient than `as_multi` for intermediate approvals since it
+   * only requires the call hash, not the full call data.
+   *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
    * is cancelled.
@@ -4206,7 +4223,8 @@ export type PalletMultisigCallLike =
    * transaction index) of the first approval transaction.
    * - `call_hash`: The hash of the call to be executed.
    *
-   * NOTE: If this is the final approval, you will want to use `as_multi` instead.
+   * NOTE: To execute the call after approvals are gathered, any signatory must call
+   * `as_multi` with the full call data. This function cannot execute the call.
    *
    * ## Complexity
    * - `O(S)`.
@@ -5197,6 +5215,8 @@ export type SpRuntimeMultiSignature =
   | { type: 'Ecdsa'; value: FixedBytes<65> }
   | { type: 'Eth'; value: FixedBytes<65> };
 
+export type FrameSystemExtensionsAuthorizeCall = {};
+
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
 export type FrameSystemExtensionsCheckSpecVersion = {};
@@ -5774,7 +5794,23 @@ export type PalletAssetsEvent =
   /**
    * Reserve information was removed for `asset_id`.
    **/
-  | { name: 'ReservesRemoved'; data: { assetId: StagingXcmV5Location } };
+  | { name: 'ReservesRemoved'; data: { assetId: StagingXcmV5Location } }
+  /**
+   * Some assets were issued as Credit (no owner yet).
+   **/
+  | { name: 'IssuedCredit'; data: { assetId: StagingXcmV5Location; amount: bigint } }
+  /**
+   * Some assets Credit was destroyed.
+   **/
+  | { name: 'BurnedCredit'; data: { assetId: StagingXcmV5Location; amount: bigint } }
+  /**
+   * Some assets were burned and a Debt was created.
+   **/
+  | { name: 'IssuedDebt'; data: { assetId: StagingXcmV5Location; amount: bigint } }
+  /**
+   * Some assets Debt was destroyed (and assets issued).
+   **/
+  | { name: 'BurnedDebt'; data: { assetId: StagingXcmV5Location; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -6561,7 +6597,10 @@ export type FrameSystemLimitsWeightsPerClass = {
   reserved?: SpWeightsWeightV2Weight | undefined;
 };
 
-export type FrameSystemLimitsBlockLength = { max: FrameSupportDispatchPerDispatchClassU32 };
+export type FrameSystemLimitsBlockLength = {
+  max: FrameSupportDispatchPerDispatchClassU32;
+  maxHeaderSize?: number | undefined;
+};
 
 export type FrameSupportDispatchPerDispatchClassU32 = { normal: number; operational: number; mandatory: number };
 
@@ -6617,6 +6656,7 @@ export type SpRuntimeBlakeTwo256 = {};
 export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
 
 export type CumulusPalletWeightReclaimStorageWeightReclaim = [
+  FrameSystemExtensionsAuthorizeCall,
   FrameSystemExtensionsCheckNonZeroSender,
   FrameSystemExtensionsCheckSpecVersion,
   FrameSystemExtensionsCheckTxVersion,
@@ -6627,6 +6667,14 @@ export type CumulusPalletWeightReclaimStorageWeightReclaim = [
   PalletAssetTxPaymentChargeAssetTxPayment,
   FrameMetadataHashExtensionCheckMetadataHash,
 ];
+
+export type CumulusPalletParachainSystemBlockWeightBlockWeightMode =
+  | { type: 'FullCore'; value: { context: number } }
+  | {
+      type: 'PotentialFullCore';
+      value: { context: number; firstTransactionIndex?: number | undefined; targetWeight: SpWeightsWeightV2Weight };
+    }
+  | { type: 'FractionOfCore'; value: { context: number; firstTransactionIndex?: number | undefined } };
 
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
@@ -6702,6 +6750,14 @@ export type PolkadotCorePrimitivesOutboundHrmpMessage = {
   data: Bytes;
 };
 
+export type CumulusPalletParachainSystemPoVMessages = {
+  relayStorageRootOrHash: H256;
+  coreSelector: number;
+  bundleIndex: number;
+  umpMsgCount: number;
+  hrmpOutboundCount: number;
+};
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -6740,6 +6796,21 @@ export type PalletMigrationsError =
    * The operation cannot complete since some MBMs are ongoing.
    **/
   'Ongoing';
+
+export type PalletMigrationsMbmIsOngoing = 'Yes' | 'No' | 'Stuck';
+
+export type PalletMigrationsMbmProgress = {
+  currentMigration: number;
+  totalMigrations: number;
+  currentMigrationSteps: number;
+  currentMigrationMaxSteps?: number | undefined;
+};
+
+export type PalletMigrationsMbmStatus = {
+  ongoing: PalletMigrationsMbmIsOngoing;
+  progress?: PalletMigrationsMbmProgress | undefined;
+  prefixes: Array<Bytes>;
+};
 
 export type PalletBalancesBalanceLock = { id: FixedBytes<8>; amount: bigint; reasons: PalletBalancesReasons };
 
@@ -7097,9 +7168,12 @@ export type CumulusPalletXcmpQueueOutboundChannelDetails = {
   signalsExist: boolean;
   firstIndex: number;
   lastIndex: number;
+  flags: CumulusPalletXcmpQueueOutboundChannelFlags;
 };
 
 export type CumulusPalletXcmpQueueOutboundState = 'Ok' | 'Suspended';
+
+export type CumulusPalletXcmpQueueOutboundChannelFlags = { bits: number };
 
 export type CumulusPalletXcmpQueueQueueConfigData = {
   suspendThreshold: number;
@@ -7724,6 +7798,8 @@ export type SpRuntimeTransactionValidityValidTransaction = {
   longevity: bigint;
   propagate: boolean;
 };
+
+export type SpSessionRuntimeApiOpaqueGeneratedSessionKeys = { keys: Bytes; proof: Bytes };
 
 export type FrameSupportViewFunctionsViewFunctionId = { prefix: FixedBytes<16>; suffix: FixedBytes<16> };
 

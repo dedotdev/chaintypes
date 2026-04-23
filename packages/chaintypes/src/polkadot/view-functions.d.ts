@@ -51,7 +51,6 @@ export interface ChainViewFunctions extends GenericChainViewFunctions {
      * Returns `(current, real_score)`, the former being the current score that this pallet is
      * aware of, which may or may not be up to date, and the latter being the real score, as
      * provided by
-     *
      * If the two differ, it means this node is eligible for [`Call::rebag`].
      *
      * @param {AccountId32Like} who

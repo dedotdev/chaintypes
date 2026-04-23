@@ -12,8 +12,8 @@ import type {
   AccountId32,
   H256,
   BitSequence,
-  Bytes,
   BytesLike,
+  Bytes,
 } from 'dedot/codecs';
 import type {
   SpRuntimeBlockLazyBlock,
@@ -53,6 +53,8 @@ import type {
   PolkadotPrimitivesV9ApprovalVotingParams,
   PolkadotPrimitivesV9CoreIndex,
   PolkadotPrimitivesV9AsyncBackingConstraints,
+  PolkadotPrimitivesV9SlashingPendingSlashes,
+  PolkadotPrimitivesVstagingRelayParentInfo,
   SpConsensusBeefyValidatorSet,
   SpConsensusBeefyDoubleVotingProof,
   SpRuntimeOpaqueValue,
@@ -73,6 +75,7 @@ import type {
   SpConsensusBabeAppPublic,
   SpConsensusSlotsEquivocationProof,
   SpAuthorityDiscoveryAppPublic,
+  SpSessionRuntimeApiOpaqueGeneratedSessionKeys,
   SpCoreCryptoKeyTypeId,
   FrameSupportViewFunctionsViewFunctionDispatchError,
   FrameSupportViewFunctionsViewFunctionId,
@@ -787,6 +790,48 @@ export interface RuntimeApis extends GenericRuntimeApis {
     schedulingLookahead: GenericRuntimeApiMethod<() => Promise<number>>;
 
     /**
+     * Retrieve paraids at relay parent
+     *
+     * @callname: ParachainHost_para_ids
+     **/
+    paraIds: GenericRuntimeApiMethod<() => Promise<Array<PolkadotParachainPrimitivesPrimitivesId>>>;
+
+    /**
+     * Returns a list of validators that lost a past session dispute and need to be slashed.
+     *
+     * @callname: ParachainHost_unapplied_slashes_v2
+     **/
+    unappliedSlashesV2: GenericRuntimeApiMethod<
+      () => Promise<Array<[number, PolkadotCorePrimitivesCandidateHash, PolkadotPrimitivesV9SlashingPendingSlashes]>>
+    >;
+
+    /**
+     * Retrieve the maximum relay parent session age allowed for parachain blocks.
+     *
+     * @callname: ParachainHost_max_relay_parent_session_age
+     **/
+    maxRelayParentSessionAge: GenericRuntimeApiMethod<() => Promise<number>>;
+
+    /**
+     * Look up relay parent info for a block that is an **ancestor** of the block
+     * this API is called at. Returns `None` if the relay parent is not found
+     * in the allowed relay parents for the given session.
+     *
+     * NOTE: A block is not in its own `AllowedRelayParents` storage (it gets
+     * added during the next block's inherent). Querying a block about itself
+     * will always return `None`. Use the node-side `check_relay_parent_session`
+     * utility for a general-purpose check that handles both the self and
+     * ancestor cases.
+     *
+     * @callname: ParachainHost_ancestor_relay_parent_info
+     * @param {number} session_index
+     * @param {H256} relay_parent
+     **/
+    ancestorRelayParentInfo: GenericRuntimeApiMethod<
+      (sessionIndex: number, relayParent: H256) => Promise<PolkadotPrimitivesVstagingRelayParentInfo | undefined>
+    >;
+
+    /**
      * Generic runtime api call
      **/
     [method: string]: GenericRuntimeApiMethod;
@@ -1197,9 +1242,12 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * Returns the concatenated SCALE encoded public keys.
      *
      * @callname: SessionKeys_generate_session_keys
+     * @param {BytesLike} owner
      * @param {BytesLike | undefined} seed
      **/
-    generateSessionKeys: GenericRuntimeApiMethod<(seed?: BytesLike | undefined) => Promise<Bytes>>;
+    generateSessionKeys: GenericRuntimeApiMethod<
+      (owner: BytesLike, seed?: BytesLike | undefined) => Promise<SpSessionRuntimeApiOpaqueGeneratedSessionKeys>
+    >;
 
     /**
      * Decode the given public session keys.
@@ -1535,6 +1583,29 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: GenesisBuilder_preset_names
      **/
     presetNames: GenericRuntimeApiMethod<() => Promise<Array<string>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: AssetHubMigrationApi - 0xc1b8f0c037f97de8
+   **/
+  assetHubMigrationApi: {
+    /**
+     * Returns the block number when the migration started.
+     *
+     * @callname: AssetHubMigrationApi_migration_start_block
+     **/
+    migrationStartBlock: GenericRuntimeApiMethod<() => Promise<number>>;
+
+    /**
+     * Returns the block number when the migration ended.
+     *
+     * @callname: AssetHubMigrationApi_migration_end_block
+     **/
+    migrationEndBlock: GenericRuntimeApiMethod<() => Promise<number>>;
 
     /**
      * Generic runtime api call

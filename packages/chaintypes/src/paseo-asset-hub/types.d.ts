@@ -77,8 +77,7 @@ export type AssetHubPolkadotRuntimeRuntimeCall =
   | { pallet: 'MultiBlockElectionSigned'; palletCall: PalletElectionProviderMultiBlockSignedPalletCall }
   | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCall }
   | { pallet: 'Revive'; palletCall: PalletReviveCall }
-  | { pallet: 'AhOps'; palletCall: PalletAhOpsCall }
-  | { pallet: 'AhMigrator'; palletCall: PalletAhMigratorCall };
+  | { pallet: 'AhOps'; palletCall: PalletAhOpsCall };
 
 export type AssetHubPolkadotRuntimeRuntimeCallLike =
   | { pallet: 'System'; palletCall: FrameSystemCallLike }
@@ -128,8 +127,7 @@ export type AssetHubPolkadotRuntimeRuntimeCallLike =
   | { pallet: 'MultiBlockElectionSigned'; palletCall: PalletElectionProviderMultiBlockSignedPalletCallLike }
   | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCallLike }
   | { pallet: 'Revive'; palletCall: PalletReviveCallLike }
-  | { pallet: 'AhOps'; palletCall: PalletAhOpsCallLike }
-  | { pallet: 'AhMigrator'; palletCall: PalletAhMigratorCallLike };
+  | { pallet: 'AhOps'; palletCall: PalletAhOpsCallLike };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -520,7 +518,10 @@ export type PalletSchedulerCall =
       };
     }
   /**
-   * Cancel an anonymously scheduled task.
+   * Cancel a scheduled task (named or anonymous), by providing the block it is scheduled for
+   * execution in, as well as the index of the task in that block's agenda.
+   *
+   * In the case of a named task, it will remove it from the lookup table as well.
    **/
   | { name: 'Cancel'; params: { when: number; index: number } }
   /**
@@ -578,6 +579,8 @@ export type PalletSchedulerCall =
    * clones of the original task. Their retry configuration will be derived from the
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
+   *
+   * This call **cannot** be used to set a retry configuration for a named task.
    **/
   | { name: 'SetRetry'; params: { task: [number, number]; retries: number; period: number } }
   /**
@@ -593,6 +596,8 @@ export type PalletSchedulerCall =
    * clones of the original task. Their retry configuration will be derived from the
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
+   *
+   * This is the only way to set a retry configuration for a named task.
    **/
   | { name: 'SetRetryNamed'; params: { id: FixedBytes<32>; retries: number; period: number } }
   /**
@@ -618,7 +623,10 @@ export type PalletSchedulerCallLike =
       };
     }
   /**
-   * Cancel an anonymously scheduled task.
+   * Cancel a scheduled task (named or anonymous), by providing the block it is scheduled for
+   * execution in, as well as the index of the task in that block's agenda.
+   *
+   * In the case of a named task, it will remove it from the lookup table as well.
    **/
   | { name: 'Cancel'; params: { when: number; index: number } }
   /**
@@ -676,6 +684,8 @@ export type PalletSchedulerCallLike =
    * clones of the original task. Their retry configuration will be derived from the
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
+   *
+   * This call **cannot** be used to set a retry configuration for a named task.
    **/
   | { name: 'SetRetry'; params: { task: [number, number]; retries: number; period: number } }
   /**
@@ -691,6 +701,8 @@ export type PalletSchedulerCallLike =
    * clones of the original task. Their retry configuration will be derived from the
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
+   *
+   * This is the only way to set a retry configuration for a named task.
    **/
   | { name: 'SetRetryNamed'; params: { id: FixedBytes<32>; retries: number; period: number } }
   /**
@@ -1681,14 +1693,16 @@ export type PalletCollatorSelectionCallLike =
 export type PalletSessionCall =
   /**
    * Sets the session key(s) of the function caller to `keys`.
+   *
    * Allows an account to set its session key prior to becoming a validator.
    * This doesn't take effect until the next session.
    *
-   * The dispatch origin of this function must be signed.
-   *
-   * ## Complexity
-   * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
-   * fixed.
+   * - `origin`: The dispatch origin of this function must be signed.
+   * - `keys`: The new session keys to set. These are the public keys of all sessions keys
+   * setup in the runtime.
+   * - `proof`: The proof that `origin` has access to the private keys of `keys`. See
+   * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
+   * proof format.
    **/
   | { name: 'SetKeys'; params: { keys: AssetHubPolkadotRuntimeSessionKeys; proof: Bytes } }
   /**
@@ -1700,24 +1714,22 @@ export type PalletSessionCall =
    * convertible to a validator ID using the chain's typical addressing system (this usually
    * means being a controller account) or directly convertible into a validator ID (which
    * usually means being a stash account).
-   *
-   * ## Complexity
-   * - `O(1)` in number of key types. Actual cost depends on the number of length of
-   * `T::Keys::key_ids()` which is fixed.
    **/
   | { name: 'PurgeKeys' };
 
 export type PalletSessionCallLike =
   /**
    * Sets the session key(s) of the function caller to `keys`.
+   *
    * Allows an account to set its session key prior to becoming a validator.
    * This doesn't take effect until the next session.
    *
-   * The dispatch origin of this function must be signed.
-   *
-   * ## Complexity
-   * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
-   * fixed.
+   * - `origin`: The dispatch origin of this function must be signed.
+   * - `keys`: The new session keys to set. These are the public keys of all sessions keys
+   * setup in the runtime.
+   * - `proof`: The proof that `origin` has access to the private keys of `keys`. See
+   * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
+   * proof format.
    **/
   | { name: 'SetKeys'; params: { keys: AssetHubPolkadotRuntimeSessionKeys; proof: BytesLike } }
   /**
@@ -1729,10 +1741,6 @@ export type PalletSessionCallLike =
    * convertible to a validator ID using the chain's typical addressing system (this usually
    * means being a controller account) or directly convertible into a validator ID (which
    * usually means being a stash account).
-   *
-   * ## Complexity
-   * - `O(1)` in number of key types. Actual cost depends on the number of length of
-   * `T::Keys::key_ids()` which is fixed.
    **/
   | { name: 'PurgeKeys' };
 
@@ -3721,7 +3729,9 @@ export type PalletMultisigCall =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
-   * If there are enough, then dispatch the call.
+   * **If the approval threshold is met (including the sender's approval), this will
+   * immediately execute the call.** This is the only way to execute a multisig call -
+   * `approve_as_multi` will never trigger execution.
    *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
@@ -3737,8 +3747,9 @@ export type PalletMultisigCall =
    * transaction index) of the first approval transaction.
    * - `call`: The call to be executed.
    *
-   * NOTE: Unless this is the final approval, you will generally want to use
-   * `approve_as_multi` instead, since it only requires a hash of the call.
+   * NOTE: For intermediate approvals (not the final approval), you should generally use
+   * `approve_as_multi` instead, since it only requires a hash of the call and is more
+   * efficient.
    *
    * Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise
    * on success, result is `Ok` and the result from the interior call, if it was executed,
@@ -3772,6 +3783,13 @@ export type PalletMultisigCall =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
+   * **This function will NEVER execute the call, even if the approval threshold is
+   * reached.** It only registers approval. To actually execute the call, `as_multi` must
+   * be called with the full call data by any of the signatories.
+   *
+   * This function is more efficient than `as_multi` for intermediate approvals since it
+   * only requires the call hash, not the full call data.
+   *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
    * is cancelled.
@@ -3786,7 +3804,8 @@ export type PalletMultisigCall =
    * transaction index) of the first approval transaction.
    * - `call_hash`: The hash of the call to be executed.
    *
-   * NOTE: If this is the final approval, you will want to use `as_multi` instead.
+   * NOTE: To execute the call after approvals are gathered, any signatory must call
+   * `as_multi` with the full call data. This function cannot execute the call.
    *
    * ## Complexity
    * - `O(S)`.
@@ -3885,7 +3904,9 @@ export type PalletMultisigCallLike =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
-   * If there are enough, then dispatch the call.
+   * **If the approval threshold is met (including the sender's approval), this will
+   * immediately execute the call.** This is the only way to execute a multisig call -
+   * `approve_as_multi` will never trigger execution.
    *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
@@ -3901,8 +3922,9 @@ export type PalletMultisigCallLike =
    * transaction index) of the first approval transaction.
    * - `call`: The call to be executed.
    *
-   * NOTE: Unless this is the final approval, you will generally want to use
-   * `approve_as_multi` instead, since it only requires a hash of the call.
+   * NOTE: For intermediate approvals (not the final approval), you should generally use
+   * `approve_as_multi` instead, since it only requires a hash of the call and is more
+   * efficient.
    *
    * Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise
    * on success, result is `Ok` and the result from the interior call, if it was executed,
@@ -3936,6 +3958,13 @@ export type PalletMultisigCallLike =
    * Register approval for a dispatch to be made from a deterministic composite account if
    * approved by a total of `threshold - 1` of `other_signatories`.
    *
+   * **This function will NEVER execute the call, even if the approval threshold is
+   * reached.** It only registers approval. To actually execute the call, `as_multi` must
+   * be called with the full call data by any of the signatories.
+   *
+   * This function is more efficient than `as_multi` for intermediate approvals since it
+   * only requires the call hash, not the full call data.
+   *
    * Payment: `DepositBase` will be reserved if this is the first approval, plus
    * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
    * is cancelled.
@@ -3950,7 +3979,8 @@ export type PalletMultisigCallLike =
    * transaction index) of the first approval transaction.
    * - `call_hash`: The hash of the call to be executed.
    *
-   * NOTE: If this is the final approval, you will want to use `as_multi` instead.
+   * NOTE: To execute the call after approvals are gathered, any signatory must call
+   * `as_multi` with the full call data. This function cannot execute the call.
    *
    * ## Complexity
    * - `O(S)`.
@@ -13791,12 +13821,10 @@ export type PalletStakingAsyncRcClientCall =
    * **Validation on AssetHub:**
    * - Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
    * format.
+   * - Ownership proof is validated using `OpaqueKeys::ownership_proof_is_valid`.
    *
    * If validation passes, only the validated keys are sent to RC (with empty proof),
    * since RC trusts AH's validation.
-   *
-   * Note: Ownership proof validation requires PR #1739 which is not backported to
-   * stable2512. The proof parameter will be added when that PR is backported.
    *
    * **Fees:**
    * The actual cost of this call is higher than what the weight-based fee estimate shows.
@@ -13863,12 +13891,10 @@ export type PalletStakingAsyncRcClientCallLike =
    * **Validation on AssetHub:**
    * - Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
    * format.
+   * - Ownership proof is validated using `OpaqueKeys::ownership_proof_is_valid`.
    *
    * If validation passes, only the validated keys are sent to RC (with empty proof),
    * since RC trusts AH's validation.
-   *
-   * Note: Ownership proof validation requires PR #1739 which is not backported to
-   * stable2512. The proof parameter will be added when that PR is backported.
    *
    * **Fees:**
    * The actual cost of this call is higher than what the weight-based fee estimate shows.
@@ -14322,12 +14348,6 @@ export type PalletStakingAsyncPalletCall =
    **/
   | { name: 'ForceNewEra' }
   /**
-   * Set the validators who cannot be slashed (if any).
-   *
-   * The dispatch origin must be Root.
-   **/
-  | { name: 'SetInvulnerables'; params: { invulnerables: Array<AccountId32> } }
-  /**
    * Force a current staker to become completely unstaked, immediately.
    *
    * The dispatch origin must be Root.
@@ -14508,7 +14528,7 @@ export type PalletStakingAsyncPalletCall =
    *
    * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
    * them, then the list of nominators is paged, with each page being capped at
-   * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+   * [`Config::MaxExposurePageSize`]. If a validator has more than one page of nominators,
    * the call needs to be made for each page separately in order for all the nominators
    * backing a validator to receive the reward. The nominators are not sorted across pages
    * and so it should not be assumed the highest staker would be on the topmost page and vice
@@ -14784,12 +14804,6 @@ export type PalletStakingAsyncPalletCallLike =
    **/
   | { name: 'ForceNewEra' }
   /**
-   * Set the validators who cannot be slashed (if any).
-   *
-   * The dispatch origin must be Root.
-   **/
-  | { name: 'SetInvulnerables'; params: { invulnerables: Array<AccountId32Like> } }
-  /**
    * Force a current staker to become completely unstaked, immediately.
    *
    * The dispatch origin must be Root.
@@ -14970,7 +14984,7 @@ export type PalletStakingAsyncPalletCallLike =
    *
    * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
    * them, then the list of nominators is paged, with each page being capped at
-   * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+   * [`Config::MaxExposurePageSize`]. If a validator has more than one page of nominators,
    * the call needs to be made for each page separately in order for all the nominators
    * backing a validator to receive the reward. The nominators are not sorted across pages
    * and so it should not be assumed the highest staker would be on the topmost page and vice
@@ -15756,792 +15770,6 @@ export type PalletAhOpsCallLike =
       };
     };
 
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletAhMigratorCall =
-  /**
-   * Receive accounts from the Relay Chain.
-   *
-   * The accounts sent with `pallet_rc_migrator::Pallet::migrate_accounts` function.
-   **/
-  | { name: 'ReceiveAccounts'; params: { accounts: Array<PalletRcMigratorAccountsAccount> } }
-  /**
-   * Receive multisigs from the Relay Chain.
-   *
-   * This will be called from an XCM `Transact` inside a DMP from the relay chain. The
-   * multisigs were prepared by
-   * `pallet_rc_migrator::multisig::MultisigMigrator::migrate_many`.
-   **/
-  | { name: 'ReceiveMultisigs'; params: { accounts: Array<PalletRcMigratorMultisigRcMultisig> } }
-  /**
-   * Receive proxies from the Relay Chain.
-   **/
-  | { name: 'ReceiveProxyProxies'; params: { proxies: Array<PalletRcMigratorProxyRcProxy> } }
-  /**
-   * Receive proxy announcements from the Relay Chain.
-   **/
-  | { name: 'ReceiveProxyAnnouncements'; params: { announcements: Array<PalletRcMigratorProxyRcProxyAnnouncement> } }
-  | { name: 'ReceivePreimageChunks'; params: { chunks: Array<PalletRcMigratorPreimageChunksRcPreimageChunk> } }
-  | {
-      name: 'ReceivePreimageRequestStatus';
-      params: { requestStatus: Array<PalletRcMigratorPreimageRequestStatusPortableRequestStatus> };
-    }
-  | {
-      name: 'ReceivePreimageLegacyStatus';
-      params: { legacyStatus: Array<PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus> };
-    }
-  | { name: 'ReceiveNomPoolsMessages'; params: { messages: Array<PalletRcMigratorStakingNomPoolsRcNomPoolsMessage> } }
-  | { name: 'ReceiveVestingSchedules'; params: { schedules: Array<PalletRcMigratorVestingRcVestingSchedule> } }
-  /**
-   * Receive referendum counts, deciding counts, votes for the track queue.
-   **/
-  | { name: 'ReceiveReferendaValues'; params: { values: Array<PalletRcMigratorReferendaReferendaMessage> } }
-  /**
-   * Receive referendums from the Relay Chain.
-   **/
-  | { name: 'ReceiveReferendums'; params: { referendums: Array<[number, PalletReferendaReferendumInfo]> } }
-  | { name: 'ReceiveClaims'; params: { messages: Array<PalletRcMigratorClaimsRcClaimsMessage> } }
-  | {
-      name: 'ReceiveBagsListMessages';
-      params: { messages: Array<PalletRcMigratorStakingBagsListPortableBagsListMessage> };
-    }
-  | { name: 'ReceiveSchedulerMessages'; params: { messages: Array<PalletRcMigratorSchedulerRcSchedulerMessage> } }
-  | { name: 'ReceiveIndices'; params: { indices: Array<PalletRcMigratorIndicesRcIndicesIndex> } }
-  | {
-      name: 'ReceiveConvictionVotingMessages';
-      params: { messages: Array<PalletRcMigratorConvictionVotingRcConvictionVotingMessage> };
-    }
-  | { name: 'ReceiveBountiesMessages'; params: { messages: Array<PalletRcMigratorBountiesRcBountiesMessage> } }
-  | {
-      name: 'ReceiveAssetRates';
-      params: { rates: Array<[PolkadotRuntimeCommonImplsVersionedLocatableAsset, FixedU128]> };
-    }
-  | { name: 'ReceiveCrowdloanMessages'; params: { messages: Array<PalletRcMigratorCrowdloanRcCrowdloanMessage> } }
-  | { name: 'ReceiveReferendaMetadata'; params: { metadata: Array<[number, H256]> } }
-  | { name: 'ReceiveTreasuryMessages'; params: { messages: Array<PalletRcMigratorTreasuryPortableTreasuryMessage> } }
-  | {
-      name: 'ReceiveSchedulerAgendaMessages';
-      params: { messages: Array<PalletRcMigratorSchedulerSchedulerAgendaMessage> };
-    }
-  | {
-      name: 'ReceiveDelegatedStakingMessages';
-      params: { messages: Array<PalletRcMigratorStakingDelegatedStakingPortableDelegatedStakingMessage> };
-    }
-  | {
-      name: 'ReceiveChildBountiesMessages';
-      params: { messages: Array<PalletRcMigratorChildBountiesPortableChildBountiesMessage> };
-    }
-  | {
-      name: 'ReceiveStakingMessages';
-      params: { messages: Array<PalletRcMigratorStakingMessagePortableStakingMessage> };
-    }
-  /**
-   * Set the migration stage.
-   *
-   * This call is intended for emergency use only and is guarded by the
-   * [`Config::AdminOrigin`].
-   **/
-  | { name: 'ForceSetStage'; params: { stage: PalletAhMigratorMigrationStage } }
-  /**
-   * Start the data migration.
-   *
-   * This is typically called by the Relay Chain to start the migration on the Asset Hub and
-   * receive a handshake message indicating the Asset Hub's readiness.
-   **/
-  | { name: 'StartMigration' }
-  /**
-   * Set the DMP queue priority configuration.
-   *
-   * Can only be called by the `AdminOrigin`.
-   **/
-  | { name: 'SetDmpQueuePriority'; params: { new: PalletRcMigratorQueuePriority } }
-  /**
-   * Set the manager account id.
-   *
-   * The manager has the similar to [`Config::AdminOrigin`] privileges except that it
-   * can not set the manager account id via `set_manager` call.
-   **/
-  | { name: 'SetManager'; params: { new?: AccountId32 | undefined } }
-  /**
-   * Finish the migration.
-   *
-   * This is typically called by the Relay Chain to signal the migration has finished.
-   *
-   * The `data` parameter might be `None` if we are running the migration for a second time
-   * for some pallets and have already performed the checking account balance correction,
-   * so we do not need to do it this time.
-   **/
-  | {
-      name: 'FinishMigration';
-      params: { data?: PalletRcMigratorMigrationFinishedData | undefined; coolOffEndAt: number };
-    }
-  /**
-   * XCM send call identical to the [`pallet_xcm::Pallet::send`] call but with the
-   * [Config::SendXcm] router which will be able to send messages to the Relay Chain during
-   * the migration.
-   **/
-  | { name: 'SendXcmMessage'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } };
-
-export type PalletAhMigratorCallLike =
-  /**
-   * Receive accounts from the Relay Chain.
-   *
-   * The accounts sent with `pallet_rc_migrator::Pallet::migrate_accounts` function.
-   **/
-  | { name: 'ReceiveAccounts'; params: { accounts: Array<PalletRcMigratorAccountsAccount> } }
-  /**
-   * Receive multisigs from the Relay Chain.
-   *
-   * This will be called from an XCM `Transact` inside a DMP from the relay chain. The
-   * multisigs were prepared by
-   * `pallet_rc_migrator::multisig::MultisigMigrator::migrate_many`.
-   **/
-  | { name: 'ReceiveMultisigs'; params: { accounts: Array<PalletRcMigratorMultisigRcMultisig> } }
-  /**
-   * Receive proxies from the Relay Chain.
-   **/
-  | { name: 'ReceiveProxyProxies'; params: { proxies: Array<PalletRcMigratorProxyRcProxy> } }
-  /**
-   * Receive proxy announcements from the Relay Chain.
-   **/
-  | { name: 'ReceiveProxyAnnouncements'; params: { announcements: Array<PalletRcMigratorProxyRcProxyAnnouncement> } }
-  | { name: 'ReceivePreimageChunks'; params: { chunks: Array<PalletRcMigratorPreimageChunksRcPreimageChunk> } }
-  | {
-      name: 'ReceivePreimageRequestStatus';
-      params: { requestStatus: Array<PalletRcMigratorPreimageRequestStatusPortableRequestStatus> };
-    }
-  | {
-      name: 'ReceivePreimageLegacyStatus';
-      params: { legacyStatus: Array<PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus> };
-    }
-  | { name: 'ReceiveNomPoolsMessages'; params: { messages: Array<PalletRcMigratorStakingNomPoolsRcNomPoolsMessage> } }
-  | { name: 'ReceiveVestingSchedules'; params: { schedules: Array<PalletRcMigratorVestingRcVestingSchedule> } }
-  /**
-   * Receive referendum counts, deciding counts, votes for the track queue.
-   **/
-  | { name: 'ReceiveReferendaValues'; params: { values: Array<PalletRcMigratorReferendaReferendaMessage> } }
-  /**
-   * Receive referendums from the Relay Chain.
-   **/
-  | { name: 'ReceiveReferendums'; params: { referendums: Array<[number, PalletReferendaReferendumInfo]> } }
-  | { name: 'ReceiveClaims'; params: { messages: Array<PalletRcMigratorClaimsRcClaimsMessage> } }
-  | {
-      name: 'ReceiveBagsListMessages';
-      params: { messages: Array<PalletRcMigratorStakingBagsListPortableBagsListMessage> };
-    }
-  | { name: 'ReceiveSchedulerMessages'; params: { messages: Array<PalletRcMigratorSchedulerRcSchedulerMessage> } }
-  | { name: 'ReceiveIndices'; params: { indices: Array<PalletRcMigratorIndicesRcIndicesIndex> } }
-  | {
-      name: 'ReceiveConvictionVotingMessages';
-      params: { messages: Array<PalletRcMigratorConvictionVotingRcConvictionVotingMessage> };
-    }
-  | { name: 'ReceiveBountiesMessages'; params: { messages: Array<PalletRcMigratorBountiesRcBountiesMessage> } }
-  | {
-      name: 'ReceiveAssetRates';
-      params: { rates: Array<[PolkadotRuntimeCommonImplsVersionedLocatableAsset, FixedU128]> };
-    }
-  | { name: 'ReceiveCrowdloanMessages'; params: { messages: Array<PalletRcMigratorCrowdloanRcCrowdloanMessage> } }
-  | { name: 'ReceiveReferendaMetadata'; params: { metadata: Array<[number, H256]> } }
-  | { name: 'ReceiveTreasuryMessages'; params: { messages: Array<PalletRcMigratorTreasuryPortableTreasuryMessage> } }
-  | {
-      name: 'ReceiveSchedulerAgendaMessages';
-      params: { messages: Array<PalletRcMigratorSchedulerSchedulerAgendaMessage> };
-    }
-  | {
-      name: 'ReceiveDelegatedStakingMessages';
-      params: { messages: Array<PalletRcMigratorStakingDelegatedStakingPortableDelegatedStakingMessage> };
-    }
-  | {
-      name: 'ReceiveChildBountiesMessages';
-      params: { messages: Array<PalletRcMigratorChildBountiesPortableChildBountiesMessage> };
-    }
-  | {
-      name: 'ReceiveStakingMessages';
-      params: { messages: Array<PalletRcMigratorStakingMessagePortableStakingMessage> };
-    }
-  /**
-   * Set the migration stage.
-   *
-   * This call is intended for emergency use only and is guarded by the
-   * [`Config::AdminOrigin`].
-   **/
-  | { name: 'ForceSetStage'; params: { stage: PalletAhMigratorMigrationStage } }
-  /**
-   * Start the data migration.
-   *
-   * This is typically called by the Relay Chain to start the migration on the Asset Hub and
-   * receive a handshake message indicating the Asset Hub's readiness.
-   **/
-  | { name: 'StartMigration' }
-  /**
-   * Set the DMP queue priority configuration.
-   *
-   * Can only be called by the `AdminOrigin`.
-   **/
-  | { name: 'SetDmpQueuePriority'; params: { new: PalletRcMigratorQueuePriority } }
-  /**
-   * Set the manager account id.
-   *
-   * The manager has the similar to [`Config::AdminOrigin`] privileges except that it
-   * can not set the manager account id via `set_manager` call.
-   **/
-  | { name: 'SetManager'; params: { new?: AccountId32Like | undefined } }
-  /**
-   * Finish the migration.
-   *
-   * This is typically called by the Relay Chain to signal the migration has finished.
-   *
-   * The `data` parameter might be `None` if we are running the migration for a second time
-   * for some pallets and have already performed the checking account balance correction,
-   * so we do not need to do it this time.
-   **/
-  | {
-      name: 'FinishMigration';
-      params: { data?: PalletRcMigratorMigrationFinishedData | undefined; coolOffEndAt: number };
-    }
-  /**
-   * XCM send call identical to the [`pallet_xcm::Pallet::send`] call but with the
-   * [Config::SendXcm] router which will be able to send messages to the Relay Chain during
-   * the migration.
-   **/
-  | { name: 'SendXcmMessage'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } };
-
-export type PalletRcMigratorAccountsAccount = {
-  who: AccountId32;
-  free: bigint;
-  reserved: bigint;
-  frozen: bigint;
-  holds: Array<FrameSupportTokensMiscIdAmount>;
-  freezes: Array<FrameSupportTokensMiscIdAmountPortableFreezeReason>;
-  locks: Array<PalletBalancesBalanceLock>;
-  unnamedReserve: bigint;
-  consumers: number;
-  providers: number;
-};
-
-export type PalletRcMigratorPortableHoldReason =
-  | { type: 'Preimage'; value: PalletPreimageHoldReason }
-  | { type: 'Staking'; value: PalletStakingPalletHoldReason }
-  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
-  | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
-  | { type: 'Session'; value: PalletSessionHoldReason }
-  | { type: 'XcmPallet'; value: PalletXcmHoldReason };
-
-export type PalletPreimageHoldReason = 'Preimage';
-
-export type PalletStakingPalletHoldReason = 'Staking';
-
-export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
-
-export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
-
-export type PalletSessionHoldReason = 'Keys';
-
-export type PalletXcmHoldReason = 'AuthorizeAlias';
-
-export type PalletRcMigratorPortableFreezeReason = {
-  type: 'NominationPools';
-  value: PalletNominationPoolsFreezeReason;
-};
-
-export type PalletNominationPoolsFreezeReason = 'PoolMinBalance';
-
-export type FrameSupportTokensMiscIdAmount = { id: PalletRcMigratorPortableHoldReason; amount: bigint };
-
-export type FrameSupportTokensMiscIdAmountPortableFreezeReason = {
-  id: PalletRcMigratorPortableFreezeReason;
-  amount: bigint;
-};
-
-export type PalletBalancesBalanceLock = { id: FixedBytes<8>; amount: bigint; reasons: PalletBalancesReasons };
-
-export type PalletBalancesReasons = 'Fee' | 'Misc' | 'All';
-
-export type PalletRcMigratorMultisigRcMultisig = { creator: AccountId32; deposit: bigint };
-
-export type PalletRcMigratorProxyRcProxy = {
-  delegator: AccountId32;
-  deposit: bigint;
-  proxies: Array<PalletProxyProxyDefinition>;
-};
-
-export type PolkadotRuntimeConstantsProxyProxyType =
-  | 'Any'
-  | 'NonTransfer'
-  | 'Governance'
-  | 'Staking'
-  | 'CancelProxy'
-  | 'Auction'
-  | 'NominationPools'
-  | 'ParaRegistration';
-
-export type PalletProxyProxyDefinition = {
-  delegate: AccountId32;
-  proxyType: PolkadotRuntimeConstantsProxyProxyType;
-  delay: number;
-};
-
-export type PalletRcMigratorProxyRcProxyAnnouncement = { depositor: AccountId32; deposit: bigint };
-
-export type PalletRcMigratorPreimageChunksRcPreimageChunk = {
-  preimageHash: H256;
-  preimageLen: number;
-  chunkByteOffset: number;
-  chunkBytes: Bytes;
-};
-
-export type PalletRcMigratorPreimageRequestStatusPortableRequestStatus = {
-  hash: H256;
-  requestStatus: PalletRcMigratorPreimageRequestStatusPortableRequestStatusInner;
-};
-
-export type PalletRcMigratorPreimageRequestStatusPortableRequestStatusInner =
-  | { type: 'Unrequested'; value: { ticket: [AccountId32, Bytes]; len: number } }
-  | {
-      type: 'Requested';
-      value: { maybeTicket?: [AccountId32, Bytes] | undefined; count: number; maybeLen?: number | undefined };
-    };
-
-export type PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus = {
-  hash: H256;
-  depositor: AccountId32;
-  deposit: bigint;
-};
-
-export type PalletRcMigratorStakingNomPoolsRcNomPoolsMessage =
-  | { type: 'StorageValues'; value: { values: PalletRcMigratorStakingNomPoolsNomPoolsStorageValues } }
-  | { type: 'PoolMembers'; value: { member: [AccountId32, PalletNominationPoolsPoolMember] } }
-  | { type: 'BondedPools'; value: { pool: [number, PalletNominationPoolsBondedPoolInner] } }
-  | { type: 'RewardPools'; value: { rewards: [number, PalletRcMigratorStakingNomPoolsAliasRewardPool] } }
-  | { type: 'SubPoolsStorage'; value: { subPools: [number, PalletRcMigratorStakingNomPoolsAliasSubPools] } }
-  | { type: 'Metadata'; value: { meta: [number, Bytes] } }
-  | { type: 'ReversePoolIdLookup'; value: { lookups: [AccountId32, number] } }
-  | { type: 'ClaimPermissions'; value: { perms: [AccountId32, PalletNominationPoolsClaimPermission] } };
-
-export type PalletRcMigratorStakingNomPoolsNomPoolsStorageValues = {
-  totalValueLocked?: bigint | undefined;
-  minJoinBond?: bigint | undefined;
-  minCreateBond?: bigint | undefined;
-  maxPools?: number | undefined;
-  maxPoolMembers?: number | undefined;
-  maxPoolMembersPerPool?: number | undefined;
-  globalMaxCommission?: Perbill | undefined;
-  lastPoolId?: number | undefined;
-};
-
-export type PalletNominationPoolsPoolMember = {
-  poolId: number;
-  points: bigint;
-  lastRecordedRewardCounter: FixedU128;
-  unbondingEras: Array<[number, bigint]>;
-};
-
-export type PalletNominationPoolsBondedPoolInner = {
-  commission: PalletNominationPoolsCommission;
-  memberCounter: number;
-  points: bigint;
-  roles: PalletNominationPoolsPoolRoles;
-  state: PalletNominationPoolsPoolState;
-};
-
-export type PalletNominationPoolsCommission = {
-  current?: [Perbill, AccountId32] | undefined;
-  max?: Perbill | undefined;
-  changeRate?: PalletNominationPoolsCommissionChangeRate | undefined;
-  throttleFrom?: number | undefined;
-  claimPermission?: PalletNominationPoolsCommissionClaimPermission | undefined;
-};
-
-export type PalletNominationPoolsPoolRoles = {
-  depositor: AccountId32;
-  root?: AccountId32 | undefined;
-  nominator?: AccountId32 | undefined;
-  bouncer?: AccountId32 | undefined;
-};
-
-export type PalletRcMigratorStakingNomPoolsAliasRewardPool = {
-  lastRecordedRewardCounter: FixedU128;
-  lastRecordedTotalPayouts: bigint;
-  totalRewardsClaimed: bigint;
-  totalCommissionPending: bigint;
-  totalCommissionClaimed: bigint;
-};
-
-export type PalletRcMigratorStakingNomPoolsAliasSubPools = {
-  noEra: PalletRcMigratorStakingNomPoolsAliasUnbondPool;
-  withEra: Array<[number, PalletRcMigratorStakingNomPoolsAliasUnbondPool]>;
-};
-
-export type PalletRcMigratorStakingNomPoolsAliasUnbondPool = { points: bigint; balance: bigint };
-
-export type PalletRcMigratorVestingRcVestingSchedule = { who: AccountId32; schedules: Array<PalletVestingVestingInfo> };
-
-export type PalletRcMigratorReferendaReferendaMessage = {
-  referendumCount?: number | undefined;
-  decidingCount: Array<[number, number]>;
-  trackQueue: Array<[number, Array<[number, bigint]>]>;
-};
-
-export type PalletReferendaReferendumInfo =
-  | { type: 'Ongoing'; value: PalletReferendaReferendumStatus }
-  | { type: 'Approved'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
-  | { type: 'Rejected'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
-  | { type: 'Cancelled'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
-  | { type: 'TimedOut'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
-  | { type: 'Killed'; value: number };
-
-export type AssetHubPolkadotRuntimeAhMigrationRcPalletsOrigin =
-  | { type: 'System'; value: FrameSupportDispatchRawOrigin }
-  | { type: 'Origins'; value: AssetHubPolkadotRuntimeGovernanceOriginsPalletCustomOriginsOrigin };
-
-export type PalletConvictionVotingTally = { ayes: bigint; nays: bigint; support: bigint };
-
-export type PalletReferendaReferendumStatus = {
-  track: number;
-  origin: AssetHubPolkadotRuntimeAhMigrationRcPalletsOrigin;
-  proposal: FrameSupportPreimagesBounded;
-  enactment: FrameSupportScheduleDispatchTime;
-  submitted: number;
-  submissionDeposit: PalletReferendaDeposit;
-  decisionDeposit?: PalletReferendaDeposit | undefined;
-  deciding?: PalletReferendaDecidingStatus | undefined;
-  tally: PalletConvictionVotingTally;
-  inQueue: boolean;
-  alarm?: [number, [number, number]] | undefined;
-};
-
-export type PalletReferendaDeposit = { who: AccountId32; amount: bigint };
-
-export type PalletReferendaDecidingStatus = { since: number; confirming?: number | undefined };
-
-export type PalletRcMigratorClaimsRcClaimsMessage =
-  | { type: 'StorageValues'; value: { total: bigint } }
-  | { type: 'Claims'; value: [EthereumAddress, bigint] }
-  | { type: 'Vesting'; value: { who: EthereumAddress; schedule: [bigint, bigint, number] } }
-  | { type: 'Signing'; value: [EthereumAddress, PolkadotRuntimeCommonClaimsStatementKind] }
-  | { type: 'Preclaims'; value: [AccountId32, EthereumAddress] };
-
-export type PalletRcMigratorStakingBagsListPortableBagsListMessage =
-  | { type: 'Node'; value: { id: AccountId32; node: PalletRcMigratorStakingBagsListPortableNode } }
-  | { type: 'Bag'; value: { score: bigint; bag: PalletRcMigratorStakingBagsListPortableBag } };
-
-export type PalletRcMigratorStakingBagsListPortableNode = {
-  id: AccountId32;
-  prev?: AccountId32 | undefined;
-  next?: AccountId32 | undefined;
-  bagUpper: bigint;
-  score: bigint;
-};
-
-export type PalletRcMigratorStakingBagsListPortableBag = {
-  head?: AccountId32 | undefined;
-  tail?: AccountId32 | undefined;
-  bagUpper: bigint;
-};
-
-export type PalletRcMigratorSchedulerRcSchedulerMessage =
-  | { type: 'IncompleteSince'; value: number }
-  | { type: 'Retries'; value: [[number, number], PalletSchedulerRetryConfig] }
-  | { type: 'Lookup'; value: [FixedBytes<32>, [number, number]] };
-
-export type PalletSchedulerRetryConfig = { totalRetries: number; remaining: number; period: number };
-
-export type PalletRcMigratorIndicesRcIndicesIndex = {
-  index: number;
-  who: AccountId32;
-  deposit: bigint;
-  frozen: boolean;
-};
-
-export type PalletRcMigratorConvictionVotingRcConvictionVotingMessage =
-  | { type: 'VotingFor'; value: [AccountId32, number, PalletConvictionVotingVoteVoting] }
-  | { type: 'ClassLocksFor'; value: [AccountId32, Array<[number, bigint]>] };
-
-export type PalletConvictionVotingVoteVoting =
-  | { type: 'Casting'; value: PalletConvictionVotingVoteCasting }
-  | { type: 'Delegating'; value: PalletConvictionVotingVoteDelegating };
-
-export type PalletConvictionVotingVoteCasting = {
-  votes: Array<[number, PalletConvictionVotingVoteAccountVote]>;
-  delegations: PalletConvictionVotingDelegations;
-  prior: PalletConvictionVotingVotePriorLock;
-};
-
-export type PalletConvictionVotingDelegations = { votes: bigint; capital: bigint };
-
-export type PalletConvictionVotingVotePriorLock = [number, bigint];
-
-export type PalletConvictionVotingVoteDelegating = {
-  balance: bigint;
-  target: AccountId32;
-  conviction: PalletConvictionVotingConviction;
-  delegations: PalletConvictionVotingDelegations;
-  prior: PalletConvictionVotingVotePriorLock;
-};
-
-export type PalletRcMigratorBountiesRcBountiesMessage =
-  | { type: 'BountyCount'; value: number }
-  | { type: 'BountyApprovals'; value: Array<number> }
-  | { type: 'BountyDescriptions'; value: [number, Bytes] }
-  | { type: 'Bounties'; value: [number, PalletRcMigratorBountiesAliasBounty] };
-
-export type PalletRcMigratorBountiesAliasBounty = {
-  proposer: AccountId32;
-  value: bigint;
-  fee: bigint;
-  curatorDeposit: bigint;
-  bond: bigint;
-  status: PalletBountiesBountyStatus;
-};
-
-export type PalletBountiesBountyStatus =
-  | { type: 'Proposed' }
-  | { type: 'Approved' }
-  | { type: 'Funded' }
-  | { type: 'CuratorProposed'; value: { curator: AccountId32 } }
-  | { type: 'Active'; value: { curator: AccountId32; updateDue: number } }
-  | { type: 'PendingPayout'; value: { curator: AccountId32; beneficiary: AccountId32; unlockAt: number } }
-  | { type: 'ApprovedWithCurator'; value: { curator: AccountId32 } };
-
-export type PalletRcMigratorCrowdloanRcCrowdloanMessage =
-  | {
-      type: 'LeaseReserve';
-      value: {
-        unreserveBlock: number;
-        account: AccountId32;
-        paraId: PolkadotParachainPrimitivesPrimitivesId;
-        amount: bigint;
-      };
-    }
-  | {
-      type: 'CrowdloanContribution';
-      value: {
-        withdrawBlock: number;
-        contributor: AccountId32;
-        paraId: PolkadotParachainPrimitivesPrimitivesId;
-        amount: bigint;
-        crowdloanAccount: AccountId32;
-      };
-    }
-  | {
-      type: 'CrowdloanReserve';
-      value: {
-        unreserveBlock: number;
-        depositor: AccountId32;
-        paraId: PolkadotParachainPrimitivesPrimitivesId;
-        amount: bigint;
-      };
-    };
-
-export type PalletRcMigratorTreasuryPortableTreasuryMessage =
-  | { type: 'ProposalCount'; value: number }
-  | { type: 'Proposals'; value: [number, PalletTreasuryProposal] }
-  | { type: 'Approvals'; value: Array<number> }
-  | { type: 'SpendCount'; value: number }
-  | { type: 'Spends'; value: { id: number; status: PalletRcMigratorTreasuryPortableSpendStatus } }
-  | { type: 'LastSpendPeriod'; value?: number | undefined }
-  | { type: 'Funds' };
-
-export type PalletTreasuryProposal = { proposer: AccountId32; value: bigint; beneficiary: AccountId32; bond: bigint };
-
-export type PalletRcMigratorTreasuryPortableSpendStatus = {
-  assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
-  amount: bigint;
-  beneficiary: XcmVersionedLocation;
-  validFrom: number;
-  expireAt: number;
-  status: PalletRcMigratorTreasuryPortablePaymentState;
-};
-
-export type PalletRcMigratorTreasuryPortablePaymentState =
-  | { type: 'Pending' }
-  | { type: 'Attempted'; value: { id: bigint } }
-  | { type: 'Failed' };
-
-export type PalletRcMigratorSchedulerSchedulerAgendaMessage = {
-  block: number;
-  agenda: Array<PalletRcMigratorSchedulerAliasScheduled | undefined>;
-};
-
-export type PalletRcMigratorSchedulerAliasScheduled = {
-  maybeId?: FixedBytes<32> | undefined;
-  priority: number;
-  call: FrameSupportPreimagesBounded;
-  maybePeriodic?: [number, number] | undefined;
-  origin: AssetHubPolkadotRuntimeAhMigrationRcPalletsOrigin;
-};
-
-export type PalletRcMigratorStakingDelegatedStakingPortableDelegatedStakingMessage =
-  | { type: 'Delegators'; value: { delegator: AccountId32; agent: AccountId32; amount: bigint } }
-  | {
-      type: 'Agents';
-      value: {
-        agent: AccountId32;
-        payee: AccountId32;
-        totalDelegated: bigint;
-        unclaimedWithdrawals: bigint;
-        pendingSlash: bigint;
-      };
-    };
-
-export type PalletRcMigratorChildBountiesPortableChildBountiesMessage =
-  | { type: 'ChildBountyCount'; value: number }
-  | { type: 'ParentChildBounties'; value: [number, number] }
-  | { type: 'ParentTotalChildBounties'; value: [number, number] }
-  | {
-      type: 'ChildBounty';
-      value: { parentId: number; childId: number; childBounty: PalletRcMigratorChildBountiesPortableChildBounty };
-    }
-  | { type: 'ChildBountyDescriptionsV1'; value: { parentId: number; childId: number; description: Bytes } }
-  | { type: 'V0ToV1ChildBountyIds'; value: { v0ChildId: number; parentId: number; v1ChildId: number } }
-  | { type: 'ChildrenCuratorFees'; value: { childId: number; amount: bigint } };
-
-export type PalletRcMigratorChildBountiesPortableChildBounty = {
-  parentBounty: number;
-  value: bigint;
-  fee: bigint;
-  curatorDeposit: bigint;
-  status: PalletRcMigratorChildBountiesPortableChildBountyStatus;
-};
-
-export type PalletRcMigratorChildBountiesPortableChildBountyStatus =
-  | { type: 'Added' }
-  | { type: 'CuratorProposed'; value: { curator: AccountId32 } }
-  | { type: 'Active'; value: { curator: AccountId32 } }
-  | { type: 'PendingPayout'; value: { curator: AccountId32; beneficiary: AccountId32; unlockAt: number } };
-
-export type PalletRcMigratorStakingMessagePortableStakingMessage =
-  | { type: 'Values'; value: PalletRcMigratorStakingMessageStakingValues }
-  | { type: 'Invulnerables'; value: Array<AccountId32> }
-  | { type: 'Bonded'; value: { stash: AccountId32; controller: AccountId32 } }
-  | { type: 'Ledger'; value: { controller: AccountId32; ledger: PalletRcMigratorStakingMessagePortableStakingLedger } }
-  | { type: 'Payee'; value: { stash: AccountId32; payment: PalletRcMigratorStakingMessagePortableRewardDestination } }
-  | {
-      type: 'Validators';
-      value: { stash: AccountId32; validators: PalletRcMigratorStakingMessagePortableValidatorPrefs };
-    }
-  | {
-      type: 'Nominators';
-      value: { stash: AccountId32; nominations: PalletRcMigratorStakingMessagePortableNominations };
-    }
-  | { type: 'VirtualStakers'; value: AccountId32 }
-  | {
-      type: 'ErasStakersOverview';
-      value: {
-        era: number;
-        validator: AccountId32;
-        exposure: PalletRcMigratorStakingMessagePortablePagedExposureMetadata;
-      };
-    }
-  | {
-      type: 'ErasStakersPaged';
-      value: {
-        era: number;
-        validator: AccountId32;
-        page: number;
-        exposure: PalletRcMigratorStakingMessagePortableExposurePage;
-      };
-    }
-  | { type: 'ClaimedRewards'; value: { era: number; validator: AccountId32; rewards: Array<number> } }
-  | {
-      type: 'ErasValidatorPrefs';
-      value: { era: number; validator: AccountId32; prefs: PalletRcMigratorStakingMessagePortableValidatorPrefs };
-    }
-  | { type: 'ErasValidatorReward'; value: { era: number; reward: bigint } }
-  | { type: 'ErasRewardPoints'; value: { era: number; points: PalletRcMigratorStakingMessagePortableEraRewardPoints } }
-  | { type: 'ErasTotalStake'; value: { era: number; totalStake: bigint } }
-  | { type: 'UnappliedSlashes'; value: { era: number; slash: PalletRcMigratorStakingMessagePortableUnappliedSlash } }
-  | { type: 'BondedEras'; value: Array<[number, number]> }
-  | { type: 'ValidatorSlashInEra'; value: { era: number; validator: AccountId32; slash: [Perbill, bigint] } };
-
-export type PalletRcMigratorStakingMessageStakingValues = {
-  validatorCount?: number | undefined;
-  minValidatorCount?: number | undefined;
-  minNominatorBond?: bigint | undefined;
-  minValidatorBond?: bigint | undefined;
-  minActiveStake?: bigint | undefined;
-  minCommission?: Perbill | undefined;
-  maxValidatorsCount?: number | undefined;
-  maxNominatorsCount?: number | undefined;
-  currentEra?: number | undefined;
-  activeEra?: PalletRcMigratorStakingMessagePortableActiveEraInfo | undefined;
-  forceEra?: PalletRcMigratorStakingMessagePortableForcing | undefined;
-  maxStakedRewards?: Percent | undefined;
-  slashRewardFraction?: Perbill | undefined;
-  canceledSlashPayout?: bigint | undefined;
-  currentPlannedSession?: number | undefined;
-  chillThreshold?: Percent | undefined;
-};
-
-export type PalletRcMigratorStakingMessagePortableActiveEraInfo = { index: number; start?: bigint | undefined };
-
-export type PalletRcMigratorStakingMessagePortableForcing = 'NotForcing' | 'ForceNew' | 'ForceNone' | 'ForceAlways';
-
-export type PalletRcMigratorStakingMessagePortableStakingLedger = {
-  stash: AccountId32;
-  total: bigint;
-  active: bigint;
-  unlocking: Array<PalletRcMigratorStakingMessagePortableUnlockChunk>;
-};
-
-export type PalletRcMigratorStakingMessagePortableUnlockChunk = { value: bigint; era: number };
-
-export type PalletRcMigratorStakingMessagePortableRewardDestination =
-  | { type: 'Staked' }
-  | { type: 'Stash' }
-  | { type: 'Controller' }
-  | { type: 'Account'; value: AccountId32 }
-  | { type: 'None' };
-
-export type PalletRcMigratorStakingMessagePortableValidatorPrefs = { commission: Perbill; blocked: boolean };
-
-export type PalletRcMigratorStakingMessagePortableNominations = {
-  targets: Array<AccountId32>;
-  submittedIn: number;
-  suppressed: boolean;
-};
-
-export type PalletRcMigratorStakingMessagePortablePagedExposureMetadata = {
-  total: bigint;
-  own: bigint;
-  nominatorCount: number;
-  pageCount: number;
-};
-
-export type PalletRcMigratorStakingMessagePortableExposurePage = {
-  pageTotal: bigint;
-  others: Array<PalletRcMigratorStakingMessagePortableIndividualExposure>;
-};
-
-export type PalletRcMigratorStakingMessagePortableIndividualExposure = { who: AccountId32; value: bigint };
-
-export type PalletRcMigratorStakingMessagePortableEraRewardPoints = {
-  total: number;
-  individual: Array<[AccountId32, number]>;
-};
-
-export type PalletRcMigratorStakingMessagePortableUnappliedSlash = {
-  validator: AccountId32;
-  own: bigint;
-  others: Array<[AccountId32, bigint]>;
-  reporters: Array<AccountId32>;
-  payout: bigint;
-};
-
-export type PalletAhMigratorMigrationStage =
-  | { type: 'Pending' }
-  | { type: 'DataMigrationOngoing' }
-  | { type: 'MigrationDone' }
-  | { type: 'CoolOff'; value: { endAt: number } };
-
-export type PalletRcMigratorQueuePriority =
-  | { type: 'Config' }
-  | { type: 'OverrideConfig'; value: [number, number] }
-  | { type: 'Disabled' };
-
-export type PalletRcMigratorMigrationFinishedData = { rcBalanceKept: bigint };
-
 export type FrameSystemExtensionsAuthorizeCall = {};
 
 export type FrameSystemExtensionsCheckNonZeroSender = {};
@@ -16642,8 +15870,7 @@ export type AssetHubPolkadotRuntimeRuntimeEvent =
   | { pallet: 'MultiBlockElectionSigned'; palletEvent: PalletElectionProviderMultiBlockSignedPalletEvent }
   | { pallet: 'Staking'; palletEvent: PalletStakingAsyncPalletEvent }
   | { pallet: 'Revive'; palletEvent: PalletReviveEvent }
-  | { pallet: 'AhOps'; palletEvent: PalletAhOpsEvent }
-  | { pallet: 'AhMigrator'; palletEvent: PalletAhMigratorEvent };
+  | { pallet: 'AhOps'; palletEvent: PalletAhOpsEvent };
 
 /**
  * Event for the System pallet.
@@ -17167,7 +16394,17 @@ export type AssetHubPolkadotRuntimeRuntimeHoldReason =
   | { type: 'Staking'; value: PalletStakingAsyncPalletHoldReason }
   | { type: 'Revive'; value: PalletReviveHoldReason };
 
+export type PalletPreimageHoldReason = 'Preimage';
+
+export type PalletSessionHoldReason = 'Keys';
+
+export type PalletXcmHoldReason = 'AuthorizeAlias';
+
 export type PalletMultiAssetBountiesHoldReason = 'CuratorDeposit';
+
+export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
+
+export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
 
 export type PalletStakingAsyncRcClientHoldReason = 'Keys';
 
@@ -18028,7 +17265,23 @@ export type PalletAssetsEvent =
   /**
    * Reserve information was removed for `asset_id`.
    **/
-  | { name: 'ReservesRemoved'; data: { assetId: number } };
+  | { name: 'ReservesRemoved'; data: { assetId: number } }
+  /**
+   * Some assets were issued as Credit (no owner yet).
+   **/
+  | { name: 'IssuedCredit'; data: { assetId: number; amount: bigint } }
+  /**
+   * Some assets Credit was destroyed.
+   **/
+  | { name: 'BurnedCredit'; data: { assetId: number; amount: bigint } }
+  /**
+   * Some assets were burned and a Debt was created.
+   **/
+  | { name: 'IssuedDebt'; data: { assetId: number; amount: bigint } }
+  /**
+   * Some assets Debt was destroyed (and assets issued).
+   **/
+  | { name: 'BurnedDebt'; data: { assetId: number; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -18538,7 +17791,23 @@ export type PalletAssetsEvent002 =
   /**
    * Reserve information was removed for `asset_id`.
    **/
-  | { name: 'ReservesRemoved'; data: { assetId: StagingXcmV5Location } };
+  | { name: 'ReservesRemoved'; data: { assetId: StagingXcmV5Location } }
+  /**
+   * Some assets were issued as Credit (no owner yet).
+   **/
+  | { name: 'IssuedCredit'; data: { assetId: StagingXcmV5Location; amount: bigint } }
+  /**
+   * Some assets Credit was destroyed.
+   **/
+  | { name: 'BurnedCredit'; data: { assetId: StagingXcmV5Location; amount: bigint } }
+  /**
+   * Some assets were burned and a Debt was created.
+   **/
+  | { name: 'IssuedDebt'; data: { assetId: StagingXcmV5Location; amount: bigint } }
+  /**
+   * Some assets Debt was destroyed (and assets issued).
+   **/
+  | { name: 'BurnedDebt'; data: { assetId: StagingXcmV5Location; amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -19112,6 +18381,8 @@ export type PalletReferendaEvent =
       };
     };
 
+export type PalletConvictionVotingTally = { ayes: bigint; nays: bigint; support: bigint };
+
 /**
  * The `Event` enum of this pallet
  **/
@@ -19589,13 +18860,32 @@ export type PalletElectionProviderMultiBlockEvent =
       };
     }
   /**
-   * Target snapshot creation failed
+   * Target snapshot creation failed.
    **/
   | { name: 'UnexpectedTargetSnapshotFailed' }
   /**
-   * Voter snapshot creation failed
+   * Voter snapshot creation failed.
    **/
-  | { name: 'UnexpectedVoterSnapshotFailed' };
+  | { name: 'UnexpectedVoterSnapshotFailed' }
+  /**
+   * Phase transition could not proceed due to being out of weight.
+   **/
+  | {
+      name: 'UnexpectedPhaseTransitionOutOfWeight';
+      data: {
+        from: PalletElectionProviderMultiBlockPhase;
+        to: PalletElectionProviderMultiBlockPhase;
+        required: SpWeightsWeightV2Weight;
+        had: SpWeightsWeightV2Weight;
+      };
+    }
+  /**
+   * Phase transition could not even begin becaseu of being out of weight.
+   **/
+  | {
+      name: 'UnexpectedPhaseTransitionHalt';
+      data: { required: SpWeightsWeightV2Weight; had: SpWeightsWeightV2Weight };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -19804,7 +19094,13 @@ export type PalletStakingAsyncPalletEvent =
 
 export type PalletStakingAsyncForcing = 'NotForcing' | 'ForceNew' | 'ForceNone' | 'ForceAlways';
 
-export type PalletStakingAsyncPalletUnexpectedKind = 'EraDurationBoundExceeded' | 'UnknownValidatorActivation';
+export type PalletStakingAsyncPalletUnexpectedKind =
+  | { type: 'EraDurationBoundExceeded' }
+  | { type: 'UnknownValidatorActivation' }
+  | {
+      type: 'PagedElectionOutOfWeight';
+      value: { page: number; required: SpWeightsWeightV2Weight; had: SpWeightsWeightV2Weight };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -19899,213 +19195,6 @@ export type PalletAhOpsEvent =
    **/
   | { name: 'FailedToBond'; data: { account: AccountId32; amount: bigint } };
 
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletAhMigratorEvent =
-  /**
-   * A stage transition has occurred.
-   **/
-  | {
-      name: 'StageTransition';
-      data: {
-        /**
-         * The old stage before the transition.
-         **/
-        old: PalletAhMigratorMigrationStage;
-
-        /**
-         * The new stage after the transition.
-         **/
-        new: PalletAhMigratorMigrationStage;
-      };
-    }
-  /**
-   * We received a batch of messages that will be integrated into a pallet.
-   **/
-  | { name: 'BatchReceived'; data: { pallet: PalletAhMigratorPalletEventName; count: number } }
-  /**
-   * We processed a batch of messages for this pallet.
-   **/
-  | { name: 'BatchProcessed'; data: { pallet: PalletAhMigratorPalletEventName; countGood: number; countBad: number } }
-  /**
-   * The Asset Hub Migration started and is active until `AssetHubMigrationFinished` is
-   * emitted.
-   *
-   * This event is equivalent to `StageTransition { new: DataMigrationOngoing, .. }` but is
-   * easier to understand. The activation is immediate and affects all events happening
-   * afterwards.
-   **/
-  | { name: 'AssetHubMigrationStarted' }
-  /**
-   * The Asset Hub Migration finished.
-   *
-   * This event is equivalent to `StageTransition { new: MigrationDone, .. }` but is easier
-   * to understand. The finishing is immediate and affects all events happening
-   * afterwards.
-   **/
-  | { name: 'AssetHubMigrationFinished' }
-  /**
-   * Whether the DMP queue was prioritized for the next block.
-   **/
-  | {
-      name: 'DmpQueuePrioritySet';
-      data: {
-        /**
-         * Indicates if DMP queue was successfully set as priority.
-         * If `false`, it means we're in the round-robin phase of our priority pattern
-         * (see [`Config::DmpQueuePriorityPattern`]), where no queue gets priority.
-         **/
-        prioritized: boolean;
-
-        /**
-         * Current block number within the pattern cycle (1 to period).
-         **/
-        cycleBlock: number;
-
-        /**
-         * Total number of blocks in the pattern cycle
-         **/
-        cyclePeriod: number;
-      };
-    }
-  /**
-   * The DMP queue priority config was set.
-   **/
-  | {
-      name: 'DmpQueuePriorityConfigSet';
-      data: {
-        /**
-         * The old priority pattern.
-         **/
-        old: PalletRcMigratorQueuePriority;
-
-        /**
-         * The new priority pattern.
-         **/
-        new: PalletRcMigratorQueuePriority;
-      };
-    }
-  /**
-   * The balances before the migration were recorded.
-   **/
-  | { name: 'BalancesBeforeRecordSet'; data: { checkingAccount: bigint; totalIssuance: bigint } }
-  /**
-   * The balances before the migration were consumed.
-   **/
-  | { name: 'BalancesBeforeRecordConsumed'; data: { checkingAccount: bigint; totalIssuance: bigint } }
-  /**
-   * A referendum was cancelled because it could not be mapped.
-   **/
-  | { name: 'ReferendumCanceled'; data: { id: number } }
-  /**
-   * The manager account id was set.
-   **/
-  | {
-      name: 'ManagerSet';
-      data: {
-        /**
-         * The old manager account id.
-         **/
-        old?: AccountId32 | undefined;
-
-        /**
-         * The new manager account id.
-         **/
-        new?: AccountId32 | undefined;
-      };
-    }
-  | { name: 'AccountTranslatedParachainSovereign'; data: { from: AccountId32; to: AccountId32 } }
-  | {
-      name: 'AccountTranslatedParachainSovereignDerived';
-      data: { from: AccountId32; to: AccountId32; derivationIndex: number };
-    }
-  /**
-   * An XCM message was sent.
-   **/
-  | {
-      name: 'XcmSent';
-      data: {
-        origin: StagingXcmV5Location;
-        destination: StagingXcmV5Location;
-        message: StagingXcmV5Xcm;
-        messageId: FixedBytes<32>;
-      };
-    }
-  /**
-   * Failed to unreserve a multisig deposit.
-   **/
-  | {
-      name: 'FailedToUnreserveMultisigDeposit';
-      data: {
-        /**
-         * The expected amount of the deposit that was expected to be unreserved.
-         **/
-        expectedAmount: bigint;
-
-        /**
-         * The missing amount of the deposit.
-         **/
-        missingAmount: bigint;
-
-        /**
-         * The account that the deposit was unreserved from.
-         **/
-        account: AccountId32;
-      };
-    }
-  /**
-   * Failed to unreserve a legacy status preimage deposit.
-   **/
-  | {
-      name: 'FailedToUnreservePreimageDeposit';
-      data: {
-        /**
-         * The expected amount of the deposit that was expected to be unreserved.
-         **/
-        expectedAmount: bigint;
-
-        /**
-         * The missing amount of the deposit.
-         **/
-        missingAmount: bigint;
-
-        /**
-         * The account that the deposit was unreserved from.
-         **/
-        account: AccountId32;
-      };
-    };
-
-export type PalletAhMigratorPalletEventName =
-  | 'AssetRates'
-  | 'BagsList'
-  | 'Balances'
-  | 'Bounties'
-  | 'ChildBounties'
-  | 'Claims'
-  | 'ConvictionVoting'
-  | 'Crowdloan'
-  | 'DelegatedStaking'
-  | 'Indices'
-  | 'Multisig'
-  | 'NomPools'
-  | 'PreimageChunk'
-  | 'PreimageLegacyStatus'
-  | 'PreimageRequestStatus'
-  | 'ProxyAnnouncements'
-  | 'ProxyProxies'
-  | 'Recovery'
-  | 'ReferendaMetadata'
-  | 'ReferendaReferendums'
-  | 'ReferendaValues'
-  | 'Scheduler'
-  | 'SchedulerAgenda'
-  | 'Staking'
-  | 'Treasury'
-  | 'Vesting'
-  | 'Society';
-
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
 
 export type FrameSystemCodeUpgradeAuthorization = { codeHash: H256; checkVersion: boolean };
@@ -20129,7 +19218,10 @@ export type FrameSystemLimitsWeightsPerClass = {
   reserved?: SpWeightsWeightV2Weight | undefined;
 };
 
-export type FrameSystemLimitsBlockLength = { max: FrameSupportDispatchPerDispatchClassU32 };
+export type FrameSystemLimitsBlockLength = {
+  max: FrameSupportDispatchPerDispatchClassU32;
+  maxHeaderSize?: number | undefined;
+};
 
 export type FrameSupportDispatchPerDispatchClassU32 = { normal: number; operational: number; mandatory: number };
 
@@ -20204,6 +19296,14 @@ export type CumulusPalletWeightReclaimStorageWeightReclaim = [
   PalletReviveEvmTxExtensionSetOrigin,
 ];
 
+export type CumulusPalletParachainSystemBlockWeightBlockWeightMode =
+  | { type: 'FullCore'; value: { context: number } }
+  | {
+      type: 'PotentialFullCore';
+      value: { context: number; firstTransactionIndex?: number | undefined; targetWeight: SpWeightsWeightV2Weight };
+    }
+  | { type: 'FractionOfCore'; value: { context: number; firstTransactionIndex?: number | undefined } };
+
 export type CumulusPalletParachainSystemUnincludedSegmentAncestor = {
   usedBandwidth: CumulusPalletParachainSystemUnincludedSegmentUsedBandwidth;
   paraHeadHash?: H256 | undefined;
@@ -20276,6 +19376,14 @@ export type CumulusPalletParachainSystemParachainInherentInboundMessageId = { se
 export type PolkadotCorePrimitivesOutboundHrmpMessage = {
   recipient: PolkadotParachainPrimitivesPrimitivesId;
   data: Bytes;
+};
+
+export type CumulusPalletParachainSystemPoVMessages = {
+  relayStorageRootOrHash: H256;
+  coreSelector: number;
+  bundleIndex: number;
+  umpMsgCount: number;
+  hrmpOutboundCount: number;
 };
 
 /**
@@ -20373,6 +19481,8 @@ export type PalletSchedulerScheduled = {
   origin: AssetHubPolkadotRuntimeOriginCaller;
 };
 
+export type PalletSchedulerRetryConfig = { totalRetries: number; remaining: number; period: number };
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -20407,12 +19517,28 @@ export type PalletMigrationsError =
    **/
   'Ongoing';
 
+export type PalletMigrationsMbmIsOngoing = 'Yes' | 'No' | 'Stuck';
+
+export type PalletMigrationsMbmProgress = {
+  currentMigration: number;
+  totalMigrations: number;
+  currentMigrationSteps: number;
+  currentMigrationMaxSteps?: number | undefined;
+};
+
+export type PalletMigrationsMbmStatus = {
+  ongoing: PalletMigrationsMbmIsOngoing;
+  progress?: PalletMigrationsMbmProgress | undefined;
+  prefixes: Array<Bytes>;
+};
+
+export type PalletBalancesBalanceLock = { id: FixedBytes<8>; amount: bigint; reasons: PalletBalancesReasons };
+
+export type PalletBalancesReasons = 'Fee' | 'Misc' | 'All';
+
 export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
-export type FrameSupportTokensMiscIdAmountRuntimeHoldReason = {
-  id: AssetHubPolkadotRuntimeRuntimeHoldReason;
-  amount: bigint;
-};
+export type FrameSupportTokensMiscIdAmount = { id: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint };
 
 export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
   id: AssetHubPolkadotRuntimeRuntimeFreezeReason;
@@ -20423,6 +19549,8 @@ export type AssetHubPolkadotRuntimeRuntimeFreezeReason = {
   type: 'NominationPools';
   value: PalletNominationPoolsFreezeReason;
 };
+
+export type PalletNominationPoolsFreezeReason = 'PoolMinBalance';
 
 /**
  * The `Error` enum of this pallet.
@@ -20655,9 +19783,12 @@ export type CumulusPalletXcmpQueueOutboundChannelDetails = {
   signalsExist: boolean;
   firstIndex: number;
   lastIndex: number;
+  flags: CumulusPalletXcmpQueueOutboundChannelFlags;
 };
 
 export type CumulusPalletXcmpQueueOutboundState = 'Ok' | 'Suspended';
+
+export type CumulusPalletXcmpQueueOutboundChannelFlags = { bits: number };
 
 export type CumulusPalletXcmpQueueQueueConfigData = {
   suspendThreshold: number;
@@ -21105,7 +20236,7 @@ export type PalletMultisigError =
    **/
   | 'AlreadyStored';
 
-export type PalletProxyProxyDefinitionProxyType = {
+export type PalletProxyProxyDefinition = {
   delegate: AccountId32;
   proxyType: AssetHubPolkadotRuntimeProxyType;
   delay: number;
@@ -21766,6 +20897,8 @@ export type PalletAssetConversionError =
    **/
   | 'BelowMinimum';
 
+export type PalletTreasuryProposal = { proposer: AccountId32; value: bigint; beneficiary: AccountId32; bond: bigint };
+
 export type PalletTreasurySpendStatus = {
   assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
   amount: bigint;
@@ -21830,6 +20963,28 @@ export type PalletTreasuryError =
    **/
   | 'Inconclusive';
 
+export type PalletConvictionVotingVoteVoting =
+  | { type: 'Casting'; value: PalletConvictionVotingVoteCasting }
+  | { type: 'Delegating'; value: PalletConvictionVotingVoteDelegating };
+
+export type PalletConvictionVotingVoteCasting = {
+  votes: Array<[number, PalletConvictionVotingVoteAccountVote]>;
+  delegations: PalletConvictionVotingDelegations;
+  prior: PalletConvictionVotingVotePriorLock;
+};
+
+export type PalletConvictionVotingDelegations = { votes: bigint; capital: bigint };
+
+export type PalletConvictionVotingVotePriorLock = [number, bigint];
+
+export type PalletConvictionVotingVoteDelegating = {
+  balance: bigint;
+  target: AccountId32;
+  conviction: PalletConvictionVotingConviction;
+  delegations: PalletConvictionVotingDelegations;
+  prior: PalletConvictionVotingVotePriorLock;
+};
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -21884,15 +21039,15 @@ export type PalletConvictionVotingError =
    **/
   | 'BadClass';
 
-export type PalletReferendaReferendumInfoOriginCaller =
-  | { type: 'Ongoing'; value: PalletReferendaReferendumStatusOriginCaller }
+export type PalletReferendaReferendumInfo =
+  | { type: 'Ongoing'; value: PalletReferendaReferendumStatus }
   | { type: 'Approved'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
   | { type: 'Rejected'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
   | { type: 'Cancelled'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
   | { type: 'TimedOut'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
   | { type: 'Killed'; value: number };
 
-export type PalletReferendaReferendumStatusOriginCaller = {
+export type PalletReferendaReferendumStatus = {
   track: number;
   origin: AssetHubPolkadotRuntimeOriginCaller;
   proposal: FrameSupportPreimagesBounded;
@@ -21905,6 +21060,10 @@ export type PalletReferendaReferendumStatusOriginCaller = {
   inQueue: boolean;
   alarm?: [number, [number, number]] | undefined;
 };
+
+export type PalletReferendaDeposit = { who: AccountId32; amount: bigint };
+
+export type PalletReferendaDecidingStatus = { since: number; confirming?: number | undefined };
 
 export type PalletReferendaTrackDetails = {
   name: string;
@@ -22017,6 +21176,15 @@ export type PalletBountiesBounty = {
   bond: bigint;
   status: PalletBountiesBountyStatus;
 };
+
+export type PalletBountiesBountyStatus =
+  | { type: 'Proposed' }
+  | { type: 'Approved' }
+  | { type: 'Funded' }
+  | { type: 'CuratorProposed'; value: { curator: AccountId32 } }
+  | { type: 'Active'; value: { curator: AccountId32; updateDue: number } }
+  | { type: 'PendingPayout'; value: { curator: AccountId32; beneficiary: AccountId32; unlockAt: number } }
+  | { type: 'ApprovedWithCurator'; value: { curator: AccountId32 } };
 
 /**
  * The `Error` enum of this pallet.
@@ -22234,6 +21402,36 @@ export type PalletMultiAssetBountiesError =
    * The preimage does not exist.
    **/
   | 'PreimageNotExist';
+
+export type PalletNominationPoolsPoolMember = {
+  poolId: number;
+  points: bigint;
+  lastRecordedRewardCounter: FixedU128;
+  unbondingEras: Array<[number, bigint]>;
+};
+
+export type PalletNominationPoolsBondedPoolInner = {
+  commission: PalletNominationPoolsCommission;
+  memberCounter: number;
+  points: bigint;
+  roles: PalletNominationPoolsPoolRoles;
+  state: PalletNominationPoolsPoolState;
+};
+
+export type PalletNominationPoolsCommission = {
+  current?: [Perbill, AccountId32] | undefined;
+  max?: Perbill | undefined;
+  changeRate?: PalletNominationPoolsCommissionChangeRate | undefined;
+  throttleFrom?: number | undefined;
+  claimPermission?: PalletNominationPoolsCommissionClaimPermission | undefined;
+};
+
+export type PalletNominationPoolsPoolRoles = {
+  depositor: AccountId32;
+  root?: AccountId32 | undefined;
+  nominator?: AccountId32 | undefined;
+  bouncer?: AccountId32 | undefined;
+};
 
 export type PalletNominationPoolsRewardPool = {
   lastRecordedRewardCounter: FixedU128;
@@ -22544,7 +21742,7 @@ export type PalletStakingAsyncRcClientError =
    **/
   | 'InvalidKeys'
   /**
-   * The ownership proof for the session keys is invalid.
+   * Invalid ownership proof for the session keys.
    **/
   | 'InvalidProof'
   /**
@@ -22932,7 +22130,6 @@ export type PalletReviveEvmApiRpcTypesGenTransaction7702Unsigned = {
   authorizationList: Array<PalletReviveEvmApiRpcTypesGenAuthorizationListEntry>;
   chainId: U256;
   gas: U256;
-  gasPrice: U256;
   input: PalletReviveEvmApiByteBytes;
   maxFeePerGas: U256;
   maxPriorityFeePerGas: U256;
@@ -23072,6 +22269,7 @@ export type PalletReviveDebugDebugSettings = {
   allowUnlimitedContractSize: boolean;
   bypassEip3607: boolean;
   pvmLogs: boolean;
+  disableExecutionTracing: boolean;
 };
 
 /**
@@ -23333,6 +22531,43 @@ export type PalletReviveError =
   | 'EcdsaRecoveryFailed';
 
 /**
+ * Error types for the permit pallet.
+ **/
+export type PalletAssetsPrecompilesPermitPalletError =
+  /**
+   * The permit signature is invalid.
+   **/
+  | 'InvalidSignature'
+  /**
+   * The signer does not match the owner.
+   **/
+  | 'SignerMismatch'
+  /**
+   * The permit has expired (deadline passed).
+   **/
+  | 'PermitExpired'
+  /**
+   * The signature's `s` value is too high (malleability protection).
+   **/
+  | 'SignatureSValueTooHigh'
+  /**
+   * The signature's `v` value is invalid.
+   **/
+  | 'InvalidVValue'
+  /**
+   * Nonce overflow - account has used too many permits.
+   **/
+  | 'NonceOverflow'
+  /**
+   * The owner address is invalid (e.g., zero address).
+   **/
+  | 'InvalidOwner'
+  /**
+   * The spender address is invalid (e.g., zero address).
+   **/
+  | 'InvalidSpender';
+
+/**
  * The `Error` enum of this pallet.
  **/
 export type PalletAhOpsError =
@@ -23397,89 +22632,6 @@ export type PalletAhOpsError =
    **/
   | 'FailedToForceUnstake';
 
-export type PalletAhMigratorBalancesBefore = { checkingAccount: bigint; totalIssuance: bigint };
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletAhMigratorError =
-  /**
-   * Failed to unreserve deposit.
-   **/
-  | 'FailedToUnreserveDeposit'
-  /**
-   * Failed to process an account data from RC.
-   **/
-  | 'FailedToProcessAccount'
-  /**
-   * Some item could not be inserted because it already exists.
-   **/
-  | 'InsertConflict'
-  /**
-   * Failed to convert RC type to AH type.
-   **/
-  | 'FailedToConvertType'
-  /**
-   * Failed to fetch preimage.
-   **/
-  | 'PreimageNotFound'
-  /**
-   * Failed to convert RC call to AH call.
-   **/
-  | 'FailedToConvertCall'
-  /**
-   * Failed to bound a call.
-   **/
-  | 'FailedToBoundCall'
-  /**
-   * Failed to send XCM message.
-   **/
-  | 'XcmError'
-  /**
-   * Failed to integrate a vesting schedule.
-   **/
-  | 'FailedToIntegrateVestingSchedule'
-  /**
-   * Checking account overflow or underflow.
-   **/
-  | 'FailedToCalculateCheckingAccount'
-  /**
-   * Vector did not fit into its compile-time bound.
-   **/
-  | 'FailedToBoundVector'
-  /**
-   * The DMP queue priority is already set to the same value.
-   **/
-  | 'DmpQueuePriorityAlreadySet'
-  /**
-   * Invalid parameter.
-   **/
-  | 'InvalidParameter'
-  /**
-   * Preimage missing.
-   **/
-  | 'PreimageMissing'
-  /**
-   * Preimage too big.
-   **/
-  | 'PreimageTooBig'
-  /**
-   * Preimage chunk missing.
-   **/
-  | 'PreimageChunkMissing'
-  /**
-   * Preimage status invalid.
-   **/
-  | 'PreimageStatusInvalid'
-  /**
-   * The XCM version is invalid.
-   **/
-  | 'BadXcmVersion'
-  /**
-   * The origin is invalid.
-   **/
-  | 'InvalidOrigin';
-
 export type SpConsensusSlotsSlotDuration = bigint;
 
 export type SpRuntimeBlockLazyBlock = { header: Header; extrinsics: Array<SpRuntimeOpaqueExtrinsic> };
@@ -23527,6 +22679,8 @@ export type SpRuntimeTransactionValidityValidTransaction = {
   longevity: bigint;
   propagate: boolean;
 };
+
+export type SpSessionRuntimeApiOpaqueGeneratedSessionKeys = { keys: Bytes; proof: Bytes };
 
 export type FrameSupportViewFunctionsViewFunctionId = { prefix: FixedBytes<16>; suffix: FixedBytes<16> };
 
@@ -23682,7 +22836,8 @@ export type PalletRevivePrimitivesContractAccessError =
 
 export type PalletReviveEvmApiDebugRpcTypesTracerType =
   | { type: 'CallTracer'; value?: PalletReviveEvmApiDebugRpcTypesCallTracerConfig | undefined }
-  | { type: 'PrestateTracer'; value?: PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig | undefined };
+  | { type: 'PrestateTracer'; value?: PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig | undefined }
+  | { type: 'ExecutionTracer'; value?: PalletReviveEvmApiDebugRpcTypesExecutionTracerConfig | undefined };
 
 export type PalletReviveEvmApiDebugRpcTypesCallTracerConfig = { withLogs: boolean; onlyTopCall: boolean };
 
@@ -23692,14 +22847,25 @@ export type PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig = {
   disableCode: boolean;
 };
 
+export type PalletReviveEvmApiDebugRpcTypesExecutionTracerConfig = {
+  enableMemory: boolean;
+  disableStack: boolean;
+  disableStorage: boolean;
+  enableReturnData: boolean;
+  disableSyscallDetails: boolean;
+  limit?: bigint | undefined;
+  memoryWordLimit: number;
+};
+
 export type PalletReviveEvmApiDebugRpcTypesTrace =
   | { type: 'Call'; value: PalletReviveEvmApiDebugRpcTypesCallTrace }
-  | { type: 'Prestate'; value: PalletReviveEvmApiDebugRpcTypesPrestateTrace };
+  | { type: 'Prestate'; value: PalletReviveEvmApiDebugRpcTypesPrestateTrace }
+  | { type: 'Execution'; value: PalletReviveEvmApiDebugRpcTypesExecutionTrace };
 
 export type PalletReviveEvmApiDebugRpcTypesCallTrace = {
   from: H160;
-  gas: U256;
-  gasUsed: U256;
+  gas: bigint;
+  gasUsed: bigint;
   to: H160;
   input: PalletReviveEvmApiByteBytes;
   output: PalletReviveEvmApiByteBytes;
@@ -23743,6 +22909,38 @@ export type PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo = {
   code?: PalletReviveEvmApiByteBytes | undefined;
   storage: Array<[PalletReviveEvmApiByteBytes, PalletReviveEvmApiByteBytes | undefined]>;
 };
+
+export type PalletReviveEvmApiDebugRpcTypesExecutionTrace = {
+  gas: bigint;
+  weightConsumed: SpWeightsWeightV2Weight;
+  baseCallWeight: SpWeightsWeightV2Weight;
+  failed: boolean;
+  returnValue: PalletReviveEvmApiByteBytes;
+  structLogs: Array<PalletReviveEvmApiDebugRpcTypesExecutionStep>;
+};
+
+export type PalletReviveEvmApiDebugRpcTypesExecutionStep = {
+  gas: bigint;
+  gasCost: bigint;
+  weightCost: SpWeightsWeightV2Weight;
+  depth: number;
+  returnData: PalletReviveEvmApiByteBytes;
+  error?: string | undefined;
+  kind: PalletReviveEvmApiDebugRpcTypesExecutionStepKind;
+};
+
+export type PalletReviveEvmApiDebugRpcTypesExecutionStepKind =
+  | {
+      type: 'EvmOpcode';
+      value: {
+        pc: number;
+        op: number;
+        stack: Array<PalletReviveEvmApiByteBytes>;
+        memory: Array<PalletReviveEvmApiByteBytes>;
+        storage?: Array<[PalletReviveEvmApiByteBytes, PalletReviveEvmApiByteBytes]> | undefined;
+      };
+    }
+  | { type: 'PvmSyscall'; value: { op: number; args: Array<bigint>; returned?: bigint | undefined } };
 
 export type PalletRevivePrimitivesBalanceConversionError = 'Value' | 'Dust';
 
@@ -23788,5 +22986,5 @@ export type AssetHubPolkadotRuntimeRuntimeError =
   | { pallet: 'MultiBlockElectionSigned'; palletError: PalletElectionProviderMultiBlockSignedPalletError }
   | { pallet: 'Staking'; palletError: PalletStakingAsyncPalletError }
   | { pallet: 'Revive'; palletError: PalletReviveError }
-  | { pallet: 'AhOps'; palletError: PalletAhOpsError }
-  | { pallet: 'AhMigrator'; palletError: PalletAhMigratorError };
+  | { pallet: 'AssetsPrecompilesPermit'; palletError: PalletAssetsPrecompilesPermitPalletError }
+  | { pallet: 'AhOps'; palletError: PalletAhOpsError };

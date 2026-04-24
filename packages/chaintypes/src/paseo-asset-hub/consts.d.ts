@@ -371,7 +371,8 @@ export interface ChainConsts extends GenericChainConsts {
   aura: {
     /**
      * The slot duration Aura should run with, expressed in milliseconds.
-     * The effective value of this type should not change while the chain is running.
+     *
+     * The effective value of this type can be changed with a runtime upgrade.
      *
      * For backwards compatibility either use [`MinimumPeriodTimesTwo`] or a const.
      **/
@@ -1386,8 +1387,7 @@ export interface ChainConsts extends GenericChainConsts {
      * Duration of the singed validation phase.
      *
      * The duration of this should not be less than `T::Pages`, and there is no point in it
-     * being more than `SignedPhase::MaxSubmission::get() * T::Pages`. TODO: integrity test for
-     * it.
+     * being more than `SignedPhase::MaxSubmission::get() * T::Pages`.
      **/
     signedValidationPhase: number;
 
@@ -1420,12 +1420,6 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `MultiBlockElectionVerifier`'s constants
    **/
   multiBlockElectionVerifier: {
-    /**
-     * The minimum amount of improvement to the solution score that defines a solution as
-     * "better".
-     **/
-    solutionImprovementThreshold: Perbill;
-
     /**
      * Maximum number of backers, per winner, among all pages of an election.
      *
@@ -1580,11 +1574,6 @@ export interface ChainConsts extends GenericChainConsts {
     maxUnlockingChunks: number;
 
     /**
-     * Maximum number of invulnerable validators.
-     **/
-    maxInvulnerables: number;
-
-    /**
      * Maximum allowed era duration in milliseconds.
      *
      * This provides a defensive upper bound to cap the effective era duration, preventing
@@ -1653,19 +1642,6 @@ export interface ChainConsts extends GenericChainConsts {
     codeHashLockupDepositPercent: Perbill;
 
     /**
-     * Make contract callable functions marked as `#[unstable]` available.
-     *
-     * Contracts that use `#[unstable]` functions won't be able to be uploaded unless
-     * this is set to `true`. This is only meant for testnets and dev nodes in order to
-     * experiment with new features.
-     *
-     * # Warning
-     *
-     * Do **not** set to `true` on productions chains.
-     **/
-    unsafeUnstableInterface: boolean;
-
-    /**
      * Allow EVM bytecode to be uploaded and instantiated.
      **/
     allowEVMBytecode: boolean;
@@ -1731,18 +1707,32 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
-   * Pallet `AhOps`'s constants
+   * Pallet `AssetsPrecompiles`'s constants
    **/
-  ahOps: {
+  assetsPrecompiles: {
     /**
      * Generic pallet constant
      **/
     [name: string]: any;
   };
   /**
-   * Pallet `AhMigrator`'s constants
+   * Pallet `AssetsPrecompilesPermit`'s constants
    **/
-  ahMigrator: {
+  assetsPrecompilesPermit: {
+    /**
+     * The chain ID used in EIP-712 domain separator.
+     **/
+    chainId: bigint;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `AhOps`'s constants
+   **/
+  ahOps: {
     /**
      * Generic pallet constant
      **/

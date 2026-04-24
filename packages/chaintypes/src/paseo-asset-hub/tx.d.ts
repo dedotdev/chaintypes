@@ -101,32 +101,6 @@ import type {
   PalletStakingAsyncPalletConfigOpBool,
   PalletStakingAsyncLedgerUnlockChunk,
   PolkadotParachainPrimitivesPrimitivesId,
-  PalletRcMigratorAccountsAccount,
-  PalletRcMigratorMultisigRcMultisig,
-  PalletRcMigratorProxyRcProxy,
-  PalletRcMigratorProxyRcProxyAnnouncement,
-  PalletRcMigratorPreimageChunksRcPreimageChunk,
-  PalletRcMigratorPreimageRequestStatusPortableRequestStatus,
-  PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus,
-  PalletRcMigratorStakingNomPoolsRcNomPoolsMessage,
-  PalletRcMigratorVestingRcVestingSchedule,
-  PalletRcMigratorReferendaReferendaMessage,
-  PalletReferendaReferendumInfo,
-  PalletRcMigratorClaimsRcClaimsMessage,
-  PalletRcMigratorStakingBagsListPortableBagsListMessage,
-  PalletRcMigratorSchedulerRcSchedulerMessage,
-  PalletRcMigratorIndicesRcIndicesIndex,
-  PalletRcMigratorConvictionVotingRcConvictionVotingMessage,
-  PalletRcMigratorBountiesRcBountiesMessage,
-  PalletRcMigratorCrowdloanRcCrowdloanMessage,
-  PalletRcMigratorTreasuryPortableTreasuryMessage,
-  PalletRcMigratorSchedulerSchedulerAgendaMessage,
-  PalletRcMigratorStakingDelegatedStakingPortableDelegatedStakingMessage,
-  PalletRcMigratorChildBountiesPortableChildBountiesMessage,
-  PalletRcMigratorStakingMessagePortableStakingMessage,
-  PalletAhMigratorMigrationStage,
-  PalletRcMigratorQueuePriority,
-  PalletRcMigratorMigrationFinishedData,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -659,7 +633,10 @@ export interface ChainTx<
     >;
 
     /**
-     * Cancel an anonymously scheduled task.
+     * Cancel a scheduled task (named or anonymous), by providing the block it is scheduled for
+     * execution in, as well as the index of the task in that block's agenda.
+     *
+     * In the case of a named task, it will remove it from the lookup table as well.
      *
      * @param {number} when
      * @param {number} index
@@ -811,6 +788,8 @@ export interface ChainTx<
      * original task's configuration, but will have a lower value for `remaining` than the
      * original `total_retries`.
      *
+     * This call **cannot** be used to set a retry configuration for a named task.
+     *
      * @param {[number, number]} task
      * @param {number} retries
      * @param {number} period
@@ -845,6 +824,8 @@ export interface ChainTx<
      * clones of the original task. Their retry configuration will be derived from the
      * original task's configuration, but will have a lower value for `remaining` than the
      * original `total_retries`.
+     *
+     * This is the only way to set a retry configuration for a named task.
      *
      * @param {FixedBytes<32>} id
      * @param {number} retries
@@ -1928,14 +1909,16 @@ export interface ChainTx<
   session: {
     /**
      * Sets the session key(s) of the function caller to `keys`.
+     *
      * Allows an account to set its session key prior to becoming a validator.
      * This doesn't take effect until the next session.
      *
-     * The dispatch origin of this function must be signed.
-     *
-     * ## Complexity
-     * - `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is
-     * fixed.
+     * - `origin`: The dispatch origin of this function must be signed.
+     * - `keys`: The new session keys to set. These are the public keys of all sessions keys
+     * setup in the runtime.
+     * - `proof`: The proof that `origin` has access to the private keys of `keys`. See
+     * [`impl_opaque_keys`](sp_runtime::impl_opaque_keys) for more information about the
+     * proof format.
      *
      * @param {AssetHubPolkadotRuntimeSessionKeys} keys
      * @param {BytesLike} proof
@@ -1965,10 +1948,6 @@ export interface ChainTx<
      * convertible to a validator ID using the chain's typical addressing system (this usually
      * means being a controller account) or directly convertible into a validator ID (which
      * usually means being a stash account).
-     *
-     * ## Complexity
-     * - `O(1)` in number of key types. Actual cost depends on the number of length of
-     * `T::Keys::key_ids()` which is fixed.
      *
      **/
     purgeKeys: GenericTxCall<
@@ -3249,7 +3228,9 @@ export interface ChainTx<
      * Register approval for a dispatch to be made from a deterministic composite account if
      * approved by a total of `threshold - 1` of `other_signatories`.
      *
-     * If there are enough, then dispatch the call.
+     * **If the approval threshold is met (including the sender's approval), this will
+     * immediately execute the call.** This is the only way to execute a multisig call -
+     * `approve_as_multi` will never trigger execution.
      *
      * Payment: `DepositBase` will be reserved if this is the first approval, plus
      * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
@@ -3265,8 +3246,9 @@ export interface ChainTx<
      * transaction index) of the first approval transaction.
      * - `call`: The call to be executed.
      *
-     * NOTE: Unless this is the final approval, you will generally want to use
-     * `approve_as_multi` instead, since it only requires a hash of the call.
+     * NOTE: For intermediate approvals (not the final approval), you should generally use
+     * `approve_as_multi` instead, since it only requires a hash of the call and is more
+     * efficient.
      *
      * Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise
      * on success, result is `Ok` and the result from the interior call, if it was executed,
@@ -3321,6 +3303,13 @@ export interface ChainTx<
      * Register approval for a dispatch to be made from a deterministic composite account if
      * approved by a total of `threshold - 1` of `other_signatories`.
      *
+     * **This function will NEVER execute the call, even if the approval threshold is
+     * reached.** It only registers approval. To actually execute the call, `as_multi` must
+     * be called with the full call data by any of the signatories.
+     *
+     * This function is more efficient than `as_multi` for intermediate approvals since it
+     * only requires the call hash, not the full call data.
+     *
      * Payment: `DepositBase` will be reserved if this is the first approval, plus
      * `threshold` times `DepositFactor`. It is returned once this dispatch happens or
      * is cancelled.
@@ -3335,7 +3324,8 @@ export interface ChainTx<
      * transaction index) of the first approval transaction.
      * - `call_hash`: The hash of the call to be executed.
      *
-     * NOTE: If this is the final approval, you will want to use `as_multi` instead.
+     * NOTE: To execute the call after approvals are gathered, any signatory must call
+     * `as_multi` with the full call data. This function cannot execute the call.
      *
      * ## Complexity
      * - `O(S)`.
@@ -13407,12 +13397,10 @@ export interface ChainTx<
      * **Validation on AssetHub:**
      * - Keys are decoded as `T::RelayChainSessionKeys` to ensure they match RC's expected
      * format.
+     * - Ownership proof is validated using `OpaqueKeys::ownership_proof_is_valid`.
      *
      * If validation passes, only the validated keys are sent to RC (with empty proof),
      * since RC trusts AH's validation.
-     *
-     * Note: Ownership proof validation requires PR #1739 which is not backported to
-     * stable2512. The proof parameter will be added when that PR is backported.
      *
      * **Fees:**
      * The actual cost of this call is higher than what the weight-based fee estimate shows.
@@ -14085,26 +14073,6 @@ export interface ChainTx<
     >;
 
     /**
-     * Set the validators who cannot be slashed (if any).
-     *
-     * The dispatch origin must be Root.
-     *
-     * @param {Array<AccountId32Like>} invulnerables
-     **/
-    setInvulnerables: GenericTxCall<
-      (invulnerables: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Staking';
-          palletCall: {
-            name: 'SetInvulnerables';
-            params: { invulnerables: Array<AccountId32Like> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
      * Force a current staker to become completely unstaked, immediately.
      *
      * The dispatch origin must be Root.
@@ -14466,7 +14434,7 @@ export interface ChainTx<
      *
      * If a validator has more than [`Config::MaxExposurePageSize`] nominators backing
      * them, then the list of nominators is paged, with each page being capped at
-     * [`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,
+     * [`Config::MaxExposurePageSize`]. If a validator has more than one page of nominators,
      * the call needs to be made for each page separately in order for all the nominators
      * backing a validator to receive the reward. The nominators are not sorted across pages
      * and so it should not be assumed the highest staker would be on the topmost page and vice
@@ -15346,589 +15314,6 @@ export interface ChainTx<
               oldAccount: AccountId32Like;
               newAccount: AccountId32Like;
             };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
-   * Pallet `AhMigrator`'s transaction calls
-   **/
-  ahMigrator: {
-    /**
-     * Receive accounts from the Relay Chain.
-     *
-     * The accounts sent with `pallet_rc_migrator::Pallet::migrate_accounts` function.
-     *
-     * @param {Array<PalletRcMigratorAccountsAccount>} accounts
-     **/
-    receiveAccounts: GenericTxCall<
-      (accounts: Array<PalletRcMigratorAccountsAccount>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveAccounts';
-            params: { accounts: Array<PalletRcMigratorAccountsAccount> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Receive multisigs from the Relay Chain.
-     *
-     * This will be called from an XCM `Transact` inside a DMP from the relay chain. The
-     * multisigs were prepared by
-     * `pallet_rc_migrator::multisig::MultisigMigrator::migrate_many`.
-     *
-     * @param {Array<PalletRcMigratorMultisigRcMultisig>} accounts
-     **/
-    receiveMultisigs: GenericTxCall<
-      (accounts: Array<PalletRcMigratorMultisigRcMultisig>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveMultisigs';
-            params: { accounts: Array<PalletRcMigratorMultisigRcMultisig> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Receive proxies from the Relay Chain.
-     *
-     * @param {Array<PalletRcMigratorProxyRcProxy>} proxies
-     **/
-    receiveProxyProxies: GenericTxCall<
-      (proxies: Array<PalletRcMigratorProxyRcProxy>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveProxyProxies';
-            params: { proxies: Array<PalletRcMigratorProxyRcProxy> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Receive proxy announcements from the Relay Chain.
-     *
-     * @param {Array<PalletRcMigratorProxyRcProxyAnnouncement>} announcements
-     **/
-    receiveProxyAnnouncements: GenericTxCall<
-      (announcements: Array<PalletRcMigratorProxyRcProxyAnnouncement>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveProxyAnnouncements';
-            params: { announcements: Array<PalletRcMigratorProxyRcProxyAnnouncement> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorPreimageChunksRcPreimageChunk>} chunks
-     **/
-    receivePreimageChunks: GenericTxCall<
-      (chunks: Array<PalletRcMigratorPreimageChunksRcPreimageChunk>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceivePreimageChunks';
-            params: { chunks: Array<PalletRcMigratorPreimageChunksRcPreimageChunk> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorPreimageRequestStatusPortableRequestStatus>} requestStatus
-     **/
-    receivePreimageRequestStatus: GenericTxCall<
-      (requestStatus: Array<PalletRcMigratorPreimageRequestStatusPortableRequestStatus>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceivePreimageRequestStatus';
-            params: { requestStatus: Array<PalletRcMigratorPreimageRequestStatusPortableRequestStatus> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus>} legacyStatus
-     **/
-    receivePreimageLegacyStatus: GenericTxCall<
-      (
-        legacyStatus: Array<PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus>,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceivePreimageLegacyStatus';
-            params: { legacyStatus: Array<PalletRcMigratorPreimageLegacyRequestStatusRcPreimageLegacyStatus> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorStakingNomPoolsRcNomPoolsMessage>} messages
-     **/
-    receiveNomPoolsMessages: GenericTxCall<
-      (messages: Array<PalletRcMigratorStakingNomPoolsRcNomPoolsMessage>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveNomPoolsMessages';
-            params: { messages: Array<PalletRcMigratorStakingNomPoolsRcNomPoolsMessage> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorVestingRcVestingSchedule>} schedules
-     **/
-    receiveVestingSchedules: GenericTxCall<
-      (schedules: Array<PalletRcMigratorVestingRcVestingSchedule>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveVestingSchedules';
-            params: { schedules: Array<PalletRcMigratorVestingRcVestingSchedule> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Receive referendum counts, deciding counts, votes for the track queue.
-     *
-     * @param {Array<PalletRcMigratorReferendaReferendaMessage>} values
-     **/
-    receiveReferendaValues: GenericTxCall<
-      (values: Array<PalletRcMigratorReferendaReferendaMessage>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveReferendaValues';
-            params: { values: Array<PalletRcMigratorReferendaReferendaMessage> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Receive referendums from the Relay Chain.
-     *
-     * @param {Array<[number, PalletReferendaReferendumInfo]>} referendums
-     **/
-    receiveReferendums: GenericTxCall<
-      (referendums: Array<[number, PalletReferendaReferendumInfo]>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveReferendums';
-            params: { referendums: Array<[number, PalletReferendaReferendumInfo]> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorClaimsRcClaimsMessage>} messages
-     **/
-    receiveClaims: GenericTxCall<
-      (messages: Array<PalletRcMigratorClaimsRcClaimsMessage>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveClaims';
-            params: { messages: Array<PalletRcMigratorClaimsRcClaimsMessage> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorStakingBagsListPortableBagsListMessage>} messages
-     **/
-    receiveBagsListMessages: GenericTxCall<
-      (messages: Array<PalletRcMigratorStakingBagsListPortableBagsListMessage>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveBagsListMessages';
-            params: { messages: Array<PalletRcMigratorStakingBagsListPortableBagsListMessage> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorSchedulerRcSchedulerMessage>} messages
-     **/
-    receiveSchedulerMessages: GenericTxCall<
-      (messages: Array<PalletRcMigratorSchedulerRcSchedulerMessage>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveSchedulerMessages';
-            params: { messages: Array<PalletRcMigratorSchedulerRcSchedulerMessage> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorIndicesRcIndicesIndex>} indices
-     **/
-    receiveIndices: GenericTxCall<
-      (indices: Array<PalletRcMigratorIndicesRcIndicesIndex>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveIndices';
-            params: { indices: Array<PalletRcMigratorIndicesRcIndicesIndex> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorConvictionVotingRcConvictionVotingMessage>} messages
-     **/
-    receiveConvictionVotingMessages: GenericTxCall<
-      (messages: Array<PalletRcMigratorConvictionVotingRcConvictionVotingMessage>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveConvictionVotingMessages';
-            params: { messages: Array<PalletRcMigratorConvictionVotingRcConvictionVotingMessage> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorBountiesRcBountiesMessage>} messages
-     **/
-    receiveBountiesMessages: GenericTxCall<
-      (messages: Array<PalletRcMigratorBountiesRcBountiesMessage>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveBountiesMessages';
-            params: { messages: Array<PalletRcMigratorBountiesRcBountiesMessage> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<[PolkadotRuntimeCommonImplsVersionedLocatableAsset, FixedU128]>} rates
-     **/
-    receiveAssetRates: GenericTxCall<
-      (rates: Array<[PolkadotRuntimeCommonImplsVersionedLocatableAsset, FixedU128]>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveAssetRates';
-            params: { rates: Array<[PolkadotRuntimeCommonImplsVersionedLocatableAsset, FixedU128]> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorCrowdloanRcCrowdloanMessage>} messages
-     **/
-    receiveCrowdloanMessages: GenericTxCall<
-      (messages: Array<PalletRcMigratorCrowdloanRcCrowdloanMessage>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveCrowdloanMessages';
-            params: { messages: Array<PalletRcMigratorCrowdloanRcCrowdloanMessage> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<[number, H256]>} metadata
-     **/
-    receiveReferendaMetadata: GenericTxCall<
-      (metadata: Array<[number, H256]>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveReferendaMetadata';
-            params: { metadata: Array<[number, H256]> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorTreasuryPortableTreasuryMessage>} messages
-     **/
-    receiveTreasuryMessages: GenericTxCall<
-      (messages: Array<PalletRcMigratorTreasuryPortableTreasuryMessage>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveTreasuryMessages';
-            params: { messages: Array<PalletRcMigratorTreasuryPortableTreasuryMessage> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorSchedulerSchedulerAgendaMessage>} messages
-     **/
-    receiveSchedulerAgendaMessages: GenericTxCall<
-      (messages: Array<PalletRcMigratorSchedulerSchedulerAgendaMessage>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveSchedulerAgendaMessages';
-            params: { messages: Array<PalletRcMigratorSchedulerSchedulerAgendaMessage> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorStakingDelegatedStakingPortableDelegatedStakingMessage>} messages
-     **/
-    receiveDelegatedStakingMessages: GenericTxCall<
-      (
-        messages: Array<PalletRcMigratorStakingDelegatedStakingPortableDelegatedStakingMessage>,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveDelegatedStakingMessages';
-            params: { messages: Array<PalletRcMigratorStakingDelegatedStakingPortableDelegatedStakingMessage> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorChildBountiesPortableChildBountiesMessage>} messages
-     **/
-    receiveChildBountiesMessages: GenericTxCall<
-      (messages: Array<PalletRcMigratorChildBountiesPortableChildBountiesMessage>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveChildBountiesMessages';
-            params: { messages: Array<PalletRcMigratorChildBountiesPortableChildBountiesMessage> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     *
-     * @param {Array<PalletRcMigratorStakingMessagePortableStakingMessage>} messages
-     **/
-    receiveStakingMessages: GenericTxCall<
-      (messages: Array<PalletRcMigratorStakingMessagePortableStakingMessage>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ReceiveStakingMessages';
-            params: { messages: Array<PalletRcMigratorStakingMessagePortableStakingMessage> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the migration stage.
-     *
-     * This call is intended for emergency use only and is guarded by the
-     * [`Config::AdminOrigin`].
-     *
-     * @param {PalletAhMigratorMigrationStage} stage
-     **/
-    forceSetStage: GenericTxCall<
-      (stage: PalletAhMigratorMigrationStage) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'ForceSetStage';
-            params: { stage: PalletAhMigratorMigrationStage };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Start the data migration.
-     *
-     * This is typically called by the Relay Chain to start the migration on the Asset Hub and
-     * receive a handshake message indicating the Asset Hub's readiness.
-     *
-     **/
-    startMigration: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'StartMigration';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the DMP queue priority configuration.
-     *
-     * Can only be called by the `AdminOrigin`.
-     *
-     * @param {PalletRcMigratorQueuePriority} new_
-     **/
-    setDmpQueuePriority: GenericTxCall<
-      (new_: PalletRcMigratorQueuePriority) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'SetDmpQueuePriority';
-            params: { new: PalletRcMigratorQueuePriority };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the manager account id.
-     *
-     * The manager has the similar to [`Config::AdminOrigin`] privileges except that it
-     * can not set the manager account id via `set_manager` call.
-     *
-     * @param {AccountId32Like | undefined} new_
-     **/
-    setManager: GenericTxCall<
-      (new_: AccountId32Like | undefined) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'SetManager';
-            params: { new: AccountId32Like | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Finish the migration.
-     *
-     * This is typically called by the Relay Chain to signal the migration has finished.
-     *
-     * The `data` parameter might be `None` if we are running the migration for a second time
-     * for some pallets and have already performed the checking account balance correction,
-     * so we do not need to do it this time.
-     *
-     * @param {PalletRcMigratorMigrationFinishedData | undefined} data
-     * @param {number} coolOffEndAt
-     **/
-    finishMigration: GenericTxCall<
-      (
-        data: PalletRcMigratorMigrationFinishedData | undefined,
-        coolOffEndAt: number,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'FinishMigration';
-            params: { data: PalletRcMigratorMigrationFinishedData | undefined; coolOffEndAt: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * XCM send call identical to the [`pallet_xcm::Pallet::send`] call but with the
-     * [Config::SendXcm] router which will be able to send messages to the Relay Chain during
-     * the migration.
-     *
-     * @param {XcmVersionedLocation} dest
-     * @param {XcmVersionedXcm} message
-     **/
-    sendXcmMessage: GenericTxCall<
-      (
-        dest: XcmVersionedLocation,
-        message: XcmVersionedXcm,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'AhMigrator';
-          palletCall: {
-            name: 'SendXcmMessage';
-            params: { dest: XcmVersionedLocation; message: XcmVersionedXcm };
           };
         },
         ChainKnownTypes

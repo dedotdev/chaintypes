@@ -1927,11 +1927,6 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   emaOracle: {
     /**
-     * Maximum allowed percentage difference for bifrost oracle price update
-     **/
-    maxAllowedPriceDifference: Permill;
-
-    /**
      * Maximum number of unique oracle entries expected in one block.
      **/
     maxUniqueEntries: number;

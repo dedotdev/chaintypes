@@ -5140,7 +5140,13 @@ export type PalletDispatcherCall =
    *
    * Emits `EmergencyAdminCallDispatched` with the call hash and dispatch result.
    **/
-  | { name: 'DispatchAsEmergencyAdmin'; params: { call: HydradxRuntimeRuntimeCall } };
+  | { name: 'DispatchAsEmergencyAdmin'; params: { call: HydradxRuntimeRuntimeCall } }
+  /**
+   * Enable/pause the background ISMP storage cleanup. If enabled for the first time,
+   * starting from the first stage.
+   **/
+  | { name: 'PauseHyperbridgeCleanup'; params: { doPause: boolean } }
+  | { name: 'DispatchWithFeePayer'; params: { call: HydradxRuntimeRuntimeCall } };
 
 export type PalletDispatcherCallLike =
   | { name: 'DispatchAsTreasury'; params: { call: HydradxRuntimeRuntimeCallLike } }
@@ -5187,7 +5193,13 @@ export type PalletDispatcherCallLike =
    *
    * Emits `EmergencyAdminCallDispatched` with the call hash and dispatch result.
    **/
-  | { name: 'DispatchAsEmergencyAdmin'; params: { call: HydradxRuntimeRuntimeCallLike } };
+  | { name: 'DispatchAsEmergencyAdmin'; params: { call: HydradxRuntimeRuntimeCallLike } }
+  /**
+   * Enable/pause the background ISMP storage cleanup. If enabled for the first time,
+   * starting from the first stage.
+   **/
+  | { name: 'PauseHyperbridgeCleanup'; params: { doPause: boolean } }
+  | { name: 'DispatchWithFeePayer'; params: { call: HydradxRuntimeRuntimeCallLike } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -13443,19 +13455,282 @@ export type SpConsensusAuraSr25519AppSr25519Public = FixedBytes<32>;
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
 export type PalletEmaOracleCall =
+  /**
+   * Add an oracle to the whitelist so it is tracked by the pallet.
+   *
+   * Parameters:
+   * - `origin`: `AuthorityOrigin`
+   * - `source`: data source identifier
+   * - `assets`: the asset pair to track
+   *
+   * Emits `AddedToWhitelist` event when successful.
+   **/
   | { name: 'AddOracle'; params: { source: FixedBytes<8>; assets: [number, number] } }
+  /**
+   * Remove an oracle from the whitelist and delete all its stored entries.
+   *
+   * Parameters:
+   * - `origin`: `AuthorityOrigin`
+   * - `source`: data source identifier
+   * - `assets`: the asset pair to stop tracking
+   *
+   * Emits `RemovedFromWhitelist` event when successful.
+   **/
   | { name: 'RemoveOracle'; params: { source: FixedBytes<8>; assets: [number, number] } }
+  /**
+   * Update an oracle entry for BIFROST_SOURCE. Thin wrapper around `set_external_oracle`.
+   *
+   * Parameters:
+   * - `origin`: signed origin — must be authorized for the specific `(BIFROST_SOURCE, pair)`
+   * - `asset_a`: XCM location of the first asset
+   * - `asset_b`: XCM location of the second asset
+   * - `price`: price as `(numerator, denominator)`
+   *
+   * Emits `OracleUpdated` event on the next `on_finalize`.
+   **/
   | {
       name: 'UpdateBifrostOracle';
       params: { assetA: XcmVersionedLocation; assetB: XcmVersionedLocation; price: [bigint, bigint] };
+    }
+  /**
+   * Submit an oracle price update for an external source.
+   *
+   * The call is feeless on success (`Pays::No`).
+   *
+   * Parameters:
+   * - `origin`: signed origin — must be authorized for the specific `(source, pair)` via
+   * `add_authorized_account`
+   * - `source`: external source identifier (must be registered via `register_external_source`)
+   * - `asset_a`: XCM location of the first asset
+   * - `asset_b`: XCM location of the second asset
+   * - `price`: price as `(numerator, denominator)` — both must be non-zero
+   *
+   * Emits `OracleUpdated` event on the next `on_finalize`.
+   **/
+  | {
+      name: 'SetExternalOracle';
+      params: {
+        source: FixedBytes<8>;
+        assetA: XcmVersionedLocation;
+        assetB: XcmVersionedLocation;
+        price: [bigint, bigint];
+      };
+    }
+  /**
+   * Update an external oracle entry using local `AssetId`s directly.
+   *
+   * Cheaper variant of `set_external_oracle` for callers that already know the local
+   * AssetIds — skips the `VersionedLocation` → `AssetId` conversion and the
+   * `AssetRegistry::LocationAssets` storage read. Authorization shares the same
+   * `AuthorizedAccounts` storage as the location variant.
+   *
+   * Parameters:
+   * - `origin`: signed origin — must be authorized for the specific `(source, pair)` via
+   * `add_authorized_account`
+   * - `source`: external source identifier (must be registered via `register_external_source`)
+   * - `asset_a`: local AssetId of the first asset
+   * - `asset_b`: local AssetId of the second asset
+   * - `price`: price as `(numerator, denominator)` — both must be non-zero
+   *
+   * The call is feeless on success (`Pays::No`).
+   *
+   * Emits `OracleUpdated` event on the next `on_finalize`.
+   **/
+  | {
+      name: 'SetExternalOracleByIds';
+      params: { source: FixedBytes<8>; assetA: number; assetB: number; price: [bigint, bigint] };
+    }
+  /**
+   * Register a new external oracle source.
+   *
+   * Parameters:
+   * - `origin`: `AuthorityOrigin`
+   * - `source`: 8-byte source identifier to register
+   *
+   * Emits `ExternalSourceRegistered` event when successful.
+   **/
+  | { name: 'RegisterExternalSource'; params: { source: FixedBytes<8> } }
+  /**
+   * Remove an external oracle source, its per-pair authorizations, and ALL oracle data it
+   * ever wrote (both committed `Oracles` rows and any in-flight `Accumulator` entries).
+   *
+   * Parameters:
+   * - `origin`: `AuthorityOrigin`
+   * - `source`: source identifier to remove
+   *
+   * Emits `ExternalSourceRemoved` event when successful.
+   **/
+  | { name: 'RemoveExternalSource'; params: { source: FixedBytes<8> } }
+  /**
+   * Authorize `account` to submit oracle updates for a specific `(source, pair)`.
+   *
+   * Authorization is scoped per-pair so a compromised account can only update the
+   * pairs it was explicitly granted, limiting DDoS blast radius.
+   *
+   * Parameters:
+   * - `origin`: `AuthorityOrigin`
+   * - `source`: external source identifier (must already be registered)
+   * - `assets`: the asset pair to authorize — stored in ordered form
+   * - `account`: the account to authorize
+   *
+   * Emits `AuthorizedAccountAdded` event when successful.
+   **/
+  | { name: 'AddAuthorizedAccount'; params: { source: FixedBytes<8>; assets: [number, number]; account: AccountId32 } }
+  /**
+   * Revoke oracle-update authorization for `account` on a specific `(source, pair)`.
+   *
+   * Parameters:
+   * - `origin`: `AuthorityOrigin`
+   * - `source`: external source identifier (must already be registered)
+   * - `assets`: the asset pair to revoke — matched in ordered form
+   * - `account`: the account to revoke
+   *
+   * Emits `AuthorizedAccountRemoved` event when successful.
+   **/
+  | {
+      name: 'RemoveAuthorizedAccount';
+      params: { source: FixedBytes<8>; assets: [number, number]; account: AccountId32 };
     };
 
 export type PalletEmaOracleCallLike =
+  /**
+   * Add an oracle to the whitelist so it is tracked by the pallet.
+   *
+   * Parameters:
+   * - `origin`: `AuthorityOrigin`
+   * - `source`: data source identifier
+   * - `assets`: the asset pair to track
+   *
+   * Emits `AddedToWhitelist` event when successful.
+   **/
   | { name: 'AddOracle'; params: { source: FixedBytes<8>; assets: [number, number] } }
+  /**
+   * Remove an oracle from the whitelist and delete all its stored entries.
+   *
+   * Parameters:
+   * - `origin`: `AuthorityOrigin`
+   * - `source`: data source identifier
+   * - `assets`: the asset pair to stop tracking
+   *
+   * Emits `RemovedFromWhitelist` event when successful.
+   **/
   | { name: 'RemoveOracle'; params: { source: FixedBytes<8>; assets: [number, number] } }
+  /**
+   * Update an oracle entry for BIFROST_SOURCE. Thin wrapper around `set_external_oracle`.
+   *
+   * Parameters:
+   * - `origin`: signed origin — must be authorized for the specific `(BIFROST_SOURCE, pair)`
+   * - `asset_a`: XCM location of the first asset
+   * - `asset_b`: XCM location of the second asset
+   * - `price`: price as `(numerator, denominator)`
+   *
+   * Emits `OracleUpdated` event on the next `on_finalize`.
+   **/
   | {
       name: 'UpdateBifrostOracle';
       params: { assetA: XcmVersionedLocation; assetB: XcmVersionedLocation; price: [bigint, bigint] };
+    }
+  /**
+   * Submit an oracle price update for an external source.
+   *
+   * The call is feeless on success (`Pays::No`).
+   *
+   * Parameters:
+   * - `origin`: signed origin — must be authorized for the specific `(source, pair)` via
+   * `add_authorized_account`
+   * - `source`: external source identifier (must be registered via `register_external_source`)
+   * - `asset_a`: XCM location of the first asset
+   * - `asset_b`: XCM location of the second asset
+   * - `price`: price as `(numerator, denominator)` — both must be non-zero
+   *
+   * Emits `OracleUpdated` event on the next `on_finalize`.
+   **/
+  | {
+      name: 'SetExternalOracle';
+      params: {
+        source: FixedBytes<8>;
+        assetA: XcmVersionedLocation;
+        assetB: XcmVersionedLocation;
+        price: [bigint, bigint];
+      };
+    }
+  /**
+   * Update an external oracle entry using local `AssetId`s directly.
+   *
+   * Cheaper variant of `set_external_oracle` for callers that already know the local
+   * AssetIds — skips the `VersionedLocation` → `AssetId` conversion and the
+   * `AssetRegistry::LocationAssets` storage read. Authorization shares the same
+   * `AuthorizedAccounts` storage as the location variant.
+   *
+   * Parameters:
+   * - `origin`: signed origin — must be authorized for the specific `(source, pair)` via
+   * `add_authorized_account`
+   * - `source`: external source identifier (must be registered via `register_external_source`)
+   * - `asset_a`: local AssetId of the first asset
+   * - `asset_b`: local AssetId of the second asset
+   * - `price`: price as `(numerator, denominator)` — both must be non-zero
+   *
+   * The call is feeless on success (`Pays::No`).
+   *
+   * Emits `OracleUpdated` event on the next `on_finalize`.
+   **/
+  | {
+      name: 'SetExternalOracleByIds';
+      params: { source: FixedBytes<8>; assetA: number; assetB: number; price: [bigint, bigint] };
+    }
+  /**
+   * Register a new external oracle source.
+   *
+   * Parameters:
+   * - `origin`: `AuthorityOrigin`
+   * - `source`: 8-byte source identifier to register
+   *
+   * Emits `ExternalSourceRegistered` event when successful.
+   **/
+  | { name: 'RegisterExternalSource'; params: { source: FixedBytes<8> } }
+  /**
+   * Remove an external oracle source, its per-pair authorizations, and ALL oracle data it
+   * ever wrote (both committed `Oracles` rows and any in-flight `Accumulator` entries).
+   *
+   * Parameters:
+   * - `origin`: `AuthorityOrigin`
+   * - `source`: source identifier to remove
+   *
+   * Emits `ExternalSourceRemoved` event when successful.
+   **/
+  | { name: 'RemoveExternalSource'; params: { source: FixedBytes<8> } }
+  /**
+   * Authorize `account` to submit oracle updates for a specific `(source, pair)`.
+   *
+   * Authorization is scoped per-pair so a compromised account can only update the
+   * pairs it was explicitly granted, limiting DDoS blast radius.
+   *
+   * Parameters:
+   * - `origin`: `AuthorityOrigin`
+   * - `source`: external source identifier (must already be registered)
+   * - `assets`: the asset pair to authorize — stored in ordered form
+   * - `account`: the account to authorize
+   *
+   * Emits `AuthorizedAccountAdded` event when successful.
+   **/
+  | {
+      name: 'AddAuthorizedAccount';
+      params: { source: FixedBytes<8>; assets: [number, number]; account: AccountId32Like };
+    }
+  /**
+   * Revoke oracle-update authorization for `account` on a specific `(source, pair)`.
+   *
+   * Parameters:
+   * - `origin`: `AuthorityOrigin`
+   * - `source`: external source identifier (must already be registered)
+   * - `assets`: the asset pair to revoke — matched in ordered form
+   * - `account`: the account to revoke
+   *
+   * Emits `AuthorizedAccountRemoved` event when successful.
+   **/
+  | {
+      name: 'RemoveAuthorizedAccount';
+      params: { source: FixedBytes<8>; assets: [number, number]; account: AccountId32Like };
     };
 
 /**
@@ -14826,7 +15101,31 @@ export type PalletDispatcherEvent =
         callHash: H256;
         result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
       };
-    };
+    }
+  /**
+   * Emitted each block when cleanup deletes a batch of keys.
+   **/
+  | {
+      name: 'HyperbridgeCleanupProgress';
+      data: { stage: PalletDispatcherHyperbridgeCleanupStage; keysDeleted: number };
+    }
+  /**
+   * Emitted when all keys in a stage are removed and cleanup advances.
+   **/
+  | { name: 'HyperbridgeCleanupStageCompleted'; data: { stage: PalletDispatcherHyperbridgeCleanupStage } }
+  /**
+   * Emitted when all three stages are done and cleanup disables itself.
+   **/
+  | { name: 'HyperbridgeCleanupCompleted' }
+  /**
+   * Emitted when cleanup is paused or resumed via extrinsic.
+   **/
+  | { name: 'HyperbridgeCleanupStatusChanged'; data: { paused: boolean } };
+
+export type PalletDispatcherHyperbridgeCleanupStage =
+  | 'StateCommitments'
+  | 'StateMachineUpdateTime'
+  | 'RelayChainStateCommitments';
 
 /**
  * The `Event` enum of this pallet
@@ -17000,7 +17299,23 @@ export type PalletEmaOracleEvent =
         assets: [number, number];
         updates: Array<[HydradxTraitsOracleOraclePeriod, HydraDxMathRatio]>;
       };
-    };
+    }
+  /**
+   * An external oracle source was registered.
+   **/
+  | { name: 'ExternalSourceRegistered'; data: { source: FixedBytes<8> } }
+  /**
+   * An external oracle source was removed.
+   **/
+  | { name: 'ExternalSourceRemoved'; data: { source: FixedBytes<8> } }
+  /**
+   * An account was authorized to update the given (source, pair).
+   **/
+  | { name: 'AuthorizedAccountAdded'; data: { source: FixedBytes<8>; pair: [number, number]; account: AccountId32 } }
+  /**
+   * An authorization was removed for the given (source, pair, account).
+   **/
+  | { name: 'AuthorizedAccountRemoved'; data: { source: FixedBytes<8>; pair: [number, number]; account: AccountId32 } };
 
 export type HydraDxMathRatio = { n: bigint; d: bigint };
 
@@ -20905,9 +21220,21 @@ export type PalletEmaOracleError =
    **/
   | 'AssetNotFound'
   /**
-   * The new price is outside the max allowed range
+   * The external source is already registered.
    **/
-  | 'PriceOutsideAllowedRange';
+  | 'SourceAlreadyRegistered'
+  /**
+   * The external source was not found.
+   **/
+  | 'SourceNotFound'
+  /**
+   * The caller is not authorized for the given (source, pair).
+   **/
+  | 'NotAuthorized'
+  /**
+   * Price must not be zero.
+   **/
+  | 'PriceIsZero';
 
 /**
  * The `Error` enum of this pallet.

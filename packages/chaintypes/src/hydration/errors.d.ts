@@ -4209,9 +4209,24 @@ export interface ChainErrors extends GenericChainErrors {
     AssetNotFound: GenericPalletError;
 
     /**
-     * The new price is outside the max allowed range
+     * The external source is already registered.
      **/
-    PriceOutsideAllowedRange: GenericPalletError;
+    SourceAlreadyRegistered: GenericPalletError;
+
+    /**
+     * The external source was not found.
+     **/
+    SourceNotFound: GenericPalletError;
+
+    /**
+     * The caller is not authorized for the given (source, pair).
+     **/
+    NotAuthorized: GenericPalletError;
+
+    /**
+     * Price must not be zero.
+     **/
+    PriceIsZero: GenericPalletError;
 
     /**
      * Generic pallet error

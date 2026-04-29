@@ -30,6 +30,7 @@ import type {
   PalletConvictionVotingTally,
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
+  PalletDispatcherHyperbridgeCleanupStage,
   PalletAssetRegistryAssetType,
   HydradxRuntimeXcmAssetLocation,
   PalletClaimsEthereumAddress,
@@ -1609,6 +1610,38 @@ export interface ChainEvents extends GenericChainEvents {
       'Dispatcher',
       'EmergencyAdminCallDispatched',
       { callHash: H256; result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo> }
+    >;
+
+    /**
+     * Emitted each block when cleanup deletes a batch of keys.
+     **/
+    HyperbridgeCleanupProgress: GenericPalletEvent<
+      'Dispatcher',
+      'HyperbridgeCleanupProgress',
+      { stage: PalletDispatcherHyperbridgeCleanupStage; keysDeleted: number }
+    >;
+
+    /**
+     * Emitted when all keys in a stage are removed and cleanup advances.
+     **/
+    HyperbridgeCleanupStageCompleted: GenericPalletEvent<
+      'Dispatcher',
+      'HyperbridgeCleanupStageCompleted',
+      { stage: PalletDispatcherHyperbridgeCleanupStage }
+    >;
+
+    /**
+     * Emitted when all three stages are done and cleanup disables itself.
+     **/
+    HyperbridgeCleanupCompleted: GenericPalletEvent<'Dispatcher', 'HyperbridgeCleanupCompleted', null>;
+
+    /**
+     * Emitted when cleanup is paused or resumed via extrinsic.
+     **/
+    HyperbridgeCleanupStatusChanged: GenericPalletEvent<
+      'Dispatcher',
+      'HyperbridgeCleanupStatusChanged',
+      { paused: boolean }
     >;
 
     /**
@@ -4564,6 +4597,34 @@ export interface ChainEvents extends GenericChainEvents {
         assets: [number, number];
         updates: Array<[HydradxTraitsOracleOraclePeriod, HydraDxMathRatio]>;
       }
+    >;
+
+    /**
+     * An external oracle source was registered.
+     **/
+    ExternalSourceRegistered: GenericPalletEvent<'EmaOracle', 'ExternalSourceRegistered', { source: FixedBytes<8> }>;
+
+    /**
+     * An external oracle source was removed.
+     **/
+    ExternalSourceRemoved: GenericPalletEvent<'EmaOracle', 'ExternalSourceRemoved', { source: FixedBytes<8> }>;
+
+    /**
+     * An account was authorized to update the given (source, pair).
+     **/
+    AuthorizedAccountAdded: GenericPalletEvent<
+      'EmaOracle',
+      'AuthorizedAccountAdded',
+      { source: FixedBytes<8>; pair: [number, number]; account: AccountId32 }
+    >;
+
+    /**
+     * An authorization was removed for the given (source, pair, account).
+     **/
+    AuthorizedAccountRemoved: GenericPalletEvent<
+      'EmaOracle',
+      'AuthorizedAccountRemoved',
+      { source: FixedBytes<8>; pair: [number, number]; account: AccountId32 }
     >;
 
     /**

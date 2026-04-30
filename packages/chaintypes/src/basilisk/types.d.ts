@@ -8813,6 +8813,7 @@ export type BasiliskRuntimeRuntimeEvent =
   | { pallet: 'CollatorRewards'; palletEvent: PalletCollatorRewardsEvent }
   | { pallet: 'Broadcast'; palletEvent: PalletBroadcastEvent }
   | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent }
+  | { pallet: 'CollatorRotation'; palletEvent: PalletCollatorRotationEvent }
   | { pallet: 'EmaOracle'; palletEvent: PalletEmaOracleEvent }
   | { pallet: 'Currencies'; palletEvent: PalletCurrenciesModuleEvent }
   | { pallet: 'Tokens'; palletEvent: OrmlTokensModuleEvent }
@@ -11121,6 +11122,11 @@ export type PalletMigrationsEvent =
         nextCursor?: Bytes | undefined;
       };
     };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletCollatorRotationEvent = { name: 'CollatorBenched'; data: { who: AccountId32; sessionIndex: number } };
 
 /**
  * The `Event` enum of this pallet

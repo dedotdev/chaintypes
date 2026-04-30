@@ -2994,6 +2994,21 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `CollatorRotation`'s events
+   **/
+  collatorRotation: {
+    CollatorBenched: GenericPalletEvent<
+      'CollatorRotation',
+      'CollatorBenched',
+      { who: AccountId32; sessionIndex: number }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `EmaOracle`'s events
    **/
   emaOracle: {

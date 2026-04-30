@@ -585,6 +585,13 @@ export interface ChainStorage extends GenericChainStorage {
     pendingUpwardSignals: GenericStorageQuery<() => Array<Bytes>>;
 
     /**
+     * The approved peer id to be sent as a UMP signal on the last block of the PoV.
+     *
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    pendingApprovedPeer: GenericStorageQuery<() => Bytes | undefined>;
+
+    /**
      * The factor to multiply the base delivery fee by for UMP.
      *
      * @param {Callback<FixedU128> =} callback
@@ -2417,28 +2424,28 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   psm: {
     /**
-     * pUSD minted through PSM per external asset.
+     * internal minted through PSM per external asset, denominated in internal units.
      *
-     * @param {number} arg
+     * @param {StagingXcmV5Location} arg
      * @param {Callback<bigint> =} callback
      **/
-    psmDebt: GenericStorageQuery<(arg: number) => bigint, number>;
+    psmDebt: GenericStorageQuery<(arg: StagingXcmV5Location) => bigint, StagingXcmV5Location>;
 
     /**
-     * Fee for external → pUSD swaps (minting) per asset. Suggested value is 0.5%.
+     * Fee for external → internal swaps (minting) per asset. Suggested value is 0.5%.
      *
-     * @param {number} arg
+     * @param {StagingXcmV5Location} arg
      * @param {Callback<Permill> =} callback
      **/
-    mintingFee: GenericStorageQuery<(arg: number) => Permill, number>;
+    mintingFee: GenericStorageQuery<(arg: StagingXcmV5Location) => Permill, StagingXcmV5Location>;
 
     /**
-     * Fee for pUSD → external swaps (redemption) per asset. Suggested value is 0.5%.
+     * Fee for internal → external swaps (redemption) per asset. Suggested value is 0.5%.
      *
-     * @param {number} arg
+     * @param {StagingXcmV5Location} arg
      * @param {Callback<Permill> =} callback
      **/
-    redemptionFee: GenericStorageQuery<(arg: number) => Permill, number>;
+    redemptionFee: GenericStorageQuery<(arg: StagingXcmV5Location) => Permill, StagingXcmV5Location>;
 
     /**
      * Max PSM debt as percentage of MaximumIssuance (global ceiling).
@@ -2451,19 +2458,22 @@ export interface ChainStorage extends GenericChainStorage {
      * Per-asset ceiling weight. Weights are normalized against the sum of all weights.
      * Zero means minting is disabled for this asset.
      *
-     * @param {number} arg
+     * @param {StagingXcmV5Location} arg
      * @param {Callback<Permill> =} callback
      **/
-    assetCeilingWeight: GenericStorageQuery<(arg: number) => Permill, number>;
+    assetCeilingWeight: GenericStorageQuery<(arg: StagingXcmV5Location) => Permill, StagingXcmV5Location>;
 
     /**
      * Set of approved external stablecoin asset IDs with their operational status.
      * Key existence indicates the asset is approved; the value is the circuit breaker level.
      *
-     * @param {number} arg
+     * @param {StagingXcmV5Location} arg
      * @param {Callback<PalletPsmCircuitBreakerLevel | undefined> =} callback
      **/
-    externalAssets: GenericStorageQuery<(arg: number) => PalletPsmCircuitBreakerLevel | undefined, number>;
+    externalAssets: GenericStorageQuery<
+      (arg: StagingXcmV5Location) => PalletPsmCircuitBreakerLevel | undefined,
+      StagingXcmV5Location
+    >;
 
     /**
      * Counter for the related counted storage map
@@ -2471,6 +2481,23 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<number> =} callback
      **/
     counterForExternalAssets: GenericStorageQuery<() => number>;
+
+    /**
+     * Snapshot of each approved external asset's decimals at registration.
+     * Used to detect runtime drift from the registered precision.
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    externalDecimals: GenericStorageQuery<(arg: StagingXcmV5Location) => number | undefined, StagingXcmV5Location>;
+
+    /**
+     * Snapshot of the internal asset's decimals taken at genesis.
+     * Set once during genesis build; present for the lifetime of the pallet.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    internalDecimals: GenericStorageQuery<() => number | undefined>;
 
     /**
      * Generic pallet storage query
@@ -2586,6 +2613,66 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<number | undefined> =} callback
      **/
     disableMintingGuard: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * Optimum self-stake threshold for validators.
+     *
+     * Below this threshold, the incentive weight grows as `sqrt(self_stake)`.
+     * Above it, growth is dampened by [`SelfStakeSlopeFactor`].
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    optimumSelfStake: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Hard cap on effective validator self-stake.
+     *
+     * Self-stake above this value receives no additional reward benefit (plateau).
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    hardCapSelfStake: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Slope factor controlling the discouragement rate for self-stake between optimum and cap.
+     *
+     * Value between 0 and 1: k=1 means no discouragement, k=0 means immediate plateau.
+     *
+     * @param {Callback<Perbill> =} callback
+     **/
+    selfStakeSlopeFactor: GenericStorageQuery<() => Perbill>;
+
+    /**
+     * The total validator incentive budget for the given era, snapshotted at era end.
+     *
+     * This is the similar to [`ErasValidatorReward`] but for the self-stake incentive pot.
+     *
+     * @param {number} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    erasValidatorIncentiveBudget: GenericStorageQuery<(arg: number) => bigint, number>;
+
+    /**
+     * Sum of all validators' incentive weights for the era.
+     *
+     * Directly linked to [`ErasValidatorIncentiveWeight`].
+     *
+     * @param {number} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    erasSumValidatorIncentiveWeight: GenericStorageQuery<(arg: number) => bigint, number>;
+
+    /**
+     * Individual validator incentive weight per era.
+     * Each validator's share of the incentive pot = `their_weight / sum_weight`.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    erasValidatorIncentiveWeight: GenericStorageQuery<
+      (arg: [number, AccountId32Like]) => bigint | undefined,
+      [number, AccountId32]
+    >;
 
     /**
      * Whether nominators are slashable or not.

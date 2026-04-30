@@ -3,8 +3,8 @@
 import type { GenericChainEvents, GenericPalletEvent } from 'dedot/types';
 import type {
   DispatchError,
-  AccountId32,
   H256,
+  AccountId32,
   FixedBytes,
   Bytes,
   Result,
@@ -85,9 +85,9 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * `:code` was updated.
+     * `:code` was updated to the code with the given hash.
      **/
-    CodeUpdated: GenericPalletEvent<'System', 'CodeUpdated', null>;
+    CodeUpdated: GenericPalletEvent<'System', 'CodeUpdated', { hash: H256 }>;
 
     /**
      * A new account was created.
@@ -723,6 +723,21 @@ export interface ChainEvents extends GenericChainEvents {
      * An \[account\] has become fully vested.
      **/
     VestingCompleted: GenericPalletEvent<'Vesting', 'VestingCompleted', { account: AccountId32 }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `PgasAllowance`'s events
+   **/
+  pgasAllowance: {
+    /**
+     * A transaction fee `actual_fee` has been paid by `who` in PGAS and burned. Mirrors
+     * [`pallet_transaction_payment::Event::TransactionFeePaid`].
+     **/
+    PgasFeePaid: GenericPalletEvent<'PgasAllowance', 'PGASFeePaid', { who: AccountId32; actualFee: bigint }>;
 
     /**
      * Generic pallet event
@@ -3387,21 +3402,21 @@ export interface ChainEvents extends GenericChainEvents {
    **/
   psm: {
     /**
-     * User swapped external stablecoin for pUSD.
+     * User swapped external stablecoin for internal.
      **/
     Minted: GenericPalletEvent<
       'Psm',
       'Minted',
-      { who: AccountId32; assetId: number; externalAmount: bigint; pusdReceived: bigint; fee: bigint }
+      { who: AccountId32; assetId: StagingXcmV5Location; externalAmount: bigint; received: bigint; fee: bigint }
     >;
 
     /**
-     * User swapped pUSD for external stablecoin.
+     * User swapped internal for external stablecoin.
      **/
     Redeemed: GenericPalletEvent<
       'Psm',
       'Redeemed',
-      { who: AccountId32; assetId: number; pusdPaid: bigint; externalReceived: bigint; fee: bigint }
+      { who: AccountId32; assetId: StagingXcmV5Location; paid: bigint; externalReceived: bigint; fee: bigint }
     >;
 
     /**
@@ -3410,7 +3425,7 @@ export interface ChainEvents extends GenericChainEvents {
     MintingFeeUpdated: GenericPalletEvent<
       'Psm',
       'MintingFeeUpdated',
-      { assetId: number; oldValue: Permill; newValue: Permill }
+      { assetId: StagingXcmV5Location; oldValue: Permill; newValue: Permill }
     >;
 
     /**
@@ -3419,7 +3434,7 @@ export interface ChainEvents extends GenericChainEvents {
     RedemptionFeeUpdated: GenericPalletEvent<
       'Psm',
       'RedemptionFeeUpdated',
-      { assetId: number; oldValue: Permill; newValue: Permill }
+      { assetId: StagingXcmV5Location; oldValue: Permill; newValue: Permill }
     >;
 
     /**
@@ -3437,7 +3452,7 @@ export interface ChainEvents extends GenericChainEvents {
     AssetCeilingWeightUpdated: GenericPalletEvent<
       'Psm',
       'AssetCeilingWeightUpdated',
-      { assetId: number; oldValue: Permill; newValue: Permill }
+      { assetId: StagingXcmV5Location; oldValue: Permill; newValue: Permill }
     >;
 
     /**
@@ -3446,18 +3461,18 @@ export interface ChainEvents extends GenericChainEvents {
     AssetStatusUpdated: GenericPalletEvent<
       'Psm',
       'AssetStatusUpdated',
-      { assetId: number; status: PalletPsmCircuitBreakerLevel }
+      { assetId: StagingXcmV5Location; status: PalletPsmCircuitBreakerLevel }
     >;
 
     /**
      * An external asset was added to the approved list.
      **/
-    ExternalAssetAdded: GenericPalletEvent<'Psm', 'ExternalAssetAdded', { assetId: number }>;
+    ExternalAssetAdded: GenericPalletEvent<'Psm', 'ExternalAssetAdded', { assetId: StagingXcmV5Location }>;
 
     /**
      * An external asset was removed from the approved list.
      **/
-    ExternalAssetRemoved: GenericPalletEvent<'Psm', 'ExternalAssetRemoved', { assetId: number }>;
+    ExternalAssetRemoved: GenericPalletEvent<'Psm', 'ExternalAssetRemoved', { assetId: StagingXcmV5Location }>;
 
     /**
      * Generic pallet event
@@ -3678,6 +3693,24 @@ export interface ChainEvents extends GenericChainEvents {
      * An old era with the given index was pruned.
      **/
     EraPruned: GenericPalletEvent<'Staking', 'EraPruned', { index: number }>;
+
+    /**
+     * The validator has been paid their self-stake incentive bonus.
+     **/
+    ValidatorIncentivePaid: GenericPalletEvent<
+      'Staking',
+      'ValidatorIncentivePaid',
+      { era: number; validatorStash: AccountId32; dest: PalletStakingAsyncRewardDestination; amount: bigint }
+    >;
+
+    /**
+     * Validator self-stake incentive configuration has been updated.
+     **/
+    ValidatorIncentiveConfigSet: GenericPalletEvent<
+      'Staking',
+      'ValidatorIncentiveConfigSet',
+      { optimumSelfStake: bigint; hardCapSelfStake: bigint; slopeFactor: Perbill }
+    >;
 
     /**
      * Generic pallet event
@@ -4805,6 +4838,20 @@ export interface ChainEvents extends GenericChainEvents {
          * The new budget allocation map.
          **/
         allocations: Array<[Bytes, Perbill]>;
+      }
+    >;
+
+    /**
+     * Funds were drained from the staging account into the DAP buffer.
+     **/
+    StagingDrained: GenericPalletEvent<
+      'Dap',
+      'StagingDrained',
+      {
+        /**
+         * Amount drained.
+         **/
+        amount: bigint;
       }
     >;
 

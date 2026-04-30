@@ -1890,6 +1890,11 @@ export interface ChainErrors extends GenericChainErrors {
     BelowMinimum: GenericPalletError;
 
     /**
+     * The pool exists but has no liquidity (at least one of the reserves is zero).
+     **/
+    PoolEmpty: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -2402,7 +2407,7 @@ export interface ChainErrors extends GenericChainErrors {
     UnsupportedAsset: GenericPalletError;
 
     /**
-     * Mint would exceed system-wide maximum pUSD issuance.
+     * Mint would exceed system-wide maximum internal issuance.
      **/
     ExceedsMaxIssuance: GenericPalletError;
 
@@ -2410,6 +2415,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Asset is already in the approved list.
      **/
     AssetAlreadyApproved: GenericPalletError;
+
+    /**
+     * Asset does not exist.
+     **/
+    AssetDoesNotExist: GenericPalletError;
 
     /**
      * Cannot remove asset: not in approved list.
@@ -2432,9 +2442,24 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyAssets: GenericPalletError;
 
     /**
-     * External asset decimals do not match the stable asset decimals.
+     * Live decimals diverged from the snapshot taken at registration or genesis.
      **/
     DecimalsMismatch: GenericPalletError;
+
+    /**
+     * The asset's decimal precision is outside the supported range.
+     **/
+    DecimalsRangeExceeded: GenericPalletError;
+
+    /**
+     * Decimal scaling produced an arithmetic overflow.
+     **/
+    ConversionOverflow: GenericPalletError;
+
+    /**
+     * Conversion to the counter-asset rounds to zero; swap would transfer nothing.
+     **/
+    AmountTooSmallAfterConversion: GenericPalletError;
 
     /**
      * An unexpected invariant violation occurred. This should be reported.
@@ -2687,9 +2712,9 @@ export interface ChainErrors extends GenericChainErrors {
     CommissionTooHigh: GenericPalletError;
 
     /**
-     * Era has no reward pot but legacy minting is disabled.
+     * Optimum self-stake cannot be greater than hard cap.
      **/
-    LegacyMintingDisabled: GenericPalletError;
+    OptimumGreaterThanCap: GenericPalletError;
 
     /**
      * Generic pallet error

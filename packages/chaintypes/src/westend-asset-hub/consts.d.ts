@@ -276,6 +276,15 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `PgasAllowance`'s constants
+   **/
+  pgasAllowance: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Authorship`'s constants
    **/
   authorship: {
@@ -956,9 +965,9 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   assetConversion: {
     /**
-     * A % the liquidity providers will take of every swap. Represents 10ths of a percent.
+     * The fraction of every swap that the liquidity providers take as a fee.
      **/
-    lpFee: number;
+    lpFee: Permill;
 
     /**
      * A one-time fee to setup the pool.

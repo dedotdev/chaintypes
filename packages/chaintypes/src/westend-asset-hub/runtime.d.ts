@@ -5,12 +5,12 @@ import type {
   H256,
   RuntimeVersion,
   Header,
-  DispatchError,
+  Bytes,
   Result,
+  BytesLike,
+  DispatchError,
   UncheckedExtrinsicLike,
   UncheckedExtrinsic,
-  BytesLike,
-  Bytes,
   AccountId32Like,
   AccountId32,
   U256,
@@ -25,6 +25,8 @@ import type {
   SpRuntimeBlockLazyBlock,
   SpRuntimeExtrinsicInclusionMode,
   SpCoreOpaqueMetadata,
+  FrameSupportViewFunctionsViewFunctionDispatchError,
+  FrameSupportViewFunctionsViewFunctionId,
   SpRuntimeTransactionValidityTransactionValidityError,
   SpInherentsInherentData,
   SpInherentsCheckInherentsResult,
@@ -67,6 +69,7 @@ import type {
   PalletReviveEvmApiDebugRpcTypesTrace,
   SpRuntimeBlock,
   PalletReviveEvmApiDebugRpcTypesTracerType,
+  PalletReviveEvmApiRpcTypesTracingConfig,
   PalletRevivePrimitivesBalanceConversionError,
 } from './types.js';
 
@@ -235,6 +238,29 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: Metadata_metadata_versions
      **/
     metadataVersions: GenericRuntimeApiMethod<() => Promise<Array<number>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: RuntimeViewFunction - 0xccd9de6396c899ca
+   **/
+  runtimeViewFunction: {
+    /**
+     * Execute a view function query.
+     *
+     * @callname: RuntimeViewFunction_execute_view_function
+     * @param {FrameSupportViewFunctionsViewFunctionId} query_id
+     * @param {BytesLike} input
+     **/
+    executeViewFunction: GenericRuntimeApiMethod<
+      (
+        queryId: FrameSupportViewFunctionsViewFunctionId,
+        input: BytesLike,
+      ) => Promise<Result<Bytes, FrameSupportViewFunctionsViewFunctionDispatchError>>
+    >;
 
     /**
      * Generic runtime api call
@@ -1259,6 +1285,16 @@ export interface RuntimeApis extends GenericRuntimeApis {
     >;
 
     /**
+     * Return the pre-dispatch weight booked for the signed Ethereum transaction payload.
+     *
+     * @callname: ReviveApi_eth_pre_dispatch_weight
+     * @param {BytesLike} tx
+     **/
+    ethPreDispatchWeight: GenericRuntimeApiMethod<
+      (tx: BytesLike) => Promise<Result<SpWeightsWeightV2Weight, PalletRevivePrimitivesEthTransactError>>
+    >;
+
+    /**
      * Upload new code without instantiating a contract from it.
      *
      * See [`crate::Pallet::bare_upload_code`].
@@ -1362,6 +1398,26 @@ export interface RuntimeApis extends GenericRuntimeApis {
       (
         tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
         config: PalletReviveEvmApiDebugRpcTypesTracerType,
+      ) => Promise<Result<PalletReviveEvmApiDebugRpcTypesTrace, PalletRevivePrimitivesEthTransactError>>
+    >;
+
+    /**
+     * Dry run and return the trace of the given call with additional configuration.
+     *
+     * Like [`Self::trace_call`], but accepts a [`TracingConfig`] that can carry state
+     * overrides and future extensibility. The config must be the **last argument** for
+     * backwards compatibility — see [`TracingConfig`] documentation.
+     *
+     * @callname: ReviveApi_trace_call_with_config
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
+     * @param {PalletReviveEvmApiDebugRpcTypesTracerType} tracer_type
+     * @param {PalletReviveEvmApiRpcTypesTracingConfig} config
+     **/
+    traceCallWithConfig: GenericRuntimeApiMethod<
+      (
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+        tracerType: PalletReviveEvmApiDebugRpcTypesTracerType,
+        config: PalletReviveEvmApiRpcTypesTracingConfig,
       ) => Promise<Result<PalletReviveEvmApiDebugRpcTypesTrace, PalletRevivePrimitivesEthTransactError>>
     >;
 

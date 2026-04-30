@@ -11092,7 +11092,7 @@ export interface ChainTx<
    **/
   psm: {
     /**
-     * Swap external stablecoin for pUSD.
+     * Swap external stablecoin for internal.
      *
      * ## Dispatch Origin
      *
@@ -11101,7 +11101,7 @@ export interface ChainTx<
      * ## Details
      *
      * Transfers `external_amount` of the specified external stablecoin from the caller
-     * to the PSM account, then mints pUSD to the caller minus the minting fee.
+     * to the PSM account, then mints internal to the caller minus the minting fee.
      * The fee is calculated using ceiling rounding (`mul_ceil`), ensuring the
      * protocol never undercharges. The fee is transferred to [`Config::FeeDestination`].
      *
@@ -11115,27 +11115,32 @@ export interface ChainTx<
      * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
      * - [`Error::MintingStopped`]: If circuit breaker is at `MintingDisabled` or higher
      * - [`Error::BelowMinimumSwap`]: If `external_amount` is below [`Config::MinSwapAmount`]
-     * - [`Error::ExceedsMaxIssuance`]: If minting would exceed system-wide pUSD issuance cap
+     * - [`Error::ExceedsMaxIssuance`]: If minting would exceed system-wide internal issuance
+     * cap
      * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed PSM debt ceiling (aggregate or
      * per-asset)
+     * - [`Error::DecimalsMismatch`]: If the asset's decimals do not match the internal asset's
+     * decimals
+     * - [`Error::AmountTooSmallAfterConversion`]: if the conversion to the counter-asset
+     * rounds to zero; swap would transfer nothing
      *
      * ## Events
      *
      * - [`Event::Minted`]: Emitted on successful mint
      *
-     * @param {number} assetId
+     * @param {StagingXcmV5Location} assetId
      * @param {bigint} externalAmount
      **/
     mint: GenericTxCall<
       (
-        assetId: number,
+        assetId: StagingXcmV5Location,
         externalAmount: bigint,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'Mint';
-            params: { assetId: number; externalAmount: bigint };
+            params: { assetId: StagingXcmV5Location; externalAmount: bigint };
           };
         },
         ChainKnownTypes
@@ -11143,7 +11148,7 @@ export interface ChainTx<
     >;
 
     /**
-     * Swap pUSD for external stablecoin.
+     * Swap internal for external stablecoin.
      *
      * ## Dispatch Origin
      *
@@ -11151,7 +11156,7 @@ export interface ChainTx<
      *
      * ## Details
      *
-     * Burns `pusd_amount` pUSD from the caller minus fee (transferred to
+     * Burns `amount` internal from the caller minus fee (transferred to
      * [`Config::FeeDestination`]), then transfers the resulting amount in external
      * stablecoin from PSM to the caller. The fee is calculated using ceiling rounding
      * (`mul_ceil`), ensuring the protocol never undercharges.
@@ -11159,32 +11164,36 @@ export interface ChainTx<
      * ## Parameters
      *
      * - `asset_id`: The external stablecoin to receive (must be in `ExternalAssets`)
-     * - `pusd_amount`: Amount of pUSD to redeem
+     * - `amount`: Amount of internal to redeem
      *
      * ## Errors
      *
      * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
      * - [`Error::AllSwapsStopped`]: If circuit breaker is at `AllDisabled`
-     * - [`Error::BelowMinimumSwap`]: If `pusd_amount` is below [`Config::MinSwapAmount`]
+     * - [`Error::BelowMinimumSwap`]: If `amount` is below [`Config::MinSwapAmount`]
      * - [`Error::InsufficientReserve`]: If PSM has insufficient external stablecoin
+     * - [`Error::DecimalsMismatch`]: If the asset's decimals do not match the internal asset's
+     * decimals
+     * - [`Error::AmountTooSmallAfterConversion`]: if the conversion to the counter-asset
+     * rounds to zero; swap would transfer nothing
      *
      * ## Events
      *
      * - [`Event::Redeemed`]: Emitted on successful redemption
      *
-     * @param {number} assetId
-     * @param {bigint} pusdAmount
+     * @param {StagingXcmV5Location} assetId
+     * @param {bigint} amount
      **/
     redeem: GenericTxCall<
       (
-        assetId: number,
-        pusdAmount: bigint,
+        assetId: StagingXcmV5Location,
+        amount: bigint,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'Redeem';
-            params: { assetId: number; pusdAmount: bigint };
+            params: { assetId: StagingXcmV5Location; amount: bigint };
           };
         },
         ChainKnownTypes
@@ -11192,7 +11201,7 @@ export interface ChainTx<
     >;
 
     /**
-     * Set the minting fee for a specific asset (external → pUSD).
+     * Set the minting fee for a specific asset (external → internal).
      *
      * ## Dispatch Origin
      *
@@ -11207,19 +11216,19 @@ export interface ChainTx<
      *
      * - [`Event::MintingFeeUpdated`]: Emitted with old and new values
      *
-     * @param {number} assetId
+     * @param {StagingXcmV5Location} assetId
      * @param {Permill} fee
      **/
     setMintingFee: GenericTxCall<
       (
-        assetId: number,
+        assetId: StagingXcmV5Location,
         fee: Permill,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'SetMintingFee';
-            params: { assetId: number; fee: Permill };
+            params: { assetId: StagingXcmV5Location; fee: Permill };
           };
         },
         ChainKnownTypes
@@ -11227,7 +11236,7 @@ export interface ChainTx<
     >;
 
     /**
-     * Set the redemption fee for a specific asset (pUSD → external).
+     * Set the redemption fee for a specific asset (internal → external).
      *
      * ## Dispatch Origin
      *
@@ -11242,19 +11251,19 @@ export interface ChainTx<
      *
      * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values
      *
-     * @param {number} assetId
+     * @param {StagingXcmV5Location} assetId
      * @param {Permill} fee
      **/
     setRedemptionFee: GenericTxCall<
       (
-        assetId: number,
+        assetId: StagingXcmV5Location,
         fee: Permill,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'SetRedemptionFee';
-            params: { assetId: number; fee: Permill };
+            params: { assetId: StagingXcmV5Location; fee: Permill };
           };
         },
         ChainKnownTypes
@@ -11315,19 +11324,19 @@ export interface ChainTx<
      *
      * - [`Event::AssetStatusUpdated`]: Emitted with the asset ID and new status
      *
-     * @param {number} assetId
+     * @param {StagingXcmV5Location} assetId
      * @param {PalletPsmCircuitBreakerLevel} status
      **/
     setAssetStatus: GenericTxCall<
       (
-        assetId: number,
+        assetId: StagingXcmV5Location,
         status: PalletPsmCircuitBreakerLevel,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'SetAssetStatus';
-            params: { assetId: number; status: PalletPsmCircuitBreakerLevel };
+            params: { assetId: StagingXcmV5Location; status: PalletPsmCircuitBreakerLevel };
           };
         },
         ChainKnownTypes
@@ -11358,19 +11367,19 @@ export interface ChainTx<
      *
      * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values
      *
-     * @param {number} assetId
+     * @param {StagingXcmV5Location} assetId
      * @param {Permill} weight
      **/
     setAssetCeilingWeight: GenericTxCall<
       (
-        assetId: number,
+        assetId: StagingXcmV5Location,
         weight: Permill,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'SetAssetCeilingWeight';
-            params: { assetId: number; weight: Permill };
+            params: { assetId: StagingXcmV5Location; weight: Permill };
           };
         },
         ChainKnownTypes
@@ -11396,15 +11405,15 @@ export interface ChainTx<
      *
      * - [`Event::ExternalAssetAdded`]: Emitted on successful addition
      *
-     * @param {number} assetId
+     * @param {StagingXcmV5Location} assetId
      **/
     addExternalAsset: GenericTxCall<
-      (assetId: number) => ChainSubmittableExtrinsic<
+      (assetId: StagingXcmV5Location) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'AddExternalAsset';
-            params: { assetId: number };
+            params: { assetId: StagingXcmV5Location };
           };
         },
         ChainKnownTypes
@@ -11441,15 +11450,15 @@ export interface ChainTx<
      *
      * - [`Event::ExternalAssetRemoved`]: Emitted on successful removal
      *
-     * @param {number} assetId
+     * @param {StagingXcmV5Location} assetId
      **/
     removeExternalAsset: GenericTxCall<
-      (assetId: number) => ChainSubmittableExtrinsic<
+      (assetId: StagingXcmV5Location) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'RemoveExternalAsset';
-            params: { assetId: number };
+            params: { assetId: StagingXcmV5Location };
           };
         },
         ChainKnownTypes
@@ -12603,6 +12612,38 @@ export interface ChainTx<
           palletCall: {
             name: 'SetMaxCommission';
             params: { new: Perbill };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Configure the validator self-stake incentive parameters.
+     *
+     * The dispatch origin must be `T::AdminOrigin`.
+     *
+     * Changes take effect in the next era when rewards are calculated.
+     *
+     * @param {PalletStakingAsyncPalletConfigOp} optimumSelfStake
+     * @param {PalletStakingAsyncPalletConfigOp} hardCapSelfStake
+     * @param {PalletStakingAsyncPalletConfigOpPerbill} selfStakeSlopeFactor
+     **/
+    setValidatorSelfStakeIncentiveConfig: GenericTxCall<
+      (
+        optimumSelfStake: PalletStakingAsyncPalletConfigOp,
+        hardCapSelfStake: PalletStakingAsyncPalletConfigOp,
+        selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetValidatorSelfStakeIncentiveConfig';
+            params: {
+              optimumSelfStake: PalletStakingAsyncPalletConfigOp;
+              hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
+              selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
+            };
           };
         },
         ChainKnownTypes

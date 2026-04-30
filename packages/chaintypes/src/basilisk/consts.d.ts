@@ -1113,6 +1113,15 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `CollatorRotation`'s constants
+   **/
+  collatorRotation: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `EmaOracle`'s constants
    **/
   emaOracle: {

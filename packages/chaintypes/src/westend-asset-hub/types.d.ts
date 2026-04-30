@@ -4402,8 +4402,8 @@ export type PalletMetaTxMetaTx = {
 };
 
 export type PalletVerifySignatureExtensionVerifySignature =
-  | { type: 'Signed'; value: { signature: SpRuntimeMultiSignature; account: AccountId32 } }
-  | { type: 'Disabled' };
+  | { type: 'Disabled' }
+  | { type: 'Signed'; value: { signature: SpRuntimeMultiSignature; account: AccountId32 } };
 
 export type SpRuntimeMultiSignature =
   | { type: 'Ed25519'; value: FixedBytes<64> }
@@ -11402,7 +11402,7 @@ export type FrameSupportScheduleDispatchTime = { type: 'At'; value: number } | {
  **/
 export type PalletPsmCall =
   /**
-   * Swap external stablecoin for pUSD.
+   * Swap external stablecoin for internal.
    *
    * ## Dispatch Origin
    *
@@ -11411,7 +11411,7 @@ export type PalletPsmCall =
    * ## Details
    *
    * Transfers `external_amount` of the specified external stablecoin from the caller
-   * to the PSM account, then mints pUSD to the caller minus the minting fee.
+   * to the PSM account, then mints internal to the caller minus the minting fee.
    * The fee is calculated using ceiling rounding (`mul_ceil`), ensuring the
    * protocol never undercharges. The fee is transferred to [`Config::FeeDestination`].
    *
@@ -11425,17 +11425,22 @@ export type PalletPsmCall =
    * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
    * - [`Error::MintingStopped`]: If circuit breaker is at `MintingDisabled` or higher
    * - [`Error::BelowMinimumSwap`]: If `external_amount` is below [`Config::MinSwapAmount`]
-   * - [`Error::ExceedsMaxIssuance`]: If minting would exceed system-wide pUSD issuance cap
+   * - [`Error::ExceedsMaxIssuance`]: If minting would exceed system-wide internal issuance
+   * cap
    * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed PSM debt ceiling (aggregate or
    * per-asset)
+   * - [`Error::DecimalsMismatch`]: If the asset's decimals do not match the internal asset's
+   * decimals
+   * - [`Error::AmountTooSmallAfterConversion`]: if the conversion to the counter-asset
+   * rounds to zero; swap would transfer nothing
    *
    * ## Events
    *
    * - [`Event::Minted`]: Emitted on successful mint
    **/
-  | { name: 'Mint'; params: { assetId: number; externalAmount: bigint } }
+  | { name: 'Mint'; params: { assetId: StagingXcmV5Location; externalAmount: bigint } }
   /**
-   * Swap pUSD for external stablecoin.
+   * Swap internal for external stablecoin.
    *
    * ## Dispatch Origin
    *
@@ -11443,7 +11448,7 @@ export type PalletPsmCall =
    *
    * ## Details
    *
-   * Burns `pusd_amount` pUSD from the caller minus fee (transferred to
+   * Burns `amount` internal from the caller minus fee (transferred to
    * [`Config::FeeDestination`]), then transfers the resulting amount in external
    * stablecoin from PSM to the caller. The fee is calculated using ceiling rounding
    * (`mul_ceil`), ensuring the protocol never undercharges.
@@ -11451,22 +11456,26 @@ export type PalletPsmCall =
    * ## Parameters
    *
    * - `asset_id`: The external stablecoin to receive (must be in `ExternalAssets`)
-   * - `pusd_amount`: Amount of pUSD to redeem
+   * - `amount`: Amount of internal to redeem
    *
    * ## Errors
    *
    * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
    * - [`Error::AllSwapsStopped`]: If circuit breaker is at `AllDisabled`
-   * - [`Error::BelowMinimumSwap`]: If `pusd_amount` is below [`Config::MinSwapAmount`]
+   * - [`Error::BelowMinimumSwap`]: If `amount` is below [`Config::MinSwapAmount`]
    * - [`Error::InsufficientReserve`]: If PSM has insufficient external stablecoin
+   * - [`Error::DecimalsMismatch`]: If the asset's decimals do not match the internal asset's
+   * decimals
+   * - [`Error::AmountTooSmallAfterConversion`]: if the conversion to the counter-asset
+   * rounds to zero; swap would transfer nothing
    *
    * ## Events
    *
    * - [`Event::Redeemed`]: Emitted on successful redemption
    **/
-  | { name: 'Redeem'; params: { assetId: number; pusdAmount: bigint } }
+  | { name: 'Redeem'; params: { assetId: StagingXcmV5Location; amount: bigint } }
   /**
-   * Set the minting fee for a specific asset (external → pUSD).
+   * Set the minting fee for a specific asset (external → internal).
    *
    * ## Dispatch Origin
    *
@@ -11481,9 +11490,9 @@ export type PalletPsmCall =
    *
    * - [`Event::MintingFeeUpdated`]: Emitted with old and new values
    **/
-  | { name: 'SetMintingFee'; params: { assetId: number; fee: Permill } }
+  | { name: 'SetMintingFee'; params: { assetId: StagingXcmV5Location; fee: Permill } }
   /**
-   * Set the redemption fee for a specific asset (pUSD → external).
+   * Set the redemption fee for a specific asset (internal → external).
    *
    * ## Dispatch Origin
    *
@@ -11498,7 +11507,7 @@ export type PalletPsmCall =
    *
    * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values
    **/
-  | { name: 'SetRedemptionFee'; params: { assetId: number; fee: Permill } }
+  | { name: 'SetRedemptionFee'; params: { assetId: StagingXcmV5Location; fee: Permill } }
   /**
    * Set the maximum PSM debt as a percentage of total maximum issuance.
    *
@@ -11539,7 +11548,7 @@ export type PalletPsmCall =
    *
    * - [`Event::AssetStatusUpdated`]: Emitted with the asset ID and new status
    **/
-  | { name: 'SetAssetStatus'; params: { assetId: number; status: PalletPsmCircuitBreakerLevel } }
+  | { name: 'SetAssetStatus'; params: { assetId: StagingXcmV5Location; status: PalletPsmCircuitBreakerLevel } }
   /**
    * Set the per-asset debt ceiling weight.
    *
@@ -11564,7 +11573,7 @@ export type PalletPsmCall =
    *
    * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values
    **/
-  | { name: 'SetAssetCeilingWeight'; params: { assetId: number; weight: Permill } }
+  | { name: 'SetAssetCeilingWeight'; params: { assetId: StagingXcmV5Location; weight: Permill } }
   /**
    * Add an external stablecoin to the approved list.
    *
@@ -11584,7 +11593,7 @@ export type PalletPsmCall =
    *
    * - [`Event::ExternalAssetAdded`]: Emitted on successful addition
    **/
-  | { name: 'AddExternalAsset'; params: { assetId: number } }
+  | { name: 'AddExternalAsset'; params: { assetId: StagingXcmV5Location } }
   /**
    * Remove an external stablecoin from the approved list.
    *
@@ -11615,11 +11624,11 @@ export type PalletPsmCall =
    *
    * - [`Event::ExternalAssetRemoved`]: Emitted on successful removal
    **/
-  | { name: 'RemoveExternalAsset'; params: { assetId: number } };
+  | { name: 'RemoveExternalAsset'; params: { assetId: StagingXcmV5Location } };
 
 export type PalletPsmCallLike =
   /**
-   * Swap external stablecoin for pUSD.
+   * Swap external stablecoin for internal.
    *
    * ## Dispatch Origin
    *
@@ -11628,7 +11637,7 @@ export type PalletPsmCallLike =
    * ## Details
    *
    * Transfers `external_amount` of the specified external stablecoin from the caller
-   * to the PSM account, then mints pUSD to the caller minus the minting fee.
+   * to the PSM account, then mints internal to the caller minus the minting fee.
    * The fee is calculated using ceiling rounding (`mul_ceil`), ensuring the
    * protocol never undercharges. The fee is transferred to [`Config::FeeDestination`].
    *
@@ -11642,17 +11651,22 @@ export type PalletPsmCallLike =
    * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
    * - [`Error::MintingStopped`]: If circuit breaker is at `MintingDisabled` or higher
    * - [`Error::BelowMinimumSwap`]: If `external_amount` is below [`Config::MinSwapAmount`]
-   * - [`Error::ExceedsMaxIssuance`]: If minting would exceed system-wide pUSD issuance cap
+   * - [`Error::ExceedsMaxIssuance`]: If minting would exceed system-wide internal issuance
+   * cap
    * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed PSM debt ceiling (aggregate or
    * per-asset)
+   * - [`Error::DecimalsMismatch`]: If the asset's decimals do not match the internal asset's
+   * decimals
+   * - [`Error::AmountTooSmallAfterConversion`]: if the conversion to the counter-asset
+   * rounds to zero; swap would transfer nothing
    *
    * ## Events
    *
    * - [`Event::Minted`]: Emitted on successful mint
    **/
-  | { name: 'Mint'; params: { assetId: number; externalAmount: bigint } }
+  | { name: 'Mint'; params: { assetId: StagingXcmV5Location; externalAmount: bigint } }
   /**
-   * Swap pUSD for external stablecoin.
+   * Swap internal for external stablecoin.
    *
    * ## Dispatch Origin
    *
@@ -11660,7 +11674,7 @@ export type PalletPsmCallLike =
    *
    * ## Details
    *
-   * Burns `pusd_amount` pUSD from the caller minus fee (transferred to
+   * Burns `amount` internal from the caller minus fee (transferred to
    * [`Config::FeeDestination`]), then transfers the resulting amount in external
    * stablecoin from PSM to the caller. The fee is calculated using ceiling rounding
    * (`mul_ceil`), ensuring the protocol never undercharges.
@@ -11668,22 +11682,26 @@ export type PalletPsmCallLike =
    * ## Parameters
    *
    * - `asset_id`: The external stablecoin to receive (must be in `ExternalAssets`)
-   * - `pusd_amount`: Amount of pUSD to redeem
+   * - `amount`: Amount of internal to redeem
    *
    * ## Errors
    *
    * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
    * - [`Error::AllSwapsStopped`]: If circuit breaker is at `AllDisabled`
-   * - [`Error::BelowMinimumSwap`]: If `pusd_amount` is below [`Config::MinSwapAmount`]
+   * - [`Error::BelowMinimumSwap`]: If `amount` is below [`Config::MinSwapAmount`]
    * - [`Error::InsufficientReserve`]: If PSM has insufficient external stablecoin
+   * - [`Error::DecimalsMismatch`]: If the asset's decimals do not match the internal asset's
+   * decimals
+   * - [`Error::AmountTooSmallAfterConversion`]: if the conversion to the counter-asset
+   * rounds to zero; swap would transfer nothing
    *
    * ## Events
    *
    * - [`Event::Redeemed`]: Emitted on successful redemption
    **/
-  | { name: 'Redeem'; params: { assetId: number; pusdAmount: bigint } }
+  | { name: 'Redeem'; params: { assetId: StagingXcmV5Location; amount: bigint } }
   /**
-   * Set the minting fee for a specific asset (external → pUSD).
+   * Set the minting fee for a specific asset (external → internal).
    *
    * ## Dispatch Origin
    *
@@ -11698,9 +11716,9 @@ export type PalletPsmCallLike =
    *
    * - [`Event::MintingFeeUpdated`]: Emitted with old and new values
    **/
-  | { name: 'SetMintingFee'; params: { assetId: number; fee: Permill } }
+  | { name: 'SetMintingFee'; params: { assetId: StagingXcmV5Location; fee: Permill } }
   /**
-   * Set the redemption fee for a specific asset (pUSD → external).
+   * Set the redemption fee for a specific asset (internal → external).
    *
    * ## Dispatch Origin
    *
@@ -11715,7 +11733,7 @@ export type PalletPsmCallLike =
    *
    * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values
    **/
-  | { name: 'SetRedemptionFee'; params: { assetId: number; fee: Permill } }
+  | { name: 'SetRedemptionFee'; params: { assetId: StagingXcmV5Location; fee: Permill } }
   /**
    * Set the maximum PSM debt as a percentage of total maximum issuance.
    *
@@ -11756,7 +11774,7 @@ export type PalletPsmCallLike =
    *
    * - [`Event::AssetStatusUpdated`]: Emitted with the asset ID and new status
    **/
-  | { name: 'SetAssetStatus'; params: { assetId: number; status: PalletPsmCircuitBreakerLevel } }
+  | { name: 'SetAssetStatus'; params: { assetId: StagingXcmV5Location; status: PalletPsmCircuitBreakerLevel } }
   /**
    * Set the per-asset debt ceiling weight.
    *
@@ -11781,7 +11799,7 @@ export type PalletPsmCallLike =
    *
    * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values
    **/
-  | { name: 'SetAssetCeilingWeight'; params: { assetId: number; weight: Permill } }
+  | { name: 'SetAssetCeilingWeight'; params: { assetId: StagingXcmV5Location; weight: Permill } }
   /**
    * Add an external stablecoin to the approved list.
    *
@@ -11801,7 +11819,7 @@ export type PalletPsmCallLike =
    *
    * - [`Event::ExternalAssetAdded`]: Emitted on successful addition
    **/
-  | { name: 'AddExternalAsset'; params: { assetId: number } }
+  | { name: 'AddExternalAsset'; params: { assetId: StagingXcmV5Location } }
   /**
    * Remove an external stablecoin from the approved list.
    *
@@ -11832,7 +11850,7 @@ export type PalletPsmCallLike =
    *
    * - [`Event::ExternalAssetRemoved`]: Emitted on successful removal
    **/
-  | { name: 'RemoveExternalAsset'; params: { assetId: number } };
+  | { name: 'RemoveExternalAsset'; params: { assetId: StagingXcmV5Location } };
 
 export type PalletPsmCircuitBreakerLevel = 'AllEnabled' | 'MintingDisabled' | 'AllDisabled';
 
@@ -12470,7 +12488,22 @@ export type PalletStakingAsyncPalletCall =
    *
    * The dispatch origin must be `T::AdminOrigin`.
    **/
-  | { name: 'SetMaxCommission'; params: { new: Perbill } };
+  | { name: 'SetMaxCommission'; params: { new: Perbill } }
+  /**
+   * Configure the validator self-stake incentive parameters.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   *
+   * Changes take effect in the next era when rewards are calculated.
+   **/
+  | {
+      name: 'SetValidatorSelfStakeIncentiveConfig';
+      params: {
+        optimumSelfStake: PalletStakingAsyncPalletConfigOp;
+        hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
+        selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
+      };
+    };
 
 export type PalletStakingAsyncPalletCallLike =
   /**
@@ -12937,7 +12970,22 @@ export type PalletStakingAsyncPalletCallLike =
    *
    * The dispatch origin must be `T::AdminOrigin`.
    **/
-  | { name: 'SetMaxCommission'; params: { new: Perbill } };
+  | { name: 'SetMaxCommission'; params: { new: Perbill } }
+  /**
+   * Configure the validator self-stake incentive parameters.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   *
+   * Changes take effect in the next era when rewards are calculated.
+   **/
+  | {
+      name: 'SetValidatorSelfStakeIncentiveConfig';
+      params: {
+        optimumSelfStake: PalletStakingAsyncPalletConfigOp;
+        hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
+        selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
+      };
+    };
 
 export type PalletStakingAsyncRewardDestination =
   | { type: 'Staked' }
@@ -15839,6 +15887,7 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'TransactionPayment'; palletEvent: PalletTransactionPaymentEvent }
   | { pallet: 'AssetTxPayment'; palletEvent: PalletAssetConversionTxPaymentEvent }
   | { pallet: 'Vesting'; palletEvent: PalletVestingEvent }
+  | { pallet: 'PgasAllowance'; palletEvent: PalletPgasAllowanceEvent }
   | { pallet: 'CollatorSelection'; palletEvent: PalletCollatorSelectionEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
@@ -15898,9 +15947,9 @@ export type FrameSystemEvent =
    **/
   | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
-   * `:code` was updated.
+   * `:code` was updated to the code with the given hash.
    **/
-  | { name: 'CodeUpdated' }
+  | { name: 'CodeUpdated'; data: { hash: H256 } }
   /**
    * A new account was created.
    **/
@@ -16401,6 +16450,16 @@ export type PalletVestingEvent =
    * An \[account\] has become fully vested.
    **/
   | { name: 'VestingCompleted'; data: { account: AccountId32 } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletPgasAllowanceEvent =
+  /**
+   * A transaction fee `actual_fee` has been paid by `who` in PGAS and burned. Mirrors
+   * [`pallet_transaction_payment::Event::TransactionFeePaid`].
+   **/
+  { name: 'PgasFeePaid'; data: { who: AccountId32; actualFee: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -18272,27 +18331,27 @@ export type PalletAssetRewardsEvent =
  **/
 export type PalletPsmEvent =
   /**
-   * User swapped external stablecoin for pUSD.
+   * User swapped external stablecoin for internal.
    **/
   | {
       name: 'Minted';
-      data: { who: AccountId32; assetId: number; externalAmount: bigint; pusdReceived: bigint; fee: bigint };
+      data: { who: AccountId32; assetId: StagingXcmV5Location; externalAmount: bigint; received: bigint; fee: bigint };
     }
   /**
-   * User swapped pUSD for external stablecoin.
+   * User swapped internal for external stablecoin.
    **/
   | {
       name: 'Redeemed';
-      data: { who: AccountId32; assetId: number; pusdPaid: bigint; externalReceived: bigint; fee: bigint };
+      data: { who: AccountId32; assetId: StagingXcmV5Location; paid: bigint; externalReceived: bigint; fee: bigint };
     }
   /**
    * Minting fee updated for an asset by governance.
    **/
-  | { name: 'MintingFeeUpdated'; data: { assetId: number; oldValue: Permill; newValue: Permill } }
+  | { name: 'MintingFeeUpdated'; data: { assetId: StagingXcmV5Location; oldValue: Permill; newValue: Permill } }
   /**
    * Redemption fee updated for an asset by governance.
    **/
-  | { name: 'RedemptionFeeUpdated'; data: { assetId: number; oldValue: Permill; newValue: Permill } }
+  | { name: 'RedemptionFeeUpdated'; data: { assetId: StagingXcmV5Location; oldValue: Permill; newValue: Permill } }
   /**
    * Max PSM debt ratio updated by governance.
    **/
@@ -18300,19 +18359,19 @@ export type PalletPsmEvent =
   /**
    * Per-asset debt ceiling weight updated by governance.
    **/
-  | { name: 'AssetCeilingWeightUpdated'; data: { assetId: number; oldValue: Permill; newValue: Permill } }
+  | { name: 'AssetCeilingWeightUpdated'; data: { assetId: StagingXcmV5Location; oldValue: Permill; newValue: Permill } }
   /**
    * Per-asset circuit breaker status updated.
    **/
-  | { name: 'AssetStatusUpdated'; data: { assetId: number; status: PalletPsmCircuitBreakerLevel } }
+  | { name: 'AssetStatusUpdated'; data: { assetId: StagingXcmV5Location; status: PalletPsmCircuitBreakerLevel } }
   /**
    * An external asset was added to the approved list.
    **/
-  | { name: 'ExternalAssetAdded'; data: { assetId: number } }
+  | { name: 'ExternalAssetAdded'; data: { assetId: StagingXcmV5Location } }
   /**
    * An external asset was removed from the approved list.
    **/
-  | { name: 'ExternalAssetRemoved'; data: { assetId: number } };
+  | { name: 'ExternalAssetRemoved'; data: { assetId: StagingXcmV5Location } };
 
 /**
  * Inner events of this pallet.
@@ -18500,7 +18559,21 @@ export type PalletStakingAsyncPalletEvent =
   /**
    * An old era with the given index was pruned.
    **/
-  | { name: 'EraPruned'; data: { index: number } };
+  | { name: 'EraPruned'; data: { index: number } }
+  /**
+   * The validator has been paid their self-stake incentive bonus.
+   **/
+  | {
+      name: 'ValidatorIncentivePaid';
+      data: { era: number; validatorStash: AccountId32; dest: PalletStakingAsyncRewardDestination; amount: bigint };
+    }
+  /**
+   * Validator self-stake incentive configuration has been updated.
+   **/
+  | {
+      name: 'ValidatorIncentiveConfigSet';
+      data: { optimumSelfStake: bigint; hardCapSelfStake: bigint; slopeFactor: Perbill };
+    };
 
 export type PalletStakingAsyncForcing = 'NotForcing' | 'ForceNew' | 'ForceNone' | 'ForceAlways';
 
@@ -18511,7 +18584,9 @@ export type PalletStakingAsyncPalletUnexpectedKind =
       type: 'PagedElectionOutOfWeight';
       value: { page: number; required: SpWeightsWeightV2Weight; had: SpWeightsWeightV2Weight };
     }
-  | { type: 'MissingPayee'; value: { era: number; stash: AccountId32 } };
+  | { type: 'MissingPayee'; value: { era: number; stash: AccountId32 } }
+  | { type: 'ValidatorIncentiveWeightMismatch'; value: { era: number } }
+  | { type: 'ValidatorIncentiveTransferFailed'; value: { era: number } };
 
 /**
  * Events of this pallet.
@@ -19364,6 +19439,18 @@ export type PalletDapEvent =
       };
     }
   /**
+   * Funds were drained from the staging account into the DAP buffer.
+   **/
+  | {
+      name: 'StagingDrained';
+      data: {
+        /**
+         * Amount drained.
+         **/
+        amount: bigint;
+      };
+    }
+  /**
    * An unexpected/defensive event was triggered.
    **/
   | { name: 'Unexpected'; data: PalletDapUnexpectedKind };
@@ -19635,6 +19722,7 @@ export type CumulusPalletParachainSystemPoVMessages = {
   bundleIndex: number;
   umpMsgCount: number;
   hrmpOutboundCount: number;
+  hrmpOutboundRecipients: Array<PolkadotParachainPrimitivesPrimitivesId>;
 };
 
 /**
@@ -21187,7 +21275,11 @@ export type PalletAssetConversionError =
   /**
    * The destination account cannot exist with the swapped funds.
    **/
-  | 'BelowMinimum';
+  | 'BelowMinimum'
+  /**
+   * The pool exists but has no liquidity (at least one of the reserves is zero).
+   **/
+  | 'PoolEmpty';
 
 /**
  * The `Error` enum of this pallet.
@@ -21826,13 +21918,17 @@ export type PalletPsmError =
    **/
   | 'UnsupportedAsset'
   /**
-   * Mint would exceed system-wide maximum pUSD issuance.
+   * Mint would exceed system-wide maximum internal issuance.
    **/
   | 'ExceedsMaxIssuance'
   /**
    * Asset is already in the approved list.
    **/
   | 'AssetAlreadyApproved'
+  /**
+   * Asset does not exist.
+   **/
+  | 'AssetDoesNotExist'
   /**
    * Cannot remove asset: not in approved list.
    **/
@@ -21850,9 +21946,21 @@ export type PalletPsmError =
    **/
   | 'TooManyAssets'
   /**
-   * External asset decimals do not match the stable asset decimals.
+   * Live decimals diverged from the snapshot taken at registration or genesis.
    **/
   | 'DecimalsMismatch'
+  /**
+   * The asset's decimal precision is outside the supported range.
+   **/
+  | 'DecimalsRangeExceeded'
+  /**
+   * Decimal scaling produced an arithmetic overflow.
+   **/
+  | 'ConversionOverflow'
+  /**
+   * Conversion to the counter-asset rounds to zero; swap would transfer nothing.
+   **/
+  | 'AmountTooSmallAfterConversion'
   /**
    * An unexpected invariant violation occurred. This should be reported.
    **/
@@ -21908,7 +22016,8 @@ export type PalletStakingAsyncPalletPruningStep =
   | 'ErasValidatorReward'
   | 'ErasRewardPoints'
   | 'SingleEntryCleanups'
-  | 'ValidatorSlashInEra';
+  | 'ValidatorSlashInEra'
+  | 'ErasValidatorIncentiveWeight';
 
 /**
  * The `Error` enum of this pallet.
@@ -22069,9 +22178,17 @@ export type PalletStakingAsyncPalletError =
    **/
   | 'CommissionTooHigh'
   /**
-   * Era has no reward pot but legacy minting is disabled.
+   * Optimum self-stake cannot be greater than hard cap.
    **/
-  | 'LegacyMintingDisabled';
+  | 'OptimumGreaterThanCap';
+
+export type PalletStakingAsyncRewardPot =
+  | { type: 'General'; value: PalletStakingAsyncRewardKind }
+  | { type: 'Era'; value: [number, PalletStakingAsyncRewardKind] };
+
+export type PalletStakingAsyncRewardKind = 'StakerRewards' | 'ValidatorSelfStake';
+
+export type PalletStakingAsyncRewardEraRewardAllocation = { stakerRewards: bigint; validatorIncentive: bigint };
 
 export type PalletNominationPoolsPoolMember = {
   poolId: number;
@@ -23022,6 +23139,13 @@ export type SpRuntimeExtrinsicInclusionMode = 'AllExtrinsics' | 'OnlyInherents';
 
 export type SpCoreOpaqueMetadata = Bytes;
 
+export type FrameSupportViewFunctionsViewFunctionId = { prefix: FixedBytes<16>; suffix: FixedBytes<16> };
+
+export type FrameSupportViewFunctionsViewFunctionDispatchError =
+  | { type: 'NotImplemented' }
+  | { type: 'NotFound'; value: FrameSupportViewFunctionsViewFunctionId }
+  | { type: 'Codec' };
+
 export type SpRuntimeTransactionValidityTransactionValidityError =
   | { type: 'Invalid'; value: SpRuntimeTransactionValidityInvalidTransaction }
   | { type: 'Unknown'; value: SpRuntimeTransactionValidityUnknownTransaction };
@@ -23327,6 +23451,10 @@ export type PalletReviveEvmApiDebugRpcTypesExecutionStepKind =
       };
     }
   | { type: 'PvmSyscall'; value: { op: number; args: Array<bigint>; returned?: bigint | undefined } };
+
+export type PalletReviveEvmApiRpcTypesTracingConfig = {
+  stateOverrides?: PalletReviveEvmApiRpcTypesGenStateOverrideSet | undefined;
+};
 
 export type PalletRevivePrimitivesBalanceConversionError = 'Value' | 'Dust';
 

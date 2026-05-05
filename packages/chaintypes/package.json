@@ -1,6 +1,6 @@
 {
   "name": "@dedot/chaintypes",
-  "version": "0.275.0",
+  "version": "0.276.0",
   "description": "Types for substrate-based chains",
   "author": "Thang X. Vu <thang@dedot.dev>",
   "homepage": "https://dedot.dev",

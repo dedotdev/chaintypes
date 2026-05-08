@@ -23,6 +23,7 @@ export type ChainJsonRpcApis = Pick<
   | 'author_rotateKeysWithOwner'
   | 'author_submitAndWatchExtrinsic'
   | 'author_submitExtrinsic'
+  | 'bitswap_v1_get'
   | 'chainHead_v1_body'
   | 'chainHead_v1_call'
   | 'chainHead_v1_continue'

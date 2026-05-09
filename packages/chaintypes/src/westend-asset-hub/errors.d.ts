@@ -990,6 +990,130 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `Recovery`'s errors
+   **/
+  recovery: {
+    /**
+     * This attempt is already fully approved and does not need any more votes.
+     **/
+    AlreadyApproved: GenericPalletError;
+
+    /**
+     * The recovery attempt has already been initiated.
+     **/
+    AlreadyInitiated: GenericPalletError;
+
+    /**
+     * The friend already voted for this attempt.
+     **/
+    AlreadyVoted: GenericPalletError;
+
+    /**
+     * The lost account has ongoing recovery attempts.
+     **/
+    HasOngoingAttempts: GenericPalletError;
+
+    /**
+     * The lost account cannot be a friend of itself.
+     **/
+    LostAccountInFriendGroup: GenericPalletError;
+
+    /**
+     * The account was already recovered by a group of equal or higher priority.
+     **/
+    HigherPriorityRecovered: GenericPalletError;
+
+    /**
+     * Cancel delay must be at least 1.
+     **/
+    NoCancelDelay: GenericPalletError;
+
+    /**
+     * This account does not have any friend groups.
+     **/
+    NoFriendGroups: GenericPalletError;
+
+    /**
+     * The friend group has no friends.
+     **/
+    NoFriends: GenericPalletError;
+
+    /**
+     * The lost account does not have any inheritor.
+     **/
+    NoInheritor: GenericPalletError;
+
+    /**
+     * Not enough friends approved this attempt.
+     **/
+    NotApproved: GenericPalletError;
+
+    /**
+     * The referenced recovery attempt was not found.
+     **/
+    NotAttempt: GenericPalletError;
+
+    /**
+     * The caller is not the initiator or the lost account.
+     **/
+    NotCanceller: GenericPalletError;
+
+    /**
+     * The caller is not a friend of the lost account.
+     **/
+    NotFriend: GenericPalletError;
+
+    /**
+     * A specific referenced friend group was not found.
+     **/
+    NotFriendGroup: GenericPalletError;
+
+    /**
+     * The caller is not the inheritor of the lost account.
+     **/
+    NotInheritor: GenericPalletError;
+
+    /**
+     * The cancel delay since the last approval or initialization has not yet passed.
+     **/
+    NotYetCancelable: GenericPalletError;
+
+    /**
+     * The inheritance delay of this attempt has not yet passed.
+     **/
+    NotYetInheritable: GenericPalletError;
+
+    /**
+     * Too many friend groups.
+     **/
+    TooManyFriendGroups: GenericPalletError;
+
+    /**
+     * The number of friends needed is greater than the number of friends.
+     **/
+    TooManyFriendsNeeded: GenericPalletError;
+
+    /**
+     * The number of friends needed is zero.
+     **/
+    NoFriendsNeeded: GenericPalletError;
+
+    /**
+     * The friends of a friend group are not sorted or not unique.
+     **/
+    FriendsNotSortedOrUnique: GenericPalletError;
+
+    /**
+     * Two friend groups have the same set of friends.
+     **/
+    DuplicateFriendGroups: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `Assets`'s errors
    **/
   assets: {
@@ -2258,6 +2382,27 @@ export interface ChainErrors extends GenericChainErrors {
      * Manual mapping is disabled when auto-mapping is enabled.
      **/
     AutoMappingEnabled: GenericPalletError;
+
+    /**
+     * A contract cannot be created at this address: it still has uncleared
+     * [`NativeDepositOf`] entries from a previously terminated contract that the deletion
+     * queue has not yet drained.
+     **/
+    PendingDepositCleanup: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `AssetsHolder`'s errors
+   **/
+  assetsHolder: {
+    /**
+     * Number of holds on an account would exceed the count of `RuntimeHoldReason`.
+     **/
+    TooManyHolds: GenericPalletError;
 
     /**
      * Generic pallet error

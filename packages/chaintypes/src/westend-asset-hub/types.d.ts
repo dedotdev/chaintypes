@@ -51,6 +51,7 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'Indices'; palletCall: PalletIndicesCall }
   | { pallet: 'MetaTx'; palletCall: PalletMetaTxCall }
   | { pallet: 'Parameters'; palletCall: PalletParametersCall }
+  | { pallet: 'Recovery'; palletCall: PalletRecoveryCall }
   | { pallet: 'Assets'; palletCall: PalletAssetsCall }
   | { pallet: 'Uniques'; palletCall: PalletUniquesCall }
   | { pallet: 'Nfts'; palletCall: PalletNftsCall }
@@ -105,6 +106,7 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'Indices'; palletCall: PalletIndicesCallLike }
   | { pallet: 'MetaTx'; palletCall: PalletMetaTxCallLike }
   | { pallet: 'Parameters'; palletCall: PalletParametersCallLike }
+  | { pallet: 'Recovery'; palletCall: PalletRecoveryCallLike }
   | { pallet: 'Assets'; palletCall: PalletAssetsCallLike }
   | { pallet: 'Uniques'; palletCall: PalletUniquesCallLike }
   | { pallet: 'Nfts'; palletCall: PalletNftsCallLike }
@@ -4461,6 +4463,153 @@ export type AssetHubWestendRuntimeDynamicParamsPusdParameters = {
 };
 
 export type AssetHubWestendRuntimeDynamicParamsPusdMaximumIssuance = {};
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletRecoveryCall =
+  /**
+   * Allows the inheritor of a recovered account to control it.
+   *
+   * The controller is not allowed to dispatch calls of the recovery pallet. Otherwise they
+   * could mess with the recovery configuration and possibly cancel or slash attempts from
+   * higher-priority friend groups.
+   **/
+  | { name: 'ControlInheritedAccount'; params: { recovered: MultiAddress; call: AssetHubWestendRuntimeRuntimeCall } }
+  /**
+   * Revoke the inheritor of the calling (lost) account.
+   *
+   * This removes the inheritor entry and refunds the inheritor deposit. Can only be called
+   * by the lost account itself after it regains access.
+   **/
+  | { name: 'RevokeInheritor' }
+  /**
+   * Set the friend groups of the calling account before it lost access.
+   *
+   * Cannot be used while there are ongoing recovery attempts. The friends of each group
+   * MUST be sorted and unique. Trying to insert two friend groups with the same set of
+   * friends will result in an error.
+   *
+   * A `FriendGroupsChanged` event is emitted only when the new friends groups differed from
+   * the old ones.
+   **/
+  | { name: 'SetFriendGroups'; params: { friendGroups: Array<PalletRecoveryFriendGroup> } }
+  /**
+   * Attempt to recover a lost account by a friend within the given friend group.
+   *
+   * The initiator's approval is recorded automatically, so they do not need to call
+   * `approve_attempt` themselves.
+   *
+   * Once an account has been recovered by a friend group, no friend group of equal or lower
+   * priority can open a new attempt: it will fail with [`Error::HigherPriorityRecovered`].
+   * Only a strictly higher-priority group (lower numerical
+   * [`FriendGroup::inheritance_priority`]) can take over the inheritor.
+   **/
+  | { name: 'InitiateAttempt'; params: { lost: MultiAddress; friendGroupIndex: number } }
+  /**
+   * Approve the recovery for a lost account.
+   *
+   * Must be called by a friend of the friend group that the recovery attempt belongs to that
+   * did not yet vote. Voting is only allowed until the threshold is reached.
+   * `finish_attempt` should be called after the last friend voted.
+   **/
+  | { name: 'ApproveAttempt'; params: { lost: MultiAddress; friendGroupIndex: number } }
+  /**
+   * Finish a recovery attempt and make the lost account accessible from the inheritor.
+   *
+   * Can be called by anyone who is willing to pay for the inheritor deposit.
+   **/
+  | { name: 'FinishAttempt'; params: { lost: MultiAddress; friendGroupIndex: number } }
+  /**
+   * The lost account can cancel an attempt at any moment; the initiator, only after a delay.
+   *
+   * This will release the security deposit back to the initiator. The cancel delay must be
+   * respected if the initiator calls it to prevent it from front-running the lost account
+   * from slashing the attempt.
+   **/
+  | { name: 'CancelAttempt'; params: { lost: MultiAddress; friendGroupIndex: number } }
+  /**
+   * Slash a malicious recovery attempt and burn the security deposit of the initiator.
+   **/
+  | { name: 'SlashAttempt'; params: { friendGroupIndex: number } };
+
+export type PalletRecoveryCallLike =
+  /**
+   * Allows the inheritor of a recovered account to control it.
+   *
+   * The controller is not allowed to dispatch calls of the recovery pallet. Otherwise they
+   * could mess with the recovery configuration and possibly cancel or slash attempts from
+   * higher-priority friend groups.
+   **/
+  | {
+      name: 'ControlInheritedAccount';
+      params: { recovered: MultiAddressLike; call: AssetHubWestendRuntimeRuntimeCallLike };
+    }
+  /**
+   * Revoke the inheritor of the calling (lost) account.
+   *
+   * This removes the inheritor entry and refunds the inheritor deposit. Can only be called
+   * by the lost account itself after it regains access.
+   **/
+  | { name: 'RevokeInheritor' }
+  /**
+   * Set the friend groups of the calling account before it lost access.
+   *
+   * Cannot be used while there are ongoing recovery attempts. The friends of each group
+   * MUST be sorted and unique. Trying to insert two friend groups with the same set of
+   * friends will result in an error.
+   *
+   * A `FriendGroupsChanged` event is emitted only when the new friends groups differed from
+   * the old ones.
+   **/
+  | { name: 'SetFriendGroups'; params: { friendGroups: Array<PalletRecoveryFriendGroup> } }
+  /**
+   * Attempt to recover a lost account by a friend within the given friend group.
+   *
+   * The initiator's approval is recorded automatically, so they do not need to call
+   * `approve_attempt` themselves.
+   *
+   * Once an account has been recovered by a friend group, no friend group of equal or lower
+   * priority can open a new attempt: it will fail with [`Error::HigherPriorityRecovered`].
+   * Only a strictly higher-priority group (lower numerical
+   * [`FriendGroup::inheritance_priority`]) can take over the inheritor.
+   **/
+  | { name: 'InitiateAttempt'; params: { lost: MultiAddressLike; friendGroupIndex: number } }
+  /**
+   * Approve the recovery for a lost account.
+   *
+   * Must be called by a friend of the friend group that the recovery attempt belongs to that
+   * did not yet vote. Voting is only allowed until the threshold is reached.
+   * `finish_attempt` should be called after the last friend voted.
+   **/
+  | { name: 'ApproveAttempt'; params: { lost: MultiAddressLike; friendGroupIndex: number } }
+  /**
+   * Finish a recovery attempt and make the lost account accessible from the inheritor.
+   *
+   * Can be called by anyone who is willing to pay for the inheritor deposit.
+   **/
+  | { name: 'FinishAttempt'; params: { lost: MultiAddressLike; friendGroupIndex: number } }
+  /**
+   * The lost account can cancel an attempt at any moment; the initiator, only after a delay.
+   *
+   * This will release the security deposit back to the initiator. The cancel delay must be
+   * respected if the initiator calls it to prevent it from front-running the lost account
+   * from slashing the attempt.
+   **/
+  | { name: 'CancelAttempt'; params: { lost: MultiAddressLike; friendGroupIndex: number } }
+  /**
+   * Slash a malicious recovery attempt and burn the security deposit of the initiator.
+   **/
+  | { name: 'SlashAttempt'; params: { friendGroupIndex: number } };
+
+export type PalletRecoveryFriendGroup = {
+  friends: Array<AccountId32>;
+  friendsNeeded: number;
+  inheritor: AccountId32;
+  inheritanceDelay: number;
+  inheritancePriority: number;
+  cancelDelay: number;
+};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -12451,7 +12600,8 @@ export type PalletStakingAsyncPalletCall =
    * for eras older than the active era.
    *
    * ## Parameters
-   * - `slash_era`: The staking era in which the slash was originally scheduled.
+   * - `slash_era`: The application era (`offence_era + SlashDeferDuration`), i.e. the key
+   * into [`UnappliedSlashes`].
    * - `slash_key`: A unique identifier for the slash, represented as a tuple:
    * - `stash`: The stash account of the validator being slashed.
    * - `slash_fraction`: The fraction of the stake that was slashed.
@@ -12933,7 +13083,8 @@ export type PalletStakingAsyncPalletCallLike =
    * for eras older than the active era.
    *
    * ## Parameters
-   * - `slash_era`: The staking era in which the slash was originally scheduled.
+   * - `slash_era`: The application era (`offence_era + SlashDeferDuration`), i.e. the key
+   * into [`UnappliedSlashes`].
    * - `slash_key`: A unique identifier for the slash, represented as a tuple:
    * - `stash`: The stash account of the validator being slashed.
    * - `slash_fraction`: The fraction of the stake that was slashed.
@@ -15806,6 +15957,7 @@ export type AssetHubWestendRuntimeRuntimeHoldReason =
   | { type: 'Preimage'; value: PalletPreimageHoldReason }
   | { type: 'Session'; value: PalletSessionHoldReason }
   | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
+  | { type: 'Recovery'; value: PalletRecoveryHoldReason }
   | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
   | { type: 'Revive'; value: PalletReviveHoldReason }
   | { type: 'AssetRewards'; value: PalletAssetRewardsHoldReason }
@@ -15821,6 +15973,12 @@ export type PalletPreimageHoldReason = 'Preimage';
 export type PalletSessionHoldReason = 'Keys';
 
 export type PalletXcmHoldReason = 'AuthorizeAlias';
+
+export type PalletRecoveryHoldReason =
+  | 'FriendGroupsStorage'
+  | 'AttemptStorage'
+  | 'InheritorStorage'
+  | 'SecurityDeposit';
 
 export type PalletNftFractionalizationHoldReason = 'Fractionalized';
 
@@ -15902,6 +16060,7 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'Indices'; palletEvent: PalletIndicesEvent }
   | { pallet: 'MetaTx'; palletEvent: PalletMetaTxEvent }
   | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
+  | { pallet: 'Recovery'; palletEvent: PalletRecoveryEvent }
   | { pallet: 'Assets'; palletEvent: PalletAssetsEvent }
   | { pallet: 'Uniques'; palletEvent: PalletUniquesEvent }
   | { pallet: 'Nfts'; palletEvent: PalletNftsEvent }
@@ -15913,6 +16072,7 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'ForeignAssetsFreezer'; palletEvent: PalletAssetsFreezerEvent002 }
   | { pallet: 'PoolAssetsFreezer'; palletEvent: PalletAssetsFreezerEvent }
   | { pallet: 'Revive'; palletEvent: PalletReviveEvent }
+  | { pallet: 'AssetsHolder'; palletEvent: PalletAssetsHolderEvent }
   | { pallet: 'AssetRewards'; palletEvent: PalletAssetRewardsEvent }
   | { pallet: 'Psm'; palletEvent: PalletPsmEvent }
   | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent }
@@ -17211,6 +17371,66 @@ export type AssetHubWestendRuntimeDynamicParamsPusdParametersValue = { type: 'Ma
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletRecoveryEvent =
+  /**
+   * A recovery attempt was approved by a friend.
+   **/
+  | { name: 'AttemptApproved'; data: { lost: AccountId32; friendGroupIndex: number; friend: AccountId32 } }
+  /**
+   * A recovery attempt was canceled by either the lost account or the initiator.
+   **/
+  | { name: 'AttemptCanceled'; data: { lost: AccountId32; friendGroupIndex: number; canceler: AccountId32 } }
+  /**
+   * A recovery attempt was initiated by a friend.
+   **/
+  | { name: 'AttemptInitiated'; data: { lost: AccountId32; friendGroupIndex: number; initiator: AccountId32 } }
+  /**
+   * A recovery attempt was finished.
+   **/
+  | {
+      name: 'AttemptFinished';
+      data: {
+        lost: AccountId32;
+        friendGroupIndex: number;
+        inheritor: AccountId32;
+        previousInheritor?: AccountId32 | undefined;
+      };
+    }
+  /**
+   * A recovery attempt was discarded because the account was already recovered by a
+   * friend group of equal or higher priority.
+   *
+   * The attempt is consumed (removed from storage) and its deposits are released, but
+   * the existing inheritor remains unchanged.
+   **/
+  | { name: 'AttemptDiscarded'; data: { lost: AccountId32; friendGroupIndex: number; existingInheritor: AccountId32 } }
+  /**
+   * A recovery attempt was slashed by the lost account.
+   *
+   * The initiator will lose their security deposit.
+   **/
+  | { name: 'AttemptSlashed'; data: { lost: AccountId32; friendGroupIndex: number } }
+  /**
+   * The friend groups of an account have been changed.
+   **/
+  | { name: 'FriendGroupsChanged'; data: { lost: AccountId32 } }
+  /**
+   * The inheritor of a lost account was revoked by the lost account.
+   **/
+  | { name: 'InheritorRevoked'; data: { lost: AccountId32 } }
+  /**
+   * A recovered account was controlled by its inheritor.
+   *
+   * Check the `call_result` to see if it was successful.
+   **/
+  | {
+      name: 'RecoveredAccountControlled';
+      data: { recovered: AccountId32; inheritor: AccountId32; callHash: H256; callResult: Result<[], DispatchError> };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PalletAssetsEvent =
   /**
    * Some asset class was created.
@@ -18139,6 +18359,32 @@ export type PalletReviveEvent =
    * for failed Ethereum transactions.
    **/
   | { name: 'EthExtrinsicRevert'; data: { dispatchError: DispatchError } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAssetsHolderEvent =
+  /**
+   * `who`s balance on hold was increased by `amount`.
+   **/
+  | {
+      name: 'Held';
+      data: { who: AccountId32; assetId: number; reason: AssetHubWestendRuntimeRuntimeHoldReason; amount: bigint };
+    }
+  /**
+   * `who`s balance on hold was decreased by `amount`.
+   **/
+  | {
+      name: 'Released';
+      data: { who: AccountId32; assetId: number; reason: AssetHubWestendRuntimeRuntimeHoldReason; amount: bigint };
+    }
+  /**
+   * `who`s balance on hold was burned by `amount`.
+   **/
+  | {
+      name: 'Burned';
+      data: { who: AccountId32; assetId: number; reason: AssetHubWestendRuntimeRuntimeHoldReason; amount: bigint };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -19894,8 +20140,11 @@ export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
 };
 
 export type AssetHubWestendRuntimeRuntimeFreezeReason =
+  | { type: 'Revive'; value: PalletReviveFreezeReason }
   | { type: 'AssetRewards'; value: PalletAssetRewardsFreezeReason }
   | { type: 'NominationPools'; value: PalletNominationPoolsFreezeReason };
+
+export type PalletReviveFreezeReason = 'PGasMinBalance';
 
 export type PalletAssetRewardsFreezeReason = 'Staked';
 
@@ -20658,6 +20907,120 @@ export type PalletMetaTxError =
    **/
   | 'InvalidLength';
 
+export type PalletRecoveryAttempt = {
+  friendGroupIndex: number;
+  initiator: AccountId32;
+  initBlock: number;
+  lastApprovalBlock: number;
+  approvals: PalletRecoveryBitfield;
+};
+
+export type PalletRecoveryBitfield = Array<number>;
+
+export type PalletRecoveryIdentifiedConsideration = {
+  depositor: AccountId32;
+  ticket?: FrameSupportTokensFungibleHoldConsideration | undefined;
+};
+
+export type FrameSupportStorageFootprint = { count: bigint; size: bigint };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletRecoveryError =
+  /**
+   * This attempt is already fully approved and does not need any more votes.
+   **/
+  | 'AlreadyApproved'
+  /**
+   * The recovery attempt has already been initiated.
+   **/
+  | 'AlreadyInitiated'
+  /**
+   * The friend already voted for this attempt.
+   **/
+  | 'AlreadyVoted'
+  /**
+   * The lost account has ongoing recovery attempts.
+   **/
+  | 'HasOngoingAttempts'
+  /**
+   * The lost account cannot be a friend of itself.
+   **/
+  | 'LostAccountInFriendGroup'
+  /**
+   * The account was already recovered by a group of equal or higher priority.
+   **/
+  | 'HigherPriorityRecovered'
+  /**
+   * Cancel delay must be at least 1.
+   **/
+  | 'NoCancelDelay'
+  /**
+   * This account does not have any friend groups.
+   **/
+  | 'NoFriendGroups'
+  /**
+   * The friend group has no friends.
+   **/
+  | 'NoFriends'
+  /**
+   * The lost account does not have any inheritor.
+   **/
+  | 'NoInheritor'
+  /**
+   * Not enough friends approved this attempt.
+   **/
+  | 'NotApproved'
+  /**
+   * The referenced recovery attempt was not found.
+   **/
+  | 'NotAttempt'
+  /**
+   * The caller is not the initiator or the lost account.
+   **/
+  | 'NotCanceller'
+  /**
+   * The caller is not a friend of the lost account.
+   **/
+  | 'NotFriend'
+  /**
+   * A specific referenced friend group was not found.
+   **/
+  | 'NotFriendGroup'
+  /**
+   * The caller is not the inheritor of the lost account.
+   **/
+  | 'NotInheritor'
+  /**
+   * The cancel delay since the last approval or initialization has not yet passed.
+   **/
+  | 'NotYetCancelable'
+  /**
+   * The inheritance delay of this attempt has not yet passed.
+   **/
+  | 'NotYetInheritable'
+  /**
+   * Too many friend groups.
+   **/
+  | 'TooManyFriendGroups'
+  /**
+   * The number of friends needed is greater than the number of friends.
+   **/
+  | 'TooManyFriendsNeeded'
+  /**
+   * The number of friends needed is zero.
+   **/
+  | 'NoFriendsNeeded'
+  /**
+   * The friends of a friend group are not sorted or not unique.
+   **/
+  | 'FriendsNotSortedOrUnique'
+  /**
+   * Two friend groups have the same set of friends.
+   **/
+  | 'DuplicateFriendGroups';
+
 export type PalletAssetsAssetDetails = {
   owner: AccountId32;
   issuer: AccountId32;
@@ -21318,6 +21681,8 @@ export type PalletReviveStorageContractInfo = {
   immutableDataLen: number;
 };
 
+export type PalletReviveStorageDeletionQueueItem = { trieId: Bytes; accountId: AccountId32 };
+
 export type PalletReviveStorageDeletionQueueManager = { insertCounter: number; deleteCounter: number };
 
 export type PalletReviveEvmApiRpcTypesGenBlock = {
@@ -21791,7 +22156,22 @@ export type PalletReviveError =
   /**
    * Manual mapping is disabled when auto-mapping is enabled.
    **/
-  | 'AutoMappingEnabled';
+  | 'AutoMappingEnabled'
+  /**
+   * A contract cannot be created at this address: it still has uncleared
+   * [`NativeDepositOf`] entries from a previously terminated contract that the deletion
+   * queue has not yet drained.
+   **/
+  | 'PendingDepositCleanup';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletAssetsHolderError =
+  /**
+   * Number of holds on an account would exceed the count of `RuntimeHoldReason`.
+   **/
+  'TooManyHolds';
 
 export type PalletAssetRewardsPoolStakerInfo = { amount: bigint; rewards: bigint; rewardPerTokenPaid: bigint };
 
@@ -23478,6 +23858,7 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'Proxy'; palletError: PalletProxyError }
   | { pallet: 'Indices'; palletError: PalletIndicesError }
   | { pallet: 'MetaTx'; palletError: PalletMetaTxError }
+  | { pallet: 'Recovery'; palletError: PalletRecoveryError }
   | { pallet: 'Assets'; palletError: PalletAssetsError }
   | { pallet: 'Uniques'; palletError: PalletUniquesError }
   | { pallet: 'Nfts'; palletError: PalletNftsError }
@@ -23489,6 +23870,7 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'ForeignAssetsFreezer'; palletError: PalletAssetsFreezerError }
   | { pallet: 'PoolAssetsFreezer'; palletError: PalletAssetsFreezerError }
   | { pallet: 'Revive'; palletError: PalletReviveError }
+  | { pallet: 'AssetsHolder'; palletError: PalletAssetsHolderError }
   | { pallet: 'AssetRewards'; palletError: PalletAssetRewardsError }
   | { pallet: 'AssetsPrecompilesPermit'; palletError: PalletAssetsPrecompilesPermitPalletError }
   | { pallet: 'Psm'; palletError: PalletPsmError }

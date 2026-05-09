@@ -51,6 +51,7 @@ import type {
   AssetHubWestendRuntimeProxyType,
   PalletMetaTxMetaTx,
   AssetHubWestendRuntimeRuntimeParameters,
+  PalletRecoveryFriendGroup,
   PalletUniquesDestroyWitness,
   PalletNftsCollectionConfig,
   PalletNftsDestroyWitness,
@@ -3943,6 +3944,209 @@ export interface ChainTx<
           palletCall: {
             name: 'SetParameter';
             params: { keyValue: AssetHubWestendRuntimeRuntimeParameters };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Recovery`'s transaction calls
+   **/
+  recovery: {
+    /**
+     * Allows the inheritor of a recovered account to control it.
+     *
+     * The controller is not allowed to dispatch calls of the recovery pallet. Otherwise they
+     * could mess with the recovery configuration and possibly cancel or slash attempts from
+     * higher-priority friend groups.
+     *
+     * @param {MultiAddressLike} recovered
+     * @param {AssetHubWestendRuntimeRuntimeCallLike} call
+     **/
+    controlInheritedAccount: GenericTxCall<
+      (
+        recovered: MultiAddressLike,
+        call: AssetHubWestendRuntimeRuntimeCallLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Recovery';
+          palletCall: {
+            name: 'ControlInheritedAccount';
+            params: { recovered: MultiAddressLike; call: AssetHubWestendRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Revoke the inheritor of the calling (lost) account.
+     *
+     * This removes the inheritor entry and refunds the inheritor deposit. Can only be called
+     * by the lost account itself after it regains access.
+     *
+     **/
+    revokeInheritor: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Recovery';
+          palletCall: {
+            name: 'RevokeInheritor';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the friend groups of the calling account before it lost access.
+     *
+     * Cannot be used while there are ongoing recovery attempts. The friends of each group
+     * MUST be sorted and unique. Trying to insert two friend groups with the same set of
+     * friends will result in an error.
+     *
+     * A `FriendGroupsChanged` event is emitted only when the new friends groups differed from
+     * the old ones.
+     *
+     * @param {Array<PalletRecoveryFriendGroup>} friendGroups
+     **/
+    setFriendGroups: GenericTxCall<
+      (friendGroups: Array<PalletRecoveryFriendGroup>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Recovery';
+          palletCall: {
+            name: 'SetFriendGroups';
+            params: { friendGroups: Array<PalletRecoveryFriendGroup> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Attempt to recover a lost account by a friend within the given friend group.
+     *
+     * The initiator's approval is recorded automatically, so they do not need to call
+     * `approve_attempt` themselves.
+     *
+     * Once an account has been recovered by a friend group, no friend group of equal or lower
+     * priority can open a new attempt: it will fail with [`Error::HigherPriorityRecovered`].
+     * Only a strictly higher-priority group (lower numerical
+     * [`FriendGroup::inheritance_priority`]) can take over the inheritor.
+     *
+     * @param {MultiAddressLike} lost
+     * @param {number} friendGroupIndex
+     **/
+    initiateAttempt: GenericTxCall<
+      (
+        lost: MultiAddressLike,
+        friendGroupIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Recovery';
+          palletCall: {
+            name: 'InitiateAttempt';
+            params: { lost: MultiAddressLike; friendGroupIndex: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Approve the recovery for a lost account.
+     *
+     * Must be called by a friend of the friend group that the recovery attempt belongs to that
+     * did not yet vote. Voting is only allowed until the threshold is reached.
+     * `finish_attempt` should be called after the last friend voted.
+     *
+     * @param {MultiAddressLike} lost
+     * @param {number} friendGroupIndex
+     **/
+    approveAttempt: GenericTxCall<
+      (
+        lost: MultiAddressLike,
+        friendGroupIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Recovery';
+          palletCall: {
+            name: 'ApproveAttempt';
+            params: { lost: MultiAddressLike; friendGroupIndex: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Finish a recovery attempt and make the lost account accessible from the inheritor.
+     *
+     * Can be called by anyone who is willing to pay for the inheritor deposit.
+     *
+     * @param {MultiAddressLike} lost
+     * @param {number} friendGroupIndex
+     **/
+    finishAttempt: GenericTxCall<
+      (
+        lost: MultiAddressLike,
+        friendGroupIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Recovery';
+          palletCall: {
+            name: 'FinishAttempt';
+            params: { lost: MultiAddressLike; friendGroupIndex: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * The lost account can cancel an attempt at any moment; the initiator, only after a delay.
+     *
+     * This will release the security deposit back to the initiator. The cancel delay must be
+     * respected if the initiator calls it to prevent it from front-running the lost account
+     * from slashing the attempt.
+     *
+     * @param {MultiAddressLike} lost
+     * @param {number} friendGroupIndex
+     **/
+    cancelAttempt: GenericTxCall<
+      (
+        lost: MultiAddressLike,
+        friendGroupIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Recovery';
+          palletCall: {
+            name: 'CancelAttempt';
+            params: { lost: MultiAddressLike; friendGroupIndex: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Slash a malicious recovery attempt and burn the security deposit of the initiator.
+     *
+     * @param {number} friendGroupIndex
+     **/
+    slashAttempt: GenericTxCall<
+      (friendGroupIndex: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Recovery';
+          palletCall: {
+            name: 'SlashAttempt';
+            params: { friendGroupIndex: number };
           };
         },
         ChainKnownTypes
@@ -12534,7 +12738,8 @@ export interface ChainTx<
      * for eras older than the active era.
      *
      * ## Parameters
-     * - `slash_era`: The staking era in which the slash was originally scheduled.
+     * - `slash_era`: The application era (`offence_era + SlashDeferDuration`), i.e. the key
+     * into [`UnappliedSlashes`].
      * - `slash_key`: A unique identifier for the slash, represented as a tuple:
      * - `stash`: The stash account of the validator being slashed.
      * - `slash_fraction`: The fraction of the stake that was slashed.

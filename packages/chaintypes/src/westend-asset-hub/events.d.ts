@@ -1676,6 +1676,97 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `Recovery`'s events
+   **/
+  recovery: {
+    /**
+     * A recovery attempt was approved by a friend.
+     **/
+    AttemptApproved: GenericPalletEvent<
+      'Recovery',
+      'AttemptApproved',
+      { lost: AccountId32; friendGroupIndex: number; friend: AccountId32 }
+    >;
+
+    /**
+     * A recovery attempt was canceled by either the lost account or the initiator.
+     **/
+    AttemptCanceled: GenericPalletEvent<
+      'Recovery',
+      'AttemptCanceled',
+      { lost: AccountId32; friendGroupIndex: number; canceler: AccountId32 }
+    >;
+
+    /**
+     * A recovery attempt was initiated by a friend.
+     **/
+    AttemptInitiated: GenericPalletEvent<
+      'Recovery',
+      'AttemptInitiated',
+      { lost: AccountId32; friendGroupIndex: number; initiator: AccountId32 }
+    >;
+
+    /**
+     * A recovery attempt was finished.
+     **/
+    AttemptFinished: GenericPalletEvent<
+      'Recovery',
+      'AttemptFinished',
+      {
+        lost: AccountId32;
+        friendGroupIndex: number;
+        inheritor: AccountId32;
+        previousInheritor?: AccountId32 | undefined;
+      }
+    >;
+
+    /**
+     * A recovery attempt was discarded because the account was already recovered by a
+     * friend group of equal or higher priority.
+     *
+     * The attempt is consumed (removed from storage) and its deposits are released, but
+     * the existing inheritor remains unchanged.
+     **/
+    AttemptDiscarded: GenericPalletEvent<
+      'Recovery',
+      'AttemptDiscarded',
+      { lost: AccountId32; friendGroupIndex: number; existingInheritor: AccountId32 }
+    >;
+
+    /**
+     * A recovery attempt was slashed by the lost account.
+     *
+     * The initiator will lose their security deposit.
+     **/
+    AttemptSlashed: GenericPalletEvent<'Recovery', 'AttemptSlashed', { lost: AccountId32; friendGroupIndex: number }>;
+
+    /**
+     * The friend groups of an account have been changed.
+     **/
+    FriendGroupsChanged: GenericPalletEvent<'Recovery', 'FriendGroupsChanged', { lost: AccountId32 }>;
+
+    /**
+     * The inheritor of a lost account was revoked by the lost account.
+     **/
+    InheritorRevoked: GenericPalletEvent<'Recovery', 'InheritorRevoked', { lost: AccountId32 }>;
+
+    /**
+     * A recovered account was controlled by its inheritor.
+     *
+     * Check the `call_result` to see if it was successful.
+     **/
+    RecoveredAccountControlled: GenericPalletEvent<
+      'Recovery',
+      'RecoveredAccountControlled',
+      { recovered: AccountId32; inheritor: AccountId32; callHash: H256; callResult: Result<[], DispatchError> }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `Assets`'s events
    **/
   assets: {
@@ -3185,6 +3276,42 @@ export interface ChainEvents extends GenericChainEvents {
      * for failed Ethereum transactions.
      **/
     EthExtrinsicRevert: GenericPalletEvent<'Revive', 'EthExtrinsicRevert', { dispatchError: DispatchError }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `AssetsHolder`'s events
+   **/
+  assetsHolder: {
+    /**
+     * `who`s balance on hold was increased by `amount`.
+     **/
+    Held: GenericPalletEvent<
+      'AssetsHolder',
+      'Held',
+      { who: AccountId32; assetId: number; reason: AssetHubWestendRuntimeRuntimeHoldReason; amount: bigint }
+    >;
+
+    /**
+     * `who`s balance on hold was decreased by `amount`.
+     **/
+    Released: GenericPalletEvent<
+      'AssetsHolder',
+      'Released',
+      { who: AccountId32; assetId: number; reason: AssetHubWestendRuntimeRuntimeHoldReason; amount: bigint }
+    >;
+
+    /**
+     * `who`s balance on hold was burned by `amount`.
+     **/
+    Burned: GenericPalletEvent<
+      'AssetsHolder',
+      'Burned',
+      { who: AccountId32; assetId: number; reason: AssetHubWestendRuntimeRuntimeHoldReason; amount: bigint }
+    >;
 
     /**
      * Generic pallet event

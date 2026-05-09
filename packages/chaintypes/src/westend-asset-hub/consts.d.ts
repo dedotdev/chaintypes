@@ -652,6 +652,27 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `Recovery`'s constants
+   **/
+  recovery: {
+    /**
+     * Security deposit taken for each attempt that the initiator needs to place.
+     **/
+    securityDeposit: bigint;
+
+    /**
+     * DO NOT REDUCE THIS VALUE. Maximum number of friends per account config.
+     *
+     * Reducing this value can cause decoding errors in the bounded vectors.
+     **/
+    maxFriendsPerConfig: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Assets`'s constants
    **/
   assets: {
@@ -1143,6 +1164,15 @@ export interface ChainConsts extends GenericChainConsts {
      **/
     gasScale: number;
 
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `AssetsHolder`'s constants
+   **/
+  assetsHolder: {
     /**
      * Generic pallet constant
      **/

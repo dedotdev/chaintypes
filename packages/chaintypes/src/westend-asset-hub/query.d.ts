@@ -77,6 +77,10 @@ import type {
   PalletProxyAnnouncement,
   AssetHubWestendRuntimeRuntimeParametersValue,
   AssetHubWestendRuntimeRuntimeParametersKey,
+  PalletRecoveryFriendGroup,
+  FrameSupportTokensFungibleHoldConsideration,
+  PalletRecoveryAttempt,
+  PalletRecoveryIdentifiedConsideration,
   PalletAssetsAssetDetails,
   PalletAssetsAssetAccount,
   PalletAssetsApproval,
@@ -101,6 +105,7 @@ import type {
   PalletAssetConversionPoolInfo,
   PalletReviveVmCodeInfo,
   PalletReviveStorageAccountInfo,
+  PalletReviveStorageDeletionQueueItem,
   PalletReviveStorageDeletionQueueManager,
   PalletReviveEvmApiRpcTypesGenBlock,
   PalletReviveEvmBlockHashReceiptGasInfo,
@@ -108,7 +113,6 @@ import type {
   PalletReviveDebugDebugSettings,
   PalletAssetRewardsPoolStakerInfo,
   PalletAssetRewardsPoolInfo,
-  FrameSupportTokensFungibleHoldConsideration,
   PalletPsmCircuitBreakerLevel,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationMigrationLimits,
@@ -1564,6 +1568,58 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
+   * Pallet `Recovery`'s storage queries
+   **/
+  recovery: {
+    /**
+     * The friend groups of an account that can conduct recovery attempts.
+     *
+     * Modifying this storage is not possible while an account has ongoing recovery attempts.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[Array<PalletRecoveryFriendGroup>, FrameSupportTokensFungibleHoldConsideration] | undefined> =} callback
+     **/
+    friendGroups: GenericStorageQuery<
+      (
+        arg: AccountId32Like,
+      ) => [Array<PalletRecoveryFriendGroup>, FrameSupportTokensFungibleHoldConsideration] | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Ongoing recovery attempts of a lost account indexed by `(lost, friend_group)`.
+     *
+     * @param {[AccountId32Like, number]} arg
+     * @param {Callback<[PalletRecoveryAttempt, PalletRecoveryIdentifiedConsideration, bigint] | undefined> =} callback
+     **/
+    attempt: GenericStorageQuery<
+      (
+        arg: [AccountId32Like, number],
+      ) => [PalletRecoveryAttempt, PalletRecoveryIdentifiedConsideration, bigint] | undefined,
+      [AccountId32, number]
+    >;
+
+    /**
+     * The account that inherited full access to a lost account after successful recovery.
+     *
+     * The key is the lost account and the value is the inheritor account.
+     *
+     * NOTE: This could be a multisig or proxy account
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<[number, AccountId32, PalletRecoveryIdentifiedConsideration] | undefined> =} callback
+     **/
+    inheritor: GenericStorageQuery<
+      (arg: AccountId32Like) => [number, AccountId32, PalletRecoveryIdentifiedConsideration] | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
    * Pallet `Assets`'s storage queries
    **/
   assets: {
@@ -2204,6 +2260,26 @@ export interface ChainStorage extends GenericChainStorage {
     accountInfoOf: GenericStorageQuery<(arg: H160) => PalletReviveStorageAccountInfo | undefined, H160>;
 
     /**
+     * Native currency storage deposit contributed by a user into a contract.
+     *
+     * Bounds how much native value the user can receive back from that contract's
+     * storage deposit.
+     *
+     * Keys: `(holder, contributor) -> amount`
+     * - `holder`: account on which the deposit is held (a contract, or the pallet's own account
+     * for code-upload deposits).
+     * - `contributor`: user that funded the deposit. Receives the native portion on refund, capped
+     * at this entry's `amount`.
+     *
+     * @param {[AccountId32Like, AccountId32Like]} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    nativeDepositOf: GenericStorageQuery<
+      (arg: [AccountId32Like, AccountId32Like]) => bigint,
+      [AccountId32, AccountId32]
+    >;
+
+    /**
      * The immutable data associated with a given account.
      *
      * @param {H160} arg
@@ -2212,15 +2288,16 @@ export interface ChainStorage extends GenericChainStorage {
     immutableDataOf: GenericStorageQuery<(arg: H160) => Bytes | undefined, H160>;
 
     /**
-     * Evicted contracts that await child trie deletion.
+     * Terminated contracts that await lazy cleanup.
      *
-     * Child trie deletion is a heavy operation depending on the amount of storage items
-     * stored in said trie. Therefore this operation is performed lazily in `on_idle`.
+     * Each entry pairs a child trie ID with the contract account so that `on_idle` can
+     * drain both the child trie and any [`NativeDepositOf`] entries that named the contract
+     * as `holder`. Both can be arbitrarily large, so cleanup runs lazily in `on_idle`.
      *
      * @param {number} arg
-     * @param {Callback<Bytes | undefined> =} callback
+     * @param {Callback<PalletReviveStorageDeletionQueueItem | undefined> =} callback
      **/
-    deletionQueue: GenericStorageQuery<(arg: number) => Bytes | undefined, number>;
+    deletionQueue: GenericStorageQuery<(arg: number) => PalletReviveStorageDeletionQueueItem | undefined, number>;
 
     /**
      * A pair of monotonic counters used to track the latest contract marked for deletion
@@ -2303,6 +2380,34 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletReviveDebugDebugSettings> =} callback
      **/
     debugSettingsOf: GenericStorageQuery<() => PalletReviveDebugDebugSettings>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetsHolder`'s storage queries
+   **/
+  assetsHolder: {
+    /**
+     * A map that stores holds applied on an account for a given AssetId.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
+     **/
+    holds: GenericStorageQuery<
+      (arg: [number, AccountId32Like]) => Array<FrameSupportTokensMiscIdAmount>,
+      [number, AccountId32]
+    >;
+
+    /**
+     * A map that stores the current total balance on hold for every account on a given AssetId.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    balancesOnHold: GenericStorageQuery<(arg: [number, AccountId32Like]) => bigint | undefined, [number, AccountId32]>;
 
     /**
      * Generic pallet storage query

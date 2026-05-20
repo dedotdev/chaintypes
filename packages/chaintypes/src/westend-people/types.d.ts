@@ -3387,8 +3387,8 @@ export type PalletMetaTxMetaTx = {
 };
 
 export type PalletVerifySignatureExtensionVerifySignature =
-  | { type: 'Signed'; value: { signature: SpRuntimeMultiSignature; account: AccountId32 } }
-  | { type: 'Disabled' };
+  | { type: 'Disabled' }
+  | { type: 'Signed'; value: { signature: SpRuntimeMultiSignature; account: AccountId32 } };
 
 export type SpRuntimeMultiSignature =
   | { type: 'Ed25519'; value: FixedBytes<64> }
@@ -4095,6 +4095,7 @@ export type PeopleWestendRuntimeRuntimeEvent =
   | { pallet: 'ParachainSystem'; palletEvent: CumulusPalletParachainSystemEvent }
   | { pallet: 'Balances'; palletEvent: PalletBalancesEvent }
   | { pallet: 'TransactionPayment'; palletEvent: PalletTransactionPaymentEvent }
+  | { pallet: 'AccumulateForward'; palletEvent: PalletAccumulateAndForwardEvent }
   | { pallet: 'CollatorSelection'; palletEvent: PalletCollatorSelectionEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
@@ -4122,9 +4123,9 @@ export type FrameSystemEvent =
    **/
   | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
-   * `:code` was updated.
+   * `:code` was updated to the code with the given hash.
    **/
-  | { name: 'CodeUpdated' }
+  | { name: 'CodeUpdated'; data: { hash: H256 } }
   /**
    * A new account was created.
    **/
@@ -4368,6 +4369,20 @@ export type PalletTransactionPaymentEvent =
    * has been paid by `who`.
    **/
   { name: 'TransactionFeePaid'; data: { who: AccountId32; actualFee: bigint; tip: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAccumulateAndForwardEvent =
+  /**
+   * Successfully forwarded accumulated funds to the destination.
+   **/
+  | { name: 'ForwardSucceeded'; data: { amount: bigint } }
+  /**
+   * Failed to forward funds. They will remain in the accumulation account
+   * and forwarding will be retried after another `TransferPeriod` blocks.
+   **/
+  | { name: 'ForwardFailed'; data: { amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -5391,6 +5406,7 @@ export type CumulusPalletParachainSystemPoVMessages = {
   bundleIndex: number;
   umpMsgCount: number;
   hrmpOutboundCount: number;
+  hrmpOutboundRecipients: Array<PolkadotParachainPrimitivesPrimitivesId>;
 };
 
 /**
@@ -5492,9 +5508,9 @@ export type FrameSupportStorageNoDrop = FrameSupportTokensFungibleImbalance;
 
 export type FrameSupportTokensFungibleImbalance = { amount: bigint };
 
-export type FrameSupportPalletId = FixedBytes<8>;
-
 export type PalletCollatorSelectionCandidateInfo = { who: AccountId32; deposit: bigint };
+
+export type FrameSupportPalletId = FixedBytes<8>;
 
 /**
  * The `Error` enum of this pallet.

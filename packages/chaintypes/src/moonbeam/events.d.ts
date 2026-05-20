@@ -17,6 +17,8 @@ import type {
   FrameSystemDispatchEventInfo,
   SpWeightsWeightV2Weight,
   FrameSupportTokensMiscBalanceStatus,
+  MoonbeamRuntimeRuntimeHoldReason,
+  PalletBalancesUnexpectedKind,
   PalletParachainStakingDelegationRequestsCancelledScheduledRequest,
   PalletParachainStakingDelegatorAdded,
   PalletParachainStakingInflationDistributionConfig,
@@ -247,9 +249,19 @@ export interface ChainEvents extends GenericChainEvents {
     Minted: GenericPalletEvent<'Balances', 'Minted', { who: AccountId20; amount: bigint }>;
 
     /**
+     * Some credit was balanced and added to the TotalIssuance.
+     **/
+    MintedCredit: GenericPalletEvent<'Balances', 'MintedCredit', { amount: bigint }>;
+
+    /**
      * Some amount was burned from an account.
      **/
     Burned: GenericPalletEvent<'Balances', 'Burned', { who: AccountId20; amount: bigint }>;
+
+    /**
+     * Some debt has been dropped from the Total Issuance.
+     **/
+    BurnedDebt: GenericPalletEvent<'Balances', 'BurnedDebt', { amount: bigint }>;
 
     /**
      * Some amount was suspended from an account (it can be restored later).
@@ -300,6 +312,56 @@ export interface ChainEvents extends GenericChainEvents {
      * The `TotalIssuance` was forcefully changed.
      **/
     TotalIssuanceForced: GenericPalletEvent<'Balances', 'TotalIssuanceForced', { old: bigint; new: bigint }>;
+
+    /**
+     * Some balance was placed on hold.
+     **/
+    Held: GenericPalletEvent<
+      'Balances',
+      'Held',
+      { reason: MoonbeamRuntimeRuntimeHoldReason; who: AccountId20; amount: bigint }
+    >;
+
+    /**
+     * Held balance was burned from an account.
+     **/
+    BurnedHeld: GenericPalletEvent<
+      'Balances',
+      'BurnedHeld',
+      { reason: MoonbeamRuntimeRuntimeHoldReason; who: AccountId20; amount: bigint }
+    >;
+
+    /**
+     * A transfer of `amount` on hold from `source` to `dest` was initiated.
+     **/
+    TransferOnHold: GenericPalletEvent<
+      'Balances',
+      'TransferOnHold',
+      { reason: MoonbeamRuntimeRuntimeHoldReason; source: AccountId20; dest: AccountId20; amount: bigint }
+    >;
+
+    /**
+     * The `transferred` balance is placed on hold at the `dest` account.
+     **/
+    TransferAndHold: GenericPalletEvent<
+      'Balances',
+      'TransferAndHold',
+      { reason: MoonbeamRuntimeRuntimeHoldReason; source: AccountId20; dest: AccountId20; transferred: bigint }
+    >;
+
+    /**
+     * Some balance was released from hold.
+     **/
+    Released: GenericPalletEvent<
+      'Balances',
+      'Released',
+      { reason: MoonbeamRuntimeRuntimeHoldReason; who: AccountId20; amount: bigint }
+    >;
+
+    /**
+     * An unexpected/defensive event was triggered.
+     **/
+    Unexpected: GenericPalletEvent<'Balances', 'Unexpected', PalletBalancesUnexpectedKind>;
 
     /**
      * Generic pallet event
@@ -820,7 +882,14 @@ export interface ChainEvents extends GenericChainEvents {
     PureCreated: GenericPalletEvent<
       'Proxy',
       'PureCreated',
-      { pure: AccountId20; who: AccountId20; proxyType: MoonbeamRuntimeProxyType; disambiguationIndex: number }
+      {
+        pure: AccountId20;
+        who: AccountId20;
+        proxyType: MoonbeamRuntimeProxyType;
+        disambiguationIndex: number;
+        at: number;
+        extrinsicIndex: number;
+      }
     >;
 
     /**
@@ -1325,12 +1394,12 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * An account has delegated their vote to another account. \[who, target\]
      **/
-    Delegated: GenericPalletEvent<'ConvictionVoting', 'Delegated', [AccountId20, AccountId20]>;
+    Delegated: GenericPalletEvent<'ConvictionVoting', 'Delegated', [AccountId20, AccountId20, number]>;
 
     /**
      * An \[account\] has cancelled a previous delegation operation.
      **/
-    Undelegated: GenericPalletEvent<'ConvictionVoting', 'Undelegated', AccountId20>;
+    Undelegated: GenericPalletEvent<'ConvictionVoting', 'Undelegated', [AccountId20, number]>;
 
     /**
      * An account has voted
@@ -1338,7 +1407,7 @@ export interface ChainEvents extends GenericChainEvents {
     Voted: GenericPalletEvent<
       'ConvictionVoting',
       'Voted',
-      { who: AccountId20; vote: PalletConvictionVotingVoteAccountVote }
+      { who: AccountId20; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number }
     >;
 
     /**
@@ -1347,7 +1416,7 @@ export interface ChainEvents extends GenericChainEvents {
     VoteRemoved: GenericPalletEvent<
       'ConvictionVoting',
       'VoteRemoved',
-      { who: AccountId20; vote: PalletConvictionVotingVoteAccountVote }
+      { who: AccountId20; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number }
     >;
 
     /**

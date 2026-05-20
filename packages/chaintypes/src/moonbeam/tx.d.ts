@@ -25,7 +25,8 @@ import type {
   MoonbeamRuntimeRuntimeCallLike,
   AccountEthereumSignature,
   FrameSystemEventRecord,
-  CumulusPrimitivesParachainInherentParachainInherentData,
+  CumulusPalletParachainSystemParachainInherentBasicParachainInherentData,
+  CumulusPalletParachainSystemParachainInherentInboundMessagesData,
   PalletBalancesAdjustmentDirection,
   PalletParachainStakingInflationDistributionConfig,
   PalletAuthorSlotFilterNumNonZeroU32,
@@ -339,15 +340,22 @@ export interface ChainTx<
      * As a side effect, this function upgrades the current validation function
      * if the appropriate time has come.
      *
-     * @param {CumulusPrimitivesParachainInherentParachainInherentData} data
+     * @param {CumulusPalletParachainSystemParachainInherentBasicParachainInherentData} data
+     * @param {CumulusPalletParachainSystemParachainInherentInboundMessagesData} inboundMessagesData
      **/
     setValidationData: GenericTxCall<
-      (data: CumulusPrimitivesParachainInherentParachainInherentData) => ChainSubmittableExtrinsic<
+      (
+        data: CumulusPalletParachainSystemParachainInherentBasicParachainInherentData,
+        inboundMessagesData: CumulusPalletParachainSystemParachainInherentInboundMessagesData,
+      ) => ChainSubmittableExtrinsic<
         {
           pallet: 'ParachainSystem';
           palletCall: {
             name: 'SetValidationData';
-            params: { data: CumulusPrimitivesParachainInherentParachainInherentData };
+            params: {
+              data: CumulusPalletParachainSystemParachainInherentBasicParachainInherentData;
+              inboundMessagesData: CumulusPalletParachainSystemParachainInherentInboundMessagesData;
+            };
           };
         },
         ChainKnownTypes
@@ -1934,7 +1942,7 @@ export interface ChainTx<
      *
      * The dispatch origin for this call must be _Signed_.
      *
-     * WARNING: This may be called on accounts created by `pure`, however if done, then
+     * WARNING: This may be called on accounts created by `create_pure`, however if done, then
      * the unreserved fees will be inaccessible. **All access to this account will be lost.**
      *
      **/
@@ -1998,16 +2006,16 @@ export interface ChainTx<
      * inaccessible.
      *
      * Requires a `Signed` origin, and the sender account must have been created by a call to
-     * `pure` with corresponding parameters.
+     * `create_pure` with corresponding parameters.
      *
-     * - `spawner`: The account that originally called `pure` to create this account.
+     * - `spawner`: The account that originally called `create_pure` to create this account.
      * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
-     * - `proxy_type`: The proxy type originally passed to `pure`.
-     * - `height`: The height of the chain when the call to `pure` was processed.
-     * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+     * - `proxy_type`: The proxy type originally passed to `create_pure`.
+     * - `height`: The height of the chain when the call to `create_pure` was processed.
+     * - `ext_index`: The extrinsic index in which the call to `create_pure` was processed.
      *
      * Fails with `NoPermission` in case the caller is not a previously created pure
-     * account whose `pure` call has corresponding parameters.
+     * account whose `create_pure` call has corresponding parameters.
      *
      * @param {AccountId20Like} spawner
      * @param {MoonbeamRuntimeProxyType} proxyType

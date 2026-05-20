@@ -23,7 +23,6 @@ import type {
   DispatchError,
   Result,
   UncheckedExtrinsic,
-  FixedI64,
 } from 'dedot/codecs';
 
 export type WestendRuntimeRuntimeCall =
@@ -38,7 +37,6 @@ export type WestendRuntimeRuntimeCall =
   | { pallet: 'Grandpa'; palletCall: PalletGrandpaCall }
   | { pallet: 'Utility'; palletCall: PalletUtilityCall }
   | { pallet: 'Identity'; palletCall: PalletIdentityCall }
-  | { pallet: 'Recovery'; palletCall: PalletRecoveryCall }
   | { pallet: 'Vesting'; palletCall: PalletVestingCall }
   | { pallet: 'Scheduler'; palletCall: PalletSchedulerCall }
   | { pallet: 'Preimage'; palletCall: PalletPreimageCall }
@@ -49,10 +47,6 @@ export type WestendRuntimeRuntimeCall =
   | { pallet: 'VoterList'; palletCall: PalletBagsListCall }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
   | { pallet: 'FastUnstake'; palletCall: PalletFastUnstakeCall }
-  | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCall }
-  | { pallet: 'Referenda'; palletCall: PalletReferendaCall }
-  | { pallet: 'Whitelist'; palletCall: PalletWhitelistCall }
-  | { pallet: 'Treasury'; palletCall: PalletTreasuryCall }
   | { pallet: 'Configuration'; palletCall: PolkadotRuntimeParachainsConfigurationPalletCall }
   | { pallet: 'ParasShared'; palletCall: PolkadotRuntimeParachainsSharedPalletCall }
   | { pallet: 'ParaInclusion'; palletCall: PolkadotRuntimeParachainsInclusionPalletCall }
@@ -92,7 +86,6 @@ export type WestendRuntimeRuntimeCallLike =
   | { pallet: 'Grandpa'; palletCall: PalletGrandpaCallLike }
   | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
   | { pallet: 'Identity'; palletCall: PalletIdentityCallLike }
-  | { pallet: 'Recovery'; palletCall: PalletRecoveryCallLike }
   | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
   | { pallet: 'Scheduler'; palletCall: PalletSchedulerCallLike }
   | { pallet: 'Preimage'; palletCall: PalletPreimageCallLike }
@@ -103,10 +96,6 @@ export type WestendRuntimeRuntimeCallLike =
   | { pallet: 'VoterList'; palletCall: PalletBagsListCallLike }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
   | { pallet: 'FastUnstake'; palletCall: PalletFastUnstakeCallLike }
-  | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCallLike }
-  | { pallet: 'Referenda'; palletCall: PalletReferendaCallLike }
-  | { pallet: 'Whitelist'; palletCall: PalletWhitelistCallLike }
-  | { pallet: 'Treasury'; palletCall: PalletTreasuryCallLike }
   | { pallet: 'Configuration'; palletCall: PolkadotRuntimeParachainsConfigurationPalletCallLike }
   | { pallet: 'ParasShared'; palletCall: PolkadotRuntimeParachainsSharedPalletCallLike }
   | { pallet: 'ParaInclusion'; palletCall: PolkadotRuntimeParachainsInclusionPalletCallLike }
@@ -2264,7 +2253,6 @@ export type PalletUtilityCallLike =
 
 export type WestendRuntimeOriginCaller =
   | { type: 'System'; value: FrameSupportDispatchRawOrigin }
-  | { type: 'Origins'; value: WestendRuntimeGovernanceOriginsPalletCustomOriginsOrigin }
   | { type: 'ParachainsOrigin'; value: PolkadotRuntimeParachainsOriginPalletOrigin }
   | { type: 'XcmPallet'; value: PalletXcmOrigin };
 
@@ -2273,35 +2261,6 @@ export type FrameSupportDispatchRawOrigin =
   | { type: 'Signed'; value: AccountId32 }
   | { type: 'None' }
   | { type: 'Authorized' };
-
-export type WestendRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
-  | 'StakingAdmin'
-  | 'Treasurer'
-  | 'FellowshipAdmin'
-  | 'GeneralAdmin'
-  | 'AuctionAdmin'
-  | 'LeaseAdmin'
-  | 'ReferendumCanceller'
-  | 'ReferendumKiller'
-  | 'SmallTipper'
-  | 'BigTipper'
-  | 'SmallSpender'
-  | 'MediumSpender'
-  | 'BigSpender'
-  | 'WhitelistedCaller'
-  | 'FellowshipInitiates'
-  | 'Fellows'
-  | 'FellowshipExperts'
-  | 'FellowshipMasters'
-  | 'Fellowship1Dan'
-  | 'Fellowship2Dan'
-  | 'Fellowship3Dan'
-  | 'Fellowship4Dan'
-  | 'Fellowship5Dan'
-  | 'Fellowship6Dan'
-  | 'Fellowship7Dan'
-  | 'Fellowship8Dan'
-  | 'Fellowship9Dan';
 
 export type PolkadotRuntimeParachainsOriginPalletOrigin = {
   type: 'Parachain';
@@ -2905,305 +2864,6 @@ export type SpRuntimeMultiSignature =
   | { type: 'Sr25519'; value: FixedBytes<64> }
   | { type: 'Ecdsa'; value: FixedBytes<65> }
   | { type: 'Eth'; value: FixedBytes<65> };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletRecoveryCall =
-  /**
-   * Send a call through a recovered account.
-   *
-   * The dispatch origin for this call must be _Signed_ and registered to
-   * be able to make calls on behalf of the recovered account.
-   *
-   * Parameters:
-   * - `account`: The recovered account you want to make a call on-behalf-of.
-   * - `call`: The call you want to make with the recovered account.
-   **/
-  | { name: 'AsRecovered'; params: { account: MultiAddress; call: WestendRuntimeRuntimeCall } }
-  /**
-   * Allow ROOT to bypass the recovery process and set a rescuer account
-   * for a lost account directly.
-   *
-   * The dispatch origin for this call must be _ROOT_.
-   *
-   * Parameters:
-   * - `lost`: The "lost account" to be recovered.
-   * - `rescuer`: The "rescuer account" which can call as the lost account.
-   **/
-  | { name: 'SetRecovered'; params: { lost: MultiAddress; rescuer: MultiAddress } }
-  /**
-   * Create a recovery configuration for your account. This makes your account recoverable.
-   *
-   * Payment: `ConfigDepositBase` + `FriendDepositFactor` * #_of_friends balance
-   * will be reserved for storing the recovery configuration. This deposit is returned
-   * in full when the user calls `remove_recovery`.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `friends`: A list of friends you trust to vouch for recovery attempts. Should be
-   * ordered and contain no duplicate values.
-   * - `threshold`: The number of friends that must vouch for a recovery attempt before the
-   * account can be recovered. Should be less than or equal to the length of the list of
-   * friends.
-   * - `delay_period`: The number of blocks after a recovery attempt is initialized that
-   * needs to pass before the account can be recovered.
-   **/
-  | { name: 'CreateRecovery'; params: { friends: Array<AccountId32>; threshold: number; delayPeriod: number } }
-  /**
-   * Initiate the process for recovering a recoverable account.
-   *
-   * Payment: `RecoveryDeposit` balance will be reserved for initiating the
-   * recovery process. This deposit will always be repatriated to the account
-   * trying to be recovered. See `close_recovery`.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `account`: The lost account that you want to recover. This account needs to be
-   * recoverable (i.e. have a recovery configuration).
-   **/
-  | { name: 'InitiateRecovery'; params: { account: MultiAddress } }
-  /**
-   * Allow a "friend" of a recoverable account to vouch for an active recovery
-   * process for that account.
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a "friend"
-   * for the recoverable account.
-   *
-   * Parameters:
-   * - `lost`: The lost account that you want to recover.
-   * - `rescuer`: The account trying to rescue the lost account that you want to vouch for.
-   *
-   * The combination of these two parameters must point to an active recovery
-   * process.
-   **/
-  | { name: 'VouchRecovery'; params: { lost: MultiAddress; rescuer: MultiAddress } }
-  /**
-   * Allow a successful rescuer to claim their recovered account.
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a "rescuer"
-   * who has successfully completed the account recovery process: collected
-   * `threshold` or more vouches, waited `delay_period` blocks since initiation.
-   *
-   * Parameters:
-   * - `account`: The lost account that you want to claim has been successfully recovered by
-   * you.
-   **/
-  | { name: 'ClaimRecovery'; params: { account: MultiAddress } }
-  /**
-   * As the controller of a recoverable account, close an active recovery
-   * process for your account.
-   *
-   * Payment: By calling this function, the recoverable account will receive
-   * the recovery deposit `RecoveryDeposit` placed by the rescuer.
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a
-   * recoverable account with an active recovery process for it.
-   *
-   * Parameters:
-   * - `rescuer`: The account trying to rescue this recoverable account.
-   **/
-  | { name: 'CloseRecovery'; params: { rescuer: MultiAddress } }
-  /**
-   * Remove the recovery process for your account. Recovered accounts are still accessible.
-   *
-   * NOTE: The user must make sure to call `close_recovery` on all active
-   * recovery attempts before calling this function else it will fail.
-   *
-   * Payment: By calling this function the recoverable account will unreserve
-   * their recovery configuration deposit.
-   * (`ConfigDepositBase` + `FriendDepositFactor` * #_of_friends)
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a
-   * recoverable account (i.e. has a recovery configuration).
-   **/
-  | { name: 'RemoveRecovery' }
-  /**
-   * Cancel the ability to use `as_recovered` for `account`.
-   *
-   * The dispatch origin for this call must be _Signed_ and registered to
-   * be able to make calls on behalf of the recovered account.
-   *
-   * Parameters:
-   * - `account`: The recovered account you are able to call on-behalf-of.
-   **/
-  | { name: 'CancelRecovered'; params: { account: MultiAddress } }
-  /**
-   * Poke deposits for recovery configurations and / or active recoveries.
-   *
-   * This can be used by accounts to possibly lower their locked amount.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `maybe_account`: Optional recoverable account for which you have an active recovery
-   * and want to adjust the deposit for the active recovery.
-   *
-   * This function checks both recovery configuration deposit and active recovery deposits
-   * of the caller:
-   * - If the caller has created a recovery configuration, checks and adjusts its deposit
-   * - If the caller has initiated any active recoveries, and provides the account in
-   * `maybe_account`, checks and adjusts those deposits
-   *
-   * If any deposit is updated, the difference will be reserved/unreserved from the caller's
-   * account.
-   *
-   * The transaction is made free if any deposit is updated and paid otherwise.
-   *
-   * Emits `DepositPoked` if any deposit is updated.
-   * Multiple events may be emitted in case both types of deposits are updated.
-   **/
-  | { name: 'PokeDeposit'; params: { maybeAccount?: MultiAddress | undefined } };
-
-export type PalletRecoveryCallLike =
-  /**
-   * Send a call through a recovered account.
-   *
-   * The dispatch origin for this call must be _Signed_ and registered to
-   * be able to make calls on behalf of the recovered account.
-   *
-   * Parameters:
-   * - `account`: The recovered account you want to make a call on-behalf-of.
-   * - `call`: The call you want to make with the recovered account.
-   **/
-  | { name: 'AsRecovered'; params: { account: MultiAddressLike; call: WestendRuntimeRuntimeCallLike } }
-  /**
-   * Allow ROOT to bypass the recovery process and set a rescuer account
-   * for a lost account directly.
-   *
-   * The dispatch origin for this call must be _ROOT_.
-   *
-   * Parameters:
-   * - `lost`: The "lost account" to be recovered.
-   * - `rescuer`: The "rescuer account" which can call as the lost account.
-   **/
-  | { name: 'SetRecovered'; params: { lost: MultiAddressLike; rescuer: MultiAddressLike } }
-  /**
-   * Create a recovery configuration for your account. This makes your account recoverable.
-   *
-   * Payment: `ConfigDepositBase` + `FriendDepositFactor` * #_of_friends balance
-   * will be reserved for storing the recovery configuration. This deposit is returned
-   * in full when the user calls `remove_recovery`.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `friends`: A list of friends you trust to vouch for recovery attempts. Should be
-   * ordered and contain no duplicate values.
-   * - `threshold`: The number of friends that must vouch for a recovery attempt before the
-   * account can be recovered. Should be less than or equal to the length of the list of
-   * friends.
-   * - `delay_period`: The number of blocks after a recovery attempt is initialized that
-   * needs to pass before the account can be recovered.
-   **/
-  | { name: 'CreateRecovery'; params: { friends: Array<AccountId32Like>; threshold: number; delayPeriod: number } }
-  /**
-   * Initiate the process for recovering a recoverable account.
-   *
-   * Payment: `RecoveryDeposit` balance will be reserved for initiating the
-   * recovery process. This deposit will always be repatriated to the account
-   * trying to be recovered. See `close_recovery`.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `account`: The lost account that you want to recover. This account needs to be
-   * recoverable (i.e. have a recovery configuration).
-   **/
-  | { name: 'InitiateRecovery'; params: { account: MultiAddressLike } }
-  /**
-   * Allow a "friend" of a recoverable account to vouch for an active recovery
-   * process for that account.
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a "friend"
-   * for the recoverable account.
-   *
-   * Parameters:
-   * - `lost`: The lost account that you want to recover.
-   * - `rescuer`: The account trying to rescue the lost account that you want to vouch for.
-   *
-   * The combination of these two parameters must point to an active recovery
-   * process.
-   **/
-  | { name: 'VouchRecovery'; params: { lost: MultiAddressLike; rescuer: MultiAddressLike } }
-  /**
-   * Allow a successful rescuer to claim their recovered account.
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a "rescuer"
-   * who has successfully completed the account recovery process: collected
-   * `threshold` or more vouches, waited `delay_period` blocks since initiation.
-   *
-   * Parameters:
-   * - `account`: The lost account that you want to claim has been successfully recovered by
-   * you.
-   **/
-  | { name: 'ClaimRecovery'; params: { account: MultiAddressLike } }
-  /**
-   * As the controller of a recoverable account, close an active recovery
-   * process for your account.
-   *
-   * Payment: By calling this function, the recoverable account will receive
-   * the recovery deposit `RecoveryDeposit` placed by the rescuer.
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a
-   * recoverable account with an active recovery process for it.
-   *
-   * Parameters:
-   * - `rescuer`: The account trying to rescue this recoverable account.
-   **/
-  | { name: 'CloseRecovery'; params: { rescuer: MultiAddressLike } }
-  /**
-   * Remove the recovery process for your account. Recovered accounts are still accessible.
-   *
-   * NOTE: The user must make sure to call `close_recovery` on all active
-   * recovery attempts before calling this function else it will fail.
-   *
-   * Payment: By calling this function the recoverable account will unreserve
-   * their recovery configuration deposit.
-   * (`ConfigDepositBase` + `FriendDepositFactor` * #_of_friends)
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a
-   * recoverable account (i.e. has a recovery configuration).
-   **/
-  | { name: 'RemoveRecovery' }
-  /**
-   * Cancel the ability to use `as_recovered` for `account`.
-   *
-   * The dispatch origin for this call must be _Signed_ and registered to
-   * be able to make calls on behalf of the recovered account.
-   *
-   * Parameters:
-   * - `account`: The recovered account you are able to call on-behalf-of.
-   **/
-  | { name: 'CancelRecovered'; params: { account: MultiAddressLike } }
-  /**
-   * Poke deposits for recovery configurations and / or active recoveries.
-   *
-   * This can be used by accounts to possibly lower their locked amount.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `maybe_account`: Optional recoverable account for which you have an active recovery
-   * and want to adjust the deposit for the active recovery.
-   *
-   * This function checks both recovery configuration deposit and active recovery deposits
-   * of the caller:
-   * - If the caller has created a recovery configuration, checks and adjusts its deposit
-   * - If the caller has initiated any active recoveries, and provides the account in
-   * `maybe_account`, checks and adjusts those deposits
-   *
-   * If any deposit is updated, the difference will be reserved/unreserved from the caller's
-   * account.
-   *
-   * The transaction is made free if any deposit is updated and paid otherwise.
-   *
-   * Emits `DepositPoked` if any deposit is updated.
-   * Multiple events may be emitted in case both types of deposits are updated.
-   **/
-  | { name: 'PokeDeposit'; params: { maybeAccount?: MultiAddressLike | undefined } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5637,906 +5297,6 @@ export type PalletFastUnstakeCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletConvictionVotingCall =
-  /**
-   * Vote in a poll. If `vote.is_aye()`, the vote is to enact the proposal;
-   * otherwise it is a vote to keep the status quo.
-   *
-   * The dispatch origin of this call must be _Signed_.
-   *
-   * - `poll_index`: The index of the poll to vote for.
-   * - `vote`: The vote configuration.
-   *
-   * Weight: `O(R)` where R is the number of polls the voter has voted on.
-   **/
-  | { name: 'Vote'; params: { pollIndex: number; vote: PalletConvictionVotingVoteAccountVote } }
-  /**
-   * Delegate the voting power (with some given conviction) of the sending account for a
-   * particular class of polls.
-   *
-   * The balance delegated is locked for as long as it's delegated, and thereafter for the
-   * time appropriate for the conviction's lock period.
-   *
-   * The dispatch origin of this call must be _Signed_, and the signing account must either:
-   * - be delegating already; or
-   * - have no voting activity (if there is, then it will need to be removed through
-   * `remove_vote`).
-   *
-   * - `to`: The account whose voting the `target` account's voting power will follow.
-   * - `class`: The class of polls to delegate. To delegate multiple classes, multiple calls
-   * to this function are required.
-   * - `conviction`: The conviction that will be attached to the delegated votes. When the
-   * account is undelegated, the funds will be locked for the corresponding period.
-   * - `balance`: The amount of the account's balance to be used in delegating. This must not
-   * be more than the account's current balance.
-   *
-   * Emits `Delegated`.
-   *
-   * Weight: `O(R)` where R is the number of polls the voter delegating to has
-   * voted on. Weight is initially charged as if maximum votes, but is refunded later.
-   **/
-  | {
-      name: 'Delegate';
-      params: { class: number; to: MultiAddress; conviction: PalletConvictionVotingConviction; balance: bigint };
-    }
-  /**
-   * Undelegate the voting power of the sending account for a particular class of polls.
-   *
-   * Tokens may be unlocked following once an amount of time consistent with the lock period
-   * of the conviction with which the delegation was issued has passed.
-   *
-   * The dispatch origin of this call must be _Signed_ and the signing account must be
-   * currently delegating.
-   *
-   * - `class`: The class of polls to remove the delegation from.
-   *
-   * Emits `Undelegated`.
-   *
-   * Weight: `O(R)` where R is the number of polls the voter delegating to has
-   * voted on. Weight is initially charged as if maximum votes, but is refunded later.
-   **/
-  | { name: 'Undelegate'; params: { class: number } }
-  /**
-   * Remove the lock caused by prior voting/delegating which has expired within a particular
-   * class.
-   *
-   * The dispatch origin of this call must be _Signed_.
-   *
-   * - `class`: The class of polls to unlock.
-   * - `target`: The account to remove the lock on.
-   *
-   * Weight: `O(R)` with R number of vote of target.
-   **/
-  | { name: 'Unlock'; params: { class: number; target: MultiAddress } }
-  /**
-   * Remove a vote for a poll.
-   *
-   * If:
-   * - the poll was cancelled, or
-   * - the poll is ongoing, or
-   * - the poll has ended such that
-   * - the vote of the account was in opposition to the result; or
-   * - there was no conviction to the account's vote; or
-   * - the account made a split vote
-   * ...then the vote is removed cleanly and a following call to `unlock` may result in more
-   * funds being available.
-   *
-   * If, however, the poll has ended and:
-   * - it finished corresponding to the vote of the account, and
-   * - the account made a standard vote with conviction, and
-   * - the lock period of the conviction is not over
-   * ...then the lock will be aggregated into the overall account's lock, which may involve
-   * *overlocking* (where the two locks are combined into a single lock that is the maximum
-   * of both the amount locked and the time is it locked for).
-   *
-   * The dispatch origin of this call must be _Signed_, and the signer must have a vote
-   * registered for poll `index`.
-   *
-   * - `index`: The index of poll of the vote to be removed.
-   * - `class`: Optional parameter, if given it indicates the class of the poll. For polls
-   * which have finished or are cancelled, this must be `Some`.
-   *
-   * Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
-   * Weight is calculated for the maximum number of vote.
-   **/
-  | { name: 'RemoveVote'; params: { class?: number | undefined; index: number } }
-  /**
-   * Remove a vote for a poll.
-   *
-   * If the `target` is equal to the signer, then this function is exactly equivalent to
-   * `remove_vote`. If not equal to the signer, then the vote must have expired,
-   * either because the poll was cancelled, because the voter lost the poll or
-   * because the conviction period is over.
-   *
-   * The dispatch origin of this call must be _Signed_.
-   *
-   * - `target`: The account of the vote to be removed; this account must have voted for poll
-   * `index`.
-   * - `index`: The index of poll of the vote to be removed.
-   * - `class`: The class of the poll.
-   *
-   * Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
-   * Weight is calculated for the maximum number of vote.
-   **/
-  | { name: 'RemoveOtherVote'; params: { target: MultiAddress; class: number; index: number } };
-
-export type PalletConvictionVotingCallLike =
-  /**
-   * Vote in a poll. If `vote.is_aye()`, the vote is to enact the proposal;
-   * otherwise it is a vote to keep the status quo.
-   *
-   * The dispatch origin of this call must be _Signed_.
-   *
-   * - `poll_index`: The index of the poll to vote for.
-   * - `vote`: The vote configuration.
-   *
-   * Weight: `O(R)` where R is the number of polls the voter has voted on.
-   **/
-  | { name: 'Vote'; params: { pollIndex: number; vote: PalletConvictionVotingVoteAccountVote } }
-  /**
-   * Delegate the voting power (with some given conviction) of the sending account for a
-   * particular class of polls.
-   *
-   * The balance delegated is locked for as long as it's delegated, and thereafter for the
-   * time appropriate for the conviction's lock period.
-   *
-   * The dispatch origin of this call must be _Signed_, and the signing account must either:
-   * - be delegating already; or
-   * - have no voting activity (if there is, then it will need to be removed through
-   * `remove_vote`).
-   *
-   * - `to`: The account whose voting the `target` account's voting power will follow.
-   * - `class`: The class of polls to delegate. To delegate multiple classes, multiple calls
-   * to this function are required.
-   * - `conviction`: The conviction that will be attached to the delegated votes. When the
-   * account is undelegated, the funds will be locked for the corresponding period.
-   * - `balance`: The amount of the account's balance to be used in delegating. This must not
-   * be more than the account's current balance.
-   *
-   * Emits `Delegated`.
-   *
-   * Weight: `O(R)` where R is the number of polls the voter delegating to has
-   * voted on. Weight is initially charged as if maximum votes, but is refunded later.
-   **/
-  | {
-      name: 'Delegate';
-      params: { class: number; to: MultiAddressLike; conviction: PalletConvictionVotingConviction; balance: bigint };
-    }
-  /**
-   * Undelegate the voting power of the sending account for a particular class of polls.
-   *
-   * Tokens may be unlocked following once an amount of time consistent with the lock period
-   * of the conviction with which the delegation was issued has passed.
-   *
-   * The dispatch origin of this call must be _Signed_ and the signing account must be
-   * currently delegating.
-   *
-   * - `class`: The class of polls to remove the delegation from.
-   *
-   * Emits `Undelegated`.
-   *
-   * Weight: `O(R)` where R is the number of polls the voter delegating to has
-   * voted on. Weight is initially charged as if maximum votes, but is refunded later.
-   **/
-  | { name: 'Undelegate'; params: { class: number } }
-  /**
-   * Remove the lock caused by prior voting/delegating which has expired within a particular
-   * class.
-   *
-   * The dispatch origin of this call must be _Signed_.
-   *
-   * - `class`: The class of polls to unlock.
-   * - `target`: The account to remove the lock on.
-   *
-   * Weight: `O(R)` with R number of vote of target.
-   **/
-  | { name: 'Unlock'; params: { class: number; target: MultiAddressLike } }
-  /**
-   * Remove a vote for a poll.
-   *
-   * If:
-   * - the poll was cancelled, or
-   * - the poll is ongoing, or
-   * - the poll has ended such that
-   * - the vote of the account was in opposition to the result; or
-   * - there was no conviction to the account's vote; or
-   * - the account made a split vote
-   * ...then the vote is removed cleanly and a following call to `unlock` may result in more
-   * funds being available.
-   *
-   * If, however, the poll has ended and:
-   * - it finished corresponding to the vote of the account, and
-   * - the account made a standard vote with conviction, and
-   * - the lock period of the conviction is not over
-   * ...then the lock will be aggregated into the overall account's lock, which may involve
-   * *overlocking* (where the two locks are combined into a single lock that is the maximum
-   * of both the amount locked and the time is it locked for).
-   *
-   * The dispatch origin of this call must be _Signed_, and the signer must have a vote
-   * registered for poll `index`.
-   *
-   * - `index`: The index of poll of the vote to be removed.
-   * - `class`: Optional parameter, if given it indicates the class of the poll. For polls
-   * which have finished or are cancelled, this must be `Some`.
-   *
-   * Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
-   * Weight is calculated for the maximum number of vote.
-   **/
-  | { name: 'RemoveVote'; params: { class?: number | undefined; index: number } }
-  /**
-   * Remove a vote for a poll.
-   *
-   * If the `target` is equal to the signer, then this function is exactly equivalent to
-   * `remove_vote`. If not equal to the signer, then the vote must have expired,
-   * either because the poll was cancelled, because the voter lost the poll or
-   * because the conviction period is over.
-   *
-   * The dispatch origin of this call must be _Signed_.
-   *
-   * - `target`: The account of the vote to be removed; this account must have voted for poll
-   * `index`.
-   * - `index`: The index of poll of the vote to be removed.
-   * - `class`: The class of the poll.
-   *
-   * Weight: `O(R + log R)` where R is the number of polls that `target` has voted on.
-   * Weight is calculated for the maximum number of vote.
-   **/
-  | { name: 'RemoveOtherVote'; params: { target: MultiAddressLike; class: number; index: number } };
-
-export type PalletConvictionVotingVoteAccountVote =
-  | { type: 'Standard'; value: { vote: PalletConvictionVotingVote; balance: bigint } }
-  | { type: 'Split'; value: { aye: bigint; nay: bigint } }
-  | { type: 'SplitAbstain'; value: { aye: bigint; nay: bigint; abstain: bigint } };
-
-export type PalletConvictionVotingVote = number;
-
-export type PalletConvictionVotingConviction =
-  | 'None'
-  | 'Locked1x'
-  | 'Locked2x'
-  | 'Locked3x'
-  | 'Locked4x'
-  | 'Locked5x'
-  | 'Locked6x';
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletReferendaCall =
-  /**
-   * Propose a referendum on a privileged action.
-   *
-   * - `origin`: must be `SubmitOrigin` and the account must have `SubmissionDeposit` funds
-   * available.
-   * - `proposal_origin`: The origin from which the proposal should be executed.
-   * - `proposal`: The proposal.
-   * - `enactment_moment`: The moment that the proposal should be enacted.
-   *
-   * Emits `Submitted`.
-   **/
-  | {
-      name: 'Submit';
-      params: {
-        proposalOrigin: WestendRuntimeOriginCaller;
-        proposal: FrameSupportPreimagesBounded;
-        enactmentMoment: FrameSupportScheduleDispatchTime;
-      };
-    }
-  /**
-   * Post the Decision Deposit for a referendum.
-   *
-   * - `origin`: must be `Signed` and the account must have funds available for the
-   * referendum's track's Decision Deposit.
-   * - `index`: The index of the submitted referendum whose Decision Deposit is yet to be
-   * posted.
-   *
-   * Emits `DecisionDepositPlaced`.
-   **/
-  | { name: 'PlaceDecisionDeposit'; params: { index: number } }
-  /**
-   * Refund the Decision Deposit for a closed referendum back to the depositor.
-   *
-   * - `origin`: must be `Signed` or `Root`.
-   * - `index`: The index of a closed referendum whose Decision Deposit has not yet been
-   * refunded.
-   *
-   * Emits `DecisionDepositRefunded`.
-   **/
-  | { name: 'RefundDecisionDeposit'; params: { index: number } }
-  /**
-   * Cancel an ongoing referendum.
-   *
-   * - `origin`: must be the `CancelOrigin`.
-   * - `index`: The index of the referendum to be cancelled.
-   *
-   * Emits `Cancelled`.
-   **/
-  | { name: 'Cancel'; params: { index: number } }
-  /**
-   * Cancel an ongoing referendum and slash the deposits.
-   *
-   * - `origin`: must be the `KillOrigin`.
-   * - `index`: The index of the referendum to be cancelled.
-   *
-   * Emits `Killed` and `DepositSlashed`.
-   **/
-  | { name: 'Kill'; params: { index: number } }
-  /**
-   * Advance a referendum onto its next logical state. Only used internally.
-   *
-   * - `origin`: must be `Root`.
-   * - `index`: the referendum to be advanced.
-   **/
-  | { name: 'NudgeReferendum'; params: { index: number } }
-  /**
-   * Advance a track onto its next logical state. Only used internally.
-   *
-   * - `origin`: must be `Root`.
-   * - `track`: the track to be advanced.
-   *
-   * Action item for when there is now one fewer referendum in the deciding phase and the
-   * `DecidingCount` is not yet updated. This means that we should either:
-   * - begin deciding another referendum (and leave `DecidingCount` alone); or
-   * - decrement `DecidingCount`.
-   **/
-  | { name: 'OneFewerDeciding'; params: { track: number } }
-  /**
-   * Refund the Submission Deposit for a closed referendum back to the depositor.
-   *
-   * - `origin`: must be `Signed` or `Root`.
-   * - `index`: The index of a closed referendum whose Submission Deposit has not yet been
-   * refunded.
-   *
-   * Emits `SubmissionDepositRefunded`.
-   **/
-  | { name: 'RefundSubmissionDeposit'; params: { index: number } }
-  /**
-   * Set or clear metadata of a referendum.
-   *
-   * Parameters:
-   * - `origin`: Must be `Signed` by a creator of a referendum or by anyone to clear a
-   * metadata of a finished referendum.
-   * - `index`: The index of a referendum to set or clear metadata for.
-   * - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
-   **/
-  | { name: 'SetMetadata'; params: { index: number; maybeHash?: H256 | undefined } };
-
-export type PalletReferendaCallLike =
-  /**
-   * Propose a referendum on a privileged action.
-   *
-   * - `origin`: must be `SubmitOrigin` and the account must have `SubmissionDeposit` funds
-   * available.
-   * - `proposal_origin`: The origin from which the proposal should be executed.
-   * - `proposal`: The proposal.
-   * - `enactment_moment`: The moment that the proposal should be enacted.
-   *
-   * Emits `Submitted`.
-   **/
-  | {
-      name: 'Submit';
-      params: {
-        proposalOrigin: WestendRuntimeOriginCaller;
-        proposal: FrameSupportPreimagesBounded;
-        enactmentMoment: FrameSupportScheduleDispatchTime;
-      };
-    }
-  /**
-   * Post the Decision Deposit for a referendum.
-   *
-   * - `origin`: must be `Signed` and the account must have funds available for the
-   * referendum's track's Decision Deposit.
-   * - `index`: The index of the submitted referendum whose Decision Deposit is yet to be
-   * posted.
-   *
-   * Emits `DecisionDepositPlaced`.
-   **/
-  | { name: 'PlaceDecisionDeposit'; params: { index: number } }
-  /**
-   * Refund the Decision Deposit for a closed referendum back to the depositor.
-   *
-   * - `origin`: must be `Signed` or `Root`.
-   * - `index`: The index of a closed referendum whose Decision Deposit has not yet been
-   * refunded.
-   *
-   * Emits `DecisionDepositRefunded`.
-   **/
-  | { name: 'RefundDecisionDeposit'; params: { index: number } }
-  /**
-   * Cancel an ongoing referendum.
-   *
-   * - `origin`: must be the `CancelOrigin`.
-   * - `index`: The index of the referendum to be cancelled.
-   *
-   * Emits `Cancelled`.
-   **/
-  | { name: 'Cancel'; params: { index: number } }
-  /**
-   * Cancel an ongoing referendum and slash the deposits.
-   *
-   * - `origin`: must be the `KillOrigin`.
-   * - `index`: The index of the referendum to be cancelled.
-   *
-   * Emits `Killed` and `DepositSlashed`.
-   **/
-  | { name: 'Kill'; params: { index: number } }
-  /**
-   * Advance a referendum onto its next logical state. Only used internally.
-   *
-   * - `origin`: must be `Root`.
-   * - `index`: the referendum to be advanced.
-   **/
-  | { name: 'NudgeReferendum'; params: { index: number } }
-  /**
-   * Advance a track onto its next logical state. Only used internally.
-   *
-   * - `origin`: must be `Root`.
-   * - `track`: the track to be advanced.
-   *
-   * Action item for when there is now one fewer referendum in the deciding phase and the
-   * `DecidingCount` is not yet updated. This means that we should either:
-   * - begin deciding another referendum (and leave `DecidingCount` alone); or
-   * - decrement `DecidingCount`.
-   **/
-  | { name: 'OneFewerDeciding'; params: { track: number } }
-  /**
-   * Refund the Submission Deposit for a closed referendum back to the depositor.
-   *
-   * - `origin`: must be `Signed` or `Root`.
-   * - `index`: The index of a closed referendum whose Submission Deposit has not yet been
-   * refunded.
-   *
-   * Emits `SubmissionDepositRefunded`.
-   **/
-  | { name: 'RefundSubmissionDeposit'; params: { index: number } }
-  /**
-   * Set or clear metadata of a referendum.
-   *
-   * Parameters:
-   * - `origin`: Must be `Signed` by a creator of a referendum or by anyone to clear a
-   * metadata of a finished referendum.
-   * - `index`: The index of a referendum to set or clear metadata for.
-   * - `maybe_hash`: The hash of an on-chain stored preimage. `None` to clear a metadata.
-   **/
-  | { name: 'SetMetadata'; params: { index: number; maybeHash?: H256 | undefined } };
-
-export type FrameSupportPreimagesBounded =
-  | { type: 'Legacy'; value: { hash: H256 } }
-  | { type: 'Inline'; value: Bytes }
-  | { type: 'Lookup'; value: { hash: H256; len: number } };
-
-export type SpRuntimeBlakeTwo256 = {};
-
-export type FrameSupportScheduleDispatchTime = { type: 'At'; value: number } | { type: 'After'; value: number };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletWhitelistCall =
-  | { name: 'WhitelistCall'; params: { callHash: H256 } }
-  | { name: 'RemoveWhitelistedCall'; params: { callHash: H256 } }
-  | {
-      name: 'DispatchWhitelistedCall';
-      params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
-    }
-  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: WestendRuntimeRuntimeCall } };
-
-export type PalletWhitelistCallLike =
-  | { name: 'WhitelistCall'; params: { callHash: H256 } }
-  | { name: 'RemoveWhitelistedCall'; params: { callHash: H256 } }
-  | {
-      name: 'DispatchWhitelistedCall';
-      params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
-    }
-  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: WestendRuntimeRuntimeCallLike } };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletTreasuryCall =
-  /**
-   * Propose and approve a spend of treasury funds.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`.
-   *
-   * ### Details
-   * NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the
-   * beneficiary.
-   *
-   * ### Parameters
-   * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
-   * - `beneficiary`: The destination account for the transfer.
-   *
-   * ## Events
-   *
-   * Emits [`Event::SpendApproved`] if successful.
-   **/
-  | { name: 'SpendLocal'; params: { amount: bigint; beneficiary: MultiAddress } }
-  /**
-   * Force a previously approved proposal to be removed from the approval queue.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::RejectOrigin`].
-   *
-   * ## Details
-   *
-   * The original deposit will no longer be returned.
-   *
-   * ### Parameters
-   * - `proposal_id`: The index of a proposal
-   *
-   * ### Complexity
-   * - O(A) where `A` is the number of approvals
-   *
-   * ### Errors
-   * - [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the
-   * approval queue, i.e., the proposal has not been approved. This could also mean the
-   * proposal does not exist altogether, thus there is no way it would have been approved
-   * in the first place.
-   **/
-  | { name: 'RemoveApproval'; params: { proposalId: number } }
-  /**
-   * Propose and approve a spend of treasury funds.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::SpendOrigin`] with the `Success` value being at least
-   * `amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted
-   * for assertion using the [`Config::BalanceConverter`].
-   *
-   * ## Details
-   *
-   * Create an approved spend for transferring a specific `amount` of `asset_kind` to a
-   * designated beneficiary. The spend must be claimed using the `payout` dispatchable within
-   * the [`Config::PayoutPeriod`].
-   *
-   * ### Parameters
-   * - `asset_kind`: An indicator of the specific asset class to be spent.
-   * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
-   * - `beneficiary`: The beneficiary of the spend.
-   * - `valid_from`: The block number from which the spend can be claimed. It can refer to
-   * the past if the resulting spend has not yet expired according to the
-   * [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after
-   * approval.
-   *
-   * ## Events
-   *
-   * Emits [`Event::AssetSpendApproved`] if successful.
-   **/
-  | {
-      name: 'Spend';
-      params: {
-        assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
-        amount: bigint;
-        beneficiary: XcmVersionedLocation;
-        validFrom?: number | undefined;
-      };
-    }
-  /**
-   * Claim a spend.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be signed
-   *
-   * ## Details
-   *
-   * Spends must be claimed within some temporal bounds. A spend may be claimed within one
-   * [`Config::PayoutPeriod`] from the `valid_from` block.
-   * In case of a payout failure, the spend status must be updated with the `check_status`
-   * dispatchable before retrying with the current function.
-   *
-   * ### Parameters
-   * - `index`: The spend index.
-   *
-   * ## Events
-   *
-   * Emits [`Event::Paid`] if successful.
-   **/
-  | { name: 'Payout'; params: { index: number } }
-  /**
-   * Check the status of the spend and remove it from the storage if processed.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be signed.
-   *
-   * ## Details
-   *
-   * The status check is a prerequisite for retrying a failed payout.
-   * If a spend has either succeeded or expired, it is removed from the storage by this
-   * function. In such instances, transaction fees are refunded.
-   *
-   * ### Parameters
-   * - `index`: The spend index.
-   *
-   * ## Events
-   *
-   * Emits [`Event::PaymentFailed`] if the spend payout has failed.
-   * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
-   **/
-  | { name: 'CheckStatus'; params: { index: number } }
-  /**
-   * Void previously approved spend.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::RejectOrigin`].
-   *
-   * ## Details
-   *
-   * A spend void is only possible if the payout has not been attempted yet.
-   *
-   * ### Parameters
-   * - `index`: The spend index.
-   *
-   * ## Events
-   *
-   * Emits [`Event::AssetSpendVoided`] if successful.
-   **/
-  | { name: 'VoidSpend'; params: { index: number } };
-
-export type PalletTreasuryCallLike =
-  /**
-   * Propose and approve a spend of treasury funds.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`.
-   *
-   * ### Details
-   * NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the
-   * beneficiary.
-   *
-   * ### Parameters
-   * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
-   * - `beneficiary`: The destination account for the transfer.
-   *
-   * ## Events
-   *
-   * Emits [`Event::SpendApproved`] if successful.
-   **/
-  | { name: 'SpendLocal'; params: { amount: bigint; beneficiary: MultiAddressLike } }
-  /**
-   * Force a previously approved proposal to be removed from the approval queue.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::RejectOrigin`].
-   *
-   * ## Details
-   *
-   * The original deposit will no longer be returned.
-   *
-   * ### Parameters
-   * - `proposal_id`: The index of a proposal
-   *
-   * ### Complexity
-   * - O(A) where `A` is the number of approvals
-   *
-   * ### Errors
-   * - [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the
-   * approval queue, i.e., the proposal has not been approved. This could also mean the
-   * proposal does not exist altogether, thus there is no way it would have been approved
-   * in the first place.
-   **/
-  | { name: 'RemoveApproval'; params: { proposalId: number } }
-  /**
-   * Propose and approve a spend of treasury funds.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::SpendOrigin`] with the `Success` value being at least
-   * `amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted
-   * for assertion using the [`Config::BalanceConverter`].
-   *
-   * ## Details
-   *
-   * Create an approved spend for transferring a specific `amount` of `asset_kind` to a
-   * designated beneficiary. The spend must be claimed using the `payout` dispatchable within
-   * the [`Config::PayoutPeriod`].
-   *
-   * ### Parameters
-   * - `asset_kind`: An indicator of the specific asset class to be spent.
-   * - `amount`: The amount to be transferred from the treasury to the `beneficiary`.
-   * - `beneficiary`: The beneficiary of the spend.
-   * - `valid_from`: The block number from which the spend can be claimed. It can refer to
-   * the past if the resulting spend has not yet expired according to the
-   * [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after
-   * approval.
-   *
-   * ## Events
-   *
-   * Emits [`Event::AssetSpendApproved`] if successful.
-   **/
-  | {
-      name: 'Spend';
-      params: {
-        assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
-        amount: bigint;
-        beneficiary: XcmVersionedLocation;
-        validFrom?: number | undefined;
-      };
-    }
-  /**
-   * Claim a spend.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be signed
-   *
-   * ## Details
-   *
-   * Spends must be claimed within some temporal bounds. A spend may be claimed within one
-   * [`Config::PayoutPeriod`] from the `valid_from` block.
-   * In case of a payout failure, the spend status must be updated with the `check_status`
-   * dispatchable before retrying with the current function.
-   *
-   * ### Parameters
-   * - `index`: The spend index.
-   *
-   * ## Events
-   *
-   * Emits [`Event::Paid`] if successful.
-   **/
-  | { name: 'Payout'; params: { index: number } }
-  /**
-   * Check the status of the spend and remove it from the storage if processed.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be signed.
-   *
-   * ## Details
-   *
-   * The status check is a prerequisite for retrying a failed payout.
-   * If a spend has either succeeded or expired, it is removed from the storage by this
-   * function. In such instances, transaction fees are refunded.
-   *
-   * ### Parameters
-   * - `index`: The spend index.
-   *
-   * ## Events
-   *
-   * Emits [`Event::PaymentFailed`] if the spend payout has failed.
-   * Emits [`Event::SpendProcessed`] if the spend payout has succeed.
-   **/
-  | { name: 'CheckStatus'; params: { index: number } }
-  /**
-   * Void previously approved spend.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::RejectOrigin`].
-   *
-   * ## Details
-   *
-   * A spend void is only possible if the payout has not been attempted yet.
-   *
-   * ### Parameters
-   * - `index`: The spend index.
-   *
-   * ## Events
-   *
-   * Emits [`Event::AssetSpendVoided`] if successful.
-   **/
-  | { name: 'VoidSpend'; params: { index: number } };
-
-export type PolkadotRuntimeCommonImplsVersionedLocatableAsset =
-  | { type: 'V3'; value: { location: StagingXcmV3MultilocationMultiLocation; assetId: XcmV3MultiassetAssetId } }
-  | { type: 'V4'; value: { location: StagingXcmV4Location; assetId: StagingXcmV4AssetAssetId } }
-  | { type: 'V5'; value: { location: StagingXcmV5Location; assetId: StagingXcmV5AssetAssetId } };
-
-export type StagingXcmV3MultilocationMultiLocation = { parents: number; interior: XcmV3Junctions };
-
-export type XcmV3Junctions =
-  | { type: 'Here' }
-  | { type: 'X1'; value: XcmV3Junction }
-  | { type: 'X2'; value: [XcmV3Junction, XcmV3Junction] }
-  | { type: 'X3'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction] }
-  | { type: 'X4'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
-  | { type: 'X5'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
-  | { type: 'X6'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
-  | {
-      type: 'X7';
-      value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction];
-    }
-  | {
-      type: 'X8';
-      value: [
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-        XcmV3Junction,
-      ];
-    };
-
-export type XcmV3Junction =
-  | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network?: XcmV3JunctionNetworkId | undefined; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network?: XcmV3JunctionNetworkId | undefined; index: bigint } }
-  | { type: 'AccountKey20'; value: { network?: XcmV3JunctionNetworkId | undefined; key: FixedBytes<20> } }
-  | { type: 'PalletInstance'; value: number }
-  | { type: 'GeneralIndex'; value: bigint }
-  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
-  | { type: 'OnlyChild' }
-  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
-  | { type: 'GlobalConsensus'; value: XcmV3JunctionNetworkId };
-
-export type XcmV3JunctionNetworkId =
-  | { type: 'ByGenesis'; value: FixedBytes<32> }
-  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
-  | { type: 'Polkadot' }
-  | { type: 'Kusama' }
-  | { type: 'Westend' }
-  | { type: 'Rococo' }
-  | { type: 'Wococo' }
-  | { type: 'Ethereum'; value: { chainId: bigint } }
-  | { type: 'BitcoinCore' }
-  | { type: 'BitcoinCash' }
-  | { type: 'PolkadotBulletin' };
-
-export type XcmV3MultiassetAssetId =
-  | { type: 'Concrete'; value: StagingXcmV3MultilocationMultiLocation }
-  | { type: 'Abstract'; value: FixedBytes<32> };
-
-export type StagingXcmV4Location = { parents: number; interior: StagingXcmV4Junctions };
-
-export type StagingXcmV4Junctions =
-  | { type: 'Here' }
-  | { type: 'X1'; value: FixedArray<StagingXcmV4Junction, 1> }
-  | { type: 'X2'; value: FixedArray<StagingXcmV4Junction, 2> }
-  | { type: 'X3'; value: FixedArray<StagingXcmV4Junction, 3> }
-  | { type: 'X4'; value: FixedArray<StagingXcmV4Junction, 4> }
-  | { type: 'X5'; value: FixedArray<StagingXcmV4Junction, 5> }
-  | { type: 'X6'; value: FixedArray<StagingXcmV4Junction, 6> }
-  | { type: 'X7'; value: FixedArray<StagingXcmV4Junction, 7> }
-  | { type: 'X8'; value: FixedArray<StagingXcmV4Junction, 8> };
-
-export type StagingXcmV4Junction =
-  | { type: 'Parachain'; value: number }
-  | { type: 'AccountId32'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; id: FixedBytes<32> } }
-  | { type: 'AccountIndex64'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; index: bigint } }
-  | { type: 'AccountKey20'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; key: FixedBytes<20> } }
-  | { type: 'PalletInstance'; value: number }
-  | { type: 'GeneralIndex'; value: bigint }
-  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
-  | { type: 'OnlyChild' }
-  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
-  | { type: 'GlobalConsensus'; value: StagingXcmV4JunctionNetworkId };
-
-export type StagingXcmV4JunctionNetworkId =
-  | { type: 'ByGenesis'; value: FixedBytes<32> }
-  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
-  | { type: 'Polkadot' }
-  | { type: 'Kusama' }
-  | { type: 'Westend' }
-  | { type: 'Rococo' }
-  | { type: 'Wococo' }
-  | { type: 'Ethereum'; value: { chainId: bigint } }
-  | { type: 'BitcoinCore' }
-  | { type: 'BitcoinCash' }
-  | { type: 'PolkadotBulletin' };
-
-export type StagingXcmV4AssetAssetId = StagingXcmV4Location;
-
-export type StagingXcmV5AssetAssetId = StagingXcmV5Location;
-
-export type XcmVersionedLocation =
-  | { type: 'V3'; value: StagingXcmV3MultilocationMultiLocation }
-  | { type: 'V4'; value: StagingXcmV4Location }
-  | { type: 'V5'; value: StagingXcmV5Location };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
 export type PolkadotRuntimeParachainsConfigurationPalletCall =
   /**
    * Set the validation upgrade cooldown.
@@ -8404,6 +7164,63 @@ export type XcmV3MultiassetMultiAssets = Array<XcmV3MultiassetMultiAsset>;
 
 export type XcmV3MultiassetMultiAsset = { id: XcmV3MultiassetAssetId; fun: XcmV3MultiassetFungibility };
 
+export type XcmV3MultiassetAssetId =
+  | { type: 'Concrete'; value: StagingXcmV3MultilocationMultiLocation }
+  | { type: 'Abstract'; value: FixedBytes<32> };
+
+export type StagingXcmV3MultilocationMultiLocation = { parents: number; interior: XcmV3Junctions };
+
+export type XcmV3Junctions =
+  | { type: 'Here' }
+  | { type: 'X1'; value: XcmV3Junction }
+  | { type: 'X2'; value: [XcmV3Junction, XcmV3Junction] }
+  | { type: 'X3'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction] }
+  | { type: 'X4'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
+  | { type: 'X5'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
+  | { type: 'X6'; value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction] }
+  | {
+      type: 'X7';
+      value: [XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction, XcmV3Junction];
+    }
+  | {
+      type: 'X8';
+      value: [
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+        XcmV3Junction,
+      ];
+    };
+
+export type XcmV3Junction =
+  | { type: 'Parachain'; value: number }
+  | { type: 'AccountId32'; value: { network?: XcmV3JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: XcmV3JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: XcmV3JunctionNetworkId | undefined; key: FixedBytes<20> } }
+  | { type: 'PalletInstance'; value: number }
+  | { type: 'GeneralIndex'; value: bigint }
+  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
+  | { type: 'OnlyChild' }
+  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
+  | { type: 'GlobalConsensus'; value: XcmV3JunctionNetworkId };
+
+export type XcmV3JunctionNetworkId =
+  | { type: 'ByGenesis'; value: FixedBytes<32> }
+  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
+  | { type: 'Polkadot' }
+  | { type: 'Kusama' }
+  | { type: 'Westend' }
+  | { type: 'Rococo' }
+  | { type: 'Wococo' }
+  | { type: 'Ethereum'; value: { chainId: bigint } }
+  | { type: 'BitcoinCore' }
+  | { type: 'BitcoinCash' }
+  | { type: 'PolkadotBulletin' };
+
 export type XcmV3MultiassetFungibility =
   | { type: 'Fungible'; value: bigint }
   | { type: 'NonFungible'; value: XcmV3MultiassetAssetInstance };
@@ -8598,6 +7415,46 @@ export type StagingXcmV4AssetAssets = Array<StagingXcmV4Asset>;
 
 export type StagingXcmV4Asset = { id: StagingXcmV4AssetAssetId; fun: StagingXcmV4AssetFungibility };
 
+export type StagingXcmV4AssetAssetId = StagingXcmV4Location;
+
+export type StagingXcmV4Location = { parents: number; interior: StagingXcmV4Junctions };
+
+export type StagingXcmV4Junctions =
+  | { type: 'Here' }
+  | { type: 'X1'; value: FixedArray<StagingXcmV4Junction, 1> }
+  | { type: 'X2'; value: FixedArray<StagingXcmV4Junction, 2> }
+  | { type: 'X3'; value: FixedArray<StagingXcmV4Junction, 3> }
+  | { type: 'X4'; value: FixedArray<StagingXcmV4Junction, 4> }
+  | { type: 'X5'; value: FixedArray<StagingXcmV4Junction, 5> }
+  | { type: 'X6'; value: FixedArray<StagingXcmV4Junction, 6> }
+  | { type: 'X7'; value: FixedArray<StagingXcmV4Junction, 7> }
+  | { type: 'X8'; value: FixedArray<StagingXcmV4Junction, 8> };
+
+export type StagingXcmV4Junction =
+  | { type: 'Parachain'; value: number }
+  | { type: 'AccountId32'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; id: FixedBytes<32> } }
+  | { type: 'AccountIndex64'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; index: bigint } }
+  | { type: 'AccountKey20'; value: { network?: StagingXcmV4JunctionNetworkId | undefined; key: FixedBytes<20> } }
+  | { type: 'PalletInstance'; value: number }
+  | { type: 'GeneralIndex'; value: bigint }
+  | { type: 'GeneralKey'; value: { length: number; data: FixedBytes<32> } }
+  | { type: 'OnlyChild' }
+  | { type: 'Plurality'; value: { id: XcmV3JunctionBodyId; part: XcmV3JunctionBodyPart } }
+  | { type: 'GlobalConsensus'; value: StagingXcmV4JunctionNetworkId };
+
+export type StagingXcmV4JunctionNetworkId =
+  | { type: 'ByGenesis'; value: FixedBytes<32> }
+  | { type: 'ByFork'; value: { blockNumber: bigint; blockHash: FixedBytes<32> } }
+  | { type: 'Polkadot' }
+  | { type: 'Kusama' }
+  | { type: 'Westend' }
+  | { type: 'Rococo' }
+  | { type: 'Wococo' }
+  | { type: 'Ethereum'; value: { chainId: bigint } }
+  | { type: 'BitcoinCore' }
+  | { type: 'BitcoinCash' }
+  | { type: 'PolkadotBulletin' };
+
 export type StagingXcmV4AssetFungibility =
   | { type: 'Fungible'; value: bigint }
   | { type: 'NonFungible'; value: StagingXcmV4AssetAssetInstance };
@@ -8758,6 +7615,8 @@ export type StagingXcmV5Instruction =
 export type StagingXcmV5AssetAssets = Array<StagingXcmV5Asset>;
 
 export type StagingXcmV5Asset = { id: StagingXcmV5AssetAssetId; fun: StagingXcmV5AssetFungibility };
+
+export type StagingXcmV5AssetAssetId = StagingXcmV5Location;
 
 export type StagingXcmV5AssetFungibility =
   | { type: 'Fungible'; value: bigint }
@@ -10148,6 +9007,11 @@ export type PalletXcmCallLike =
    **/
   | { name: 'RemoveAllAuthorizedAliases' };
 
+export type XcmVersionedLocation =
+  | { type: 'V3'; value: StagingXcmV3MultilocationMultiLocation }
+  | { type: 'V4'; value: StagingXcmV4Location }
+  | { type: 'V5'; value: StagingXcmV5Location };
+
 export type XcmVersionedAssets =
   | { type: 'V3'; value: XcmV3MultiassetMultiAssets }
   | { type: 'V4'; value: StagingXcmV4AssetAssets }
@@ -10291,6 +9155,11 @@ export type PalletAssetRateCallLike =
    * - O(1)
    **/
   | { name: 'Remove'; params: { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset } };
+
+export type PolkadotRuntimeCommonImplsVersionedLocatableAsset =
+  | { type: 'V3'; value: { location: StagingXcmV3MultilocationMultiLocation; assetId: XcmV3MultiassetAssetId } }
+  | { type: 'V4'; value: { location: StagingXcmV4Location; assetId: StagingXcmV4AssetAssetId } }
+  | { type: 'V5'; value: { location: StagingXcmV5Location; assetId: StagingXcmV5AssetAssetId } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10653,6 +9522,7 @@ export type WestendRuntimeRuntimeEvent =
   | { pallet: 'Indices'; palletEvent: PalletIndicesEvent }
   | { pallet: 'Balances'; palletEvent: PalletBalancesEvent }
   | { pallet: 'TransactionPayment'; palletEvent: PalletTransactionPaymentEvent }
+  | { pallet: 'AccumulateForward'; palletEvent: PalletAccumulateAndForwardEvent }
   | { pallet: 'Staking'; palletEvent: PalletStakingPalletEvent }
   | { pallet: 'Offences'; palletEvent: PalletOffencesEvent }
   | { pallet: 'Historical'; palletEvent: PalletSessionHistoricalPalletEvent }
@@ -10661,7 +9531,6 @@ export type WestendRuntimeRuntimeEvent =
   | { pallet: 'Grandpa'; palletEvent: PalletGrandpaEvent }
   | { pallet: 'Utility'; palletEvent: PalletUtilityEvent }
   | { pallet: 'Identity'; palletEvent: PalletIdentityEvent }
-  | { pallet: 'Recovery'; palletEvent: PalletRecoveryEvent }
   | { pallet: 'Vesting'; palletEvent: PalletVestingEvent }
   | { pallet: 'Scheduler'; palletEvent: PalletSchedulerEvent }
   | { pallet: 'Preimage'; palletEvent: PalletPreimageEvent }
@@ -10672,10 +9541,6 @@ export type WestendRuntimeRuntimeEvent =
   | { pallet: 'VoterList'; palletEvent: PalletBagsListEvent }
   | { pallet: 'NominationPools'; palletEvent: PalletNominationPoolsEvent }
   | { pallet: 'FastUnstake'; palletEvent: PalletFastUnstakeEvent }
-  | { pallet: 'ConvictionVoting'; palletEvent: PalletConvictionVotingEvent }
-  | { pallet: 'Referenda'; palletEvent: PalletReferendaEvent }
-  | { pallet: 'Whitelist'; palletEvent: PalletWhitelistEvent }
-  | { pallet: 'Treasury'; palletEvent: PalletTreasuryEvent }
   | { pallet: 'DelegatedStaking'; palletEvent: PalletDelegatedStakingEvent }
   | { pallet: 'ParaInclusion'; palletEvent: PolkadotRuntimeParachainsInclusionPalletEvent }
   | { pallet: 'Paras'; palletEvent: PolkadotRuntimeParachainsParasPalletEvent }
@@ -10710,9 +9575,9 @@ export type FrameSystemEvent =
    **/
   | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
-   * `:code` was updated.
+   * `:code` was updated to the code with the given hash.
    **/
-  | { name: 'CodeUpdated' }
+  | { name: 'CodeUpdated'; data: { hash: H256 } }
   /**
    * A new account was created.
    **/
@@ -10952,6 +9817,20 @@ export type PalletTransactionPaymentEvent =
    * has been paid by `who`.
    **/
   { name: 'TransactionFeePaid'; data: { who: AccountId32; actualFee: bigint; tip: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAccumulateAndForwardEvent =
+  /**
+   * Successfully forwarded accumulated funds to the destination.
+   **/
+  | { name: 'ForwardSucceeded'; data: { amount: bigint } }
+  /**
+   * Failed to forward funds. They will remain in the accumulation account
+   * and forwarding will be retried after another `TransferPeriod` blocks.
+   **/
+  | { name: 'ForwardFailed'; data: { amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -11296,46 +10175,6 @@ export type PalletIdentityEvent =
    * A username has been killed.
    **/
   | { name: 'UsernameKilled'; data: { username: Bytes } };
-
-/**
- * Events type.
- **/
-export type PalletRecoveryEvent =
-  /**
-   * A recovery process has been set up for an account.
-   **/
-  | { name: 'RecoveryCreated'; data: { account: AccountId32 } }
-  /**
-   * A recovery process has been initiated for lost account by rescuer account.
-   **/
-  | { name: 'RecoveryInitiated'; data: { lostAccount: AccountId32; rescuerAccount: AccountId32 } }
-  /**
-   * A recovery process for lost account by rescuer account has been vouched for by sender.
-   **/
-  | { name: 'RecoveryVouched'; data: { lostAccount: AccountId32; rescuerAccount: AccountId32; sender: AccountId32 } }
-  /**
-   * A recovery process for lost account by rescuer account has been closed.
-   **/
-  | { name: 'RecoveryClosed'; data: { lostAccount: AccountId32; rescuerAccount: AccountId32 } }
-  /**
-   * Lost account has been successfully recovered by rescuer account.
-   **/
-  | { name: 'AccountRecovered'; data: { lostAccount: AccountId32; rescuerAccount: AccountId32 } }
-  /**
-   * A recovery process has been removed for an account.
-   **/
-  | { name: 'RecoveryRemoved'; data: { lostAccount: AccountId32 } }
-  /**
-   * A deposit has been updated.
-   **/
-  | {
-      name: 'DepositPoked';
-      data: { who: AccountId32; kind: PalletRecoveryDepositKind; oldDeposit: bigint; newDeposit: bigint };
-    };
-
-export type PalletRecoveryDepositKind = { type: 'RecoveryConfig' } | { type: 'ActiveRecoveryFor'; value: AccountId32 };
-
-export type WestendRuntimeRuntime = {};
 
 /**
  * The `Event` enum of this pallet
@@ -11833,407 +10672,6 @@ export type PalletFastUnstakeEvent =
    * An internal error happened. Operations will be paused now.
    **/
   | { name: 'InternalError' };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletConvictionVotingEvent =
-  /**
-   * An account has delegated their vote to another account. \[who, target\]
-   **/
-  | { name: 'Delegated'; data: [AccountId32, AccountId32, number] }
-  /**
-   * An \[account\] has cancelled a previous delegation operation.
-   **/
-  | { name: 'Undelegated'; data: [AccountId32, number] }
-  /**
-   * An account has voted
-   **/
-  | { name: 'Voted'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number } }
-  /**
-   * A vote has been removed
-   **/
-  | { name: 'VoteRemoved'; data: { who: AccountId32; vote: PalletConvictionVotingVoteAccountVote; pollIndex: number } }
-  /**
-   * The lockup period of a conviction vote expired, and the funds have been unlocked.
-   **/
-  | { name: 'VoteUnlocked'; data: { who: AccountId32; class: number } };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletReferendaEvent =
-  /**
-   * A referendum has been submitted.
-   **/
-  | {
-      name: 'Submitted';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-
-        /**
-         * The track (and by extension proposal dispatch origin) of this referendum.
-         **/
-        track: number;
-
-        /**
-         * The proposal for the referendum.
-         **/
-        proposal: FrameSupportPreimagesBounded;
-      };
-    }
-  /**
-   * The decision deposit has been placed.
-   **/
-  | {
-      name: 'DecisionDepositPlaced';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-
-        /**
-         * The account who placed the deposit.
-         **/
-        who: AccountId32;
-
-        /**
-         * The amount placed by the account.
-         **/
-        amount: bigint;
-      };
-    }
-  /**
-   * The decision deposit has been refunded.
-   **/
-  | {
-      name: 'DecisionDepositRefunded';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-
-        /**
-         * The account who placed the deposit.
-         **/
-        who: AccountId32;
-
-        /**
-         * The amount placed by the account.
-         **/
-        amount: bigint;
-      };
-    }
-  /**
-   * A deposit has been slashed.
-   **/
-  | {
-      name: 'DepositSlashed';
-      data: {
-        /**
-         * The account who placed the deposit.
-         **/
-        who: AccountId32;
-
-        /**
-         * The amount placed by the account.
-         **/
-        amount: bigint;
-      };
-    }
-  /**
-   * A referendum has moved into the deciding phase.
-   **/
-  | {
-      name: 'DecisionStarted';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-
-        /**
-         * The track (and by extension proposal dispatch origin) of this referendum.
-         **/
-        track: number;
-
-        /**
-         * The proposal for the referendum.
-         **/
-        proposal: FrameSupportPreimagesBounded;
-
-        /**
-         * The current tally of votes in this referendum.
-         **/
-        tally: PalletConvictionVotingTally;
-      };
-    }
-  | {
-      name: 'ConfirmStarted';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-      };
-    }
-  | {
-      name: 'ConfirmAborted';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-      };
-    }
-  /**
-   * A referendum has ended its confirmation phase and is ready for approval.
-   **/
-  | {
-      name: 'Confirmed';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-
-        /**
-         * The final tally of votes in this referendum.
-         **/
-        tally: PalletConvictionVotingTally;
-      };
-    }
-  /**
-   * A referendum has been approved and its proposal has been scheduled.
-   **/
-  | {
-      name: 'Approved';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-      };
-    }
-  /**
-   * A proposal has been rejected by referendum.
-   **/
-  | {
-      name: 'Rejected';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-
-        /**
-         * The final tally of votes in this referendum.
-         **/
-        tally: PalletConvictionVotingTally;
-      };
-    }
-  /**
-   * A referendum has been timed out without being decided.
-   **/
-  | {
-      name: 'TimedOut';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-
-        /**
-         * The final tally of votes in this referendum.
-         **/
-        tally: PalletConvictionVotingTally;
-      };
-    }
-  /**
-   * A referendum has been cancelled.
-   **/
-  | {
-      name: 'Cancelled';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-
-        /**
-         * The final tally of votes in this referendum.
-         **/
-        tally: PalletConvictionVotingTally;
-      };
-    }
-  /**
-   * A referendum has been killed.
-   **/
-  | {
-      name: 'Killed';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-
-        /**
-         * The final tally of votes in this referendum.
-         **/
-        tally: PalletConvictionVotingTally;
-      };
-    }
-  /**
-   * The submission deposit has been refunded.
-   **/
-  | {
-      name: 'SubmissionDepositRefunded';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-
-        /**
-         * The account who placed the deposit.
-         **/
-        who: AccountId32;
-
-        /**
-         * The amount placed by the account.
-         **/
-        amount: bigint;
-      };
-    }
-  /**
-   * Metadata for a referendum has been set.
-   **/
-  | {
-      name: 'MetadataSet';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-
-        /**
-         * Preimage hash.
-         **/
-        hash: H256;
-      };
-    }
-  /**
-   * Metadata for a referendum has been cleared.
-   **/
-  | {
-      name: 'MetadataCleared';
-      data: {
-        /**
-         * Index of the referendum.
-         **/
-        index: number;
-
-        /**
-         * Preimage hash.
-         **/
-        hash: H256;
-      };
-    };
-
-export type PalletConvictionVotingTally = { ayes: bigint; nays: bigint; support: bigint };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletWhitelistEvent =
-  | { name: 'CallWhitelisted'; data: { callHash: H256 } }
-  | { name: 'WhitelistedCallRemoved'; data: { callHash: H256 } }
-  | {
-      name: 'WhitelistedCallDispatched';
-      data: {
-        callHash: H256;
-        result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
-      };
-    };
-
-export type FrameSupportDispatchPostDispatchInfo = {
-  actualWeight?: SpWeightsWeightV2Weight | undefined;
-  paysFee: FrameSupportDispatchPays;
-};
-
-export type SpRuntimeDispatchErrorWithPostInfo = {
-  postInfo: FrameSupportDispatchPostDispatchInfo;
-  error: DispatchError;
-};
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletTreasuryEvent =
-  /**
-   * We have ended a spend period and will now allocate funds.
-   **/
-  | { name: 'Spending'; data: { budgetRemaining: bigint } }
-  /**
-   * Some funds have been allocated.
-   **/
-  | { name: 'Awarded'; data: { proposalIndex: number; award: bigint; account: AccountId32 } }
-  /**
-   * Some of our funds have been burnt.
-   **/
-  | { name: 'Burnt'; data: { burntFunds: bigint } }
-  /**
-   * Spending has finished; this is the amount that rolls over until next spend.
-   **/
-  | { name: 'Rollover'; data: { rolloverBalance: bigint } }
-  /**
-   * Some funds have been deposited.
-   **/
-  | { name: 'Deposit'; data: { value: bigint } }
-  /**
-   * A new spend proposal has been approved.
-   **/
-  | { name: 'SpendApproved'; data: { proposalIndex: number; amount: bigint; beneficiary: AccountId32 } }
-  /**
-   * The inactive funds of the pallet have been updated.
-   **/
-  | { name: 'UpdatedInactive'; data: { reactivated: bigint; deactivated: bigint } }
-  /**
-   * A new asset spend proposal has been approved.
-   **/
-  | {
-      name: 'AssetSpendApproved';
-      data: {
-        index: number;
-        assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
-        amount: bigint;
-        beneficiary: XcmVersionedLocation;
-        validFrom: number;
-        expireAt: number;
-      };
-    }
-  /**
-   * An approved spend was voided.
-   **/
-  | { name: 'AssetSpendVoided'; data: { index: number } }
-  /**
-   * A payment happened.
-   **/
-  | { name: 'Paid'; data: { index: number; paymentId: bigint } }
-  /**
-   * A payment failed and can be retried.
-   **/
-  | { name: 'PaymentFailed'; data: { index: number; paymentId: bigint } }
-  /**
-   * A spend was processed and removed from the storage. It might have been successfully
-   * paid or it may have expired.
-   **/
-  | { name: 'SpendProcessed'; data: { index: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -13319,6 +11757,8 @@ export type FrameSystemError =
    **/
   | 'Unauthorized';
 
+export type SpRuntimeBlakeTwo256 = {};
+
 export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
 
 export type SpConsensusBabeDigestsPreDigest =
@@ -13465,8 +11905,6 @@ export type PalletTransactionPaymentReleases = 'V1Ancient' | 'V2';
 export type FrameSupportStorageNoDrop = FrameSupportTokensFungibleImbalance;
 
 export type FrameSupportTokensFungibleImbalance = { amount: bigint };
-
-export type FrameSupportPalletId = FixedBytes<8>;
 
 export type PalletStakingStakingLedger = {
   stash: AccountId32;
@@ -13883,84 +12321,6 @@ export type PalletIdentityError =
    **/
   | 'InsufficientPrivileges';
 
-export type PalletRecoveryRecoveryConfig = {
-  delayPeriod: number;
-  deposit: bigint;
-  friends: Array<AccountId32>;
-  threshold: number;
-};
-
-export type PalletRecoveryActiveRecovery = { created: number; deposit: bigint; friends: Array<AccountId32> };
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletRecoveryError =
-  /**
-   * User is not allowed to make a call on behalf of this account
-   **/
-  | 'NotAllowed'
-  /**
-   * Threshold must be greater than zero
-   **/
-  | 'ZeroThreshold'
-  /**
-   * Friends list must be greater than zero and threshold
-   **/
-  | 'NotEnoughFriends'
-  /**
-   * Friends list must be less than max friends
-   **/
-  | 'MaxFriends'
-  /**
-   * Friends list must be sorted and free of duplicates
-   **/
-  | 'NotSorted'
-  /**
-   * This account is not set up for recovery
-   **/
-  | 'NotRecoverable'
-  /**
-   * This account is already set up for recovery
-   **/
-  | 'AlreadyRecoverable'
-  /**
-   * A recovery process has already started for this account
-   **/
-  | 'AlreadyStarted'
-  /**
-   * A recovery process has not started for this rescuer
-   **/
-  | 'NotStarted'
-  /**
-   * This account is not a friend who can vouch
-   **/
-  | 'NotFriend'
-  /**
-   * The friend must wait until the delay period to vouch for this recovery
-   **/
-  | 'DelayPeriod'
-  /**
-   * This user has already vouched for this recovery
-   **/
-  | 'AlreadyVouched'
-  /**
-   * The threshold for recovering this account has not been met
-   **/
-  | 'Threshold'
-  /**
-   * There are still active recovery attempts that need to be closed
-   **/
-  | 'StillActive'
-  /**
-   * This account is already set up for recovery
-   **/
-  | 'AlreadyProxy'
-  /**
-   * Some internal state is broken.
-   **/
-  | 'BadState';
-
 export type PalletVestingReleases = 'V0' | 'V1';
 
 /**
@@ -13996,6 +12356,11 @@ export type PalletSchedulerScheduled = {
   maybePeriodic?: [number, number] | undefined;
   origin: WestendRuntimeOriginCaller;
 };
+
+export type FrameSupportPreimagesBounded =
+  | { type: 'Legacy'; value: { hash: H256 } }
+  | { type: 'Inline'; value: Bytes }
+  | { type: 'Lookup'; value: { hash: H256; len: number } };
 
 export type PalletSchedulerRetryConfig = { totalRetries: number; remaining: number; period: number };
 
@@ -14359,6 +12724,8 @@ export type PalletNominationPoolsSubPools = {
 
 export type PalletNominationPoolsUnbondPool = { points: bigint; balance: bigint };
 
+export type FrameSupportPalletId = FixedBytes<8>;
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -14566,277 +12933,6 @@ export type PalletFastUnstakeError =
    * The call is not allowed at this point because the pallet is not active.
    **/
   | 'CallNotAllowed';
-
-export type PalletConvictionVotingVoteVoting =
-  | { type: 'Casting'; value: PalletConvictionVotingVoteCasting }
-  | { type: 'Delegating'; value: PalletConvictionVotingVoteDelegating };
-
-export type PalletConvictionVotingVoteCasting = {
-  votes: Array<[number, PalletConvictionVotingVoteAccountVote]>;
-  delegations: PalletConvictionVotingDelegations;
-  prior: PalletConvictionVotingVotePriorLock;
-};
-
-export type PalletConvictionVotingDelegations = { votes: bigint; capital: bigint };
-
-export type PalletConvictionVotingVotePriorLock = [number, bigint];
-
-export type PalletConvictionVotingVoteDelegating = {
-  balance: bigint;
-  target: AccountId32;
-  conviction: PalletConvictionVotingConviction;
-  delegations: PalletConvictionVotingDelegations;
-  prior: PalletConvictionVotingVotePriorLock;
-};
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletConvictionVotingError =
-  /**
-   * Poll is not ongoing.
-   **/
-  | 'NotOngoing'
-  /**
-   * The given account did not vote on the poll.
-   **/
-  | 'NotVoter'
-  /**
-   * The actor has no permission to conduct the action.
-   **/
-  | 'NoPermission'
-  /**
-   * The actor has no permission to conduct the action right now but will do in the future.
-   **/
-  | 'NoPermissionYet'
-  /**
-   * The account is already delegating.
-   **/
-  | 'AlreadyDelegating'
-  /**
-   * The account currently has votes attached to it and the operation cannot succeed until
-   * these are removed through `remove_vote`.
-   **/
-  | 'AlreadyVoting'
-  /**
-   * Too high a balance was provided that the account cannot afford.
-   **/
-  | 'InsufficientFunds'
-  /**
-   * The account is not currently delegating.
-   **/
-  | 'NotDelegating'
-  /**
-   * Delegation to oneself makes no sense.
-   **/
-  | 'Nonsense'
-  /**
-   * Maximum number of votes reached.
-   **/
-  | 'MaxVotesReached'
-  /**
-   * The class must be supplied since it is not easily determinable from the state.
-   **/
-  | 'ClassNeeded'
-  /**
-   * The class ID supplied is invalid.
-   **/
-  | 'BadClass';
-
-export type PalletReferendaReferendumInfo =
-  | { type: 'Ongoing'; value: PalletReferendaReferendumStatus }
-  | { type: 'Approved'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
-  | { type: 'Rejected'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
-  | { type: 'Cancelled'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
-  | { type: 'TimedOut'; value: [number, PalletReferendaDeposit | undefined, PalletReferendaDeposit | undefined] }
-  | { type: 'Killed'; value: number };
-
-export type PalletReferendaReferendumStatus = {
-  track: number;
-  origin: WestendRuntimeOriginCaller;
-  proposal: FrameSupportPreimagesBounded;
-  enactment: FrameSupportScheduleDispatchTime;
-  submitted: number;
-  submissionDeposit: PalletReferendaDeposit;
-  decisionDeposit?: PalletReferendaDeposit | undefined;
-  deciding?: PalletReferendaDecidingStatus | undefined;
-  tally: PalletConvictionVotingTally;
-  inQueue: boolean;
-  alarm?: [number, [number, number]] | undefined;
-};
-
-export type PalletReferendaDeposit = { who: AccountId32; amount: bigint };
-
-export type PalletReferendaDecidingStatus = { since: number; confirming?: number | undefined };
-
-export type PalletReferendaTrackDetails = {
-  name: string;
-  maxDeciding: number;
-  decisionDeposit: bigint;
-  preparePeriod: number;
-  decisionPeriod: number;
-  confirmPeriod: number;
-  minEnactmentPeriod: number;
-  minApproval: PalletReferendaCurve;
-  minSupport: PalletReferendaCurve;
-};
-
-export type PalletReferendaCurve =
-  | { type: 'LinearDecreasing'; value: { length: Perbill; floor: Perbill; ceil: Perbill } }
-  | { type: 'SteppedDecreasing'; value: { begin: Perbill; end: Perbill; step: Perbill; period: Perbill } }
-  | { type: 'Reciprocal'; value: { factor: FixedI64; xOffset: FixedI64; yOffset: FixedI64 } };
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletReferendaError =
-  /**
-   * Referendum is not ongoing.
-   **/
-  | 'NotOngoing'
-  /**
-   * Referendum's decision deposit is already paid.
-   **/
-  | 'HasDeposit'
-  /**
-   * The track identifier given was invalid.
-   **/
-  | 'BadTrack'
-  /**
-   * There are already a full complement of referenda in progress for this track.
-   **/
-  | 'Full'
-  /**
-   * The queue of the track is empty.
-   **/
-  | 'QueueEmpty'
-  /**
-   * The referendum index provided is invalid in this context.
-   **/
-  | 'BadReferendum'
-  /**
-   * There was nothing to do in the advancement.
-   **/
-  | 'NothingToDo'
-  /**
-   * No track exists for the proposal origin.
-   **/
-  | 'NoTrack'
-  /**
-   * Any deposit cannot be refunded until after the decision is over.
-   **/
-  | 'Unfinished'
-  /**
-   * The deposit refunder is not the depositor.
-   **/
-  | 'NoPermission'
-  /**
-   * The deposit cannot be refunded since none was made.
-   **/
-  | 'NoDeposit'
-  /**
-   * The referendum status is invalid for this operation.
-   **/
-  | 'BadStatus'
-  /**
-   * The preimage does not exist.
-   **/
-  | 'PreimageNotExist'
-  /**
-   * The preimage is stored with a different length than the one provided.
-   **/
-  | 'PreimageStoredWithDifferentLength';
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletWhitelistError =
-  /**
-   * The preimage of the call hash could not be loaded.
-   **/
-  | 'UnavailablePreImage'
-  /**
-   * The call could not be decoded.
-   **/
-  | 'UndecodableCall'
-  /**
-   * The weight of the decoded call was higher than the witness.
-   **/
-  | 'InvalidCallWeightWitness'
-  /**
-   * The call was not whitelisted.
-   **/
-  | 'CallIsNotWhitelisted'
-  /**
-   * The call was already whitelisted; No-Op.
-   **/
-  | 'CallAlreadyWhitelisted';
-
-export type PalletTreasuryProposal = { proposer: AccountId32; value: bigint; beneficiary: AccountId32; bond: bigint };
-
-export type PalletTreasurySpendStatus = {
-  assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset;
-  amount: bigint;
-  beneficiary: XcmVersionedLocation;
-  validFrom: number;
-  expireAt: number;
-  status: PalletTreasuryPaymentState;
-};
-
-export type PalletTreasuryPaymentState =
-  | { type: 'Pending' }
-  | { type: 'Attempted'; value: { id: bigint } }
-  | { type: 'Failed' };
-
-/**
- * Error for the treasury pallet.
- **/
-export type PalletTreasuryError =
-  /**
-   * No proposal, bounty or spend at that index.
-   **/
-  | 'InvalidIndex'
-  /**
-   * Too many approvals in the queue.
-   **/
-  | 'TooManyApprovals'
-  /**
-   * The spend origin is valid but the amount it is allowed to spend is lower than the
-   * amount to be spent.
-   **/
-  | 'InsufficientPermission'
-  /**
-   * Proposal has not been approved.
-   **/
-  | 'ProposalNotApproved'
-  /**
-   * The balance of the asset kind is not convertible to the balance of the native asset.
-   **/
-  | 'FailedToConvertBalance'
-  /**
-   * The spend has expired and cannot be claimed.
-   **/
-  | 'SpendExpired'
-  /**
-   * The spend is not yet eligible for payout.
-   **/
-  | 'EarlyPayout'
-  /**
-   * The payment has already been attempted.
-   **/
-  | 'AlreadyAttempted'
-  /**
-   * There was some issue with the mechanism of payment.
-   **/
-  | 'PayoutError'
-  /**
-   * The payout was not yet attempted/claimed.
-   **/
-  | 'NotAttempted'
-  /**
-   * The payment has neither failed nor succeeded yet.
-   **/
-  | 'Inconclusive';
 
 export type PalletDelegatedStakingDelegation = { agent: AccountId32; amount: bigint };
 
@@ -16471,6 +14567,16 @@ export type XcmRuntimeApisDryRunCallDryRunEffects = {
   forwardedXcms: Array<[XcmVersionedLocation, Array<XcmVersionedXcm>]>;
 };
 
+export type FrameSupportDispatchPostDispatchInfo = {
+  actualWeight?: SpWeightsWeightV2Weight | undefined;
+  paysFee: FrameSupportDispatchPays;
+};
+
+export type SpRuntimeDispatchErrorWithPostInfo = {
+  postInfo: FrameSupportDispatchPostDispatchInfo;
+  error: DispatchError;
+};
+
 export type XcmRuntimeApisDryRunError = 'Unimplemented' | 'VersionedConversionFailed';
 
 export type XcmRuntimeApisDryRunXcmDryRunEffects = {
@@ -16498,7 +14604,6 @@ export type WestendRuntimeRuntimeError =
   | { pallet: 'Grandpa'; palletError: PalletGrandpaError }
   | { pallet: 'Utility'; palletError: PalletUtilityError }
   | { pallet: 'Identity'; palletError: PalletIdentityError }
-  | { pallet: 'Recovery'; palletError: PalletRecoveryError }
   | { pallet: 'Vesting'; palletError: PalletVestingError }
   | { pallet: 'Scheduler'; palletError: PalletSchedulerError }
   | { pallet: 'Preimage'; palletError: PalletPreimageError }
@@ -16509,10 +14614,6 @@ export type WestendRuntimeRuntimeError =
   | { pallet: 'VoterList'; palletError: PalletBagsListError }
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }
   | { pallet: 'FastUnstake'; palletError: PalletFastUnstakeError }
-  | { pallet: 'ConvictionVoting'; palletError: PalletConvictionVotingError }
-  | { pallet: 'Referenda'; palletError: PalletReferendaError }
-  | { pallet: 'Whitelist'; palletError: PalletWhitelistError }
-  | { pallet: 'Treasury'; palletError: PalletTreasuryError }
   | { pallet: 'DelegatedStaking'; palletError: PalletDelegatedStakingError }
   | { pallet: 'Configuration'; palletError: PolkadotRuntimeParachainsConfigurationPalletError }
   | { pallet: 'ParaInclusion'; palletError: PolkadotRuntimeParachainsInclusionPalletError }

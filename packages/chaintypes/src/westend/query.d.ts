@@ -63,8 +63,6 @@ import type {
   PalletIdentityAuthorityProperties,
   PalletIdentityUsernameInformation,
   PalletIdentityProvider,
-  PalletRecoveryRecoveryConfig,
-  PalletRecoveryActiveRecovery,
   PalletVestingVestingInfo,
   PalletVestingReleases,
   PalletSchedulerScheduled,
@@ -88,10 +86,6 @@ import type {
   PalletNominationPoolsSubPools,
   PalletNominationPoolsClaimPermission,
   PalletFastUnstakeUnstakeRequest,
-  PalletConvictionVotingVoteVoting,
-  PalletReferendaReferendumInfo,
-  PalletTreasuryProposal,
-  PalletTreasurySpendStatus,
   PalletDelegatedStakingDelegation,
   PalletDelegatedStakingAgentLedger,
   PolkadotRuntimeParachainsConfigurationHostConfiguration,
@@ -1494,47 +1488,6 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
-   * Pallet `Recovery`'s storage queries
-   **/
-  recovery: {
-    /**
-     * The set of recoverable accounts and their recovery configuration.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<PalletRecoveryRecoveryConfig | undefined> =} callback
-     **/
-    recoverable: GenericStorageQuery<(arg: AccountId32Like) => PalletRecoveryRecoveryConfig | undefined, AccountId32>;
-
-    /**
-     * Active recovery attempts.
-     *
-     * First account is the account to be recovered, and the second account
-     * is the user trying to recover the account.
-     *
-     * @param {[AccountId32Like, AccountId32Like]} arg
-     * @param {Callback<PalletRecoveryActiveRecovery | undefined> =} callback
-     **/
-    activeRecoveries: GenericStorageQuery<
-      (arg: [AccountId32Like, AccountId32Like]) => PalletRecoveryActiveRecovery | undefined,
-      [AccountId32, AccountId32]
-    >;
-
-    /**
-     * The list of allowed proxy accounts.
-     *
-     * Map from the user who can access it to the recovered account.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<AccountId32 | undefined> =} callback
-     **/
-    proxy: GenericStorageQuery<(arg: AccountId32Like) => AccountId32 | undefined, AccountId32>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
    * Pallet `Vesting`'s storage queries
    **/
   vesting: {
@@ -2133,178 +2086,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<number> =} callback
      **/
     erasToCheckPerBlock: GenericStorageQuery<() => number>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `ConvictionVoting`'s storage queries
-   **/
-  convictionVoting: {
-    /**
-     * All voting for a particular voter in a particular voting class. We store the balance for the
-     * number of votes that we have recorded.
-     *
-     * @param {[AccountId32Like, number]} arg
-     * @param {Callback<PalletConvictionVotingVoteVoting> =} callback
-     **/
-    votingFor: GenericStorageQuery<
-      (arg: [AccountId32Like, number]) => PalletConvictionVotingVoteVoting,
-      [AccountId32, number]
-    >;
-
-    /**
-     * The voting classes which have a non-zero lock requirement and the lock amounts which they
-     * require. The actual amount locked on behalf of this pallet should always be the maximum of
-     * this list.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<Array<[number, bigint]>> =} callback
-     **/
-    classLocksFor: GenericStorageQuery<(arg: AccountId32Like) => Array<[number, bigint]>, AccountId32>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `Referenda`'s storage queries
-   **/
-  referenda: {
-    /**
-     * The next free referendum index, aka the number of referenda started so far.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    referendumCount: GenericStorageQuery<() => number>;
-
-    /**
-     * Information concerning any given referendum.
-     *
-     * @param {number} arg
-     * @param {Callback<PalletReferendaReferendumInfo | undefined> =} callback
-     **/
-    referendumInfoFor: GenericStorageQuery<(arg: number) => PalletReferendaReferendumInfo | undefined, number>;
-
-    /**
-     * The sorted list of referenda ready to be decided but not yet being decided, ordered by
-     * conviction-weighted approvals.
-     *
-     * This should be empty if `DecidingCount` is less than `TrackInfo::max_deciding`.
-     *
-     * @param {number} arg
-     * @param {Callback<Array<[number, bigint]>> =} callback
-     **/
-    trackQueue: GenericStorageQuery<(arg: number) => Array<[number, bigint]>, number>;
-
-    /**
-     * The number of referenda being decided currently.
-     *
-     * @param {number} arg
-     * @param {Callback<number> =} callback
-     **/
-    decidingCount: GenericStorageQuery<(arg: number) => number, number>;
-
-    /**
-     * The metadata is a general information concerning the referendum.
-     * The `Hash` refers to the preimage of the `Preimages` provider which can be a JSON
-     * dump or IPFS hash of a JSON file.
-     *
-     * Consider a garbage collection for a metadata of finished referendums to `unrequest` (remove)
-     * large preimages.
-     *
-     * @param {number} arg
-     * @param {Callback<H256 | undefined> =} callback
-     **/
-    metadataOf: GenericStorageQuery<(arg: number) => H256 | undefined, number>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `Whitelist`'s storage queries
-   **/
-  whitelist: {
-    /**
-     *
-     * @param {H256} arg
-     * @param {Callback<[] | undefined> =} callback
-     **/
-    whitelistedCall: GenericStorageQuery<(arg: H256) => [] | undefined, H256>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `Treasury`'s storage queries
-   **/
-  treasury: {
-    /**
-     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
-     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
-     *
-     * Number of proposals that have been made.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    proposalCount: GenericStorageQuery<() => number>;
-
-    /**
-     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
-     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
-     *
-     * Proposals that have been made.
-     *
-     * @param {number} arg
-     * @param {Callback<PalletTreasuryProposal | undefined> =} callback
-     **/
-    proposals: GenericStorageQuery<(arg: number) => PalletTreasuryProposal | undefined, number>;
-
-    /**
-     * The amount which has been reported as inactive to Currency.
-     *
-     * @param {Callback<bigint> =} callback
-     **/
-    deactivated: GenericStorageQuery<() => bigint>;
-
-    /**
-     * DEPRECATED: associated with `spend_local` call and will be removed in May 2025.
-     * Refer to <https://github.com/paritytech/polkadot-sdk/pull/5961> for migration to `spend`.
-     *
-     * Proposal indices that have been approved but not yet awarded.
-     *
-     * @param {Callback<Array<number>> =} callback
-     **/
-    approvals: GenericStorageQuery<() => Array<number>>;
-
-    /**
-     * The count of spends that have been made.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    spendCount: GenericStorageQuery<() => number>;
-
-    /**
-     * Spends that have been approved and being processed.
-     *
-     * @param {number} arg
-     * @param {Callback<PalletTreasurySpendStatus | undefined> =} callback
-     **/
-    spends: GenericStorageQuery<(arg: number) => PalletTreasurySpendStatus | undefined, number>;
-
-    /**
-     * The blocknumber for the last triggered spend period.
-     *
-     * @param {Callback<number | undefined> =} callback
-     **/
-    lastSpendPeriod: GenericStorageQuery<() => number | undefined>;
 
     /**
      * Generic pallet storage query

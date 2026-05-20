@@ -183,16 +183,21 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
-   * Pallet `DapSatellite`'s constants
+   * Pallet `AccumulateForward`'s constants
    **/
-  dapSatellite: {
+  accumulateForward: {
     /**
-     * The pallet ID used to derive the satellite account.
-     *
-     * Each runtime should configure a unique ID to avoid collisions if multiple
-     * DAP satellite instances are used.
+     * Minimum number of blocks between successive forwards.
+     * Acts as a rate limiter to avoid sending too many messages.
      **/
-    palletId: FrameSupportPalletId;
+    transferPeriod: number;
+
+    /**
+     * Minimum transferable balance required to trigger a forward.
+     * This avoids forwarding very small / negligible amounts.
+     * The accumulation account always retains its existential deposit on top of this.
+     **/
+    minTransferAmount: bigint;
 
     /**
      * Generic pallet constant

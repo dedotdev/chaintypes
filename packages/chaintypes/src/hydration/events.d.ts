@@ -30,7 +30,6 @@ import type {
   PalletConvictionVotingTally,
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
-  PalletDispatcherHyperbridgeCleanupStage,
   PalletAssetRegistryAssetType,
   HydradxRuntimeXcmAssetLocation,
   PalletClaimsEthereumAddress,
@@ -1613,38 +1612,6 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * Emitted each block when cleanup deletes a batch of keys.
-     **/
-    HyperbridgeCleanupProgress: GenericPalletEvent<
-      'Dispatcher',
-      'HyperbridgeCleanupProgress',
-      { stage: PalletDispatcherHyperbridgeCleanupStage; keysDeleted: number }
-    >;
-
-    /**
-     * Emitted when all keys in a stage are removed and cleanup advances.
-     **/
-    HyperbridgeCleanupStageCompleted: GenericPalletEvent<
-      'Dispatcher',
-      'HyperbridgeCleanupStageCompleted',
-      { stage: PalletDispatcherHyperbridgeCleanupStage }
-    >;
-
-    /**
-     * Emitted when all three stages are done and cleanup disables itself.
-     **/
-    HyperbridgeCleanupCompleted: GenericPalletEvent<'Dispatcher', 'HyperbridgeCleanupCompleted', null>;
-
-    /**
-     * Emitted when cleanup is paused or resumed via extrinsic.
-     **/
-    HyperbridgeCleanupStatusChanged: GenericPalletEvent<
-      'Dispatcher',
-      'HyperbridgeCleanupStatusChanged',
-      { paused: boolean }
-    >;
-
-    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -1745,6 +1712,21 @@ export interface ChainEvents extends GenericChainEvents {
       'CollatorRewards',
       'CollatorRewarded',
       { who: AccountId32; amount: bigint; currency: number }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `CollatorRotation`'s events
+   **/
+  collatorRotation: {
+    CollatorBenched: GenericPalletEvent<
+      'CollatorRotation',
+      'CollatorBenched',
+      { who: AccountId32; sessionIndex: number }
     >;
 
     /**
@@ -2916,18 +2898,23 @@ export interface ChainEvents extends GenericChainEvents {
    **/
   signet: {
     /**
-     * Pallet has been initialized with an admin
+     * Signet configuration has been updated.
      **/
-    Initialized: GenericPalletEvent<
+    ConfigUpdated: GenericPalletEvent<
       'Signet',
-      'Initialized',
-      { admin: AccountId32; signatureDeposit: bigint; chainId: Bytes }
+      'ConfigUpdated',
+      { signatureDeposit: bigint; maxChainIdLength: number; maxEvmDataLength: number; chainId: Bytes }
     >;
 
     /**
-     * Signature deposit amount has been updated
+     * Signet has been paused. No new requests will be accepted.
      **/
-    DepositUpdated: GenericPalletEvent<'Signet', 'DepositUpdated', { oldDeposit: bigint; newDeposit: bigint }>;
+    Paused: GenericPalletEvent<'Signet', 'Paused', null>;
+
+    /**
+     * Signet has been unpaused. New requests are allowed again.
+     **/
+    Unpaused: GenericPalletEvent<'Signet', 'Unpaused', null>;
 
     /**
      * Funds have been withdrawn from the pallet
@@ -3011,6 +2998,22 @@ export interface ChainEvents extends GenericChainEvents {
    **/
   ethDispenser: {
     /**
+     * Dispenser configuration has been set or updated.
+     **/
+    ConfigUpdated: GenericPalletEvent<
+      'EthDispenser',
+      'ConfigUpdated',
+      {
+        faucetAddress: H160;
+        minFaucetThreshold: bigint;
+        minRequest: bigint;
+        maxDispense: bigint;
+        dispenserFee: bigint;
+        faucetBalanceWei: bigint;
+      }
+    >;
+
+    /**
      * Dispenser has been paused. No new requests will be accepted.
      **/
     Paused: GenericPalletEvent<'EthDispenser', 'Paused', null>;
@@ -3049,25 +3052,6 @@ export interface ChainEvents extends GenericChainEvents {
          * Requested amount of ETH (in wei).
          **/
         amount: bigint;
-      }
-    >;
-
-    /**
-     * Tracked faucet ETH balance has been updated.
-     **/
-    FaucetBalanceUpdated: GenericPalletEvent<
-      'EthDispenser',
-      'FaucetBalanceUpdated',
-      {
-        /**
-         * Previous tracked balance (in wei).
-         **/
-        oldBalanceWei: bigint;
-
-        /**
-         * New tracked balance (in wei).
-         **/
-        newBalanceWei: bigint;
       }
     >;
 

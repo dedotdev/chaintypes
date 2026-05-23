@@ -56,7 +56,6 @@ import type {
   PalletStateTrieMigrationMigrationLimits,
   PalletConvictionVotingVoteVoting,
   PalletReferendaReferendumInfo,
-  PalletDispatcherHyperbridgeCleanupStage,
   EvmCoreErrorExitReason,
   PalletAssetRegistryAssetDetails,
   HydradxRuntimeXcmAssetLocation,
@@ -92,6 +91,7 @@ import type {
   PalletReferralsLevel,
   PalletReferralsFeeDistribution,
   PalletHsmCollateralInfo,
+  PalletSignetSignetConfigData,
   PalletDispenserDispenserConfigData,
   OrmlTokensBalanceLock,
   OrmlTokensAccountData,
@@ -1189,20 +1189,6 @@ export interface ChainStorage extends GenericChainStorage {
     extraGas: GenericStorageQuery<() => bigint>;
 
     /**
-     * Whether the background ISMP storage cleanup is active.
-     *
-     * @param {Callback<boolean> =} callback
-     **/
-    cleanupEnabled: GenericStorageQuery<() => boolean>;
-
-    /**
-     * Current stage of the background ISMP storage cleanup.
-     *
-     * @param {Callback<PalletDispatcherHyperbridgeCleanupStage | undefined> =} callback
-     **/
-    cleanupStage: GenericStorageQuery<() => PalletDispatcherHyperbridgeCleanupStage | undefined>;
-
-    /**
      *
      * @param {Callback<EvmCoreErrorExitReason | undefined> =} callback
      **/
@@ -2080,6 +2066,12 @@ export interface ChainStorage extends GenericChainStorage {
     isTestnet: GenericStorageQuery<() => boolean>;
 
     /**
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    relayParentOffsetOverride: GenericStorageQuery<() => boolean>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
@@ -2089,25 +2081,13 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   signet: {
     /**
-     * The admin account that controls this pallet
+     * Global configuration for the signet pallet.
      *
-     * @param {Callback<AccountId32 | undefined> =} callback
-     **/
-    admin: GenericStorageQuery<() => AccountId32 | undefined>;
-
-    /**
-     * The amount required as deposit for signature requests
+     * If `None`, the pallet has not been configured yet and cannot be used.
      *
-     * @param {Callback<bigint> =} callback
+     * @param {Callback<PalletSignetSignetConfigData | undefined> =} callback
      **/
-    signatureDeposit: GenericStorageQuery<() => bigint>;
-
-    /**
-     * The CAIP-2 chain identifier
-     *
-     * @param {Callback<Bytes> =} callback
-     **/
-    chainId: GenericStorageQuery<() => Bytes>;
+    signetConfig: GenericStorageQuery<() => PalletSignetSignetConfigData | undefined>;
 
     /**
      * Generic pallet storage query
@@ -2121,22 +2101,11 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * Global configuration for the dispenser.
      *
-     * Currently only tracks whether the pallet is paused. If `None`, defaults
-     * to unpaused.
+     * If `None`, the pallet has not been configured and cannot process requests.
      *
      * @param {Callback<PalletDispenserDispenserConfigData | undefined> =} callback
      **/
     dispenserConfig: GenericStorageQuery<() => PalletDispenserDispenserConfigData | undefined>;
-
-    /**
-     * Tracked ETH balance (in wei) currently available in the external faucet.
-     *
-     * This value is updated manually via governance and is used as a guardrail
-     * to prevent issuing requests that would over-spend the faucet.
-     *
-     * @param {Callback<bigint> =} callback
-     **/
-    faucetBalanceWei: GenericStorageQuery<() => bigint>;
 
     /**
      * Request IDs that have already been used.

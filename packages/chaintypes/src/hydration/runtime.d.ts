@@ -30,6 +30,8 @@ import type {
   SpConsensusSlotsSlotDuration,
   SpConsensusAuraSr25519AppSr25519Public,
   CumulusPrimitivesCoreCollationInfo,
+  PolkadotPrimitivesVstagingCoreSelector,
+  PolkadotPrimitivesVstagingClaimQueueOffset,
   PalletCurrenciesRpcRuntimeApiAccountData,
   PalletTransactionPaymentRuntimeDispatchInfo,
   PalletTransactionPaymentFeeDetails,
@@ -305,6 +307,24 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {Header} header
      **/
     collectCollationInfo: GenericRuntimeApiMethod<(header: Header) => Promise<CumulusPrimitivesCoreCollationInfo>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: GetCoreSelectorApi - 0x695c80446b8b3d4e
+   **/
+  getCoreSelectorApi: {
+    /**
+     * Retrieve core selector and claim queue offset for the next block.
+     *
+     * @callname: GetCoreSelectorApi_core_selector
+     **/
+    coreSelector: GenericRuntimeApiMethod<
+      () => Promise<[PolkadotPrimitivesVstagingCoreSelector, PolkadotPrimitivesVstagingClaimQueueOffset]>
+    >;
 
     /**
      * Generic runtime api call
@@ -803,6 +823,22 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @param {SpConsensusSlotsSlot} slot
      **/
     canBuildUpon: GenericRuntimeApiMethod<(includedHash: H256, slot: SpConsensusSlotsSlot) => Promise<boolean>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: RelayParentOffsetApi - 0x04e70521a0d3d2f8
+   **/
+  relayParentOffsetApi: {
+    /**
+     * Fetch the slot offset that is expected from the relay chain.
+     *
+     * @callname: RelayParentOffsetApi_relay_parent_offset
+     **/
+    relayParentOffset: GenericRuntimeApiMethod<() => Promise<number>>;
 
     /**
      * Generic runtime api call

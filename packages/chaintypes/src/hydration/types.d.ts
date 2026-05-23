@@ -5141,11 +5141,6 @@ export type PalletDispatcherCall =
    * Emits `EmergencyAdminCallDispatched` with the call hash and dispatch result.
    **/
   | { name: 'DispatchAsEmergencyAdmin'; params: { call: HydradxRuntimeRuntimeCall } }
-  /**
-   * Enable/pause the background ISMP storage cleanup. If enabled for the first time,
-   * starting from the first stage.
-   **/
-  | { name: 'PauseHyperbridgeCleanup'; params: { doPause: boolean } }
   | { name: 'DispatchWithFeePayer'; params: { call: HydradxRuntimeRuntimeCall } };
 
 export type PalletDispatcherCallLike =
@@ -5194,11 +5189,6 @@ export type PalletDispatcherCallLike =
    * Emits `EmergencyAdminCallDispatched` with the call hash and dispatch result.
    **/
   | { name: 'DispatchAsEmergencyAdmin'; params: { call: HydradxRuntimeRuntimeCallLike } }
-  /**
-   * Enable/pause the background ISMP storage cleanup. If enabled for the first time,
-   * starting from the first stage.
-   **/
-  | { name: 'PauseHyperbridgeCleanup'; params: { doPause: boolean } }
   | { name: 'DispatchWithFeePayer'; params: { call: HydradxRuntimeRuntimeCallLike } };
 
 /**
@@ -8243,18 +8233,18 @@ export type PalletBondsCall =
   /**
    * Issue new fungible bonds.
    * New asset id is registered and assigned to the bonds.
-   * The number of bonds the issuer receives is 1:1 to the `amount` of the underlying asset
-   * minus the protocol fee.
+   * The number of bonds issued is 1:1 to the `amount` of the underlying asset.
    * The bond asset is registered with the empty string for the asset name,
    * and with the same existential deposit as of the underlying asset.
    * Bonds can be redeemed for the underlying asset once mature.
-   * Protocol fee is applied to the amount, and transferred to `T::FeeReceiver`.
+   * The underlying asset is debited from `T::IssuerAccount`, and the bonds are credited to
+   * the same account.
    * When issuing new bonds with the underlying asset and maturity that matches existing bonds,
    * new amount of these existing bonds is issued, instead of registering new bonds.
    * It's possible to issue new bonds for bonds that are already mature.
    *
    * Parameters:
-   * - `origin`: issuer of new bonds, needs to be `T::IssueOrigin`
+   * - `origin`: must be `T::IssueOrigin`.
    * - `asset_id`: underlying asset id
    * - `amount`: the amount of the underlying asset
    * - `maturity`: Unix time in milliseconds, when the bonds will be mature.
@@ -8284,18 +8274,18 @@ export type PalletBondsCallLike =
   /**
    * Issue new fungible bonds.
    * New asset id is registered and assigned to the bonds.
-   * The number of bonds the issuer receives is 1:1 to the `amount` of the underlying asset
-   * minus the protocol fee.
+   * The number of bonds issued is 1:1 to the `amount` of the underlying asset.
    * The bond asset is registered with the empty string for the asset name,
    * and with the same existential deposit as of the underlying asset.
    * Bonds can be redeemed for the underlying asset once mature.
-   * Protocol fee is applied to the amount, and transferred to `T::FeeReceiver`.
+   * The underlying asset is debited from `T::IssuerAccount`, and the bonds are credited to
+   * the same account.
    * When issuing new bonds with the underlying asset and maturity that matches existing bonds,
    * new amount of these existing bonds is issued, instead of registering new bonds.
    * It's possible to issue new bonds for bonds that are already mature.
    *
    * Parameters:
-   * - `origin`: issuer of new bonds, needs to be `T::IssueOrigin`
+   * - `origin`: must be `T::IssueOrigin`.
    * - `asset_id`: underlying asset id
    * - `amount`: the amount of the underlying asset
    * - `maturity`: Unix time in milliseconds, when the bonds will be mature.
@@ -9432,15 +9422,28 @@ export type PalletHsmArbitrage = { type: 'HollarOut'; value: bigint } | { type: 
  **/
 export type PalletSignetCall =
   /**
-   * Initialize the pallet with admin, deposit, and chain ID
+   * Set or update the signet configuration.
+   *
+   * Can be called multiple times to update the configuration.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`.
+   * - `signature_deposit`: Deposit amount for signature requests.
+   * - `max_chain_id_length`: Maximum chain ID length.
+   * - `max_evm_data_length`: Maximum EVM transaction data length.
+   * - `chain_id`: The CAIP-2 chain identifier.
    **/
-  | { name: 'Initialize'; params: { admin: AccountId32; signatureDeposit: bigint; chainId: Bytes } }
+  | {
+      name: 'SetConfig';
+      params: { signatureDeposit: bigint; maxChainIdLength: number; maxEvmDataLength: number; chainId: Bytes };
+    }
   /**
-   * Update the signature deposit amount (admin only)
-   **/
-  | { name: 'UpdateDeposit'; params: { newDeposit: bigint } }
-  /**
-   * Withdraw funds from the pallet account (admin only)
+   * Withdraw funds from the pallet account.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`.
+   * - `recipient`: Account to receive the withdrawn funds.
+   * - `amount`: Amount to withdraw.
    **/
   | { name: 'WithdrawFunds'; params: { recipient: AccountId32; amount: bigint } }
   /**
@@ -9481,19 +9484,46 @@ export type PalletSignetCall =
   | {
       name: 'RespondBidirectional';
       params: { requestId: FixedBytes<32>; serializedOutput: Bytes; signature: PalletSignetSignature };
-    };
+    }
+  /**
+   * Pause the signet so that no new signing requests can be made.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`.
+   **/
+  | { name: 'Pause' }
+  /**
+   * Unpause the signet so that signing requests are allowed again.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`.
+   **/
+  | { name: 'Unpause' };
 
 export type PalletSignetCallLike =
   /**
-   * Initialize the pallet with admin, deposit, and chain ID
+   * Set or update the signet configuration.
+   *
+   * Can be called multiple times to update the configuration.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`.
+   * - `signature_deposit`: Deposit amount for signature requests.
+   * - `max_chain_id_length`: Maximum chain ID length.
+   * - `max_evm_data_length`: Maximum EVM transaction data length.
+   * - `chain_id`: The CAIP-2 chain identifier.
    **/
-  | { name: 'Initialize'; params: { admin: AccountId32Like; signatureDeposit: bigint; chainId: BytesLike } }
+  | {
+      name: 'SetConfig';
+      params: { signatureDeposit: bigint; maxChainIdLength: number; maxEvmDataLength: number; chainId: BytesLike };
+    }
   /**
-   * Update the signature deposit amount (admin only)
-   **/
-  | { name: 'UpdateDeposit'; params: { newDeposit: bigint } }
-  /**
-   * Withdraw funds from the pallet account (admin only)
+   * Withdraw funds from the pallet account.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`.
+   * - `recipient`: Account to receive the withdrawn funds.
+   * - `amount`: Amount to withdraw.
    **/
   | { name: 'WithdrawFunds'; params: { recipient: AccountId32Like; amount: bigint } }
   /**
@@ -9541,7 +9571,21 @@ export type PalletSignetCallLike =
   | {
       name: 'RespondBidirectional';
       params: { requestId: FixedBytes<32>; serializedOutput: BytesLike; signature: PalletSignetSignature };
-    };
+    }
+  /**
+   * Pause the signet so that no new signing requests can be made.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`.
+   **/
+  | { name: 'Pause' }
+  /**
+   * Unpause the signet so that signing requests are allowed again.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`.
+   **/
+  | { name: 'Unpause' };
 
 export type PalletSignetSignature = { bigR: PalletSignetAffinePoint; s: FixedBytes<32>; recoveryId: number };
 
@@ -9556,16 +9600,6 @@ export type PalletDispenserCall =
   /**
    * Request ETH from the external faucet for a given EVM address.
    *
-   * This call:
-   * - Verifies amount bounds and EVM transaction parameters.
-   * - Checks the tracked faucet ETH balance against `MinFaucetEthThreshold`.
-   * - Charges the configured fee in `FeeAsset`.
-   * - Transfers the requested faucet asset from the user to `FeeDestination`.
-   * - Builds an EVM transaction calling `IGasFaucet::fund`.
-   * - Submits a signing request to SigNet via `pallet_signet::sign_bidirectional`.
-   *
-   * The `request_id` must match the ID derived internally from the inputs,
-   * otherwise the call will fail with `InvalidRequestId`.
    * Parameters:
    * - `to`: Target EVM address to receive ETH.
    * - `amount`: Amount of ETH (in wei) to request.
@@ -9575,6 +9609,32 @@ export type PalletDispenserCall =
   | {
       name: 'RequestFund';
       params: { to: H160; amount: bigint; requestId: FixedBytes<32>; tx: PalletDispenserEvmTransactionParams };
+    }
+  /**
+   * Set or update the dispenser configuration.
+   *
+   * On first call, the pallet starts unpaused. On subsequent calls,
+   * `paused` state is preserved.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`.
+   * - `faucet_address`: EVM address of the external gas faucet contract.
+   * - `min_faucet_threshold`: Minimum remaining ETH (wei) after a request.
+   * - `min_request`: Minimum request amount.
+   * - `max_dispense`: Maximum request amount.
+   * - `dispenser_fee`: Flat fee in `FeeAsset` per request.
+   * - `faucet_balance_wei`: Tracked faucet ETH balance (in wei).
+   **/
+  | {
+      name: 'SetConfig';
+      params: {
+        faucetAddress: H160;
+        minFaucetThreshold: bigint;
+        minRequest: bigint;
+        maxDispense: bigint;
+        dispenserFee: bigint;
+        faucetBalanceWei: bigint;
+      };
     }
   /**
    * Pause the dispenser so that no new funding requests can be made.
@@ -9589,33 +9649,12 @@ export type PalletDispenserCall =
    * Parameters:
    * - `origin`: Must satisfy `UpdateOrigin`
    **/
-  | { name: 'Unpause' }
-  /**
-   * Increase the tracked faucet ETH balance (in wei).
-   *
-   * This is an accounting helper used to keep `FaucetBalanceWei`
-   * roughly in sync with the real faucet balance on the EVM chain.
-   *
-   * Parameters:
-   * - `origin`: Must satisfy `UpdateOrigin`.
-   * - `balance_wei`: Amount (in wei) to add to the currently stored balance.
-   **/
-  | { name: 'SetFaucetBalance'; params: { balanceWei: bigint } };
+  | { name: 'Unpause' };
 
 export type PalletDispenserCallLike =
   /**
    * Request ETH from the external faucet for a given EVM address.
    *
-   * This call:
-   * - Verifies amount bounds and EVM transaction parameters.
-   * - Checks the tracked faucet ETH balance against `MinFaucetEthThreshold`.
-   * - Charges the configured fee in `FeeAsset`.
-   * - Transfers the requested faucet asset from the user to `FeeDestination`.
-   * - Builds an EVM transaction calling `IGasFaucet::fund`.
-   * - Submits a signing request to SigNet via `pallet_signet::sign_bidirectional`.
-   *
-   * The `request_id` must match the ID derived internally from the inputs,
-   * otherwise the call will fail with `InvalidRequestId`.
    * Parameters:
    * - `to`: Target EVM address to receive ETH.
    * - `amount`: Amount of ETH (in wei) to request.
@@ -9625,6 +9664,32 @@ export type PalletDispenserCallLike =
   | {
       name: 'RequestFund';
       params: { to: H160; amount: bigint; requestId: FixedBytes<32>; tx: PalletDispenserEvmTransactionParams };
+    }
+  /**
+   * Set or update the dispenser configuration.
+   *
+   * On first call, the pallet starts unpaused. On subsequent calls,
+   * `paused` state is preserved.
+   *
+   * Parameters:
+   * - `origin`: Must satisfy `UpdateOrigin`.
+   * - `faucet_address`: EVM address of the external gas faucet contract.
+   * - `min_faucet_threshold`: Minimum remaining ETH (wei) after a request.
+   * - `min_request`: Minimum request amount.
+   * - `max_dispense`: Maximum request amount.
+   * - `dispenser_fee`: Flat fee in `FeeAsset` per request.
+   * - `faucet_balance_wei`: Tracked faucet ETH balance (in wei).
+   **/
+  | {
+      name: 'SetConfig';
+      params: {
+        faucetAddress: H160;
+        minFaucetThreshold: bigint;
+        minRequest: bigint;
+        maxDispense: bigint;
+        dispenserFee: bigint;
+        faucetBalanceWei: bigint;
+      };
     }
   /**
    * Pause the dispenser so that no new funding requests can be made.
@@ -9639,18 +9704,7 @@ export type PalletDispenserCallLike =
    * Parameters:
    * - `origin`: Must satisfy `UpdateOrigin`
    **/
-  | { name: 'Unpause' }
-  /**
-   * Increase the tracked faucet ETH balance (in wei).
-   *
-   * This is an accounting helper used to keep `FaucetBalanceWei`
-   * roughly in sync with the real faucet balance on the EVM chain.
-   *
-   * Parameters:
-   * - `origin`: Must satisfy `UpdateOrigin`.
-   * - `balance_wei`: Amount (in wei) to add to the currently stored balance.
-   **/
-  | { name: 'SetFaucetBalance'; params: { balanceWei: bigint } };
+  | { name: 'Unpause' };
 
 export type PalletDispenserEvmTransactionParams = {
   value: bigint;
@@ -13809,6 +13863,7 @@ export type HydradxRuntimeRuntimeEvent =
   | { pallet: 'AssetRegistry'; palletEvent: PalletAssetRegistryEvent }
   | { pallet: 'Claims'; palletEvent: PalletClaimsEvent }
   | { pallet: 'CollatorRewards'; palletEvent: PalletCollatorRewardsEvent }
+  | { pallet: 'CollatorRotation'; palletEvent: PalletCollatorRotationEvent }
   | { pallet: 'Omnipool'; palletEvent: PalletOmnipoolEvent }
   | { pallet: 'TransactionPause'; palletEvent: PalletTransactionPauseEvent }
   | { pallet: 'Duster'; palletEvent: PalletDusterEvent }
@@ -15101,31 +15156,7 @@ export type PalletDispatcherEvent =
         callHash: H256;
         result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
       };
-    }
-  /**
-   * Emitted each block when cleanup deletes a batch of keys.
-   **/
-  | {
-      name: 'HyperbridgeCleanupProgress';
-      data: { stage: PalletDispatcherHyperbridgeCleanupStage; keysDeleted: number };
-    }
-  /**
-   * Emitted when all keys in a stage are removed and cleanup advances.
-   **/
-  | { name: 'HyperbridgeCleanupStageCompleted'; data: { stage: PalletDispatcherHyperbridgeCleanupStage } }
-  /**
-   * Emitted when all three stages are done and cleanup disables itself.
-   **/
-  | { name: 'HyperbridgeCleanupCompleted' }
-  /**
-   * Emitted when cleanup is paused or resumed via extrinsic.
-   **/
-  | { name: 'HyperbridgeCleanupStatusChanged'; data: { paused: boolean } };
-
-export type PalletDispatcherHyperbridgeCleanupStage =
-  | 'StateCommitments'
-  | 'StateMachineUpdateTime'
-  | 'RelayChainStateCommitments';
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -15196,6 +15227,11 @@ export type PalletCollatorRewardsEvent =
    * Collator was rewarded.
    **/
   { name: 'CollatorRewarded'; data: { who: AccountId32; amount: bigint; currency: number } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletCollatorRotationEvent = { name: 'CollatorBenched'; data: { who: AccountId32; sessionIndex: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -16054,13 +16090,20 @@ export type PalletHsmEvent =
  **/
 export type PalletSignetEvent =
   /**
-   * Pallet has been initialized with an admin
+   * Signet configuration has been updated.
    **/
-  | { name: 'Initialized'; data: { admin: AccountId32; signatureDeposit: bigint; chainId: Bytes } }
+  | {
+      name: 'ConfigUpdated';
+      data: { signatureDeposit: bigint; maxChainIdLength: number; maxEvmDataLength: number; chainId: Bytes };
+    }
   /**
-   * Signature deposit amount has been updated
+   * Signet has been paused. No new requests will be accepted.
    **/
-  | { name: 'DepositUpdated'; data: { oldDeposit: bigint; newDeposit: bigint } }
+  | { name: 'Paused' }
+  /**
+   * Signet has been unpaused. New requests are allowed again.
+   **/
+  | { name: 'Unpaused' }
   /**
    * Funds have been withdrawn from the pallet
    **/
@@ -16130,6 +16173,20 @@ export type PalletSignetEvent =
  **/
 export type PalletDispenserEvent =
   /**
+   * Dispenser configuration has been set or updated.
+   **/
+  | {
+      name: 'ConfigUpdated';
+      data: {
+        faucetAddress: H160;
+        minFaucetThreshold: bigint;
+        minRequest: bigint;
+        maxDispense: bigint;
+        dispenserFee: bigint;
+        faucetBalanceWei: bigint;
+      };
+    }
+  /**
    * Dispenser has been paused. No new requests will be accepted.
    **/
   | { name: 'Paused' }
@@ -16165,23 +16222,6 @@ export type PalletDispenserEvent =
          * Requested amount of ETH (in wei).
          **/
         amount: bigint;
-      };
-    }
-  /**
-   * Tracked faucet ETH balance has been updated.
-   **/
-  | {
-      name: 'FaucetBalanceUpdated';
-      data: {
-        /**
-         * Previous tracked balance (in wei).
-         **/
-        oldBalanceWei: bigint;
-
-        /**
-         * New tracked balance (in wei).
-         **/
-        newBalanceWei: bigint;
       };
     };
 
@@ -18807,7 +18847,16 @@ export type PalletOmnipoolError =
   /**
    * Slip fee configuration exceeds the allowed maximum (50%).
    **/
-  | 'MaxSlipFeeTooHigh';
+  | 'MaxSlipFeeTooHigh'
+  /**
+   * Invariant check failed inside a trade or liquidity operation.
+   **/
+  | 'InvariantError'
+  /**
+   * Hub asset free balance in the protocol account is less than the sum of recorded
+   * asset hub reserves. Indicates corrupted hub-asset accounting; should never happen.
+   **/
+  | 'InvalidOmnipoolHubReserve';
 
 /**
  * The `Error` enum of this pallet.
@@ -19506,7 +19555,11 @@ export type PalletStableswapError =
   /**
    * Trade would result in zero amount in.
    **/
-  | 'ZeroAmountIn';
+  | 'ZeroAmountIn'
+  /**
+   * Invariant check failed inside a trade or liquidity operation.
+   **/
+  | 'InvariantError';
 
 /**
  * The `Error` enum of this pallet.
@@ -19992,22 +20045,26 @@ export type PalletHsmError =
    **/
   | 'InvalidArbitrageData';
 
+export type PalletSignetSignetConfigData = {
+  paused: boolean;
+  signatureDeposit: bigint;
+  maxChainIdLength: number;
+  maxEvmDataLength: number;
+  chainId: Bytes;
+};
+
 /**
  * The `Error` enum of this pallet.
  **/
 export type PalletSignetError =
   /**
-   * The pallet has already been initialized
+   * The pallet has not been configured yet
    **/
-  | 'AlreadyInitialized'
+  | 'NotConfigured'
   /**
-   * The pallet has not been initialized yet
+   * Pallet is paused and cannot process this call.
    **/
-  | 'NotInitialized'
-  /**
-   * Unauthorized - caller is not admin
-   **/
-  | 'Unauthorized'
+  | 'Paused'
   /**
    * Insufficient funds for withdrawal
    **/
@@ -20021,10 +20078,6 @@ export type PalletSignetError =
    **/
   | 'InvalidInputLength'
   /**
-   * The chain ID is too long
-   **/
-  | 'ChainIdTooLong'
-  /**
    * Transaction data exceeds maximum allowed length
    **/
   | 'DataTooLong'
@@ -20035,18 +20088,26 @@ export type PalletSignetError =
   /**
    * Priority fee cannot exceed max fee per gas (EIP-1559 requirement)
    **/
-  | 'InvalidGasPrice'
-  /**
-   * Signature Deposit cannot exceed MaxSignatureDeposit
-   **/
-  | 'MaxDepositExceeded';
+  | 'InvalidGasPrice';
 
-export type PalletDispenserDispenserConfigData = { paused: boolean };
+export type PalletDispenserDispenserConfigData = {
+  paused: boolean;
+  faucetBalanceWei: bigint;
+  faucetAddress: H160;
+  minFaucetThreshold: bigint;
+  minRequest: bigint;
+  maxDispense: bigint;
+  dispenserFee: bigint;
+};
 
 /**
  * Pallet errors.
  **/
 export type PalletDispenserError =
+  /**
+   * The pallet has not been configured yet.
+   **/
+  | 'NotConfigured'
   /**
    * Request ID has already been used.
    **/
@@ -20090,7 +20151,11 @@ export type PalletDispenserError =
   /**
    * Caller does not have enough balance of the faucet asset.
    **/
-  | 'NotEnoughFaucetFunds';
+  | 'NotEnoughFaucetFunds'
+  /**
+   * Configuration parameters are invalid (e.g., min_request > max_dispense).
+   **/
+  | 'InvalidConfig';
 
 export type OrmlTokensBalanceLock = { id: FixedBytes<8>; amount: bigint };
 
@@ -21303,6 +21368,10 @@ export type CumulusPrimitivesCoreCollationInfo = {
 };
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
+
+export type PolkadotPrimitivesVstagingCoreSelector = number;
+
+export type PolkadotPrimitivesVstagingClaimQueueOffset = number;
 
 export type PalletCurrenciesRpcRuntimeApiAccountData = { free: bigint; reserved: bigint; frozen: bigint };
 

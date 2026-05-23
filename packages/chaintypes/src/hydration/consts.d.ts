@@ -728,6 +728,15 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `CollatorRotation`'s constants
+   **/
+  collatorRotation: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Omnipool`'s constants
    **/
   omnipool: {
@@ -1048,14 +1057,9 @@ export interface ChainConsts extends GenericChainConsts {
     palletId: FrameSupportPalletId;
 
     /**
-     * Protocol fee.
+     * Account that pays the underlying asset and receives the bonds when `issue` is called.
      **/
-    protocolFee: Permill;
-
-    /**
-     * Protocol fee receiver.
-     **/
-    feeReceiver: AccountId32;
+    issuerAccount: AccountId32;
 
     /**
      * Generic pallet constant
@@ -1279,17 +1283,6 @@ export interface ChainConsts extends GenericChainConsts {
     palletId: FrameSupportPalletId;
 
     /**
-     * Maximum length for chain ID
-     **/
-    maxChainIdLength: number;
-
-    /**
-     * Maximum length of transaction data
-     **/
-    maxDataLength: number;
-    maxSignatureDeposit: bigint;
-
-    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -1298,21 +1291,6 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `EthDispenser`'s constants
    **/
   ethDispenser: {
-    /**
-     * Minimum amount of faucet asset that can be requested in a single call.
-     **/
-    minimumRequestAmount: bigint;
-
-    /**
-     * Maximum amount of faucet asset that can be requested in a single call.
-     **/
-    maxDispenseAmount: bigint;
-
-    /**
-     * Flat fee charged in `FeeAsset` for each faucet request.
-     **/
-    dispenserFee: bigint;
-
     /**
      * Asset ID used to charge the faucet request fee.
      * (HDX - 0)
@@ -1331,21 +1309,9 @@ export interface ChainConsts extends GenericChainConsts {
     feeDestination: AccountId32;
 
     /**
-     * EVM address of the external gas faucet contract.
-     **/
-    faucetAddress: H160;
-
-    /**
      * Pallet ID used to derive the pallet's sovereign account.
      **/
     palletId: FrameSupportPalletId;
-
-    /**
-     * Minimum remaining ETH (in wei) that must be available in the faucet
-     * after servicing a request. Requests are rejected if this threshold
-     * would be breached.
-     **/
-    minFaucetEthThreshold: bigint;
 
     /**
      * Generic pallet constant

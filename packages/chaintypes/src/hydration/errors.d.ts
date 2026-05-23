@@ -1514,6 +1514,17 @@ export interface ChainErrors extends GenericChainErrors {
     MaxSlipFeeTooHigh: GenericPalletError;
 
     /**
+     * Invariant check failed inside a trade or liquidity operation.
+     **/
+    InvariantError: GenericPalletError;
+
+    /**
+     * Hub asset free balance in the protocol account is less than the sum of recorded
+     * asset hub reserves. Indicates corrupted hub-asset accounting; should never happen.
+     **/
+    InvalidOmnipoolHubReserve: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -2223,6 +2234,11 @@ export interface ChainErrors extends GenericChainErrors {
     ZeroAmountIn: GenericPalletError;
 
     /**
+     * Invariant check failed inside a trade or liquidity operation.
+     **/
+    InvariantError: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -2836,19 +2852,14 @@ export interface ChainErrors extends GenericChainErrors {
    **/
   signet: {
     /**
-     * The pallet has already been initialized
+     * The pallet has not been configured yet
      **/
-    AlreadyInitialized: GenericPalletError;
+    NotConfigured: GenericPalletError;
 
     /**
-     * The pallet has not been initialized yet
+     * Pallet is paused and cannot process this call.
      **/
-    NotInitialized: GenericPalletError;
-
-    /**
-     * Unauthorized - caller is not admin
-     **/
-    Unauthorized: GenericPalletError;
+    Paused: GenericPalletError;
 
     /**
      * Insufficient funds for withdrawal
@@ -2866,11 +2877,6 @@ export interface ChainErrors extends GenericChainErrors {
     InvalidInputLength: GenericPalletError;
 
     /**
-     * The chain ID is too long
-     **/
-    ChainIdTooLong: GenericPalletError;
-
-    /**
      * Transaction data exceeds maximum allowed length
      **/
     DataTooLong: GenericPalletError;
@@ -2886,11 +2892,6 @@ export interface ChainErrors extends GenericChainErrors {
     InvalidGasPrice: GenericPalletError;
 
     /**
-     * Signature Deposit cannot exceed MaxSignatureDeposit
-     **/
-    MaxDepositExceeded: GenericPalletError;
-
-    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -2899,6 +2900,11 @@ export interface ChainErrors extends GenericChainErrors {
    * Pallet `EthDispenser`'s errors
    **/
   ethDispenser: {
+    /**
+     * The pallet has not been configured yet.
+     **/
+    NotConfigured: GenericPalletError;
+
     /**
      * Request ID has already been used.
      **/
@@ -2953,6 +2959,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Caller does not have enough balance of the faucet asset.
      **/
     NotEnoughFaucetFunds: GenericPalletError;
+
+    /**
+     * Configuration parameters are invalid (e.g., min_request > max_dispense).
+     **/
+    InvalidConfig: GenericPalletError;
 
     /**
      * Generic pallet error

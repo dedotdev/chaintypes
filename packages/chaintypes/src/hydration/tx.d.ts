@@ -5452,25 +5452,6 @@ export interface ChainTx<
     >;
 
     /**
-     * Enable/pause the background ISMP storage cleanup. If enabled for the first time,
-     * starting from the first stage.
-     *
-     * @param {boolean} doPause
-     **/
-    pauseHyperbridgeCleanup: GenericTxCall<
-      (doPause: boolean) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Dispatcher';
-          palletCall: {
-            name: 'PauseHyperbridgeCleanup';
-            params: { doPause: boolean };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
      *
      * @param {HydradxRuntimeRuntimeCallLike} call
      **/
@@ -8644,18 +8625,18 @@ export interface ChainTx<
     /**
      * Issue new fungible bonds.
      * New asset id is registered and assigned to the bonds.
-     * The number of bonds the issuer receives is 1:1 to the `amount` of the underlying asset
-     * minus the protocol fee.
+     * The number of bonds issued is 1:1 to the `amount` of the underlying asset.
      * The bond asset is registered with the empty string for the asset name,
      * and with the same existential deposit as of the underlying asset.
      * Bonds can be redeemed for the underlying asset once mature.
-     * Protocol fee is applied to the amount, and transferred to `T::FeeReceiver`.
+     * The underlying asset is debited from `T::IssuerAccount`, and the bonds are credited to
+     * the same account.
      * When issuing new bonds with the underlying asset and maturity that matches existing bonds,
      * new amount of these existing bonds is issued, instead of registering new bonds.
      * It's possible to issue new bonds for bonds that are already mature.
      *
      * Parameters:
-     * - `origin`: issuer of new bonds, needs to be `T::IssueOrigin`
+     * - `origin`: must be `T::IssueOrigin`.
      * - `asset_id`: underlying asset id
      * - `amount`: the amount of the underlying asset
      * - `maturity`: Unix time in milliseconds, when the bonds will be mature.
@@ -9870,23 +9851,39 @@ export interface ChainTx<
    **/
   signet: {
     /**
-     * Initialize the pallet with admin, deposit, and chain ID
+     * Set or update the signet configuration.
      *
-     * @param {AccountId32Like} admin
+     * Can be called multiple times to update the configuration.
+     *
+     * Parameters:
+     * - `origin`: Must satisfy `UpdateOrigin`.
+     * - `signature_deposit`: Deposit amount for signature requests.
+     * - `max_chain_id_length`: Maximum chain ID length.
+     * - `max_evm_data_length`: Maximum EVM transaction data length.
+     * - `chain_id`: The CAIP-2 chain identifier.
+     *
      * @param {bigint} signatureDeposit
+     * @param {number} maxChainIdLength
+     * @param {number} maxEvmDataLength
      * @param {BytesLike} chainId
      **/
-    initialize: GenericTxCall<
+    setConfig: GenericTxCall<
       (
-        admin: AccountId32Like,
         signatureDeposit: bigint,
+        maxChainIdLength: number,
+        maxEvmDataLength: number,
         chainId: BytesLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Signet';
           palletCall: {
-            name: 'Initialize';
-            params: { admin: AccountId32Like; signatureDeposit: bigint; chainId: BytesLike };
+            name: 'SetConfig';
+            params: {
+              signatureDeposit: bigint;
+              maxChainIdLength: number;
+              maxEvmDataLength: number;
+              chainId: BytesLike;
+            };
           };
         },
         ChainKnownTypes
@@ -9894,25 +9891,12 @@ export interface ChainTx<
     >;
 
     /**
-     * Update the signature deposit amount (admin only)
+     * Withdraw funds from the pallet account.
      *
-     * @param {bigint} newDeposit
-     **/
-    updateDeposit: GenericTxCall<
-      (newDeposit: bigint) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Signet';
-          palletCall: {
-            name: 'UpdateDeposit';
-            params: { newDeposit: bigint };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Withdraw funds from the pallet account (admin only)
+     * Parameters:
+     * - `origin`: Must satisfy `UpdateOrigin`.
+     * - `recipient`: Account to receive the withdrawn funds.
+     * - `amount`: Amount to withdraw.
      *
      * @param {AccountId32Like} recipient
      * @param {bigint} amount
@@ -10081,6 +10065,44 @@ export interface ChainTx<
     >;
 
     /**
+     * Pause the signet so that no new signing requests can be made.
+     *
+     * Parameters:
+     * - `origin`: Must satisfy `UpdateOrigin`.
+     *
+     **/
+    pause: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Signet';
+          palletCall: {
+            name: 'Pause';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unpause the signet so that signing requests are allowed again.
+     *
+     * Parameters:
+     * - `origin`: Must satisfy `UpdateOrigin`.
+     *
+     **/
+    unpause: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Signet';
+          palletCall: {
+            name: 'Unpause';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -10092,16 +10114,6 @@ export interface ChainTx<
     /**
      * Request ETH from the external faucet for a given EVM address.
      *
-     * This call:
-     * - Verifies amount bounds and EVM transaction parameters.
-     * - Checks the tracked faucet ETH balance against `MinFaucetEthThreshold`.
-     * - Charges the configured fee in `FeeAsset`.
-     * - Transfers the requested faucet asset from the user to `FeeDestination`.
-     * - Builds an EVM transaction calling `IGasFaucet::fund`.
-     * - Submits a signing request to SigNet via `pallet_signet::sign_bidirectional`.
-     *
-     * The `request_id` must match the ID derived internally from the inputs,
-     * otherwise the call will fail with `InvalidRequestId`.
      * Parameters:
      * - `to`: Target EVM address to receive ETH.
      * - `amount`: Amount of ETH (in wei) to request.
@@ -10125,6 +10137,55 @@ export interface ChainTx<
           palletCall: {
             name: 'RequestFund';
             params: { to: H160; amount: bigint; requestId: FixedBytes<32>; tx: PalletDispenserEvmTransactionParams };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set or update the dispenser configuration.
+     *
+     * On first call, the pallet starts unpaused. On subsequent calls,
+     * `paused` state is preserved.
+     *
+     * Parameters:
+     * - `origin`: Must satisfy `UpdateOrigin`.
+     * - `faucet_address`: EVM address of the external gas faucet contract.
+     * - `min_faucet_threshold`: Minimum remaining ETH (wei) after a request.
+     * - `min_request`: Minimum request amount.
+     * - `max_dispense`: Maximum request amount.
+     * - `dispenser_fee`: Flat fee in `FeeAsset` per request.
+     * - `faucet_balance_wei`: Tracked faucet ETH balance (in wei).
+     *
+     * @param {H160} faucetAddress
+     * @param {bigint} minFaucetThreshold
+     * @param {bigint} minRequest
+     * @param {bigint} maxDispense
+     * @param {bigint} dispenserFee
+     * @param {bigint} faucetBalanceWei
+     **/
+    setConfig: GenericTxCall<
+      (
+        faucetAddress: H160,
+        minFaucetThreshold: bigint,
+        minRequest: bigint,
+        maxDispense: bigint,
+        dispenserFee: bigint,
+        faucetBalanceWei: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'EthDispenser';
+          palletCall: {
+            name: 'SetConfig';
+            params: {
+              faucetAddress: H160;
+              minFaucetThreshold: bigint;
+              minRequest: bigint;
+              maxDispense: bigint;
+              dispenserFee: bigint;
+              faucetBalanceWei: bigint;
+            };
           };
         },
         ChainKnownTypes
@@ -10163,31 +10224,6 @@ export interface ChainTx<
           pallet: 'EthDispenser';
           palletCall: {
             name: 'Unpause';
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Increase the tracked faucet ETH balance (in wei).
-     *
-     * This is an accounting helper used to keep `FaucetBalanceWei`
-     * roughly in sync with the real faucet balance on the EVM chain.
-     *
-     * Parameters:
-     * - `origin`: Must satisfy `UpdateOrigin`.
-     * - `balance_wei`: Amount (in wei) to add to the currently stored balance.
-     *
-     * @param {bigint} balanceWei
-     **/
-    setFaucetBalance: GenericTxCall<
-      (balanceWei: bigint) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'EthDispenser';
-          palletCall: {
-            name: 'SetFaucetBalance';
-            params: { balanceWei: bigint };
           };
         },
         ChainKnownTypes

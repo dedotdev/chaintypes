@@ -70,11 +70,6 @@ import type {
   PalletAssetsAssetAccount,
   PalletAssetsApproval,
   PalletAssetsAssetMetadata,
-  PalletPriceAggregatorValueAggregator,
-  PalletPriceAggregatorCircularBuffer,
-  OrmlOracleModuleTimestampedValue,
-  AstarPrimitivesOracleCurrencyId,
-  OrmlUtilitiesOrderedSet,
   PalletCollatorSelectionCandidateInfo,
   AstarRuntimeSessionKeys,
   SpStakingOffenceOffenceSeverity,
@@ -1140,97 +1135,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<bigint | undefined> =} callback
      **/
     nextAssetId: GenericStorageQuery<() => bigint | undefined>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `PriceAggregator`'s storage queries
-   **/
-  priceAggregator: {
-    /**
-     * Storage for the accumulated native currency price in the current block.
-     *
-     * @param {Callback<Array<FixedU128>> =} callback
-     **/
-    currentBlockValues: GenericStorageQuery<() => Array<FixedU128>>;
-
-    /**
-     * Used to store the aggregated processed block values during some time period.
-     *
-     * @param {Callback<PalletPriceAggregatorValueAggregator> =} callback
-     **/
-    intermediateValueAggregator: GenericStorageQuery<() => PalletPriceAggregatorValueAggregator>;
-
-    /**
-     * Used to store aggregated intermediate values for some time period.
-     *
-     * @param {Callback<PalletPriceAggregatorCircularBuffer> =} callback
-     **/
-    valuesCircularBuffer: GenericStorageQuery<() => PalletPriceAggregatorCircularBuffer>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `Oracle`'s storage queries
-   **/
-  oracle: {
-    /**
-     * Raw values for each oracle operators
-     *
-     * @param {[AccountId32Like, AstarPrimitivesOracleCurrencyId]} arg
-     * @param {Callback<OrmlOracleModuleTimestampedValue | undefined> =} callback
-     **/
-    rawValues: GenericStorageQuery<
-      (arg: [AccountId32Like, AstarPrimitivesOracleCurrencyId]) => OrmlOracleModuleTimestampedValue | undefined,
-      [AccountId32, AstarPrimitivesOracleCurrencyId]
-    >;
-
-    /**
-     * Up to date combined value from Raw Values
-     *
-     * @param {AstarPrimitivesOracleCurrencyId} arg
-     * @param {Callback<OrmlOracleModuleTimestampedValue | undefined> =} callback
-     **/
-    values: GenericStorageQuery<
-      (arg: AstarPrimitivesOracleCurrencyId) => OrmlOracleModuleTimestampedValue | undefined,
-      AstarPrimitivesOracleCurrencyId
-    >;
-
-    /**
-     * If an oracle operator has fed a value in this block
-     *
-     * @param {Callback<OrmlUtilitiesOrderedSet> =} callback
-     **/
-    hasDispatched: GenericStorageQuery<() => OrmlUtilitiesOrderedSet>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `OracleMembership`'s storage queries
-   **/
-  oracleMembership: {
-    /**
-     * The current membership, stored as an ordered Vec.
-     *
-     * @param {Callback<Array<AccountId32>> =} callback
-     **/
-    members: GenericStorageQuery<() => Array<AccountId32>>;
-
-    /**
-     * The current prime member, if one exists.
-     *
-     * @param {Callback<AccountId32 | undefined> =} callback
-     **/
-    prime: GenericStorageQuery<() => AccountId32 | undefined>;
 
     /**
      * Generic pallet storage query

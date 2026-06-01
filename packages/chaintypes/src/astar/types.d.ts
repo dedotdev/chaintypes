@@ -16,7 +16,6 @@ import type {
   Perquintill,
   Permill,
   Perbill,
-  FixedU128,
   U256,
   Era,
   Phase,
@@ -40,8 +39,6 @@ export type AstarRuntimeRuntimeCall =
   | { pallet: 'Inflation'; palletCall: PalletInflationCall }
   | { pallet: 'DappStaking'; palletCall: PalletDappStakingCall }
   | { pallet: 'Assets'; palletCall: PalletAssetsCall }
-  | { pallet: 'Oracle'; palletCall: OrmlOracleModuleCall }
-  | { pallet: 'OracleMembership'; palletCall: PalletMembershipCall }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCall }
   | { pallet: 'Session'; palletCall: PalletSessionCall }
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCall }
@@ -84,8 +81,6 @@ export type AstarRuntimeRuntimeCallLike =
   | { pallet: 'Inflation'; palletCall: PalletInflationCallLike }
   | { pallet: 'DappStaking'; palletCall: PalletDappStakingCallLike }
   | { pallet: 'Assets'; palletCall: PalletAssetsCallLike }
-  | { pallet: 'Oracle'; palletCall: OrmlOracleModuleCallLike }
-  | { pallet: 'OracleMembership'; palletCall: PalletMembershipCallLike }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCallLike }
   | { pallet: 'Session'; palletCall: PalletSessionCallLike }
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCallLike }
@@ -2953,16 +2948,10 @@ export type PalletDappStakingTierParameters = {
   rewardPortion: Array<Permill>;
   slotDistribution: Array<Permill>;
   tierThresholds: Array<PalletDappStakingTierThreshold>;
-  slotNumberArgs: [bigint, bigint];
   tierRankMultipliers: Array<number>;
 };
 
-export type PalletDappStakingTierThreshold =
-  | { type: 'FixedPercentage'; value: { requiredPercentage: Perbill } }
-  | {
-      type: 'DynamicPercentage';
-      value: { percentage: Perbill; minimumRequiredPercentage: Perbill; maximumPossiblePercentage: Perbill };
-    };
+export type PalletDappStakingTierThreshold = { type: 'FixedPercentage'; value: { requiredPercentage: Perbill } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4102,128 +4091,6 @@ export type PalletAssetsCallLike =
    * guarantee to keep the sender asset account alive (true).
    **/
   | { name: 'TransferAll'; params: { id: bigint; dest: MultiAddressLike; keepAlive: boolean } };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type OrmlOracleModuleCall =
-  /**
-   * Feed the external value.
-   *
-   * Require authorized operator.
-   **/
-  { name: 'FeedValues'; params: { values: Array<[AstarPrimitivesOracleCurrencyId, FixedU128]> } };
-
-export type OrmlOracleModuleCallLike =
-  /**
-   * Feed the external value.
-   *
-   * Require authorized operator.
-   **/
-  { name: 'FeedValues'; params: { values: Array<[AstarPrimitivesOracleCurrencyId, FixedU128]> } };
-
-export type AstarPrimitivesOracleCurrencyId = 'Astr' | 'Sdn';
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletMembershipCall =
-  /**
-   * Add a member `who` to the set.
-   *
-   * May only be called from `T::AddOrigin`.
-   **/
-  | { name: 'AddMember'; params: { who: MultiAddress } }
-  /**
-   * Remove a member `who` from the set.
-   *
-   * May only be called from `T::RemoveOrigin`.
-   **/
-  | { name: 'RemoveMember'; params: { who: MultiAddress } }
-  /**
-   * Swap out one member `remove` for another `add`.
-   *
-   * May only be called from `T::SwapOrigin`.
-   *
-   * Prime membership is *not* passed from `remove` to `add`, if extant.
-   **/
-  | { name: 'SwapMember'; params: { remove: MultiAddress; add: MultiAddress } }
-  /**
-   * Change the membership to a new set, disregarding the existing membership. Be nice and
-   * pass `members` pre-sorted.
-   *
-   * May only be called from `T::ResetOrigin`.
-   **/
-  | { name: 'ResetMembers'; params: { members: Array<AccountId32> } }
-  /**
-   * Swap out the sending member for some other key `new`.
-   *
-   * May only be called from `Signed` origin of a current member.
-   *
-   * Prime membership is passed from the origin account to `new`, if extant.
-   **/
-  | { name: 'ChangeKey'; params: { new: MultiAddress } }
-  /**
-   * Set the prime member. Must be a current member.
-   *
-   * May only be called from `T::PrimeOrigin`.
-   **/
-  | { name: 'SetPrime'; params: { who: MultiAddress } }
-  /**
-   * Remove the prime member if it exists.
-   *
-   * May only be called from `T::PrimeOrigin`.
-   **/
-  | { name: 'ClearPrime' };
-
-export type PalletMembershipCallLike =
-  /**
-   * Add a member `who` to the set.
-   *
-   * May only be called from `T::AddOrigin`.
-   **/
-  | { name: 'AddMember'; params: { who: MultiAddressLike } }
-  /**
-   * Remove a member `who` from the set.
-   *
-   * May only be called from `T::RemoveOrigin`.
-   **/
-  | { name: 'RemoveMember'; params: { who: MultiAddressLike } }
-  /**
-   * Swap out one member `remove` for another `add`.
-   *
-   * May only be called from `T::SwapOrigin`.
-   *
-   * Prime membership is *not* passed from `remove` to `add`, if extant.
-   **/
-  | { name: 'SwapMember'; params: { remove: MultiAddressLike; add: MultiAddressLike } }
-  /**
-   * Change the membership to a new set, disregarding the existing membership. Be nice and
-   * pass `members` pre-sorted.
-   *
-   * May only be called from `T::ResetOrigin`.
-   **/
-  | { name: 'ResetMembers'; params: { members: Array<AccountId32Like> } }
-  /**
-   * Swap out the sending member for some other key `new`.
-   *
-   * May only be called from `Signed` origin of a current member.
-   *
-   * Prime membership is passed from the origin account to `new`, if extant.
-   **/
-  | { name: 'ChangeKey'; params: { new: MultiAddressLike } }
-  /**
-   * Set the prime member. Must be a current member.
-   *
-   * May only be called from `T::PrimeOrigin`.
-   **/
-  | { name: 'SetPrime'; params: { who: MultiAddressLike } }
-  /**
-   * Remove the prime member if it exists.
-   *
-   * May only be called from `T::PrimeOrigin`.
-   **/
-  | { name: 'ClearPrime' };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -7050,6 +6917,107 @@ export type PalletPreimageCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletMembershipCall =
+  /**
+   * Add a member `who` to the set.
+   *
+   * May only be called from `T::AddOrigin`.
+   **/
+  | { name: 'AddMember'; params: { who: MultiAddress } }
+  /**
+   * Remove a member `who` from the set.
+   *
+   * May only be called from `T::RemoveOrigin`.
+   **/
+  | { name: 'RemoveMember'; params: { who: MultiAddress } }
+  /**
+   * Swap out one member `remove` for another `add`.
+   *
+   * May only be called from `T::SwapOrigin`.
+   *
+   * Prime membership is *not* passed from `remove` to `add`, if extant.
+   **/
+  | { name: 'SwapMember'; params: { remove: MultiAddress; add: MultiAddress } }
+  /**
+   * Change the membership to a new set, disregarding the existing membership. Be nice and
+   * pass `members` pre-sorted.
+   *
+   * May only be called from `T::ResetOrigin`.
+   **/
+  | { name: 'ResetMembers'; params: { members: Array<AccountId32> } }
+  /**
+   * Swap out the sending member for some other key `new`.
+   *
+   * May only be called from `Signed` origin of a current member.
+   *
+   * Prime membership is passed from the origin account to `new`, if extant.
+   **/
+  | { name: 'ChangeKey'; params: { new: MultiAddress } }
+  /**
+   * Set the prime member. Must be a current member.
+   *
+   * May only be called from `T::PrimeOrigin`.
+   **/
+  | { name: 'SetPrime'; params: { who: MultiAddress } }
+  /**
+   * Remove the prime member if it exists.
+   *
+   * May only be called from `T::PrimeOrigin`.
+   **/
+  | { name: 'ClearPrime' };
+
+export type PalletMembershipCallLike =
+  /**
+   * Add a member `who` to the set.
+   *
+   * May only be called from `T::AddOrigin`.
+   **/
+  | { name: 'AddMember'; params: { who: MultiAddressLike } }
+  /**
+   * Remove a member `who` from the set.
+   *
+   * May only be called from `T::RemoveOrigin`.
+   **/
+  | { name: 'RemoveMember'; params: { who: MultiAddressLike } }
+  /**
+   * Swap out one member `remove` for another `add`.
+   *
+   * May only be called from `T::SwapOrigin`.
+   *
+   * Prime membership is *not* passed from `remove` to `add`, if extant.
+   **/
+  | { name: 'SwapMember'; params: { remove: MultiAddressLike; add: MultiAddressLike } }
+  /**
+   * Change the membership to a new set, disregarding the existing membership. Be nice and
+   * pass `members` pre-sorted.
+   *
+   * May only be called from `T::ResetOrigin`.
+   **/
+  | { name: 'ResetMembers'; params: { members: Array<AccountId32Like> } }
+  /**
+   * Swap out the sending member for some other key `new`.
+   *
+   * May only be called from `Signed` origin of a current member.
+   *
+   * Prime membership is passed from the origin account to `new`, if extant.
+   **/
+  | { name: 'ChangeKey'; params: { new: MultiAddressLike } }
+  /**
+   * Set the prime member. Must be a current member.
+   *
+   * May only be called from `T::PrimeOrigin`.
+   **/
+  | { name: 'SetPrime'; params: { who: MultiAddressLike } }
+  /**
+   * Remove the prime member if it exists.
+   *
+   * May only be called from `T::PrimeOrigin`.
+   **/
+  | { name: 'ClearPrime' };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletCollectiveCall =
   /**
    * Set the collective's membership.
@@ -8416,9 +8384,6 @@ export type AstarRuntimeRuntimeEvent =
   | { pallet: 'Inflation'; palletEvent: PalletInflationEvent }
   | { pallet: 'DappStaking'; palletEvent: PalletDappStakingEvent }
   | { pallet: 'Assets'; palletEvent: PalletAssetsEvent }
-  | { pallet: 'PriceAggregator'; palletEvent: PalletPriceAggregatorEvent }
-  | { pallet: 'Oracle'; palletEvent: OrmlOracleModuleEvent }
-  | { pallet: 'OracleMembership'; palletEvent: PalletMembershipEvent }
   | { pallet: 'CollatorSelection'; palletEvent: PalletCollatorSelectionEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
@@ -9242,53 +9207,6 @@ export type PalletAssetsEvent =
 /**
  * The `Event` enum of this pallet
  **/
-export type PalletPriceAggregatorEvent =
-  /**
-   * New average native currency value has been calculated and pushed into the moving average buffer.
-   **/
-  { name: 'AverageAggregatedValue'; data: { value: FixedU128 } };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type OrmlOracleModuleEvent =
-  /**
-   * New feed data is submitted.
-   **/
-  { name: 'NewFeedData'; data: { sender: AccountId32; values: Array<[AstarPrimitivesOracleCurrencyId, FixedU128]> } };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletMembershipEvent =
-  /**
-   * The given member was added; see the transaction for who.
-   **/
-  | 'MemberAdded'
-  /**
-   * The given member was removed; see the transaction for who.
-   **/
-  | 'MemberRemoved'
-  /**
-   * Two members were swapped; see the transaction for who.
-   **/
-  | 'MembersSwapped'
-  /**
-   * The membership was reset; see the transaction for who the new set is.
-   **/
-  | 'MembersReset'
-  /**
-   * One of the members' keys changed.
-   **/
-  | 'KeyChanged'
-  /**
-   * Phantom member, never used.
-   **/
-  | 'Dummy';
-
-/**
- * The `Event` enum of this pallet
- **/
 export type PalletCollatorSelectionEvent =
   /**
    * New invulnerables candidates were set.
@@ -10004,6 +9922,35 @@ export type PalletPreimageEvent =
    * A preimage has ben cleared.
    **/
   | { name: 'Cleared'; data: { hash: H256 } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletMembershipEvent =
+  /**
+   * The given member was added; see the transaction for who.
+   **/
+  | 'MemberAdded'
+  /**
+   * The given member was removed; see the transaction for who.
+   **/
+  | 'MemberRemoved'
+  /**
+   * Two members were swapped; see the transaction for who.
+   **/
+  | 'MembersSwapped'
+  /**
+   * The membership was reset; see the transaction for who the new set is.
+   **/
+  | 'MembersReset'
+  /**
+   * One of the members' keys changed.
+   **/
+  | 'KeyChanged'
+  /**
+   * Phantom member, never used.
+   **/
+  | 'Dummy';
 
 /**
  * The `Event` enum of this pallet
@@ -11357,44 +11304,6 @@ export type PalletAssetsError =
    **/
   | 'ContainsHolds';
 
-export type PalletPriceAggregatorValueAggregator = { total: FixedU128; count: number; limitBlock: number };
-
-export type PalletPriceAggregatorCircularBuffer = { buffer: Array<FixedU128>; head: number };
-
-export type OrmlOracleModuleTimestampedValue = { value: FixedU128; timestamp: bigint };
-
-export type OrmlUtilitiesOrderedSet = Array<AccountId32>;
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type OrmlOracleModuleError =
-  /**
-   * Sender does not have permission
-   **/
-  | 'NoPermission'
-  /**
-   * Feeder has already fed at this block
-   **/
-  | 'AlreadyFeeded';
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletMembershipError =
-  /**
-   * Already a member.
-   **/
-  | 'AlreadyMember'
-  /**
-   * Not a member.
-   **/
-  | 'NotMember'
-  /**
-   * Too many members.
-   **/
-  | 'TooManyMembers';
-
 export type PalletCollatorSelectionCandidateInfo = { who: AccountId32; deposit: bigint };
 
 /**
@@ -12346,6 +12255,23 @@ export type PalletPreimageError =
    **/
   | 'TooFew';
 
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletMembershipError =
+  /**
+   * Already a member.
+   **/
+  | 'AlreadyMember'
+  /**
+   * Not a member.
+   **/
+  | 'NotMember'
+  /**
+   * Too many members.
+   **/
+  | 'TooManyMembers';
+
 export type PalletCollectiveVotes = {
   index: number;
   threshold: number;
@@ -12705,6 +12631,10 @@ export type CumulusPrimitivesCoreCollationInfo = {
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
 
+export type PolkadotPrimitivesVstagingCoreSelector = number;
+
+export type PolkadotPrimitivesVstagingClaimQueueOffset = number;
+
 export type EvmBackendBasic = { balance: U256; nonce: U256 };
 
 export type FpEvmExecutionInfoV2 = {
@@ -12817,8 +12747,6 @@ export type AstarRuntimeRuntimeError =
   | { pallet: 'Inflation'; palletError: PalletInflationError }
   | { pallet: 'DappStaking'; palletError: PalletDappStakingError }
   | { pallet: 'Assets'; palletError: PalletAssetsError }
-  | { pallet: 'Oracle'; palletError: OrmlOracleModuleError }
-  | { pallet: 'OracleMembership'; palletError: PalletMembershipError }
   | { pallet: 'CollatorSelection'; palletError: PalletCollatorSelectionError }
   | { pallet: 'Session'; palletError: PalletSessionError }
   | { pallet: 'XcmpQueue'; palletError: CumulusPalletXcmpQueueError }

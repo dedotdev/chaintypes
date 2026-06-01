@@ -880,49 +880,6 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
-   * Pallet `Oracle`'s errors
-   **/
-  oracle: {
-    /**
-     * Sender does not have permission
-     **/
-    NoPermission: GenericPalletError;
-
-    /**
-     * Feeder has already fed at this block
-     **/
-    AlreadyFeeded: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `OracleMembership`'s errors
-   **/
-  oracleMembership: {
-    /**
-     * Already a member.
-     **/
-    AlreadyMember: GenericPalletError;
-
-    /**
-     * Not a member.
-     **/
-    NotMember: GenericPalletError;
-
-    /**
-     * Too many members.
-     **/
-    TooManyMembers: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
    * Pallet `CollatorSelection`'s errors
    **/
   collatorSelection: {

@@ -16,7 +16,6 @@ import type {
   AccountId32Like,
   Data,
   FixedBytes,
-  FixedU128,
   H160,
   U256,
 } from 'dedot/codecs';
@@ -37,7 +36,6 @@ import type {
   AstarPrimitivesDappStakingSmartContract,
   PalletDappStakingForcingType,
   PalletDappStakingTierParameters,
-  AstarPrimitivesOracleCurrencyId,
   AstarRuntimeSessionKeys,
   XcmVersionedLocation,
   XcmVersionedXcm,
@@ -4465,191 +4463,6 @@ export interface ChainTx<
           palletCall: {
             name: 'TransferAll';
             params: { id: bigint; dest: MultiAddressLike; keepAlive: boolean };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
-   * Pallet `Oracle`'s transaction calls
-   **/
-  oracle: {
-    /**
-     * Feed the external value.
-     *
-     * Require authorized operator.
-     *
-     * @param {Array<[AstarPrimitivesOracleCurrencyId, FixedU128]>} values
-     **/
-    feedValues: GenericTxCall<
-      (values: Array<[AstarPrimitivesOracleCurrencyId, FixedU128]>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Oracle';
-          palletCall: {
-            name: 'FeedValues';
-            params: { values: Array<[AstarPrimitivesOracleCurrencyId, FixedU128]> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
-   * Pallet `OracleMembership`'s transaction calls
-   **/
-  oracleMembership: {
-    /**
-     * Add a member `who` to the set.
-     *
-     * May only be called from `T::AddOrigin`.
-     *
-     * @param {MultiAddressLike} who
-     **/
-    addMember: GenericTxCall<
-      (who: MultiAddressLike) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'OracleMembership';
-          palletCall: {
-            name: 'AddMember';
-            params: { who: MultiAddressLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove a member `who` from the set.
-     *
-     * May only be called from `T::RemoveOrigin`.
-     *
-     * @param {MultiAddressLike} who
-     **/
-    removeMember: GenericTxCall<
-      (who: MultiAddressLike) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'OracleMembership';
-          palletCall: {
-            name: 'RemoveMember';
-            params: { who: MultiAddressLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Swap out one member `remove` for another `add`.
-     *
-     * May only be called from `T::SwapOrigin`.
-     *
-     * Prime membership is *not* passed from `remove` to `add`, if extant.
-     *
-     * @param {MultiAddressLike} remove
-     * @param {MultiAddressLike} add
-     **/
-    swapMember: GenericTxCall<
-      (
-        remove: MultiAddressLike,
-        add: MultiAddressLike,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'OracleMembership';
-          palletCall: {
-            name: 'SwapMember';
-            params: { remove: MultiAddressLike; add: MultiAddressLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Change the membership to a new set, disregarding the existing membership. Be nice and
-     * pass `members` pre-sorted.
-     *
-     * May only be called from `T::ResetOrigin`.
-     *
-     * @param {Array<AccountId32Like>} members
-     **/
-    resetMembers: GenericTxCall<
-      (members: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'OracleMembership';
-          palletCall: {
-            name: 'ResetMembers';
-            params: { members: Array<AccountId32Like> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Swap out the sending member for some other key `new`.
-     *
-     * May only be called from `Signed` origin of a current member.
-     *
-     * Prime membership is passed from the origin account to `new`, if extant.
-     *
-     * @param {MultiAddressLike} new_
-     **/
-    changeKey: GenericTxCall<
-      (new_: MultiAddressLike) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'OracleMembership';
-          palletCall: {
-            name: 'ChangeKey';
-            params: { new: MultiAddressLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the prime member. Must be a current member.
-     *
-     * May only be called from `T::PrimeOrigin`.
-     *
-     * @param {MultiAddressLike} who
-     **/
-    setPrime: GenericTxCall<
-      (who: MultiAddressLike) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'OracleMembership';
-          palletCall: {
-            name: 'SetPrime';
-            params: { who: MultiAddressLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove the prime member if it exists.
-     *
-     * May only be called from `T::PrimeOrigin`.
-     *
-     **/
-    clearPrime: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'OracleMembership';
-          palletCall: {
-            name: 'ClearPrime';
           };
         },
         ChainKnownTypes

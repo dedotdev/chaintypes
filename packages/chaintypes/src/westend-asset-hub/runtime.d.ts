@@ -104,11 +104,69 @@ export interface RuntimeApis extends GenericRuntimeApis {
    **/
   relayParentOffsetApi: {
     /**
-     * Fetch the slot offset that is expected from the relay chain.
+     * Fetch the relay parent offset that is expected from the relay chain.
+     *
+     * This determines how many blocks behind the relay chain tip the relay parent should be.
      *
      * @callname: RelayParentOffsetApi_relay_parent_offset
      **/
     relayParentOffset: GenericRuntimeApiMethod<() => Promise<number>>;
+
+    /**
+     * Maximum claim queue offset for async backing flexibility.
+     *
+     * Bounds how far "into the future" a candidate may look in the claim queue when
+     * selecting a core. The effective claim queue depth depends on the candidate version:
+     *
+     * - **V1/V2 candidates**: the claim queue is looked up at the candidate's `relay_parent`,
+     * which is `relay_parent_offset` blocks behind the relay-chain tip. The effective
+     * depth is `relay_parent_offset + max_claim_queue_offset`.
+     *
+     * - **V3 candidates**: the claim queue is looked up at the candidate's
+     * `scheduling_parent` — the relay-chain block of the *last finished* slot, decoupled
+     * from the execution-context `relay_parent`. The effective depth is just
+     * `max_claim_queue_offset`.
+     *
+     * Collators select a core via an offset in `[0, max_claim_queue_offset]`.
+     *
+     * - **V2 candidates**: `max_claim_queue_offset = 1` is sufficient. The claim queue is
+     * looked up at `relay_parent`, which sits behind the tip. Offset 0 covers synchronous
+     * backing in the next relay block; offset 1 covers asynchronous backing in the relay
+     * block after that.
+     *
+     * - **V3 candidates**: offset 0 is not reachable — the `scheduling_parent`
+     * is usually the leaf when picked, but its child is already being built, so there is
+     * no opportunity to land in the next relay block. Offset 1 is reachable under
+     * synchronous-backing semantics. For elastic scaling the last block in the bundle is
+     * built near the end of the current slot, which makes offset 1 too tight —
+     * `max_claim_queue_offset = 2` is the minimum cap that keeps elastic scaling viable.
+     *
+     * Note: this method was added in `api_version = 2`. Collators calling on runtimes that
+     * only implement `api_version = 1` of [`RelayParentOffsetApi`] will receive an error
+     * and should fall back to a sensible default (current collator defaults: `1` on the
+     * V3 path, `0` on the V1/V2 path).
+     *
+     * See: <https://github.com/paritytech/polkadot-sdk/issues/8893>
+     *
+     * @callname: RelayParentOffsetApi_max_claim_queue_offset
+     **/
+    maxClaimQueueOffset: GenericRuntimeApiMethod<() => Promise<number>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: SchedulingV3EnabledApi - 0x162bf19137abacbd
+   **/
+  schedulingV3EnabledApi: {
+    /**
+     * Returns true if V3 scheduling is enabled for this parachain.
+     *
+     * @callname: SchedulingV3EnabledApi_scheduling_v3_enabled
+     **/
+    schedulingV3Enabled: GenericRuntimeApiMethod<() => Promise<boolean>>;
 
     /**
      * Generic runtime api call

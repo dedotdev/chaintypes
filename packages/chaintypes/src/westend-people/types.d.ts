@@ -5623,6 +5623,7 @@ export type CumulusPalletXcmpQueueOutboundChannelDetails = {
   firstIndex: number;
   lastIndex: number;
   flags: CumulusPalletXcmpQueueOutboundChannelFlags;
+  queuedBytes: number;
 };
 
 export type CumulusPalletXcmpQueueOutboundState = 'Ok' | 'Suspended';

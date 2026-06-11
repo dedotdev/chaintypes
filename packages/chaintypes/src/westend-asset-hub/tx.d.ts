@@ -10981,6 +10981,24 @@ export interface ChainTx<
     >;
 
     /**
+     * Map many accounts and make the TX free if at least 90% were unmapped or held deposits.
+     *
+     * @param {Array<AccountId32Like>} accounts
+     **/
+    batchMapAccounts: GenericTxCall<
+      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'BatchMapAccounts';
+            params: { accounts: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Unregister the callers account id in order to free the deposit.
      *
      * There is no reason to ever call this function other than freeing up the deposit.
@@ -12357,11 +12375,17 @@ export interface ChainTx<
      * Remove all data structures concerning a staker/stash once it is at a state where it can
      * be considered `dust` in the staking system. The requirements are:
      *
-     * 1. the `total_balance` of the stash is below `min_chilled_bond` or is zero.
-     * 2. or, the `ledger.total` of the stash is below `min_chilled_bond` or is zero.
+     * 1. the `total_balance` of the stash is below the existential deposit.
+     * 2. or, the `ledger.total` of the stash is below the existential deposit.
      *
      * The former can happen in cases like a slash; the latter when a fully unbonded account
      * is still receiving staking rewards in `RewardDestination::Staked`.
+     *
+     * The gate is intentionally the existential deposit and *not* `min_chilled_bond`: a
+     * governance change to `MinValidatorBond` / `MinNominatorBond` must not turn previously
+     * safe stashes into permissionlessly reapable ones. Accounts that fall below the new
+     * minimums after such a change should be `chill_other`-ed (which has a density gate and
+     * does not destroy the ledger), not reaped.
      *
      * It can be called by anyone, as long as `stash` meets the above requirements.
      *

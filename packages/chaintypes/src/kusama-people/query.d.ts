@@ -502,6 +502,13 @@ export interface ChainStorage extends GenericChainStorage {
     pendingUpwardSignals: GenericStorageQuery<() => Array<Bytes>>;
 
     /**
+     * The approved peer id to be sent as a UMP signal on the last block of the PoV.
+     *
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    pendingApprovedPeer: GenericStorageQuery<() => Bytes | undefined>;
+
+    /**
      * The factor to multiply the base delivery fee by for UMP.
      *
      * @param {Callback<FixedU128> =} callback

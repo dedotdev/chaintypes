@@ -64,6 +64,7 @@ import type {
   PalletNftsPreSignedMint,
   PalletNftsPreSignedAttributes,
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
+  PalletRecoveryFriendGroup,
   PalletStateTrieMigrationMigrationLimits,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationProgress,
@@ -10461,28 +10462,25 @@ export interface ChainTx<
    **/
   recovery: {
     /**
-     * Send a call through a recovered account.
+     * Allows the inheritor of a recovered account to control it.
      *
-     * The dispatch origin for this call must be _Signed_ and registered to
-     * be able to make calls on behalf of the recovered account.
+     * The controller is not allowed to dispatch calls of the recovery pallet. Otherwise they
+     * could mess with the recovery configuration and possibly cancel or slash attempts from
+     * higher-priority friend groups.
      *
-     * Parameters:
-     * - `account`: The recovered account you want to make a call on-behalf-of.
-     * - `call`: The call you want to make with the recovered account.
-     *
-     * @param {MultiAddressLike} account
+     * @param {MultiAddressLike} recovered
      * @param {AssetHubKusamaRuntimeRuntimeCallLike} call
      **/
-    asRecovered: GenericTxCall<
+    controlInheritedAccount: GenericTxCall<
       (
-        account: MultiAddressLike,
+        recovered: MultiAddressLike,
         call: AssetHubKusamaRuntimeRuntimeCallLike,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Recovery';
           palletCall: {
-            name: 'AsRecovered';
-            params: { account: MultiAddressLike; call: AssetHubKusamaRuntimeRuntimeCallLike };
+            name: 'ControlInheritedAccount';
+            params: { recovered: MultiAddressLike; call: AssetHubKusamaRuntimeRuntimeCallLike };
           };
         },
         ChainKnownTypes
@@ -10490,208 +10488,18 @@ export interface ChainTx<
     >;
 
     /**
-     * Allow ROOT to bypass the recovery process and set a rescuer account
-     * for a lost account directly.
+     * Revoke the inheritor of the calling (lost) account.
      *
-     * The dispatch origin for this call must be _ROOT_.
-     *
-     * Parameters:
-     * - `lost`: The "lost account" to be recovered.
-     * - `rescuer`: The "rescuer account" which can call as the lost account.
-     *
-     * @param {MultiAddressLike} lost
-     * @param {MultiAddressLike} rescuer
-     **/
-    setRecovered: GenericTxCall<
-      (
-        lost: MultiAddressLike,
-        rescuer: MultiAddressLike,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Recovery';
-          palletCall: {
-            name: 'SetRecovered';
-            params: { lost: MultiAddressLike; rescuer: MultiAddressLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Create a recovery configuration for your account. This makes your account recoverable.
-     *
-     * Payment: `ConfigDepositBase` + `FriendDepositFactor` * #_of_friends balance
-     * will be reserved for storing the recovery configuration. This deposit is returned
-     * in full when the user calls `remove_recovery`.
-     *
-     * The dispatch origin for this call must be _Signed_.
-     *
-     * Parameters:
-     * - `friends`: A list of friends you trust to vouch for recovery attempts. Should be
-     * ordered and contain no duplicate values.
-     * - `threshold`: The number of friends that must vouch for a recovery attempt before the
-     * account can be recovered. Should be less than or equal to the length of the list of
-     * friends.
-     * - `delay_period`: The number of blocks after a recovery attempt is initialized that
-     * needs to pass before the account can be recovered.
-     *
-     * @param {Array<AccountId32Like>} friends
-     * @param {number} threshold
-     * @param {number} delayPeriod
-     **/
-    createRecovery: GenericTxCall<
-      (
-        friends: Array<AccountId32Like>,
-        threshold: number,
-        delayPeriod: number,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Recovery';
-          palletCall: {
-            name: 'CreateRecovery';
-            params: { friends: Array<AccountId32Like>; threshold: number; delayPeriod: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Initiate the process for recovering a recoverable account.
-     *
-     * Payment: `RecoveryDeposit` balance will be reserved for initiating the
-     * recovery process. This deposit will always be repatriated to the account
-     * trying to be recovered. See `close_recovery`.
-     *
-     * The dispatch origin for this call must be _Signed_.
-     *
-     * Parameters:
-     * - `account`: The lost account that you want to recover. This account needs to be
-     * recoverable (i.e. have a recovery configuration).
-     *
-     * @param {MultiAddressLike} account
-     **/
-    initiateRecovery: GenericTxCall<
-      (account: MultiAddressLike) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Recovery';
-          palletCall: {
-            name: 'InitiateRecovery';
-            params: { account: MultiAddressLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Allow a "friend" of a recoverable account to vouch for an active recovery
-     * process for that account.
-     *
-     * The dispatch origin for this call must be _Signed_ and must be a "friend"
-     * for the recoverable account.
-     *
-     * Parameters:
-     * - `lost`: The lost account that you want to recover.
-     * - `rescuer`: The account trying to rescue the lost account that you want to vouch for.
-     *
-     * The combination of these two parameters must point to an active recovery
-     * process.
-     *
-     * @param {MultiAddressLike} lost
-     * @param {MultiAddressLike} rescuer
-     **/
-    vouchRecovery: GenericTxCall<
-      (
-        lost: MultiAddressLike,
-        rescuer: MultiAddressLike,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Recovery';
-          palletCall: {
-            name: 'VouchRecovery';
-            params: { lost: MultiAddressLike; rescuer: MultiAddressLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Allow a successful rescuer to claim their recovered account.
-     *
-     * The dispatch origin for this call must be _Signed_ and must be a "rescuer"
-     * who has successfully completed the account recovery process: collected
-     * `threshold` or more vouches, waited `delay_period` blocks since initiation.
-     *
-     * Parameters:
-     * - `account`: The lost account that you want to claim has been successfully recovered by
-     * you.
-     *
-     * @param {MultiAddressLike} account
-     **/
-    claimRecovery: GenericTxCall<
-      (account: MultiAddressLike) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Recovery';
-          palletCall: {
-            name: 'ClaimRecovery';
-            params: { account: MultiAddressLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * As the controller of a recoverable account, close an active recovery
-     * process for your account.
-     *
-     * Payment: By calling this function, the recoverable account will receive
-     * the recovery deposit `RecoveryDeposit` placed by the rescuer.
-     *
-     * The dispatch origin for this call must be _Signed_ and must be a
-     * recoverable account with an active recovery process for it.
-     *
-     * Parameters:
-     * - `rescuer`: The account trying to rescue this recoverable account.
-     *
-     * @param {MultiAddressLike} rescuer
-     **/
-    closeRecovery: GenericTxCall<
-      (rescuer: MultiAddressLike) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Recovery';
-          palletCall: {
-            name: 'CloseRecovery';
-            params: { rescuer: MultiAddressLike };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Remove the recovery process for your account. Recovered accounts are still accessible.
-     *
-     * NOTE: The user must make sure to call `close_recovery` on all active
-     * recovery attempts before calling this function else it will fail.
-     *
-     * Payment: By calling this function the recoverable account will unreserve
-     * their recovery configuration deposit.
-     * (`ConfigDepositBase` + `FriendDepositFactor` * #_of_friends)
-     *
-     * The dispatch origin for this call must be _Signed_ and must be a
-     * recoverable account (i.e. has a recovery configuration).
+     * This removes the inheritor entry and refunds the inheritor deposit. Can only be called
+     * by the lost account itself after it regains access.
      *
      **/
-    removeRecovery: GenericTxCall<
+    revokeInheritor: GenericTxCall<
       () => ChainSubmittableExtrinsic<
         {
           pallet: 'Recovery';
           palletCall: {
-            name: 'RemoveRecovery';
+            name: 'RevokeInheritor';
           };
         },
         ChainKnownTypes
@@ -10699,23 +10507,24 @@ export interface ChainTx<
     >;
 
     /**
-     * Cancel the ability to use `as_recovered` for `account`.
+     * Set the friend groups of the calling account before it lost access.
      *
-     * The dispatch origin for this call must be _Signed_ and registered to
-     * be able to make calls on behalf of the recovered account.
+     * Cannot be used while there are ongoing recovery attempts. The friends of each group
+     * MUST be sorted and unique. Trying to insert two friend groups with the same set of
+     * friends will result in an error.
      *
-     * Parameters:
-     * - `account`: The recovered account you are able to call on-behalf-of.
+     * A `FriendGroupsChanged` event is emitted only when the new friends groups differed from
+     * the old ones.
      *
-     * @param {MultiAddressLike} account
+     * @param {Array<PalletRecoveryFriendGroup>} friendGroups
      **/
-    cancelRecovered: GenericTxCall<
-      (account: MultiAddressLike) => ChainSubmittableExtrinsic<
+    setFriendGroups: GenericTxCall<
+      (friendGroups: Array<PalletRecoveryFriendGroup>) => ChainSubmittableExtrinsic<
         {
           pallet: 'Recovery';
           palletCall: {
-            name: 'CancelRecovered';
-            params: { account: MultiAddressLike };
+            name: 'SetFriendGroups';
+            params: { friendGroups: Array<PalletRecoveryFriendGroup> };
           };
         },
         ChainKnownTypes
@@ -10723,39 +10532,123 @@ export interface ChainTx<
     >;
 
     /**
-     * Poke deposits for recovery configurations and / or active recoveries.
+     * Attempt to recover a lost account by a friend within the given friend group.
      *
-     * This can be used by accounts to possibly lower their locked amount.
+     * The initiator's approval is recorded automatically, so they do not need to call
+     * `approve_attempt` themselves.
      *
-     * The dispatch origin for this call must be _Signed_.
+     * Once an account has been recovered by a friend group, no friend group of equal or lower
+     * priority can open a new attempt: it will fail with [`Error::HigherPriorityRecovered`].
+     * Only a strictly higher-priority group (lower numerical
+     * [`FriendGroup::inheritance_priority`]) can take over the inheritor.
      *
-     * Parameters:
-     * - `maybe_account`: Optional recoverable account for which you have an active recovery
-     * and want to adjust the deposit for the active recovery.
-     *
-     * This function checks both recovery configuration deposit and active recovery deposits
-     * of the caller:
-     * - If the caller has created a recovery configuration, checks and adjusts its deposit
-     * - If the caller has initiated any active recoveries, and provides the account in
-     * `maybe_account`, checks and adjusts those deposits
-     *
-     * If any deposit is updated, the difference will be reserved/unreserved from the caller's
-     * account.
-     *
-     * The transaction is made free if any deposit is updated and paid otherwise.
-     *
-     * Emits `DepositPoked` if any deposit is updated.
-     * Multiple events may be emitted in case both types of deposits are updated.
-     *
-     * @param {MultiAddressLike | undefined} maybeAccount
+     * @param {MultiAddressLike} lost
+     * @param {number} friendGroupIndex
      **/
-    pokeDeposit: GenericTxCall<
-      (maybeAccount: MultiAddressLike | undefined) => ChainSubmittableExtrinsic<
+    initiateAttempt: GenericTxCall<
+      (
+        lost: MultiAddressLike,
+        friendGroupIndex: number,
+      ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Recovery';
           palletCall: {
-            name: 'PokeDeposit';
-            params: { maybeAccount: MultiAddressLike | undefined };
+            name: 'InitiateAttempt';
+            params: { lost: MultiAddressLike; friendGroupIndex: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Approve the recovery for a lost account.
+     *
+     * Must be called by a friend of the friend group that the recovery attempt belongs to that
+     * did not yet vote. Voting is only allowed until the threshold is reached.
+     * `finish_attempt` should be called after the last friend voted.
+     *
+     * @param {MultiAddressLike} lost
+     * @param {number} friendGroupIndex
+     **/
+    approveAttempt: GenericTxCall<
+      (
+        lost: MultiAddressLike,
+        friendGroupIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Recovery';
+          palletCall: {
+            name: 'ApproveAttempt';
+            params: { lost: MultiAddressLike; friendGroupIndex: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Finish a recovery attempt and make the lost account accessible from the inheritor.
+     *
+     * Can be called by anyone who is willing to pay for the inheritor deposit.
+     *
+     * @param {MultiAddressLike} lost
+     * @param {number} friendGroupIndex
+     **/
+    finishAttempt: GenericTxCall<
+      (
+        lost: MultiAddressLike,
+        friendGroupIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Recovery';
+          palletCall: {
+            name: 'FinishAttempt';
+            params: { lost: MultiAddressLike; friendGroupIndex: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * The lost account can cancel an attempt at any moment; the initiator, only after a delay.
+     *
+     * This will release the security deposit back to the initiator. The cancel delay must be
+     * respected if the initiator calls it to prevent it from front-running the lost account
+     * from slashing the attempt.
+     *
+     * @param {MultiAddressLike} lost
+     * @param {number} friendGroupIndex
+     **/
+    cancelAttempt: GenericTxCall<
+      (
+        lost: MultiAddressLike,
+        friendGroupIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Recovery';
+          palletCall: {
+            name: 'CancelAttempt';
+            params: { lost: MultiAddressLike; friendGroupIndex: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Slash a malicious recovery attempt and burn the security deposit of the initiator.
+     *
+     * @param {number} friendGroupIndex
+     **/
+    slashAttempt: GenericTxCall<
+      (friendGroupIndex: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Recovery';
+          palletCall: {
+            name: 'SlashAttempt';
+            params: { friendGroupIndex: number };
           };
         },
         ChainKnownTypes
@@ -11769,6 +11662,9 @@ export interface ChainTx<
      * This will error if the origin is already mapped or is a eth native `Address20`. It will
      * take a deposit that can be released by calling [`Self::unmap_account`].
      *
+     * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
+     * on creation via [`AutoMapper`].
+     *
      **/
     mapAccount: GenericTxCall<
       () => ChainSubmittableExtrinsic<
@@ -11783,10 +11679,31 @@ export interface ChainTx<
     >;
 
     /**
+     * Map many accounts and make the TX free if at least 90% were unmapped or held deposits.
+     *
+     * @param {Array<AccountId32Like>} accounts
+     **/
+    batchMapAccounts: GenericTxCall<
+      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'BatchMapAccounts';
+            params: { accounts: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Unregister the callers account id in order to free the deposit.
      *
      * There is no reason to ever call this function other than freeing up the deposit.
      * This is only useful when the account should no longer be used.
+     *
+     * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
+     * on kill via [`AutoMapper`].
      *
      **/
     unmapAccount: GenericTxCall<
@@ -13941,9 +13858,10 @@ export interface ChainTx<
     >;
 
     /**
-     * Force a validator to have at least the minimum commission. This will not affect a
-     * validator who already has a commission greater than or equal to the minimum. Any account
-     * can call this.
+     * Clamps a validator's commission to the `[MinCommission, MaxCommission]` range.
+     *
+     * Named `force_apply_min_commission` for legacy reasons — it also enforces the
+     * maximum. Any account can call this.
      *
      * @param {AccountId32Like} validatorStash
      **/
@@ -13999,6 +13917,10 @@ export interface ChainTx<
      * backing a validator to receive the reward. The nominators are not sorted across pages
      * and so it should not be assumed the highest staker would be on the topmost page and vice
      * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
+     *
+     * The validator's own reward (commission + own-stake share) is prorated across pages
+     * proportional to each page's stake. The full validator reward is the sum across all
+     * pages.
      *
      * @param {AccountId32Like} validatorStash
      * @param {number} era
@@ -14151,7 +14073,8 @@ export interface ChainTx<
      * for eras older than the active era.
      *
      * ## Parameters
-     * - `slash_era`: The staking era in which the slash was originally scheduled.
+     * - `slash_era`: The application era (`offence_era + SlashDeferDuration`), i.e. the key
+     * into [`UnappliedSlashes`].
      * - `slash_key`: A unique identifier for the slash, represented as a tuple:
      * - `stash`: The stash account of the validator being slashed.
      * - `slash_fraction`: The fraction of the stake that was slashed.
@@ -14209,6 +14132,58 @@ export interface ChainTx<
           palletCall: {
             name: 'PruneEraStep';
             params: { era: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Sets the maximum commission that validators can set.
+     *
+     * The dispatch origin must be `T::AdminOrigin`.
+     *
+     * @param {Perbill} new_
+     **/
+    setMaxCommission: GenericTxCall<
+      (new_: Perbill) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetMaxCommission';
+            params: { new: Perbill };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Configure the validator self-stake incentive parameters.
+     *
+     * The dispatch origin must be `T::AdminOrigin`.
+     *
+     * Changes take effect in the next era when rewards are calculated.
+     *
+     * @param {PalletStakingAsyncPalletConfigOp} optimumSelfStake
+     * @param {PalletStakingAsyncPalletConfigOp} hardCapSelfStake
+     * @param {PalletStakingAsyncPalletConfigOpPerbill} selfStakeSlopeFactor
+     **/
+    setValidatorSelfStakeIncentiveConfig: GenericTxCall<
+      (
+        optimumSelfStake: PalletStakingAsyncPalletConfigOp,
+        hardCapSelfStake: PalletStakingAsyncPalletConfigOp,
+        selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetValidatorSelfStakeIncentiveConfig';
+            params: {
+              optimumSelfStake: PalletStakingAsyncPalletConfigOp;
+              hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
+              selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
+            };
           };
         },
         ChainKnownTypes

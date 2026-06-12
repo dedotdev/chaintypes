@@ -11036,299 +11036,147 @@ export type PalletAssetConversionCallLike =
  **/
 export type PalletRecoveryCall =
   /**
-   * Send a call through a recovered account.
+   * Allows the inheritor of a recovered account to control it.
    *
-   * The dispatch origin for this call must be _Signed_ and registered to
-   * be able to make calls on behalf of the recovered account.
-   *
-   * Parameters:
-   * - `account`: The recovered account you want to make a call on-behalf-of.
-   * - `call`: The call you want to make with the recovered account.
+   * The controller is not allowed to dispatch calls of the recovery pallet. Otherwise they
+   * could mess with the recovery configuration and possibly cancel or slash attempts from
+   * higher-priority friend groups.
    **/
-  | { name: 'AsRecovered'; params: { account: MultiAddress; call: AssetHubKusamaRuntimeRuntimeCall } }
+  | { name: 'ControlInheritedAccount'; params: { recovered: MultiAddress; call: AssetHubKusamaRuntimeRuntimeCall } }
   /**
-   * Allow ROOT to bypass the recovery process and set a rescuer account
-   * for a lost account directly.
+   * Revoke the inheritor of the calling (lost) account.
    *
-   * The dispatch origin for this call must be _ROOT_.
-   *
-   * Parameters:
-   * - `lost`: The "lost account" to be recovered.
-   * - `rescuer`: The "rescuer account" which can call as the lost account.
+   * This removes the inheritor entry and refunds the inheritor deposit. Can only be called
+   * by the lost account itself after it regains access.
    **/
-  | { name: 'SetRecovered'; params: { lost: MultiAddress; rescuer: MultiAddress } }
+  | { name: 'RevokeInheritor' }
   /**
-   * Create a recovery configuration for your account. This makes your account recoverable.
+   * Set the friend groups of the calling account before it lost access.
    *
-   * Payment: `ConfigDepositBase` + `FriendDepositFactor` * #_of_friends balance
-   * will be reserved for storing the recovery configuration. This deposit is returned
-   * in full when the user calls `remove_recovery`.
+   * Cannot be used while there are ongoing recovery attempts. The friends of each group
+   * MUST be sorted and unique. Trying to insert two friend groups with the same set of
+   * friends will result in an error.
    *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `friends`: A list of friends you trust to vouch for recovery attempts. Should be
-   * ordered and contain no duplicate values.
-   * - `threshold`: The number of friends that must vouch for a recovery attempt before the
-   * account can be recovered. Should be less than or equal to the length of the list of
-   * friends.
-   * - `delay_period`: The number of blocks after a recovery attempt is initialized that
-   * needs to pass before the account can be recovered.
+   * A `FriendGroupsChanged` event is emitted only when the new friends groups differed from
+   * the old ones.
    **/
-  | { name: 'CreateRecovery'; params: { friends: Array<AccountId32>; threshold: number; delayPeriod: number } }
+  | { name: 'SetFriendGroups'; params: { friendGroups: Array<PalletRecoveryFriendGroup> } }
   /**
-   * Initiate the process for recovering a recoverable account.
+   * Attempt to recover a lost account by a friend within the given friend group.
    *
-   * Payment: `RecoveryDeposit` balance will be reserved for initiating the
-   * recovery process. This deposit will always be repatriated to the account
-   * trying to be recovered. See `close_recovery`.
+   * The initiator's approval is recorded automatically, so they do not need to call
+   * `approve_attempt` themselves.
    *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `account`: The lost account that you want to recover. This account needs to be
-   * recoverable (i.e. have a recovery configuration).
+   * Once an account has been recovered by a friend group, no friend group of equal or lower
+   * priority can open a new attempt: it will fail with [`Error::HigherPriorityRecovered`].
+   * Only a strictly higher-priority group (lower numerical
+   * [`FriendGroup::inheritance_priority`]) can take over the inheritor.
    **/
-  | { name: 'InitiateRecovery'; params: { account: MultiAddress } }
+  | { name: 'InitiateAttempt'; params: { lost: MultiAddress; friendGroupIndex: number } }
   /**
-   * Allow a "friend" of a recoverable account to vouch for an active recovery
-   * process for that account.
+   * Approve the recovery for a lost account.
    *
-   * The dispatch origin for this call must be _Signed_ and must be a "friend"
-   * for the recoverable account.
-   *
-   * Parameters:
-   * - `lost`: The lost account that you want to recover.
-   * - `rescuer`: The account trying to rescue the lost account that you want to vouch for.
-   *
-   * The combination of these two parameters must point to an active recovery
-   * process.
+   * Must be called by a friend of the friend group that the recovery attempt belongs to that
+   * did not yet vote. Voting is only allowed until the threshold is reached.
+   * `finish_attempt` should be called after the last friend voted.
    **/
-  | { name: 'VouchRecovery'; params: { lost: MultiAddress; rescuer: MultiAddress } }
+  | { name: 'ApproveAttempt'; params: { lost: MultiAddress; friendGroupIndex: number } }
   /**
-   * Allow a successful rescuer to claim their recovered account.
+   * Finish a recovery attempt and make the lost account accessible from the inheritor.
    *
-   * The dispatch origin for this call must be _Signed_ and must be a "rescuer"
-   * who has successfully completed the account recovery process: collected
-   * `threshold` or more vouches, waited `delay_period` blocks since initiation.
-   *
-   * Parameters:
-   * - `account`: The lost account that you want to claim has been successfully recovered by
-   * you.
+   * Can be called by anyone who is willing to pay for the inheritor deposit.
    **/
-  | { name: 'ClaimRecovery'; params: { account: MultiAddress } }
+  | { name: 'FinishAttempt'; params: { lost: MultiAddress; friendGroupIndex: number } }
   /**
-   * As the controller of a recoverable account, close an active recovery
-   * process for your account.
+   * The lost account can cancel an attempt at any moment; the initiator, only after a delay.
    *
-   * Payment: By calling this function, the recoverable account will receive
-   * the recovery deposit `RecoveryDeposit` placed by the rescuer.
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a
-   * recoverable account with an active recovery process for it.
-   *
-   * Parameters:
-   * - `rescuer`: The account trying to rescue this recoverable account.
+   * This will release the security deposit back to the initiator. The cancel delay must be
+   * respected if the initiator calls it to prevent it from front-running the lost account
+   * from slashing the attempt.
    **/
-  | { name: 'CloseRecovery'; params: { rescuer: MultiAddress } }
+  | { name: 'CancelAttempt'; params: { lost: MultiAddress; friendGroupIndex: number } }
   /**
-   * Remove the recovery process for your account. Recovered accounts are still accessible.
-   *
-   * NOTE: The user must make sure to call `close_recovery` on all active
-   * recovery attempts before calling this function else it will fail.
-   *
-   * Payment: By calling this function the recoverable account will unreserve
-   * their recovery configuration deposit.
-   * (`ConfigDepositBase` + `FriendDepositFactor` * #_of_friends)
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a
-   * recoverable account (i.e. has a recovery configuration).
+   * Slash a malicious recovery attempt and burn the security deposit of the initiator.
    **/
-  | { name: 'RemoveRecovery' }
-  /**
-   * Cancel the ability to use `as_recovered` for `account`.
-   *
-   * The dispatch origin for this call must be _Signed_ and registered to
-   * be able to make calls on behalf of the recovered account.
-   *
-   * Parameters:
-   * - `account`: The recovered account you are able to call on-behalf-of.
-   **/
-  | { name: 'CancelRecovered'; params: { account: MultiAddress } }
-  /**
-   * Poke deposits for recovery configurations and / or active recoveries.
-   *
-   * This can be used by accounts to possibly lower their locked amount.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `maybe_account`: Optional recoverable account for which you have an active recovery
-   * and want to adjust the deposit for the active recovery.
-   *
-   * This function checks both recovery configuration deposit and active recovery deposits
-   * of the caller:
-   * - If the caller has created a recovery configuration, checks and adjusts its deposit
-   * - If the caller has initiated any active recoveries, and provides the account in
-   * `maybe_account`, checks and adjusts those deposits
-   *
-   * If any deposit is updated, the difference will be reserved/unreserved from the caller's
-   * account.
-   *
-   * The transaction is made free if any deposit is updated and paid otherwise.
-   *
-   * Emits `DepositPoked` if any deposit is updated.
-   * Multiple events may be emitted in case both types of deposits are updated.
-   **/
-  | { name: 'PokeDeposit'; params: { maybeAccount?: MultiAddress | undefined } };
+  | { name: 'SlashAttempt'; params: { friendGroupIndex: number } };
 
 export type PalletRecoveryCallLike =
   /**
-   * Send a call through a recovered account.
+   * Allows the inheritor of a recovered account to control it.
    *
-   * The dispatch origin for this call must be _Signed_ and registered to
-   * be able to make calls on behalf of the recovered account.
-   *
-   * Parameters:
-   * - `account`: The recovered account you want to make a call on-behalf-of.
-   * - `call`: The call you want to make with the recovered account.
+   * The controller is not allowed to dispatch calls of the recovery pallet. Otherwise they
+   * could mess with the recovery configuration and possibly cancel or slash attempts from
+   * higher-priority friend groups.
    **/
-  | { name: 'AsRecovered'; params: { account: MultiAddressLike; call: AssetHubKusamaRuntimeRuntimeCallLike } }
+  | {
+      name: 'ControlInheritedAccount';
+      params: { recovered: MultiAddressLike; call: AssetHubKusamaRuntimeRuntimeCallLike };
+    }
   /**
-   * Allow ROOT to bypass the recovery process and set a rescuer account
-   * for a lost account directly.
+   * Revoke the inheritor of the calling (lost) account.
    *
-   * The dispatch origin for this call must be _ROOT_.
-   *
-   * Parameters:
-   * - `lost`: The "lost account" to be recovered.
-   * - `rescuer`: The "rescuer account" which can call as the lost account.
+   * This removes the inheritor entry and refunds the inheritor deposit. Can only be called
+   * by the lost account itself after it regains access.
    **/
-  | { name: 'SetRecovered'; params: { lost: MultiAddressLike; rescuer: MultiAddressLike } }
+  | { name: 'RevokeInheritor' }
   /**
-   * Create a recovery configuration for your account. This makes your account recoverable.
+   * Set the friend groups of the calling account before it lost access.
    *
-   * Payment: `ConfigDepositBase` + `FriendDepositFactor` * #_of_friends balance
-   * will be reserved for storing the recovery configuration. This deposit is returned
-   * in full when the user calls `remove_recovery`.
+   * Cannot be used while there are ongoing recovery attempts. The friends of each group
+   * MUST be sorted and unique. Trying to insert two friend groups with the same set of
+   * friends will result in an error.
    *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `friends`: A list of friends you trust to vouch for recovery attempts. Should be
-   * ordered and contain no duplicate values.
-   * - `threshold`: The number of friends that must vouch for a recovery attempt before the
-   * account can be recovered. Should be less than or equal to the length of the list of
-   * friends.
-   * - `delay_period`: The number of blocks after a recovery attempt is initialized that
-   * needs to pass before the account can be recovered.
+   * A `FriendGroupsChanged` event is emitted only when the new friends groups differed from
+   * the old ones.
    **/
-  | { name: 'CreateRecovery'; params: { friends: Array<AccountId32Like>; threshold: number; delayPeriod: number } }
+  | { name: 'SetFriendGroups'; params: { friendGroups: Array<PalletRecoveryFriendGroup> } }
   /**
-   * Initiate the process for recovering a recoverable account.
+   * Attempt to recover a lost account by a friend within the given friend group.
    *
-   * Payment: `RecoveryDeposit` balance will be reserved for initiating the
-   * recovery process. This deposit will always be repatriated to the account
-   * trying to be recovered. See `close_recovery`.
+   * The initiator's approval is recorded automatically, so they do not need to call
+   * `approve_attempt` themselves.
    *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `account`: The lost account that you want to recover. This account needs to be
-   * recoverable (i.e. have a recovery configuration).
+   * Once an account has been recovered by a friend group, no friend group of equal or lower
+   * priority can open a new attempt: it will fail with [`Error::HigherPriorityRecovered`].
+   * Only a strictly higher-priority group (lower numerical
+   * [`FriendGroup::inheritance_priority`]) can take over the inheritor.
    **/
-  | { name: 'InitiateRecovery'; params: { account: MultiAddressLike } }
+  | { name: 'InitiateAttempt'; params: { lost: MultiAddressLike; friendGroupIndex: number } }
   /**
-   * Allow a "friend" of a recoverable account to vouch for an active recovery
-   * process for that account.
+   * Approve the recovery for a lost account.
    *
-   * The dispatch origin for this call must be _Signed_ and must be a "friend"
-   * for the recoverable account.
-   *
-   * Parameters:
-   * - `lost`: The lost account that you want to recover.
-   * - `rescuer`: The account trying to rescue the lost account that you want to vouch for.
-   *
-   * The combination of these two parameters must point to an active recovery
-   * process.
+   * Must be called by a friend of the friend group that the recovery attempt belongs to that
+   * did not yet vote. Voting is only allowed until the threshold is reached.
+   * `finish_attempt` should be called after the last friend voted.
    **/
-  | { name: 'VouchRecovery'; params: { lost: MultiAddressLike; rescuer: MultiAddressLike } }
+  | { name: 'ApproveAttempt'; params: { lost: MultiAddressLike; friendGroupIndex: number } }
   /**
-   * Allow a successful rescuer to claim their recovered account.
+   * Finish a recovery attempt and make the lost account accessible from the inheritor.
    *
-   * The dispatch origin for this call must be _Signed_ and must be a "rescuer"
-   * who has successfully completed the account recovery process: collected
-   * `threshold` or more vouches, waited `delay_period` blocks since initiation.
-   *
-   * Parameters:
-   * - `account`: The lost account that you want to claim has been successfully recovered by
-   * you.
+   * Can be called by anyone who is willing to pay for the inheritor deposit.
    **/
-  | { name: 'ClaimRecovery'; params: { account: MultiAddressLike } }
+  | { name: 'FinishAttempt'; params: { lost: MultiAddressLike; friendGroupIndex: number } }
   /**
-   * As the controller of a recoverable account, close an active recovery
-   * process for your account.
+   * The lost account can cancel an attempt at any moment; the initiator, only after a delay.
    *
-   * Payment: By calling this function, the recoverable account will receive
-   * the recovery deposit `RecoveryDeposit` placed by the rescuer.
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a
-   * recoverable account with an active recovery process for it.
-   *
-   * Parameters:
-   * - `rescuer`: The account trying to rescue this recoverable account.
+   * This will release the security deposit back to the initiator. The cancel delay must be
+   * respected if the initiator calls it to prevent it from front-running the lost account
+   * from slashing the attempt.
    **/
-  | { name: 'CloseRecovery'; params: { rescuer: MultiAddressLike } }
+  | { name: 'CancelAttempt'; params: { lost: MultiAddressLike; friendGroupIndex: number } }
   /**
-   * Remove the recovery process for your account. Recovered accounts are still accessible.
-   *
-   * NOTE: The user must make sure to call `close_recovery` on all active
-   * recovery attempts before calling this function else it will fail.
-   *
-   * Payment: By calling this function the recoverable account will unreserve
-   * their recovery configuration deposit.
-   * (`ConfigDepositBase` + `FriendDepositFactor` * #_of_friends)
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a
-   * recoverable account (i.e. has a recovery configuration).
+   * Slash a malicious recovery attempt and burn the security deposit of the initiator.
    **/
-  | { name: 'RemoveRecovery' }
-  /**
-   * Cancel the ability to use `as_recovered` for `account`.
-   *
-   * The dispatch origin for this call must be _Signed_ and registered to
-   * be able to make calls on behalf of the recovered account.
-   *
-   * Parameters:
-   * - `account`: The recovered account you are able to call on-behalf-of.
-   **/
-  | { name: 'CancelRecovered'; params: { account: MultiAddressLike } }
-  /**
-   * Poke deposits for recovery configurations and / or active recoveries.
-   *
-   * This can be used by accounts to possibly lower their locked amount.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `maybe_account`: Optional recoverable account for which you have an active recovery
-   * and want to adjust the deposit for the active recovery.
-   *
-   * This function checks both recovery configuration deposit and active recovery deposits
-   * of the caller:
-   * - If the caller has created a recovery configuration, checks and adjusts its deposit
-   * - If the caller has initiated any active recoveries, and provides the account in
-   * `maybe_account`, checks and adjusts those deposits
-   *
-   * If any deposit is updated, the difference will be reserved/unreserved from the caller's
-   * account.
-   *
-   * The transaction is made free if any deposit is updated and paid otherwise.
-   *
-   * Emits `DepositPoked` if any deposit is updated.
-   * Multiple events may be emitted in case both types of deposits are updated.
-   **/
-  | { name: 'PokeDeposit'; params: { maybeAccount?: MultiAddressLike | undefined } };
+  | { name: 'SlashAttempt'; params: { friendGroupIndex: number } };
+
+export type PalletRecoveryFriendGroup = {
+  friends: Array<AccountId32>;
+  friendsNeeded: number;
+  inheritor: AccountId32;
+  inheritanceDelay: number;
+  inheritancePriority: number;
+  cancelDelay: number;
+};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -12032,13 +11880,23 @@ export type PalletReviveCall =
    *
    * This will error if the origin is already mapped or is a eth native `Address20`. It will
    * take a deposit that can be released by calling [`Self::unmap_account`].
+   *
+   * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
+   * on creation via [`AutoMapper`].
    **/
   | { name: 'MapAccount' }
+  /**
+   * Map many accounts and make the TX free if at least 90% were unmapped or held deposits.
+   **/
+  | { name: 'BatchMapAccounts'; params: { accounts: Array<AccountId32> } }
   /**
    * Unregister the callers account id in order to free the deposit.
    *
    * There is no reason to ever call this function other than freeing up the deposit.
    * This is only useful when the account should no longer be used.
+   *
+   * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
+   * on kill via [`AutoMapper`].
    **/
   | { name: 'UnmapAccount' }
   /**
@@ -12274,13 +12132,23 @@ export type PalletReviveCallLike =
    *
    * This will error if the origin is already mapped or is a eth native `Address20`. It will
    * take a deposit that can be released by calling [`Self::unmap_account`].
+   *
+   * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
+   * on creation via [`AutoMapper`].
    **/
   | { name: 'MapAccount' }
+  /**
+   * Map many accounts and make the TX free if at least 90% were unmapped or held deposits.
+   **/
+  | { name: 'BatchMapAccounts'; params: { accounts: Array<AccountId32Like> } }
   /**
    * Unregister the callers account id in order to free the deposit.
    *
    * There is no reason to ever call this function other than freeing up the deposit.
    * This is only useful when the account should no longer be used.
+   *
+   * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
+   * on kill via [`AutoMapper`].
    **/
   | { name: 'UnmapAccount' }
   /**
@@ -14017,9 +13885,10 @@ export type PalletStakingAsyncPalletCall =
    **/
   | { name: 'ChillOther'; params: { stash: AccountId32 } }
   /**
-   * Force a validator to have at least the minimum commission. This will not affect a
-   * validator who already has a commission greater than or equal to the minimum. Any account
-   * can call this.
+   * Clamps a validator's commission to the `[MinCommission, MaxCommission]` range.
+   *
+   * Named `force_apply_min_commission` for legacy reasons — it also enforces the
+   * maximum. Any account can call this.
    **/
   | { name: 'ForceApplyMinCommission'; params: { validatorStash: AccountId32 } }
   /**
@@ -14047,6 +13916,10 @@ export type PalletStakingAsyncPalletCall =
    * backing a validator to receive the reward. The nominators are not sorted across pages
    * and so it should not be assumed the highest staker would be on the topmost page and vice
    * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
+   *
+   * The validator's own reward (commission + own-stake share) is prorated across pages
+   * proportional to each page's stake. The full validator reward is the sum across all
+   * pages.
    **/
   | { name: 'PayoutStakersByPage'; params: { validatorStash: AccountId32; era: number; page: number } }
   /**
@@ -14118,7 +13991,8 @@ export type PalletStakingAsyncPalletCall =
    * for eras older than the active era.
    *
    * ## Parameters
-   * - `slash_era`: The staking era in which the slash was originally scheduled.
+   * - `slash_era`: The application era (`offence_era + SlashDeferDuration`), i.e. the key
+   * into [`UnappliedSlashes`].
    * - `slash_key`: A unique identifier for the slash, represented as a tuple:
    * - `stash`: The stash account of the validator being slashed.
    * - `slash_fraction`: The fraction of the stake that was slashed.
@@ -14149,7 +14023,28 @@ export type PalletStakingAsyncPalletCall =
    * The era must be eligible for pruning (older than HistoryDepth + 1).
    * Check `EraPruningState` storage to see if an era needs pruning before calling.
    **/
-  | { name: 'PruneEraStep'; params: { era: number } };
+  | { name: 'PruneEraStep'; params: { era: number } }
+  /**
+   * Sets the maximum commission that validators can set.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   **/
+  | { name: 'SetMaxCommission'; params: { new: Perbill } }
+  /**
+   * Configure the validator self-stake incentive parameters.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   *
+   * Changes take effect in the next era when rewards are calculated.
+   **/
+  | {
+      name: 'SetValidatorSelfStakeIncentiveConfig';
+      params: {
+        optimumSelfStake: PalletStakingAsyncPalletConfigOp;
+        hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
+        selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
+      };
+    };
 
 export type PalletStakingAsyncPalletCallLike =
   /**
@@ -14473,9 +14368,10 @@ export type PalletStakingAsyncPalletCallLike =
    **/
   | { name: 'ChillOther'; params: { stash: AccountId32Like } }
   /**
-   * Force a validator to have at least the minimum commission. This will not affect a
-   * validator who already has a commission greater than or equal to the minimum. Any account
-   * can call this.
+   * Clamps a validator's commission to the `[MinCommission, MaxCommission]` range.
+   *
+   * Named `force_apply_min_commission` for legacy reasons — it also enforces the
+   * maximum. Any account can call this.
    **/
   | { name: 'ForceApplyMinCommission'; params: { validatorStash: AccountId32Like } }
   /**
@@ -14503,6 +14399,10 @@ export type PalletStakingAsyncPalletCallLike =
    * backing a validator to receive the reward. The nominators are not sorted across pages
    * and so it should not be assumed the highest staker would be on the topmost page and vice
    * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
+   *
+   * The validator's own reward (commission + own-stake share) is prorated across pages
+   * proportional to each page's stake. The full validator reward is the sum across all
+   * pages.
    **/
   | { name: 'PayoutStakersByPage'; params: { validatorStash: AccountId32Like; era: number; page: number } }
   /**
@@ -14574,7 +14474,8 @@ export type PalletStakingAsyncPalletCallLike =
    * for eras older than the active era.
    *
    * ## Parameters
-   * - `slash_era`: The staking era in which the slash was originally scheduled.
+   * - `slash_era`: The application era (`offence_era + SlashDeferDuration`), i.e. the key
+   * into [`UnappliedSlashes`].
    * - `slash_key`: A unique identifier for the slash, represented as a tuple:
    * - `stash`: The stash account of the validator being slashed.
    * - `slash_fraction`: The fraction of the stake that was slashed.
@@ -14605,7 +14506,28 @@ export type PalletStakingAsyncPalletCallLike =
    * The era must be eligible for pruning (older than HistoryDepth + 1).
    * Check `EraPruningState` storage to see if an era needs pruning before calling.
    **/
-  | { name: 'PruneEraStep'; params: { era: number } };
+  | { name: 'PruneEraStep'; params: { era: number } }
+  /**
+   * Sets the maximum commission that validators can set.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   **/
+  | { name: 'SetMaxCommission'; params: { new: Perbill } }
+  /**
+   * Configure the validator self-stake incentive parameters.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   *
+   * Changes take effect in the next era when rewards are calculated.
+   **/
+  | {
+      name: 'SetValidatorSelfStakeIncentiveConfig';
+      params: {
+        optimumSelfStake: PalletStakingAsyncPalletConfigOp;
+        hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
+        selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
+      };
+    };
 
 export type PalletStakingAsyncRewardDestination =
   | { type: 'Staked' }
@@ -16822,6 +16744,8 @@ export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
   assetId?: StagingXcmV5Location | undefined;
 };
 
+export type PolkadotRuntimeCommonClaimsPrevalidateAttests = {};
+
 export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
 
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
@@ -16918,9 +16842,9 @@ export type FrameSystemEvent =
    **/
   | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
-   * `:code` was updated.
+   * `:code` was updated to the code with the given hash.
    **/
-  | { name: 'CodeUpdated' }
+  | { name: 'CodeUpdated'; data: { hash: H256 } }
   /**
    * A new account was created.
    **/
@@ -17439,6 +17363,7 @@ export type AssetHubKusamaRuntimeRuntimeHoldReason =
   | { type: 'Session'; value: PalletSessionHoldReason }
   | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
   | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
+  | { type: 'Recovery'; value: PalletRecoveryHoldReason }
   | { type: 'Revive'; value: PalletReviveHoldReason }
   | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
   | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
@@ -17454,6 +17379,12 @@ export type PalletSessionHoldReason = 'Keys';
 export type PalletXcmHoldReason = 'AuthorizeAlias';
 
 export type PalletNftFractionalizationHoldReason = 'Fractionalized';
+
+export type PalletRecoveryHoldReason =
+  | 'FriendGroupsStorage'
+  | 'AttemptStorage'
+  | 'InheritorStorage'
+  | 'SecurityDeposit';
 
 export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
 
@@ -19057,42 +18988,64 @@ export type PalletAssetConversionEvent =
     };
 
 /**
- * Events type.
+ * The `Event` enum of this pallet
  **/
 export type PalletRecoveryEvent =
   /**
-   * A recovery process has been set up for an account.
+   * A recovery attempt was approved by a friend.
    **/
-  | { name: 'RecoveryCreated'; data: { account: AccountId32 } }
+  | { name: 'AttemptApproved'; data: { lost: AccountId32; friendGroupIndex: number; friend: AccountId32 } }
   /**
-   * A recovery process has been initiated for lost account by rescuer account.
+   * A recovery attempt was canceled by either the lost account or the initiator.
    **/
-  | { name: 'RecoveryInitiated'; data: { lostAccount: AccountId32; rescuerAccount: AccountId32 } }
+  | { name: 'AttemptCanceled'; data: { lost: AccountId32; friendGroupIndex: number; canceler: AccountId32 } }
   /**
-   * A recovery process for lost account by rescuer account has been vouched for by sender.
+   * A recovery attempt was initiated by a friend.
    **/
-  | { name: 'RecoveryVouched'; data: { lostAccount: AccountId32; rescuerAccount: AccountId32; sender: AccountId32 } }
+  | { name: 'AttemptInitiated'; data: { lost: AccountId32; friendGroupIndex: number; initiator: AccountId32 } }
   /**
-   * A recovery process for lost account by rescuer account has been closed.
-   **/
-  | { name: 'RecoveryClosed'; data: { lostAccount: AccountId32; rescuerAccount: AccountId32 } }
-  /**
-   * Lost account has been successfully recovered by rescuer account.
-   **/
-  | { name: 'AccountRecovered'; data: { lostAccount: AccountId32; rescuerAccount: AccountId32 } }
-  /**
-   * A recovery process has been removed for an account.
-   **/
-  | { name: 'RecoveryRemoved'; data: { lostAccount: AccountId32 } }
-  /**
-   * A deposit has been updated.
+   * A recovery attempt was finished.
    **/
   | {
-      name: 'DepositPoked';
-      data: { who: AccountId32; kind: PalletRecoveryDepositKind; oldDeposit: bigint; newDeposit: bigint };
+      name: 'AttemptFinished';
+      data: {
+        lost: AccountId32;
+        friendGroupIndex: number;
+        inheritor: AccountId32;
+        previousInheritor?: AccountId32 | undefined;
+      };
+    }
+  /**
+   * A recovery attempt was discarded because the account was already recovered by a
+   * friend group of equal or higher priority.
+   *
+   * The attempt is consumed (removed from storage) and its deposits are released, but
+   * the existing inheritor remains unchanged.
+   **/
+  | { name: 'AttemptDiscarded'; data: { lost: AccountId32; friendGroupIndex: number; existingInheritor: AccountId32 } }
+  /**
+   * A recovery attempt was slashed by the lost account.
+   *
+   * The initiator will lose their security deposit.
+   **/
+  | { name: 'AttemptSlashed'; data: { lost: AccountId32; friendGroupIndex: number } }
+  /**
+   * The friend groups of an account have been changed.
+   **/
+  | { name: 'FriendGroupsChanged'; data: { lost: AccountId32 } }
+  /**
+   * The inheritor of a lost account was revoked by the lost account.
+   **/
+  | { name: 'InheritorRevoked'; data: { lost: AccountId32 } }
+  /**
+   * A recovered account was controlled by its inheritor.
+   *
+   * Check the `call_result` to see if it was successful.
+   **/
+  | {
+      name: 'RecoveredAccountControlled';
+      data: { recovered: AccountId32; inheritor: AccountId32; callHash: H256; callResult: Result<[], DispatchError> };
     };
-
-export type PalletRecoveryDepositKind = { type: 'RecoveryConfig' } | { type: 'ActiveRecoveryFor'; value: AccountId32 };
 
 /**
  * The `Event` enum of this pallet
@@ -19634,8 +19587,11 @@ export type PalletElectionProviderMultiBlockSignedPalletEvent =
  **/
 export type PalletStakingAsyncPalletEvent =
   /**
-   * The era payout has been set; the first balance is the validator-payout; the second is
-   * the remainder from the maximum amount of reward.
+   * The era payout has been set.
+   *
+   * In non-minting mode, `validator_payout` is the staker reward budget
+   * snapshotted from the general pot, and `remainder` is always zero.
+   * In legacy minting mode, both fields reflect the `EraPayout` computation.
    **/
   | { name: 'EraPaid'; data: { eraIndex: number; validatorPayout: bigint; remainder: bigint } }
   /**
@@ -19753,7 +19709,21 @@ export type PalletStakingAsyncPalletEvent =
   /**
    * An old era with the given index was pruned.
    **/
-  | { name: 'EraPruned'; data: { index: number } };
+  | { name: 'EraPruned'; data: { index: number } }
+  /**
+   * The validator has been paid their self-stake incentive bonus.
+   **/
+  | {
+      name: 'ValidatorIncentivePaid';
+      data: { era: number; validatorStash: AccountId32; dest: PalletStakingAsyncRewardDestination; amount: bigint };
+    }
+  /**
+   * Validator self-stake incentive configuration has been updated.
+   **/
+  | {
+      name: 'ValidatorIncentiveConfigSet';
+      data: { optimumSelfStake: bigint; hardCapSelfStake: bigint; slopeFactor: Perbill };
+    };
 
 export type PalletStakingAsyncForcing = 'NotForcing' | 'ForceNew' | 'ForceNone' | 'ForceAlways';
 
@@ -19763,7 +19733,10 @@ export type PalletStakingAsyncPalletUnexpectedKind =
   | {
       type: 'PagedElectionOutOfWeight';
       value: { page: number; required: SpWeightsWeightV2Weight; had: SpWeightsWeightV2Weight };
-    };
+    }
+  | { type: 'MissingPayee'; value: { era: number; stash: AccountId32 } }
+  | { type: 'ValidatorIncentiveWeightMismatch'; value: { era: number } }
+  | { type: 'ValidatorIncentiveTransferFailed'; value: { era: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -20471,6 +20444,7 @@ export type CumulusPalletWeightReclaimStorageWeightReclaim = [
   FrameSystemExtensionsCheckNonce,
   FrameSystemExtensionsCheckWeight,
   PalletAssetConversionTxPaymentChargeAssetTxPayment,
+  PolkadotRuntimeCommonClaimsPrevalidateAttests,
   FrameMetadataHashExtensionCheckMetadataHash,
   PalletReviveEvmTxExtensionSetOrigin,
 ];
@@ -20563,6 +20537,7 @@ export type CumulusPalletParachainSystemPoVMessages = {
   bundleIndex: number;
   umpMsgCount: number;
   hrmpOutboundCount: number;
+  hrmpOutboundRecipients: Array<PolkadotParachainPrimitivesPrimitivesId>;
 };
 
 /**
@@ -20724,10 +20699,11 @@ export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
   amount: bigint;
 };
 
-export type AssetHubKusamaRuntimeRuntimeFreezeReason = {
-  type: 'NominationPools';
-  value: PalletNominationPoolsFreezeReason;
-};
+export type AssetHubKusamaRuntimeRuntimeFreezeReason =
+  | { type: 'Revive'; value: PalletReviveFreezeReason }
+  | { type: 'NominationPools'; value: PalletNominationPoolsFreezeReason };
+
+export type PalletReviveFreezeReason = 'PGasMinBalance';
 
 export type PalletNominationPoolsFreezeReason = 'PoolMinBalance';
 
@@ -22077,85 +22053,125 @@ export type PalletAssetConversionError =
   /**
    * The destination account cannot exist with the swapped funds.
    **/
-  | 'BelowMinimum';
+  | 'BelowMinimum'
+  /**
+   * The pool exists but has no liquidity (at least one of the reserves is zero).
+   **/
+  | 'PoolEmpty';
 
-export type PalletRecoveryRecoveryConfig = {
-  delayPeriod: number;
-  deposit: bigint;
-  friends: Array<AccountId32>;
-  threshold: number;
+export type PalletRecoveryAttempt = {
+  friendGroupIndex: number;
+  initiator: AccountId32;
+  initBlock: number;
+  lastApprovalBlock: number;
+  approvals: PalletRecoveryBitfield;
 };
 
-export type PalletRecoveryActiveRecovery = { created: number; deposit: bigint; friends: Array<AccountId32> };
+export type PalletRecoveryBitfield = Array<number>;
+
+export type PalletRecoveryIdentifiedConsideration = {
+  depositor: AccountId32;
+  ticket?: FrameSupportTokensFungibleHoldConsideration | undefined;
+};
+
+export type FrameSupportStorageFootprint = { count: bigint; size: bigint };
 
 /**
  * The `Error` enum of this pallet.
  **/
 export type PalletRecoveryError =
   /**
-   * User is not allowed to make a call on behalf of this account
+   * This attempt is already fully approved and does not need any more votes.
    **/
-  | 'NotAllowed'
+  | 'AlreadyApproved'
   /**
-   * Threshold must be greater than zero
+   * The recovery attempt has already been initiated.
    **/
-  | 'ZeroThreshold'
+  | 'AlreadyInitiated'
   /**
-   * Friends list must be greater than zero and threshold
+   * The friend already voted for this attempt.
    **/
-  | 'NotEnoughFriends'
+  | 'AlreadyVoted'
   /**
-   * Friends list must be less than max friends
+   * The lost account has ongoing recovery attempts.
    **/
-  | 'MaxFriends'
+  | 'HasOngoingAttempts'
   /**
-   * Friends list must be sorted and free of duplicates
+   * The lost account cannot be a friend of itself.
    **/
-  | 'NotSorted'
+  | 'LostAccountInFriendGroup'
   /**
-   * This account is not set up for recovery
+   * The account was already recovered by a group of equal or higher priority.
    **/
-  | 'NotRecoverable'
+  | 'HigherPriorityRecovered'
   /**
-   * This account is already set up for recovery
+   * Cancel delay must be at least 1.
    **/
-  | 'AlreadyRecoverable'
+  | 'NoCancelDelay'
   /**
-   * A recovery process has already started for this account
+   * This account does not have any friend groups.
    **/
-  | 'AlreadyStarted'
+  | 'NoFriendGroups'
   /**
-   * A recovery process has not started for this rescuer
+   * The friend group has no friends.
    **/
-  | 'NotStarted'
+  | 'NoFriends'
   /**
-   * This account is not a friend who can vouch
+   * The lost account does not have any inheritor.
+   **/
+  | 'NoInheritor'
+  /**
+   * Not enough friends approved this attempt.
+   **/
+  | 'NotApproved'
+  /**
+   * The referenced recovery attempt was not found.
+   **/
+  | 'NotAttempt'
+  /**
+   * The caller is not the initiator or the lost account.
+   **/
+  | 'NotCanceller'
+  /**
+   * The caller is not a friend of the lost account.
    **/
   | 'NotFriend'
   /**
-   * The friend must wait until the delay period to vouch for this recovery
+   * A specific referenced friend group was not found.
    **/
-  | 'DelayPeriod'
+  | 'NotFriendGroup'
   /**
-   * This user has already vouched for this recovery
+   * The caller is not the inheritor of the lost account.
    **/
-  | 'AlreadyVouched'
+  | 'NotInheritor'
   /**
-   * The threshold for recovering this account has not been met
+   * The cancel delay since the last approval or initialization has not yet passed.
    **/
-  | 'Threshold'
+  | 'NotYetCancelable'
   /**
-   * There are still active recovery attempts that need to be closed
+   * The inheritance delay of this attempt has not yet passed.
    **/
-  | 'StillActive'
+  | 'NotYetInheritable'
   /**
-   * This account is already set up for recovery
+   * Too many friend groups.
    **/
-  | 'AlreadyProxy'
+  | 'TooManyFriendGroups'
   /**
-   * Some internal state is broken.
+   * The number of friends needed is greater than the number of friends.
    **/
-  | 'BadState';
+  | 'TooManyFriendsNeeded'
+  /**
+   * The number of friends needed is zero.
+   **/
+  | 'NoFriendsNeeded'
+  /**
+   * The friends of a friend group are not sorted or not unique.
+   **/
+  | 'FriendsNotSortedOrUnique'
+  /**
+   * Two friend groups have the same set of friends.
+   **/
+  | 'DuplicateFriendGroups';
 
 export type PalletSocietyMemberRecord = {
   rank: number;
@@ -22350,6 +22366,8 @@ export type PalletReviveStorageContractInfo = {
   storageBaseDeposit: bigint;
   immutableDataLen: number;
 };
+
+export type PalletReviveStorageDeletionQueueItem = { trieId: Bytes; accountId: AccountId32 };
 
 export type PalletReviveStorageDeletionQueueManager = { insertCounter: number; deleteCounter: number };
 
@@ -22820,7 +22838,17 @@ export type PalletReviveError =
   /**
    * ECDSA public key recovery failed. Most probably wrong recovery id or signature.
    **/
-  | 'EcdsaRecoveryFailed';
+  | 'EcdsaRecoveryFailed'
+  /**
+   * Manual mapping is disabled when auto-mapping is enabled.
+   **/
+  | 'AutoMappingEnabled'
+  /**
+   * A contract cannot be created at this address: it still has uncleared
+   * [`NativeDepositOf`] entries from a previously terminated contract that the deletion
+   * queue has not yet drained.
+   **/
+  | 'PendingDepositCleanup';
 
 /**
  * Error types for the permit pallet.
@@ -23330,7 +23358,8 @@ export type PalletStakingAsyncPalletPruningStep =
   | 'ErasValidatorReward'
   | 'ErasRewardPoints'
   | 'SingleEntryCleanups'
-  | 'ValidatorSlashInEra';
+  | 'ValidatorSlashInEra'
+  | 'ErasValidatorIncentiveWeight';
 
 /**
  * The `Error` enum of this pallet.
@@ -23485,7 +23514,23 @@ export type PalletStakingAsyncPalletError =
   /**
    * The slash has been cancelled and cannot be applied.
    **/
-  | 'CancelledSlash';
+  | 'CancelledSlash'
+  /**
+   * Commission is higher than the allowed maximum `MaxCommission`.
+   **/
+  | 'CommissionTooHigh'
+  /**
+   * Optimum self-stake cannot be greater than hard cap.
+   **/
+  | 'OptimumGreaterThanCap';
+
+export type PalletStakingAsyncRewardPot =
+  | { type: 'General'; value: PalletStakingAsyncRewardKind }
+  | { type: 'Era'; value: [number, PalletStakingAsyncRewardKind] };
+
+export type PalletStakingAsyncRewardKind = 'StakerRewards' | 'ValidatorSelfStake';
+
+export type PalletStakingAsyncRewardEraRewardAllocation = { stakerRewards: bigint; validatorIncentive: bigint };
 
 export type PalletTreasuryProposal = { proposer: AccountId32; value: bigint; beneficiary: AccountId32; bond: bigint };
 
@@ -24250,8 +24295,23 @@ export type PalletRevivePrimitivesEthTransactError =
 
 export type PalletReviveEvmApiRpcTypesDryRunConfig = {
   timestampOverride?: bigint | undefined;
-  reserved?: [] | undefined;
+  performBalanceChecks?: boolean | undefined;
+  stateOverrides?: PalletReviveEvmApiRpcTypesGenStateOverrideSet | undefined;
 };
+
+export type PalletReviveEvmApiRpcTypesGenStateOverrideSet = Array<[H160, PalletReviveEvmApiRpcTypesGenStateOverride]>;
+
+export type PalletReviveEvmApiRpcTypesGenStateOverride = {
+  balance?: U256 | undefined;
+  nonce?: U256 | undefined;
+  code?: PalletReviveEvmApiByteBytes | undefined;
+  storage?: PalletReviveEvmApiRpcTypesGenStorageOverride | undefined;
+  movePrecompileToAddress?: H160 | undefined;
+};
+
+export type PalletReviveEvmApiRpcTypesGenStorageOverride =
+  | { type: 'State'; value: Array<[H256, H256]> }
+  | { type: 'StateDiff'; value: Array<[H256, H256]> };
 
 export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
 
@@ -24367,6 +24427,10 @@ export type PalletReviveEvmApiDebugRpcTypesExecutionStepKind =
       };
     }
   | { type: 'PvmSyscall'; value: { op: number; args: Array<bigint>; returned?: bigint | undefined } };
+
+export type PalletReviveEvmApiRpcTypesTracingConfig = {
+  stateOverrides?: PalletReviveEvmApiRpcTypesGenStateOverrideSet | undefined;
+};
 
 export type PalletRevivePrimitivesBalanceConversionError = 'Value' | 'Dust';
 

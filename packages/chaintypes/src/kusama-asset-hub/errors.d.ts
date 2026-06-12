@@ -1851,6 +1851,11 @@ export interface ChainErrors extends GenericChainErrors {
     BelowMinimum: GenericPalletError;
 
     /**
+     * The pool exists but has no liquidity (at least one of the reserves is zero).
+     **/
+    PoolEmpty: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1860,84 +1865,119 @@ export interface ChainErrors extends GenericChainErrors {
    **/
   recovery: {
     /**
-     * User is not allowed to make a call on behalf of this account
+     * This attempt is already fully approved and does not need any more votes.
      **/
-    NotAllowed: GenericPalletError;
+    AlreadyApproved: GenericPalletError;
 
     /**
-     * Threshold must be greater than zero
+     * The recovery attempt has already been initiated.
      **/
-    ZeroThreshold: GenericPalletError;
+    AlreadyInitiated: GenericPalletError;
 
     /**
-     * Friends list must be greater than zero and threshold
+     * The friend already voted for this attempt.
      **/
-    NotEnoughFriends: GenericPalletError;
+    AlreadyVoted: GenericPalletError;
 
     /**
-     * Friends list must be less than max friends
+     * The lost account has ongoing recovery attempts.
      **/
-    MaxFriends: GenericPalletError;
+    HasOngoingAttempts: GenericPalletError;
 
     /**
-     * Friends list must be sorted and free of duplicates
+     * The lost account cannot be a friend of itself.
      **/
-    NotSorted: GenericPalletError;
+    LostAccountInFriendGroup: GenericPalletError;
 
     /**
-     * This account is not set up for recovery
+     * The account was already recovered by a group of equal or higher priority.
      **/
-    NotRecoverable: GenericPalletError;
+    HigherPriorityRecovered: GenericPalletError;
 
     /**
-     * This account is already set up for recovery
+     * Cancel delay must be at least 1.
      **/
-    AlreadyRecoverable: GenericPalletError;
+    NoCancelDelay: GenericPalletError;
 
     /**
-     * A recovery process has already started for this account
+     * This account does not have any friend groups.
      **/
-    AlreadyStarted: GenericPalletError;
+    NoFriendGroups: GenericPalletError;
 
     /**
-     * A recovery process has not started for this rescuer
+     * The friend group has no friends.
      **/
-    NotStarted: GenericPalletError;
+    NoFriends: GenericPalletError;
 
     /**
-     * This account is not a friend who can vouch
+     * The lost account does not have any inheritor.
+     **/
+    NoInheritor: GenericPalletError;
+
+    /**
+     * Not enough friends approved this attempt.
+     **/
+    NotApproved: GenericPalletError;
+
+    /**
+     * The referenced recovery attempt was not found.
+     **/
+    NotAttempt: GenericPalletError;
+
+    /**
+     * The caller is not the initiator or the lost account.
+     **/
+    NotCanceller: GenericPalletError;
+
+    /**
+     * The caller is not a friend of the lost account.
      **/
     NotFriend: GenericPalletError;
 
     /**
-     * The friend must wait until the delay period to vouch for this recovery
+     * A specific referenced friend group was not found.
      **/
-    DelayPeriod: GenericPalletError;
+    NotFriendGroup: GenericPalletError;
 
     /**
-     * This user has already vouched for this recovery
+     * The caller is not the inheritor of the lost account.
      **/
-    AlreadyVouched: GenericPalletError;
+    NotInheritor: GenericPalletError;
 
     /**
-     * The threshold for recovering this account has not been met
+     * The cancel delay since the last approval or initialization has not yet passed.
      **/
-    Threshold: GenericPalletError;
+    NotYetCancelable: GenericPalletError;
 
     /**
-     * There are still active recovery attempts that need to be closed
+     * The inheritance delay of this attempt has not yet passed.
      **/
-    StillActive: GenericPalletError;
+    NotYetInheritable: GenericPalletError;
 
     /**
-     * This account is already set up for recovery
+     * Too many friend groups.
      **/
-    AlreadyProxy: GenericPalletError;
+    TooManyFriendGroups: GenericPalletError;
 
     /**
-     * Some internal state is broken.
+     * The number of friends needed is greater than the number of friends.
      **/
-    BadState: GenericPalletError;
+    TooManyFriendsNeeded: GenericPalletError;
+
+    /**
+     * The number of friends needed is zero.
+     **/
+    NoFriendsNeeded: GenericPalletError;
+
+    /**
+     * The friends of a friend group are not sorted or not unique.
+     **/
+    FriendsNotSortedOrUnique: GenericPalletError;
+
+    /**
+     * Two friend groups have the same set of friends.
+     **/
+    DuplicateFriendGroups: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2430,6 +2470,18 @@ export interface ChainErrors extends GenericChainErrors {
      * ECDSA public key recovery failed. Most probably wrong recovery id or signature.
      **/
     EcdsaRecoveryFailed: GenericPalletError;
+
+    /**
+     * Manual mapping is disabled when auto-mapping is enabled.
+     **/
+    AutoMappingEnabled: GenericPalletError;
+
+    /**
+     * A contract cannot be created at this address: it still has uncleared
+     * [`NativeDepositOf`] entries from a previously terminated contract that the deletion
+     * queue has not yet drained.
+     **/
+    PendingDepositCleanup: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3135,6 +3187,16 @@ export interface ChainErrors extends GenericChainErrors {
      * The slash has been cancelled and cannot be applied.
      **/
     CancelledSlash: GenericPalletError;
+
+    /**
+     * Commission is higher than the allowed maximum `MaxCommission`.
+     **/
+    CommissionTooHigh: GenericPalletError;
+
+    /**
+     * Optimum self-stake cannot be greater than hard cap.
+     **/
+    OptimumGreaterThanCap: GenericPalletError;
 
     /**
      * Generic pallet error

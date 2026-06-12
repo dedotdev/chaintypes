@@ -629,53 +629,6 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
-   * Pallet `Recovery`'s constants
-   **/
-  recovery: {
-    /**
-     * The base amount of currency needed to reserve for creating a recovery configuration.
-     *
-     * This is held for an additional storage item whose value size is
-     * `2 + sizeof(BlockNumber, Balance)` bytes.
-     **/
-    configDepositBase: bigint;
-
-    /**
-     * The amount of currency needed per additional user when creating a recovery
-     * configuration.
-     *
-     * This is held for adding `sizeof(AccountId)` bytes more into a pre-existing storage
-     * value.
-     **/
-    friendDepositFactor: bigint;
-
-    /**
-     * The maximum amount of friends allowed in a recovery configuration.
-     *
-     * NOTE: The threshold programmed in this Pallet uses u16, so it does
-     * not really make sense to have a limit here greater than u16::MAX.
-     * But also, that is a lot more than you should probably set this value
-     * to anyway...
-     **/
-    maxFriends: number;
-
-    /**
-     * The base amount of currency needed to reserve for starting a recovery.
-     *
-     * This is primarily held for deterring malicious recovery attempts, and should
-     * have a value large enough that a bad actor would choose not to place this
-     * deposit. It also acts to fund additional storage item whose value size is
-     * `sizeof(BlockNumber, Balance + T * AccountId)` bytes. Where T is a configurable
-     * threshold.
-     **/
-    recoveryDeposit: bigint;
-
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
    * Pallet `Vesting`'s constants
    **/
   vesting: {

@@ -75,8 +75,6 @@ import type {
   PalletSocietyVote,
   PalletSocietyIntakeRecord,
   PalletSocietyTally,
-  PalletRecoveryRecoveryConfig,
-  PalletRecoveryActiveRecovery,
   PalletVestingVestingInfo,
   PalletVestingReleases,
   PalletSchedulerScheduled,
@@ -1910,47 +1908,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<number | undefined> =} callback
      **/
     nextChallengeAt: GenericStorageQuery<() => number | undefined>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `Recovery`'s storage queries
-   **/
-  recovery: {
-    /**
-     * The set of recoverable accounts and their recovery configuration.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<PalletRecoveryRecoveryConfig | undefined> =} callback
-     **/
-    recoverable: GenericStorageQuery<(arg: AccountId32Like) => PalletRecoveryRecoveryConfig | undefined, AccountId32>;
-
-    /**
-     * Active recovery attempts.
-     *
-     * First account is the account to be recovered, and the second account
-     * is the user trying to recover the account.
-     *
-     * @param {[AccountId32Like, AccountId32Like]} arg
-     * @param {Callback<PalletRecoveryActiveRecovery | undefined> =} callback
-     **/
-    activeRecoveries: GenericStorageQuery<
-      (arg: [AccountId32Like, AccountId32Like]) => PalletRecoveryActiveRecovery | undefined,
-      [AccountId32, AccountId32]
-    >;
-
-    /**
-     * The list of allowed proxy accounts.
-     *
-     * Map from the user who can access it to the recovered account.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<AccountId32 | undefined> =} callback
-     **/
-    proxy: GenericStorageQuery<(arg: AccountId32Like) => AccountId32 | undefined, AccountId32>;
 
     /**
      * Generic pallet storage query

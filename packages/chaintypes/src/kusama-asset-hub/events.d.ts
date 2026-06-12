@@ -3,8 +3,8 @@
 import type { GenericChainEvents, GenericPalletEvent } from 'dedot/types';
 import type {
   DispatchError,
-  AccountId32,
   H256,
+  AccountId32,
   FixedBytes,
   Bytes,
   Result,
@@ -41,7 +41,6 @@ import type {
   PalletNftsPriceWithDirection,
   PalletNftsPalletAttributes,
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
-  PalletRecoveryDepositKind,
   PalletSocietyGroupParams,
   PalletStateTrieMigrationMigrationCompute,
   PalletStateTrieMigrationError,
@@ -87,9 +86,9 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * `:code` was updated.
+     * `:code` was updated to the code with the given hash.
      **/
-    CodeUpdated: GenericPalletEvent<'System', 'CodeUpdated', null>;
+    CodeUpdated: GenericPalletEvent<'System', 'CodeUpdated', { hash: H256 }>;
 
     /**
      * A new account was created.
@@ -3012,58 +3011,85 @@ export interface ChainEvents extends GenericChainEvents {
    **/
   recovery: {
     /**
-     * A recovery process has been set up for an account.
+     * A recovery attempt was approved by a friend.
      **/
-    RecoveryCreated: GenericPalletEvent<'Recovery', 'RecoveryCreated', { account: AccountId32 }>;
-
-    /**
-     * A recovery process has been initiated for lost account by rescuer account.
-     **/
-    RecoveryInitiated: GenericPalletEvent<
+    AttemptApproved: GenericPalletEvent<
       'Recovery',
-      'RecoveryInitiated',
-      { lostAccount: AccountId32; rescuerAccount: AccountId32 }
+      'AttemptApproved',
+      { lost: AccountId32; friendGroupIndex: number; friend: AccountId32 }
     >;
 
     /**
-     * A recovery process for lost account by rescuer account has been vouched for by sender.
+     * A recovery attempt was canceled by either the lost account or the initiator.
      **/
-    RecoveryVouched: GenericPalletEvent<
+    AttemptCanceled: GenericPalletEvent<
       'Recovery',
-      'RecoveryVouched',
-      { lostAccount: AccountId32; rescuerAccount: AccountId32; sender: AccountId32 }
+      'AttemptCanceled',
+      { lost: AccountId32; friendGroupIndex: number; canceler: AccountId32 }
     >;
 
     /**
-     * A recovery process for lost account by rescuer account has been closed.
+     * A recovery attempt was initiated by a friend.
      **/
-    RecoveryClosed: GenericPalletEvent<
+    AttemptInitiated: GenericPalletEvent<
       'Recovery',
-      'RecoveryClosed',
-      { lostAccount: AccountId32; rescuerAccount: AccountId32 }
+      'AttemptInitiated',
+      { lost: AccountId32; friendGroupIndex: number; initiator: AccountId32 }
     >;
 
     /**
-     * Lost account has been successfully recovered by rescuer account.
+     * A recovery attempt was finished.
      **/
-    AccountRecovered: GenericPalletEvent<
+    AttemptFinished: GenericPalletEvent<
       'Recovery',
-      'AccountRecovered',
-      { lostAccount: AccountId32; rescuerAccount: AccountId32 }
+      'AttemptFinished',
+      {
+        lost: AccountId32;
+        friendGroupIndex: number;
+        inheritor: AccountId32;
+        previousInheritor?: AccountId32 | undefined;
+      }
     >;
 
     /**
-     * A recovery process has been removed for an account.
+     * A recovery attempt was discarded because the account was already recovered by a
+     * friend group of equal or higher priority.
+     *
+     * The attempt is consumed (removed from storage) and its deposits are released, but
+     * the existing inheritor remains unchanged.
      **/
-    RecoveryRemoved: GenericPalletEvent<'Recovery', 'RecoveryRemoved', { lostAccount: AccountId32 }>;
+    AttemptDiscarded: GenericPalletEvent<
+      'Recovery',
+      'AttemptDiscarded',
+      { lost: AccountId32; friendGroupIndex: number; existingInheritor: AccountId32 }
+    >;
 
     /**
-     * A deposit has been updated.
+     * A recovery attempt was slashed by the lost account.
+     *
+     * The initiator will lose their security deposit.
      **/
-    DepositPoked: GenericPalletEvent<
+    AttemptSlashed: GenericPalletEvent<'Recovery', 'AttemptSlashed', { lost: AccountId32; friendGroupIndex: number }>;
+
+    /**
+     * The friend groups of an account have been changed.
+     **/
+    FriendGroupsChanged: GenericPalletEvent<'Recovery', 'FriendGroupsChanged', { lost: AccountId32 }>;
+
+    /**
+     * The inheritor of a lost account was revoked by the lost account.
+     **/
+    InheritorRevoked: GenericPalletEvent<'Recovery', 'InheritorRevoked', { lost: AccountId32 }>;
+
+    /**
+     * A recovered account was controlled by its inheritor.
+     *
+     * Check the `call_result` to see if it was successful.
+     **/
+    RecoveredAccountControlled: GenericPalletEvent<
       'Recovery',
-      'DepositPoked',
-      { who: AccountId32; kind: PalletRecoveryDepositKind; oldDeposit: bigint; newDeposit: bigint }
+      'RecoveredAccountControlled',
+      { recovered: AccountId32; inheritor: AccountId32; callHash: H256; callResult: Result<[], DispatchError> }
     >;
 
     /**
@@ -3754,8 +3780,11 @@ export interface ChainEvents extends GenericChainEvents {
    **/
   staking: {
     /**
-     * The era payout has been set; the first balance is the validator-payout; the second is
-     * the remainder from the maximum amount of reward.
+     * The era payout has been set.
+     *
+     * In non-minting mode, `validator_payout` is the staker reward budget
+     * snapshotted from the general pot, and `remainder` is always zero.
+     * In legacy minting mode, both fields reflect the `EraPayout` computation.
      **/
     EraPaid: GenericPalletEvent<'Staking', 'EraPaid', { eraIndex: number; validatorPayout: bigint; remainder: bigint }>;
 
@@ -3926,6 +3955,24 @@ export interface ChainEvents extends GenericChainEvents {
      * An old era with the given index was pruned.
      **/
     EraPruned: GenericPalletEvent<'Staking', 'EraPruned', { index: number }>;
+
+    /**
+     * The validator has been paid their self-stake incentive bonus.
+     **/
+    ValidatorIncentivePaid: GenericPalletEvent<
+      'Staking',
+      'ValidatorIncentivePaid',
+      { era: number; validatorStash: AccountId32; dest: PalletStakingAsyncRewardDestination; amount: bigint }
+    >;
+
+    /**
+     * Validator self-stake incentive configuration has been updated.
+     **/
+    ValidatorIncentiveConfigSet: GenericPalletEvent<
+      'Staking',
+      'ValidatorIncentiveConfigSet',
+      { optimumSelfStake: bigint; hardCapSelfStake: bigint; slopeFactor: Perbill }
+    >;
 
     /**
      * Generic pallet event

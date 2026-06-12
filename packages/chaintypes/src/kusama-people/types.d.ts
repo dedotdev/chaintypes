@@ -3961,6 +3961,8 @@ export type SpRuntimeMultiSignature =
   | { type: 'Ecdsa'; value: FixedBytes<65> }
   | { type: 'Eth'; value: FixedBytes<65> };
 
+export type FrameSystemExtensionsAuthorizeCall = {};
+
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
 export type FrameSystemExtensionsCheckSpecVersion = {};
@@ -4036,9 +4038,9 @@ export type FrameSystemEvent =
    **/
   | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
-   * `:code` was updated.
+   * `:code` was updated to the code with the given hash.
    **/
-  | { name: 'CodeUpdated' }
+  | { name: 'CodeUpdated'; data: { hash: H256 } }
   /**
    * A new account was created.
    **/
@@ -5166,6 +5168,7 @@ export type SpRuntimeBlakeTwo256 = {};
 export type SpRuntimeBlock = { header: Header; extrinsics: Array<UncheckedExtrinsic> };
 
 export type CumulusPalletWeightReclaimStorageWeightReclaim = [
+  FrameSystemExtensionsAuthorizeCall,
   FrameSystemExtensionsCheckNonZeroSender,
   FrameSystemExtensionsCheckSpecVersion,
   FrameSystemExtensionsCheckTxVersion,
@@ -5265,6 +5268,7 @@ export type CumulusPalletParachainSystemPoVMessages = {
   bundleIndex: number;
   umpMsgCount: number;
   hrmpOutboundCount: number;
+  hrmpOutboundRecipients: Array<PolkadotParachainPrimitivesPrimitivesId>;
 };
 
 /**

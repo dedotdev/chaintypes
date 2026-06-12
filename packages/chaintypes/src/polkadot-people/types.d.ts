@@ -5296,9 +5296,9 @@ export type FrameSystemEvent =
    **/
   | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
-   * `:code` was updated.
+   * `:code` was updated to the code with the given hash.
    **/
-  | { name: 'CodeUpdated' }
+  | { name: 'CodeUpdated'; data: { hash: H256 } }
   /**
    * A new account was created.
    **/
@@ -6756,6 +6756,7 @@ export type CumulusPalletParachainSystemPoVMessages = {
   bundleIndex: number;
   umpMsgCount: number;
   hrmpOutboundCount: number;
+  hrmpOutboundRecipients: Array<PolkadotParachainPrimitivesPrimitivesId>;
 };
 
 /**

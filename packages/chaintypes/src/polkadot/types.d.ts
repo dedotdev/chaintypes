@@ -53,6 +53,7 @@ export type PolkadotRuntimeRuntimeCall =
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
   | { pallet: 'FastUnstake'; palletCall: PalletFastUnstakeCall }
   | { pallet: 'StakingAhClient'; palletCall: PalletStakingAsyncAhClientCall }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCall }
   | { pallet: 'Configuration'; palletCall: PolkadotRuntimeParachainsConfigurationPalletCall }
   | { pallet: 'ParasShared'; palletCall: PolkadotRuntimeParachainsSharedPalletCall }
   | { pallet: 'ParaInclusion'; palletCall: PolkadotRuntimeParachainsInclusionPalletCall }
@@ -101,6 +102,7 @@ export type PolkadotRuntimeRuntimeCallLike =
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
   | { pallet: 'FastUnstake'; palletCall: PalletFastUnstakeCallLike }
   | { pallet: 'StakingAhClient'; palletCall: PalletStakingAsyncAhClientCallLike }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCallLike }
   | { pallet: 'Configuration'; palletCall: PolkadotRuntimeParachainsConfigurationPalletCallLike }
   | { pallet: 'ParasShared'; palletCall: PolkadotRuntimeParachainsSharedPalletCallLike }
   | { pallet: 'ParaInclusion'; palletCall: PolkadotRuntimeParachainsInclusionPalletCallLike }
@@ -6522,6 +6524,39 @@ export type PalletStakingAsyncAhClientOperatingMode = 'Passive' | 'Buffered' | '
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletParametersCall =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: PolkadotRuntimeRuntimeParameters } };
+
+export type PalletParametersCallLike =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: PolkadotRuntimeRuntimeParameters } };
+
+export type PolkadotRuntimeRuntimeParameters = {
+  type: 'AhClient';
+  value: PolkadotRuntimeDynamicParamsAhClientParameters;
+};
+
+export type PolkadotRuntimeDynamicParamsAhClientParameters = {
+  type: 'MinimumValidatorSetSize';
+  value: [PolkadotRuntimeDynamicParamsAhClientMinimumValidatorSetSize, number | undefined];
+};
+
+export type PolkadotRuntimeDynamicParamsAhClientMinimumValidatorSetSize = {};
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PolkadotRuntimeParachainsConfigurationPalletCall =
   /**
    * Set the validation upgrade cooldown.
@@ -10403,6 +10438,7 @@ export type PolkadotRuntimeRuntimeEvent =
   | { pallet: 'FastUnstake'; palletEvent: PalletFastUnstakeEvent }
   | { pallet: 'DelegatedStaking'; palletEvent: PalletDelegatedStakingEvent }
   | { pallet: 'StakingAhClient'; palletEvent: PalletStakingAsyncAhClientEvent }
+  | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
   | { pallet: 'ParaInclusion'; palletEvent: PolkadotRuntimeParachainsInclusionPalletEvent }
   | { pallet: 'Paras'; palletEvent: PolkadotRuntimeParachainsParasPalletEvent }
   | { pallet: 'Hrmp'; palletEvent: PolkadotRuntimeParachainsHrmpPalletEvent }
@@ -10431,9 +10467,9 @@ export type FrameSystemEvent =
    **/
   | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
-   * `:code` was updated.
+   * `:code` was updated to the code with the given hash.
    **/
-  | { name: 'CodeUpdated' }
+  | { name: 'CodeUpdated'; data: { hash: H256 } }
   /**
    * A new account was created.
    **/
@@ -11886,6 +11922,52 @@ export type PalletStakingAsyncAhClientUnexpectedKind =
   | 'InvalidKeysFromAssetHub';
 
 export type PalletStakingAsyncAhClientSessionKeysUpdate = 'Set' | 'Purged';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletParametersEvent =
+  /**
+   * A Parameter was set.
+   *
+   * Is also emitted when the value was not changed.
+   **/
+  {
+    name: 'Updated';
+    data: {
+      /**
+       * The key that was updated.
+       **/
+      key: PolkadotRuntimeRuntimeParametersKey;
+
+      /**
+       * The old value before this call.
+       **/
+      oldValue?: PolkadotRuntimeRuntimeParametersValue | undefined;
+
+      /**
+       * The new value after this call.
+       **/
+      newValue?: PolkadotRuntimeRuntimeParametersValue | undefined;
+    };
+  };
+
+export type PolkadotRuntimeRuntimeParametersKey = {
+  type: 'AhClient';
+  value: PolkadotRuntimeDynamicParamsAhClientParametersKey;
+};
+
+export type PolkadotRuntimeDynamicParamsAhClientParametersKey = {
+  type: 'MinimumValidatorSetSize';
+  value: PolkadotRuntimeDynamicParamsAhClientMinimumValidatorSetSize;
+};
+
+export type PolkadotRuntimeRuntimeParametersValue = {
+  type: 'AhClient';
+  value: PolkadotRuntimeDynamicParamsAhClientParametersValue;
+};
+
+export type PolkadotRuntimeDynamicParamsAhClientParametersValue = { type: 'MinimumValidatorSetSize'; value: number };
 
 /**
  * The `Event` enum of this pallet

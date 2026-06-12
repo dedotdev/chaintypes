@@ -6,6 +6,7 @@ import type {
   FrameSystemEventRecord,
   StagingKusamaRuntimeRuntimeCall,
   SpRuntimeMultiSignature,
+  FrameSystemExtensionsAuthorizeCall,
   FrameSystemExtensionsCheckNonZeroSender,
   FrameSystemExtensionsCheckSpecVersion,
   FrameSystemExtensionsCheckTxVersion,
@@ -32,6 +33,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
   Signature: SpRuntimeMultiSignature;
   RuntimeCall: StagingKusamaRuntimeRuntimeCall;
   Extra: [
+    FrameSystemExtensionsAuthorizeCall,
     FrameSystemExtensionsCheckNonZeroSender,
     FrameSystemExtensionsCheckSpecVersion,
     FrameSystemExtensionsCheckTxVersion,
@@ -48,7 +50,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: KusamaApi
- * @specVersion: 2002000
+ * @specVersion: 2003000
  **/
 export interface KusamaApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

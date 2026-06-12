@@ -70,6 +70,7 @@ import type {
   PalletReviveEvmApiDebugRpcTypesTrace,
   SpRuntimeBlock,
   PalletReviveEvmApiDebugRpcTypesTracerType,
+  PalletReviveEvmApiRpcTypesTracingConfig,
   PalletRevivePrimitivesBalanceConversionError,
 } from './types.js';
 
@@ -1096,6 +1097,13 @@ export interface RuntimeApis extends GenericRuntimeApis {
     blockGasLimit: GenericRuntimeApiMethod<() => Promise<U256>>;
 
     /**
+     * Returns the block gas limit as calculated from the weights.
+     *
+     * @callname: ReviveApi_max_extrinsic_weight_in_gas
+     **/
+    maxExtrinsicWeightInGas: GenericRuntimeApiMethod<() => Promise<U256>>;
+
+    /**
      * Returns the free balance of the given `[H160]` address, using EVM decimals.
      *
      * @callname: ReviveApi_balance
@@ -1197,6 +1205,34 @@ export interface RuntimeApis extends GenericRuntimeApis {
         tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
         config: PalletReviveEvmApiRpcTypesDryRunConfig,
       ) => Promise<Result<PalletRevivePrimitivesEthTransactInfo, PalletRevivePrimitivesEthTransactError>>
+    >;
+
+    /**
+     * Estimates the amount of gas that a transactions requires.
+     *
+     * This function estimates the gas of the transaction according to the same binary search
+     * algorithm that's implemented in Geth. It stops when with an acceptable error ratio of
+     * 1.5% so that the algorithm terminates early.
+     *
+     * @callname: ReviveApi_eth_estimate_gas
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
+     * @param {PalletReviveEvmApiRpcTypesDryRunConfig} config
+     **/
+    ethEstimateGas: GenericRuntimeApiMethod<
+      (
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+        config: PalletReviveEvmApiRpcTypesDryRunConfig,
+      ) => Promise<Result<U256, PalletRevivePrimitivesEthTransactError>>
+    >;
+
+    /**
+     * Return the pre-dispatch weight booked for the signed Ethereum transaction payload.
+     *
+     * @callname: ReviveApi_eth_pre_dispatch_weight
+     * @param {BytesLike} tx
+     **/
+    ethPreDispatchWeight: GenericRuntimeApiMethod<
+      (tx: BytesLike) => Promise<Result<SpWeightsWeightV2Weight, PalletRevivePrimitivesEthTransactError>>
     >;
 
     /**
@@ -1303,6 +1339,26 @@ export interface RuntimeApis extends GenericRuntimeApis {
       (
         tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
         config: PalletReviveEvmApiDebugRpcTypesTracerType,
+      ) => Promise<Result<PalletReviveEvmApiDebugRpcTypesTrace, PalletRevivePrimitivesEthTransactError>>
+    >;
+
+    /**
+     * Dry run and return the trace of the given call with additional configuration.
+     *
+     * Like [`Self::trace_call`], but accepts a [`TracingConfig`] that can carry state
+     * overrides and future extensibility. The config must be the **last argument** for
+     * backwards compatibility — see [`TracingConfig`] documentation.
+     *
+     * @callname: ReviveApi_trace_call_with_config
+     * @param {PalletReviveEvmApiRpcTypesGenGenericTransaction} tx
+     * @param {PalletReviveEvmApiDebugRpcTypesTracerType} tracer_type
+     * @param {PalletReviveEvmApiRpcTypesTracingConfig} config
+     **/
+    traceCallWithConfig: GenericRuntimeApiMethod<
+      (
+        tx: PalletReviveEvmApiRpcTypesGenGenericTransaction,
+        tracerType: PalletReviveEvmApiDebugRpcTypesTracerType,
+        config: PalletReviveEvmApiRpcTypesTracingConfig,
       ) => Promise<Result<PalletReviveEvmApiDebugRpcTypesTrace, PalletRevivePrimitivesEthTransactError>>
     >;
 

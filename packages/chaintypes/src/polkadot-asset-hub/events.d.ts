@@ -3,15 +3,15 @@
 import type { GenericChainEvents, GenericPalletEvent } from 'dedot/types';
 import type {
   DispatchError,
-  AccountId32,
   H256,
+  AccountId32,
   FixedBytes,
   Result,
   Bytes,
   EthereumAddress,
+  Perbill,
   FixedU128,
   Permill,
-  Perbill,
   H160,
 } from 'dedot/codecs';
 import type {
@@ -24,6 +24,7 @@ import type {
   AssetHubPolkadotRuntimeRuntimeHoldReason,
   PalletBalancesUnexpectedKind,
   StagingXcmV5Location,
+  PalletDapUnexpectedKind,
   StagingXcmV5TraitsOutcome,
   StagingXcmV5Xcm,
   XcmV3TraitsSendError,
@@ -86,9 +87,9 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * `:code` was updated.
+     * `:code` was updated to the code with the given hash.
      **/
-    CodeUpdated: GenericPalletEvent<'System', 'CodeUpdated', null>;
+    CodeUpdated: GenericPalletEvent<'System', 'CodeUpdated', { hash: H256 }>;
 
     /**
      * A new account was created.
@@ -735,6 +736,67 @@ export interface ChainEvents extends GenericChainEvents {
       'Claimed',
       { who: AccountId32; ethereumAddress: EthereumAddress; amount: bigint }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Dap`'s events
+   **/
+  dap: {
+    /**
+     * Inflation dripped and distributed to budget recipients.
+     **/
+    IssuanceMinted: GenericPalletEvent<
+      'Dap',
+      'IssuanceMinted',
+      {
+        /**
+         * Total amount minted in this drip.
+         **/
+        totalMinted: bigint;
+
+        /**
+         * Elapsed time (ms) since last drip.
+         **/
+        elapsedMillis: bigint;
+      }
+    >;
+
+    /**
+     * Budget allocation was updated via governance.
+     **/
+    BudgetAllocationUpdated: GenericPalletEvent<
+      'Dap',
+      'BudgetAllocationUpdated',
+      {
+        /**
+         * The new budget allocation map.
+         **/
+        allocations: Array<[Bytes, Perbill]>;
+      }
+    >;
+
+    /**
+     * Funds were drained from the staging account into the DAP buffer.
+     **/
+    StagingDrained: GenericPalletEvent<
+      'Dap',
+      'StagingDrained',
+      {
+        /**
+         * Amount drained.
+         **/
+        amount: bigint;
+      }
+    >;
+
+    /**
+     * An unexpected/defensive event was triggered.
+     **/
+    Unexpected: GenericPalletEvent<'Dap', 'Unexpected', PalletDapUnexpectedKind>;
 
     /**
      * Generic pallet event
@@ -4251,8 +4313,11 @@ export interface ChainEvents extends GenericChainEvents {
    **/
   staking: {
     /**
-     * The era payout has been set; the first balance is the validator-payout; the second is
-     * the remainder from the maximum amount of reward.
+     * The era payout has been set.
+     *
+     * In non-minting mode, `validator_payout` is the staker reward budget
+     * snapshotted from the general pot, and `remainder` is always zero.
+     * In legacy minting mode, both fields reflect the `EraPayout` computation.
      **/
     EraPaid: GenericPalletEvent<'Staking', 'EraPaid', { eraIndex: number; validatorPayout: bigint; remainder: bigint }>;
 
@@ -4423,6 +4488,24 @@ export interface ChainEvents extends GenericChainEvents {
      * An old era with the given index was pruned.
      **/
     EraPruned: GenericPalletEvent<'Staking', 'EraPruned', { index: number }>;
+
+    /**
+     * The validator has been paid their self-stake incentive bonus.
+     **/
+    ValidatorIncentivePaid: GenericPalletEvent<
+      'Staking',
+      'ValidatorIncentivePaid',
+      { era: number; validatorStash: AccountId32; dest: PalletStakingAsyncRewardDestination; amount: bigint }
+    >;
+
+    /**
+     * Validator self-stake incentive configuration has been updated.
+     **/
+    ValidatorIncentiveConfigSet: GenericPalletEvent<
+      'Staking',
+      'ValidatorIncentiveConfigSet',
+      { optimumSelfStake: bigint; hardCapSelfStake: bigint; slopeFactor: Perbill }
+    >;
 
     /**
      * Generic pallet event

@@ -47,7 +47,6 @@ export type StagingKusamaRuntimeRuntimeCall =
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCall }
   | { pallet: 'Utility'; palletCall: PalletUtilityCall }
   | { pallet: 'Society'; palletCall: PalletSocietyCall }
-  | { pallet: 'Recovery'; palletCall: PalletRecoveryCall }
   | { pallet: 'Vesting'; palletCall: PalletVestingCall }
   | { pallet: 'Scheduler'; palletCall: PalletSchedulerCall }
   | { pallet: 'Proxy'; palletCall: PalletProxyCall }
@@ -99,7 +98,6 @@ export type StagingKusamaRuntimeRuntimeCallLike =
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCallLike }
   | { pallet: 'Utility'; palletCall: PalletUtilityCallLike }
   | { pallet: 'Society'; palletCall: PalletSocietyCallLike }
-  | { pallet: 'Recovery'; palletCall: PalletRecoveryCallLike }
   | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
   | { pallet: 'Scheduler'; palletCall: PalletSchedulerCallLike }
   | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
@@ -3150,7 +3148,8 @@ export type PalletParametersCallLike =
 
 export type StagingKusamaRuntimeRuntimeParameters =
   | { type: 'Inflation'; value: StagingKusamaRuntimeDynamicParamsInflationParameters }
-  | { type: 'Treasury'; value: StagingKusamaRuntimeDynamicParamsTreasuryParameters };
+  | { type: 'Treasury'; value: StagingKusamaRuntimeDynamicParamsTreasuryParameters }
+  | { type: 'AhClient'; value: StagingKusamaRuntimeDynamicParamsAhClientParameters };
 
 export type StagingKusamaRuntimeDynamicParamsInflationParameters =
   | { type: 'MinInflation'; value: [StagingKusamaRuntimeDynamicParamsInflationMinInflation, Perquintill | undefined] }
@@ -3187,6 +3186,13 @@ export type StagingKusamaRuntimeDynamicParamsTreasuryBurnPortion = {};
 export type StagingKusamaRuntimeDynamicParamsTreasuryBurnDestination = {};
 
 export type StagingKusamaRuntimeBurnDestinationAccount = AccountId32 | undefined;
+
+export type StagingKusamaRuntimeDynamicParamsAhClientParameters = {
+  type: 'MinimumValidatorSetSize';
+  value: [StagingKusamaRuntimeDynamicParamsAhClientMinimumValidatorSetSize, number | undefined];
+};
+
+export type StagingKusamaRuntimeDynamicParamsAhClientMinimumValidatorSetSize = {};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4165,305 +4171,6 @@ export type PalletSocietyCallLike =
    * - `who`: The member to be removed.
    **/
   | { name: 'KickMember'; params: { who: MultiAddressLike } };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletRecoveryCall =
-  /**
-   * Send a call through a recovered account.
-   *
-   * The dispatch origin for this call must be _Signed_ and registered to
-   * be able to make calls on behalf of the recovered account.
-   *
-   * Parameters:
-   * - `account`: The recovered account you want to make a call on-behalf-of.
-   * - `call`: The call you want to make with the recovered account.
-   **/
-  | { name: 'AsRecovered'; params: { account: MultiAddress; call: StagingKusamaRuntimeRuntimeCall } }
-  /**
-   * Allow ROOT to bypass the recovery process and set a rescuer account
-   * for a lost account directly.
-   *
-   * The dispatch origin for this call must be _ROOT_.
-   *
-   * Parameters:
-   * - `lost`: The "lost account" to be recovered.
-   * - `rescuer`: The "rescuer account" which can call as the lost account.
-   **/
-  | { name: 'SetRecovered'; params: { lost: MultiAddress; rescuer: MultiAddress } }
-  /**
-   * Create a recovery configuration for your account. This makes your account recoverable.
-   *
-   * Payment: `ConfigDepositBase` + `FriendDepositFactor` * #_of_friends balance
-   * will be reserved for storing the recovery configuration. This deposit is returned
-   * in full when the user calls `remove_recovery`.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `friends`: A list of friends you trust to vouch for recovery attempts. Should be
-   * ordered and contain no duplicate values.
-   * - `threshold`: The number of friends that must vouch for a recovery attempt before the
-   * account can be recovered. Should be less than or equal to the length of the list of
-   * friends.
-   * - `delay_period`: The number of blocks after a recovery attempt is initialized that
-   * needs to pass before the account can be recovered.
-   **/
-  | { name: 'CreateRecovery'; params: { friends: Array<AccountId32>; threshold: number; delayPeriod: number } }
-  /**
-   * Initiate the process for recovering a recoverable account.
-   *
-   * Payment: `RecoveryDeposit` balance will be reserved for initiating the
-   * recovery process. This deposit will always be repatriated to the account
-   * trying to be recovered. See `close_recovery`.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `account`: The lost account that you want to recover. This account needs to be
-   * recoverable (i.e. have a recovery configuration).
-   **/
-  | { name: 'InitiateRecovery'; params: { account: MultiAddress } }
-  /**
-   * Allow a "friend" of a recoverable account to vouch for an active recovery
-   * process for that account.
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a "friend"
-   * for the recoverable account.
-   *
-   * Parameters:
-   * - `lost`: The lost account that you want to recover.
-   * - `rescuer`: The account trying to rescue the lost account that you want to vouch for.
-   *
-   * The combination of these two parameters must point to an active recovery
-   * process.
-   **/
-  | { name: 'VouchRecovery'; params: { lost: MultiAddress; rescuer: MultiAddress } }
-  /**
-   * Allow a successful rescuer to claim their recovered account.
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a "rescuer"
-   * who has successfully completed the account recovery process: collected
-   * `threshold` or more vouches, waited `delay_period` blocks since initiation.
-   *
-   * Parameters:
-   * - `account`: The lost account that you want to claim has been successfully recovered by
-   * you.
-   **/
-  | { name: 'ClaimRecovery'; params: { account: MultiAddress } }
-  /**
-   * As the controller of a recoverable account, close an active recovery
-   * process for your account.
-   *
-   * Payment: By calling this function, the recoverable account will receive
-   * the recovery deposit `RecoveryDeposit` placed by the rescuer.
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a
-   * recoverable account with an active recovery process for it.
-   *
-   * Parameters:
-   * - `rescuer`: The account trying to rescue this recoverable account.
-   **/
-  | { name: 'CloseRecovery'; params: { rescuer: MultiAddress } }
-  /**
-   * Remove the recovery process for your account. Recovered accounts are still accessible.
-   *
-   * NOTE: The user must make sure to call `close_recovery` on all active
-   * recovery attempts before calling this function else it will fail.
-   *
-   * Payment: By calling this function the recoverable account will unreserve
-   * their recovery configuration deposit.
-   * (`ConfigDepositBase` + `FriendDepositFactor` * #_of_friends)
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a
-   * recoverable account (i.e. has a recovery configuration).
-   **/
-  | { name: 'RemoveRecovery' }
-  /**
-   * Cancel the ability to use `as_recovered` for `account`.
-   *
-   * The dispatch origin for this call must be _Signed_ and registered to
-   * be able to make calls on behalf of the recovered account.
-   *
-   * Parameters:
-   * - `account`: The recovered account you are able to call on-behalf-of.
-   **/
-  | { name: 'CancelRecovered'; params: { account: MultiAddress } }
-  /**
-   * Poke deposits for recovery configurations and / or active recoveries.
-   *
-   * This can be used by accounts to possibly lower their locked amount.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `maybe_account`: Optional recoverable account for which you have an active recovery
-   * and want to adjust the deposit for the active recovery.
-   *
-   * This function checks both recovery configuration deposit and active recovery deposits
-   * of the caller:
-   * - If the caller has created a recovery configuration, checks and adjusts its deposit
-   * - If the caller has initiated any active recoveries, and provides the account in
-   * `maybe_account`, checks and adjusts those deposits
-   *
-   * If any deposit is updated, the difference will be reserved/unreserved from the caller's
-   * account.
-   *
-   * The transaction is made free if any deposit is updated and paid otherwise.
-   *
-   * Emits `DepositPoked` if any deposit is updated.
-   * Multiple events may be emitted in case both types of deposits are updated.
-   **/
-  | { name: 'PokeDeposit'; params: { maybeAccount?: MultiAddress | undefined } };
-
-export type PalletRecoveryCallLike =
-  /**
-   * Send a call through a recovered account.
-   *
-   * The dispatch origin for this call must be _Signed_ and registered to
-   * be able to make calls on behalf of the recovered account.
-   *
-   * Parameters:
-   * - `account`: The recovered account you want to make a call on-behalf-of.
-   * - `call`: The call you want to make with the recovered account.
-   **/
-  | { name: 'AsRecovered'; params: { account: MultiAddressLike; call: StagingKusamaRuntimeRuntimeCallLike } }
-  /**
-   * Allow ROOT to bypass the recovery process and set a rescuer account
-   * for a lost account directly.
-   *
-   * The dispatch origin for this call must be _ROOT_.
-   *
-   * Parameters:
-   * - `lost`: The "lost account" to be recovered.
-   * - `rescuer`: The "rescuer account" which can call as the lost account.
-   **/
-  | { name: 'SetRecovered'; params: { lost: MultiAddressLike; rescuer: MultiAddressLike } }
-  /**
-   * Create a recovery configuration for your account. This makes your account recoverable.
-   *
-   * Payment: `ConfigDepositBase` + `FriendDepositFactor` * #_of_friends balance
-   * will be reserved for storing the recovery configuration. This deposit is returned
-   * in full when the user calls `remove_recovery`.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `friends`: A list of friends you trust to vouch for recovery attempts. Should be
-   * ordered and contain no duplicate values.
-   * - `threshold`: The number of friends that must vouch for a recovery attempt before the
-   * account can be recovered. Should be less than or equal to the length of the list of
-   * friends.
-   * - `delay_period`: The number of blocks after a recovery attempt is initialized that
-   * needs to pass before the account can be recovered.
-   **/
-  | { name: 'CreateRecovery'; params: { friends: Array<AccountId32Like>; threshold: number; delayPeriod: number } }
-  /**
-   * Initiate the process for recovering a recoverable account.
-   *
-   * Payment: `RecoveryDeposit` balance will be reserved for initiating the
-   * recovery process. This deposit will always be repatriated to the account
-   * trying to be recovered. See `close_recovery`.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `account`: The lost account that you want to recover. This account needs to be
-   * recoverable (i.e. have a recovery configuration).
-   **/
-  | { name: 'InitiateRecovery'; params: { account: MultiAddressLike } }
-  /**
-   * Allow a "friend" of a recoverable account to vouch for an active recovery
-   * process for that account.
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a "friend"
-   * for the recoverable account.
-   *
-   * Parameters:
-   * - `lost`: The lost account that you want to recover.
-   * - `rescuer`: The account trying to rescue the lost account that you want to vouch for.
-   *
-   * The combination of these two parameters must point to an active recovery
-   * process.
-   **/
-  | { name: 'VouchRecovery'; params: { lost: MultiAddressLike; rescuer: MultiAddressLike } }
-  /**
-   * Allow a successful rescuer to claim their recovered account.
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a "rescuer"
-   * who has successfully completed the account recovery process: collected
-   * `threshold` or more vouches, waited `delay_period` blocks since initiation.
-   *
-   * Parameters:
-   * - `account`: The lost account that you want to claim has been successfully recovered by
-   * you.
-   **/
-  | { name: 'ClaimRecovery'; params: { account: MultiAddressLike } }
-  /**
-   * As the controller of a recoverable account, close an active recovery
-   * process for your account.
-   *
-   * Payment: By calling this function, the recoverable account will receive
-   * the recovery deposit `RecoveryDeposit` placed by the rescuer.
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a
-   * recoverable account with an active recovery process for it.
-   *
-   * Parameters:
-   * - `rescuer`: The account trying to rescue this recoverable account.
-   **/
-  | { name: 'CloseRecovery'; params: { rescuer: MultiAddressLike } }
-  /**
-   * Remove the recovery process for your account. Recovered accounts are still accessible.
-   *
-   * NOTE: The user must make sure to call `close_recovery` on all active
-   * recovery attempts before calling this function else it will fail.
-   *
-   * Payment: By calling this function the recoverable account will unreserve
-   * their recovery configuration deposit.
-   * (`ConfigDepositBase` + `FriendDepositFactor` * #_of_friends)
-   *
-   * The dispatch origin for this call must be _Signed_ and must be a
-   * recoverable account (i.e. has a recovery configuration).
-   **/
-  | { name: 'RemoveRecovery' }
-  /**
-   * Cancel the ability to use `as_recovered` for `account`.
-   *
-   * The dispatch origin for this call must be _Signed_ and registered to
-   * be able to make calls on behalf of the recovered account.
-   *
-   * Parameters:
-   * - `account`: The recovered account you are able to call on-behalf-of.
-   **/
-  | { name: 'CancelRecovered'; params: { account: MultiAddressLike } }
-  /**
-   * Poke deposits for recovery configurations and / or active recoveries.
-   *
-   * This can be used by accounts to possibly lower their locked amount.
-   *
-   * The dispatch origin for this call must be _Signed_.
-   *
-   * Parameters:
-   * - `maybe_account`: Optional recoverable account for which you have an active recovery
-   * and want to adjust the deposit for the active recovery.
-   *
-   * This function checks both recovery configuration deposit and active recovery deposits
-   * of the caller:
-   * - If the caller has created a recovery configuration, checks and adjusts its deposit
-   * - If the caller has initiated any active recoveries, and provides the account in
-   * `maybe_account`, checks and adjusts those deposits
-   *
-   * If any deposit is updated, the difference will be reserved/unreserved from the caller's
-   * account.
-   *
-   * The transaction is made free if any deposit is updated and paid otherwise.
-   *
-   * Emits `DepositPoked` if any deposit is updated.
-   * Multiple events may be emitted in case both types of deposits are updated.
-   **/
-  | { name: 'PokeDeposit'; params: { maybeAccount?: MultiAddressLike | undefined } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11195,6 +10902,8 @@ export type SpMmrPrimitivesAncestryProof = {
 
 export type SpConsensusBeefyFutureBlockVotingProof = { vote: SpConsensusBeefyVoteMessage };
 
+export type FrameSystemExtensionsAuthorizeCall = {};
+
 export type FrameSystemExtensionsCheckNonZeroSender = {};
 
 export type FrameSystemExtensionsCheckSpecVersion = {};
@@ -11260,7 +10969,6 @@ export type StagingKusamaRuntimeRuntimeEvent =
   | { pallet: 'Claims'; palletEvent: PolkadotRuntimeCommonClaimsPalletEvent }
   | { pallet: 'Utility'; palletEvent: PalletUtilityEvent }
   | { pallet: 'Society'; palletEvent: PalletSocietyEvent }
-  | { pallet: 'Recovery'; palletEvent: PalletRecoveryEvent }
   | { pallet: 'Vesting'; palletEvent: PalletVestingEvent }
   | { pallet: 'Scheduler'; palletEvent: PalletSchedulerEvent }
   | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
@@ -11301,9 +11009,9 @@ export type FrameSystemEvent =
    **/
   | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
-   * `:code` was updated.
+   * `:code` was updated to the code with the given hash.
    **/
-  | { name: 'CodeUpdated' }
+  | { name: 'CodeUpdated'; data: { hash: H256 } }
   /**
    * A new account was created.
    **/
@@ -12463,7 +12171,8 @@ export type PalletParametersEvent =
 
 export type StagingKusamaRuntimeRuntimeParametersKey =
   | { type: 'Inflation'; value: StagingKusamaRuntimeDynamicParamsInflationParametersKey }
-  | { type: 'Treasury'; value: StagingKusamaRuntimeDynamicParamsTreasuryParametersKey };
+  | { type: 'Treasury'; value: StagingKusamaRuntimeDynamicParamsTreasuryParametersKey }
+  | { type: 'AhClient'; value: StagingKusamaRuntimeDynamicParamsAhClientParametersKey };
 
 export type StagingKusamaRuntimeDynamicParamsInflationParametersKey =
   | { type: 'MinInflation'; value: StagingKusamaRuntimeDynamicParamsInflationMinInflation }
@@ -12476,9 +12185,15 @@ export type StagingKusamaRuntimeDynamicParamsTreasuryParametersKey =
   | { type: 'BurnPortion'; value: StagingKusamaRuntimeDynamicParamsTreasuryBurnPortion }
   | { type: 'BurnDestination'; value: StagingKusamaRuntimeDynamicParamsTreasuryBurnDestination };
 
+export type StagingKusamaRuntimeDynamicParamsAhClientParametersKey = {
+  type: 'MinimumValidatorSetSize';
+  value: StagingKusamaRuntimeDynamicParamsAhClientMinimumValidatorSetSize;
+};
+
 export type StagingKusamaRuntimeRuntimeParametersValue =
   | { type: 'Inflation'; value: StagingKusamaRuntimeDynamicParamsInflationParametersValue }
-  | { type: 'Treasury'; value: StagingKusamaRuntimeDynamicParamsTreasuryParametersValue };
+  | { type: 'Treasury'; value: StagingKusamaRuntimeDynamicParamsTreasuryParametersValue }
+  | { type: 'AhClient'; value: StagingKusamaRuntimeDynamicParamsAhClientParametersValue };
 
 export type StagingKusamaRuntimeDynamicParamsInflationParametersValue =
   | { type: 'MinInflation'; value: Perquintill }
@@ -12490,6 +12205,11 @@ export type StagingKusamaRuntimeDynamicParamsInflationParametersValue =
 export type StagingKusamaRuntimeDynamicParamsTreasuryParametersValue =
   | { type: 'BurnPortion'; value: Permill }
   | { type: 'BurnDestination'; value: StagingKusamaRuntimeBurnDestinationAccount };
+
+export type StagingKusamaRuntimeDynamicParamsAhClientParametersValue = {
+  type: 'MinimumValidatorSetSize';
+  value: number;
+};
 
 /**
  * The `Event` enum of this pallet
@@ -12628,46 +12348,6 @@ export type PalletSocietyGroupParams = {
   maxStrikes: number;
   candidateDeposit: bigint;
 };
-
-/**
- * Events type.
- **/
-export type PalletRecoveryEvent =
-  /**
-   * A recovery process has been set up for an account.
-   **/
-  | { name: 'RecoveryCreated'; data: { account: AccountId32 } }
-  /**
-   * A recovery process has been initiated for lost account by rescuer account.
-   **/
-  | { name: 'RecoveryInitiated'; data: { lostAccount: AccountId32; rescuerAccount: AccountId32 } }
-  /**
-   * A recovery process for lost account by rescuer account has been vouched for by sender.
-   **/
-  | { name: 'RecoveryVouched'; data: { lostAccount: AccountId32; rescuerAccount: AccountId32; sender: AccountId32 } }
-  /**
-   * A recovery process for lost account by rescuer account has been closed.
-   **/
-  | { name: 'RecoveryClosed'; data: { lostAccount: AccountId32; rescuerAccount: AccountId32 } }
-  /**
-   * Lost account has been successfully recovered by rescuer account.
-   **/
-  | { name: 'AccountRecovered'; data: { lostAccount: AccountId32; rescuerAccount: AccountId32 } }
-  /**
-   * A recovery process has been removed for an account.
-   **/
-  | { name: 'RecoveryRemoved'; data: { lostAccount: AccountId32 } }
-  /**
-   * A deposit has been updated.
-   **/
-  | {
-      name: 'DepositPoked';
-      data: { who: AccountId32; kind: PalletRecoveryDepositKind; oldDeposit: bigint; newDeposit: bigint };
-    };
-
-export type PalletRecoveryDepositKind = { type: 'RecoveryConfig' } | { type: 'ActiveRecoveryFor'; value: AccountId32 };
-
-export type StagingKusamaRuntimeRuntime = {};
 
 /**
  * The `Event` enum of this pallet
@@ -15088,84 +14768,6 @@ export type PalletSocietyError =
    **/
   | 'NoDeposit';
 
-export type PalletRecoveryRecoveryConfig = {
-  delayPeriod: number;
-  deposit: bigint;
-  friends: Array<AccountId32>;
-  threshold: number;
-};
-
-export type PalletRecoveryActiveRecovery = { created: number; deposit: bigint; friends: Array<AccountId32> };
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletRecoveryError =
-  /**
-   * User is not allowed to make a call on behalf of this account
-   **/
-  | 'NotAllowed'
-  /**
-   * Threshold must be greater than zero
-   **/
-  | 'ZeroThreshold'
-  /**
-   * Friends list must be greater than zero and threshold
-   **/
-  | 'NotEnoughFriends'
-  /**
-   * Friends list must be less than max friends
-   **/
-  | 'MaxFriends'
-  /**
-   * Friends list must be sorted and free of duplicates
-   **/
-  | 'NotSorted'
-  /**
-   * This account is not set up for recovery
-   **/
-  | 'NotRecoverable'
-  /**
-   * This account is already set up for recovery
-   **/
-  | 'AlreadyRecoverable'
-  /**
-   * A recovery process has already started for this account
-   **/
-  | 'AlreadyStarted'
-  /**
-   * A recovery process has not started for this rescuer
-   **/
-  | 'NotStarted'
-  /**
-   * This account is not a friend who can vouch
-   **/
-  | 'NotFriend'
-  /**
-   * The friend must wait until the delay period to vouch for this recovery
-   **/
-  | 'DelayPeriod'
-  /**
-   * This user has already vouched for this recovery
-   **/
-  | 'AlreadyVouched'
-  /**
-   * The threshold for recovering this account has not been met
-   **/
-  | 'Threshold'
-  /**
-   * There are still active recovery attempts that need to be closed
-   **/
-  | 'StillActive'
-  /**
-   * This account is already set up for recovery
-   **/
-  | 'AlreadyProxy'
-  /**
-   * Some internal state is broken.
-   **/
-  | 'BadState';
-
 export type PalletVestingReleases = 'V0' | 'V1';
 
 /**
@@ -17422,7 +17024,6 @@ export type StagingKusamaRuntimeRuntimeError =
   | { pallet: 'Claims'; palletError: PolkadotRuntimeCommonClaimsPalletError }
   | { pallet: 'Utility'; palletError: PalletUtilityError }
   | { pallet: 'Society'; palletError: PalletSocietyError }
-  | { pallet: 'Recovery'; palletError: PalletRecoveryError }
   | { pallet: 'Vesting'; palletError: PalletVestingError }
   | { pallet: 'Scheduler'; palletError: PalletSchedulerError }
   | { pallet: 'Proxy'; palletError: PalletProxyError }

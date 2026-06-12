@@ -16,8 +16,8 @@ import type {
   FixedBytes,
   AccountId32Like,
   EthereumAddressLike,
-  FixedU128,
   Perbill,
+  FixedU128,
   Percent,
   H160,
   U256,
@@ -1674,6 +1674,36 @@ export interface ChainTx<
           palletCall: {
             name: 'MoveClaim';
             params: { old: EthereumAddressLike; new: EthereumAddressLike; maybePreclaim: AccountId32Like | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Dap`'s transaction calls
+   **/
+  dap: {
+    /**
+     * Set the budget allocation map.
+     *
+     * Each key must match a registered `BudgetRecipient`. The sum of all percentages
+     * must be exactly 100%. Recipients not included in the map receive nothing.
+     *
+     * @param {Array<[BytesLike, Perbill]>} newAllocations
+     **/
+    setBudgetAllocation: GenericTxCall<
+      (newAllocations: Array<[BytesLike, Perbill]>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Dap';
+          palletCall: {
+            name: 'SetBudgetAllocation';
+            params: { newAllocations: Array<[BytesLike, Perbill]> };
           };
         },
         ChainKnownTypes
@@ -14381,9 +14411,10 @@ export interface ChainTx<
     >;
 
     /**
-     * Force a validator to have at least the minimum commission. This will not affect a
-     * validator who already has a commission greater than or equal to the minimum. Any account
-     * can call this.
+     * Clamps a validator's commission to the `[MinCommission, MaxCommission]` range.
+     *
+     * Named `force_apply_min_commission` for legacy reasons — it also enforces the
+     * maximum. Any account can call this.
      *
      * @param {AccountId32Like} validatorStash
      **/
@@ -14439,6 +14470,10 @@ export interface ChainTx<
      * backing a validator to receive the reward. The nominators are not sorted across pages
      * and so it should not be assumed the highest staker would be on the topmost page and vice
      * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
+     *
+     * The validator's own reward (commission + own-stake share) is prorated across pages
+     * proportional to each page's stake. The full validator reward is the sum across all
+     * pages.
      *
      * @param {AccountId32Like} validatorStash
      * @param {number} era
@@ -14591,7 +14626,8 @@ export interface ChainTx<
      * for eras older than the active era.
      *
      * ## Parameters
-     * - `slash_era`: The staking era in which the slash was originally scheduled.
+     * - `slash_era`: The application era (`offence_era + SlashDeferDuration`), i.e. the key
+     * into [`UnappliedSlashes`].
      * - `slash_key`: A unique identifier for the slash, represented as a tuple:
      * - `stash`: The stash account of the validator being slashed.
      * - `slash_fraction`: The fraction of the stake that was slashed.
@@ -14649,6 +14685,58 @@ export interface ChainTx<
           palletCall: {
             name: 'PruneEraStep';
             params: { era: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Sets the maximum commission that validators can set.
+     *
+     * The dispatch origin must be `T::AdminOrigin`.
+     *
+     * @param {Perbill} new_
+     **/
+    setMaxCommission: GenericTxCall<
+      (new_: Perbill) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetMaxCommission';
+            params: { new: Perbill };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Configure the validator self-stake incentive parameters.
+     *
+     * The dispatch origin must be `T::AdminOrigin`.
+     *
+     * Changes take effect in the next era when rewards are calculated.
+     *
+     * @param {PalletStakingAsyncPalletConfigOp} optimumSelfStake
+     * @param {PalletStakingAsyncPalletConfigOp} hardCapSelfStake
+     * @param {PalletStakingAsyncPalletConfigOpPerbill} selfStakeSlopeFactor
+     **/
+    setValidatorSelfStakeIncentiveConfig: GenericTxCall<
+      (
+        optimumSelfStake: PalletStakingAsyncPalletConfigOp,
+        hardCapSelfStake: PalletStakingAsyncPalletConfigOp,
+        selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'SetValidatorSelfStakeIncentiveConfig';
+            params: {
+              optimumSelfStake: PalletStakingAsyncPalletConfigOp;
+              hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
+              selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
+            };
           };
         },
         ChainKnownTypes
@@ -15091,6 +15179,9 @@ export interface ChainTx<
      * This will error if the origin is already mapped or is a eth native `Address20`. It will
      * take a deposit that can be released by calling [`Self::unmap_account`].
      *
+     * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
+     * on creation via [`AutoMapper`].
+     *
      **/
     mapAccount: GenericTxCall<
       () => ChainSubmittableExtrinsic<
@@ -15105,10 +15196,31 @@ export interface ChainTx<
     >;
 
     /**
+     * Map many accounts and make the TX free if at least 90% were unmapped or held deposits.
+     *
+     * @param {Array<AccountId32Like>} accounts
+     **/
+    batchMapAccounts: GenericTxCall<
+      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Revive';
+          palletCall: {
+            name: 'BatchMapAccounts';
+            params: { accounts: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Unregister the callers account id in order to free the deposit.
      *
      * There is no reason to ever call this function other than freeing up the deposit.
      * This is only useful when the account should no longer be used.
+     *
+     * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
+     * on kill via [`AutoMapper`].
      *
      **/
     unmapAccount: GenericTxCall<

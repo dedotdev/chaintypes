@@ -3,8 +3,8 @@
 import type { GenericChainEvents, GenericPalletEvent } from 'dedot/types';
 import type {
   DispatchError,
-  AccountId32,
   H256,
+  AccountId32,
   Perbill,
   FixedBytes,
   Bytes,
@@ -33,7 +33,6 @@ import type {
   StagingKusamaRuntimeRuntimeParametersKey,
   StagingKusamaRuntimeRuntimeParametersValue,
   PalletSocietyGroupParams,
-  PalletRecoveryDepositKind,
   KusamaRuntimeConstantsProxyProxyType,
   PalletProxyDepositKind,
   PalletMultisigTimepoint,
@@ -89,9 +88,9 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * `:code` was updated.
+     * `:code` was updated to the code with the given hash.
      **/
-    CodeUpdated: GenericPalletEvent<'System', 'CodeUpdated', null>;
+    CodeUpdated: GenericPalletEvent<'System', 'CodeUpdated', { hash: H256 }>;
 
     /**
      * A new account was created.
@@ -1625,70 +1624,6 @@ export interface ChainEvents extends GenericChainEvents {
      * A member was kicked by the founder.
      **/
     MemberKicked: GenericPalletEvent<'Society', 'MemberKicked', { member: AccountId32 }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
-   * Pallet `Recovery`'s events
-   **/
-  recovery: {
-    /**
-     * A recovery process has been set up for an account.
-     **/
-    RecoveryCreated: GenericPalletEvent<'Recovery', 'RecoveryCreated', { account: AccountId32 }>;
-
-    /**
-     * A recovery process has been initiated for lost account by rescuer account.
-     **/
-    RecoveryInitiated: GenericPalletEvent<
-      'Recovery',
-      'RecoveryInitiated',
-      { lostAccount: AccountId32; rescuerAccount: AccountId32 }
-    >;
-
-    /**
-     * A recovery process for lost account by rescuer account has been vouched for by sender.
-     **/
-    RecoveryVouched: GenericPalletEvent<
-      'Recovery',
-      'RecoveryVouched',
-      { lostAccount: AccountId32; rescuerAccount: AccountId32; sender: AccountId32 }
-    >;
-
-    /**
-     * A recovery process for lost account by rescuer account has been closed.
-     **/
-    RecoveryClosed: GenericPalletEvent<
-      'Recovery',
-      'RecoveryClosed',
-      { lostAccount: AccountId32; rescuerAccount: AccountId32 }
-    >;
-
-    /**
-     * Lost account has been successfully recovered by rescuer account.
-     **/
-    AccountRecovered: GenericPalletEvent<
-      'Recovery',
-      'AccountRecovered',
-      { lostAccount: AccountId32; rescuerAccount: AccountId32 }
-    >;
-
-    /**
-     * A recovery process has been removed for an account.
-     **/
-    RecoveryRemoved: GenericPalletEvent<'Recovery', 'RecoveryRemoved', { lostAccount: AccountId32 }>;
-
-    /**
-     * A deposit has been updated.
-     **/
-    DepositPoked: GenericPalletEvent<
-      'Recovery',
-      'DepositPoked',
-      { who: AccountId32; kind: PalletRecoveryDepositKind; oldDeposit: bigint; newDeposit: bigint }
-    >;
 
     /**
      * Generic pallet event

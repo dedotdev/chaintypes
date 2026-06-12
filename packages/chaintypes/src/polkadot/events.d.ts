@@ -3,8 +3,8 @@
 import type { GenericChainEvents, GenericPalletEvent } from 'dedot/types';
 import type {
   DispatchError,
-  AccountId32,
   H256,
+  AccountId32,
   FixedBytes,
   Result,
   Perbill,
@@ -40,6 +40,8 @@ import type {
   PalletNominationPoolsClaimPermission,
   PalletStakingAsyncAhClientUnexpectedKind,
   PalletStakingAsyncAhClientSessionKeysUpdate,
+  PolkadotRuntimeRuntimeParametersKey,
+  PolkadotRuntimeRuntimeParametersValue,
   PolkadotPrimitivesV9CandidateReceiptV2,
   PolkadotParachainPrimitivesPrimitivesHeadData,
   PolkadotPrimitivesV9CoreIndex,
@@ -85,9 +87,9 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * `:code` was updated.
+     * `:code` was updated to the code with the given hash.
      **/
-    CodeUpdated: GenericPalletEvent<'System', 'CodeUpdated', null>;
+    CodeUpdated: GenericPalletEvent<'System', 'CodeUpdated', { hash: H256 }>;
 
     /**
      * A new account was created.
@@ -1950,6 +1952,41 @@ export interface ChainEvents extends GenericChainEvents {
       'StakingAhClient',
       'SessionKeysUpdateFailed',
       { stash: AccountId32; update: PalletStakingAsyncAhClientSessionKeysUpdate; error: DispatchError }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Parameters`'s events
+   **/
+  parameters: {
+    /**
+     * A Parameter was set.
+     *
+     * Is also emitted when the value was not changed.
+     **/
+    Updated: GenericPalletEvent<
+      'Parameters',
+      'Updated',
+      {
+        /**
+         * The key that was updated.
+         **/
+        key: PolkadotRuntimeRuntimeParametersKey;
+
+        /**
+         * The old value before this call.
+         **/
+        oldValue?: PolkadotRuntimeRuntimeParametersValue | undefined;
+
+        /**
+         * The new value after this call.
+         **/
+        newValue?: PolkadotRuntimeRuntimeParametersValue | undefined;
+      }
     >;
 
     /**

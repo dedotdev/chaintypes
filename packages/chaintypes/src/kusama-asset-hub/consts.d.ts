@@ -940,9 +940,9 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   assetConversion: {
     /**
-     * A % the liquidity providers will take of every swap. Represents 10ths of a percent.
+     * The fraction of every swap that the liquidity providers take as a fee.
      **/
-    lpFee: number;
+    lpFee: Permill;
 
     /**
      * A one-time fee to setup the pool.
@@ -984,42 +984,16 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   recovery: {
     /**
-     * The base amount of currency needed to reserve for creating a recovery configuration.
-     *
-     * This is held for an additional storage item whose value size is
-     * `2 + sizeof(BlockNumber, Balance)` bytes.
+     * Security deposit taken for each attempt that the initiator needs to place.
      **/
-    configDepositBase: bigint;
+    securityDeposit: bigint;
 
     /**
-     * The amount of currency needed per additional user when creating a recovery
-     * configuration.
+     * DO NOT REDUCE THIS VALUE. Maximum number of friends per account config.
      *
-     * This is held for adding `sizeof(AccountId)` bytes more into a pre-existing storage
-     * value.
+     * Reducing this value can cause decoding errors in the bounded vectors.
      **/
-    friendDepositFactor: bigint;
-
-    /**
-     * The maximum amount of friends allowed in a recovery configuration.
-     *
-     * NOTE: The threshold programmed in this Pallet uses u16, so it does
-     * not really make sense to have a limit here greater than u16::MAX.
-     * But also, that is a lot more than you should probably set this value
-     * to anyway...
-     **/
-    maxFriends: number;
-
-    /**
-     * The base amount of currency needed to reserve for starting a recovery.
-     *
-     * This is primarily held for deterring malicious recovery attempts, and should
-     * have a value large enough that a bad actor would choose not to place this
-     * deposit. It also acts to fund additional storage item whose value size is
-     * `sizeof(BlockNumber, Balance + T * AccountId)` bytes. Where T is a configurable
-     * threshold.
-     **/
-    recoveryDeposit: bigint;
+    maxFriendsPerConfig: number;
 
     /**
      * Generic pallet constant
@@ -1165,6 +1139,16 @@ export interface ChainConsts extends GenericChainConsts {
     debugEnabled: boolean;
 
     /**
+     * When enabled, accounts are automatically mapped on creation and unmapped on
+     * kill via [`AutoMapper`]. This removes the need for explicit `map_account` calls.
+     *
+     * Requires `frame_system::Config::OnNewAccount` and `OnKilledAccount` to be set
+     * to [`AutoMapper`]. When enabled, the `map_account` and `unmap_account`
+     * dispatchables are disabled.
+     **/
+    autoMap: boolean;
+
+    /**
      * This determines the relative scale of our gas price and gas estimates.
      *
      * By default, the gas price (in wei) is `FeeInfo::next_fee_multiplier()` multiplied by
@@ -1214,6 +1198,15 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `VestingPrecompiles`'s constants
+   **/
+  vestingPrecompiles: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `StateTrieMigration`'s constants
    **/
   stateTrieMigration: {
@@ -1238,7 +1231,7 @@ export interface ChainConsts extends GenericChainConsts {
      * - [`frame_support::storage::StorageDoubleMap`]: 96 byte
      *
      * For more info see
-     * <https://www.shawntabrizi.com/blog/substrate/querying-substrate-storage-via-rpc/>
+     * <https://www.shawntabrizi.com/blog/interacting-with-the-substrate-rpc-endpoint/>
      **/
     maxKeyLen: number;
 
@@ -1547,6 +1540,20 @@ export interface ChainConsts extends GenericChainConsts {
     slashDeferDuration: number;
 
     /**
+     * When `true`, staking does not mint. It expects an external source to fund
+     * the general reward pot. At era boundary, rewards are snapshotted from
+     * the pot. `EraPayout` is not called.
+     *
+     * When `false`, staking uses the legacy path: `EraPayout` computes inflation,
+     * tokens are minted on-the-fly during payout.
+     *
+     * **Irreversible**: once set to `true`, must never be switched back. Eras
+     * created in non-minting mode have funded reward pots — switching to legacy
+     * would orphan those pots and cause double-minting.
+     **/
+    disableMinting: boolean;
+
+    /**
      * The maximum size of each `T::ExposurePage`.
      *
      * An `ExposurePage` is weakly bounded to a maximum of `MaxExposurePageSize`
@@ -1592,6 +1599,8 @@ export interface ChainConsts extends GenericChainConsts {
      *
      * Example: For an ideal era duration of 24 hours (86,400,000 ms),
      * this can be set to 604,800,000 ms (7 days).
+     *
+     * Only used in legacy minting mode (`DisableMinting = false`).
      **/
     maxEraDuration: bigint;
 

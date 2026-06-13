@@ -12,9 +12,9 @@ import type {
   AccountId32Like,
   EthereumAddress,
   EthereumAddressLike,
+  Perbill,
   FixedArray,
   FixedU128,
-  Perbill,
   PerU16,
   Percent,
   H160,
@@ -41,6 +41,7 @@ export type AssetHubPolkadotRuntimeRuntimeCall =
   | { pallet: 'Balances'; palletCall: PalletBalancesCall }
   | { pallet: 'Vesting'; palletCall: PalletVestingCall }
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCall }
+  | { pallet: 'Dap'; palletCall: PalletDapCall }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCall }
   | { pallet: 'Session'; palletCall: PalletSessionCall }
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCall }
@@ -91,6 +92,7 @@ export type AssetHubPolkadotRuntimeRuntimeCallLike =
   | { pallet: 'Balances'; palletCall: PalletBalancesCallLike }
   | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
   | { pallet: 'Claims'; palletCall: PolkadotRuntimeCommonClaimsPalletCallLike }
+  | { pallet: 'Dap'; palletCall: PalletDapCallLike }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCallLike }
   | { pallet: 'Session'; palletCall: PalletSessionCallLike }
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCallLike }
@@ -1513,6 +1515,27 @@ export type PolkadotRuntimeCommonClaimsPalletCallLike =
 export type PolkadotRuntimeCommonClaimsEcdsaSignature = FixedBytes<65>;
 
 export type PolkadotRuntimeCommonClaimsStatementKind = 'Regular' | 'Saft';
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletDapCall =
+  /**
+   * Set the budget allocation map.
+   *
+   * Each key must match a registered `BudgetRecipient`. The sum of all percentages
+   * must be exactly 100%. Recipients not included in the map receive nothing.
+   **/
+  { name: 'SetBudgetAllocation'; params: { newAllocations: Array<[Bytes, Perbill]> } };
+
+export type PalletDapCallLike =
+  /**
+   * Set the budget allocation map.
+   *
+   * Each key must match a registered `BudgetRecipient`. The sum of all percentages
+   * must be exactly 100%. Recipients not included in the map receive nothing.
+   **/
+  { name: 'SetBudgetAllocation'; params: { newAllocations: Array<[BytesLike, Perbill]> } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -14503,9 +14526,10 @@ export type PalletStakingAsyncPalletCall =
    **/
   | { name: 'ChillOther'; params: { stash: AccountId32 } }
   /**
-   * Force a validator to have at least the minimum commission. This will not affect a
-   * validator who already has a commission greater than or equal to the minimum. Any account
-   * can call this.
+   * Clamps a validator's commission to the `[MinCommission, MaxCommission]` range.
+   *
+   * Named `force_apply_min_commission` for legacy reasons — it also enforces the
+   * maximum. Any account can call this.
    **/
   | { name: 'ForceApplyMinCommission'; params: { validatorStash: AccountId32 } }
   /**
@@ -14533,6 +14557,10 @@ export type PalletStakingAsyncPalletCall =
    * backing a validator to receive the reward. The nominators are not sorted across pages
    * and so it should not be assumed the highest staker would be on the topmost page and vice
    * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
+   *
+   * The validator's own reward (commission + own-stake share) is prorated across pages
+   * proportional to each page's stake. The full validator reward is the sum across all
+   * pages.
    **/
   | { name: 'PayoutStakersByPage'; params: { validatorStash: AccountId32; era: number; page: number } }
   /**
@@ -14604,7 +14632,8 @@ export type PalletStakingAsyncPalletCall =
    * for eras older than the active era.
    *
    * ## Parameters
-   * - `slash_era`: The staking era in which the slash was originally scheduled.
+   * - `slash_era`: The application era (`offence_era + SlashDeferDuration`), i.e. the key
+   * into [`UnappliedSlashes`].
    * - `slash_key`: A unique identifier for the slash, represented as a tuple:
    * - `stash`: The stash account of the validator being slashed.
    * - `slash_fraction`: The fraction of the stake that was slashed.
@@ -14635,7 +14664,28 @@ export type PalletStakingAsyncPalletCall =
    * The era must be eligible for pruning (older than HistoryDepth + 1).
    * Check `EraPruningState` storage to see if an era needs pruning before calling.
    **/
-  | { name: 'PruneEraStep'; params: { era: number } };
+  | { name: 'PruneEraStep'; params: { era: number } }
+  /**
+   * Sets the maximum commission that validators can set.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   **/
+  | { name: 'SetMaxCommission'; params: { new: Perbill } }
+  /**
+   * Configure the validator self-stake incentive parameters.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   *
+   * Changes take effect in the next era when rewards are calculated.
+   **/
+  | {
+      name: 'SetValidatorSelfStakeIncentiveConfig';
+      params: {
+        optimumSelfStake: PalletStakingAsyncPalletConfigOp;
+        hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
+        selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
+      };
+    };
 
 export type PalletStakingAsyncPalletCallLike =
   /**
@@ -14959,9 +15009,10 @@ export type PalletStakingAsyncPalletCallLike =
    **/
   | { name: 'ChillOther'; params: { stash: AccountId32Like } }
   /**
-   * Force a validator to have at least the minimum commission. This will not affect a
-   * validator who already has a commission greater than or equal to the minimum. Any account
-   * can call this.
+   * Clamps a validator's commission to the `[MinCommission, MaxCommission]` range.
+   *
+   * Named `force_apply_min_commission` for legacy reasons — it also enforces the
+   * maximum. Any account can call this.
    **/
   | { name: 'ForceApplyMinCommission'; params: { validatorStash: AccountId32Like } }
   /**
@@ -14989,6 +15040,10 @@ export type PalletStakingAsyncPalletCallLike =
    * backing a validator to receive the reward. The nominators are not sorted across pages
    * and so it should not be assumed the highest staker would be on the topmost page and vice
    * versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost.
+   *
+   * The validator's own reward (commission + own-stake share) is prorated across pages
+   * proportional to each page's stake. The full validator reward is the sum across all
+   * pages.
    **/
   | { name: 'PayoutStakersByPage'; params: { validatorStash: AccountId32Like; era: number; page: number } }
   /**
@@ -15060,7 +15115,8 @@ export type PalletStakingAsyncPalletCallLike =
    * for eras older than the active era.
    *
    * ## Parameters
-   * - `slash_era`: The staking era in which the slash was originally scheduled.
+   * - `slash_era`: The application era (`offence_era + SlashDeferDuration`), i.e. the key
+   * into [`UnappliedSlashes`].
    * - `slash_key`: A unique identifier for the slash, represented as a tuple:
    * - `stash`: The stash account of the validator being slashed.
    * - `slash_fraction`: The fraction of the stake that was slashed.
@@ -15091,7 +15147,28 @@ export type PalletStakingAsyncPalletCallLike =
    * The era must be eligible for pruning (older than HistoryDepth + 1).
    * Check `EraPruningState` storage to see if an era needs pruning before calling.
    **/
-  | { name: 'PruneEraStep'; params: { era: number } };
+  | { name: 'PruneEraStep'; params: { era: number } }
+  /**
+   * Sets the maximum commission that validators can set.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   **/
+  | { name: 'SetMaxCommission'; params: { new: Perbill } }
+  /**
+   * Configure the validator self-stake incentive parameters.
+   *
+   * The dispatch origin must be `T::AdminOrigin`.
+   *
+   * Changes take effect in the next era when rewards are calculated.
+   **/
+  | {
+      name: 'SetValidatorSelfStakeIncentiveConfig';
+      params: {
+        optimumSelfStake: PalletStakingAsyncPalletConfigOp;
+        hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
+        selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
+      };
+    };
 
 export type PalletStakingAsyncRewardDestination =
   | { type: 'Staked' }
@@ -15353,13 +15430,23 @@ export type PalletReviveCall =
    *
    * This will error if the origin is already mapped or is a eth native `Address20`. It will
    * take a deposit that can be released by calling [`Self::unmap_account`].
+   *
+   * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
+   * on creation via [`AutoMapper`].
    **/
   | { name: 'MapAccount' }
+  /**
+   * Map many accounts and make the TX free if at least 90% were unmapped or held deposits.
+   **/
+  | { name: 'BatchMapAccounts'; params: { accounts: Array<AccountId32> } }
   /**
    * Unregister the callers account id in order to free the deposit.
    *
    * There is no reason to ever call this function other than freeing up the deposit.
    * This is only useful when the account should no longer be used.
+   *
+   * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
+   * on kill via [`AutoMapper`].
    **/
   | { name: 'UnmapAccount' }
   /**
@@ -15598,13 +15685,23 @@ export type PalletReviveCallLike =
    *
    * This will error if the origin is already mapped or is a eth native `Address20`. It will
    * take a deposit that can be released by calling [`Self::unmap_account`].
+   *
+   * Noop when [`Config::AutoMap`] is enabled, as accounts are automatically mapped
+   * on creation via [`AutoMapper`].
    **/
   | { name: 'MapAccount' }
+  /**
+   * Map many accounts and make the TX free if at least 90% were unmapped or held deposits.
+   **/
+  | { name: 'BatchMapAccounts'; params: { accounts: Array<AccountId32Like> } }
   /**
    * Unregister the callers account id in order to free the deposit.
    *
    * There is no reason to ever call this function other than freeing up the deposit.
    * This is only useful when the account should no longer be used.
+   *
+   * Disabled when [`Config::AutoMap`] is enabled, as accounts are automatically unmapped
+   * on kill via [`AutoMapper`].
    **/
   | { name: 'UnmapAccount' }
   /**
@@ -15791,6 +15888,8 @@ export type PalletAssetConversionTxPaymentChargeAssetTxPayment = {
   assetId?: StagingXcmV5Location | undefined;
 };
 
+export type PolkadotRuntimeCommonClaimsPrevalidateAttests = {};
+
 export type FrameMetadataHashExtensionCheckMetadataHash = { mode: FrameMetadataHashExtensionMode };
 
 export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
@@ -15834,6 +15933,7 @@ export type AssetHubPolkadotRuntimeRuntimeEvent =
   | { pallet: 'AssetTxPayment'; palletEvent: PalletAssetConversionTxPaymentEvent }
   | { pallet: 'Vesting'; palletEvent: PalletVestingEvent }
   | { pallet: 'Claims'; palletEvent: PolkadotRuntimeCommonClaimsPalletEvent }
+  | { pallet: 'Dap'; palletEvent: PalletDapEvent }
   | { pallet: 'CollatorSelection'; palletEvent: PalletCollatorSelectionEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
@@ -15885,9 +15985,9 @@ export type FrameSystemEvent =
    **/
   | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
-   * `:code` was updated.
+   * `:code` was updated to the code with the given hash.
    **/
-  | { name: 'CodeUpdated' }
+  | { name: 'CodeUpdated'; data: { hash: H256 } }
   /**
    * A new account was created.
    **/
@@ -16469,6 +16569,60 @@ export type PolkadotRuntimeCommonClaimsPalletEvent =
    * Someone claimed some DOTs.
    **/
   { name: 'Claimed'; data: { who: AccountId32; ethereumAddress: EthereumAddress; amount: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletDapEvent =
+  /**
+   * Inflation dripped and distributed to budget recipients.
+   **/
+  | {
+      name: 'IssuanceMinted';
+      data: {
+        /**
+         * Total amount minted in this drip.
+         **/
+        totalMinted: bigint;
+
+        /**
+         * Elapsed time (ms) since last drip.
+         **/
+        elapsedMillis: bigint;
+      };
+    }
+  /**
+   * Budget allocation was updated via governance.
+   **/
+  | {
+      name: 'BudgetAllocationUpdated';
+      data: {
+        /**
+         * The new budget allocation map.
+         **/
+        allocations: Array<[Bytes, Perbill]>;
+      };
+    }
+  /**
+   * Funds were drained from the staging account into the DAP buffer.
+   **/
+  | {
+      name: 'StagingDrained';
+      data: {
+        /**
+         * Amount drained.
+         **/
+        amount: bigint;
+      };
+    }
+  /**
+   * An unexpected/defensive event was triggered.
+   **/
+  | { name: 'Unexpected'; data: PalletDapUnexpectedKind };
+
+export type PalletDapUnexpectedKind =
+  | { type: 'MintFailed' }
+  | { type: 'ElapsedClamped'; value: { actualElapsed: bigint; ceiling: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -18971,8 +19125,11 @@ export type PalletElectionProviderMultiBlockSignedPalletEvent =
  **/
 export type PalletStakingAsyncPalletEvent =
   /**
-   * The era payout has been set; the first balance is the validator-payout; the second is
-   * the remainder from the maximum amount of reward.
+   * The era payout has been set.
+   *
+   * In non-minting mode, `validator_payout` is the staker reward budget
+   * snapshotted from the general pot, and `remainder` is always zero.
+   * In legacy minting mode, both fields reflect the `EraPayout` computation.
    **/
   | { name: 'EraPaid'; data: { eraIndex: number; validatorPayout: bigint; remainder: bigint } }
   /**
@@ -19090,7 +19247,21 @@ export type PalletStakingAsyncPalletEvent =
   /**
    * An old era with the given index was pruned.
    **/
-  | { name: 'EraPruned'; data: { index: number } };
+  | { name: 'EraPruned'; data: { index: number } }
+  /**
+   * The validator has been paid their self-stake incentive bonus.
+   **/
+  | {
+      name: 'ValidatorIncentivePaid';
+      data: { era: number; validatorStash: AccountId32; dest: PalletStakingAsyncRewardDestination; amount: bigint };
+    }
+  /**
+   * Validator self-stake incentive configuration has been updated.
+   **/
+  | {
+      name: 'ValidatorIncentiveConfigSet';
+      data: { optimumSelfStake: bigint; hardCapSelfStake: bigint; slopeFactor: Perbill };
+    };
 
 export type PalletStakingAsyncForcing = 'NotForcing' | 'ForceNew' | 'ForceNone' | 'ForceAlways';
 
@@ -19100,7 +19271,10 @@ export type PalletStakingAsyncPalletUnexpectedKind =
   | {
       type: 'PagedElectionOutOfWeight';
       value: { page: number; required: SpWeightsWeightV2Weight; had: SpWeightsWeightV2Weight };
-    };
+    }
+  | { type: 'MissingPayee'; value: { era: number; stash: AccountId32 } }
+  | { type: 'ValidatorIncentiveWeightMismatch'; value: { era: number } }
+  | { type: 'ValidatorIncentiveTransferFailed'; value: { era: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -19292,6 +19466,7 @@ export type CumulusPalletWeightReclaimStorageWeightReclaim = [
   FrameSystemExtensionsCheckNonce,
   FrameSystemExtensionsCheckWeight,
   PalletAssetConversionTxPaymentChargeAssetTxPayment,
+  PolkadotRuntimeCommonClaimsPrevalidateAttests,
   FrameMetadataHashExtensionCheckMetadataHash,
   PalletReviveEvmTxExtensionSetOrigin,
 ];
@@ -19384,6 +19559,7 @@ export type CumulusPalletParachainSystemPoVMessages = {
   bundleIndex: number;
   umpMsgCount: number;
   hrmpOutboundCount: number;
+  hrmpOutboundRecipients: Array<PolkadotParachainPrimitivesPrimitivesId>;
 };
 
 /**
@@ -19545,12 +19721,13 @@ export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
   amount: bigint;
 };
 
-export type AssetHubPolkadotRuntimeRuntimeFreezeReason = {
-  type: 'NominationPools';
-  value: PalletNominationPoolsFreezeReason;
-};
+export type AssetHubPolkadotRuntimeRuntimeFreezeReason =
+  | { type: 'NominationPools'; value: PalletNominationPoolsFreezeReason }
+  | { type: 'Revive'; value: PalletReviveFreezeReason };
 
 export type PalletNominationPoolsFreezeReason = 'PoolMinBalance';
+
+export type PalletReviveFreezeReason = 'PGasMinBalance';
 
 /**
  * The `Error` enum of this pallet.
@@ -19670,6 +19847,19 @@ export type PolkadotRuntimeCommonClaimsPalletError =
   | 'VestedBalanceExists';
 
 export type FrameSupportPalletId = FixedBytes<8>;
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletDapError =
+  /**
+   * A key in the budget allocation does not match any registered recipient.
+   **/
+  | 'UnknownBudgetKey'
+  /**
+   * Budget allocation percentages do not sum to exactly 100%.
+   **/
+  | 'BudgetNotExact';
 
 export type PalletCollatorSelectionCandidateInfo = { who: AccountId32; deposit: bigint };
 
@@ -20895,7 +21085,11 @@ export type PalletAssetConversionError =
   /**
    * The destination account cannot exist with the swapped funds.
    **/
-  | 'BelowMinimum';
+  | 'BelowMinimum'
+  /**
+   * The pool exists but has no liquidity (at least one of the reserves is zero).
+   **/
+  | 'PoolEmpty';
 
 export type PalletTreasuryProposal = { proposer: AccountId32; value: bigint; beneficiary: AccountId32; bond: bigint };
 
@@ -21874,7 +22068,8 @@ export type PalletStakingAsyncPalletPruningStep =
   | 'ErasValidatorReward'
   | 'ErasRewardPoints'
   | 'SingleEntryCleanups'
-  | 'ValidatorSlashInEra';
+  | 'ValidatorSlashInEra'
+  | 'ErasValidatorIncentiveWeight';
 
 /**
  * The `Error` enum of this pallet.
@@ -22029,7 +22224,23 @@ export type PalletStakingAsyncPalletError =
   /**
    * The slash has been cancelled and cannot be applied.
    **/
-  | 'CancelledSlash';
+  | 'CancelledSlash'
+  /**
+   * Commission is higher than the allowed maximum `MaxCommission`.
+   **/
+  | 'CommissionTooHigh'
+  /**
+   * Optimum self-stake cannot be greater than hard cap.
+   **/
+  | 'OptimumGreaterThanCap';
+
+export type PalletStakingAsyncRewardPot =
+  | { type: 'General'; value: PalletStakingAsyncRewardKind }
+  | { type: 'Era'; value: [number, PalletStakingAsyncRewardKind] };
+
+export type PalletStakingAsyncRewardKind = 'StakerRewards' | 'ValidatorSelfStake';
+
+export type PalletStakingAsyncRewardEraRewardAllocation = { stakerRewards: bigint; validatorIncentive: bigint };
 
 export type PalletReviveVmCodeInfo = {
   owner: AccountId32;
@@ -22058,6 +22269,8 @@ export type PalletReviveStorageContractInfo = {
   storageBaseDeposit: bigint;
   immutableDataLen: number;
 };
+
+export type PalletReviveStorageDeletionQueueItem = { trieId: Bytes; accountId: AccountId32 };
 
 export type PalletReviveStorageDeletionQueueManager = { insertCounter: number; deleteCounter: number };
 
@@ -22528,7 +22741,17 @@ export type PalletReviveError =
   /**
    * ECDSA public key recovery failed. Most probably wrong recovery id or signature.
    **/
-  | 'EcdsaRecoveryFailed';
+  | 'EcdsaRecoveryFailed'
+  /**
+   * Manual mapping is disabled when auto-mapping is enabled.
+   **/
+  | 'AutoMappingEnabled'
+  /**
+   * A contract cannot be created at this address: it still has uncleared
+   * [`NativeDepositOf`] entries from a previously terminated contract that the deletion
+   * queue has not yet drained.
+   **/
+  | 'PendingDepositCleanup';
 
 /**
  * Error types for the permit pallet.
@@ -22824,8 +23047,23 @@ export type PalletRevivePrimitivesEthTransactError =
 
 export type PalletReviveEvmApiRpcTypesDryRunConfig = {
   timestampOverride?: bigint | undefined;
-  reserved?: [] | undefined;
+  performBalanceChecks?: boolean | undefined;
+  stateOverrides?: PalletReviveEvmApiRpcTypesGenStateOverrideSet | undefined;
 };
+
+export type PalletReviveEvmApiRpcTypesGenStateOverrideSet = Array<[H160, PalletReviveEvmApiRpcTypesGenStateOverride]>;
+
+export type PalletReviveEvmApiRpcTypesGenStateOverride = {
+  balance?: U256 | undefined;
+  nonce?: U256 | undefined;
+  code?: PalletReviveEvmApiByteBytes | undefined;
+  storage?: PalletReviveEvmApiRpcTypesGenStorageOverride | undefined;
+  movePrecompileToAddress?: H160 | undefined;
+};
+
+export type PalletReviveEvmApiRpcTypesGenStorageOverride =
+  | { type: 'State'; value: Array<[H256, H256]> }
+  | { type: 'StateDiff'; value: Array<[H256, H256]> };
 
 export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
 
@@ -22942,6 +23180,10 @@ export type PalletReviveEvmApiDebugRpcTypesExecutionStepKind =
     }
   | { type: 'PvmSyscall'; value: { op: number; args: Array<bigint>; returned?: bigint | undefined } };
 
+export type PalletReviveEvmApiRpcTypesTracingConfig = {
+  stateOverrides?: PalletReviveEvmApiRpcTypesGenStateOverrideSet | undefined;
+};
+
 export type PalletRevivePrimitivesBalanceConversionError = 'Value' | 'Dust';
 
 export type AssetHubPolkadotRuntimeRuntimeError =
@@ -22953,6 +23195,7 @@ export type AssetHubPolkadotRuntimeRuntimeError =
   | { pallet: 'Balances'; palletError: PalletBalancesError }
   | { pallet: 'Vesting'; palletError: PalletVestingError }
   | { pallet: 'Claims'; palletError: PolkadotRuntimeCommonClaimsPalletError }
+  | { pallet: 'Dap'; palletError: PalletDapError }
   | { pallet: 'CollatorSelection'; palletError: PalletCollatorSelectionError }
   | { pallet: 'Session'; palletError: PalletSessionError }
   | { pallet: 'XcmpQueue'; palletError: CumulusPalletXcmpQueueError }

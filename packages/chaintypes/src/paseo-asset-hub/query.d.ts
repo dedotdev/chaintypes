@@ -146,6 +146,7 @@ import type {
   PalletStakingAsyncPalletPruningStep,
   PalletReviveVmCodeInfo,
   PalletReviveStorageAccountInfo,
+  PalletReviveStorageDeletionQueueItem,
   PalletReviveStorageDeletionQueueManager,
   PalletReviveEvmApiRpcTypesGenBlock,
   PalletReviveEvmBlockHashReceiptGasInfo,
@@ -585,6 +586,13 @@ export interface ChainStorage extends GenericChainStorage {
     pendingUpwardSignals: GenericStorageQuery<() => Array<Bytes>>;
 
     /**
+     * The approved peer id to be sent as a UMP signal on the last block of the PoV.
+     *
+     * @param {Callback<Bytes | undefined> =} callback
+     **/
+    pendingApprovedPeer: GenericStorageQuery<() => Bytes | undefined>;
+
+    /**
      * The factor to multiply the base delivery fee by for UMP.
      *
      * @param {Callback<FixedU128> =} callback
@@ -1001,6 +1009,35 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<EthereumAddress | undefined> =} callback
      **/
     preclaims: GenericStorageQuery<(arg: AccountId32Like) => EthereumAddress | undefined, AccountId32>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Dap`'s storage queries
+   **/
+  dap: {
+    /**
+     * Budget allocation map: `BudgetKey -> Perbill`.
+     *
+     * Keys must correspond to registered `BudgetRecipients`. Sum of values must be
+     * exactly `Perbill::one()` (100%). Recipients not included receive nothing.
+     *
+     * @param {Callback<Array<[Bytes, Perbill]>> =} callback
+     **/
+    budgetAllocation: GenericStorageQuery<() => Array<[Bytes, Perbill]>>;
+
+    /**
+     * Timestamp (ms) of the last issuance drip.
+     *
+     * On existing chains, this must be seeded via
+     * [`migrations::MigrateV1ToV2`] to prevent incorrect minting on the first drip.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    lastIssuanceTimestamp: GenericStorageQuery<() => bigint>;
 
     /**
      * Generic pallet storage query
@@ -3168,6 +3205,88 @@ export interface ChainStorage extends GenericChainStorage {
     minCommission: GenericStorageQuery<() => Perbill>;
 
     /**
+     * The maximum commission that validators can set.
+     *
+     * If not set, defaults to `Perbill::one()` (100%), i.e. no upper limit.
+     *
+     * @param {Callback<Perbill> =} callback
+     **/
+    maxCommission: GenericStorageQuery<() => Perbill>;
+
+    /**
+     * Safety guard: the era from which legacy minting is permanently disabled on the
+     * payout side. **Irreversible** — once set, should never be cleared.
+     *
+     * Separate from [`Config::DisableMinting`] which controls the `end_era` path.
+     * This storage guards against minting during payout for eras that were created
+     * in DAP mode. Set automatically by `end_era_dap` on first successful pot snapshot.
+     * In legacy mode (Kusama), this is never set and the guard is inactive.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    disableMintingGuard: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * Optimum self-stake threshold for validators.
+     *
+     * Below this threshold, the incentive weight grows as `sqrt(self_stake)`.
+     * Above it, growth is dampened by [`SelfStakeSlopeFactor`].
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    optimumSelfStake: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Hard cap on effective validator self-stake.
+     *
+     * Self-stake above this value receives no additional reward benefit (plateau).
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    hardCapSelfStake: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Slope factor controlling the discouragement rate for self-stake between optimum and cap.
+     *
+     * Value between 0 and 1: k=1 means no discouragement, k=0 means immediate plateau.
+     *
+     * @param {Callback<Perbill> =} callback
+     **/
+    selfStakeSlopeFactor: GenericStorageQuery<() => Perbill>;
+
+    /**
+     * The total validator incentive budget for the given era, snapshotted at era end.
+     *
+     * This is the similar to [`ErasValidatorReward`] but for the self-stake incentive pot.
+     *
+     * @param {number} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    erasValidatorIncentiveBudget: GenericStorageQuery<(arg: number) => bigint, number>;
+
+    /**
+     * Sum of all validators' incentive weights for the era.
+     *
+     * Directly linked to [`ErasValidatorIncentiveWeight`].
+     *
+     * @param {number} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    erasSumValidatorIncentiveWeight: GenericStorageQuery<(arg: number) => bigint, number>;
+
+    /**
+     * Individual validator incentive weight per era.
+     * Each validator's share of the incentive pot = `their_weight / sum_weight`.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    erasValidatorIncentiveWeight: GenericStorageQuery<
+      (arg: [number, AccountId32Like]) => bigint | undefined,
+      [number, AccountId32]
+    >;
+
+    /**
      * Whether nominators are slashable or not.
      *
      * - When set to `true` (default), nominators are slashed along with validators and must wait
@@ -3422,9 +3541,11 @@ export interface ChainStorage extends GenericChainStorage {
     >;
 
     /**
-     * The total validator era payout for the last [`Config::HistoryDepth`] eras.
+     * The total staker reward budget for each era within [`Config::HistoryDepth`].
      *
-     * Eras that haven't finished yet or has been removed doesn't have reward.
+     * Set at era finalization:
+     * - in non-minting mode this is the snapshot of the era pot balance before any payouts.
+     * - in legacy mode it comes from `EraPayout`, with rewards minted on the fly.
      *
      * @param {number} arg
      * @param {Callback<bigint | undefined> =} callback
@@ -3459,7 +3580,8 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * Maximum staked rewards, i.e. the percentage of the era inflation that
      * is used for stake rewards.
-     * See [Era payout](./index.html#era-payout).
+     *
+     * Only used in legacy minting mode (`DisableMinting = false`).
      *
      * @param {Callback<Percent | undefined> =} callback
      **/
@@ -3510,7 +3632,8 @@ export interface ChainStorage extends GenericChainStorage {
      * - When a new offence is added to `OffenceQueue`, its era is **inserted in sorted order**
      * if not already present.
      * - When all offences for an era are processed, it is **removed** from this list.
-     * - The maximum length of this vector is bounded by `BondingDuration`.
+     * - The maximum length of this vector is bounded by `BondingDuration +
+     * OFFENCE_QUEUE_ERAS_BOUND`.
      *
      * This eliminates the need for expensive iteration and sorting when fetching the next offence
      * to process.
@@ -3656,6 +3779,26 @@ export interface ChainStorage extends GenericChainStorage {
     accountInfoOf: GenericStorageQuery<(arg: H160) => PalletReviveStorageAccountInfo | undefined, H160>;
 
     /**
+     * Native currency storage deposit contributed by a user into a contract.
+     *
+     * Bounds how much native value the user can receive back from that contract's
+     * storage deposit.
+     *
+     * Keys: `(holder, contributor) -> amount`
+     * - `holder`: account on which the deposit is held (a contract, or the pallet's own account
+     * for code-upload deposits).
+     * - `contributor`: user that funded the deposit. Receives the native portion on refund, capped
+     * at this entry's `amount`.
+     *
+     * @param {[AccountId32Like, AccountId32Like]} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    nativeDepositOf: GenericStorageQuery<
+      (arg: [AccountId32Like, AccountId32Like]) => bigint,
+      [AccountId32, AccountId32]
+    >;
+
+    /**
      * The immutable data associated with a given account.
      *
      * @param {H160} arg
@@ -3664,15 +3807,16 @@ export interface ChainStorage extends GenericChainStorage {
     immutableDataOf: GenericStorageQuery<(arg: H160) => Bytes | undefined, H160>;
 
     /**
-     * Evicted contracts that await child trie deletion.
+     * Terminated contracts that await lazy cleanup.
      *
-     * Child trie deletion is a heavy operation depending on the amount of storage items
-     * stored in said trie. Therefore this operation is performed lazily in `on_idle`.
+     * Each entry pairs a child trie ID with the contract account so that `on_idle` can
+     * drain both the child trie and any [`NativeDepositOf`] entries that named the contract
+     * as `holder`. Both can be arbitrarily large, so cleanup runs lazily in `on_idle`.
      *
      * @param {number} arg
-     * @param {Callback<Bytes | undefined> =} callback
+     * @param {Callback<PalletReviveStorageDeletionQueueItem | undefined> =} callback
      **/
-    deletionQueue: GenericStorageQuery<(arg: number) => Bytes | undefined, number>;
+    deletionQueue: GenericStorageQuery<(arg: number) => PalletReviveStorageDeletionQueueItem | undefined, number>;
 
     /**
      * A pair of monotonic counters used to track the latest contract marked for deletion

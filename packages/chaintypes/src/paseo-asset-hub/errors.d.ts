@@ -353,6 +353,25 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `Dap`'s errors
+   **/
+  dap: {
+    /**
+     * A key in the budget allocation does not match any registered recipient.
+     **/
+    UnknownBudgetKey: GenericPalletError;
+
+    /**
+     * Budget allocation percentages do not sum to exactly 100%.
+     **/
+    BudgetNotExact: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `CollatorSelection`'s errors
    **/
   collatorSelection: {
@@ -1853,6 +1872,11 @@ export interface ChainErrors extends GenericChainErrors {
     BelowMinimum: GenericPalletError;
 
     /**
+     * The pool exists but has no liquidity (at least one of the reserves is zero).
+     **/
+    PoolEmpty: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -2973,6 +2997,16 @@ export interface ChainErrors extends GenericChainErrors {
     CancelledSlash: GenericPalletError;
 
     /**
+     * Commission is higher than the allowed maximum `MaxCommission`.
+     **/
+    CommissionTooHigh: GenericPalletError;
+
+    /**
+     * Optimum self-stake cannot be greater than hard cap.
+     **/
+    OptimumGreaterThanCap: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -3289,6 +3323,18 @@ export interface ChainErrors extends GenericChainErrors {
      * ECDSA public key recovery failed. Most probably wrong recovery id or signature.
      **/
     EcdsaRecoveryFailed: GenericPalletError;
+
+    /**
+     * Manual mapping is disabled when auto-mapping is enabled.
+     **/
+    AutoMappingEnabled: GenericPalletError;
+
+    /**
+     * A contract cannot be created at this address: it still has uncleared
+     * [`NativeDepositOf`] entries from a previously terminated contract that the deletion
+     * queue has not yet drained.
+     **/
+    PendingDepositCleanup: GenericPalletError;
 
     /**
      * Generic pallet error

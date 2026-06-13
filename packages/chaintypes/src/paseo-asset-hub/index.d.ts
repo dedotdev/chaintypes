@@ -15,6 +15,7 @@ import type {
   FrameSystemExtensionsCheckNonce,
   FrameSystemExtensionsCheckWeight,
   PalletAssetConversionTxPaymentChargeAssetTxPayment,
+  PolkadotRuntimeCommonClaimsPrevalidateAttests,
   FrameMetadataHashExtensionCheckMetadataHash,
   PalletReviveEvmTxExtensionSetOrigin,
   StagingXcmV5Location,
@@ -44,6 +45,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     FrameSystemExtensionsCheckNonce,
     FrameSystemExtensionsCheckWeight,
     PalletAssetConversionTxPaymentChargeAssetTxPayment,
+    PolkadotRuntimeCommonClaimsPrevalidateAttests,
     FrameMetadataHashExtensionCheckMetadataHash,
     PalletReviveEvmTxExtensionSetOrigin,
     [],
@@ -54,7 +56,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PaseoAssetHubApi
- * @specVersion: 2002001
+ * @specVersion: 2003000
  **/
 export interface PaseoAssetHubApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

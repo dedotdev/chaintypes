@@ -56,7 +56,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PolkadotAssetHubApi
- * @specVersion: 2003000
+ * @specVersion: 2003001
  **/
 export interface PolkadotAssetHubApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

@@ -93,6 +93,8 @@ import type {
   PalletStakingAsyncAhClientOperatingMode,
   PalletStakingAsyncRcClientSessionReport,
   PalletStakingAsyncRcClientOffence,
+  PaseoRuntimeRuntimeParametersValue,
+  PaseoRuntimeRuntimeParametersKey,
   PolkadotRuntimeParachainsConfigurationHostConfiguration,
   PolkadotPrimitivesV9ValidatorIndex,
   PolkadotPrimitivesV9ValidatorAppPublic,
@@ -2426,6 +2428,26 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<number> =} callback
      **/
     offenceSendQueueCursor: GenericStorageQuery<() => number>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Parameters`'s storage queries
+   **/
+  parameters: {
+    /**
+     * Stored parameters.
+     *
+     * @param {PaseoRuntimeRuntimeParametersKey} arg
+     * @param {Callback<PaseoRuntimeRuntimeParametersValue | undefined> =} callback
+     **/
+    parameters: GenericStorageQuery<
+      (arg: PaseoRuntimeRuntimeParametersKey) => PaseoRuntimeRuntimeParametersValue | undefined,
+      PaseoRuntimeRuntimeParametersKey
+    >;
 
     /**
      * Generic pallet storage query

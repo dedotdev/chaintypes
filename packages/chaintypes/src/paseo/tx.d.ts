@@ -65,6 +65,7 @@ import type {
   PalletNominationPoolsCommissionClaimPermission,
   PalletStakingAsyncRcClientValidatorSetReport,
   PalletStakingAsyncAhClientOperatingMode,
+  PaseoRuntimeRuntimeParameters,
   PolkadotPrimitivesV9AsyncBackingAsyncBackingParams,
   PolkadotPrimitivesV9ExecutorParams,
   PolkadotPrimitivesV9ApprovalVotingParams,
@@ -6496,6 +6497,36 @@ export interface ChainTx<
           palletCall: {
             name: 'PurgeKeysFromAh';
             params: { stash: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Parameters`'s transaction calls
+   **/
+  parameters: {
+    /**
+     * Set the value of a parameter.
+     *
+     * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+     * deleted by setting them to `None`.
+     *
+     * @param {PaseoRuntimeRuntimeParameters} keyValue
+     **/
+    setParameter: GenericTxCall<
+      (keyValue: PaseoRuntimeRuntimeParameters) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'SetParameter';
+            params: { keyValue: PaseoRuntimeRuntimeParameters };
           };
         },
         ChainKnownTypes

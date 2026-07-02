@@ -53,6 +53,7 @@ export type PaseoRuntimeRuntimeCall =
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
   | { pallet: 'FastUnstake'; palletCall: PalletFastUnstakeCall }
   | { pallet: 'StakingAhClient'; palletCall: PalletStakingAsyncAhClientCall }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCall }
   | { pallet: 'Configuration'; palletCall: PolkadotRuntimeParachainsConfigurationPalletCall }
   | { pallet: 'ParasShared'; palletCall: PolkadotRuntimeParachainsSharedPalletCall }
   | { pallet: 'ParaInclusion'; palletCall: PolkadotRuntimeParachainsInclusionPalletCall }
@@ -103,6 +104,7 @@ export type PaseoRuntimeRuntimeCallLike =
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
   | { pallet: 'FastUnstake'; palletCall: PalletFastUnstakeCallLike }
   | { pallet: 'StakingAhClient'; palletCall: PalletStakingAsyncAhClientCallLike }
+  | { pallet: 'Parameters'; palletCall: PalletParametersCallLike }
   | { pallet: 'Configuration'; palletCall: PolkadotRuntimeParachainsConfigurationPalletCallLike }
   | { pallet: 'ParasShared'; palletCall: PolkadotRuntimeParachainsSharedPalletCallLike }
   | { pallet: 'ParaInclusion'; palletCall: PolkadotRuntimeParachainsInclusionPalletCallLike }
@@ -4311,7 +4313,8 @@ export type PaseoRuntimeConstantsProxyProxyType =
   | 'Auction'
   | 'NominationPools'
   | 'ParaRegistration'
-  | 'StakingOperator';
+  | 'StakingOperator'
+  | 'SafeSudo';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -6519,6 +6522,36 @@ export type PalletStakingAsyncRcClientValidatorSetReport = {
 };
 
 export type PalletStakingAsyncAhClientOperatingMode = 'Passive' | 'Buffered' | 'Active';
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletParametersCall =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: PaseoRuntimeRuntimeParameters } };
+
+export type PalletParametersCallLike =
+  /**
+   * Set the value of a parameter.
+   *
+   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+   * deleted by setting them to `None`.
+   **/
+  { name: 'SetParameter'; params: { keyValue: PaseoRuntimeRuntimeParameters } };
+
+export type PaseoRuntimeRuntimeParameters = { type: 'AhClient'; value: PaseoRuntimeDynamicParamsAhClientParameters };
+
+export type PaseoRuntimeDynamicParamsAhClientParameters = {
+  type: 'MinimumValidatorSetSize';
+  value: [PaseoRuntimeDynamicParamsAhClientMinimumValidatorSetSize, number | undefined];
+};
+
+export type PaseoRuntimeDynamicParamsAhClientMinimumValidatorSetSize = {};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10574,6 +10607,7 @@ export type PaseoRuntimeRuntimeEvent =
   | { pallet: 'FastUnstake'; palletEvent: PalletFastUnstakeEvent }
   | { pallet: 'DelegatedStaking'; palletEvent: PalletDelegatedStakingEvent }
   | { pallet: 'StakingAhClient'; palletEvent: PalletStakingAsyncAhClientEvent }
+  | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
   | { pallet: 'ParaInclusion'; palletEvent: PolkadotRuntimeParachainsInclusionPalletEvent }
   | { pallet: 'Paras'; palletEvent: PolkadotRuntimeParachainsParasPalletEvent }
   | { pallet: 'Hrmp'; palletEvent: PolkadotRuntimeParachainsHrmpPalletEvent }
@@ -10603,9 +10637,9 @@ export type FrameSystemEvent =
    **/
   | { name: 'ExtrinsicFailed'; data: { dispatchError: DispatchError; dispatchInfo: FrameSystemDispatchEventInfo } }
   /**
-   * `:code` was updated.
+   * `:code` was updated to the code with the given hash.
    **/
-  | { name: 'CodeUpdated' }
+  | { name: 'CodeUpdated'; data: { hash: H256 } }
   /**
    * A new account was created.
    **/
@@ -12058,6 +12092,52 @@ export type PalletStakingAsyncAhClientUnexpectedKind =
   | 'InvalidKeysFromAssetHub';
 
 export type PalletStakingAsyncAhClientSessionKeysUpdate = 'Set' | 'Purged';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletParametersEvent =
+  /**
+   * A Parameter was set.
+   *
+   * Is also emitted when the value was not changed.
+   **/
+  {
+    name: 'Updated';
+    data: {
+      /**
+       * The key that was updated.
+       **/
+      key: PaseoRuntimeRuntimeParametersKey;
+
+      /**
+       * The old value before this call.
+       **/
+      oldValue?: PaseoRuntimeRuntimeParametersValue | undefined;
+
+      /**
+       * The new value after this call.
+       **/
+      newValue?: PaseoRuntimeRuntimeParametersValue | undefined;
+    };
+  };
+
+export type PaseoRuntimeRuntimeParametersKey = {
+  type: 'AhClient';
+  value: PaseoRuntimeDynamicParamsAhClientParametersKey;
+};
+
+export type PaseoRuntimeDynamicParamsAhClientParametersKey = {
+  type: 'MinimumValidatorSetSize';
+  value: PaseoRuntimeDynamicParamsAhClientMinimumValidatorSetSize;
+};
+
+export type PaseoRuntimeRuntimeParametersValue = {
+  type: 'AhClient';
+  value: PaseoRuntimeDynamicParamsAhClientParametersValue;
+};
+
+export type PaseoRuntimeDynamicParamsAhClientParametersValue = { type: 'MinimumValidatorSetSize'; value: number };
 
 /**
  * The `Event` enum of this pallet

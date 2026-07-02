@@ -956,6 +956,15 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `Parameters`'s constants
+   **/
+  parameters: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `ParachainsOrigin`'s constants
    **/
   parachainsOrigin: {
@@ -1231,7 +1240,7 @@ export interface ChainConsts extends GenericChainConsts {
      * - [`frame_support::storage::StorageDoubleMap`]: 96 byte
      *
      * For more info see
-     * <https://www.shawntabrizi.com/blog/substrate/querying-substrate-storage-via-rpc/>
+     * <https://www.shawntabrizi.com/blog/interacting-with-the-substrate-rpc-endpoint/>
      **/
     maxKeyLen: number;
 

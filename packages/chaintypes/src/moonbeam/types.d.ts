@@ -2709,12 +2709,19 @@ export type MoonbeamRuntimeRuntimeParamsRuntimeParameters =
   | { type: 'PalletRandomness'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParameters }
   | { type: 'XcmConfig'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsXcmConfigParameters };
 
-export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParameters = {
-  type: 'FeesTreasuryProportion';
-  value: [MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigFeesTreasuryProportion, Perbill | undefined];
-};
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParameters =
+  | {
+      type: 'FeesTreasuryProportion';
+      value: [MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigFeesTreasuryProportion, Perbill | undefined];
+    }
+  | {
+      type: 'MaxTransactionsPerBlock';
+      value: [MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigMaxTransactionsPerBlock, number | undefined];
+    };
 
 export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigFeesTreasuryProportion = {};
+
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigMaxTransactionsPerBlock = {};
 
 export type MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParameters = {
   type: 'Deposit';
@@ -4336,7 +4343,15 @@ export type PalletCrowdloanRewardsCall =
   /**
    * Update reward address, proving that the caller owns the current native key
    **/
-  | { name: 'UpdateRewardAddress'; params: { newRewardAccount: AccountId20 } };
+  | { name: 'UpdateRewardAddress'; params: { newRewardAccount: AccountId20 } }
+  /**
+   * Permissionless settle-and-drain of any remaining unclaimed reward for `target`.
+   *
+   * Pays the full outstanding `total_reward - claimed_reward` regardless of the vesting
+   * schedule, transfers it to `target`, and removes the entry from `AccountsPayable`.
+   * Intended as a one-shot migration step before the pallet is removed.
+   **/
+  | { name: 'CompleteUnclaimedRewards'; params: { target: AccountId20 } };
 
 export type PalletCrowdloanRewardsCallLike =
   /**
@@ -4372,7 +4387,15 @@ export type PalletCrowdloanRewardsCallLike =
   /**
    * Update reward address, proving that the caller owns the current native key
    **/
-  | { name: 'UpdateRewardAddress'; params: { newRewardAccount: AccountId20Like } };
+  | { name: 'UpdateRewardAddress'; params: { newRewardAccount: AccountId20Like } }
+  /**
+   * Permissionless settle-and-drain of any remaining unclaimed reward for `target`.
+   *
+   * Pays the full outstanding `total_reward - claimed_reward` regardless of the vesting
+   * schedule, transfers it to `target`, and removes the entry from `AccountsPayable`.
+   * Intended as a one-shot migration step before the pallet is removed.
+   **/
+  | { name: 'CompleteUnclaimedRewards'; params: { target: AccountId20Like } };
 
 export type SpRuntimeMultiSignature =
   | { type: 'Ed25519'; value: FixedBytes<64> }
@@ -7931,10 +7954,15 @@ export type MoonbeamRuntimeRuntimeParamsRuntimeParametersKey =
   | { type: 'PalletRandomness'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParametersKey }
   | { type: 'XcmConfig'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsXcmConfigParametersKey };
 
-export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParametersKey = {
-  type: 'FeesTreasuryProportion';
-  value: MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigFeesTreasuryProportion;
-};
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParametersKey =
+  | {
+      type: 'FeesTreasuryProportion';
+      value: MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigFeesTreasuryProportion;
+    }
+  | {
+      type: 'MaxTransactionsPerBlock';
+      value: MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigMaxTransactionsPerBlock;
+    };
 
 export type MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParametersKey = {
   type: 'Deposit';
@@ -7951,10 +7979,9 @@ export type MoonbeamRuntimeRuntimeParamsRuntimeParametersValue =
   | { type: 'PalletRandomness'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParametersValue }
   | { type: 'XcmConfig'; value: MoonbeamRuntimeRuntimeParamsDynamicParamsXcmConfigParametersValue };
 
-export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParametersValue = {
-  type: 'FeesTreasuryProportion';
-  value: Perbill;
-};
+export type MoonbeamRuntimeRuntimeParamsDynamicParamsRuntimeConfigParametersValue =
+  | { type: 'FeesTreasuryProportion'; value: Perbill }
+  | { type: 'MaxTransactionsPerBlock'; value: number };
 
 export type MoonbeamRuntimeRuntimeParamsDynamicParamsPalletRandomnessParametersValue = {
   type: 'Deposit';

@@ -5303,6 +5303,28 @@ export interface ChainTx<
     >;
 
     /**
+     * Permissionless settle-and-drain of any remaining unclaimed reward for `target`.
+     *
+     * Pays the full outstanding `total_reward - claimed_reward` regardless of the vesting
+     * schedule, transfers it to `target`, and removes the entry from `AccountsPayable`.
+     * Intended as a one-shot migration step before the pallet is removed.
+     *
+     * @param {AccountId20Like} target
+     **/
+    completeUnclaimedRewards: GenericTxCall<
+      (target: AccountId20Like) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'CrowdloanRewards';
+          palletCall: {
+            name: 'CompleteUnclaimedRewards';
+            params: { target: AccountId20Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;

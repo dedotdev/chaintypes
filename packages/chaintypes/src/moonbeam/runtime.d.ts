@@ -386,6 +386,21 @@ export interface RuntimeApis extends GenericRuntimeApis {
     [method: string]: GenericRuntimeApiMethod;
   };
   /**
+   * @runtimeapi: AuthoringRuntimeApi - 0xeeaddf97adb21714
+   **/
+  authoringRuntimeApi: {
+    /**
+     *
+     * @callname: AuthoringRuntimeApi_max_transactions_per_block
+     **/
+    maxTransactionsPerBlock: GenericRuntimeApiMethod<() => Promise<number>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
    * @runtimeapi: SessionKeys - 0xab3c0572291feb8b
    **/
   sessionKeys: {

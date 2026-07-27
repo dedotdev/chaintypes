@@ -16308,7 +16308,40 @@ export type PalletMultiAssetBountiesCall =
    *
    * Emits [`Event::Paid`] if the funding, refund or payout payment has initiated.
    **/
-  | { name: 'RetryPayment'; params: { parentBountyId: number; childBountyId?: number | undefined } };
+  | { name: 'RetryPayment'; params: { parentBountyId: number; childBountyId?: number | undefined } }
+  /**
+   * Increase the value of an active bounty by `amount`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed by the bounty curator.
+   *
+   * ## Details
+   *
+   * - The bounty must be in the `Active` state.
+   * - Raises the recorded `value` by `amount`. This is used to register funds that were
+   * transferred into the bounty account out-of-band (e.g. recurring external top-ups), so
+   * they become available to award or to allocate to child bounties. It must be greater
+   * than 0.
+   * - The curator deposit is re-evaluated for the new value and any additional deposit is
+   * collected from the curator.
+   * - The value can only be increased, never decreased, so the invariant that the sum of
+   * child-bounty values never exceeds the parent value is preserved.
+   * - This call does **not** check that the bounty account holds `new_value`; it only
+   * updates the recorded value. Payouts stay bounded by the account's real balance at
+   * settlement, so increasing the value beyond the available funds simply makes a later
+   * payout fail — no funds are moved by this call.
+   * - Only a parent bounty's value can be increased via this call.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of the bounty whose value is increased.
+   * - `amount`: The amount to add to the bounty value.
+   *
+   * ## Events
+   *
+   * Emits [`Event::BountyValueIncreased`] if successful.
+   **/
+  | { name: 'IncreaseValue'; params: { parentBountyId: number; amount: bigint } };
 
 export type PalletMultiAssetBountiesCallLike =
   /**
@@ -16567,7 +16600,40 @@ export type PalletMultiAssetBountiesCallLike =
    *
    * Emits [`Event::Paid`] if the funding, refund or payout payment has initiated.
    **/
-  | { name: 'RetryPayment'; params: { parentBountyId: number; childBountyId?: number | undefined } };
+  | { name: 'RetryPayment'; params: { parentBountyId: number; childBountyId?: number | undefined } }
+  /**
+   * Increase the value of an active bounty by `amount`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed by the bounty curator.
+   *
+   * ## Details
+   *
+   * - The bounty must be in the `Active` state.
+   * - Raises the recorded `value` by `amount`. This is used to register funds that were
+   * transferred into the bounty account out-of-band (e.g. recurring external top-ups), so
+   * they become available to award or to allocate to child bounties. It must be greater
+   * than 0.
+   * - The curator deposit is re-evaluated for the new value and any additional deposit is
+   * collected from the curator.
+   * - The value can only be increased, never decreased, so the invariant that the sum of
+   * child-bounty values never exceeds the parent value is preserved.
+   * - This call does **not** check that the bounty account holds `new_value`; it only
+   * updates the recorded value. Payouts stay bounded by the account's real balance at
+   * settlement, so increasing the value beyond the available funds simply makes a later
+   * payout fail — no funds are moved by this call.
+   * - Only a parent bounty's value can be increased via this call.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of the bounty whose value is increased.
+   * - `amount`: The amount to add to the bounty value.
+   *
+   * ## Events
+   *
+   * Emits [`Event::BountyValueIncreased`] if successful.
+   **/
+  | { name: 'IncreaseValue'; params: { parentBountyId: number; amount: bigint } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -20294,7 +20360,11 @@ export type PalletMultiAssetBountiesEvent =
   /**
    * A payment happened and can be checked.
    **/
-  | { name: 'Paid'; data: { index: number; childIndex?: number | undefined; paymentId: bigint } };
+  | { name: 'Paid'; data: { index: number; childIndex?: number | undefined; paymentId: bigint } }
+  /**
+   * A bounty's value was increased by its curator.
+   **/
+  | { name: 'BountyValueIncreased'; data: { index: number; oldValue: bigint; newValue: bigint } };
 
 /**
  * The `Event` enum of this pallet

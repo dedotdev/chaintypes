@@ -3791,6 +3791,15 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * A bounty's value was increased by its curator.
+     **/
+    BountyValueIncreased: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyValueIncreased',
+      { index: number; oldValue: bigint; newValue: bigint }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;

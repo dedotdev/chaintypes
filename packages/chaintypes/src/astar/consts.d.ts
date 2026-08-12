@@ -524,6 +524,11 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   session: {
     /**
+     * The amount to be held when setting keys.
+     **/
+    keyDeposit: bigint;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;

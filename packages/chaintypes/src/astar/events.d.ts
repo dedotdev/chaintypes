@@ -9,6 +9,8 @@ import type {
   PalletProxyDepositKind,
   SpWeightsWeightV2Weight,
   FrameSupportTokensMiscBalanceStatus,
+  AstarRuntimeRuntimeHoldReason,
+  PalletBalancesUnexpectedKind,
   PalletInflationInflationConfiguration,
   PalletDappStakingSubperiod,
   AstarPrimitivesDappStakingSmartContract,
@@ -372,7 +374,14 @@ export interface ChainEvents extends GenericChainEvents {
     PureCreated: GenericPalletEvent<
       'Proxy',
       'PureCreated',
-      { pure: AccountId32; who: AccountId32; proxyType: AstarRuntimeProxyType; disambiguationIndex: number }
+      {
+        pure: AccountId32;
+        who: AccountId32;
+        proxyType: AstarRuntimeProxyType;
+        disambiguationIndex: number;
+        at: number;
+        extrinsicIndex: number;
+      }
     >;
 
     /**
@@ -645,9 +654,19 @@ export interface ChainEvents extends GenericChainEvents {
     Minted: GenericPalletEvent<'Balances', 'Minted', { who: AccountId32; amount: bigint }>;
 
     /**
+     * Some credit was balanced and added to the TotalIssuance.
+     **/
+    MintedCredit: GenericPalletEvent<'Balances', 'MintedCredit', { amount: bigint }>;
+
+    /**
      * Some amount was burned from an account.
      **/
     Burned: GenericPalletEvent<'Balances', 'Burned', { who: AccountId32; amount: bigint }>;
+
+    /**
+     * Some debt has been dropped from the Total Issuance.
+     **/
+    BurnedDebt: GenericPalletEvent<'Balances', 'BurnedDebt', { amount: bigint }>;
 
     /**
      * Some amount was suspended from an account (it can be restored later).
@@ -698,6 +717,56 @@ export interface ChainEvents extends GenericChainEvents {
      * The `TotalIssuance` was forcefully changed.
      **/
     TotalIssuanceForced: GenericPalletEvent<'Balances', 'TotalIssuanceForced', { old: bigint; new: bigint }>;
+
+    /**
+     * Some balance was placed on hold.
+     **/
+    Held: GenericPalletEvent<
+      'Balances',
+      'Held',
+      { reason: AstarRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * Held balance was burned from an account.
+     **/
+    BurnedHeld: GenericPalletEvent<
+      'Balances',
+      'BurnedHeld',
+      { reason: AstarRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * A transfer of `amount` on hold from `source` to `dest` was initiated.
+     **/
+    TransferOnHold: GenericPalletEvent<
+      'Balances',
+      'TransferOnHold',
+      { reason: AstarRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * The `transferred` balance is placed on hold at the `dest` account.
+     **/
+    TransferAndHold: GenericPalletEvent<
+      'Balances',
+      'TransferAndHold',
+      { reason: AstarRuntimeRuntimeHoldReason; source: AccountId32; dest: AccountId32; transferred: bigint }
+    >;
+
+    /**
+     * Some balance was released from hold.
+     **/
+    Released: GenericPalletEvent<
+      'Balances',
+      'Released',
+      { reason: AstarRuntimeRuntimeHoldReason; who: AccountId32; amount: bigint }
+    >;
+
+    /**
+     * An unexpected/defensive event was triggered.
+     **/
+    Unexpected: GenericPalletEvent<'Balances', 'Unexpected', PalletBalancesUnexpectedKind>;
 
     /**
      * Generic pallet event
@@ -1109,6 +1178,16 @@ export interface ChainEvents extends GenericChainEvents {
      * Some assets were withdrawn from the account (e.g. for transaction fees).
      **/
     Withdrawn: GenericPalletEvent<'Assets', 'Withdrawn', { assetId: bigint; who: AccountId32; amount: bigint }>;
+
+    /**
+     * Reserve information was set or updated for `asset_id`.
+     **/
+    ReservesUpdated: GenericPalletEvent<'Assets', 'ReservesUpdated', { assetId: bigint; reserves: Array<[]> }>;
+
+    /**
+     * Reserve information was removed for `asset_id`.
+     **/
+    ReservesRemoved: GenericPalletEvent<'Assets', 'ReservesRemoved', { assetId: bigint }>;
 
     /**
      * Generic pallet event

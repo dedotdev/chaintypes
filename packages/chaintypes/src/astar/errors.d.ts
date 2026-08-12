@@ -875,6 +875,11 @@ export interface ChainErrors extends GenericChainErrors {
     ContainsHolds: GenericPalletError;
 
     /**
+     * Tried setting too many reserves.
+     **/
+    TooManyReserves: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1422,9 +1427,9 @@ export interface ChainErrors extends GenericChainErrors {
     GasLimitTooLow: GenericPalletError;
 
     /**
-     * Gas limit is too high.
+     * Gas limit exceeds block gas limit.
      **/
-    GasLimitTooHigh: GenericPalletError;
+    GasLimitExceedsBlockLimit: GenericPalletError;
 
     /**
      * The chain id is invalid.
@@ -1455,6 +1460,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Address not allowed to deploy contracts either via CREATE or CALL(CREATE).
      **/
     CreateOriginNotAllowed: GenericPalletError;
+
+    /**
+     * EIP-7825: Transaction gas limit exceeds protocol cap (2^24).
+     **/
+    TransactionGasLimitExceedsCap: GenericPalletError;
 
     /**
      * Generic pallet error

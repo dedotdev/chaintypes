@@ -29,7 +29,8 @@ import type {
   PalletIdentityJudgement,
   PalletMultisigTimepoint,
   AstarRuntimeProxyType,
-  CumulusPrimitivesParachainInherentParachainInherentData,
+  CumulusPalletParachainSystemParachainInherentBasicParachainInherentData,
+  CumulusPalletParachainSystemParachainInherentInboundMessagesData,
   PalletBalancesAdjustmentDirection,
   PalletVestingVestingInfo,
   PalletInflationInflationParameters,
@@ -1621,7 +1622,7 @@ export interface ChainTx<
      *
      * The dispatch origin for this call must be _Signed_.
      *
-     * WARNING: This may be called on accounts created by `pure`, however if done, then
+     * WARNING: This may be called on accounts created by `create_pure`, however if done, then
      * the unreserved fees will be inaccessible. **All access to this account will be lost.**
      *
      **/
@@ -1685,16 +1686,16 @@ export interface ChainTx<
      * inaccessible.
      *
      * Requires a `Signed` origin, and the sender account must have been created by a call to
-     * `pure` with corresponding parameters.
+     * `create_pure` with corresponding parameters.
      *
-     * - `spawner`: The account that originally called `pure` to create this account.
+     * - `spawner`: The account that originally called `create_pure` to create this account.
      * - `index`: The disambiguation index originally passed to `create_pure`. Probably `0`.
-     * - `proxy_type`: The proxy type originally passed to `pure`.
-     * - `height`: The height of the chain when the call to `pure` was processed.
-     * - `ext_index`: The extrinsic index in which the call to `pure` was processed.
+     * - `proxy_type`: The proxy type originally passed to `create_pure`.
+     * - `height`: The height of the chain when the call to `create_pure` was processed.
+     * - `ext_index`: The extrinsic index in which the call to `create_pure` was processed.
      *
      * Fails with `NoPermission` in case the caller is not a previously created pure
-     * account whose `pure` call has corresponding parameters.
+     * account whose `create_pure` call has corresponding parameters.
      *
      * @param {MultiAddressLike} spawner
      * @param {AstarRuntimeProxyType} proxyType
@@ -2194,15 +2195,22 @@ export interface ChainTx<
      * As a side effect, this function upgrades the current validation function
      * if the appropriate time has come.
      *
-     * @param {CumulusPrimitivesParachainInherentParachainInherentData} data
+     * @param {CumulusPalletParachainSystemParachainInherentBasicParachainInherentData} data
+     * @param {CumulusPalletParachainSystemParachainInherentInboundMessagesData} inboundMessagesData
      **/
     setValidationData: GenericTxCall<
-      (data: CumulusPrimitivesParachainInherentParachainInherentData) => ChainSubmittableExtrinsic<
+      (
+        data: CumulusPalletParachainSystemParachainInherentBasicParachainInherentData,
+        inboundMessagesData: CumulusPalletParachainSystemParachainInherentInboundMessagesData,
+      ) => ChainSubmittableExtrinsic<
         {
           pallet: 'ParachainSystem';
           palletCall: {
             name: 'SetValidationData';
-            params: { data: CumulusPrimitivesParachainInherentParachainInherentData };
+            params: {
+              data: CumulusPalletParachainSystemParachainInherentBasicParachainInherentData;
+              inboundMessagesData: CumulusPalletParachainSystemParachainInherentInboundMessagesData;
+            };
           };
         },
         ChainKnownTypes
@@ -4339,9 +4347,10 @@ export interface ChainTx<
      *
      * A deposit will be taken from the signer account.
      *
-     * - `origin`: Must be Signed by `Freezer` or `Admin` of the asset `id`; the signer account
-     * must have sufficient funds for a deposit to be taken.
-     * - `id`: The identifier of the asset for the account to be created.
+     * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+     * to be taken.
+     * - `id`: The identifier of the asset for the account to be created, the asset status must
+     * be live.
      * - `who`: The account to be created.
      *
      * Emits `Touched` event when successful.
@@ -4463,6 +4472,36 @@ export interface ChainTx<
           palletCall: {
             name: 'TransferAll';
             params: { id: bigint; dest: MultiAddressLike; keepAlive: boolean };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Sets the trusted reserve information of an asset.
+     *
+     * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+     * `CreateOrigin` or be the signed `owner` configured during asset creation.
+     *
+     * - `id`: The identifier of the asset.
+     * - `reserves`: The full list of trusted reserves information.
+     *
+     * Emits `AssetMinBalanceChanged` event when successful.
+     *
+     * @param {bigint} id
+     * @param {Array<[]>} reserves
+     **/
+    setReserves: GenericTxCall<
+      (
+        id: bigint,
+        reserves: Array<[]>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Assets';
+          palletCall: {
+            name: 'SetReserves';
+            params: { id: bigint; reserves: Array<[]> };
           };
         },
         ChainKnownTypes

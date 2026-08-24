@@ -36,13 +36,12 @@ import type {
   PalletProxyDepositKind,
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
-  AssetHubWestendRuntimeRuntimeParametersKey,
-  AssetHubWestendRuntimeRuntimeParametersValue,
   PalletNftsAttributeNamespace,
   PalletNftsPriceWithDirection,
   PalletNftsPalletAttributes,
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
   PalletPsmCircuitBreakerLevel,
+  AssetHubWestendRuntimeOriginCaller,
   PalletStateTrieMigrationMigrationCompute,
   PalletStateTrieMigrationError,
   PalletStakingAsyncRewardDestination,
@@ -1641,41 +1640,6 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
-   * Pallet `Parameters`'s events
-   **/
-  parameters: {
-    /**
-     * A Parameter was set.
-     *
-     * Is also emitted when the value was not changed.
-     **/
-    Updated: GenericPalletEvent<
-      'Parameters',
-      'Updated',
-      {
-        /**
-         * The key that was updated.
-         **/
-        key: AssetHubWestendRuntimeRuntimeParametersKey;
-
-        /**
-         * The old value before this call.
-         **/
-        oldValue?: AssetHubWestendRuntimeRuntimeParametersValue | undefined;
-
-        /**
-         * The new value after this call.
-         **/
-        newValue?: AssetHubWestendRuntimeRuntimeParametersValue | undefined;
-      }
-    >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
    * Pallet `Recovery`'s events
    **/
   recovery: {
@@ -3011,6 +2975,26 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * A pool's swap fee was set, either at creation via [`Pallet::create_pool_with_fee`]
+     * or afterwards via [`Pallet::set_pool_fee`].
+     **/
+    PoolFeeSet: GenericPalletEvent<
+      'AssetConversion',
+      'PoolFeeSet',
+      {
+        /**
+         * The pool whose fee was set.
+         **/
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
+
+        /**
+         * The swap fee now applied to the pool.
+         **/
+        fee: Permill;
+      }
+    >;
+
+    /**
      * A successful call of the `AddLiquidity` extrinsic will create this event.
      **/
     LiquidityAdded: GenericPalletEvent<
@@ -3529,21 +3513,35 @@ export interface ChainEvents extends GenericChainEvents {
    **/
   psm: {
     /**
-     * User swapped external stablecoin for internal.
+     * User swapped external asset for internal.
      **/
     Minted: GenericPalletEvent<
       'Psm',
       'Minted',
-      { who: AccountId32; assetId: StagingXcmV5Location; externalAmount: bigint; received: bigint; fee: bigint }
+      {
+        who: AccountId32;
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        externalConsumed: bigint;
+        internalReceived: bigint;
+        internalFee: bigint;
+      }
     >;
 
     /**
-     * User swapped internal for external stablecoin.
+     * User swapped internal for external asset.
      **/
     Redeemed: GenericPalletEvent<
       'Psm',
       'Redeemed',
-      { who: AccountId32; assetId: StagingXcmV5Location; paid: bigint; externalReceived: bigint; fee: bigint }
+      {
+        who: AccountId32;
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        internalConsumed: bigint;
+        externalReceived: bigint;
+        internalFee: bigint;
+      }
     >;
 
     /**
@@ -3552,7 +3550,7 @@ export interface ChainEvents extends GenericChainEvents {
     MintingFeeUpdated: GenericPalletEvent<
       'Psm',
       'MintingFeeUpdated',
-      { assetId: StagingXcmV5Location; oldValue: Permill; newValue: Permill }
+      { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; oldValue: Permill; newValue: Permill }
     >;
 
     /**
@@ -3561,16 +3559,16 @@ export interface ChainEvents extends GenericChainEvents {
     RedemptionFeeUpdated: GenericPalletEvent<
       'Psm',
       'RedemptionFeeUpdated',
-      { assetId: StagingXcmV5Location; oldValue: Permill; newValue: Permill }
+      { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; oldValue: Permill; newValue: Permill }
     >;
 
     /**
-     * Max PSM debt ratio updated by governance.
+     * PSM debt ceiling updated by governance.
      **/
-    MaxPsmDebtOfTotalUpdated: GenericPalletEvent<
+    MaxDebtUpdated: GenericPalletEvent<
       'Psm',
-      'MaxPsmDebtOfTotalUpdated',
-      { oldValue: Permill; newValue: Permill }
+      'MaxDebtUpdated',
+      { internalAsset: StagingXcmV5Location; oldValue: bigint; newValue: bigint }
     >;
 
     /**
@@ -3579,7 +3577,7 @@ export interface ChainEvents extends GenericChainEvents {
     AssetCeilingWeightUpdated: GenericPalletEvent<
       'Psm',
       'AssetCeilingWeightUpdated',
-      { assetId: StagingXcmV5Location; oldValue: Permill; newValue: Permill }
+      { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; oldValue: Permill; newValue: Permill }
     >;
 
     /**
@@ -3588,18 +3586,72 @@ export interface ChainEvents extends GenericChainEvents {
     AssetStatusUpdated: GenericPalletEvent<
       'Psm',
       'AssetStatusUpdated',
-      { assetId: StagingXcmV5Location; status: PalletPsmCircuitBreakerLevel }
+      { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; status: PalletPsmCircuitBreakerLevel }
     >;
 
     /**
      * An external asset was added to the approved list.
      **/
-    ExternalAssetAdded: GenericPalletEvent<'Psm', 'ExternalAssetAdded', { assetId: StagingXcmV5Location }>;
+    ExternalAssetAdded: GenericPalletEvent<
+      'Psm',
+      'ExternalAssetAdded',
+      { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location }
+    >;
 
     /**
      * An external asset was removed from the approved list.
      **/
-    ExternalAssetRemoved: GenericPalletEvent<'Psm', 'ExternalAssetRemoved', { assetId: StagingXcmV5Location }>;
+    ExternalAssetRemoved: GenericPalletEvent<
+      'Psm',
+      'ExternalAssetRemoved',
+      { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location }
+    >;
+
+    /**
+     * A PSM instance was created.
+     **/
+    PsmCreated: GenericPalletEvent<
+      'Psm',
+      'PsmCreated',
+      {
+        internalAsset: StagingXcmV5Location;
+        fullAdmin: AssetHubWestendRuntimeOriginCaller;
+        emergencyAdmin: AssetHubWestendRuntimeOriginCaller;
+        feeDestination: AccountId32;
+        maxDebt: bigint;
+      }
+    >;
+
+    /**
+     * A PSM instance was removed.
+     **/
+    PsmRemoved: GenericPalletEvent<'Psm', 'PsmRemoved', { internalAsset: StagingXcmV5Location }>;
+
+    /**
+     * A PSM's `full_admin` was reassigned.
+     **/
+    FullAdminChanged: GenericPalletEvent<
+      'Psm',
+      'FullAdminChanged',
+      {
+        internalAsset: StagingXcmV5Location;
+        oldAdmin: AssetHubWestendRuntimeOriginCaller;
+        newAdmin: AssetHubWestendRuntimeOriginCaller;
+      }
+    >;
+
+    /**
+     * A PSM's `emergency_admin` was reassigned.
+     **/
+    EmergencyAdminChanged: GenericPalletEvent<
+      'Psm',
+      'EmergencyAdminChanged',
+      {
+        internalAsset: StagingXcmV5Location;
+        oldAdmin: AssetHubWestendRuntimeOriginCaller;
+        newAdmin: AssetHubWestendRuntimeOriginCaller;
+      }
+    >;
 
     /**
      * Generic pallet event
@@ -3684,7 +3736,19 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * An account has unbonded this amount.
      **/
-    Unbonded: GenericPalletEvent<'Staking', 'Unbonded', { stash: AccountId32; amount: bigint }>;
+    Unbonded: GenericPalletEvent<
+      'Staking',
+      'Unbonded',
+      {
+        stash: AccountId32;
+        amount: bigint;
+
+        /**
+         * The era at which `amount` becomes withdrawable.
+         **/
+        era: number;
+      }
+    >;
 
     /**
      * An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
@@ -4698,6 +4762,29 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * A call dispatch has been deferred to a future provided block.
+     **/
+    DispatchDeferred: GenericPalletEvent<'Whitelist', 'DispatchDeferred', { callHash: H256 }>;
+
+    /**
+     * A deferred dispatch entry has been removed after expiration.
+     **/
+    DeferredDispatchRemoved: GenericPalletEvent<'Whitelist', 'DeferredDispatchRemoved', { callHash: H256 }>;
+
+    /**
+     * A relayer (signed origin) executed a deferred dispatch.
+     *
+     * Emitted whenever the deferred entry is consumed by a relayer, regardless of whether the
+     * inner call itself succeeded; the inner call's outcome is reported separately by
+     * [`Event::WhitelistedCallDispatched`].
+     **/
+    DeferredDispatchExecuted: GenericPalletEvent<
+      'Whitelist',
+      'DeferredDispatchExecuted',
+      { callHash: H256; who: AccountId32 }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -4924,6 +5011,15 @@ export interface ChainEvents extends GenericChainEvents {
       'MultiAssetBounties',
       'Paid',
       { index: number; childIndex?: number | undefined; paymentId: bigint }
+    >;
+
+    /**
+     * A bounty's value was increased by its curator.
+     **/
+    BountyValueIncreased: GenericPalletEvent<
+      'MultiAssetBounties',
+      'BountyValueIncreased',
+      { index: number; oldValue: bigint; newValue: bigint }
     >;
 
     /**

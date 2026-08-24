@@ -15,9 +15,9 @@ import type {
   H256,
   FixedBytes,
   AccountId32Like,
+  Permill,
   H160,
   U256,
-  Permill,
   Percent,
   Perbill,
   FixedU128,
@@ -50,7 +50,6 @@ import type {
   PalletMultisigTimepoint,
   AssetHubWestendRuntimeProxyType,
   PalletMetaTxMetaTx,
-  AssetHubWestendRuntimeRuntimeParameters,
   PalletRecoveryFriendGroup,
   PalletUniquesDestroyWitness,
   PalletNftsCollectionConfig,
@@ -2404,6 +2403,8 @@ export interface ChainTx<
      * was the latest when they were trapped.
      * - `beneficiary`: The location/account where the claimed assets will be deposited.
      *
+     * The weight of this call is linear in the number of assets claimed.
+     *
      * @param {XcmVersionedAssets} assets
      * @param {XcmVersionedLocation} beneficiary
      **/
@@ -3926,36 +3927,6 @@ export interface ChainTx<
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
-   * Pallet `Parameters`'s transaction calls
-   **/
-  parameters: {
-    /**
-     * Set the value of a parameter.
-     *
-     * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
-     * deleted by setting them to `None`.
-     *
-     * @param {AssetHubWestendRuntimeRuntimeParameters} keyValue
-     **/
-    setParameter: GenericTxCall<
-      (keyValue: AssetHubWestendRuntimeRuntimeParameters) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Parameters';
-          palletCall: {
-            name: 'SetParameter';
-            params: { keyValue: AssetHubWestendRuntimeRuntimeParameters };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
    * Pallet `Recovery`'s transaction calls
    **/
   recovery: {
@@ -4173,7 +4144,8 @@ export interface ChainTx<
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+     * equal it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -4213,8 +4185,18 @@ export interface ChainTx<
      *
      * Unlike `create`, no funds are reserved.
      *
+     * Unlike `create`, the `id` does not have to be the one required by
+     * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+     * marked as allocated.
+     *
+     * # Warning
+     *
+     * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+     * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+     * most severely for bridged assets, where a collision breaks the local/remote mapping.
+     *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset, and must never have been in use previously (see warning above).
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.
@@ -4681,6 +4663,10 @@ export interface ChainTx<
      * Change the Owner of an asset.
      *
      * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+     * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+     * blocks the full transfer; clear it and retry.
      *
      * - `id`: The identifier of the asset.
      * - `owner`: The new Owner of this asset.
@@ -7775,7 +7761,8 @@ export interface ChainTx<
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+     * equal it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -7815,8 +7802,18 @@ export interface ChainTx<
      *
      * Unlike `create`, no funds are reserved.
      *
+     * Unlike `create`, the `id` does not have to be the one required by
+     * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+     * marked as allocated.
+     *
+     * # Warning
+     *
+     * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+     * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+     * most severely for bridged assets, where a collision breaks the local/remote mapping.
+     *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset, and must never have been in use previously (see warning above).
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.
@@ -8283,6 +8280,10 @@ export interface ChainTx<
      * Change the Owner of an asset.
      *
      * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+     * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+     * blocks the full transfer; clear it and retry.
      *
      * - `id`: The identifier of the asset.
      * - `owner`: The new Owner of this asset.
@@ -9103,7 +9104,8 @@ export interface ChainTx<
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+     * equal it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -9143,8 +9145,18 @@ export interface ChainTx<
      *
      * Unlike `create`, no funds are reserved.
      *
+     * Unlike `create`, the `id` does not have to be the one required by
+     * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+     * marked as allocated.
+     *
+     * # Warning
+     *
+     * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+     * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+     * most severely for bridged assets, where a collision breaks the local/remote mapping.
+     *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset, and must never have been in use previously (see warning above).
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.
@@ -9611,6 +9623,10 @@ export interface ChainTx<
      * Change the Owner of an asset.
      *
      * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+     * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+     * blocks the full transfer; clear it and retry.
      *
      * - `id`: The identifier of the asset.
      * - `owner`: The new Owner of this asset.
@@ -10529,6 +10545,70 @@ export interface ChainTx<
     >;
 
     /**
+     * Like [`Pallet::create_pool`], but sets an initial per-pool swap `fee` overriding the
+     * global [`Config::LPFee`].
+     *
+     * Requires [`Config::AdminOrigin`]. `creator` pays the pool setup fee and deposits.
+     * `fee` must not exceed [`Config::MaxSwapFee`].
+     *
+     * Emits both [`Event::PoolCreated`] and [`Event::PoolFeeSet`] on success.
+     *
+     * @param {AccountId32Like} creator
+     * @param {StagingXcmV5Location} asset1
+     * @param {StagingXcmV5Location} asset2
+     * @param {Permill} fee
+     **/
+    createPoolWithFee: GenericTxCall<
+      (
+        creator: AccountId32Like,
+        asset1: StagingXcmV5Location,
+        asset2: StagingXcmV5Location,
+        fee: Permill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetConversion';
+          palletCall: {
+            name: 'CreatePoolWithFee';
+            params: {
+              creator: AccountId32Like;
+              asset1: StagingXcmV5Location;
+              asset2: StagingXcmV5Location;
+              fee: Permill;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the per-pool swap `fee` for an existing pool, overriding the global
+     * [`Config::LPFee`].
+     *
+     * Requires [`Config::AdminOrigin`]. `fee` must not exceed [`Config::MaxSwapFee`].
+     *
+     * Emits [`Event::PoolFeeSet`] on success.
+     *
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} poolId
+     * @param {Permill} fee
+     **/
+    setPoolFee: GenericTxCall<
+      (
+        poolId: [StagingXcmV5Location, StagingXcmV5Location],
+        fee: Permill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetConversion';
+          palletCall: {
+            name: 'SetPoolFee';
+            params: { poolId: [StagingXcmV5Location, StagingXcmV5Location]; fee: Permill };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -11314,7 +11394,7 @@ export interface ChainTx<
    **/
   psm: {
     /**
-     * Swap external stablecoin for internal.
+     * Swap external asset for internal on a specific PSM instance.
      *
      * ## Dispatch Origin
      *
@@ -11322,47 +11402,62 @@ export interface ChainTx<
      *
      * ## Details
      *
-     * Transfers `external_amount` of the specified external stablecoin from the caller
-     * to the PSM account, then mints internal to the caller minus the minting fee.
-     * The fee is calculated using ceiling rounding (`mul_ceil`), ensuring the
-     * protocol never undercharges. The fee is transferred to [`Config::FeeDestination`].
+     * Transfers `external_amount` of `external_asset` from the caller to the
+     * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
+     * caller minus the minting fee. The fee is calculated using ceiling rounding
+     * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
+     * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
      *
      * ## Parameters
      *
-     * - `asset_id`: The external stablecoin to deposit (must be in `ExternalAssets`)
-     * - `external_amount`: Amount of external stablecoin to deposit
+     * - `internal_asset`: The internal stablecoin that identifies the PSM instance.
+     * - `external_asset`: The external asset to deposit (must be approved on
+     * `internal_asset`).
+     * - `external_amount`: Amount of external asset to deposit.
+     * - `max_fee`: Maximum minting fee rate accepted by the caller.
      *
      * ## Errors
      *
-     * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
-     * - [`Error::MintingStopped`]: If circuit breaker is at `MintingDisabled` or higher
-     * - [`Error::BelowMinimumSwap`]: If `external_amount` is below [`Config::MinSwapAmount`]
-     * - [`Error::ExceedsMaxIssuance`]: If minting would exceed system-wide internal issuance
-     * cap
-     * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed PSM debt ceiling (aggregate or
-     * per-asset)
-     * - [`Error::DecimalsMismatch`]: If the asset's decimals do not match the internal asset's
-     * decimals
-     * - [`Error::AmountTooSmallAfterConversion`]: if the conversion to the counter-asset
-     * rounds to zero; swap would transfer nothing
+     * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+     * - [`Error::UnsupportedAsset`]: If `external_asset` is not approved on this PSM.
+     * - [`Error::MintingStopped`]: If the per-external circuit breaker is at `MintingDisabled`
+     * or higher.
+     * - [`Error::BelowMinimumSwap`]: If the internal-equivalent of `external_amount` is below
+     * the instance's `min_swap_amount`.
+     * - [`Error::FeeTooHigh`]: If the configured minting fee exceeds `max_fee`.
+     * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed this PSM's debt ceiling
+     * (aggregate or per-asset).
+     * - [`Error::DecimalsMismatch`]: If live decimals diverged from the snapshot taken at
+     * registration.
+     * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
+     * rounds to zero; swap would transfer nothing.
      *
      * ## Events
      *
-     * - [`Event::Minted`]: Emitted on successful mint
+     * - [`Event::Minted`]: Emitted on successful mint.
      *
-     * @param {StagingXcmV5Location} assetId
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
      * @param {bigint} externalAmount
+     * @param {Permill} maxFee
      **/
     mint: GenericTxCall<
       (
-        assetId: StagingXcmV5Location,
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
         externalAmount: bigint,
+        maxFee: Permill,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'Mint';
-            params: { assetId: StagingXcmV5Location; externalAmount: bigint };
+            params: {
+              internalAsset: StagingXcmV5Location;
+              externalAsset: StagingXcmV5Location;
+              externalAmount: bigint;
+              maxFee: Permill;
+            };
           };
         },
         ChainKnownTypes
@@ -11370,7 +11465,7 @@ export interface ChainTx<
     >;
 
     /**
-     * Swap internal for external stablecoin.
+     * Swap internal for external asset on a specific PSM instance.
      *
      * ## Dispatch Origin
      *
@@ -11378,44 +11473,61 @@ export interface ChainTx<
      *
      * ## Details
      *
-     * Burns `amount` internal from the caller minus fee (transferred to
-     * [`Config::FeeDestination`]), then transfers the resulting amount in external
-     * stablecoin from PSM to the caller. The fee is calculated using ceiling rounding
-     * (`mul_ceil`), ensuring the protocol never undercharges.
+     * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
+     * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
+     * amount in `external_asset` from the PSM reserve to the caller. The fee is
+     * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
+     * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
+     * was registered, allowing existing positions to unwind even if live metadata later
+     * changes.
      *
      * ## Parameters
      *
-     * - `asset_id`: The external stablecoin to receive (must be in `ExternalAssets`)
-     * - `amount`: Amount of internal to redeem
+     * - `internal_asset`: The internal stablecoin that identifies the PSM instance.
+     * - `external_asset`: The external asset to receive (must be approved on
+     * `internal_asset`).
+     * - `internal_amount`: Amount of `internal_asset` to redeem.
+     * - `max_fee`: Maximum redemption fee rate accepted by the caller.
      *
      * ## Errors
      *
-     * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
-     * - [`Error::AllSwapsStopped`]: If circuit breaker is at `AllDisabled`
-     * - [`Error::BelowMinimumSwap`]: If `amount` is below [`Config::MinSwapAmount`]
-     * - [`Error::InsufficientReserve`]: If PSM has insufficient external stablecoin
-     * - [`Error::DecimalsMismatch`]: If the asset's decimals do not match the internal asset's
-     * decimals
-     * - [`Error::AmountTooSmallAfterConversion`]: if the conversion to the counter-asset
-     * rounds to zero; swap would transfer nothing
+     * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+     * - [`Error::UnsupportedAsset`]: If `external_asset` is not approved on this PSM.
+     * - [`Error::AllSwapsStopped`]: If the per-external circuit breaker is at `AllDisabled`.
+     * - [`Error::BelowMinimumSwap`]: If `internal_amount` is below the instance's
+     * `min_swap_amount`.
+     * - [`Error::FeeTooHigh`]: If the configured redemption fee exceeds `max_fee`.
+     * - [`Error::InsufficientReserve`]: If the PSM holds less of `external_asset` than the
+     * redemption requires.
+     * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
+     * rounds to zero; swap would transfer nothing.
      *
      * ## Events
      *
-     * - [`Event::Redeemed`]: Emitted on successful redemption
+     * - [`Event::Redeemed`]: Emitted on successful redemption.
      *
-     * @param {StagingXcmV5Location} assetId
-     * @param {bigint} amount
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
+     * @param {bigint} internalAmount
+     * @param {Permill} maxFee
      **/
     redeem: GenericTxCall<
       (
-        assetId: StagingXcmV5Location,
-        amount: bigint,
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
+        internalAmount: bigint,
+        maxFee: Permill,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'Redeem';
-            params: { assetId: StagingXcmV5Location; amount: bigint };
+            params: {
+              internalAsset: StagingXcmV5Location;
+              externalAsset: StagingXcmV5Location;
+              internalAmount: bigint;
+              maxFee: Permill;
+            };
           };
         },
         ChainKnownTypes
@@ -11423,34 +11535,154 @@ export interface ChainTx<
     >;
 
     /**
-     * Set the minting fee for a specific asset (external → internal).
+     * Create a PSM for a given internal asset.
+     *
+     * If [`Config::CreateOrigin`] resolves to `Some(account)`, takes a
+     * [`Config::Consideration`] deposit from that account for the instance's footprint
+     * (refunded on `remove_psm`). If it resolves to `None`, no deposit is taken. The
+     * `full_admin` and `emergency_admin` origins are set from the provided arguments and may
+     * later be reassigned via [`Pallet::set_full_admin`] / [`Pallet::set_emergency_admin`].
      *
      * ## Dispatch Origin
      *
-     * Must be [`Config::ManagerOrigin`].
+     * [`Config::CreateOrigin`], parameterised by `internal_asset`. With the recommended
+     * [`EnsureAssetOwner`] this is a signed origin that owns `internal_asset`.
      *
      * ## Parameters
      *
-     * - `asset_id`: The external stablecoin to configure
-     * - `fee`: The new minting fee as a Permill
+     * - `internal_asset`: The internal stablecoin keying the new PSM. Must exist in the
+     * fungibles backend; must not already have a PSM registered.
+     * - `full_admin`: Origin granted full management of the new PSM.
+     * - `emergency_admin`: Origin granted emergency management of the new PSM.
+     * - `fee_destination`: Account that will receive mint/redeem fees.
+     * - `max_debt`: Initial absolute internal-asset debt ceiling.
+     * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
+     * Must be non-zero.
+     *
+     * ## Errors
+     *
+     * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
+     * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
+     * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
+     * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
+     * - Any error from establishing the [`Config::Consideration`] deposit when one is needed
+     * (e.g. the account cannot afford it).
      *
      * ## Events
      *
-     * - [`Event::MintingFeeUpdated`]: Emitted with old and new values
+     * - [`Event::PsmCreated`].
      *
-     * @param {StagingXcmV5Location} assetId
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {AssetHubWestendRuntimeOriginCaller} fullAdmin
+     * @param {AssetHubWestendRuntimeOriginCaller} emergencyAdmin
+     * @param {AccountId32Like} feeDestination
+     * @param {bigint} maxDebt
+     * @param {bigint} minSwapAmount
+     **/
+    createPsm: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        fullAdmin: AssetHubWestendRuntimeOriginCaller,
+        emergencyAdmin: AssetHubWestendRuntimeOriginCaller,
+        feeDestination: AccountId32Like,
+        maxDebt: bigint,
+        minSwapAmount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'CreatePsm';
+            params: {
+              internalAsset: StagingXcmV5Location;
+              fullAdmin: AssetHubWestendRuntimeOriginCaller;
+              emergencyAdmin: AssetHubWestendRuntimeOriginCaller;
+              feeDestination: AccountId32Like;
+              maxDebt: bigint;
+              minSwapAmount: bigint;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove a PSM. Callable by the current `full_admin`. All approved externals
+     * must be removed first and aggregate PSM debt must be zero.
+     *
+     * If a creation deposit was taken, it is always returned to the account that originally
+     * paid it, regardless of any later admin reassignment.
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM's `full_admin`.
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM instance to remove.
+     *
+     * ## Errors
+     *
+     * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+     * - [`Error::PsmHasApprovedExternals`]: Approved externals still exist.
+     * - [`Error::PsmHasDebt`]: Outstanding aggregate debt is non-zero.
+     *
+     * ## Events
+     *
+     * - [`Event::PsmRemoved`].
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     **/
+    removePsm: GenericTxCall<
+      (internalAsset: StagingXcmV5Location) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'RemovePsm';
+            params: { internalAsset: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the minting fee for an `(internal_asset, external_asset)` pair.
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM instance to configure.
+     * - `external_asset`: The external asset whose minting fee is being updated.
+     * - `fee`: The new minting fee.
+     *
+     * ## Errors
+     *
+     * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+     * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+     *
+     * ## Events
+     *
+     * - [`Event::MintingFeeUpdated`]: Emitted with old and new values.
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
      * @param {Permill} fee
      **/
     setMintingFee: GenericTxCall<
       (
-        assetId: StagingXcmV5Location,
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
         fee: Permill,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'SetMintingFee';
-            params: { assetId: StagingXcmV5Location; fee: Permill };
+            params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; fee: Permill };
           };
         },
         ChainKnownTypes
@@ -11458,34 +11690,42 @@ export interface ChainTx<
     >;
 
     /**
-     * Set the redemption fee for a specific asset (internal → external).
+     * Set the redemption fee for an `(internal_asset, external_asset)` pair.
      *
      * ## Dispatch Origin
      *
-     * Must be [`Config::ManagerOrigin`].
+     * Must match the PSM instance's `full_admin` (the `Full` privilege level).
      *
      * ## Parameters
      *
-     * - `asset_id`: The external stablecoin to configure
-     * - `fee`: The new redemption fee as a Permill
+     * - `internal_asset`: The PSM instance to configure.
+     * - `external_asset`: The external asset whose redemption fee is being updated.
+     * - `fee`: The new redemption fee.
+     *
+     * ## Errors
+     *
+     * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+     * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
      *
      * ## Events
      *
-     * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values
+     * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values.
      *
-     * @param {StagingXcmV5Location} assetId
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
      * @param {Permill} fee
      **/
     setRedemptionFee: GenericTxCall<
       (
-        assetId: StagingXcmV5Location,
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
         fee: Permill,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'SetRedemptionFee';
-            params: { assetId: StagingXcmV5Location; fee: Permill };
+            params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; fee: Permill };
           };
         },
         ChainKnownTypes
@@ -11493,72 +11733,88 @@ export interface ChainTx<
     >;
 
     /**
-     * Set the maximum PSM debt as a percentage of total maximum issuance.
+     * Set the PSM debt ceiling per internal asset, shared across all approved external
+     * assets.
      *
      * ## Dispatch Origin
      *
-     * Must be [`Config::ManagerOrigin`].
-     *
-     * ## Events
-     *
-     * - [`Event::MaxPsmDebtOfTotalUpdated`]: Emitted with old and new values
-     *
-     * @param {Permill} ratio
-     **/
-    setMaxPsmDebt: GenericTxCall<
-      (ratio: Permill) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'Psm';
-          palletCall: {
-            name: 'SetMaxPsmDebt';
-            params: { ratio: Permill };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the circuit breaker status for a specific external asset.
-     *
-     * ## Dispatch Origin
-     *
-     * Must be [`Config::ManagerOrigin`].
-     *
-     * ## Details
-     *
-     * Controls which operations are allowed for this asset:
-     * - [`CircuitBreakerLevel::AllEnabled`]: All swaps allowed
-     * - [`CircuitBreakerLevel::MintingDisabled`]: Only redemptions allowed (useful for
-     * draining debt)
-     * - [`CircuitBreakerLevel::AllDisabled`]: No swaps allowed
+     * Must match the PSM instance's `full_admin`; only the `Full` privilege level may use
+     * this call.
      *
      * ## Parameters
      *
-     * - `asset_id`: The external stablecoin to configure
-     * - `status`: The new circuit breaker level for this asset
+     * - `internal_asset`: The PSM instance to configure.
+     * - `value`: The new absolute debt ceiling, in internal-asset units.
      *
      * ## Errors
      *
-     * - [`Error::AssetNotApproved`]: If the asset is not in the approved list
+     * - [`Error::InsufficientPrivilege`]: If the origin level cannot set the debt ceiling.
+     * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
      *
      * ## Events
      *
-     * - [`Event::AssetStatusUpdated`]: Emitted with the asset ID and new status
+     * - [`Event::MaxDebtUpdated`]: Emitted with old and new values.
      *
-     * @param {StagingXcmV5Location} assetId
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {bigint} value
+     **/
+    setMaxDebt: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        value: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetMaxDebt';
+            params: { internalAsset: StagingXcmV5Location; value: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the circuit breaker per external asset on a PSM instance.
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM instance's `full_admin` or `emergency_admin`; either the
+     * `Full` or `Emergency` privilege level may use this call.
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM instance to configure.
+     * - `external_asset`: The external asset whose status is being updated.
+     * - `status`: The new circuit breaker level for that external.
+     *
+     * ## Errors
+     *
+     * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+     *
+     * ## Events
+     *
+     * - [`Event::AssetStatusUpdated`]: Emitted on a successful update.
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
      * @param {PalletPsmCircuitBreakerLevel} status
      **/
     setAssetStatus: GenericTxCall<
       (
-        assetId: StagingXcmV5Location,
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
         status: PalletPsmCircuitBreakerLevel,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'SetAssetStatus';
-            params: { assetId: StagingXcmV5Location; status: PalletPsmCircuitBreakerLevel };
+            params: {
+              internalAsset: StagingXcmV5Location;
+              externalAsset: StagingXcmV5Location;
+              status: PalletPsmCircuitBreakerLevel;
+            };
           };
         },
         ChainKnownTypes
@@ -11566,42 +11822,46 @@ export interface ChainTx<
     >;
 
     /**
-     * Set the per-asset debt ceiling weight.
+     * Set the ceiling weight per external asset on a PSM instance.
+     *
+     * Weights are normalised against the sum of weights within the same instance:
+     * `max_asset_debt = (weight / sum_of_weights) * info.max_debt`.
      *
      * ## Dispatch Origin
      *
-     * Must be [`Config::ManagerOrigin`].
-     *
-     * ## Details
-     *
-     * Ratios act as weights normalized against the sum of all asset weights:
-     * `max_asset_debt = (ratio / sum_of_all_ratios) * MaxPsmDebtOfTotal * MaximumIssuance`
-     *
-     * With a single asset, the weight always normalizes to 100% of the PSM
-     * ceiling.
+     * Must match the PSM instance's `full_admin`; only the `Full` privilege level may use
+     * this call.
      *
      * ## Parameters
      *
-     * - `asset_id`: The external stablecoin to configure
-     * - `ratio`: Weight for this asset's share of the total PSM ceiling
+     * - `internal_asset`: The PSM instance to configure.
+     * - `external_asset`: The external asset whose ceiling weight is being updated.
+     * - `weight`: The new ceiling weight. Zero disables minting for this external.
+     *
+     * ## Errors
+     *
+     * - [`Error::InsufficientPrivilege`]: If the origin level cannot set ceiling weights.
+     * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
      *
      * ## Events
      *
-     * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values
+     * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values.
      *
-     * @param {StagingXcmV5Location} assetId
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
      * @param {Permill} weight
      **/
     setAssetCeilingWeight: GenericTxCall<
       (
-        assetId: StagingXcmV5Location,
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
         weight: Permill,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'SetAssetCeilingWeight';
-            params: { assetId: StagingXcmV5Location; weight: Permill };
+            params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; weight: Permill };
           };
         },
         ChainKnownTypes
@@ -11609,33 +11869,50 @@ export interface ChainTx<
     >;
 
     /**
-     * Add an external stablecoin to the approved list.
+     * Approve an external asset for a given internal asset.
+     *
+     * Snapshots the external asset's live decimals at registration time and
+     * increments [`PsmInfo::external_count`].
      *
      * ## Dispatch Origin
      *
-     * Must be [`Config::ManagerOrigin`].
+     * Must match the PSM instance's `full_admin` (the `Full` privilege level).
      *
      * ## Parameters
      *
-     * - `asset_id`: The external stablecoin to add
+     * - `internal_asset`: The PSM instance to approve the external on.
+     * - `external_asset`: The external asset to approve.
      *
      * ## Errors
      *
-     * - [`Error::AssetAlreadyApproved`]: If the asset is already in the approved list
+     * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+     * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+     * - [`Error::TooManyAssets`]: If the PSM is already at [`Config::MaxExternals`].
+     * - [`Error::AssetAlreadyApproved`]: If `external_asset` is already approved on this PSM.
+     * - [`Error::AssetDoesNotExist`]: If `external_asset` does not exist in the underlying
+     * fungibles backend.
+     * - [`Error::DecimalsMismatch`]: If the internal asset's live decimals diverged from the
+     * snapshot in [`PsmInfo`].
+     * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
+     * [`MAX_DECIMALS_DIFF`].
      *
      * ## Events
      *
-     * - [`Event::ExternalAssetAdded`]: Emitted on successful addition
+     * - [`Event::ExternalAssetAdded`]: Emitted on a successful approval.
      *
-     * @param {StagingXcmV5Location} assetId
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
      **/
     addExternalAsset: GenericTxCall<
-      (assetId: StagingXcmV5Location) => ChainSubmittableExtrinsic<
+      (
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
+      ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'AddExternalAsset';
-            params: { assetId: StagingXcmV5Location };
+            params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location };
           };
         },
         ChainKnownTypes
@@ -11643,44 +11920,123 @@ export interface ChainTx<
     >;
 
     /**
-     * Remove an external stablecoin from the approved list.
+     * Remove an external asset from a PSM instance.
+     *
+     * Wipes the external's per-instance state (status, decimals, fees, ceiling
+     * weight, debt counter) and decrements [`PsmInfo::external_count`]. The
+     * external must have zero outstanding debt on this instance.
      *
      * ## Dispatch Origin
      *
-     * Must be [`Config::ManagerOrigin`].
-     *
-     * ## Details
-     *
-     * The asset cannot be removed if it has non-zero PSM debt outstanding.
-     * This prevents orphaned debt that cannot be redeemed.
-     *
-     * Upon removal, the associated configuration is also cleaned up:
-     * - `MintingFee` for this asset
-     * - `RedemptionFee` for this asset
-     * - `AssetCeilingWeight` for this asset
+     * Must match the PSM instance's `full_admin` (the `Full` privilege level).
      *
      * ## Parameters
      *
-     * - `asset_id`: The external stablecoin to remove
+     * - `internal_asset`: The PSM instance to remove the external from.
+     * - `external_asset`: The external asset to remove.
      *
      * ## Errors
      *
-     * - [`Error::AssetNotApproved`]: If the asset is not in the approved list
-     * - [`Error::AssetHasDebt`]: If the asset has non-zero PSM debt
+     * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+     * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+     * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on this PSM.
+     * - [`Error::AssetHasDebt`]: If the external still has non-zero outstanding debt.
      *
      * ## Events
      *
-     * - [`Event::ExternalAssetRemoved`]: Emitted on successful removal
+     * - [`Event::ExternalAssetRemoved`]: Emitted on a successful removal.
      *
-     * @param {StagingXcmV5Location} assetId
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
      **/
     removeExternalAsset: GenericTxCall<
-      (assetId: StagingXcmV5Location) => ChainSubmittableExtrinsic<
+      (
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
+      ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Psm';
           palletCall: {
             name: 'RemoveExternalAsset';
-            params: { assetId: StagingXcmV5Location };
+            params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Reassign the PSM's `full_admin`. Callable by the current `full_admin`.
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM's current `full_admin`.
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM whose `full_admin` is being changed.
+     * - `new_admin`: The new `full_admin` origin.
+     *
+     * ## Errors
+     *
+     * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+     *
+     * ## Events
+     *
+     * - [`Event::FullAdminChanged`].
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {AssetHubWestendRuntimeOriginCaller} newAdmin
+     **/
+    setFullAdmin: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        newAdmin: AssetHubWestendRuntimeOriginCaller,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetFullAdmin';
+            params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubWestendRuntimeOriginCaller };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Reassign the PSM's `emergency_admin`. Callable by the current `full_admin`.
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM's current `full_admin`.
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM whose `emergency_admin` is being changed.
+     * - `new_admin`: The new `emergency_admin` origin.
+     *
+     * ## Errors
+     *
+     * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+     *
+     * ## Events
+     *
+     * - [`Event::EmergencyAdminChanged`].
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {AssetHubWestendRuntimeOriginCaller} newAdmin
+     **/
+    setEmergencyAdmin: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        newAdmin: AssetHubWestendRuntimeOriginCaller,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetEmergencyAdmin';
+            params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubWestendRuntimeOriginCaller };
           };
         },
         ChainKnownTypes
@@ -12457,6 +12813,9 @@ export interface ChainTx<
      * should be filled in order for the `chill_other` transaction to work.
      * * `min_commission`: The minimum amount of commission that each validators must maintain.
      * This is checked only upon calling `validate`. Existing validators are not affected.
+     * * `chill_inactive_threshold`: The number of eras a validator can remain inactive during
+     * the last [`Config::HistoryDepth`] eras before being subject to chilling becuase of
+     * inactivity.
      *
      * RuntimeOrigin must be Root to call this function.
      *
@@ -12471,6 +12830,7 @@ export interface ChainTx<
      * @param {PalletStakingAsyncPalletConfigOpPerbill} minCommission
      * @param {PalletStakingAsyncPalletConfigOpPercent} maxStakedRewards
      * @param {PalletStakingAsyncPalletConfigOpBool} areNominatorsSlashable
+     * @param {PalletStakingAsyncPalletConfigOpU32} chillInactiveThreshold
      **/
     setStakingConfigs: GenericTxCall<
       (
@@ -12482,6 +12842,7 @@ export interface ChainTx<
         minCommission: PalletStakingAsyncPalletConfigOpPerbill,
         maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent,
         areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool,
+        chillInactiveThreshold: PalletStakingAsyncPalletConfigOpU32,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Staking';
@@ -12496,6 +12857,7 @@ export interface ChainTx<
               minCommission: PalletStakingAsyncPalletConfigOpPerbill;
               maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
               areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool;
+              chillInactiveThreshold: PalletStakingAsyncPalletConfigOpU32;
             };
           };
         },
@@ -12873,6 +13235,41 @@ export interface ChainTx<
               hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
               selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
             };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Chill an inactive validator.
+     *
+     * This extrinsic can be called by anyone, given that the valid inactivity proof is
+     * provided. Inactivity proof is a vector of eras where the given validator was inactive.
+     *
+     * Requirements for the inactivity proof:
+     * - The length must be equal to [`ChillInactiveThreshold`].
+     * - It must be sorted in ascending order.
+     * - It must not contain duplicate entries.
+     * - For every era the `stash` account must be exposed.
+     * - Every item must pass the check provided by [`Config::IsValidatorInactive`].
+     * - Every era must be less than the active era.
+     *
+     * On a successfull execution, caller doesn't pay fees.
+     *
+     * @param {AccountId32Like} stash
+     * @param {Array<number>} proof
+     **/
+    chillInactive: GenericTxCall<
+      (
+        stash: AccountId32Like,
+        proof: Array<number>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ChillInactive';
+            params: { stash: AccountId32Like; proof: Array<number> };
           };
         },
         ChainKnownTypes
@@ -14708,6 +15105,23 @@ export interface ChainTx<
     >;
 
     /**
+     *
+     * @param {H256} callHash
+     **/
+    removeDeferredDispatch: GenericTxCall<
+      (callHash: H256) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Whitelist';
+          palletCall: {
+            name: 'RemoveDeferredDispatch';
+            params: { callHash: H256 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -15459,6 +15873,57 @@ export interface ChainTx<
           palletCall: {
             name: 'RetryPayment';
             params: { parentBountyId: number; childBountyId: number | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Increase the value of an active bounty by `amount`.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be signed by the bounty curator.
+     *
+     * ## Details
+     *
+     * - The bounty must be in the `Active` state.
+     * - Raises the recorded `value` by `amount`. This is used to register funds that were
+     * transferred into the bounty account out-of-band (e.g. recurring external top-ups), so
+     * they become available to award or to allocate to child bounties. It must be greater
+     * than 0.
+     * - The curator deposit is re-evaluated for the new value and any additional deposit is
+     * collected from the curator.
+     * - The value can only be increased, never decreased, so the invariant that the sum of
+     * child-bounty values never exceeds the parent value is preserved.
+     * - This call does **not** check that the bounty account holds `new_value`; it only
+     * updates the recorded value. Payouts stay bounded by the account's real balance at
+     * settlement, so increasing the value beyond the available funds simply makes a later
+     * payout fail — no funds are moved by this call.
+     * - Only a parent bounty's value can be increased via this call.
+     *
+     * ### Parameters
+     * - `parent_bounty_id`: Index of the bounty whose value is increased.
+     * - `amount`: The amount to add to the bounty value.
+     *
+     * ## Events
+     *
+     * Emits [`Event::BountyValueIncreased`] if successful.
+     *
+     * @param {number} parentBountyId
+     * @param {bigint} amount
+     **/
+    increaseValue: GenericTxCall<
+      (
+        parentBountyId: number,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiAssetBounties';
+          palletCall: {
+            name: 'IncreaseValue';
+            params: { parentBountyId: number; amount: bigint };
           };
         },
         ChainKnownTypes

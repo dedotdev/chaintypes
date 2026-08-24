@@ -54,7 +54,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: WestendAssetHubApi
- * @specVersion: 1024001
+ * @specVersion: 1024002
  **/
 export interface WestendAssetHubApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

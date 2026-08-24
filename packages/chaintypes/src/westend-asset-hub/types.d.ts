@@ -12,9 +12,9 @@ import type {
   AccountId32Like,
   FixedArray,
   Era,
+  Permill,
   H160,
   U256,
-  Permill,
   Percent,
   Perbill,
   PerU16,
@@ -50,7 +50,6 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'Proxy'; palletCall: PalletProxyCall }
   | { pallet: 'Indices'; palletCall: PalletIndicesCall }
   | { pallet: 'MetaTx'; palletCall: PalletMetaTxCall }
-  | { pallet: 'Parameters'; palletCall: PalletParametersCall }
   | { pallet: 'Recovery'; palletCall: PalletRecoveryCall }
   | { pallet: 'Assets'; palletCall: PalletAssetsCall }
   | { pallet: 'Uniques'; palletCall: PalletUniquesCall }
@@ -105,7 +104,6 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'Proxy'; palletCall: PalletProxyCallLike }
   | { pallet: 'Indices'; palletCall: PalletIndicesCallLike }
   | { pallet: 'MetaTx'; palletCall: PalletMetaTxCallLike }
-  | { pallet: 'Parameters'; palletCall: PalletParametersCallLike }
   | { pallet: 'Recovery'; palletCall: PalletRecoveryCallLike }
   | { pallet: 'Assets'; palletCall: PalletAssetsCallLike }
   | { pallet: 'Uniques'; palletCall: PalletUniquesCallLike }
@@ -1820,6 +1818,8 @@ export type PalletXcmCall =
    * - `assets`: The exact assets that were trapped. Use the version to specify what version
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
+   *
+   * The weight of this call is linear in the number of assets claimed.
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
@@ -2156,6 +2156,8 @@ export type PalletXcmCallLike =
    * - `assets`: The exact assets that were trapped. Use the version to specify what version
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
+   *
+   * The weight of this call is linear in the number of assets claimed.
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
@@ -4434,39 +4436,6 @@ export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletParametersCall =
-  /**
-   * Set the value of a parameter.
-   *
-   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
-   * deleted by setting them to `None`.
-   **/
-  { name: 'SetParameter'; params: { keyValue: AssetHubWestendRuntimeRuntimeParameters } };
-
-export type PalletParametersCallLike =
-  /**
-   * Set the value of a parameter.
-   *
-   * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
-   * deleted by setting them to `None`.
-   **/
-  { name: 'SetParameter'; params: { keyValue: AssetHubWestendRuntimeRuntimeParameters } };
-
-export type AssetHubWestendRuntimeRuntimeParameters = {
-  type: 'Pusd';
-  value: AssetHubWestendRuntimeDynamicParamsPusdParameters;
-};
-
-export type AssetHubWestendRuntimeDynamicParamsPusdParameters = {
-  type: 'MaximumIssuance';
-  value: [AssetHubWestendRuntimeDynamicParamsPusdMaximumIssuance, bigint | undefined];
-};
-
-export type AssetHubWestendRuntimeDynamicParamsPusdMaximumIssuance = {};
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
 export type PalletRecoveryCall =
   /**
    * Allows the inheritor of a recovered account to control it.
@@ -4626,7 +4595,8 @@ export type PalletAssetsCall =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -4646,8 +4616,18 @@ export type PalletAssetsCall =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -4870,6 +4850,10 @@ export type PalletAssetsCall =
    * Change the Owner of an asset.
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
    *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
@@ -5204,7 +5188,8 @@ export type PalletAssetsCallLike =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -5224,8 +5209,18 @@ export type PalletAssetsCallLike =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -5448,6 +5443,10 @@ export type PalletAssetsCallLike =
    * Change the Owner of an asset.
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
    *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
@@ -8197,7 +8196,8 @@ export type PalletAssetsCall002 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -8217,8 +8217,18 @@ export type PalletAssetsCall002 =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -8447,6 +8457,10 @@ export type PalletAssetsCall002 =
    * Change the Owner of an asset.
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
    *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
@@ -8790,7 +8804,8 @@ export type PalletAssetsCallLike002 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -8810,8 +8825,18 @@ export type PalletAssetsCallLike002 =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -9040,6 +9065,10 @@ export type PalletAssetsCallLike002 =
    * Change the Owner of an asset.
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
    *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
@@ -9499,7 +9528,8 @@ export type PalletAssetsCall003 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -9519,8 +9549,18 @@ export type PalletAssetsCall003 =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -9743,6 +9783,10 @@ export type PalletAssetsCall003 =
    * Change the Owner of an asset.
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
    *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
@@ -10077,7 +10121,8 @@ export type PalletAssetsCallLike003 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -10097,8 +10142,18 @@ export type PalletAssetsCallLike003 =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -10321,6 +10376,10 @@ export type PalletAssetsCallLike003 =
    * Change the Owner of an asset.
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
+   *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
    *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
@@ -10753,7 +10812,29 @@ export type PalletAssetConversionCall =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
+  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } }
+  /**
+   * Like [`Pallet::create_pool`], but sets an initial per-pool swap `fee` overriding the
+   * global [`Config::LPFee`].
+   *
+   * Requires [`Config::AdminOrigin`]. `creator` pays the pool setup fee and deposits.
+   * `fee` must not exceed [`Config::MaxSwapFee`].
+   *
+   * Emits both [`Event::PoolCreated`] and [`Event::PoolFeeSet`] on success.
+   **/
+  | {
+      name: 'CreatePoolWithFee';
+      params: { creator: AccountId32; asset1: StagingXcmV5Location; asset2: StagingXcmV5Location; fee: Permill };
+    }
+  /**
+   * Set the per-pool swap `fee` for an existing pool, overriding the global
+   * [`Config::LPFee`].
+   *
+   * Requires [`Config::AdminOrigin`]. `fee` must not exceed [`Config::MaxSwapFee`].
+   *
+   * Emits [`Event::PoolFeeSet`] on success.
+   **/
+  | { name: 'SetPoolFee'; params: { poolId: [StagingXcmV5Location, StagingXcmV5Location]; fee: Permill } };
 
 export type PalletAssetConversionCallLike =
   /**
@@ -10856,7 +10937,29 @@ export type PalletAssetConversionCallLike =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
+  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } }
+  /**
+   * Like [`Pallet::create_pool`], but sets an initial per-pool swap `fee` overriding the
+   * global [`Config::LPFee`].
+   *
+   * Requires [`Config::AdminOrigin`]. `creator` pays the pool setup fee and deposits.
+   * `fee` must not exceed [`Config::MaxSwapFee`].
+   *
+   * Emits both [`Event::PoolCreated`] and [`Event::PoolFeeSet`] on success.
+   **/
+  | {
+      name: 'CreatePoolWithFee';
+      params: { creator: AccountId32Like; asset1: StagingXcmV5Location; asset2: StagingXcmV5Location; fee: Permill };
+    }
+  /**
+   * Set the per-pool swap `fee` for an existing pool, overriding the global
+   * [`Config::LPFee`].
+   *
+   * Requires [`Config::AdminOrigin`]. `fee` must not exceed [`Config::MaxSwapFee`].
+   *
+   * Emits [`Event::PoolFeeSet`] on success.
+   **/
+  | { name: 'SetPoolFee'; params: { poolId: [StagingXcmV5Location, StagingXcmV5Location]; fee: Permill } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -11559,7 +11662,7 @@ export type FrameSupportScheduleDispatchTime = { type: 'At'; value: number } | {
  **/
 export type PalletPsmCall =
   /**
-   * Swap external stablecoin for internal.
+   * Swap external asset for internal on a specific PSM instance.
    *
    * ## Dispatch Origin
    *
@@ -11567,37 +11670,51 @@ export type PalletPsmCall =
    *
    * ## Details
    *
-   * Transfers `external_amount` of the specified external stablecoin from the caller
-   * to the PSM account, then mints internal to the caller minus the minting fee.
-   * The fee is calculated using ceiling rounding (`mul_ceil`), ensuring the
-   * protocol never undercharges. The fee is transferred to [`Config::FeeDestination`].
+   * Transfers `external_amount` of `external_asset` from the caller to the
+   * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
+   * caller minus the minting fee. The fee is calculated using ceiling rounding
+   * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
+   * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
    *
    * ## Parameters
    *
-   * - `asset_id`: The external stablecoin to deposit (must be in `ExternalAssets`)
-   * - `external_amount`: Amount of external stablecoin to deposit
+   * - `internal_asset`: The internal stablecoin that identifies the PSM instance.
+   * - `external_asset`: The external asset to deposit (must be approved on
+   * `internal_asset`).
+   * - `external_amount`: Amount of external asset to deposit.
+   * - `max_fee`: Maximum minting fee rate accepted by the caller.
    *
    * ## Errors
    *
-   * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
-   * - [`Error::MintingStopped`]: If circuit breaker is at `MintingDisabled` or higher
-   * - [`Error::BelowMinimumSwap`]: If `external_amount` is below [`Config::MinSwapAmount`]
-   * - [`Error::ExceedsMaxIssuance`]: If minting would exceed system-wide internal issuance
-   * cap
-   * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed PSM debt ceiling (aggregate or
-   * per-asset)
-   * - [`Error::DecimalsMismatch`]: If the asset's decimals do not match the internal asset's
-   * decimals
-   * - [`Error::AmountTooSmallAfterConversion`]: if the conversion to the counter-asset
-   * rounds to zero; swap would transfer nothing
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::UnsupportedAsset`]: If `external_asset` is not approved on this PSM.
+   * - [`Error::MintingStopped`]: If the per-external circuit breaker is at `MintingDisabled`
+   * or higher.
+   * - [`Error::BelowMinimumSwap`]: If the internal-equivalent of `external_amount` is below
+   * the instance's `min_swap_amount`.
+   * - [`Error::FeeTooHigh`]: If the configured minting fee exceeds `max_fee`.
+   * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed this PSM's debt ceiling
+   * (aggregate or per-asset).
+   * - [`Error::DecimalsMismatch`]: If live decimals diverged from the snapshot taken at
+   * registration.
+   * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
+   * rounds to zero; swap would transfer nothing.
    *
    * ## Events
    *
-   * - [`Event::Minted`]: Emitted on successful mint
+   * - [`Event::Minted`]: Emitted on successful mint.
    **/
-  | { name: 'Mint'; params: { assetId: StagingXcmV5Location; externalAmount: bigint } }
+  | {
+      name: 'Mint';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        externalAmount: bigint;
+        maxFee: Permill;
+      };
+    }
   /**
-   * Swap internal for external stablecoin.
+   * Swap internal for external asset on a specific PSM instance.
    *
    * ## Dispatch Origin
    *
@@ -11605,187 +11722,375 @@ export type PalletPsmCall =
    *
    * ## Details
    *
-   * Burns `amount` internal from the caller minus fee (transferred to
-   * [`Config::FeeDestination`]), then transfers the resulting amount in external
-   * stablecoin from PSM to the caller. The fee is calculated using ceiling rounding
-   * (`mul_ceil`), ensuring the protocol never undercharges.
+   * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
+   * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
+   * amount in `external_asset` from the PSM reserve to the caller. The fee is
+   * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
+   * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
+   * was registered, allowing existing positions to unwind even if live metadata later
+   * changes.
    *
    * ## Parameters
    *
-   * - `asset_id`: The external stablecoin to receive (must be in `ExternalAssets`)
-   * - `amount`: Amount of internal to redeem
+   * - `internal_asset`: The internal stablecoin that identifies the PSM instance.
+   * - `external_asset`: The external asset to receive (must be approved on
+   * `internal_asset`).
+   * - `internal_amount`: Amount of `internal_asset` to redeem.
+   * - `max_fee`: Maximum redemption fee rate accepted by the caller.
    *
    * ## Errors
    *
-   * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
-   * - [`Error::AllSwapsStopped`]: If circuit breaker is at `AllDisabled`
-   * - [`Error::BelowMinimumSwap`]: If `amount` is below [`Config::MinSwapAmount`]
-   * - [`Error::InsufficientReserve`]: If PSM has insufficient external stablecoin
-   * - [`Error::DecimalsMismatch`]: If the asset's decimals do not match the internal asset's
-   * decimals
-   * - [`Error::AmountTooSmallAfterConversion`]: if the conversion to the counter-asset
-   * rounds to zero; swap would transfer nothing
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::UnsupportedAsset`]: If `external_asset` is not approved on this PSM.
+   * - [`Error::AllSwapsStopped`]: If the per-external circuit breaker is at `AllDisabled`.
+   * - [`Error::BelowMinimumSwap`]: If `internal_amount` is below the instance's
+   * `min_swap_amount`.
+   * - [`Error::FeeTooHigh`]: If the configured redemption fee exceeds `max_fee`.
+   * - [`Error::InsufficientReserve`]: If the PSM holds less of `external_asset` than the
+   * redemption requires.
+   * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
+   * rounds to zero; swap would transfer nothing.
    *
    * ## Events
    *
-   * - [`Event::Redeemed`]: Emitted on successful redemption
+   * - [`Event::Redeemed`]: Emitted on successful redemption.
    **/
-  | { name: 'Redeem'; params: { assetId: StagingXcmV5Location; amount: bigint } }
+  | {
+      name: 'Redeem';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        internalAmount: bigint;
+        maxFee: Permill;
+      };
+    }
   /**
-   * Set the minting fee for a specific asset (external → internal).
+   * Create a PSM for a given internal asset.
+   *
+   * If [`Config::CreateOrigin`] resolves to `Some(account)`, takes a
+   * [`Config::Consideration`] deposit from that account for the instance's footprint
+   * (refunded on `remove_psm`). If it resolves to `None`, no deposit is taken. The
+   * `full_admin` and `emergency_admin` origins are set from the provided arguments and may
+   * later be reassigned via [`Pallet::set_full_admin`] / [`Pallet::set_emergency_admin`].
    *
    * ## Dispatch Origin
    *
-   * Must be [`Config::ManagerOrigin`].
+   * [`Config::CreateOrigin`], parameterised by `internal_asset`. With the recommended
+   * [`EnsureAssetOwner`] this is a signed origin that owns `internal_asset`.
    *
    * ## Parameters
    *
-   * - `asset_id`: The external stablecoin to configure
-   * - `fee`: The new minting fee as a Permill
-   *
-   * ## Events
-   *
-   * - [`Event::MintingFeeUpdated`]: Emitted with old and new values
-   **/
-  | { name: 'SetMintingFee'; params: { assetId: StagingXcmV5Location; fee: Permill } }
-  /**
-   * Set the redemption fee for a specific asset (internal → external).
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::ManagerOrigin`].
-   *
-   * ## Parameters
-   *
-   * - `asset_id`: The external stablecoin to configure
-   * - `fee`: The new redemption fee as a Permill
-   *
-   * ## Events
-   *
-   * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values
-   **/
-  | { name: 'SetRedemptionFee'; params: { assetId: StagingXcmV5Location; fee: Permill } }
-  /**
-   * Set the maximum PSM debt as a percentage of total maximum issuance.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::ManagerOrigin`].
-   *
-   * ## Events
-   *
-   * - [`Event::MaxPsmDebtOfTotalUpdated`]: Emitted with old and new values
-   **/
-  | { name: 'SetMaxPsmDebt'; params: { ratio: Permill } }
-  /**
-   * Set the circuit breaker status for a specific external asset.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::ManagerOrigin`].
-   *
-   * ## Details
-   *
-   * Controls which operations are allowed for this asset:
-   * - [`CircuitBreakerLevel::AllEnabled`]: All swaps allowed
-   * - [`CircuitBreakerLevel::MintingDisabled`]: Only redemptions allowed (useful for
-   * draining debt)
-   * - [`CircuitBreakerLevel::AllDisabled`]: No swaps allowed
-   *
-   * ## Parameters
-   *
-   * - `asset_id`: The external stablecoin to configure
-   * - `status`: The new circuit breaker level for this asset
+   * - `internal_asset`: The internal stablecoin keying the new PSM. Must exist in the
+   * fungibles backend; must not already have a PSM registered.
+   * - `full_admin`: Origin granted full management of the new PSM.
+   * - `emergency_admin`: Origin granted emergency management of the new PSM.
+   * - `fee_destination`: Account that will receive mint/redeem fees.
+   * - `max_debt`: Initial absolute internal-asset debt ceiling.
+   * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
+   * Must be non-zero.
    *
    * ## Errors
    *
-   * - [`Error::AssetNotApproved`]: If the asset is not in the approved list
+   * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
+   * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
+   * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
+   * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
+   * - Any error from establishing the [`Config::Consideration`] deposit when one is needed
+   * (e.g. the account cannot afford it).
    *
    * ## Events
    *
-   * - [`Event::AssetStatusUpdated`]: Emitted with the asset ID and new status
+   * - [`Event::PsmCreated`].
    **/
-  | { name: 'SetAssetStatus'; params: { assetId: StagingXcmV5Location; status: PalletPsmCircuitBreakerLevel } }
+  | {
+      name: 'CreatePsm';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        fullAdmin: AssetHubWestendRuntimeOriginCaller;
+        emergencyAdmin: AssetHubWestendRuntimeOriginCaller;
+        feeDestination: AccountId32;
+        maxDebt: bigint;
+        minSwapAmount: bigint;
+      };
+    }
   /**
-   * Set the per-asset debt ceiling weight.
+   * Remove a PSM. Callable by the current `full_admin`. All approved externals
+   * must be removed first and aggregate PSM debt must be zero.
+   *
+   * If a creation deposit was taken, it is always returned to the account that originally
+   * paid it, regardless of any later admin reassignment.
    *
    * ## Dispatch Origin
    *
-   * Must be [`Config::ManagerOrigin`].
-   *
-   * ## Details
-   *
-   * Ratios act as weights normalized against the sum of all asset weights:
-   * `max_asset_debt = (ratio / sum_of_all_ratios) * MaxPsmDebtOfTotal * MaximumIssuance`
-   *
-   * With a single asset, the weight always normalizes to 100% of the PSM
-   * ceiling.
+   * Must match the PSM's `full_admin`.
    *
    * ## Parameters
    *
-   * - `asset_id`: The external stablecoin to configure
-   * - `ratio`: Weight for this asset's share of the total PSM ceiling
-   *
-   * ## Events
-   *
-   * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values
-   **/
-  | { name: 'SetAssetCeilingWeight'; params: { assetId: StagingXcmV5Location; weight: Permill } }
-  /**
-   * Add an external stablecoin to the approved list.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::ManagerOrigin`].
-   *
-   * ## Parameters
-   *
-   * - `asset_id`: The external stablecoin to add
+   * - `internal_asset`: The PSM instance to remove.
    *
    * ## Errors
    *
-   * - [`Error::AssetAlreadyApproved`]: If the asset is already in the approved list
+   * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   * - [`Error::PsmHasApprovedExternals`]: Approved externals still exist.
+   * - [`Error::PsmHasDebt`]: Outstanding aggregate debt is non-zero.
    *
    * ## Events
    *
-   * - [`Event::ExternalAssetAdded`]: Emitted on successful addition
+   * - [`Event::PsmRemoved`].
    **/
-  | { name: 'AddExternalAsset'; params: { assetId: StagingXcmV5Location } }
+  | { name: 'RemovePsm'; params: { internalAsset: StagingXcmV5Location } }
   /**
-   * Remove an external stablecoin from the approved list.
+   * Set the minting fee for an `(internal_asset, external_asset)` pair.
    *
    * ## Dispatch Origin
    *
-   * Must be [`Config::ManagerOrigin`].
-   *
-   * ## Details
-   *
-   * The asset cannot be removed if it has non-zero PSM debt outstanding.
-   * This prevents orphaned debt that cannot be redeemed.
-   *
-   * Upon removal, the associated configuration is also cleaned up:
-   * - `MintingFee` for this asset
-   * - `RedemptionFee` for this asset
-   * - `AssetCeilingWeight` for this asset
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
    *
    * ## Parameters
    *
-   * - `asset_id`: The external stablecoin to remove
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose minting fee is being updated.
+   * - `fee`: The new minting fee.
    *
    * ## Errors
    *
-   * - [`Error::AssetNotApproved`]: If the asset is not in the approved list
-   * - [`Error::AssetHasDebt`]: If the asset has non-zero PSM debt
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
    *
    * ## Events
    *
-   * - [`Event::ExternalAssetRemoved`]: Emitted on successful removal
+   * - [`Event::MintingFeeUpdated`]: Emitted with old and new values.
    **/
-  | { name: 'RemoveExternalAsset'; params: { assetId: StagingXcmV5Location } };
+  | {
+      name: 'SetMintingFee';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; fee: Permill };
+    }
+  /**
+   * Set the redemption fee for an `(internal_asset, external_asset)` pair.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose redemption fee is being updated.
+   * - `fee`: The new redemption fee.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values.
+   **/
+  | {
+      name: 'SetRedemptionFee';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; fee: Permill };
+    }
+  /**
+   * Set the PSM debt ceiling per internal asset, shared across all approved external
+   * assets.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin`; only the `Full` privilege level may use
+   * this call.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `value`: The new absolute debt ceiling, in internal-asset units.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin level cannot set the debt ceiling.
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::MaxDebtUpdated`]: Emitted with old and new values.
+   **/
+  | { name: 'SetMaxDebt'; params: { internalAsset: StagingXcmV5Location; value: bigint } }
+  /**
+   * Set the circuit breaker per external asset on a PSM instance.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` or `emergency_admin`; either the
+   * `Full` or `Emergency` privilege level may use this call.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose status is being updated.
+   * - `status`: The new circuit breaker level for that external.
+   *
+   * ## Errors
+   *
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::AssetStatusUpdated`]: Emitted on a successful update.
+   **/
+  | {
+      name: 'SetAssetStatus';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        status: PalletPsmCircuitBreakerLevel;
+      };
+    }
+  /**
+   * Set the ceiling weight per external asset on a PSM instance.
+   *
+   * Weights are normalised against the sum of weights within the same instance:
+   * `max_asset_debt = (weight / sum_of_weights) * info.max_debt`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin`; only the `Full` privilege level may use
+   * this call.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose ceiling weight is being updated.
+   * - `weight`: The new ceiling weight. Zero disables minting for this external.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin level cannot set ceiling weights.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values.
+   **/
+  | {
+      name: 'SetAssetCeilingWeight';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; weight: Permill };
+    }
+  /**
+   * Approve an external asset for a given internal asset.
+   *
+   * Snapshots the external asset's live decimals at registration time and
+   * increments [`PsmInfo::external_count`].
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to approve the external on.
+   * - `external_asset`: The external asset to approve.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::TooManyAssets`]: If the PSM is already at [`Config::MaxExternals`].
+   * - [`Error::AssetAlreadyApproved`]: If `external_asset` is already approved on this PSM.
+   * - [`Error::AssetDoesNotExist`]: If `external_asset` does not exist in the underlying
+   * fungibles backend.
+   * - [`Error::DecimalsMismatch`]: If the internal asset's live decimals diverged from the
+   * snapshot in [`PsmInfo`].
+   * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
+   * [`MAX_DECIMALS_DIFF`].
+   *
+   * ## Events
+   *
+   * - [`Event::ExternalAssetAdded`]: Emitted on a successful approval.
+   **/
+  | { name: 'AddExternalAsset'; params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location } }
+  /**
+   * Remove an external asset from a PSM instance.
+   *
+   * Wipes the external's per-instance state (status, decimals, fees, ceiling
+   * weight, debt counter) and decrements [`PsmInfo::external_count`]. The
+   * external must have zero outstanding debt on this instance.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to remove the external from.
+   * - `external_asset`: The external asset to remove.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on this PSM.
+   * - [`Error::AssetHasDebt`]: If the external still has non-zero outstanding debt.
+   *
+   * ## Events
+   *
+   * - [`Event::ExternalAssetRemoved`]: Emitted on a successful removal.
+   **/
+  | {
+      name: 'RemoveExternalAsset';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location };
+    }
+  /**
+   * Reassign the PSM's `full_admin`. Callable by the current `full_admin`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM's current `full_admin`.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM whose `full_admin` is being changed.
+   * - `new_admin`: The new `full_admin` origin.
+   *
+   * ## Errors
+   *
+   * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::FullAdminChanged`].
+   **/
+  | {
+      name: 'SetFullAdmin';
+      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubWestendRuntimeOriginCaller };
+    }
+  /**
+   * Reassign the PSM's `emergency_admin`. Callable by the current `full_admin`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM's current `full_admin`.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM whose `emergency_admin` is being changed.
+   * - `new_admin`: The new `emergency_admin` origin.
+   *
+   * ## Errors
+   *
+   * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::EmergencyAdminChanged`].
+   **/
+  | {
+      name: 'SetEmergencyAdmin';
+      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubWestendRuntimeOriginCaller };
+    };
 
 export type PalletPsmCallLike =
   /**
-   * Swap external stablecoin for internal.
+   * Swap external asset for internal on a specific PSM instance.
    *
    * ## Dispatch Origin
    *
@@ -11793,37 +12098,51 @@ export type PalletPsmCallLike =
    *
    * ## Details
    *
-   * Transfers `external_amount` of the specified external stablecoin from the caller
-   * to the PSM account, then mints internal to the caller minus the minting fee.
-   * The fee is calculated using ceiling rounding (`mul_ceil`), ensuring the
-   * protocol never undercharges. The fee is transferred to [`Config::FeeDestination`].
+   * Transfers `external_amount` of `external_asset` from the caller to the
+   * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
+   * caller minus the minting fee. The fee is calculated using ceiling rounding
+   * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
+   * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
    *
    * ## Parameters
    *
-   * - `asset_id`: The external stablecoin to deposit (must be in `ExternalAssets`)
-   * - `external_amount`: Amount of external stablecoin to deposit
+   * - `internal_asset`: The internal stablecoin that identifies the PSM instance.
+   * - `external_asset`: The external asset to deposit (must be approved on
+   * `internal_asset`).
+   * - `external_amount`: Amount of external asset to deposit.
+   * - `max_fee`: Maximum minting fee rate accepted by the caller.
    *
    * ## Errors
    *
-   * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
-   * - [`Error::MintingStopped`]: If circuit breaker is at `MintingDisabled` or higher
-   * - [`Error::BelowMinimumSwap`]: If `external_amount` is below [`Config::MinSwapAmount`]
-   * - [`Error::ExceedsMaxIssuance`]: If minting would exceed system-wide internal issuance
-   * cap
-   * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed PSM debt ceiling (aggregate or
-   * per-asset)
-   * - [`Error::DecimalsMismatch`]: If the asset's decimals do not match the internal asset's
-   * decimals
-   * - [`Error::AmountTooSmallAfterConversion`]: if the conversion to the counter-asset
-   * rounds to zero; swap would transfer nothing
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::UnsupportedAsset`]: If `external_asset` is not approved on this PSM.
+   * - [`Error::MintingStopped`]: If the per-external circuit breaker is at `MintingDisabled`
+   * or higher.
+   * - [`Error::BelowMinimumSwap`]: If the internal-equivalent of `external_amount` is below
+   * the instance's `min_swap_amount`.
+   * - [`Error::FeeTooHigh`]: If the configured minting fee exceeds `max_fee`.
+   * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed this PSM's debt ceiling
+   * (aggregate or per-asset).
+   * - [`Error::DecimalsMismatch`]: If live decimals diverged from the snapshot taken at
+   * registration.
+   * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
+   * rounds to zero; swap would transfer nothing.
    *
    * ## Events
    *
-   * - [`Event::Minted`]: Emitted on successful mint
+   * - [`Event::Minted`]: Emitted on successful mint.
    **/
-  | { name: 'Mint'; params: { assetId: StagingXcmV5Location; externalAmount: bigint } }
+  | {
+      name: 'Mint';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        externalAmount: bigint;
+        maxFee: Permill;
+      };
+    }
   /**
-   * Swap internal for external stablecoin.
+   * Swap internal for external asset on a specific PSM instance.
    *
    * ## Dispatch Origin
    *
@@ -11831,183 +12150,371 @@ export type PalletPsmCallLike =
    *
    * ## Details
    *
-   * Burns `amount` internal from the caller minus fee (transferred to
-   * [`Config::FeeDestination`]), then transfers the resulting amount in external
-   * stablecoin from PSM to the caller. The fee is calculated using ceiling rounding
-   * (`mul_ceil`), ensuring the protocol never undercharges.
+   * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
+   * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
+   * amount in `external_asset` from the PSM reserve to the caller. The fee is
+   * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
+   * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
+   * was registered, allowing existing positions to unwind even if live metadata later
+   * changes.
    *
    * ## Parameters
    *
-   * - `asset_id`: The external stablecoin to receive (must be in `ExternalAssets`)
-   * - `amount`: Amount of internal to redeem
+   * - `internal_asset`: The internal stablecoin that identifies the PSM instance.
+   * - `external_asset`: The external asset to receive (must be approved on
+   * `internal_asset`).
+   * - `internal_amount`: Amount of `internal_asset` to redeem.
+   * - `max_fee`: Maximum redemption fee rate accepted by the caller.
    *
    * ## Errors
    *
-   * - [`Error::UnsupportedAsset`]: If `asset_id` is not an approved external stablecoin
-   * - [`Error::AllSwapsStopped`]: If circuit breaker is at `AllDisabled`
-   * - [`Error::BelowMinimumSwap`]: If `amount` is below [`Config::MinSwapAmount`]
-   * - [`Error::InsufficientReserve`]: If PSM has insufficient external stablecoin
-   * - [`Error::DecimalsMismatch`]: If the asset's decimals do not match the internal asset's
-   * decimals
-   * - [`Error::AmountTooSmallAfterConversion`]: if the conversion to the counter-asset
-   * rounds to zero; swap would transfer nothing
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::UnsupportedAsset`]: If `external_asset` is not approved on this PSM.
+   * - [`Error::AllSwapsStopped`]: If the per-external circuit breaker is at `AllDisabled`.
+   * - [`Error::BelowMinimumSwap`]: If `internal_amount` is below the instance's
+   * `min_swap_amount`.
+   * - [`Error::FeeTooHigh`]: If the configured redemption fee exceeds `max_fee`.
+   * - [`Error::InsufficientReserve`]: If the PSM holds less of `external_asset` than the
+   * redemption requires.
+   * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
+   * rounds to zero; swap would transfer nothing.
    *
    * ## Events
    *
-   * - [`Event::Redeemed`]: Emitted on successful redemption
+   * - [`Event::Redeemed`]: Emitted on successful redemption.
    **/
-  | { name: 'Redeem'; params: { assetId: StagingXcmV5Location; amount: bigint } }
+  | {
+      name: 'Redeem';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        internalAmount: bigint;
+        maxFee: Permill;
+      };
+    }
   /**
-   * Set the minting fee for a specific asset (external → internal).
+   * Create a PSM for a given internal asset.
+   *
+   * If [`Config::CreateOrigin`] resolves to `Some(account)`, takes a
+   * [`Config::Consideration`] deposit from that account for the instance's footprint
+   * (refunded on `remove_psm`). If it resolves to `None`, no deposit is taken. The
+   * `full_admin` and `emergency_admin` origins are set from the provided arguments and may
+   * later be reassigned via [`Pallet::set_full_admin`] / [`Pallet::set_emergency_admin`].
    *
    * ## Dispatch Origin
    *
-   * Must be [`Config::ManagerOrigin`].
+   * [`Config::CreateOrigin`], parameterised by `internal_asset`. With the recommended
+   * [`EnsureAssetOwner`] this is a signed origin that owns `internal_asset`.
    *
    * ## Parameters
    *
-   * - `asset_id`: The external stablecoin to configure
-   * - `fee`: The new minting fee as a Permill
-   *
-   * ## Events
-   *
-   * - [`Event::MintingFeeUpdated`]: Emitted with old and new values
-   **/
-  | { name: 'SetMintingFee'; params: { assetId: StagingXcmV5Location; fee: Permill } }
-  /**
-   * Set the redemption fee for a specific asset (internal → external).
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::ManagerOrigin`].
-   *
-   * ## Parameters
-   *
-   * - `asset_id`: The external stablecoin to configure
-   * - `fee`: The new redemption fee as a Permill
-   *
-   * ## Events
-   *
-   * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values
-   **/
-  | { name: 'SetRedemptionFee'; params: { assetId: StagingXcmV5Location; fee: Permill } }
-  /**
-   * Set the maximum PSM debt as a percentage of total maximum issuance.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::ManagerOrigin`].
-   *
-   * ## Events
-   *
-   * - [`Event::MaxPsmDebtOfTotalUpdated`]: Emitted with old and new values
-   **/
-  | { name: 'SetMaxPsmDebt'; params: { ratio: Permill } }
-  /**
-   * Set the circuit breaker status for a specific external asset.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::ManagerOrigin`].
-   *
-   * ## Details
-   *
-   * Controls which operations are allowed for this asset:
-   * - [`CircuitBreakerLevel::AllEnabled`]: All swaps allowed
-   * - [`CircuitBreakerLevel::MintingDisabled`]: Only redemptions allowed (useful for
-   * draining debt)
-   * - [`CircuitBreakerLevel::AllDisabled`]: No swaps allowed
-   *
-   * ## Parameters
-   *
-   * - `asset_id`: The external stablecoin to configure
-   * - `status`: The new circuit breaker level for this asset
+   * - `internal_asset`: The internal stablecoin keying the new PSM. Must exist in the
+   * fungibles backend; must not already have a PSM registered.
+   * - `full_admin`: Origin granted full management of the new PSM.
+   * - `emergency_admin`: Origin granted emergency management of the new PSM.
+   * - `fee_destination`: Account that will receive mint/redeem fees.
+   * - `max_debt`: Initial absolute internal-asset debt ceiling.
+   * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
+   * Must be non-zero.
    *
    * ## Errors
    *
-   * - [`Error::AssetNotApproved`]: If the asset is not in the approved list
+   * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
+   * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
+   * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
+   * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
+   * - Any error from establishing the [`Config::Consideration`] deposit when one is needed
+   * (e.g. the account cannot afford it).
    *
    * ## Events
    *
-   * - [`Event::AssetStatusUpdated`]: Emitted with the asset ID and new status
+   * - [`Event::PsmCreated`].
    **/
-  | { name: 'SetAssetStatus'; params: { assetId: StagingXcmV5Location; status: PalletPsmCircuitBreakerLevel } }
+  | {
+      name: 'CreatePsm';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        fullAdmin: AssetHubWestendRuntimeOriginCaller;
+        emergencyAdmin: AssetHubWestendRuntimeOriginCaller;
+        feeDestination: AccountId32Like;
+        maxDebt: bigint;
+        minSwapAmount: bigint;
+      };
+    }
   /**
-   * Set the per-asset debt ceiling weight.
+   * Remove a PSM. Callable by the current `full_admin`. All approved externals
+   * must be removed first and aggregate PSM debt must be zero.
+   *
+   * If a creation deposit was taken, it is always returned to the account that originally
+   * paid it, regardless of any later admin reassignment.
    *
    * ## Dispatch Origin
    *
-   * Must be [`Config::ManagerOrigin`].
-   *
-   * ## Details
-   *
-   * Ratios act as weights normalized against the sum of all asset weights:
-   * `max_asset_debt = (ratio / sum_of_all_ratios) * MaxPsmDebtOfTotal * MaximumIssuance`
-   *
-   * With a single asset, the weight always normalizes to 100% of the PSM
-   * ceiling.
+   * Must match the PSM's `full_admin`.
    *
    * ## Parameters
    *
-   * - `asset_id`: The external stablecoin to configure
-   * - `ratio`: Weight for this asset's share of the total PSM ceiling
-   *
-   * ## Events
-   *
-   * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values
-   **/
-  | { name: 'SetAssetCeilingWeight'; params: { assetId: StagingXcmV5Location; weight: Permill } }
-  /**
-   * Add an external stablecoin to the approved list.
-   *
-   * ## Dispatch Origin
-   *
-   * Must be [`Config::ManagerOrigin`].
-   *
-   * ## Parameters
-   *
-   * - `asset_id`: The external stablecoin to add
+   * - `internal_asset`: The PSM instance to remove.
    *
    * ## Errors
    *
-   * - [`Error::AssetAlreadyApproved`]: If the asset is already in the approved list
+   * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   * - [`Error::PsmHasApprovedExternals`]: Approved externals still exist.
+   * - [`Error::PsmHasDebt`]: Outstanding aggregate debt is non-zero.
    *
    * ## Events
    *
-   * - [`Event::ExternalAssetAdded`]: Emitted on successful addition
+   * - [`Event::PsmRemoved`].
    **/
-  | { name: 'AddExternalAsset'; params: { assetId: StagingXcmV5Location } }
+  | { name: 'RemovePsm'; params: { internalAsset: StagingXcmV5Location } }
   /**
-   * Remove an external stablecoin from the approved list.
+   * Set the minting fee for an `(internal_asset, external_asset)` pair.
    *
    * ## Dispatch Origin
    *
-   * Must be [`Config::ManagerOrigin`].
-   *
-   * ## Details
-   *
-   * The asset cannot be removed if it has non-zero PSM debt outstanding.
-   * This prevents orphaned debt that cannot be redeemed.
-   *
-   * Upon removal, the associated configuration is also cleaned up:
-   * - `MintingFee` for this asset
-   * - `RedemptionFee` for this asset
-   * - `AssetCeilingWeight` for this asset
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
    *
    * ## Parameters
    *
-   * - `asset_id`: The external stablecoin to remove
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose minting fee is being updated.
+   * - `fee`: The new minting fee.
    *
    * ## Errors
    *
-   * - [`Error::AssetNotApproved`]: If the asset is not in the approved list
-   * - [`Error::AssetHasDebt`]: If the asset has non-zero PSM debt
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
    *
    * ## Events
    *
-   * - [`Event::ExternalAssetRemoved`]: Emitted on successful removal
+   * - [`Event::MintingFeeUpdated`]: Emitted with old and new values.
    **/
-  | { name: 'RemoveExternalAsset'; params: { assetId: StagingXcmV5Location } };
+  | {
+      name: 'SetMintingFee';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; fee: Permill };
+    }
+  /**
+   * Set the redemption fee for an `(internal_asset, external_asset)` pair.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose redemption fee is being updated.
+   * - `fee`: The new redemption fee.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values.
+   **/
+  | {
+      name: 'SetRedemptionFee';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; fee: Permill };
+    }
+  /**
+   * Set the PSM debt ceiling per internal asset, shared across all approved external
+   * assets.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin`; only the `Full` privilege level may use
+   * this call.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `value`: The new absolute debt ceiling, in internal-asset units.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin level cannot set the debt ceiling.
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::MaxDebtUpdated`]: Emitted with old and new values.
+   **/
+  | { name: 'SetMaxDebt'; params: { internalAsset: StagingXcmV5Location; value: bigint } }
+  /**
+   * Set the circuit breaker per external asset on a PSM instance.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` or `emergency_admin`; either the
+   * `Full` or `Emergency` privilege level may use this call.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose status is being updated.
+   * - `status`: The new circuit breaker level for that external.
+   *
+   * ## Errors
+   *
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::AssetStatusUpdated`]: Emitted on a successful update.
+   **/
+  | {
+      name: 'SetAssetStatus';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        status: PalletPsmCircuitBreakerLevel;
+      };
+    }
+  /**
+   * Set the ceiling weight per external asset on a PSM instance.
+   *
+   * Weights are normalised against the sum of weights within the same instance:
+   * `max_asset_debt = (weight / sum_of_weights) * info.max_debt`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin`; only the `Full` privilege level may use
+   * this call.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose ceiling weight is being updated.
+   * - `weight`: The new ceiling weight. Zero disables minting for this external.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin level cannot set ceiling weights.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values.
+   **/
+  | {
+      name: 'SetAssetCeilingWeight';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; weight: Permill };
+    }
+  /**
+   * Approve an external asset for a given internal asset.
+   *
+   * Snapshots the external asset's live decimals at registration time and
+   * increments [`PsmInfo::external_count`].
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to approve the external on.
+   * - `external_asset`: The external asset to approve.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::TooManyAssets`]: If the PSM is already at [`Config::MaxExternals`].
+   * - [`Error::AssetAlreadyApproved`]: If `external_asset` is already approved on this PSM.
+   * - [`Error::AssetDoesNotExist`]: If `external_asset` does not exist in the underlying
+   * fungibles backend.
+   * - [`Error::DecimalsMismatch`]: If the internal asset's live decimals diverged from the
+   * snapshot in [`PsmInfo`].
+   * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
+   * [`MAX_DECIMALS_DIFF`].
+   *
+   * ## Events
+   *
+   * - [`Event::ExternalAssetAdded`]: Emitted on a successful approval.
+   **/
+  | { name: 'AddExternalAsset'; params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location } }
+  /**
+   * Remove an external asset from a PSM instance.
+   *
+   * Wipes the external's per-instance state (status, decimals, fees, ceiling
+   * weight, debt counter) and decrements [`PsmInfo::external_count`]. The
+   * external must have zero outstanding debt on this instance.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to remove the external from.
+   * - `external_asset`: The external asset to remove.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on this PSM.
+   * - [`Error::AssetHasDebt`]: If the external still has non-zero outstanding debt.
+   *
+   * ## Events
+   *
+   * - [`Event::ExternalAssetRemoved`]: Emitted on a successful removal.
+   **/
+  | {
+      name: 'RemoveExternalAsset';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location };
+    }
+  /**
+   * Reassign the PSM's `full_admin`. Callable by the current `full_admin`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM's current `full_admin`.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM whose `full_admin` is being changed.
+   * - `new_admin`: The new `full_admin` origin.
+   *
+   * ## Errors
+   *
+   * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::FullAdminChanged`].
+   **/
+  | {
+      name: 'SetFullAdmin';
+      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubWestendRuntimeOriginCaller };
+    }
+  /**
+   * Reassign the PSM's `emergency_admin`. Callable by the current `full_admin`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM's current `full_admin`.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM whose `emergency_admin` is being changed.
+   * - `new_admin`: The new `emergency_admin` origin.
+   *
+   * ## Errors
+   *
+   * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::EmergencyAdminChanged`].
+   **/
+  | {
+      name: 'SetEmergencyAdmin';
+      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubWestendRuntimeOriginCaller };
+    };
 
 export type PalletPsmCircuitBreakerLevel = 'AllEnabled' | 'MintingDisabled' | 'AllDisabled';
 
@@ -12459,6 +12966,9 @@ export type PalletStakingAsyncPalletCall =
    * should be filled in order for the `chill_other` transaction to work.
    * * `min_commission`: The minimum amount of commission that each validators must maintain.
    * This is checked only upon calling `validate`. Existing validators are not affected.
+   * * `chill_inactive_threshold`: The number of eras a validator can remain inactive during
+   * the last [`Config::HistoryDepth`] eras before being subject to chilling becuase of
+   * inactivity.
    *
    * RuntimeOrigin must be Root to call this function.
    *
@@ -12476,6 +12986,7 @@ export type PalletStakingAsyncPalletCall =
         minCommission: PalletStakingAsyncPalletConfigOpPerbill;
         maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
         areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool;
+        chillInactiveThreshold: PalletStakingAsyncPalletConfigOpU32;
       };
     }
   /**
@@ -12667,7 +13178,24 @@ export type PalletStakingAsyncPalletCall =
         hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
         selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
       };
-    };
+    }
+  /**
+   * Chill an inactive validator.
+   *
+   * This extrinsic can be called by anyone, given that the valid inactivity proof is
+   * provided. Inactivity proof is a vector of eras where the given validator was inactive.
+   *
+   * Requirements for the inactivity proof:
+   * - The length must be equal to [`ChillInactiveThreshold`].
+   * - It must be sorted in ascending order.
+   * - It must not contain duplicate entries.
+   * - For every era the `stash` account must be exposed.
+   * - Every item must pass the check provided by [`Config::IsValidatorInactive`].
+   * - Every era must be less than the active era.
+   *
+   * On a successfull execution, caller doesn't pay fees.
+   **/
+  | { name: 'ChillInactive'; params: { stash: AccountId32; proof: Array<number> } };
 
 export type PalletStakingAsyncPalletCallLike =
   /**
@@ -12948,6 +13476,9 @@ export type PalletStakingAsyncPalletCallLike =
    * should be filled in order for the `chill_other` transaction to work.
    * * `min_commission`: The minimum amount of commission that each validators must maintain.
    * This is checked only upon calling `validate`. Existing validators are not affected.
+   * * `chill_inactive_threshold`: The number of eras a validator can remain inactive during
+   * the last [`Config::HistoryDepth`] eras before being subject to chilling becuase of
+   * inactivity.
    *
    * RuntimeOrigin must be Root to call this function.
    *
@@ -12965,6 +13496,7 @@ export type PalletStakingAsyncPalletCallLike =
         minCommission: PalletStakingAsyncPalletConfigOpPerbill;
         maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
         areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool;
+        chillInactiveThreshold: PalletStakingAsyncPalletConfigOpU32;
       };
     }
   /**
@@ -13156,7 +13688,24 @@ export type PalletStakingAsyncPalletCallLike =
         hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
         selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
       };
-    };
+    }
+  /**
+   * Chill an inactive validator.
+   *
+   * This extrinsic can be called by anyone, given that the valid inactivity proof is
+   * provided. Inactivity proof is a vector of eras where the given validator was inactive.
+   *
+   * Requirements for the inactivity proof:
+   * - The length must be equal to [`ChillInactiveThreshold`].
+   * - It must be sorted in ascending order.
+   * - It must not contain duplicate entries.
+   * - For every era the `stash` account must be exposed.
+   * - Every item must pass the check provided by [`Config::IsValidatorInactive`].
+   * - Every era must be less than the active era.
+   *
+   * On a successfull execution, caller doesn't pay fees.
+   **/
+  | { name: 'ChillInactive'; params: { stash: AccountId32Like; proof: Array<number> } };
 
 export type PalletStakingAsyncRewardDestination =
   | { type: 'Staked' }
@@ -14900,7 +15449,8 @@ export type PalletWhitelistCall =
       name: 'DispatchWhitelistedCall';
       params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
-  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubWestendRuntimeRuntimeCall } };
+  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubWestendRuntimeRuntimeCall } }
+  | { name: 'RemoveDeferredDispatch'; params: { callHash: H256 } };
 
 export type PalletWhitelistCallLike =
   | { name: 'WhitelistCall'; params: { callHash: H256 } }
@@ -14909,7 +15459,8 @@ export type PalletWhitelistCallLike =
       name: 'DispatchWhitelistedCall';
       params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
-  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubWestendRuntimeRuntimeCallLike } };
+  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubWestendRuntimeRuntimeCallLike } }
+  | { name: 'RemoveDeferredDispatch'; params: { callHash: H256 } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -15524,7 +16075,40 @@ export type PalletMultiAssetBountiesCall =
    *
    * Emits [`Event::Paid`] if the funding, refund or payout payment has initiated.
    **/
-  | { name: 'RetryPayment'; params: { parentBountyId: number; childBountyId?: number | undefined } };
+  | { name: 'RetryPayment'; params: { parentBountyId: number; childBountyId?: number | undefined } }
+  /**
+   * Increase the value of an active bounty by `amount`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed by the bounty curator.
+   *
+   * ## Details
+   *
+   * - The bounty must be in the `Active` state.
+   * - Raises the recorded `value` by `amount`. This is used to register funds that were
+   * transferred into the bounty account out-of-band (e.g. recurring external top-ups), so
+   * they become available to award or to allocate to child bounties. It must be greater
+   * than 0.
+   * - The curator deposit is re-evaluated for the new value and any additional deposit is
+   * collected from the curator.
+   * - The value can only be increased, never decreased, so the invariant that the sum of
+   * child-bounty values never exceeds the parent value is preserved.
+   * - This call does **not** check that the bounty account holds `new_value`; it only
+   * updates the recorded value. Payouts stay bounded by the account's real balance at
+   * settlement, so increasing the value beyond the available funds simply makes a later
+   * payout fail — no funds are moved by this call.
+   * - Only a parent bounty's value can be increased via this call.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of the bounty whose value is increased.
+   * - `amount`: The amount to add to the bounty value.
+   *
+   * ## Events
+   *
+   * Emits [`Event::BountyValueIncreased`] if successful.
+   **/
+  | { name: 'IncreaseValue'; params: { parentBountyId: number; amount: bigint } };
 
 export type PalletMultiAssetBountiesCallLike =
   /**
@@ -15783,7 +16367,40 @@ export type PalletMultiAssetBountiesCallLike =
    *
    * Emits [`Event::Paid`] if the funding, refund or payout payment has initiated.
    **/
-  | { name: 'RetryPayment'; params: { parentBountyId: number; childBountyId?: number | undefined } };
+  | { name: 'RetryPayment'; params: { parentBountyId: number; childBountyId?: number | undefined } }
+  /**
+   * Increase the value of an active bounty by `amount`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be signed by the bounty curator.
+   *
+   * ## Details
+   *
+   * - The bounty must be in the `Active` state.
+   * - Raises the recorded `value` by `amount`. This is used to register funds that were
+   * transferred into the bounty account out-of-band (e.g. recurring external top-ups), so
+   * they become available to award or to allocate to child bounties. It must be greater
+   * than 0.
+   * - The curator deposit is re-evaluated for the new value and any additional deposit is
+   * collected from the curator.
+   * - The value can only be increased, never decreased, so the invariant that the sum of
+   * child-bounty values never exceeds the parent value is preserved.
+   * - This call does **not** check that the bounty account holds `new_value`; it only
+   * updates the recorded value. Payouts stay bounded by the account's real balance at
+   * settlement, so increasing the value beyond the available funds simply makes a later
+   * payout fail — no funds are moved by this call.
+   * - Only a parent bounty's value can be increased via this call.
+   *
+   * ### Parameters
+   * - `parent_bounty_id`: Index of the bounty whose value is increased.
+   * - `amount`: The amount to add to the bounty value.
+   *
+   * ## Events
+   *
+   * Emits [`Event::BountyValueIncreased`] if successful.
+   **/
+  | { name: 'IncreaseValue'; params: { parentBountyId: number; amount: bigint } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -15981,6 +16598,7 @@ export type AssetHubWestendRuntimeRuntimeHoldReason =
   | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
   | { type: 'Revive'; value: PalletReviveHoldReason }
   | { type: 'AssetRewards'; value: PalletAssetRewardsHoldReason }
+  | { type: 'Psm'; value: PalletPsmHoldReason }
   | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
   | { type: 'Staking'; value: PalletStakingAsyncPalletHoldReason }
   | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
@@ -16005,6 +16623,8 @@ export type PalletNftFractionalizationHoldReason = 'Fractionalized';
 export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
 
 export type PalletAssetRewardsHoldReason = 'PoolCreation';
+
+export type PalletPsmHoldReason = 'CreationDeposit';
 
 export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
 
@@ -16079,7 +16699,6 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'Proxy'; palletEvent: PalletProxyEvent }
   | { pallet: 'Indices'; palletEvent: PalletIndicesEvent }
   | { pallet: 'MetaTx'; palletEvent: PalletMetaTxEvent }
-  | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
   | { pallet: 'Recovery'; palletEvent: PalletRecoveryEvent }
   | { pallet: 'Assets'; palletEvent: PalletAssetsEvent }
   | { pallet: 'Uniques'; palletEvent: PalletUniquesEvent }
@@ -17345,52 +17964,6 @@ export type SpRuntimeDispatchErrorWithPostInfo = {
 /**
  * The `Event` enum of this pallet
  **/
-export type PalletParametersEvent =
-  /**
-   * A Parameter was set.
-   *
-   * Is also emitted when the value was not changed.
-   **/
-  {
-    name: 'Updated';
-    data: {
-      /**
-       * The key that was updated.
-       **/
-      key: AssetHubWestendRuntimeRuntimeParametersKey;
-
-      /**
-       * The old value before this call.
-       **/
-      oldValue?: AssetHubWestendRuntimeRuntimeParametersValue | undefined;
-
-      /**
-       * The new value after this call.
-       **/
-      newValue?: AssetHubWestendRuntimeRuntimeParametersValue | undefined;
-    };
-  };
-
-export type AssetHubWestendRuntimeRuntimeParametersKey = {
-  type: 'Pusd';
-  value: AssetHubWestendRuntimeDynamicParamsPusdParametersKey;
-};
-
-export type AssetHubWestendRuntimeDynamicParamsPusdParametersKey = {
-  type: 'MaximumIssuance';
-  value: AssetHubWestendRuntimeDynamicParamsPusdMaximumIssuance;
-};
-
-export type AssetHubWestendRuntimeRuntimeParametersValue = {
-  type: 'Pusd';
-  value: AssetHubWestendRuntimeDynamicParamsPusdParametersValue;
-};
-
-export type AssetHubWestendRuntimeDynamicParamsPusdParametersValue = { type: 'MaximumIssuance'; value: bigint };
-
-/**
- * The `Event` enum of this pallet
- **/
 export type PalletRecoveryEvent =
   /**
    * A recovery attempt was approved by a friend.
@@ -18161,6 +18734,24 @@ export type PalletAssetConversionEvent =
       };
     }
   /**
+   * A pool's swap fee was set, either at creation via [`Pallet::create_pool_with_fee`]
+   * or afterwards via [`Pallet::set_pool_fee`].
+   **/
+  | {
+      name: 'PoolFeeSet';
+      data: {
+        /**
+         * The pool whose fee was set.
+         **/
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
+
+        /**
+         * The swap fee now applied to the pool.
+         **/
+        fee: Permill;
+      };
+    }
+  /**
    * A successful call of the `AddLiquidity` extrinsic will create this event.
    **/
   | {
@@ -18597,47 +19188,131 @@ export type PalletAssetRewardsEvent =
  **/
 export type PalletPsmEvent =
   /**
-   * User swapped external stablecoin for internal.
+   * User swapped external asset for internal.
    **/
   | {
       name: 'Minted';
-      data: { who: AccountId32; assetId: StagingXcmV5Location; externalAmount: bigint; received: bigint; fee: bigint };
+      data: {
+        who: AccountId32;
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        externalConsumed: bigint;
+        internalReceived: bigint;
+        internalFee: bigint;
+      };
     }
   /**
-   * User swapped internal for external stablecoin.
+   * User swapped internal for external asset.
    **/
   | {
       name: 'Redeemed';
-      data: { who: AccountId32; assetId: StagingXcmV5Location; paid: bigint; externalReceived: bigint; fee: bigint };
+      data: {
+        who: AccountId32;
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        internalConsumed: bigint;
+        externalReceived: bigint;
+        internalFee: bigint;
+      };
     }
   /**
    * Minting fee updated for an asset by governance.
    **/
-  | { name: 'MintingFeeUpdated'; data: { assetId: StagingXcmV5Location; oldValue: Permill; newValue: Permill } }
+  | {
+      name: 'MintingFeeUpdated';
+      data: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        oldValue: Permill;
+        newValue: Permill;
+      };
+    }
   /**
    * Redemption fee updated for an asset by governance.
    **/
-  | { name: 'RedemptionFeeUpdated'; data: { assetId: StagingXcmV5Location; oldValue: Permill; newValue: Permill } }
+  | {
+      name: 'RedemptionFeeUpdated';
+      data: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        oldValue: Permill;
+        newValue: Permill;
+      };
+    }
   /**
-   * Max PSM debt ratio updated by governance.
+   * PSM debt ceiling updated by governance.
    **/
-  | { name: 'MaxPsmDebtOfTotalUpdated'; data: { oldValue: Permill; newValue: Permill } }
+  | { name: 'MaxDebtUpdated'; data: { internalAsset: StagingXcmV5Location; oldValue: bigint; newValue: bigint } }
   /**
    * Per-asset debt ceiling weight updated by governance.
    **/
-  | { name: 'AssetCeilingWeightUpdated'; data: { assetId: StagingXcmV5Location; oldValue: Permill; newValue: Permill } }
+  | {
+      name: 'AssetCeilingWeightUpdated';
+      data: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        oldValue: Permill;
+        newValue: Permill;
+      };
+    }
   /**
    * Per-asset circuit breaker status updated.
    **/
-  | { name: 'AssetStatusUpdated'; data: { assetId: StagingXcmV5Location; status: PalletPsmCircuitBreakerLevel } }
+  | {
+      name: 'AssetStatusUpdated';
+      data: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        status: PalletPsmCircuitBreakerLevel;
+      };
+    }
   /**
    * An external asset was added to the approved list.
    **/
-  | { name: 'ExternalAssetAdded'; data: { assetId: StagingXcmV5Location } }
+  | { name: 'ExternalAssetAdded'; data: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location } }
   /**
    * An external asset was removed from the approved list.
    **/
-  | { name: 'ExternalAssetRemoved'; data: { assetId: StagingXcmV5Location } };
+  | { name: 'ExternalAssetRemoved'; data: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location } }
+  /**
+   * A PSM instance was created.
+   **/
+  | {
+      name: 'PsmCreated';
+      data: {
+        internalAsset: StagingXcmV5Location;
+        fullAdmin: AssetHubWestendRuntimeOriginCaller;
+        emergencyAdmin: AssetHubWestendRuntimeOriginCaller;
+        feeDestination: AccountId32;
+        maxDebt: bigint;
+      };
+    }
+  /**
+   * A PSM instance was removed.
+   **/
+  | { name: 'PsmRemoved'; data: { internalAsset: StagingXcmV5Location } }
+  /**
+   * A PSM's `full_admin` was reassigned.
+   **/
+  | {
+      name: 'FullAdminChanged';
+      data: {
+        internalAsset: StagingXcmV5Location;
+        oldAdmin: AssetHubWestendRuntimeOriginCaller;
+        newAdmin: AssetHubWestendRuntimeOriginCaller;
+      };
+    }
+  /**
+   * A PSM's `emergency_admin` was reassigned.
+   **/
+  | {
+      name: 'EmergencyAdminChanged';
+      data: {
+        internalAsset: StagingXcmV5Location;
+        oldAdmin: AssetHubWestendRuntimeOriginCaller;
+        newAdmin: AssetHubWestendRuntimeOriginCaller;
+      };
+    };
 
 /**
  * Inner events of this pallet.
@@ -18733,7 +19408,18 @@ export type PalletStakingAsyncPalletEvent =
   /**
    * An account has unbonded this amount.
    **/
-  | { name: 'Unbonded'; data: { stash: AccountId32; amount: bigint } }
+  | {
+      name: 'Unbonded';
+      data: {
+        stash: AccountId32;
+        amount: bigint;
+
+        /**
+         * The era at which `amount` becomes withdrawable.
+         **/
+        era: number;
+      };
+    }
   /**
    * An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
    * from the unlocking queue.
@@ -19522,7 +20208,23 @@ export type PalletWhitelistEvent =
         callHash: H256;
         result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
       };
-    };
+    }
+  /**
+   * A call dispatch has been deferred to a future provided block.
+   **/
+  | { name: 'DispatchDeferred'; data: { callHash: H256 } }
+  /**
+   * A deferred dispatch entry has been removed after expiration.
+   **/
+  | { name: 'DeferredDispatchRemoved'; data: { callHash: H256 } }
+  /**
+   * A relayer (signed origin) executed a deferred dispatch.
+   *
+   * Emitted whenever the deferred entry is consumed by a relayer, regardless of whether the
+   * inner call itself succeeded; the inner call's outcome is reported separately by
+   * [`Event::WhitelistedCallDispatched`].
+   **/
+  | { name: 'DeferredDispatchExecuted'; data: { callHash: H256; who: AccountId32 } };
 
 /**
  * The `Event` enum of this pallet
@@ -19669,7 +20371,11 @@ export type PalletMultiAssetBountiesEvent =
   /**
    * A payment happened and can be checked.
    **/
-  | { name: 'Paid'; data: { index: number; childIndex?: number | undefined; paymentId: bigint } };
+  | { name: 'Paid'; data: { index: number; childIndex?: number | undefined; paymentId: bigint } }
+  /**
+   * A bounty's value was increased by its curator.
+   **/
+  | { name: 'BountyValueIncreased'; data: { index: number; oldValue: bigint; newValue: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -21173,9 +21879,14 @@ export type PalletAssetsError =
    **/
   | 'CallbackFailed'
   /**
-   * The asset ID must be equal to the [`NextAssetId`].
+   * The asset ID is not the one required by [`Config::AssetIdAllocator`].
    **/
   | 'BadAssetId'
+  /**
+   * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+   * exhausted.
+   **/
+  | 'AssetIdAllocationFailed'
   /**
    * The asset cannot be destroyed because some accounts for this asset contain freezes.
    **/
@@ -21187,7 +21898,11 @@ export type PalletAssetsError =
   /**
    * Tried setting too many reserves.
    **/
-  | 'TooManyReserves';
+  | 'TooManyReserves'
+  /**
+   * The asset deposit could not be fully moved due to a lock or freeze on the owner.
+   **/
+  | 'IncompleteDepositTransfer';
 
 export type PalletUniquesCollectionDetails = {
   owner: AccountId32;
@@ -21663,7 +22378,11 @@ export type PalletAssetConversionError =
   /**
    * The pool exists but has no liquidity (at least one of the reserves is zero).
    **/
-  | 'PoolEmpty';
+  | 'PoolEmpty'
+  /**
+   * The fee exceeds [`Config::MaxSwapFee`].
+   **/
+  | 'FeeTooHigh';
 
 /**
  * The `Error` enum of this pallet.
@@ -21706,19 +22425,19 @@ export type PalletReviveStorageDeletionQueueItem = { trieId: Bytes; accountId: A
 
 export type PalletReviveStorageDeletionQueueManager = { insertCounter: number; deleteCounter: number };
 
-export type PalletReviveEvmApiRpcTypesGenBlock = {
+export type PalletReviveEvmApiBlock = {
   baseFeePerGas: U256;
   blobGasUsed: U256;
   difficulty: U256;
   excessBlobGas: U256;
-  extraData: PalletReviveEvmApiByteBytes;
+  extraData: PalletReviveTypesCommonByteBytes;
   gasLimit: U256;
   gasUsed: U256;
   hash: H256;
-  logsBloom: PalletReviveEvmApiByteBytes256;
+  logsBloom: PalletReviveTypesCommonByteBytes256;
   miner: H160;
   mixHash: H256;
-  nonce: PalletReviveEvmApiByteBytes8;
+  nonce: PalletReviveTypesCommonByteBytes8;
   number: U256;
   parentBeaconBlockRoot?: H256 | undefined;
   parentHash: H256;
@@ -21729,53 +22448,53 @@ export type PalletReviveEvmApiRpcTypesGenBlock = {
   stateRoot: H256;
   timestamp: U256;
   totalDifficulty?: U256 | undefined;
-  transactions: PalletReviveEvmApiRpcTypesGenHashesOrTransactionInfos;
+  transactions: PalletReviveEvmApiTransactionHashesOrTransactionInfos;
   transactionsRoot: H256;
   uncles: Array<H256>;
-  withdrawals: Array<PalletReviveEvmApiRpcTypesGenWithdrawal>;
+  withdrawals: Array<PalletReviveEvmApiBlockWithdrawal>;
   withdrawalsRoot: H256;
 };
 
-export type PalletReviveEvmApiByteBytes = Bytes;
+export type PalletReviveTypesCommonByteBytes = Bytes;
 
-export type PalletReviveEvmApiByteBytes256 = FixedBytes<256>;
+export type PalletReviveTypesCommonByteBytes256 = FixedBytes<256>;
 
-export type PalletReviveEvmApiByteBytes8 = FixedBytes<8>;
+export type PalletReviveTypesCommonByteBytes8 = FixedBytes<8>;
 
-export type PalletReviveEvmApiRpcTypesGenHashesOrTransactionInfos =
+export type PalletReviveEvmApiTransactionHashesOrTransactionInfos =
   | { type: 'Hashes'; value: Array<H256> }
-  | { type: 'TransactionInfos'; value: Array<PalletReviveEvmApiRpcTypesGenTransactionInfo> };
+  | { type: 'TransactionInfos'; value: Array<PalletReviveEvmApiTransactionTransactionInfo> };
 
-export type PalletReviveEvmApiRpcTypesGenTransactionInfo = {
+export type PalletReviveEvmApiTransactionTransactionInfo = {
   blockHash: H256;
   blockNumber: U256;
   from: H160;
   hash: H256;
   transactionIndex: U256;
-  transactionSigned: PalletReviveEvmApiRpcTypesGenTransactionSigned;
+  transactionSigned: PalletReviveEvmApiTransactionTransactionSigned;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransactionSigned =
-  | { type: 'Transaction7702Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction7702Signed }
-  | { type: 'Transaction4844Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction4844Signed }
-  | { type: 'Transaction1559Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction1559Signed }
-  | { type: 'Transaction2930Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction2930Signed }
-  | { type: 'TransactionLegacySigned'; value: PalletReviveEvmApiRpcTypesGenTransactionLegacySigned };
+export type PalletReviveEvmApiTransactionTransactionSigned =
+  | { type: 'Transaction7702Signed'; value: PalletReviveEvmApiTransactionTransaction7702Signed }
+  | { type: 'Transaction4844Signed'; value: PalletReviveEvmApiTransactionTransaction4844Signed }
+  | { type: 'Transaction1559Signed'; value: PalletReviveEvmApiTransactionTransaction1559Signed }
+  | { type: 'Transaction2930Signed'; value: PalletReviveEvmApiTransactionTransaction2930Signed }
+  | { type: 'TransactionLegacySigned'; value: PalletReviveEvmApiTransactionTransactionLegacySigned };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction7702Signed = {
-  transaction7702Unsigned: PalletReviveEvmApiRpcTypesGenTransaction7702Unsigned;
+export type PalletReviveEvmApiTransactionTransaction7702Signed = {
+  transaction7702Unsigned: PalletReviveEvmApiTransactionTransaction7702Unsigned;
   r: U256;
   s: U256;
   v?: U256 | undefined;
   yParity: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction7702Unsigned = {
-  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
-  authorizationList: Array<PalletReviveEvmApiRpcTypesGenAuthorizationListEntry>;
+export type PalletReviveEvmApiTransactionTransaction7702Unsigned = {
+  accessList: Array<PalletReviveEvmApiTransactionAccessListEntry>;
+  authorizationList: Array<PalletReviveEvmApiTransactionAuthorizationListEntry>;
   chainId: U256;
   gas: U256;
-  input: PalletReviveEvmApiByteBytes;
+  input: PalletReviveTypesCommonByteBytes;
   maxFeePerGas: U256;
   maxPriorityFeePerGas: U256;
   nonce: U256;
@@ -21784,9 +22503,9 @@ export type PalletReviveEvmApiRpcTypesGenTransaction7702Unsigned = {
   value: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenAccessListEntry = { address: H160; storageKeys: Array<H256> };
+export type PalletReviveEvmApiTransactionAccessListEntry = { address: H160; storageKeys: Array<H256> };
 
-export type PalletReviveEvmApiRpcTypesGenAuthorizationListEntry = {
+export type PalletReviveEvmApiTransactionAuthorizationListEntry = {
   chainId: U256;
   address: H160;
   nonce: U256;
@@ -21795,19 +22514,19 @@ export type PalletReviveEvmApiRpcTypesGenAuthorizationListEntry = {
   s: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction4844Signed = {
-  transaction4844Unsigned: PalletReviveEvmApiRpcTypesGenTransaction4844Unsigned;
+export type PalletReviveEvmApiTransactionTransaction4844Signed = {
+  transaction4844Unsigned: PalletReviveEvmApiTransactionTransaction4844Unsigned;
   r: U256;
   s: U256;
   yParity: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction4844Unsigned = {
-  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
+export type PalletReviveEvmApiTransactionTransaction4844Unsigned = {
+  accessList: Array<PalletReviveEvmApiTransactionAccessListEntry>;
   blobVersionedHashes: Array<H256>;
   chainId: U256;
   gas: U256;
-  input: PalletReviveEvmApiByteBytes;
+  input: PalletReviveTypesCommonByteBytes;
   maxFeePerBlobGas: U256;
   maxFeePerGas: U256;
   maxPriorityFeePerGas: U256;
@@ -21817,20 +22536,20 @@ export type PalletReviveEvmApiRpcTypesGenTransaction4844Unsigned = {
   value: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction1559Signed = {
-  transaction1559Unsigned: PalletReviveEvmApiRpcTypesGenTransaction1559Unsigned;
+export type PalletReviveEvmApiTransactionTransaction1559Signed = {
+  transaction1559Unsigned: PalletReviveEvmApiTransactionTransaction1559Unsigned;
   r: U256;
   s: U256;
   v?: U256 | undefined;
   yParity: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction1559Unsigned = {
-  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
+export type PalletReviveEvmApiTransactionTransaction1559Unsigned = {
+  accessList: Array<PalletReviveEvmApiTransactionAccessListEntry>;
   chainId: U256;
   gas: U256;
   gasPrice: U256;
-  input: PalletReviveEvmApiByteBytes;
+  input: PalletReviveTypesCommonByteBytes;
   maxFeePerGas: U256;
   maxPriorityFeePerGas: U256;
   nonce: U256;
@@ -21839,50 +22558,45 @@ export type PalletReviveEvmApiRpcTypesGenTransaction1559Unsigned = {
   value: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction2930Signed = {
-  transaction2930Unsigned: PalletReviveEvmApiRpcTypesGenTransaction2930Unsigned;
+export type PalletReviveEvmApiTransactionTransaction2930Signed = {
+  transaction2930Unsigned: PalletReviveEvmApiTransactionTransaction2930Unsigned;
   r: U256;
   s: U256;
   v?: U256 | undefined;
   yParity: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction2930Unsigned = {
-  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
+export type PalletReviveEvmApiTransactionTransaction2930Unsigned = {
+  accessList: Array<PalletReviveEvmApiTransactionAccessListEntry>;
   chainId: U256;
   gas: U256;
   gasPrice: U256;
-  input: PalletReviveEvmApiByteBytes;
+  input: PalletReviveTypesCommonByteBytes;
   nonce: U256;
   to?: H160 | undefined;
   rType: number;
   value: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransactionLegacySigned = {
-  transactionLegacyUnsigned: PalletReviveEvmApiRpcTypesGenTransactionLegacyUnsigned;
+export type PalletReviveEvmApiTransactionTransactionLegacySigned = {
+  transactionLegacyUnsigned: PalletReviveEvmApiTransactionTransactionLegacyUnsigned;
   r: U256;
   s: U256;
   v: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransactionLegacyUnsigned = {
+export type PalletReviveEvmApiTransactionTransactionLegacyUnsigned = {
   chainId?: U256 | undefined;
   gas: U256;
   gasPrice: U256;
-  input: PalletReviveEvmApiByteBytes;
+  input: PalletReviveTypesCommonByteBytes;
   nonce: U256;
   to?: H160 | undefined;
   rType: number;
   value: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenWithdrawal = {
-  address: H160;
-  amount: U256;
-  index: U256;
-  validatorIndex: U256;
-};
+export type PalletReviveEvmApiBlockWithdrawal = { address: H160; amount: U256; index: U256; validatorIndex: U256 };
 
 export type PalletReviveEvmBlockHashReceiptGasInfo = { gasUsed: U256; effectiveGasPrice: U256 };
 
@@ -22290,12 +23004,28 @@ export type PalletAssetsPrecompilesPermitPalletError =
    **/
   | 'InvalidSpender';
 
+export type PalletPsmPsmInfo = {
+  feeDestination: AccountId32;
+  maxDebt: bigint;
+  minSwapAmount: bigint;
+  internalDecimals: number;
+  externalCount: number;
+};
+
+export type PalletPsmPsmAdminInfo = {
+  fullAdmin: AssetHubWestendRuntimeOriginCaller;
+  emergencyAdmin: AssetHubWestendRuntimeOriginCaller;
+  deposit?: [AccountId32, FrameSupportTokensFungibleHoldConsideration] | undefined;
+};
+
+export type PalletPsmExternalAssetInfo = { status: PalletPsmCircuitBreakerLevel; decimals: number };
+
 /**
  * The `Error` enum of this pallet.
  **/
 export type PalletPsmError =
   /**
-   * PSM doesn't have enough external stablecoin for redemption.
+   * PSM doesn't have enough external asset for redemption.
    **/
   | 'InsufficientReserve'
   /**
@@ -22303,9 +23033,17 @@ export type PalletPsmError =
    **/
   | 'ExceedsMaxPsmDebt'
   /**
-   * Swap amount below minimum threshold.
+   * Swap amount below the instance's minimum threshold.
    **/
   | 'BelowMinimumSwap'
+  /**
+   * Current fee exceeds the caller-provided maximum.
+   **/
+  | 'FeeTooHigh'
+  /**
+   * `create_psm` was called with a zero `min_swap_amount`.
+   **/
+  | 'ZeroMinSwapAmount'
   /**
    * Minting operations are disabled (circuit breaker level >= 1).
    **/
@@ -22315,13 +23053,13 @@ export type PalletPsmError =
    **/
   | 'AllSwapsStopped'
   /**
-   * Asset is not an approved external stablecoin.
+   * Asset is not an approved external asset.
    **/
   | 'UnsupportedAsset'
   /**
-   * Mint would exceed system-wide maximum internal issuance.
+   * No PSM instance is registered for the given internal asset.
    **/
-  | 'ExceedsMaxIssuance'
+  | 'PsmNotFound'
   /**
    * Asset is already in the approved list.
    **/
@@ -22339,7 +23077,8 @@ export type PalletPsmError =
    **/
   | 'AssetHasDebt'
   /**
-   * Operation requires Full manager level (GeneralAdmin), not Emergency.
+   * Operation requires the instance's `full_admin` (Full level); the caller only
+   * matched the `emergency_admin` (Emergency level).
    **/
   | 'InsufficientPrivilege'
   /**
@@ -22362,6 +23101,18 @@ export type PalletPsmError =
    * Conversion to the counter-asset rounds to zero; swap would transfer nothing.
    **/
   | 'AmountTooSmallAfterConversion'
+  /**
+   * A PSM is already registered for this internal asset.
+   **/
+  | 'PsmAlreadyExists'
+  /**
+   * The PSM has non-zero outstanding debt on at least one approved external.
+   **/
+  | 'PsmHasDebt'
+  /**
+   * The PSM still has approved externals; remove them before removing the PSM.
+   **/
+  | 'PsmHasApprovedExternals'
   /**
    * An unexpected invariant violation occurred. This should be reported.
    **/
@@ -22427,161 +23178,176 @@ export type PalletStakingAsyncPalletError =
   /**
    * Not a controller account.
    **/
-  | 'NotController'
+  | { name: 'NotController' }
   /**
    * Not a stash account.
    **/
-  | 'NotStash'
+  | { name: 'NotStash' }
   /**
    * Stash is already bonded.
    **/
-  | 'AlreadyBonded'
+  | { name: 'AlreadyBonded' }
   /**
    * Controller is already paired.
    **/
-  | 'AlreadyPaired'
+  | { name: 'AlreadyPaired' }
   /**
    * Targets cannot be empty.
    **/
-  | 'EmptyTargets'
+  | { name: 'EmptyTargets' }
   /**
    * Duplicate index.
    **/
-  | 'DuplicateIndex'
+  | { name: 'DuplicateIndex' }
   /**
    * Slash record not found.
    **/
-  | 'InvalidSlashRecord'
+  | { name: 'InvalidSlashRecord' }
   /**
    * Cannot bond, nominate or validate with value less than the minimum defined by
    * governance (see `MinValidatorBond` and `MinNominatorBond`). If unbonding is the
    * intention, `chill` first to remove one's role as validator/nominator.
    **/
-  | 'InsufficientBond'
+  | { name: 'InsufficientBond' }
   /**
    * Can not schedule more unlock chunks.
    **/
-  | 'NoMoreChunks'
+  | { name: 'NoMoreChunks' }
   /**
    * Can not rebond without unlocking chunks.
    **/
-  | 'NoUnlockChunk'
+  | { name: 'NoUnlockChunk' }
   /**
    * Attempting to target a stash that still has funds.
    **/
-  | 'FundedTarget'
+  | { name: 'FundedTarget' }
   /**
    * Invalid era to reward.
    **/
-  | 'InvalidEraToReward'
+  | { name: 'InvalidEraToReward' }
   /**
    * Invalid number of nominations.
    **/
-  | 'InvalidNumberOfNominations'
+  | { name: 'InvalidNumberOfNominations' }
   /**
    * Rewards for this era have already been claimed for this validator.
    **/
-  | 'AlreadyClaimed'
+  | { name: 'AlreadyClaimed' }
   /**
    * No nominators exist on this page.
    **/
-  | 'InvalidPage'
+  | { name: 'InvalidPage' }
   /**
    * Incorrect previous history depth input provided.
    **/
-  | 'IncorrectHistoryDepth'
+  | { name: 'IncorrectHistoryDepth' }
   /**
    * Internal state has become somehow corrupted and the operation cannot continue.
    **/
-  | 'BadState'
+  | { name: 'BadState' }
   /**
    * Too many nomination targets supplied.
    **/
-  | 'TooManyTargets'
+  | { name: 'TooManyTargets' }
   /**
    * A nomination target was supplied that was blocked or otherwise not a validator.
    **/
-  | 'BadTarget'
+  | { name: 'BadTarget' }
   /**
    * The user has enough bond and thus cannot be chilled forcefully by an external person.
    **/
-  | 'CannotChillOther'
+  | { name: 'CannotChillOther' }
   /**
    * There are too many nominators in the system. Governance needs to adjust the staking
    * settings to keep things safe for the runtime.
    **/
-  | 'TooManyNominators'
+  | { name: 'TooManyNominators' }
   /**
    * There are too many validator candidates in the system. Governance needs to adjust the
    * staking settings to keep things safe for the runtime.
    **/
-  | 'TooManyValidators'
+  | { name: 'TooManyValidators' }
   /**
    * Commission is too low. Must be at least `MinCommission`.
    **/
-  | 'CommissionTooLow'
+  | { name: 'CommissionTooLow' }
   /**
    * Some bound is not met.
    **/
-  | 'BoundNotMet'
+  | { name: 'BoundNotMet' }
   /**
    * Used when attempting to use deprecated controller account logic.
    **/
-  | 'ControllerDeprecated'
+  | { name: 'ControllerDeprecated' }
   /**
    * Cannot reset a ledger.
    **/
-  | 'CannotRestoreLedger'
+  | { name: 'CannotRestoreLedger' }
   /**
    * Provided reward destination is not allowed.
    **/
-  | 'RewardDestinationRestricted'
+  | { name: 'RewardDestinationRestricted' }
   /**
    * Not enough funds available to withdraw.
    **/
-  | 'NotEnoughFunds'
+  | { name: 'NotEnoughFunds' }
   /**
    * Operation not allowed for virtual stakers.
    **/
-  | 'VirtualStakerNotAllowed'
+  | { name: 'VirtualStakerNotAllowed' }
   /**
    * Stash could not be reaped as other pallet might depend on it.
    **/
-  | 'CannotReapStash'
+  | { name: 'CannotReapStash' }
   /**
    * The stake of this account is already migrated to `Fungible` holds.
    **/
-  | 'AlreadyMigrated'
+  | { name: 'AlreadyMigrated' }
   /**
    * Era not yet started.
    **/
-  | 'EraNotStarted'
+  | { name: 'EraNotStarted' }
   /**
    * Account is restricted from participation in staking. This may happen if the account is
    * staking in another way already, such as via pool.
    **/
-  | 'Restricted'
+  | { name: 'Restricted' }
   /**
    * Unapplied slashes in the recently concluded era is blocking this operation.
    * See `Call::apply_slash` to apply them.
    **/
-  | 'UnappliedSlashesInPreviousEra'
+  | { name: 'UnappliedSlashesInPreviousEra' }
   /**
    * The era is not eligible for pruning.
    **/
-  | 'EraNotPrunable'
+  | { name: 'EraNotPrunable' }
   /**
    * The slash has been cancelled and cannot be applied.
    **/
-  | 'CancelledSlash'
+  | { name: 'CancelledSlash' }
   /**
    * Commission is higher than the allowed maximum `MaxCommission`.
    **/
-  | 'CommissionTooHigh'
+  | { name: 'CommissionTooHigh' }
   /**
    * Optimum self-stake cannot be greater than hard cap.
    **/
-  | 'OptimumGreaterThanCap';
+  | { name: 'OptimumGreaterThanCap' }
+  /**
+   * Validator inactivity proof is invalid.
+   **/
+  | { name: 'InvalidInactivityProof'; data: PalletStakingAsyncPalletInvalidInactivityProofError }
+  /**
+   * Cannot set [`ChillInactiveThreshold`] to the provided value.
+   **/
+  | { name: 'InvalidChillInactiveThreshold' };
+
+export type PalletStakingAsyncPalletInvalidInactivityProofError =
+  | 'InvalidLen'
+  | 'NotSorted'
+  | 'ValidatorNotExposed'
+  | 'ValidatorActive'
+  | 'InvalidEra';
 
 export type PalletStakingAsyncRewardPot =
   | { type: 'General'; value: PalletStakingAsyncRewardKind }
@@ -23215,7 +23981,23 @@ export type PalletWhitelistError =
   /**
    * The call was already whitelisted; No-Op.
    **/
-  | 'CallAlreadyWhitelisted';
+  | 'CallAlreadyWhitelisted'
+  /**
+   * No deferred dispatch entry exists for this call hash.
+   **/
+  | 'DeferredDispatchNotFound'
+  /**
+   * The deferred dispatch entry has not yet expired.
+   **/
+  | 'DeferredDispatchNotExpired'
+  /**
+   * The dispatch has already been deferred.
+   **/
+  | 'AlreadyDeferred'
+  /**
+   * The deferred dispatch has expired.
+   **/
+  | 'DeferredDispatchExpired';
 
 export type PalletTreasuryProposal = { proposer: AccountId32; value: bigint; beneficiary: AccountId32; bond: bigint };
 
@@ -23647,66 +24429,245 @@ export type CumulusPrimitivesCoreCollationInfo = {
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
 
-export type PalletRevivePrimitivesContractResult = {
-  weightConsumed: SpWeightsWeightV2Weight;
-  weightRequired: SpWeightsWeightV2Weight;
-  storageDeposit: PalletRevivePrimitivesStorageDeposit;
-  maxStorageDeposit: PalletRevivePrimitivesStorageDeposit;
-  gasConsumed: bigint;
-  result: Result<PalletRevivePrimitivesExecReturnValue, DispatchError>;
+export type PalletReviveTypesRuntimeApiTypesBlockBlockV1 = {
+  baseFeePerGas: U256;
+  blobGasUsed: U256;
+  difficulty: U256;
+  excessBlobGas: U256;
+  extraData: PalletReviveTypesCommonByteBytes;
+  gasLimit: U256;
+  gasUsed: U256;
+  hash: H256;
+  logsBloom: PalletReviveTypesCommonByteBytes256;
+  miner: H160;
+  mixHash: H256;
+  nonce: PalletReviveTypesCommonByteBytes8;
+  number: U256;
+  parentBeaconBlockRoot?: H256 | undefined;
+  parentHash: H256;
+  receiptsRoot: H256;
+  requestsHash?: H256 | undefined;
+  sha3Uncles: H256;
+  size: U256;
+  stateRoot: H256;
+  timestamp: U256;
+  totalDifficulty?: U256 | undefined;
+  transactions: PalletReviveTypesRuntimeApiTypesTransactionHashesOrTransactionInfosV1;
+  transactionsRoot: H256;
+  uncles: Array<H256>;
+  withdrawals: Array<PalletReviveTypesRuntimeApiTypesBlockWithdrawalV1>;
+  withdrawalsRoot: H256;
 };
 
-export type PalletRevivePrimitivesExecReturnValue = { flags: PalletReviveUapiFlagsReturnFlags; data: Bytes };
+export type PalletReviveTypesRuntimeApiTypesTransactionHashesOrTransactionInfosV1 =
+  | { type: 'Hashes'; value: Array<H256> }
+  | { type: 'TransactionInfos'; value: Array<PalletReviveTypesRuntimeApiTypesTransactionTransactionInfoV1> };
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransactionInfoV1 = {
+  blockHash: H256;
+  blockNumber: U256;
+  from: H160;
+  hash: H256;
+  transactionIndex: U256;
+  transactionSigned: PalletReviveTypesRuntimeApiTypesTransactionTransactionSignedV1;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransactionSignedV1 =
+  | { type: 'Transaction7702Signed'; value: PalletReviveTypesRuntimeApiTypesTransactionTransaction7702SignedV1 }
+  | { type: 'Transaction4844Signed'; value: PalletReviveTypesRuntimeApiTypesTransactionTransaction4844SignedV1 }
+  | { type: 'Transaction1559Signed'; value: PalletReviveTypesRuntimeApiTypesTransactionTransaction1559SignedV1 }
+  | { type: 'Transaction2930Signed'; value: PalletReviveTypesRuntimeApiTypesTransactionTransaction2930SignedV1 }
+  | { type: 'TransactionLegacySigned'; value: PalletReviveTypesRuntimeApiTypesTransactionTransactionLegacySignedV1 };
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction7702SignedV1 = {
+  transaction7702Unsigned: PalletReviveTypesRuntimeApiTypesTransactionTransaction7702UnsignedV1;
+  r: U256;
+  s: U256;
+  v?: U256 | undefined;
+  yParity: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction7702UnsignedV1 = {
+  accessList: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1>;
+  authorizationList: Array<PalletReviveTypesRuntimeApiTypesTransactionAuthorizationListEntryV1>;
+  chainId: U256;
+  gas: U256;
+  input: PalletReviveTypesCommonByteBytes;
+  maxFeePerGas: U256;
+  maxPriorityFeePerGas: U256;
+  nonce: U256;
+  to: H160;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1 = { address: H160; storageKeys: Array<H256> };
+
+export type PalletReviveTypesRuntimeApiTypesTransactionAuthorizationListEntryV1 = {
+  chainId: U256;
+  address: H160;
+  nonce: U256;
+  yParity: U256;
+  r: U256;
+  s: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction4844SignedV1 = {
+  transaction4844Unsigned: PalletReviveTypesRuntimeApiTypesTransactionTransaction4844UnsignedV1;
+  r: U256;
+  s: U256;
+  yParity: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction4844UnsignedV1 = {
+  accessList: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1>;
+  blobVersionedHashes: Array<H256>;
+  chainId: U256;
+  gas: U256;
+  input: PalletReviveTypesCommonByteBytes;
+  maxFeePerBlobGas: U256;
+  maxFeePerGas: U256;
+  maxPriorityFeePerGas: U256;
+  nonce: U256;
+  to: H160;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction1559SignedV1 = {
+  transaction1559Unsigned: PalletReviveTypesRuntimeApiTypesTransactionTransaction1559UnsignedV1;
+  r: U256;
+  s: U256;
+  v?: U256 | undefined;
+  yParity: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction1559UnsignedV1 = {
+  accessList: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1>;
+  chainId: U256;
+  gas: U256;
+  gasPrice: U256;
+  input: PalletReviveTypesCommonByteBytes;
+  maxFeePerGas: U256;
+  maxPriorityFeePerGas: U256;
+  nonce: U256;
+  to?: H160 | undefined;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction2930SignedV1 = {
+  transaction2930Unsigned: PalletReviveTypesRuntimeApiTypesTransactionTransaction2930UnsignedV1;
+  r: U256;
+  s: U256;
+  v?: U256 | undefined;
+  yParity: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction2930UnsignedV1 = {
+  accessList: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1>;
+  chainId: U256;
+  gas: U256;
+  gasPrice: U256;
+  input: PalletReviveTypesCommonByteBytes;
+  nonce: U256;
+  to?: H160 | undefined;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransactionLegacySignedV1 = {
+  transactionLegacyUnsigned: PalletReviveTypesRuntimeApiTypesTransactionTransactionLegacyUnsignedV1;
+  r: U256;
+  s: U256;
+  v: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransactionLegacyUnsignedV1 = {
+  chainId?: U256 | undefined;
+  gas: U256;
+  gasPrice: U256;
+  input: PalletReviveTypesCommonByteBytes;
+  nonce: U256;
+  to?: H160 | undefined;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesBlockWithdrawalV1 = {
+  address: H160;
+  amount: U256;
+  index: U256;
+  validatorIndex: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesReceiptReceiptGasInfoV1 = { gasUsed: U256; effectiveGasPrice: U256 };
+
+export type PalletReviveTypesRuntimeApiTypesContractContractResultV1 = {
+  weightConsumed: SpWeightsWeightV2Weight;
+  weightRequired: SpWeightsWeightV2Weight;
+  storageDeposit: PalletReviveTypesRuntimeApiTypesContractStorageDepositV1;
+  maxStorageDeposit: PalletReviveTypesRuntimeApiTypesContractStorageDepositV1;
+  gasConsumed: bigint;
+  result: Result<PalletReviveTypesRuntimeApiTypesContractExecReturnValueV1, DispatchError>;
+};
+
+export type PalletReviveTypesRuntimeApiTypesContractExecReturnValueV1 = {
+  flags: PalletReviveUapiFlagsReturnFlags;
+  data: Bytes;
+};
 
 export type PalletReviveUapiFlagsReturnFlags = { bits: number };
 
-export type PalletRevivePrimitivesStorageDeposit =
+export type PalletReviveTypesRuntimeApiTypesContractStorageDepositV1 =
   | { type: 'Refund'; value: bigint }
   | { type: 'Charge'; value: bigint };
 
-export type PalletRevivePrimitivesCode = { type: 'Upload'; value: Bytes } | { type: 'Existing'; value: H256 };
+export type PalletReviveTypesRuntimeApiTypesContractCodeV1 =
+  | { type: 'Upload'; value: Bytes }
+  | { type: 'Existing'; value: H256 };
 
-export type PalletRevivePrimitivesContractResultInstantiateReturnValue = {
+export type PalletReviveTypesRuntimeApiTypesContractContractResultV1InstantiateReturnValueV1 = {
   weightConsumed: SpWeightsWeightV2Weight;
   weightRequired: SpWeightsWeightV2Weight;
-  storageDeposit: PalletRevivePrimitivesStorageDeposit;
-  maxStorageDeposit: PalletRevivePrimitivesStorageDeposit;
+  storageDeposit: PalletReviveTypesRuntimeApiTypesContractStorageDepositV1;
+  maxStorageDeposit: PalletReviveTypesRuntimeApiTypesContractStorageDepositV1;
   gasConsumed: bigint;
-  result: Result<PalletRevivePrimitivesInstantiateReturnValue, DispatchError>;
+  result: Result<PalletReviveTypesRuntimeApiTypesContractInstantiateReturnValueV1, DispatchError>;
 };
 
-export type PalletRevivePrimitivesInstantiateReturnValue = {
-  result: PalletRevivePrimitivesExecReturnValue;
+export type PalletReviveTypesRuntimeApiTypesContractInstantiateReturnValueV1 = {
+  result: PalletReviveTypesRuntimeApiTypesContractExecReturnValueV1;
   addr: H160;
 };
 
-export type PalletReviveEvmApiRpcTypesGenGenericTransaction = {
-  accessList?: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry> | undefined;
-  authorizationList: Array<PalletReviveEvmApiRpcTypesGenAuthorizationListEntry>;
+export type PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1 = {
+  accessList?: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1> | undefined;
+  authorizationList: Array<PalletReviveTypesRuntimeApiTypesTransactionAuthorizationListEntryV1>;
   blobVersionedHashes: Array<H256>;
-  blobs: Array<PalletReviveEvmApiByteBytes>;
+  blobs: Array<PalletReviveTypesCommonByteBytes>;
   chainId?: U256 | undefined;
   from?: H160 | undefined;
   gas?: U256 | undefined;
   gasPrice?: U256 | undefined;
-  input: PalletReviveEvmApiRpcTypesGenInputOrData;
+  input: PalletReviveTypesRuntimeApiTypesTransactionInputOrDataV1;
   maxFeePerBlobGas?: U256 | undefined;
   maxFeePerGas?: U256 | undefined;
   maxPriorityFeePerGas?: U256 | undefined;
   nonce?: U256 | undefined;
   to?: H160 | undefined;
-  rType?: PalletReviveEvmApiByte | undefined;
+  rType?: PalletReviveTypesCommonByte | undefined;
   value?: U256 | undefined;
 };
 
-export type PalletReviveEvmApiRpcTypesGenInputOrData = {
-  input?: PalletReviveEvmApiByteBytes | undefined;
-  data?: PalletReviveEvmApiByteBytes | undefined;
+export type PalletReviveTypesRuntimeApiTypesTransactionInputOrDataV1 = {
+  input?: PalletReviveTypesCommonByteBytes | undefined;
+  data?: PalletReviveTypesCommonByteBytes | undefined;
 };
 
-export type PalletReviveEvmApiByte = number;
+export type PalletReviveTypesCommonByte = number;
 
-export type PalletRevivePrimitivesEthTransactInfo = {
+export type PalletReviveTypesRuntimeApiTypesDryRunEthTransactInfoV1 = {
   weightRequired: SpWeightsWeightV2Weight;
   storageDeposit: bigint;
   maxStorageDeposit: bigint;
@@ -23718,47 +24679,49 @@ export type PalletRevivePrimitivesEthTransactError =
   | { type: 'Data'; value: Bytes }
   | { type: 'Message'; value: string };
 
-export type PalletReviveEvmApiRpcTypesDryRunConfig = {
+export type PalletReviveTypesRuntimeApiTypesDryRunDryRunConfigV1 = {
   timestampOverride?: bigint | undefined;
   performBalanceChecks?: boolean | undefined;
-  stateOverrides?: PalletReviveEvmApiRpcTypesGenStateOverrideSet | undefined;
+  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
 };
 
-export type PalletReviveEvmApiRpcTypesGenStateOverrideSet = Array<[H160, PalletReviveEvmApiRpcTypesGenStateOverride]>;
+export type PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 = Array<
+  [H160, PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideV1]
+>;
 
-export type PalletReviveEvmApiRpcTypesGenStateOverride = {
+export type PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideV1 = {
   balance?: U256 | undefined;
   nonce?: U256 | undefined;
-  code?: PalletReviveEvmApiByteBytes | undefined;
-  storage?: PalletReviveEvmApiRpcTypesGenStorageOverride | undefined;
+  code?: PalletReviveTypesCommonByteBytes | undefined;
+  storage?: PalletReviveTypesRuntimeApiTypesStateOverridesStorageOverrideV1 | undefined;
   movePrecompileToAddress?: H160 | undefined;
 };
 
-export type PalletReviveEvmApiRpcTypesGenStorageOverride =
+export type PalletReviveTypesRuntimeApiTypesStateOverridesStorageOverrideV1 =
   | { type: 'State'; value: Array<[H256, H256]> }
   | { type: 'StateDiff'; value: Array<[H256, H256]> };
 
-export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
+export type PalletReviveTypesRuntimeApiTypesUploadCodeUploadReturnValueV1 = { codeHash: H256; deposit: bigint };
 
 export type PalletRevivePrimitivesContractAccessError =
   | { type: 'DoesntExist' }
   | { type: 'KeyDecodingFailed' }
   | { type: 'StorageWriteFailed'; value: DispatchError };
 
-export type PalletReviveEvmApiDebugRpcTypesTracerType =
-  | { type: 'CallTracer'; value?: PalletReviveEvmApiDebugRpcTypesCallTracerConfig | undefined }
-  | { type: 'PrestateTracer'; value?: PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig | undefined }
-  | { type: 'ExecutionTracer'; value?: PalletReviveEvmApiDebugRpcTypesExecutionTracerConfig | undefined };
+export type PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1 =
+  | { type: 'CallTracer'; value?: PalletReviveTypesRuntimeApiTypesTracerCallTracerConfigV1 | undefined }
+  | { type: 'PrestateTracer'; value?: PalletReviveTypesRuntimeApiTypesTracerPrestateTracerConfigV1 | undefined }
+  | { type: 'ExecutionTracer'; value?: PalletReviveTypesRuntimeApiTypesTracerExecutionTracerConfigV1 | undefined };
 
-export type PalletReviveEvmApiDebugRpcTypesCallTracerConfig = { withLogs: boolean; onlyTopCall: boolean };
+export type PalletReviveTypesRuntimeApiTypesTracerCallTracerConfigV1 = { withLogs: boolean; onlyTopCall: boolean };
 
-export type PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig = {
+export type PalletReviveTypesRuntimeApiTypesTracerPrestateTracerConfigV1 = {
   diffMode: boolean;
   disableStorage: boolean;
   disableCode: boolean;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesExecutionTracerConfig = {
+export type PalletReviveTypesRuntimeApiTypesTracerExecutionTracerConfigV1 = {
   enableMemory: boolean;
   disableStack: boolean;
   disableStorage: boolean;
@@ -23768,35 +24731,35 @@ export type PalletReviveEvmApiDebugRpcTypesExecutionTracerConfig = {
   memoryWordLimit: number;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesTrace =
-  | { type: 'Call'; value: PalletReviveEvmApiDebugRpcTypesCallTrace }
-  | { type: 'Prestate'; value: PalletReviveEvmApiDebugRpcTypesPrestateTrace }
-  | { type: 'Execution'; value: PalletReviveEvmApiDebugRpcTypesExecutionTrace };
+export type PalletReviveTypesRuntimeApiTypesTracesTraceV1 =
+  | { type: 'Call'; value: PalletReviveTypesRuntimeApiTypesTracesCallTraceV1 }
+  | { type: 'Prestate'; value: PalletReviveTypesRuntimeApiTypesTracesPrestateTraceV1 }
+  | { type: 'Execution'; value: PalletReviveTypesRuntimeApiTypesTracesExecutionTraceV1 };
 
-export type PalletReviveEvmApiDebugRpcTypesCallTrace = {
+export type PalletReviveTypesRuntimeApiTypesTracesCallTraceV1 = {
   from: H160;
   gas: bigint;
   gasUsed: bigint;
   to: H160;
-  input: PalletReviveEvmApiByteBytes;
-  output: PalletReviveEvmApiByteBytes;
+  input: PalletReviveTypesCommonByteBytes;
+  output: PalletReviveTypesCommonByteBytes;
   error?: string | undefined;
   revertReason?: string | undefined;
-  calls: Array<PalletReviveEvmApiDebugRpcTypesCallTrace>;
-  logs: Array<PalletReviveEvmApiDebugRpcTypesCallLog>;
+  calls: Array<PalletReviveTypesRuntimeApiTypesTracesCallTraceV1>;
+  logs: Array<PalletReviveTypesRuntimeApiTypesTracesCallLogV1>;
   value?: U256 | undefined;
-  callType: PalletReviveEvmApiDebugRpcTypesCallType;
+  callType: PalletReviveTypesRuntimeApiTypesTracesCallTypeV1;
   childCallCount: number;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesCallLog = {
+export type PalletReviveTypesRuntimeApiTypesTracesCallLogV1 = {
   address: H160;
   topics: Array<H256>;
-  data: PalletReviveEvmApiByteBytes;
+  data: PalletReviveTypesCommonByteBytes;
   position: number;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesCallType =
+export type PalletReviveTypesRuntimeApiTypesTracesCallTypeV1 =
   | 'Call'
   | 'StaticCall'
   | 'DelegateCall'
@@ -23804,60 +24767,579 @@ export type PalletReviveEvmApiDebugRpcTypesCallType =
   | 'Create2'
   | 'Selfdestruct';
 
-export type PalletReviveEvmApiDebugRpcTypesPrestateTrace =
-  | { type: 'Prestate'; value: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]> }
+export type PalletReviveTypesRuntimeApiTypesTracesPrestateTraceV1 =
+  | { type: 'Prestate'; value: Array<[H160, PalletReviveTypesRuntimeApiTypesTracesPrestateTraceInfoV1]> }
   | {
       type: 'DiffMode';
       value: {
-        pre: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]>;
-        post: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]>;
+        pre: Array<[H160, PalletReviveTypesRuntimeApiTypesTracesPrestateTraceInfoV1]>;
+        post: Array<[H160, PalletReviveTypesRuntimeApiTypesTracesPrestateTraceInfoV1]>;
       };
     };
 
-export type PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo = {
+export type PalletReviveTypesRuntimeApiTypesTracesPrestateTraceInfoV1 = {
   balance?: U256 | undefined;
   nonce?: number | undefined;
-  code?: PalletReviveEvmApiByteBytes | undefined;
-  storage: Array<[PalletReviveEvmApiByteBytes, PalletReviveEvmApiByteBytes | undefined]>;
+  code?: PalletReviveTypesCommonByteBytes | undefined;
+  storage: Array<[PalletReviveTypesCommonByteBytes, PalletReviveTypesCommonByteBytes | undefined]>;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesExecutionTrace = {
+export type PalletReviveTypesRuntimeApiTypesTracesExecutionTraceV1 = {
   gas: bigint;
   weightConsumed: SpWeightsWeightV2Weight;
   baseCallWeight: SpWeightsWeightV2Weight;
   failed: boolean;
-  returnValue: PalletReviveEvmApiByteBytes;
-  structLogs: Array<PalletReviveEvmApiDebugRpcTypesExecutionStep>;
+  returnValue: PalletReviveTypesCommonByteBytes;
+  structLogs: Array<PalletReviveTypesRuntimeApiTypesTracesExecutionStepV1>;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesExecutionStep = {
+export type PalletReviveTypesRuntimeApiTypesTracesExecutionStepV1 = {
   gas: bigint;
   gasCost: bigint;
   weightCost: SpWeightsWeightV2Weight;
   depth: number;
-  returnData: PalletReviveEvmApiByteBytes;
+  returnData: PalletReviveTypesCommonByteBytes;
   error?: string | undefined;
-  kind: PalletReviveEvmApiDebugRpcTypesExecutionStepKind;
+  kind: PalletReviveTypesRuntimeApiTypesTracesExecutionStepKindV1;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesExecutionStepKind =
+export type PalletReviveTypesRuntimeApiTypesTracesExecutionStepKindV1 =
   | {
       type: 'EvmOpcode';
       value: {
         pc: number;
-        op: number;
-        stack: Array<PalletReviveEvmApiByteBytes>;
-        memory: Array<PalletReviveEvmApiByteBytes>;
-        storage?: Array<[PalletReviveEvmApiByteBytes, PalletReviveEvmApiByteBytes]> | undefined;
+        op: PalletReviveTypesRuntimeApiTypesTracesEvmOpcodeV1;
+        stack: Array<PalletReviveTypesCommonByteBytes>;
+        memory: Array<PalletReviveTypesCommonByteBytes>;
+        storage?: Array<[PalletReviveTypesCommonByteBytes, PalletReviveTypesCommonByteBytes]> | undefined;
       };
     }
-  | { type: 'PvmSyscall'; value: { op: number; args: Array<bigint>; returned?: bigint | undefined } };
+  | {
+      type: 'PvmSyscall';
+      value: {
+        op: PalletReviveTypesRuntimeApiTypesTracesPolkavmSyscallV1;
+        args: Array<bigint>;
+        returned?: bigint | undefined;
+      };
+    };
 
-export type PalletReviveEvmApiRpcTypesTracingConfig = {
-  stateOverrides?: PalletReviveEvmApiRpcTypesGenStateOverrideSet | undefined;
+export type PalletReviveTypesRuntimeApiTypesTracesEvmOpcodeV1 = number;
+
+export type PalletReviveTypesRuntimeApiTypesTracesPolkavmSyscallV1 =
+  | 'Noop'
+  | 'SetStorage'
+  | 'SetStorageOrClear'
+  | 'GetStorage'
+  | 'GetStorageOrZero'
+  | 'Call'
+  | 'CallEvm'
+  | 'DelegateCall'
+  | 'DelegateCallEvm'
+  | 'Instantiate'
+  | 'CallDataSize'
+  | 'CallDataCopy'
+  | 'CallDataLoad'
+  | 'SealReturn'
+  | 'Caller'
+  | 'Origin'
+  | 'CodeHash'
+  | 'CodeSize'
+  | 'Address'
+  | 'GetImmutableData'
+  | 'SetImmutableData'
+  | 'Balance'
+  | 'BalanceOf'
+  | 'ChainId'
+  | 'GasLimit'
+  | 'ValueTransferred'
+  | 'GasPrice'
+  | 'BaseFee'
+  | 'Now'
+  | 'DepositEvent'
+  | 'BlockNumber'
+  | 'BlockHash'
+  | 'BlockAuthor'
+  | 'HashKeccak256'
+  | 'ReturnDataSize'
+  | 'ReturnDataCopy'
+  | 'RefTimeLeft'
+  | 'ConsumeAllGas'
+  | 'EcdsaToEthAddress'
+  | 'Sr25519Verify'
+  | 'Terminate'
+  | 'PvmFuel';
+
+export type PalletReviveTypesRuntimeApiTypesStateOverridesTracingConfigV1 = {
+  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
 };
 
 export type PalletRevivePrimitivesBalanceConversionError = 'Value' | 'Dust';
+
+export type PalletReviveTypesRuntimeApiDeclarationReviveRuntimeApiVersionDeclarations = Array<[string, number]>;
+
+export type PalletReviveTypesRuntimeApiPayloadsEthBlockBlockVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthBlockBlockInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthBlockBlockInputPayloadV1 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthBlockBlockVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthBlockBlockOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthBlockBlockOutputPayloadV1 = {
+  block: PalletReviveTypesRuntimeApiTypesBlockBlockV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashInputPayloadV1 = { blockNumber: U256 };
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashOutputPayloadV1 = { blockHash?: H256 | undefined };
+
+export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataInputPayloadV1 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataOutputPayloadV1 = {
+  receiptData: Array<PalletReviveTypesRuntimeApiTypesReceiptReceiptGasInfoV1>;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitInputPayloadV1 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitOutputPayloadV1 = { blockGasLimit: U256 };
+
+export type PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasInputPayloadV1 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasOutputPayloadV1 = {
+  maxExtrinsicWeightInGas: U256;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBalanceBalanceVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBalanceBalanceInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBalanceBalanceInputPayloadV1 = { address: H160 };
+
+export type PalletReviveTypesRuntimeApiPayloadsBalanceBalanceVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBalanceBalanceOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBalanceBalanceOutputPayloadV1 = { balance: U256 };
+
+export type PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceInputPayloadV1 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceOutputPayloadV1 = { gasPrice: U256 };
+
+export type PalletReviveTypesRuntimeApiPayloadsNonceNonceVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsNonceNonceInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsNonceNonceInputPayloadV1 = { address: H160 };
+
+export type PalletReviveTypesRuntimeApiPayloadsNonceNonceVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsNonceNonceOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsNonceNonceOutputPayloadV1 = { nonce: number };
+
+export type PalletReviveTypesRuntimeApiPayloadsCallCallVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsCallCallInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsCallCallInputPayloadV1 = {
+  origin: AccountId32;
+  dest: H160;
+  value: bigint;
+  gasLimit?: SpWeightsWeightV2Weight | undefined;
+  storageDepositLimit?: bigint | undefined;
+  inputData: Bytes;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsCallCallVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsCallCallOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsCallCallOutputPayloadV1 = {
+  contractResult: PalletReviveTypesRuntimeApiTypesContractContractResultV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateInputPayloadV1 = {
+  origin: AccountId32;
+  value: bigint;
+  gasLimit?: SpWeightsWeightV2Weight | undefined;
+  storageDepositLimit?: bigint | undefined;
+  code: PalletReviveTypesRuntimeApiTypesContractCodeV1;
+  data: Bytes;
+  salt?: FixedBytes<32> | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateOutputPayloadV1 = {
+  contractResult: PalletReviveTypesRuntimeApiTypesContractContractResultV1InstantiateReturnValueV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthTransactTransactVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthTransactTransactInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthTransactTransactInputPayloadV1 = {
+  tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1;
+  timestampOverride?: bigint | undefined;
+  performBalanceChecks: boolean;
+  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthTransactTransactVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthTransactTransactOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthTransactTransactOutputPayloadV1 = {
+  transactInfo: PalletReviveTypesRuntimeApiTypesDryRunEthTransactInfoV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasInputPayloadV1 = {
+  tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1;
+  timestampOverride?: bigint | undefined;
+  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasOutputPayloadV1 = { gasEstimate: U256 };
+
+export type PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightInputPayloadV1 = { tx: Bytes };
+
+export type PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightOutputPayloadV1 = {
+  weight: SpWeightsWeightV2Weight;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeInputPayloadV1 = {
+  origin: AccountId32;
+  code: Bytes;
+  storageDepositLimit?: bigint | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeOutputPayloadV1 = {
+  codeUploadReturnValue: PalletReviveTypesRuntimeApiTypesUploadCodeUploadReturnValueV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageInputPayloadV1 = {
+  address: H160;
+  key: PalletReviveTypesRuntimeApiTypesStorageStorageKeyV1;
+};
+
+export type PalletReviveTypesRuntimeApiTypesStorageStorageKeyV1 =
+  | { type: 'Fixed'; value: FixedBytes<32> }
+  | { type: 'Variable'; value: Bytes };
+
+export type PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageOutputPayloadV1 = { storage?: Bytes | undefined };
+
+export type PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressInputPayloadV1 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressOutputPayloadV1 = {
+  runtimePalletsAddress: H160;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsCodeCodeVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsCodeCodeInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsCodeCodeInputPayloadV1 = { address: H160 };
+
+export type PalletReviveTypesRuntimeApiPayloadsCodeCodeVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsCodeCodeOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsCodeCodeOutputPayloadV1 = { code: Bytes };
+
+export type PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdInputPayloadV1 = { address: H160 };
+
+export type PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdOutputPayloadV1 = { accountId: AccountId32 };
+
+export type PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustInputPayloadV1 = { balance: U256 };
+
+export type PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustOutputPayloadV1 = {
+  newBalance: bigint;
+  dust: number;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorInputPayloadV1 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorOutputPayloadV1 = { blockAuthor: H160 };
+
+export type PalletReviveTypesRuntimeApiPayloadsAddressAddressVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsAddressAddressInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsAddressAddressInputPayloadV1 = { accountId: AccountId32 };
+
+export type PalletReviveTypesRuntimeApiPayloadsAddressAddressVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsAddressAddressOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsAddressAddressOutputPayloadV1 = { address: H160 };
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockVersionedInputPayload =
+  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockInputPayloadV1 }
+  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockInputPayloadV2 };
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockInputPayloadV1 = {
+  block: SpRuntimeBlock;
+  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockInputPayloadV2 = {
+  block: SpRuntimeBlock;
+  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockVersionedOutputPayload =
+  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockOutputPayloadV1 }
+  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockOutputPayloadV2 };
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockOutputPayloadV1 = {
+  traces: Array<[number, PalletReviveTypesRuntimeApiTypesTracesTraceV1]>;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockOutputPayloadV2 = {
+  entries: Array<[number, PalletReviveTypesRuntimeApiTypesTracesTraceEntryV1]>;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTracesTraceEntryV1 =
+  | { type: 'Traced'; value: PalletReviveTypesRuntimeApiTypesTracesTraceV2 }
+  | { type: 'NotTraced' };
+
+export type PalletReviveTypesRuntimeApiTypesTracesTraceV2 =
+  | { type: 'Call'; value: PalletReviveTypesRuntimeApiTypesTracesCallTraceV2 }
+  | { type: 'Prestate'; value: PalletReviveTypesRuntimeApiTypesTracesPrestateTraceV1 }
+  | { type: 'Execution'; value: PalletReviveTypesRuntimeApiTypesTracesExecutionTraceV1 };
+
+export type PalletReviveTypesRuntimeApiTypesTracesCallTraceV2 = {
+  from: H160;
+  gas: bigint;
+  gasUsed: bigint;
+  to: H160;
+  input: PalletReviveTypesCommonByteBytes;
+  output: PalletReviveTypesCommonByteBytes;
+  error?: string | undefined;
+  revertReason?: string | undefined;
+  calls: Array<PalletReviveTypesRuntimeApiTypesTracesCallTraceV2>;
+  logs: Array<PalletReviveTypesRuntimeApiTypesTracesCallLogV2>;
+  value?: U256 | undefined;
+  callType: PalletReviveTypesRuntimeApiTypesTracesCallTypeV1;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTracesCallLogV2 = {
+  address: H160;
+  topics: Array<H256>;
+  data: PalletReviveTypesCommonByteBytes;
+  position: number;
+  index: number;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxVersionedInputPayload =
+  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxInputPayloadV1 }
+  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxInputPayloadV2 };
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxInputPayloadV1 = {
+  block: SpRuntimeBlock;
+  txIndex: number;
+  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxInputPayloadV2 = {
+  block: SpRuntimeBlock;
+  txIndex: number;
+  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxVersionedOutputPayload =
+  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxOutputPayloadV1 }
+  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxOutputPayloadV2 };
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxOutputPayloadV1 = {
+  trace?: PalletReviveTypesRuntimeApiTypesTracesTraceV1 | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxOutputPayloadV2 = {
+  entry?: PalletReviveTypesRuntimeApiTypesTracesTraceEntryV1 | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallVersionedInputPayload =
+  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallInputPayloadV1 }
+  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallInputPayloadV2 };
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallInputPayloadV1 = {
+  tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1;
+  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
+  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallInputPayloadV2 = {
+  tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1;
+  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
+  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallVersionedOutputPayload =
+  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallOutputPayloadV1 }
+  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallOutputPayloadV2 };
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallOutputPayloadV1 = {
+  trace: PalletReviveTypesRuntimeApiTypesTracesTraceV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallOutputPayloadV2 = {
+  trace: PalletReviveTypesRuntimeApiTypesTracesTraceV2;
+};
 
 export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }

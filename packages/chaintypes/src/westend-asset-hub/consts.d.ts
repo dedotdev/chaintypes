@@ -643,15 +643,6 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
-   * Pallet `Parameters`'s constants
-   **/
-  parameters: {
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
    * Pallet `Recovery`'s constants
    **/
   recovery: {
@@ -987,8 +978,16 @@ export interface ChainConsts extends GenericChainConsts {
   assetConversion: {
     /**
      * The fraction of every swap that the liquidity providers take as a fee.
+     *
+     * Used as the default swap fee for any pool that has no per-pool override set in
+     * [`PoolFees`]. See [`Pallet::pool_fee`].
      **/
     lpFee: Permill;
+
+    /**
+     * The maximum swap fee that can be set for a pool.
+     **/
+    maxSwapFee: Permill;
 
     /**
      * A one-time fee to setup the pool.
@@ -1231,19 +1230,14 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   psm: {
     /**
-     * PalletId for deriving the PSM account.
+     * PalletId for deriving each PSM instance's reserve sub-account.
      **/
     palletId: FrameSupportPalletId;
 
     /**
-     * Minimum swap amount.
+     * Maximum number of approved external assets per PSM instance.
      **/
-    minSwapAmount: bigint;
-
-    /**
-     * Maximum number of approved external assets.
-     **/
-    maxExternalAssets: number;
+    maxExternals: number;
 
     /**
      * Generic pallet constant
@@ -1465,6 +1459,16 @@ export interface ChainConsts extends GenericChainConsts {
      * The maximum number of simultaneous unbonding chunks that can exist per member.
      **/
     maxUnbonding: number;
+
+    /**
+     * The maximum number of distinct era-keyed unbonding sub-pools ([`SubPools::with_era`])
+     * that may exist at once. This is also the basis for how long each sub-pool is kept on
+     * its own (correct) points-to-balance ratio: a sub-pool is merged into the era-agnostic
+     * [`SubPools::no_era`] pool only after `MaxUnbondingPools - bonding_duration` eras
+     * have passed since its unlock era (see `SubPools::maybe_merge_pools`). Once merged
+     * the ratio can become skewed due to some slashed ratio getting merged in at some point.
+     **/
+    maxUnbondingPools: number;
 
     /**
      * Generic pallet constant

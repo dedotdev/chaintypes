@@ -1221,9 +1221,15 @@ export interface ChainErrors extends GenericChainErrors {
     CallbackFailed: GenericPalletError;
 
     /**
-     * The asset ID must be equal to the [`NextAssetId`].
+     * The asset ID is not the one required by [`Config::AssetIdAllocator`].
      **/
     BadAssetId: GenericPalletError;
+
+    /**
+     * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+     * exhausted.
+     **/
+    AssetIdAllocationFailed: GenericPalletError;
 
     /**
      * The asset cannot be destroyed because some accounts for this asset contain freezes.
@@ -1239,6 +1245,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Tried setting too many reserves.
      **/
     TooManyReserves: GenericPalletError;
+
+    /**
+     * The asset deposit could not be fully moved due to a lock or freeze on the owner.
+     **/
+    IncompleteDepositTransfer: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1706,9 +1717,15 @@ export interface ChainErrors extends GenericChainErrors {
     CallbackFailed: GenericPalletError;
 
     /**
-     * The asset ID must be equal to the [`NextAssetId`].
+     * The asset ID is not the one required by [`Config::AssetIdAllocator`].
      **/
     BadAssetId: GenericPalletError;
+
+    /**
+     * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+     * exhausted.
+     **/
+    AssetIdAllocationFailed: GenericPalletError;
 
     /**
      * The asset cannot be destroyed because some accounts for this asset contain freezes.
@@ -1724,6 +1741,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Tried setting too many reserves.
      **/
     TooManyReserves: GenericPalletError;
+
+    /**
+     * The asset deposit could not be fully moved due to a lock or freeze on the owner.
+     **/
+    IncompleteDepositTransfer: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1867,9 +1889,15 @@ export interface ChainErrors extends GenericChainErrors {
     CallbackFailed: GenericPalletError;
 
     /**
-     * The asset ID must be equal to the [`NextAssetId`].
+     * The asset ID is not the one required by [`Config::AssetIdAllocator`].
      **/
     BadAssetId: GenericPalletError;
+
+    /**
+     * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+     * exhausted.
+     **/
+    AssetIdAllocationFailed: GenericPalletError;
 
     /**
      * The asset cannot be destroyed because some accounts for this asset contain freezes.
@@ -1885,6 +1913,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Tried setting too many reserves.
      **/
     TooManyReserves: GenericPalletError;
+
+    /**
+     * The asset deposit could not be fully moved due to a lock or freeze on the owner.
+     **/
+    IncompleteDepositTransfer: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2017,6 +2050,11 @@ export interface ChainErrors extends GenericChainErrors {
      * The pool exists but has no liquidity (at least one of the reserves is zero).
      **/
     PoolEmpty: GenericPalletError;
+
+    /**
+     * The fee exceeds [`Config::MaxSwapFee`].
+     **/
+    FeeTooHigh: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2522,7 +2560,7 @@ export interface ChainErrors extends GenericChainErrors {
    **/
   psm: {
     /**
-     * PSM doesn't have enough external stablecoin for redemption.
+     * PSM doesn't have enough external asset for redemption.
      **/
     InsufficientReserve: GenericPalletError;
 
@@ -2532,9 +2570,19 @@ export interface ChainErrors extends GenericChainErrors {
     ExceedsMaxPsmDebt: GenericPalletError;
 
     /**
-     * Swap amount below minimum threshold.
+     * Swap amount below the instance's minimum threshold.
      **/
     BelowMinimumSwap: GenericPalletError;
+
+    /**
+     * Current fee exceeds the caller-provided maximum.
+     **/
+    FeeTooHigh: GenericPalletError;
+
+    /**
+     * `create_psm` was called with a zero `min_swap_amount`.
+     **/
+    ZeroMinSwapAmount: GenericPalletError;
 
     /**
      * Minting operations are disabled (circuit breaker level >= 1).
@@ -2547,14 +2595,14 @@ export interface ChainErrors extends GenericChainErrors {
     AllSwapsStopped: GenericPalletError;
 
     /**
-     * Asset is not an approved external stablecoin.
+     * Asset is not an approved external asset.
      **/
     UnsupportedAsset: GenericPalletError;
 
     /**
-     * Mint would exceed system-wide maximum internal issuance.
+     * No PSM instance is registered for the given internal asset.
      **/
-    ExceedsMaxIssuance: GenericPalletError;
+    PsmNotFound: GenericPalletError;
 
     /**
      * Asset is already in the approved list.
@@ -2577,7 +2625,8 @@ export interface ChainErrors extends GenericChainErrors {
     AssetHasDebt: GenericPalletError;
 
     /**
-     * Operation requires Full manager level (GeneralAdmin), not Emergency.
+     * Operation requires the instance's `full_admin` (Full level); the caller only
+     * matched the `emergency_admin` (Emergency level).
      **/
     InsufficientPrivilege: GenericPalletError;
 
@@ -2605,6 +2654,21 @@ export interface ChainErrors extends GenericChainErrors {
      * Conversion to the counter-asset rounds to zero; swap would transfer nothing.
      **/
     AmountTooSmallAfterConversion: GenericPalletError;
+
+    /**
+     * A PSM is already registered for this internal asset.
+     **/
+    PsmAlreadyExists: GenericPalletError;
+
+    /**
+     * The PSM has non-zero outstanding debt on at least one approved external.
+     **/
+    PsmHasDebt: GenericPalletError;
+
+    /**
+     * The PSM still has approved externals; remove them before removing the PSM.
+     **/
+    PsmHasApprovedExternals: GenericPalletError;
 
     /**
      * An unexpected invariant violation occurred. This should be reported.
@@ -2860,6 +2924,16 @@ export interface ChainErrors extends GenericChainErrors {
      * Optimum self-stake cannot be greater than hard cap.
      **/
     OptimumGreaterThanCap: GenericPalletError;
+
+    /**
+     * Validator inactivity proof is invalid.
+     **/
+    InvalidInactivityProof: GenericPalletError;
+
+    /**
+     * Cannot set [`ChillInactiveThreshold`] to the provided value.
+     **/
+    InvalidChillInactiveThreshold: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3459,6 +3533,26 @@ export interface ChainErrors extends GenericChainErrors {
      * The call was already whitelisted; No-Op.
      **/
     CallAlreadyWhitelisted: GenericPalletError;
+
+    /**
+     * No deferred dispatch entry exists for this call hash.
+     **/
+    DeferredDispatchNotFound: GenericPalletError;
+
+    /**
+     * The deferred dispatch entry has not yet expired.
+     **/
+    DeferredDispatchNotExpired: GenericPalletError;
+
+    /**
+     * The dispatch has already been deferred.
+     **/
+    AlreadyDeferred: GenericPalletError;
+
+    /**
+     * The deferred dispatch has expired.
+     **/
+    DeferredDispatchExpired: GenericPalletError;
 
     /**
      * Generic pallet error

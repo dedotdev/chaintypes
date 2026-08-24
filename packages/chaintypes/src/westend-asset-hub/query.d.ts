@@ -11,9 +11,9 @@ import type {
   FixedU128,
   BytesLike,
   FixedBytes,
+  Permill,
   H160,
   U256,
-  Permill,
   Perbill,
   Percent,
 } from 'dedot/codecs';
@@ -75,8 +75,6 @@ import type {
   PalletMultisigMultisig,
   PalletProxyProxyDefinition,
   PalletProxyAnnouncement,
-  AssetHubWestendRuntimeRuntimeParametersValue,
-  AssetHubWestendRuntimeRuntimeParametersKey,
   PalletRecoveryFriendGroup,
   FrameSupportTokensFungibleHoldConsideration,
   PalletRecoveryAttempt,
@@ -107,13 +105,15 @@ import type {
   PalletReviveStorageAccountInfo,
   PalletReviveStorageDeletionQueueItem,
   PalletReviveStorageDeletionQueueManager,
-  PalletReviveEvmApiRpcTypesGenBlock,
+  PalletReviveEvmApiBlock,
   PalletReviveEvmBlockHashReceiptGasInfo,
   PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR,
   PalletReviveDebugDebugSettings,
   PalletAssetRewardsPoolStakerInfo,
   PalletAssetRewardsPoolInfo,
-  PalletPsmCircuitBreakerLevel,
+  PalletPsmPsmInfo,
+  PalletPsmPsmAdminInfo,
+  PalletPsmExternalAssetInfo,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationMigrationLimits,
   PalletStakingAsyncLedgerStakingLedger,
@@ -1548,26 +1548,6 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
-   * Pallet `Parameters`'s storage queries
-   **/
-  parameters: {
-    /**
-     * Stored parameters.
-     *
-     * @param {AssetHubWestendRuntimeRuntimeParametersKey} arg
-     * @param {Callback<AssetHubWestendRuntimeRuntimeParametersValue | undefined> =} callback
-     **/
-    parameters: GenericStorageQuery<
-      (arg: AssetHubWestendRuntimeRuntimeParametersKey) => AssetHubWestendRuntimeRuntimeParametersValue | undefined,
-      AssetHubWestendRuntimeRuntimeParametersKey
-    >;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
    * Pallet `Recovery`'s storage queries
    **/
   recovery: {
@@ -1675,9 +1655,8 @@ export interface ChainStorage extends GenericChainStorage {
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
      * item has no effect.
      *
-     * This can be useful for setting up constraints for IDs of the new assets. For example, by
-     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
-     * auto-increment model can be applied to all new asset IDs.
+     * Only read by [`crate::AutoIncAssetId`]: configure it as [`Config::AssetIdAllocator`] and
+     * provide an initial value here to apply an auto-increment model to all new asset IDs.
      *
      * The initial next asset ID can be set using the [`GenesisConfig`] or the
      * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
@@ -2005,9 +1984,8 @@ export interface ChainStorage extends GenericChainStorage {
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
      * item has no effect.
      *
-     * This can be useful for setting up constraints for IDs of the new assets. For example, by
-     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
-     * auto-increment model can be applied to all new asset IDs.
+     * Only read by [`crate::AutoIncAssetId`]: configure it as [`Config::AssetIdAllocator`] and
+     * provide an initial value here to apply an auto-increment model to all new asset IDs.
      *
      * The initial next asset ID can be set using the [`GenesisConfig`] or the
      * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
@@ -2097,9 +2075,8 @@ export interface ChainStorage extends GenericChainStorage {
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
      * item has no effect.
      *
-     * This can be useful for setting up constraints for IDs of the new assets. For example, by
-     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
-     * auto-increment model can be applied to all new asset IDs.
+     * Only read by [`crate::AutoIncAssetId`]: configure it as [`Config::AssetIdAllocator`] and
+     * provide an initial value here to apply an auto-increment model to all new asset IDs.
      *
      * The initial next asset ID can be set using the [`GenesisConfig`] or the
      * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
@@ -2136,6 +2113,21 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<number | undefined> =} callback
      **/
     nextPoolAssetId: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * Per-pool swap fee overrides.
+     *
+     * When a pool has no entry here, the global [`Config::LPFee`] applies. This storage is purely
+     * additive: existing pools and runtimes that never set a per-pool fee behave exactly as before
+     * and require no migration. See [`Pallet::pool_fee`] for the resolution logic.
+     *
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
+     * @param {Callback<Permill | undefined> =} callback
+     **/
+    poolFees: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => Permill | undefined,
+      [StagingXcmV5Location, StagingXcmV5Location]
+    >;
 
     /**
      * Generic pallet storage query
@@ -2331,9 +2323,9 @@ export interface ChainStorage extends GenericChainStorage {
      * Since the block is convenient to have around, and the extra details are capped
      * by a few hashes and the vector of transaction hashes, we store the block here.
      *
-     * @param {Callback<PalletReviveEvmApiRpcTypesGenBlock> =} callback
+     * @param {Callback<PalletReviveEvmApiBlock> =} callback
      **/
-    ethereumBlock: GenericStorageQuery<() => PalletReviveEvmApiRpcTypesGenBlock>;
+    ethereumBlock: GenericStorageQuery<() => PalletReviveEvmApiBlock>;
 
     /**
      * Mapping for block number and hashes.
@@ -2529,80 +2521,83 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   psm: {
     /**
-     * internal minted through PSM per external asset, denominated in internal units.
+     * Registered PSM instances, keyed by the internal asset id.
      *
      * @param {StagingXcmV5Location} arg
-     * @param {Callback<bigint> =} callback
+     * @param {Callback<PalletPsmPsmInfo | undefined> =} callback
      **/
-    psmDebt: GenericStorageQuery<(arg: StagingXcmV5Location) => bigint, StagingXcmV5Location>;
+    psm: GenericStorageQuery<(arg: StagingXcmV5Location) => PalletPsmPsmInfo | undefined, StagingXcmV5Location>;
 
     /**
-     * Fee for external → internal swaps (minting) per asset. Suggested value is 0.5%.
+     * Admin origins and creation-deposit bookkeeping per PSM, keyed by the internal
+     * asset id. Held separately from [`Psm`] so swaps never decode the admin origins.
+     * Always written and removed together with the corresponding [`Psm`] entry.
      *
      * @param {StagingXcmV5Location} arg
-     * @param {Callback<Permill> =} callback
+     * @param {Callback<PalletPsmPsmAdminInfo | undefined> =} callback
      **/
-    mintingFee: GenericStorageQuery<(arg: StagingXcmV5Location) => Permill, StagingXcmV5Location>;
-
-    /**
-     * Fee for internal → external swaps (redemption) per asset. Suggested value is 0.5%.
-     *
-     * @param {StagingXcmV5Location} arg
-     * @param {Callback<Permill> =} callback
-     **/
-    redemptionFee: GenericStorageQuery<(arg: StagingXcmV5Location) => Permill, StagingXcmV5Location>;
-
-    /**
-     * Max PSM debt as percentage of MaximumIssuance (global ceiling).
-     *
-     * @param {Callback<Permill> =} callback
-     **/
-    maxPsmDebtOfTotal: GenericStorageQuery<() => Permill>;
-
-    /**
-     * Per-asset ceiling weight. Weights are normalized against the sum of all weights.
-     * Zero means minting is disabled for this asset.
-     *
-     * @param {StagingXcmV5Location} arg
-     * @param {Callback<Permill> =} callback
-     **/
-    assetCeilingWeight: GenericStorageQuery<(arg: StagingXcmV5Location) => Permill, StagingXcmV5Location>;
-
-    /**
-     * Set of approved external stablecoin asset IDs with their operational status.
-     * Key existence indicates the asset is approved; the value is the circuit breaker level.
-     *
-     * @param {StagingXcmV5Location} arg
-     * @param {Callback<PalletPsmCircuitBreakerLevel | undefined> =} callback
-     **/
-    externalAssets: GenericStorageQuery<
-      (arg: StagingXcmV5Location) => PalletPsmCircuitBreakerLevel | undefined,
+    psmAdmin: GenericStorageQuery<
+      (arg: StagingXcmV5Location) => PalletPsmPsmAdminInfo | undefined,
       StagingXcmV5Location
     >;
 
     /**
-     * Counter for the related counted storage map
+     * Internal-asset debt minted through PSM, per `(internal, external)` pair.
      *
-     * @param {Callback<number> =} callback
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
+     * @param {Callback<bigint> =} callback
      **/
-    counterForExternalAssets: GenericStorageQuery<() => number>;
+    psmDebt: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => bigint,
+      [StagingXcmV5Location, StagingXcmV5Location]
+    >;
 
     /**
-     * Snapshot of each approved external asset's decimals at registration.
-     * Used to detect runtime drift from the registered precision.
+     * Fee for external → internal swaps (minting), per `(internal, external)` pair.
+     * Defaults to 0.5%.
      *
-     * @param {StagingXcmV5Location} arg
-     * @param {Callback<number | undefined> =} callback
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
+     * @param {Callback<Permill> =} callback
      **/
-    externalDecimals: GenericStorageQuery<(arg: StagingXcmV5Location) => number | undefined, StagingXcmV5Location>;
+    mintingFee: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => Permill,
+      [StagingXcmV5Location, StagingXcmV5Location]
+    >;
 
     /**
-     * Snapshot of the internal asset's decimals taken at genesis.
-     * Set once during genesis build; present for the lifetime of the pallet.
+     * Fee for internal → external swaps (redemption), per `(internal, external)` pair.
+     * Defaults to 0.5%.
      *
-     * @param {Callback<number | undefined> =} callback
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
+     * @param {Callback<Permill> =} callback
      **/
-    internalDecimals: GenericStorageQuery<() => number | undefined>;
+    redemptionFee: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => Permill,
+      [StagingXcmV5Location, StagingXcmV5Location]
+    >;
+
+    /**
+     * Per-external ceiling weight within a PSM, normalised against the sum of weights
+     * for the same instance. Zero disables minting for that external.
+     *
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
+     * @param {Callback<Permill> =} callback
+     **/
+    assetCeilingWeight: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => Permill,
+      [StagingXcmV5Location, StagingXcmV5Location]
+    >;
+
+    /**
+     * Approved external assets per PSM.
+     *
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
+     * @param {Callback<PalletPsmExternalAssetInfo | undefined> =} callback
+     **/
+    externalAssets: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => PalletPsmExternalAssetInfo | undefined,
+      [StagingXcmV5Location, StagingXcmV5Location]
+    >;
 
     /**
      * Generic pallet storage query
@@ -2778,6 +2773,43 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [number, AccountId32Like]) => bigint | undefined,
       [number, AccountId32]
     >;
+
+    /**
+     * Running sum of `validator_incentive_weight × era_points` across all validators
+     * with non-zero era points for the era.
+     *
+     * Maintained incrementally inside [`session_rotation::Eras::reward_active_era`] every
+     * time validator points are credited. Used as the denominator of the weighted-points
+     * share that determines each validator's slice of [`ErasValidatorIncentiveBudget`].
+     *
+     * @param {number} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    erasSumWeightedPoints: GenericStorageQuery<(arg: number) => bigint, number>;
+
+    /**
+     * Cutoff era from which the validator self-stake incentive switches to the
+     * weighted-points formula.
+     *
+     * `None` is the pre-migration state for chains whose storage predates this item. Until the
+     * migration records a cutoff, [`session_rotation::Eras::uses_weighted_points`] treats all
+     * eras as weighted-points eras. Chains initialized with this storage item set the cutoff to
+     * `0` in `genesis_build`, and the upgrade migration leaves any existing value untouched.
+     *
+     * See [`session_rotation::Eras::uses_weighted_points`] for the exact semantics and
+     * the rationale for the cutoff.
+     *
+     * TODO(staking-async): remove this storage item, the legacy stake-only branch in
+     * [`crate::Pallet::calculate_validator_incentive_for_page`], the
+     * [`session_rotation::Eras::uses_weighted_points`] cutoff helper, and the
+     * [`crate::migrations::SetWeightedPointsFormulaStartEra`] migration once
+     * [`Config::HistoryDepth`] eras have elapsed since the upgrade — i.e. once the cutoff
+     * satisfies `cutoff <= active_era - HistoryDepth`, at which point no pre-cutoff era
+     * remains claimable and every live era uses the weighted-points formula.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    weightedPointsFormulaStartEra: GenericStorageQuery<() => number | undefined>;
 
     /**
      * Whether nominators are slashable or not.
@@ -3235,6 +3267,16 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<PalletStakingAsyncPalletPruningStep | undefined> =} callback
      **/
     eraPruningState: GenericStorageQuery<(arg: number) => PalletStakingAsyncPalletPruningStep | undefined, number>;
+
+    /**
+     * The number of eras a validator can remain inactive during the last
+     * [`Config::HistoryDepth`] before being subject to chilling because of inactivity.
+     *
+     * This must be less than or equal [`Config::HistoryDepth`] and bigger than 1.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    chillInactiveThreshold: GenericStorageQuery<() => number>;
 
     /**
      * Generic pallet storage query
@@ -3922,6 +3964,15 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<[] | undefined> =} callback
      **/
     whitelistedCall: GenericStorageQuery<(arg: H256) => [] | undefined, H256>;
+
+    /**
+     * Deferred dispatches, mapping a call hash to the provided block number at which the deferral
+     * expires and the entry can be permissionlessly removed.
+     *
+     * @param {H256} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    deferredDispatch: GenericStorageQuery<(arg: H256) => number | undefined, H256>;
 
     /**
      * Generic pallet storage query

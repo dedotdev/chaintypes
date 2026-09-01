@@ -978,6 +978,25 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `Psm`'s constants
+   **/
+  psm: {
+    /**
+     * PalletId for deriving each PSM instance's reserve sub-account.
+     **/
+    palletId: FrameSupportPalletId;
+
+    /**
+     * Maximum number of approved external assets per PSM instance.
+     **/
+    maxExternals: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `Treasury`'s constants
    **/
   treasury: {

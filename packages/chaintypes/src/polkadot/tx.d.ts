@@ -9810,6 +9810,8 @@ export interface ChainTx<
      * was the latest when they were trapped.
      * - `beneficiary`: The location/account where the claimed assets will be deposited.
      *
+     * The weight of this call is linear in the number of assets claimed.
+     *
      * @param {XcmVersionedAssets} assets
      * @param {XcmVersionedLocation} beneficiary
      **/

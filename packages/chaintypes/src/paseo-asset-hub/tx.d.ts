@@ -17,6 +17,7 @@ import type {
   AccountId32Like,
   EthereumAddressLike,
   Perbill,
+  Permill,
   FixedU128,
   Percent,
   H160,
@@ -67,6 +68,7 @@ import type {
   PalletNftsPreSignedMint,
   PalletNftsPreSignedAttributes,
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
+  PalletPsmCircuitBreakerLevel,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   ParachainsCommonPayVersionedLocatableAccount,
   PalletConvictionVotingVoteAccountVote,
@@ -2577,6 +2579,8 @@ export interface ChainTx<
      * - `assets`: The exact assets that were trapped. Use the version to specify what version
      * was the latest when they were trapped.
      * - `beneficiary`: The location/account where the claimed assets will be deposited.
+     *
+     * The weight of this call is linear in the number of assets claimed.
      *
      * @param {XcmVersionedAssets} assets
      * @param {XcmVersionedLocation} beneficiary
@@ -10340,6 +10344,665 @@ export interface ChainTx<
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
+   * Pallet `Psm`'s transaction calls
+   **/
+  psm: {
+    /**
+     * Swap external asset for internal on a specific PSM instance.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be `Signed` by the user performing the swap.
+     *
+     * ## Details
+     *
+     * Transfers `external_amount` of `external_asset` from the caller to the
+     * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
+     * caller minus the minting fee. The fee is calculated using ceiling rounding
+     * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
+     * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The internal stablecoin that identifies the PSM instance.
+     * - `external_asset`: The external asset to deposit (must be approved on
+     * `internal_asset`).
+     * - `external_amount`: Amount of external asset to deposit.
+     * - `max_fee`: Maximum minting fee rate accepted by the caller.
+     *
+     * ## Errors
+     *
+     * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+     * - [`Error::UnsupportedAsset`]: If `external_asset` is not approved on this PSM.
+     * - [`Error::MintingStopped`]: If the per-external circuit breaker is at `MintingDisabled`
+     * or higher.
+     * - [`Error::BelowMinimumSwap`]: If the internal-equivalent of `external_amount` is below
+     * the instance's `min_swap_amount`.
+     * - [`Error::FeeTooHigh`]: If the configured minting fee exceeds `max_fee`.
+     * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed this PSM's debt ceiling
+     * (aggregate or per-asset).
+     * - [`Error::DecimalsMismatch`]: If live decimals diverged from the snapshot taken at
+     * registration.
+     * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
+     * rounds to zero; swap would transfer nothing.
+     *
+     * ## Events
+     *
+     * - [`Event::Minted`]: Emitted on successful mint.
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
+     * @param {bigint} externalAmount
+     * @param {Permill} maxFee
+     **/
+    mint: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
+        externalAmount: bigint,
+        maxFee: Permill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'Mint';
+            params: {
+              internalAsset: StagingXcmV5Location;
+              externalAsset: StagingXcmV5Location;
+              externalAmount: bigint;
+              maxFee: Permill;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Swap internal for external asset on a specific PSM instance.
+     *
+     * ## Dispatch Origin
+     *
+     * Must be `Signed` by the user performing the swap.
+     *
+     * ## Details
+     *
+     * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
+     * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
+     * amount in `external_asset` from the PSM reserve to the caller. The fee is
+     * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
+     * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
+     * was registered, allowing existing positions to unwind even if live metadata later
+     * changes.
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The internal stablecoin that identifies the PSM instance.
+     * - `external_asset`: The external asset to receive (must be approved on
+     * `internal_asset`).
+     * - `internal_amount`: Amount of `internal_asset` to redeem.
+     * - `max_fee`: Maximum redemption fee rate accepted by the caller.
+     *
+     * ## Errors
+     *
+     * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+     * - [`Error::UnsupportedAsset`]: If `external_asset` is not approved on this PSM.
+     * - [`Error::AllSwapsStopped`]: If the per-external circuit breaker is at `AllDisabled`.
+     * - [`Error::BelowMinimumSwap`]: If `internal_amount` is below the instance's
+     * `min_swap_amount`.
+     * - [`Error::FeeTooHigh`]: If the configured redemption fee exceeds `max_fee`.
+     * - [`Error::InsufficientReserve`]: If the PSM holds less of `external_asset` than the
+     * redemption requires.
+     * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
+     * rounds to zero; swap would transfer nothing.
+     *
+     * ## Events
+     *
+     * - [`Event::Redeemed`]: Emitted on successful redemption.
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
+     * @param {bigint} internalAmount
+     * @param {Permill} maxFee
+     **/
+    redeem: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
+        internalAmount: bigint,
+        maxFee: Permill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'Redeem';
+            params: {
+              internalAsset: StagingXcmV5Location;
+              externalAsset: StagingXcmV5Location;
+              internalAmount: bigint;
+              maxFee: Permill;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Create a PSM for a given internal asset.
+     *
+     * If [`Config::CreateOrigin`] resolves to `Some(account)`, takes a
+     * [`Config::Consideration`] deposit from that account for the instance's footprint
+     * (refunded on `remove_psm`). If it resolves to `None`, no deposit is taken. The
+     * `full_admin` and `emergency_admin` origins are set from the provided arguments and may
+     * later be reassigned via [`Pallet::set_full_admin`] / [`Pallet::set_emergency_admin`].
+     *
+     * ## Dispatch Origin
+     *
+     * [`Config::CreateOrigin`], parameterised by `internal_asset`. With the recommended
+     * [`EnsureAssetOwner`] this is a signed origin that owns `internal_asset`.
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The internal stablecoin keying the new PSM. Must exist in the
+     * fungibles backend; must not already have a PSM registered.
+     * - `full_admin`: Origin granted full management of the new PSM.
+     * - `emergency_admin`: Origin granted emergency management of the new PSM.
+     * - `fee_destination`: Account that will receive mint/redeem fees.
+     * - `max_debt`: Initial absolute internal-asset debt ceiling.
+     * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
+     * Must be non-zero.
+     *
+     * ## Errors
+     *
+     * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
+     * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
+     * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
+     * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
+     * - Any error from establishing the [`Config::Consideration`] deposit when one is needed
+     * (e.g. the account cannot afford it).
+     *
+     * ## Events
+     *
+     * - [`Event::PsmCreated`].
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {AssetHubPolkadotRuntimeOriginCaller} fullAdmin
+     * @param {AssetHubPolkadotRuntimeOriginCaller} emergencyAdmin
+     * @param {AccountId32Like} feeDestination
+     * @param {bigint} maxDebt
+     * @param {bigint} minSwapAmount
+     **/
+    createPsm: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        fullAdmin: AssetHubPolkadotRuntimeOriginCaller,
+        emergencyAdmin: AssetHubPolkadotRuntimeOriginCaller,
+        feeDestination: AccountId32Like,
+        maxDebt: bigint,
+        minSwapAmount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'CreatePsm';
+            params: {
+              internalAsset: StagingXcmV5Location;
+              fullAdmin: AssetHubPolkadotRuntimeOriginCaller;
+              emergencyAdmin: AssetHubPolkadotRuntimeOriginCaller;
+              feeDestination: AccountId32Like;
+              maxDebt: bigint;
+              minSwapAmount: bigint;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove a PSM. Callable by the current `full_admin`. All approved externals
+     * must be removed first and aggregate PSM debt must be zero.
+     *
+     * If a creation deposit was taken, it is always returned to the account that originally
+     * paid it, regardless of any later admin reassignment.
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM's `full_admin`.
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM instance to remove.
+     *
+     * ## Errors
+     *
+     * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+     * - [`Error::PsmHasApprovedExternals`]: Approved externals still exist.
+     * - [`Error::PsmHasDebt`]: Outstanding aggregate debt is non-zero.
+     *
+     * ## Events
+     *
+     * - [`Event::PsmRemoved`].
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     **/
+    removePsm: GenericTxCall<
+      (internalAsset: StagingXcmV5Location) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'RemovePsm';
+            params: { internalAsset: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the minting fee for an `(internal_asset, external_asset)` pair.
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM instance to configure.
+     * - `external_asset`: The external asset whose minting fee is being updated.
+     * - `fee`: The new minting fee.
+     *
+     * ## Errors
+     *
+     * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+     * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+     *
+     * ## Events
+     *
+     * - [`Event::MintingFeeUpdated`]: Emitted with old and new values.
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
+     * @param {Permill} fee
+     **/
+    setMintingFee: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
+        fee: Permill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetMintingFee';
+            params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; fee: Permill };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the redemption fee for an `(internal_asset, external_asset)` pair.
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM instance to configure.
+     * - `external_asset`: The external asset whose redemption fee is being updated.
+     * - `fee`: The new redemption fee.
+     *
+     * ## Errors
+     *
+     * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+     * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+     *
+     * ## Events
+     *
+     * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values.
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
+     * @param {Permill} fee
+     **/
+    setRedemptionFee: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
+        fee: Permill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetRedemptionFee';
+            params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; fee: Permill };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the PSM debt ceiling per internal asset, shared across all approved external
+     * assets.
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM instance's `full_admin`; only the `Full` privilege level may use
+     * this call.
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM instance to configure.
+     * - `value`: The new absolute debt ceiling, in internal-asset units.
+     *
+     * ## Errors
+     *
+     * - [`Error::InsufficientPrivilege`]: If the origin level cannot set the debt ceiling.
+     * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+     *
+     * ## Events
+     *
+     * - [`Event::MaxDebtUpdated`]: Emitted with old and new values.
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {bigint} value
+     **/
+    setMaxDebt: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        value: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetMaxDebt';
+            params: { internalAsset: StagingXcmV5Location; value: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the circuit breaker per external asset on a PSM instance.
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM instance's `full_admin` or `emergency_admin`; either the
+     * `Full` or `Emergency` privilege level may use this call.
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM instance to configure.
+     * - `external_asset`: The external asset whose status is being updated.
+     * - `status`: The new circuit breaker level for that external.
+     *
+     * ## Errors
+     *
+     * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+     *
+     * ## Events
+     *
+     * - [`Event::AssetStatusUpdated`]: Emitted on a successful update.
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
+     * @param {PalletPsmCircuitBreakerLevel} status
+     **/
+    setAssetStatus: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
+        status: PalletPsmCircuitBreakerLevel,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetAssetStatus';
+            params: {
+              internalAsset: StagingXcmV5Location;
+              externalAsset: StagingXcmV5Location;
+              status: PalletPsmCircuitBreakerLevel;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the ceiling weight per external asset on a PSM instance.
+     *
+     * Weights are normalised against the sum of weights within the same instance:
+     * `max_asset_debt = (weight / sum_of_weights) * info.max_debt`.
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM instance's `full_admin`; only the `Full` privilege level may use
+     * this call.
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM instance to configure.
+     * - `external_asset`: The external asset whose ceiling weight is being updated.
+     * - `weight`: The new ceiling weight. Zero disables minting for this external.
+     *
+     * ## Errors
+     *
+     * - [`Error::InsufficientPrivilege`]: If the origin level cannot set ceiling weights.
+     * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+     *
+     * ## Events
+     *
+     * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values.
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
+     * @param {Permill} weight
+     **/
+    setAssetCeilingWeight: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
+        weight: Permill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetAssetCeilingWeight';
+            params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; weight: Permill };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Approve an external asset for a given internal asset.
+     *
+     * Snapshots the external asset's live decimals at registration time and
+     * increments [`PsmInfo::external_count`].
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM instance to approve the external on.
+     * - `external_asset`: The external asset to approve.
+     *
+     * ## Errors
+     *
+     * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+     * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+     * - [`Error::TooManyAssets`]: If the PSM is already at [`Config::MaxExternals`].
+     * - [`Error::AssetAlreadyApproved`]: If `external_asset` is already approved on this PSM.
+     * - [`Error::AssetDoesNotExist`]: If `external_asset` does not exist in the underlying
+     * fungibles backend.
+     * - [`Error::DecimalsMismatch`]: If the internal asset's live decimals diverged from the
+     * snapshot in [`PsmInfo`].
+     * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
+     * [`MAX_DECIMALS_DIFF`].
+     *
+     * ## Events
+     *
+     * - [`Event::ExternalAssetAdded`]: Emitted on a successful approval.
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
+     **/
+    addExternalAsset: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'AddExternalAsset';
+            params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove an external asset from a PSM instance.
+     *
+     * Wipes the external's per-instance state (status, decimals, fees, ceiling
+     * weight, debt counter) and decrements [`PsmInfo::external_count`]. The
+     * external must have zero outstanding debt on this instance.
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM instance to remove the external from.
+     * - `external_asset`: The external asset to remove.
+     *
+     * ## Errors
+     *
+     * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+     * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+     * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on this PSM.
+     * - [`Error::AssetHasDebt`]: If the external still has non-zero outstanding debt.
+     *
+     * ## Events
+     *
+     * - [`Event::ExternalAssetRemoved`]: Emitted on a successful removal.
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {StagingXcmV5Location} externalAsset
+     **/
+    removeExternalAsset: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        externalAsset: StagingXcmV5Location,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'RemoveExternalAsset';
+            params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Reassign the PSM's `full_admin`. Callable by the current `full_admin`.
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM's current `full_admin`.
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM whose `full_admin` is being changed.
+     * - `new_admin`: The new `full_admin` origin.
+     *
+     * ## Errors
+     *
+     * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+     *
+     * ## Events
+     *
+     * - [`Event::FullAdminChanged`].
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {AssetHubPolkadotRuntimeOriginCaller} newAdmin
+     **/
+    setFullAdmin: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        newAdmin: AssetHubPolkadotRuntimeOriginCaller,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetFullAdmin';
+            params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPolkadotRuntimeOriginCaller };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Reassign the PSM's `emergency_admin`. Callable by the current `full_admin`.
+     *
+     * ## Dispatch Origin
+     *
+     * Must match the PSM's current `full_admin`.
+     *
+     * ## Parameters
+     *
+     * - `internal_asset`: The PSM whose `emergency_admin` is being changed.
+     * - `new_admin`: The new `emergency_admin` origin.
+     *
+     * ## Errors
+     *
+     * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+     *
+     * ## Events
+     *
+     * - [`Event::EmergencyAdminChanged`].
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     * @param {AssetHubPolkadotRuntimeOriginCaller} newAdmin
+     **/
+    setEmergencyAdmin: GenericTxCall<
+      (
+        internalAsset: StagingXcmV5Location,
+        newAdmin: AssetHubPolkadotRuntimeOriginCaller,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Psm';
+          palletCall: {
+            name: 'SetEmergencyAdmin';
+            params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPolkadotRuntimeOriginCaller };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
    * Pallet `Treasury`'s transaction calls
    **/
   treasury: {
@@ -14296,11 +14959,17 @@ export interface ChainTx<
      * Remove all data structures concerning a staker/stash once it is at a state where it can
      * be considered `dust` in the staking system. The requirements are:
      *
-     * 1. the `total_balance` of the stash is below `min_chilled_bond` or is zero.
-     * 2. or, the `ledger.total` of the stash is below `min_chilled_bond` or is zero.
+     * 1. the `total_balance` of the stash is below the existential deposit.
+     * 2. or, the `ledger.total` of the stash is below the existential deposit.
      *
      * The former can happen in cases like a slash; the latter when a fully unbonded account
      * is still receiving staking rewards in `RewardDestination::Staked`.
+     *
+     * The gate is intentionally the existential deposit and *not* `min_chilled_bond`: a
+     * governance change to `MinValidatorBond` / `MinNominatorBond` must not turn previously
+     * safe stashes into permissionlessly reapable ones. Accounts that fall below the new
+     * minimums after such a change should be `chill_other`-ed (which has a density gate and
+     * does not destroy the ledger), not reaped.
      *
      * It can be called by anyone, as long as `stash` meets the above requirements.
      *

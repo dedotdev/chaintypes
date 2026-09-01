@@ -14,6 +14,7 @@ import type {
   EthereumAddressLike,
   Perbill,
   FixedArray,
+  Permill,
   FixedU128,
   PerU16,
   Percent,
@@ -23,7 +24,6 @@ import type {
   Phase,
   DispatchError,
   Result,
-  Permill,
   UncheckedExtrinsic,
   FixedI64,
   Perquintill,
@@ -60,6 +60,7 @@ export type AssetHubPolkadotRuntimeRuntimeCall =
   | { pallet: 'ForeignAssets'; palletCall: PalletAssetsCall002 }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCall003 }
   | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCall }
+  | { pallet: 'Psm'; palletCall: PalletPsmCall }
   | { pallet: 'Treasury'; palletCall: PalletTreasuryCall }
   | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCall }
   | { pallet: 'Referenda'; palletCall: PalletReferendaCall }
@@ -111,6 +112,7 @@ export type AssetHubPolkadotRuntimeRuntimeCallLike =
   | { pallet: 'ForeignAssets'; palletCall: PalletAssetsCallLike002 }
   | { pallet: 'PoolAssets'; palletCall: PalletAssetsCallLike003 }
   | { pallet: 'AssetConversion'; palletCall: PalletAssetConversionCallLike }
+  | { pallet: 'Psm'; palletCall: PalletPsmCallLike }
   | { pallet: 'Treasury'; palletCall: PalletTreasuryCallLike }
   | { pallet: 'ConvictionVoting'; palletCall: PalletConvictionVotingCallLike }
   | { pallet: 'Referenda'; palletCall: PalletReferendaCallLike }
@@ -2104,6 +2106,8 @@ export type PalletXcmCall =
    * - `assets`: The exact assets that were trapped. Use the version to specify what version
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
+   *
+   * The weight of this call is linear in the number of assets claimed.
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
@@ -2440,6 +2444,8 @@ export type PalletXcmCallLike =
    * - `assets`: The exact assets that were trapped. Use the version to specify what version
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
+   *
+   * The weight of this call is linear in the number of assets claimed.
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
@@ -10805,6 +10811,867 @@ export type PalletAssetConversionCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletPsmCall =
+  /**
+   * Swap external asset for internal on a specific PSM instance.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be `Signed` by the user performing the swap.
+   *
+   * ## Details
+   *
+   * Transfers `external_amount` of `external_asset` from the caller to the
+   * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
+   * caller minus the minting fee. The fee is calculated using ceiling rounding
+   * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
+   * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The internal stablecoin that identifies the PSM instance.
+   * - `external_asset`: The external asset to deposit (must be approved on
+   * `internal_asset`).
+   * - `external_amount`: Amount of external asset to deposit.
+   * - `max_fee`: Maximum minting fee rate accepted by the caller.
+   *
+   * ## Errors
+   *
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::UnsupportedAsset`]: If `external_asset` is not approved on this PSM.
+   * - [`Error::MintingStopped`]: If the per-external circuit breaker is at `MintingDisabled`
+   * or higher.
+   * - [`Error::BelowMinimumSwap`]: If the internal-equivalent of `external_amount` is below
+   * the instance's `min_swap_amount`.
+   * - [`Error::FeeTooHigh`]: If the configured minting fee exceeds `max_fee`.
+   * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed this PSM's debt ceiling
+   * (aggregate or per-asset).
+   * - [`Error::DecimalsMismatch`]: If live decimals diverged from the snapshot taken at
+   * registration.
+   * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
+   * rounds to zero; swap would transfer nothing.
+   *
+   * ## Events
+   *
+   * - [`Event::Minted`]: Emitted on successful mint.
+   **/
+  | {
+      name: 'Mint';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        externalAmount: bigint;
+        maxFee: Permill;
+      };
+    }
+  /**
+   * Swap internal for external asset on a specific PSM instance.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be `Signed` by the user performing the swap.
+   *
+   * ## Details
+   *
+   * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
+   * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
+   * amount in `external_asset` from the PSM reserve to the caller. The fee is
+   * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
+   * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
+   * was registered, allowing existing positions to unwind even if live metadata later
+   * changes.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The internal stablecoin that identifies the PSM instance.
+   * - `external_asset`: The external asset to receive (must be approved on
+   * `internal_asset`).
+   * - `internal_amount`: Amount of `internal_asset` to redeem.
+   * - `max_fee`: Maximum redemption fee rate accepted by the caller.
+   *
+   * ## Errors
+   *
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::UnsupportedAsset`]: If `external_asset` is not approved on this PSM.
+   * - [`Error::AllSwapsStopped`]: If the per-external circuit breaker is at `AllDisabled`.
+   * - [`Error::BelowMinimumSwap`]: If `internal_amount` is below the instance's
+   * `min_swap_amount`.
+   * - [`Error::FeeTooHigh`]: If the configured redemption fee exceeds `max_fee`.
+   * - [`Error::InsufficientReserve`]: If the PSM holds less of `external_asset` than the
+   * redemption requires.
+   * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
+   * rounds to zero; swap would transfer nothing.
+   *
+   * ## Events
+   *
+   * - [`Event::Redeemed`]: Emitted on successful redemption.
+   **/
+  | {
+      name: 'Redeem';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        internalAmount: bigint;
+        maxFee: Permill;
+      };
+    }
+  /**
+   * Create a PSM for a given internal asset.
+   *
+   * If [`Config::CreateOrigin`] resolves to `Some(account)`, takes a
+   * [`Config::Consideration`] deposit from that account for the instance's footprint
+   * (refunded on `remove_psm`). If it resolves to `None`, no deposit is taken. The
+   * `full_admin` and `emergency_admin` origins are set from the provided arguments and may
+   * later be reassigned via [`Pallet::set_full_admin`] / [`Pallet::set_emergency_admin`].
+   *
+   * ## Dispatch Origin
+   *
+   * [`Config::CreateOrigin`], parameterised by `internal_asset`. With the recommended
+   * [`EnsureAssetOwner`] this is a signed origin that owns `internal_asset`.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The internal stablecoin keying the new PSM. Must exist in the
+   * fungibles backend; must not already have a PSM registered.
+   * - `full_admin`: Origin granted full management of the new PSM.
+   * - `emergency_admin`: Origin granted emergency management of the new PSM.
+   * - `fee_destination`: Account that will receive mint/redeem fees.
+   * - `max_debt`: Initial absolute internal-asset debt ceiling.
+   * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
+   * Must be non-zero.
+   *
+   * ## Errors
+   *
+   * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
+   * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
+   * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
+   * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
+   * - Any error from establishing the [`Config::Consideration`] deposit when one is needed
+   * (e.g. the account cannot afford it).
+   *
+   * ## Events
+   *
+   * - [`Event::PsmCreated`].
+   **/
+  | {
+      name: 'CreatePsm';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        fullAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        emergencyAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        feeDestination: AccountId32;
+        maxDebt: bigint;
+        minSwapAmount: bigint;
+      };
+    }
+  /**
+   * Remove a PSM. Callable by the current `full_admin`. All approved externals
+   * must be removed first and aggregate PSM debt must be zero.
+   *
+   * If a creation deposit was taken, it is always returned to the account that originally
+   * paid it, regardless of any later admin reassignment.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM's `full_admin`.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to remove.
+   *
+   * ## Errors
+   *
+   * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   * - [`Error::PsmHasApprovedExternals`]: Approved externals still exist.
+   * - [`Error::PsmHasDebt`]: Outstanding aggregate debt is non-zero.
+   *
+   * ## Events
+   *
+   * - [`Event::PsmRemoved`].
+   **/
+  | { name: 'RemovePsm'; params: { internalAsset: StagingXcmV5Location } }
+  /**
+   * Set the minting fee for an `(internal_asset, external_asset)` pair.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose minting fee is being updated.
+   * - `fee`: The new minting fee.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::MintingFeeUpdated`]: Emitted with old and new values.
+   **/
+  | {
+      name: 'SetMintingFee';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; fee: Permill };
+    }
+  /**
+   * Set the redemption fee for an `(internal_asset, external_asset)` pair.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose redemption fee is being updated.
+   * - `fee`: The new redemption fee.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values.
+   **/
+  | {
+      name: 'SetRedemptionFee';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; fee: Permill };
+    }
+  /**
+   * Set the PSM debt ceiling per internal asset, shared across all approved external
+   * assets.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin`; only the `Full` privilege level may use
+   * this call.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `value`: The new absolute debt ceiling, in internal-asset units.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin level cannot set the debt ceiling.
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::MaxDebtUpdated`]: Emitted with old and new values.
+   **/
+  | { name: 'SetMaxDebt'; params: { internalAsset: StagingXcmV5Location; value: bigint } }
+  /**
+   * Set the circuit breaker per external asset on a PSM instance.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` or `emergency_admin`; either the
+   * `Full` or `Emergency` privilege level may use this call.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose status is being updated.
+   * - `status`: The new circuit breaker level for that external.
+   *
+   * ## Errors
+   *
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::AssetStatusUpdated`]: Emitted on a successful update.
+   **/
+  | {
+      name: 'SetAssetStatus';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        status: PalletPsmCircuitBreakerLevel;
+      };
+    }
+  /**
+   * Set the ceiling weight per external asset on a PSM instance.
+   *
+   * Weights are normalised against the sum of weights within the same instance:
+   * `max_asset_debt = (weight / sum_of_weights) * info.max_debt`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin`; only the `Full` privilege level may use
+   * this call.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose ceiling weight is being updated.
+   * - `weight`: The new ceiling weight. Zero disables minting for this external.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin level cannot set ceiling weights.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values.
+   **/
+  | {
+      name: 'SetAssetCeilingWeight';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; weight: Permill };
+    }
+  /**
+   * Approve an external asset for a given internal asset.
+   *
+   * Snapshots the external asset's live decimals at registration time and
+   * increments [`PsmInfo::external_count`].
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to approve the external on.
+   * - `external_asset`: The external asset to approve.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::TooManyAssets`]: If the PSM is already at [`Config::MaxExternals`].
+   * - [`Error::AssetAlreadyApproved`]: If `external_asset` is already approved on this PSM.
+   * - [`Error::AssetDoesNotExist`]: If `external_asset` does not exist in the underlying
+   * fungibles backend.
+   * - [`Error::DecimalsMismatch`]: If the internal asset's live decimals diverged from the
+   * snapshot in [`PsmInfo`].
+   * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
+   * [`MAX_DECIMALS_DIFF`].
+   *
+   * ## Events
+   *
+   * - [`Event::ExternalAssetAdded`]: Emitted on a successful approval.
+   **/
+  | { name: 'AddExternalAsset'; params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location } }
+  /**
+   * Remove an external asset from a PSM instance.
+   *
+   * Wipes the external's per-instance state (status, decimals, fees, ceiling
+   * weight, debt counter) and decrements [`PsmInfo::external_count`]. The
+   * external must have zero outstanding debt on this instance.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to remove the external from.
+   * - `external_asset`: The external asset to remove.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on this PSM.
+   * - [`Error::AssetHasDebt`]: If the external still has non-zero outstanding debt.
+   *
+   * ## Events
+   *
+   * - [`Event::ExternalAssetRemoved`]: Emitted on a successful removal.
+   **/
+  | {
+      name: 'RemoveExternalAsset';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location };
+    }
+  /**
+   * Reassign the PSM's `full_admin`. Callable by the current `full_admin`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM's current `full_admin`.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM whose `full_admin` is being changed.
+   * - `new_admin`: The new `full_admin` origin.
+   *
+   * ## Errors
+   *
+   * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::FullAdminChanged`].
+   **/
+  | {
+      name: 'SetFullAdmin';
+      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPolkadotRuntimeOriginCaller };
+    }
+  /**
+   * Reassign the PSM's `emergency_admin`. Callable by the current `full_admin`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM's current `full_admin`.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM whose `emergency_admin` is being changed.
+   * - `new_admin`: The new `emergency_admin` origin.
+   *
+   * ## Errors
+   *
+   * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::EmergencyAdminChanged`].
+   **/
+  | {
+      name: 'SetEmergencyAdmin';
+      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPolkadotRuntimeOriginCaller };
+    };
+
+export type PalletPsmCallLike =
+  /**
+   * Swap external asset for internal on a specific PSM instance.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be `Signed` by the user performing the swap.
+   *
+   * ## Details
+   *
+   * Transfers `external_amount` of `external_asset` from the caller to the
+   * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
+   * caller minus the minting fee. The fee is calculated using ceiling rounding
+   * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
+   * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The internal stablecoin that identifies the PSM instance.
+   * - `external_asset`: The external asset to deposit (must be approved on
+   * `internal_asset`).
+   * - `external_amount`: Amount of external asset to deposit.
+   * - `max_fee`: Maximum minting fee rate accepted by the caller.
+   *
+   * ## Errors
+   *
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::UnsupportedAsset`]: If `external_asset` is not approved on this PSM.
+   * - [`Error::MintingStopped`]: If the per-external circuit breaker is at `MintingDisabled`
+   * or higher.
+   * - [`Error::BelowMinimumSwap`]: If the internal-equivalent of `external_amount` is below
+   * the instance's `min_swap_amount`.
+   * - [`Error::FeeTooHigh`]: If the configured minting fee exceeds `max_fee`.
+   * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed this PSM's debt ceiling
+   * (aggregate or per-asset).
+   * - [`Error::DecimalsMismatch`]: If live decimals diverged from the snapshot taken at
+   * registration.
+   * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
+   * rounds to zero; swap would transfer nothing.
+   *
+   * ## Events
+   *
+   * - [`Event::Minted`]: Emitted on successful mint.
+   **/
+  | {
+      name: 'Mint';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        externalAmount: bigint;
+        maxFee: Permill;
+      };
+    }
+  /**
+   * Swap internal for external asset on a specific PSM instance.
+   *
+   * ## Dispatch Origin
+   *
+   * Must be `Signed` by the user performing the swap.
+   *
+   * ## Details
+   *
+   * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
+   * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
+   * amount in `external_asset` from the PSM reserve to the caller. The fee is
+   * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
+   * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
+   * was registered, allowing existing positions to unwind even if live metadata later
+   * changes.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The internal stablecoin that identifies the PSM instance.
+   * - `external_asset`: The external asset to receive (must be approved on
+   * `internal_asset`).
+   * - `internal_amount`: Amount of `internal_asset` to redeem.
+   * - `max_fee`: Maximum redemption fee rate accepted by the caller.
+   *
+   * ## Errors
+   *
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::UnsupportedAsset`]: If `external_asset` is not approved on this PSM.
+   * - [`Error::AllSwapsStopped`]: If the per-external circuit breaker is at `AllDisabled`.
+   * - [`Error::BelowMinimumSwap`]: If `internal_amount` is below the instance's
+   * `min_swap_amount`.
+   * - [`Error::FeeTooHigh`]: If the configured redemption fee exceeds `max_fee`.
+   * - [`Error::InsufficientReserve`]: If the PSM holds less of `external_asset` than the
+   * redemption requires.
+   * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
+   * rounds to zero; swap would transfer nothing.
+   *
+   * ## Events
+   *
+   * - [`Event::Redeemed`]: Emitted on successful redemption.
+   **/
+  | {
+      name: 'Redeem';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        internalAmount: bigint;
+        maxFee: Permill;
+      };
+    }
+  /**
+   * Create a PSM for a given internal asset.
+   *
+   * If [`Config::CreateOrigin`] resolves to `Some(account)`, takes a
+   * [`Config::Consideration`] deposit from that account for the instance's footprint
+   * (refunded on `remove_psm`). If it resolves to `None`, no deposit is taken. The
+   * `full_admin` and `emergency_admin` origins are set from the provided arguments and may
+   * later be reassigned via [`Pallet::set_full_admin`] / [`Pallet::set_emergency_admin`].
+   *
+   * ## Dispatch Origin
+   *
+   * [`Config::CreateOrigin`], parameterised by `internal_asset`. With the recommended
+   * [`EnsureAssetOwner`] this is a signed origin that owns `internal_asset`.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The internal stablecoin keying the new PSM. Must exist in the
+   * fungibles backend; must not already have a PSM registered.
+   * - `full_admin`: Origin granted full management of the new PSM.
+   * - `emergency_admin`: Origin granted emergency management of the new PSM.
+   * - `fee_destination`: Account that will receive mint/redeem fees.
+   * - `max_debt`: Initial absolute internal-asset debt ceiling.
+   * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
+   * Must be non-zero.
+   *
+   * ## Errors
+   *
+   * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
+   * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
+   * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
+   * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
+   * - Any error from establishing the [`Config::Consideration`] deposit when one is needed
+   * (e.g. the account cannot afford it).
+   *
+   * ## Events
+   *
+   * - [`Event::PsmCreated`].
+   **/
+  | {
+      name: 'CreatePsm';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        fullAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        emergencyAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        feeDestination: AccountId32Like;
+        maxDebt: bigint;
+        minSwapAmount: bigint;
+      };
+    }
+  /**
+   * Remove a PSM. Callable by the current `full_admin`. All approved externals
+   * must be removed first and aggregate PSM debt must be zero.
+   *
+   * If a creation deposit was taken, it is always returned to the account that originally
+   * paid it, regardless of any later admin reassignment.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM's `full_admin`.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to remove.
+   *
+   * ## Errors
+   *
+   * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   * - [`Error::PsmHasApprovedExternals`]: Approved externals still exist.
+   * - [`Error::PsmHasDebt`]: Outstanding aggregate debt is non-zero.
+   *
+   * ## Events
+   *
+   * - [`Event::PsmRemoved`].
+   **/
+  | { name: 'RemovePsm'; params: { internalAsset: StagingXcmV5Location } }
+  /**
+   * Set the minting fee for an `(internal_asset, external_asset)` pair.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose minting fee is being updated.
+   * - `fee`: The new minting fee.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::MintingFeeUpdated`]: Emitted with old and new values.
+   **/
+  | {
+      name: 'SetMintingFee';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; fee: Permill };
+    }
+  /**
+   * Set the redemption fee for an `(internal_asset, external_asset)` pair.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose redemption fee is being updated.
+   * - `fee`: The new redemption fee.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::RedemptionFeeUpdated`]: Emitted with old and new values.
+   **/
+  | {
+      name: 'SetRedemptionFee';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; fee: Permill };
+    }
+  /**
+   * Set the PSM debt ceiling per internal asset, shared across all approved external
+   * assets.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin`; only the `Full` privilege level may use
+   * this call.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `value`: The new absolute debt ceiling, in internal-asset units.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin level cannot set the debt ceiling.
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::MaxDebtUpdated`]: Emitted with old and new values.
+   **/
+  | { name: 'SetMaxDebt'; params: { internalAsset: StagingXcmV5Location; value: bigint } }
+  /**
+   * Set the circuit breaker per external asset on a PSM instance.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` or `emergency_admin`; either the
+   * `Full` or `Emergency` privilege level may use this call.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose status is being updated.
+   * - `status`: The new circuit breaker level for that external.
+   *
+   * ## Errors
+   *
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::AssetStatusUpdated`]: Emitted on a successful update.
+   **/
+  | {
+      name: 'SetAssetStatus';
+      params: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        status: PalletPsmCircuitBreakerLevel;
+      };
+    }
+  /**
+   * Set the ceiling weight per external asset on a PSM instance.
+   *
+   * Weights are normalised against the sum of weights within the same instance:
+   * `max_asset_debt = (weight / sum_of_weights) * info.max_debt`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin`; only the `Full` privilege level may use
+   * this call.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to configure.
+   * - `external_asset`: The external asset whose ceiling weight is being updated.
+   * - `weight`: The new ceiling weight. Zero disables minting for this external.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin level cannot set ceiling weights.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::AssetCeilingWeightUpdated`]: Emitted with old and new values.
+   **/
+  | {
+      name: 'SetAssetCeilingWeight';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; weight: Permill };
+    }
+  /**
+   * Approve an external asset for a given internal asset.
+   *
+   * Snapshots the external asset's live decimals at registration time and
+   * increments [`PsmInfo::external_count`].
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to approve the external on.
+   * - `external_asset`: The external asset to approve.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::TooManyAssets`]: If the PSM is already at [`Config::MaxExternals`].
+   * - [`Error::AssetAlreadyApproved`]: If `external_asset` is already approved on this PSM.
+   * - [`Error::AssetDoesNotExist`]: If `external_asset` does not exist in the underlying
+   * fungibles backend.
+   * - [`Error::DecimalsMismatch`]: If the internal asset's live decimals diverged from the
+   * snapshot in [`PsmInfo`].
+   * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
+   * [`MAX_DECIMALS_DIFF`].
+   *
+   * ## Events
+   *
+   * - [`Event::ExternalAssetAdded`]: Emitted on a successful approval.
+   **/
+  | { name: 'AddExternalAsset'; params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location } }
+  /**
+   * Remove an external asset from a PSM instance.
+   *
+   * Wipes the external's per-instance state (status, decimals, fees, ceiling
+   * weight, debt counter) and decrements [`PsmInfo::external_count`]. The
+   * external must have zero outstanding debt on this instance.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM instance's `full_admin` (the `Full` privilege level).
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM instance to remove the external from.
+   * - `external_asset`: The external asset to remove.
+   *
+   * ## Errors
+   *
+   * - [`Error::InsufficientPrivilege`]: If the origin only has `Emergency` privileges.
+   * - [`Error::PsmNotFound`]: If no PSM is registered for `internal_asset`.
+   * - [`Error::AssetNotApproved`]: If `external_asset` is not approved on this PSM.
+   * - [`Error::AssetHasDebt`]: If the external still has non-zero outstanding debt.
+   *
+   * ## Events
+   *
+   * - [`Event::ExternalAssetRemoved`]: Emitted on a successful removal.
+   **/
+  | {
+      name: 'RemoveExternalAsset';
+      params: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location };
+    }
+  /**
+   * Reassign the PSM's `full_admin`. Callable by the current `full_admin`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM's current `full_admin`.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM whose `full_admin` is being changed.
+   * - `new_admin`: The new `full_admin` origin.
+   *
+   * ## Errors
+   *
+   * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::FullAdminChanged`].
+   **/
+  | {
+      name: 'SetFullAdmin';
+      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPolkadotRuntimeOriginCaller };
+    }
+  /**
+   * Reassign the PSM's `emergency_admin`. Callable by the current `full_admin`.
+   *
+   * ## Dispatch Origin
+   *
+   * Must match the PSM's current `full_admin`.
+   *
+   * ## Parameters
+   *
+   * - `internal_asset`: The PSM whose `emergency_admin` is being changed.
+   * - `new_admin`: The new `emergency_admin` origin.
+   *
+   * ## Errors
+   *
+   * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   *
+   * ## Events
+   *
+   * - [`Event::EmergencyAdminChanged`].
+   **/
+  | {
+      name: 'SetEmergencyAdmin';
+      params: { internalAsset: StagingXcmV5Location; newAdmin: AssetHubPolkadotRuntimeOriginCaller };
+    };
+
+export type PalletPsmCircuitBreakerLevel = 'AllEnabled' | 'MintingDisabled' | 'AllDisabled';
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletTreasuryCall =
   /**
    * Propose and approve a spend of treasury funds.
@@ -14499,11 +15366,17 @@ export type PalletStakingAsyncPalletCall =
    * Remove all data structures concerning a staker/stash once it is at a state where it can
    * be considered `dust` in the staking system. The requirements are:
    *
-   * 1. the `total_balance` of the stash is below `min_chilled_bond` or is zero.
-   * 2. or, the `ledger.total` of the stash is below `min_chilled_bond` or is zero.
+   * 1. the `total_balance` of the stash is below the existential deposit.
+   * 2. or, the `ledger.total` of the stash is below the existential deposit.
    *
    * The former can happen in cases like a slash; the latter when a fully unbonded account
    * is still receiving staking rewards in `RewardDestination::Staked`.
+   *
+   * The gate is intentionally the existential deposit and *not* `min_chilled_bond`: a
+   * governance change to `MinValidatorBond` / `MinNominatorBond` must not turn previously
+   * safe stashes into permissionlessly reapable ones. Accounts that fall below the new
+   * minimums after such a change should be `chill_other`-ed (which has a density gate and
+   * does not destroy the ledger), not reaped.
    *
    * It can be called by anyone, as long as `stash` meets the above requirements.
    *
@@ -14982,11 +15855,17 @@ export type PalletStakingAsyncPalletCallLike =
    * Remove all data structures concerning a staker/stash once it is at a state where it can
    * be considered `dust` in the staking system. The requirements are:
    *
-   * 1. the `total_balance` of the stash is below `min_chilled_bond` or is zero.
-   * 2. or, the `ledger.total` of the stash is below `min_chilled_bond` or is zero.
+   * 1. the `total_balance` of the stash is below the existential deposit.
+   * 2. or, the `ledger.total` of the stash is below the existential deposit.
    *
    * The former can happen in cases like a slash; the latter when a fully unbonded account
    * is still receiving staking rewards in `RewardDestination::Staked`.
+   *
+   * The gate is intentionally the existential deposit and *not* `min_chilled_bond`: a
+   * governance change to `MinValidatorBond` / `MinNominatorBond` must not turn previously
+   * safe stashes into permissionlessly reapable ones. Accounts that fall below the new
+   * minimums after such a change should be `chill_other`-ed (which has a density gate and
+   * does not destroy the ledger), not reaped.
    *
    * It can be called by anyone, as long as `stash` meets the above requirements.
    *
@@ -16018,6 +16897,7 @@ export type AssetHubPolkadotRuntimeRuntimeEvent =
   | { pallet: 'ForeignAssets'; palletEvent: PalletAssetsEvent002 }
   | { pallet: 'PoolAssets'; palletEvent: PalletAssetsEvent }
   | { pallet: 'AssetConversion'; palletEvent: PalletAssetConversionEvent }
+  | { pallet: 'Psm'; palletEvent: PalletPsmEvent }
   | { pallet: 'Treasury'; palletEvent: PalletTreasuryEvent }
   | { pallet: 'ConvictionVoting'; palletEvent: PalletConvictionVotingEvent }
   | { pallet: 'Referenda'; palletEvent: PalletReferendaEvent }
@@ -16552,6 +17432,7 @@ export type AssetHubPolkadotRuntimeRuntimeHoldReason =
   | { type: 'Preimage'; value: PalletPreimageHoldReason }
   | { type: 'Session'; value: PalletSessionHoldReason }
   | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
+  | { type: 'Psm'; value: PalletPsmHoldReason }
   | { type: 'MultiAssetBounties'; value: PalletMultiAssetBountiesHoldReason }
   | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
   | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
@@ -16565,6 +17446,8 @@ export type PalletPreimageHoldReason = 'Preimage';
 export type PalletSessionHoldReason = 'Keys';
 
 export type PalletXcmHoldReason = 'AuthorizeAlias';
+
+export type PalletPsmHoldReason = 'CreationDeposit';
 
 export type PalletMultiAssetBountiesHoldReason = 'CuratorDeposit';
 
@@ -18223,6 +19106,137 @@ export type PalletAssetConversionEvent =
          * The account initiating the touch.
          **/
         who: AccountId32;
+      };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletPsmEvent =
+  /**
+   * User swapped external asset for internal.
+   **/
+  | {
+      name: 'Minted';
+      data: {
+        who: AccountId32;
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        externalConsumed: bigint;
+        internalReceived: bigint;
+        internalFee: bigint;
+      };
+    }
+  /**
+   * User swapped internal for external asset.
+   **/
+  | {
+      name: 'Redeemed';
+      data: {
+        who: AccountId32;
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        internalConsumed: bigint;
+        externalReceived: bigint;
+        internalFee: bigint;
+      };
+    }
+  /**
+   * Minting fee updated for an asset by governance.
+   **/
+  | {
+      name: 'MintingFeeUpdated';
+      data: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        oldValue: Permill;
+        newValue: Permill;
+      };
+    }
+  /**
+   * Redemption fee updated for an asset by governance.
+   **/
+  | {
+      name: 'RedemptionFeeUpdated';
+      data: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        oldValue: Permill;
+        newValue: Permill;
+      };
+    }
+  /**
+   * PSM debt ceiling updated by governance.
+   **/
+  | { name: 'MaxDebtUpdated'; data: { internalAsset: StagingXcmV5Location; oldValue: bigint; newValue: bigint } }
+  /**
+   * Per-asset debt ceiling weight updated by governance.
+   **/
+  | {
+      name: 'AssetCeilingWeightUpdated';
+      data: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        oldValue: Permill;
+        newValue: Permill;
+      };
+    }
+  /**
+   * Per-asset circuit breaker status updated.
+   **/
+  | {
+      name: 'AssetStatusUpdated';
+      data: {
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        status: PalletPsmCircuitBreakerLevel;
+      };
+    }
+  /**
+   * An external asset was added to the approved list.
+   **/
+  | { name: 'ExternalAssetAdded'; data: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location } }
+  /**
+   * An external asset was removed from the approved list.
+   **/
+  | { name: 'ExternalAssetRemoved'; data: { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location } }
+  /**
+   * A PSM instance was created.
+   **/
+  | {
+      name: 'PsmCreated';
+      data: {
+        internalAsset: StagingXcmV5Location;
+        fullAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        emergencyAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        feeDestination: AccountId32;
+        maxDebt: bigint;
+      };
+    }
+  /**
+   * A PSM instance was removed.
+   **/
+  | { name: 'PsmRemoved'; data: { internalAsset: StagingXcmV5Location } }
+  /**
+   * A PSM's `full_admin` was reassigned.
+   **/
+  | {
+      name: 'FullAdminChanged';
+      data: {
+        internalAsset: StagingXcmV5Location;
+        oldAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        newAdmin: AssetHubPolkadotRuntimeOriginCaller;
+      };
+    }
+  /**
+   * A PSM's `emergency_admin` was reassigned.
+   **/
+  | {
+      name: 'EmergencyAdminChanged';
+      data: {
+        internalAsset: StagingXcmV5Location;
+        oldAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        newAdmin: AssetHubPolkadotRuntimeOriginCaller;
       };
     };
 
@@ -20044,6 +21058,7 @@ export type CumulusPalletXcmpQueueOutboundChannelDetails = {
   firstIndex: number;
   lastIndex: number;
   flags: CumulusPalletXcmpQueueOutboundChannelFlags;
+  queuedBytes: number;
 };
 
 export type CumulusPalletXcmpQueueOutboundState = 'Ok' | 'Suspended';
@@ -21160,6 +22175,120 @@ export type PalletAssetConversionError =
    * The pool exists but has no liquidity (at least one of the reserves is zero).
    **/
   | 'PoolEmpty';
+
+export type PalletPsmPsmInfo = {
+  feeDestination: AccountId32;
+  maxDebt: bigint;
+  minSwapAmount: bigint;
+  internalDecimals: number;
+  externalCount: number;
+};
+
+export type PalletPsmPsmAdminInfo = {
+  fullAdmin: AssetHubPolkadotRuntimeOriginCaller;
+  emergencyAdmin: AssetHubPolkadotRuntimeOriginCaller;
+  deposit?: [AccountId32, FrameSupportTokensFungibleHoldConsideration] | undefined;
+};
+
+export type PalletPsmExternalAssetInfo = { status: PalletPsmCircuitBreakerLevel; decimals: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletPsmError =
+  /**
+   * PSM doesn't have enough external asset for redemption.
+   **/
+  | 'InsufficientReserve'
+  /**
+   * Swap would exceed PSM debt ceiling.
+   **/
+  | 'ExceedsMaxPsmDebt'
+  /**
+   * Swap amount below the instance's minimum threshold.
+   **/
+  | 'BelowMinimumSwap'
+  /**
+   * Current fee exceeds the caller-provided maximum.
+   **/
+  | 'FeeTooHigh'
+  /**
+   * `create_psm` was called with a zero `min_swap_amount`.
+   **/
+  | 'ZeroMinSwapAmount'
+  /**
+   * Minting operations are disabled (circuit breaker level >= 1).
+   **/
+  | 'MintingStopped'
+  /**
+   * All swap operations are disabled (circuit breaker level = 2).
+   **/
+  | 'AllSwapsStopped'
+  /**
+   * Asset is not an approved external asset.
+   **/
+  | 'UnsupportedAsset'
+  /**
+   * No PSM instance is registered for the given internal asset.
+   **/
+  | 'PsmNotFound'
+  /**
+   * Asset is already in the approved list.
+   **/
+  | 'AssetAlreadyApproved'
+  /**
+   * Asset does not exist.
+   **/
+  | 'AssetDoesNotExist'
+  /**
+   * Cannot remove asset: not in approved list.
+   **/
+  | 'AssetNotApproved'
+  /**
+   * Cannot remove asset: has non-zero PSM debt.
+   **/
+  | 'AssetHasDebt'
+  /**
+   * Operation requires the instance's `full_admin` (Full level); the caller only
+   * matched the `emergency_admin` (Emergency level).
+   **/
+  | 'InsufficientPrivilege'
+  /**
+   * Maximum number of approved external assets reached.
+   **/
+  | 'TooManyAssets'
+  /**
+   * Live decimals diverged from the snapshot taken at registration or genesis.
+   **/
+  | 'DecimalsMismatch'
+  /**
+   * The asset's decimal precision is outside the supported range.
+   **/
+  | 'DecimalsRangeExceeded'
+  /**
+   * Decimal scaling produced an arithmetic overflow.
+   **/
+  | 'ConversionOverflow'
+  /**
+   * Conversion to the counter-asset rounds to zero; swap would transfer nothing.
+   **/
+  | 'AmountTooSmallAfterConversion'
+  /**
+   * A PSM is already registered for this internal asset.
+   **/
+  | 'PsmAlreadyExists'
+  /**
+   * The PSM has non-zero outstanding debt on at least one approved external.
+   **/
+  | 'PsmHasDebt'
+  /**
+   * The PSM still has approved externals; remove them before removing the PSM.
+   **/
+  | 'PsmHasApprovedExternals'
+  /**
+   * An unexpected invariant violation occurred. This should be reported.
+   **/
+  | 'Unexpected';
 
 export type PalletTreasuryProposal = { proposer: AccountId32; value: bigint; beneficiary: AccountId32; bond: bigint };
 
@@ -23282,6 +24411,7 @@ export type AssetHubPolkadotRuntimeRuntimeError =
   | { pallet: 'ForeignAssets'; palletError: PalletAssetsError }
   | { pallet: 'PoolAssets'; palletError: PalletAssetsError }
   | { pallet: 'AssetConversion'; palletError: PalletAssetConversionError }
+  | { pallet: 'Psm'; palletError: PalletPsmError }
   | { pallet: 'Treasury'; palletError: PalletTreasuryError }
   | { pallet: 'ConvictionVoting'; palletError: PalletConvictionVotingError }
   | { pallet: 'Referenda'; palletError: PalletReferendaError }

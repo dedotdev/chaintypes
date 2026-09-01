@@ -14,6 +14,7 @@ import type {
   EthereumAddress,
   EthereumAddressLike,
   Perbill,
+  Permill,
   Percent,
   H160,
   U256,
@@ -100,6 +101,9 @@ import type {
   StagingXcmV5Location,
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
   PalletAssetConversionPoolInfo,
+  PalletPsmPsmInfo,
+  PalletPsmPsmAdminInfo,
+  PalletPsmExternalAssetInfo,
   PalletTreasuryProposal,
   PalletTreasurySpendStatus,
   PalletConvictionVotingVoteVoting,
@@ -2129,6 +2133,94 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<number | undefined> =} callback
      **/
     nextPoolAssetId: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Psm`'s storage queries
+   **/
+  psm: {
+    /**
+     * Registered PSM instances, keyed by the internal asset id.
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<PalletPsmPsmInfo | undefined> =} callback
+     **/
+    psm: GenericStorageQuery<(arg: StagingXcmV5Location) => PalletPsmPsmInfo | undefined, StagingXcmV5Location>;
+
+    /**
+     * Admin origins and creation-deposit bookkeeping per PSM, keyed by the internal
+     * asset id. Held separately from [`Psm`] so swaps never decode the admin origins.
+     * Always written and removed together with the corresponding [`Psm`] entry.
+     *
+     * @param {StagingXcmV5Location} arg
+     * @param {Callback<PalletPsmPsmAdminInfo | undefined> =} callback
+     **/
+    psmAdmin: GenericStorageQuery<
+      (arg: StagingXcmV5Location) => PalletPsmPsmAdminInfo | undefined,
+      StagingXcmV5Location
+    >;
+
+    /**
+     * Internal-asset debt minted through PSM, per `(internal, external)` pair.
+     *
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    psmDebt: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => bigint,
+      [StagingXcmV5Location, StagingXcmV5Location]
+    >;
+
+    /**
+     * Fee for external → internal swaps (minting), per `(internal, external)` pair.
+     * Defaults to 0.5%.
+     *
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
+     * @param {Callback<Permill> =} callback
+     **/
+    mintingFee: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => Permill,
+      [StagingXcmV5Location, StagingXcmV5Location]
+    >;
+
+    /**
+     * Fee for internal → external swaps (redemption), per `(internal, external)` pair.
+     * Defaults to 0.5%.
+     *
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
+     * @param {Callback<Permill> =} callback
+     **/
+    redemptionFee: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => Permill,
+      [StagingXcmV5Location, StagingXcmV5Location]
+    >;
+
+    /**
+     * Per-external ceiling weight within a PSM, normalised against the sum of weights
+     * for the same instance. Zero disables minting for that external.
+     *
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
+     * @param {Callback<Permill> =} callback
+     **/
+    assetCeilingWeight: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => Permill,
+      [StagingXcmV5Location, StagingXcmV5Location]
+    >;
+
+    /**
+     * Approved external assets per PSM.
+     *
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
+     * @param {Callback<PalletPsmExternalAssetInfo | undefined> =} callback
+     **/
+    externalAssets: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => PalletPsmExternalAssetInfo | undefined,
+      [StagingXcmV5Location, StagingXcmV5Location]
+    >;
 
     /**
      * Generic pallet storage query

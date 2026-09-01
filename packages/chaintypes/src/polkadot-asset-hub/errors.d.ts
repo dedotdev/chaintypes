@@ -1882,6 +1882,131 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `Psm`'s errors
+   **/
+  psm: {
+    /**
+     * PSM doesn't have enough external asset for redemption.
+     **/
+    InsufficientReserve: GenericPalletError;
+
+    /**
+     * Swap would exceed PSM debt ceiling.
+     **/
+    ExceedsMaxPsmDebt: GenericPalletError;
+
+    /**
+     * Swap amount below the instance's minimum threshold.
+     **/
+    BelowMinimumSwap: GenericPalletError;
+
+    /**
+     * Current fee exceeds the caller-provided maximum.
+     **/
+    FeeTooHigh: GenericPalletError;
+
+    /**
+     * `create_psm` was called with a zero `min_swap_amount`.
+     **/
+    ZeroMinSwapAmount: GenericPalletError;
+
+    /**
+     * Minting operations are disabled (circuit breaker level >= 1).
+     **/
+    MintingStopped: GenericPalletError;
+
+    /**
+     * All swap operations are disabled (circuit breaker level = 2).
+     **/
+    AllSwapsStopped: GenericPalletError;
+
+    /**
+     * Asset is not an approved external asset.
+     **/
+    UnsupportedAsset: GenericPalletError;
+
+    /**
+     * No PSM instance is registered for the given internal asset.
+     **/
+    PsmNotFound: GenericPalletError;
+
+    /**
+     * Asset is already in the approved list.
+     **/
+    AssetAlreadyApproved: GenericPalletError;
+
+    /**
+     * Asset does not exist.
+     **/
+    AssetDoesNotExist: GenericPalletError;
+
+    /**
+     * Cannot remove asset: not in approved list.
+     **/
+    AssetNotApproved: GenericPalletError;
+
+    /**
+     * Cannot remove asset: has non-zero PSM debt.
+     **/
+    AssetHasDebt: GenericPalletError;
+
+    /**
+     * Operation requires the instance's `full_admin` (Full level); the caller only
+     * matched the `emergency_admin` (Emergency level).
+     **/
+    InsufficientPrivilege: GenericPalletError;
+
+    /**
+     * Maximum number of approved external assets reached.
+     **/
+    TooManyAssets: GenericPalletError;
+
+    /**
+     * Live decimals diverged from the snapshot taken at registration or genesis.
+     **/
+    DecimalsMismatch: GenericPalletError;
+
+    /**
+     * The asset's decimal precision is outside the supported range.
+     **/
+    DecimalsRangeExceeded: GenericPalletError;
+
+    /**
+     * Decimal scaling produced an arithmetic overflow.
+     **/
+    ConversionOverflow: GenericPalletError;
+
+    /**
+     * Conversion to the counter-asset rounds to zero; swap would transfer nothing.
+     **/
+    AmountTooSmallAfterConversion: GenericPalletError;
+
+    /**
+     * A PSM is already registered for this internal asset.
+     **/
+    PsmAlreadyExists: GenericPalletError;
+
+    /**
+     * The PSM has non-zero outstanding debt on at least one approved external.
+     **/
+    PsmHasDebt: GenericPalletError;
+
+    /**
+     * The PSM still has approved externals; remove them before removing the PSM.
+     **/
+    PsmHasApprovedExternals: GenericPalletError;
+
+    /**
+     * An unexpected invariant violation occurred. This should be reported.
+     **/
+    Unexpected: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `Treasury`'s errors
    **/
   treasury: {

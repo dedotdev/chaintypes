@@ -43,6 +43,8 @@ import type {
   PalletNftsPriceWithDirection,
   PalletNftsPalletAttributes,
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
+  PalletPsmCircuitBreakerLevel,
+  AssetHubPolkadotRuntimeOriginCaller,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
   ParachainsCommonPayVersionedLocatableAccount,
   PalletConvictionVotingVoteAccountVote,
@@ -3065,6 +3067,156 @@ export interface ChainEvents extends GenericChainEvents {
          * The account initiating the touch.
          **/
         who: AccountId32;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Psm`'s events
+   **/
+  psm: {
+    /**
+     * User swapped external asset for internal.
+     **/
+    Minted: GenericPalletEvent<
+      'Psm',
+      'Minted',
+      {
+        who: AccountId32;
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        externalConsumed: bigint;
+        internalReceived: bigint;
+        internalFee: bigint;
+      }
+    >;
+
+    /**
+     * User swapped internal for external asset.
+     **/
+    Redeemed: GenericPalletEvent<
+      'Psm',
+      'Redeemed',
+      {
+        who: AccountId32;
+        internalAsset: StagingXcmV5Location;
+        externalAsset: StagingXcmV5Location;
+        internalConsumed: bigint;
+        externalReceived: bigint;
+        internalFee: bigint;
+      }
+    >;
+
+    /**
+     * Minting fee updated for an asset by governance.
+     **/
+    MintingFeeUpdated: GenericPalletEvent<
+      'Psm',
+      'MintingFeeUpdated',
+      { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; oldValue: Permill; newValue: Permill }
+    >;
+
+    /**
+     * Redemption fee updated for an asset by governance.
+     **/
+    RedemptionFeeUpdated: GenericPalletEvent<
+      'Psm',
+      'RedemptionFeeUpdated',
+      { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; oldValue: Permill; newValue: Permill }
+    >;
+
+    /**
+     * PSM debt ceiling updated by governance.
+     **/
+    MaxDebtUpdated: GenericPalletEvent<
+      'Psm',
+      'MaxDebtUpdated',
+      { internalAsset: StagingXcmV5Location; oldValue: bigint; newValue: bigint }
+    >;
+
+    /**
+     * Per-asset debt ceiling weight updated by governance.
+     **/
+    AssetCeilingWeightUpdated: GenericPalletEvent<
+      'Psm',
+      'AssetCeilingWeightUpdated',
+      { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; oldValue: Permill; newValue: Permill }
+    >;
+
+    /**
+     * Per-asset circuit breaker status updated.
+     **/
+    AssetStatusUpdated: GenericPalletEvent<
+      'Psm',
+      'AssetStatusUpdated',
+      { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location; status: PalletPsmCircuitBreakerLevel }
+    >;
+
+    /**
+     * An external asset was added to the approved list.
+     **/
+    ExternalAssetAdded: GenericPalletEvent<
+      'Psm',
+      'ExternalAssetAdded',
+      { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location }
+    >;
+
+    /**
+     * An external asset was removed from the approved list.
+     **/
+    ExternalAssetRemoved: GenericPalletEvent<
+      'Psm',
+      'ExternalAssetRemoved',
+      { internalAsset: StagingXcmV5Location; externalAsset: StagingXcmV5Location }
+    >;
+
+    /**
+     * A PSM instance was created.
+     **/
+    PsmCreated: GenericPalletEvent<
+      'Psm',
+      'PsmCreated',
+      {
+        internalAsset: StagingXcmV5Location;
+        fullAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        emergencyAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        feeDestination: AccountId32;
+        maxDebt: bigint;
+      }
+    >;
+
+    /**
+     * A PSM instance was removed.
+     **/
+    PsmRemoved: GenericPalletEvent<'Psm', 'PsmRemoved', { internalAsset: StagingXcmV5Location }>;
+
+    /**
+     * A PSM's `full_admin` was reassigned.
+     **/
+    FullAdminChanged: GenericPalletEvent<
+      'Psm',
+      'FullAdminChanged',
+      {
+        internalAsset: StagingXcmV5Location;
+        oldAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        newAdmin: AssetHubPolkadotRuntimeOriginCaller;
+      }
+    >;
+
+    /**
+     * A PSM's `emergency_admin` was reassigned.
+     **/
+    EmergencyAdminChanged: GenericPalletEvent<
+      'Psm',
+      'EmergencyAdminChanged',
+      {
+        internalAsset: StagingXcmV5Location;
+        oldAdmin: AssetHubPolkadotRuntimeOriginCaller;
+        newAdmin: AssetHubPolkadotRuntimeOriginCaller;
       }
     >;
 

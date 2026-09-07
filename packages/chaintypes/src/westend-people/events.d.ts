@@ -1196,6 +1196,11 @@ export interface ChainEvents extends GenericChainEvents {
     RegistrarAdded: GenericPalletEvent<'Identity', 'RegistrarAdded', { registrarIndex: number }>;
 
     /**
+     * A registrar was removed.
+     **/
+    RegistrarRemoved: GenericPalletEvent<'Identity', 'RegistrarRemoved', { registrarIndex: number }>;
+
+    /**
      * A sub-identity was added to an identity and the deposit paid.
      **/
     SubIdentityAdded: GenericPalletEvent<

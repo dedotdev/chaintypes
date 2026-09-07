@@ -66,6 +66,7 @@ export type ChainJsonRpcApis = Pick<
   | 'payment_queryInfo'
   | 'rpc_methods'
   | 'state_call'
+  | 'state_callRecorded'
   | 'state_getChildReadProof'
   | 'state_getKeys'
   | 'state_getKeysPaged'

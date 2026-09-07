@@ -1514,6 +1514,8 @@ export interface ChainTx<
      * was the latest when they were trapped.
      * - `beneficiary`: The location/account where the claimed assets will be deposited.
      *
+     * The weight of this call is linear in the number of assets claimed.
+     *
      * @param {XcmVersionedAssets} assets
      * @param {XcmVersionedLocation} beneficiary
      **/
@@ -2750,6 +2752,41 @@ export interface ChainTx<
           palletCall: {
             name: 'AddRegistrar';
             params: { account: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove a registrar from the system.
+     *
+     * The dispatch origin for this call must be `T::RegistrarOrigin`.
+     *
+     * The registrar's slot is tombstoned (set to `None`) rather than removed, so that the
+     * `RegistrarIndex` of every other registrar — and any judgements already recorded against
+     * them — stays stable. The freed index is not reused by `add_registrar`, so each removal
+     * permanently consumes one slot against `MaxRegistrars` (reusing the slot would let a new
+     * registrar inherit an index that historical judgements still reference).
+     *
+     * Deposits reserved by pending `request_judgement` calls against this registrar are
+     * **not** returned; once the registrar is removed `provide_judgement` can no longer
+     * release them, so affected users should reclaim their funds manually with
+     * `cancel_request`.
+     *
+     * - `index`: the index of the registrar to remove.
+     *
+     * Emits `RegistrarRemoved` if successful.
+     *
+     * @param {number} index
+     **/
+    removeRegistrar: GenericTxCall<
+      (index: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'RemoveRegistrar';
+            params: { index: number };
           };
         },
         ChainKnownTypes

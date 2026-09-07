@@ -1093,6 +1093,8 @@ export type PalletXcmCall =
    * - `assets`: The exact assets that were trapped. Use the version to specify what version
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
+   *
+   * The weight of this call is linear in the number of assets claimed.
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
@@ -1429,6 +1431,8 @@ export type PalletXcmCallLike =
    * - `assets`: The exact assets that were trapped. Use the version to specify what version
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
+   *
+   * The weight of this call is linear in the number of assets claimed.
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
@@ -3429,6 +3433,27 @@ export type PalletIdentityCall =
    **/
   | { name: 'AddRegistrar'; params: { account: MultiAddress } }
   /**
+   * Remove a registrar from the system.
+   *
+   * The dispatch origin for this call must be `T::RegistrarOrigin`.
+   *
+   * The registrar's slot is tombstoned (set to `None`) rather than removed, so that the
+   * `RegistrarIndex` of every other registrar — and any judgements already recorded against
+   * them — stays stable. The freed index is not reused by `add_registrar`, so each removal
+   * permanently consumes one slot against `MaxRegistrars` (reusing the slot would let a new
+   * registrar inherit an index that historical judgements still reference).
+   *
+   * Deposits reserved by pending `request_judgement` calls against this registrar are
+   * **not** returned; once the registrar is removed `provide_judgement` can no longer
+   * release them, so affected users should reclaim their funds manually with
+   * `cancel_request`.
+   *
+   * - `index`: the index of the registrar to remove.
+   *
+   * Emits `RegistrarRemoved` if successful.
+   **/
+  | { name: 'RemoveRegistrar'; params: { index: number } }
+  /**
    * Set an account's identity information and reserve the appropriate deposit.
    *
    * If the account already has identity information, the deposit is taken as part payment
@@ -3681,6 +3706,27 @@ export type PalletIdentityCallLike =
    * Emits `RegistrarAdded` if successful.
    **/
   | { name: 'AddRegistrar'; params: { account: MultiAddressLike } }
+  /**
+   * Remove a registrar from the system.
+   *
+   * The dispatch origin for this call must be `T::RegistrarOrigin`.
+   *
+   * The registrar's slot is tombstoned (set to `None`) rather than removed, so that the
+   * `RegistrarIndex` of every other registrar — and any judgements already recorded against
+   * them — stays stable. The freed index is not reused by `add_registrar`, so each removal
+   * permanently consumes one slot against `MaxRegistrars` (reusing the slot would let a new
+   * registrar inherit an index that historical judgements still reference).
+   *
+   * Deposits reserved by pending `request_judgement` calls against this registrar are
+   * **not** returned; once the registrar is removed `provide_judgement` can no longer
+   * release them, so affected users should reclaim their funds manually with
+   * `cancel_request`.
+   *
+   * - `index`: the index of the registrar to remove.
+   *
+   * Emits `RegistrarRemoved` if successful.
+   **/
+  | { name: 'RemoveRegistrar'; params: { index: number } }
   /**
    * Set an account's identity information and reserve the appropriate deposit.
    *
@@ -5036,6 +5082,10 @@ export type PalletIdentityEvent =
    * A registrar was added.
    **/
   | { name: 'RegistrarAdded'; data: { registrarIndex: number } }
+  /**
+   * A registrar was removed.
+   **/
+  | { name: 'RegistrarRemoved'; data: { registrarIndex: number } }
   /**
    * A sub-identity was added to an identity and the deposit paid.
    **/

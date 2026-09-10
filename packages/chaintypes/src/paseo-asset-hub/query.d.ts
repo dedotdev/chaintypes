@@ -114,8 +114,6 @@ import type {
   PalletMultiAssetBountiesBounty,
   PalletMultiAssetBountiesChildBounty,
   FrameSupportTokensFungibleHoldConsideration,
-  PalletStateTrieMigrationMigrationTask,
-  PalletStateTrieMigrationMigrationLimits,
   PalletNominationPoolsPoolMember,
   PalletNominationPoolsBondedPoolInner,
   PalletNominationPoolsRewardPool,
@@ -156,6 +154,20 @@ import type {
   PalletReviveEvmBlockHashReceiptGasInfo,
   PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR,
   PalletReviveDebugDebugSettings,
+  IndivPalletMembersSubscriberRingCommitmentRecord,
+  IndivPalletMembersSubscriberRingPurgeProgress,
+  IndivPalletMembersSubscriberRingCollectionState,
+  IndivSupportRealityRingExponent,
+  IndivPalletMembersSubscriberSubscriptionStatus,
+  IndivPalletMembersSubscriberUpdatesProcessingState,
+  IndivSupportRealityContextualAlias,
+  IndivPalletAliasAccountsAliasAccountInfo,
+  IndivSupportUtilsBigEndianU32,
+  IndivPalletDotnsGatewayRegistrationRecord,
+  IndivPalletDotnsGatewayBaseLabel,
+  IndivPalletDotnsGatewayAccountNameRecord,
+  IndivPalletOriginRestrictionUsage,
+  AssetHubPolkadotRuntimeIndividualityRestrictedEntity,
 } from './types.js';
 
 export interface ChainStorage extends GenericChainStorage {
@@ -1692,9 +1704,8 @@ export interface ChainStorage extends GenericChainStorage {
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
      * item has no effect.
      *
-     * This can be useful for setting up constraints for IDs of the new assets. For example, by
-     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
-     * auto-increment model can be applied to all new asset IDs.
+     * Only read by [`crate::AutoIncAssetId`]: configure it as [`Config::AssetIdAllocator`] and
+     * provide an initial value here to apply an auto-increment model to all new asset IDs.
      *
      * The initial next asset ID can be set using the [`GenesisConfig`] or the
      * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
@@ -2022,9 +2033,8 @@ export interface ChainStorage extends GenericChainStorage {
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
      * item has no effect.
      *
-     * This can be useful for setting up constraints for IDs of the new assets. For example, by
-     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
-     * auto-increment model can be applied to all new asset IDs.
+     * Only read by [`crate::AutoIncAssetId`]: configure it as [`Config::AssetIdAllocator`] and
+     * provide an initial value here to apply an auto-increment model to all new asset IDs.
      *
      * The initial next asset ID can be set using the [`GenesisConfig`] or the
      * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
@@ -2094,9 +2104,8 @@ export interface ChainStorage extends GenericChainStorage {
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
      * item has no effect.
      *
-     * This can be useful for setting up constraints for IDs of the new assets. For example, by
-     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
-     * auto-increment model can be applied to all new asset IDs.
+     * Only read by [`crate::AutoIncAssetId`]: configure it as [`Config::AssetIdAllocator`] and
+     * provide an initial value here to apply an auto-increment model to all new asset IDs.
      *
      * The initial next asset ID can be set using the [`GenesisConfig`] or the
      * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
@@ -2221,6 +2230,62 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [StagingXcmV5Location, StagingXcmV5Location]) => PalletPsmExternalAssetInfo | undefined,
       [StagingXcmV5Location, StagingXcmV5Location]
     >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetsFreezer`'s storage queries
+   **/
+  assetsFreezer: {
+    /**
+     * A map that stores freezes applied on an account for a given AssetId.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>> =} callback
+     **/
+    freezes: GenericStorageQuery<
+      (arg: [number, AccountId32Like]) => Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>,
+      [number, AccountId32]
+    >;
+
+    /**
+     * A map that stores the current total frozen balance for every account on a given AssetId.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    frozenBalances: GenericStorageQuery<(arg: [number, AccountId32Like]) => bigint | undefined, [number, AccountId32]>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AssetsHolder`'s storage queries
+   **/
+  assetsHolder: {
+    /**
+     * A map that stores holds applied on an account for a given AssetId.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmount>> =} callback
+     **/
+    holds: GenericStorageQuery<
+      (arg: [number, AccountId32Like]) => Array<FrameSupportTokensMiscIdAmount>,
+      [number, AccountId32]
+    >;
+
+    /**
+     * A map that stores the current total balance on hold for every account on a given AssetId.
+     *
+     * @param {[number, AccountId32Like]} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    balancesOnHold: GenericStorageQuery<(arg: [number, AccountId32Like]) => bigint | undefined, [number, AccountId32]>;
 
     /**
      * Generic pallet storage query
@@ -2618,43 +2683,6 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [number, number | undefined]) => FrameSupportTokensFungibleHoldConsideration | undefined,
       [number, number | undefined]
     >;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `StateTrieMigration`'s storage queries
-   **/
-  stateTrieMigration: {
-    /**
-     * Migration progress.
-     *
-     * This stores the snapshot of the last migrated keys. It can be set into motion and move
-     * forward by any of the means provided by this pallet.
-     *
-     * @param {Callback<PalletStateTrieMigrationMigrationTask> =} callback
-     **/
-    migrationProcess: GenericStorageQuery<() => PalletStateTrieMigrationMigrationTask>;
-
-    /**
-     * The limits that are imposed on automatic migrations.
-     *
-     * If set to None, then no automatic migration happens.
-     *
-     * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
-     **/
-    autoLimits: GenericStorageQuery<() => PalletStateTrieMigrationMigrationLimits | undefined>;
-
-    /**
-     * The maximum limits that the signed migration could use.
-     *
-     * If not set, no signed submission is allowed.
-     *
-     * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
-     **/
-    signedMigrationMaxLimits: GenericStorageQuery<() => PalletStateTrieMigrationMigrationLimits | undefined>;
 
     /**
      * Generic pallet storage query
@@ -3379,6 +3407,43 @@ export interface ChainStorage extends GenericChainStorage {
     >;
 
     /**
+     * Running sum of `validator_incentive_weight × era_points` across all validators
+     * with non-zero era points for the era.
+     *
+     * Maintained incrementally inside [`session_rotation::Eras::reward_active_era`] every
+     * time validator points are credited. Used as the denominator of the weighted-points
+     * share that determines each validator's slice of [`ErasValidatorIncentiveBudget`].
+     *
+     * @param {number} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    erasSumWeightedPoints: GenericStorageQuery<(arg: number) => bigint, number>;
+
+    /**
+     * Cutoff era from which the validator self-stake incentive switches to the
+     * weighted-points formula.
+     *
+     * `None` is the pre-migration state for chains whose storage predates this item. Until the
+     * migration records a cutoff, [`session_rotation::Eras::uses_weighted_points`] treats all
+     * eras as weighted-points eras. Chains initialized with this storage item set the cutoff to
+     * `0` in `genesis_build`, and the upgrade migration leaves any existing value untouched.
+     *
+     * See [`session_rotation::Eras::uses_weighted_points`] for the exact semantics and
+     * the rationale for the cutoff.
+     *
+     * TODO(staking-async): remove this storage item, the legacy stake-only branch in
+     * [`crate::Pallet::calculate_validator_incentive_for_page`], the
+     * [`session_rotation::Eras::uses_weighted_points`] cutoff helper, and the
+     * [`crate::migrations::SetWeightedPointsFormulaStartEra`] migration once
+     * [`Config::HistoryDepth`] eras have elapsed since the upgrade — i.e. once the cutoff
+     * satisfies `cutoff <= active_era - HistoryDepth`, at which point no pre-cutoff era
+     * remains claimable and every live era uses the weighted-points formula.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    weightedPointsFormulaStartEra: GenericStorageQuery<() => number | undefined>;
+
+    /**
      * Whether nominators are slashable or not.
      *
      * - When set to `true` (default), nominators are slashed along with validators and must wait
@@ -4050,6 +4115,282 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<U256> =} callback
      **/
     nonces: GenericStorageQuery<(arg: [H160, H160]) => U256, [H160, H160]>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `MembersSubscriber`'s storage queries
+   **/
+  membersSubscriber: {
+    /**
+     * Recent ring roots received from the notifier.
+     * Maps (generation, identifier, ring_index) to a sliding window of ring roots; only the
+     * [`CurrentGeneration`] prefix is live, so a logical clear leaves the older prefixes
+     * unreachable until the offchain purge removes them.
+     * Proofs are accepted against any root in the window that has not expired: a
+     * superseded root expires once `OldRootRetentionDuration` has passed since its
+     * successor's source time. The oldest root is evicted when the window reaches
+     * `MaxRecentRootsPerRing`, so expired roots may remain stored until then but are
+     * rejected during verification.
+     *
+     * @param {[number, FixedBytes<32>, number]} arg
+     * @param {Callback<Array<IndivPalletMembersSubscriberRingCommitmentRecord> | undefined> =} callback
+     **/
+    ringRoots: GenericStorageQuery<
+      (arg: [number, FixedBytes<32>, number]) => Array<IndivPalletMembersSubscriberRingCommitmentRecord> | undefined,
+      [number, FixedBytes<32>, number]
+    >;
+
+    /**
+     * Generation prefix holding the live `RingRoots` entries. Increased on
+     * `clear_all_ring_data` call. A saturated counter stops distinguishing generations, which
+     * is unreachable for notifier-driven re-initializations.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    currentGeneration: GenericStorageQuery<() => number>;
+
+    /**
+     * Position of the purge that removes the stale `RingRoots` prefixes. Absent when no stale
+     * ring data remains.
+     *
+     * @param {Callback<IndivPalletMembersSubscriberRingPurgeProgress | undefined> =} callback
+     **/
+    queuedRingPurge: GenericStorageQuery<() => IndivPalletMembersSubscriberRingPurgeProgress | undefined>;
+
+    /**
+     * State of each ring collection including rings count and missing rings tracking.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<IndivPalletMembersSubscriberRingCollectionState> =} callback
+     **/
+    ringCollectionStates: GenericStorageQuery<
+      (arg: FixedBytes<32>) => IndivPalletMembersSubscriberRingCollectionState,
+      FixedBytes<32>
+    >;
+
+    /**
+     * Ring exponent recorded per collection at initialization.
+     *
+     * The subscriber needs the exponent to derive the crypto's `Config` when verifying
+     * proofs, since ring roots on their own do not carry that information. The entry is
+     * written by `initialize_ring_roots` and is read during proof verification via the
+     * `MembershipProver` impl.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<IndivSupportRealityRingExponent | undefined> =} callback
+     **/
+    ringCollectionExponents: GenericStorageQuery<
+      (arg: FixedBytes<32>) => IndivSupportRealityRingExponent | undefined,
+      FixedBytes<32>
+    >;
+
+    /**
+     * Current subscription status.
+     *
+     * @param {Callback<IndivPalletMembersSubscriberSubscriptionStatus> =} callback
+     **/
+    subscription: GenericStorageQuery<() => IndivPalletMembersSubscriberSubscriptionStatus>;
+
+    /**
+     * State for tracking updates processing timestamps and sequence numbers.
+     *
+     * @param {Callback<IndivPalletMembersSubscriberUpdatesProcessingState> =} callback
+     **/
+    processingState: GenericStorageQuery<() => IndivPalletMembersSubscriberUpdatesProcessingState>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AliasAccounts`'s storage queries
+   **/
+  aliasAccounts: {
+    /**
+     * Maps (collection, contextual_alias) to account.
+     * Uses `DoubleMap` because the same alias value could exist in different collections.
+     *
+     * @param {[FixedBytes<32>, IndivSupportRealityContextualAlias]} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    aliasToAccount: GenericStorageQuery<
+      (arg: [FixedBytes<32>, IndivSupportRealityContextualAlias]) => AccountId32 | undefined,
+      [FixedBytes<32>, IndivSupportRealityContextualAlias]
+    >;
+
+    /**
+     * Maps account to full alias info (collection + revised contextual alias).
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<IndivPalletAliasAccountsAliasAccountInfo | undefined> =} callback
+     **/
+    accountToAlias: GenericStorageQuery<
+      (arg: AccountId32Like) => IndivPalletAliasAccountsAliasAccountInfo | undefined,
+      AccountId32
+    >;
+
+    /**
+     * When a mapping was first reported stale, which is what [`Config::MappingRetention`] is
+     * counted from.
+     *
+     * The first [`Pallet::report_stale_aliases`] for a stale mapping stamps it and removes
+     * nothing; a later call does the removal. The stamp is the ring's newest root time where that
+     * is still known and the call's own time otherwise, so a deleted ring keeps the full
+     * retention. Every path that writes [`AccountToAlias`] clears it, as does a call that finds
+     * the revision verifying again, so a mapping known to be valid has no stamp.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    staleSince: GenericStorageQuery<(arg: AccountId32Like) => bigint | undefined, AccountId32>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `Pgas`'s storage queries
+   **/
+  pgas: {
+    /**
+     * Aliases that have been used to claim PGAS, keyed by (day, alias).
+     * `Day` uses big-endian encoding with `Identity` hashing so iteration yields days
+     * in ascending order, allowing the offchain worker to find the oldest stale day
+     * without scanning.
+     *
+     * @param {[IndivSupportUtilsBigEndianU32, FixedBytes<32>]} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    claimedGasAliases: GenericStorageQuery<
+      (arg: [IndivSupportUtilsBigEndianU32, FixedBytes<32>]) => [] | undefined,
+      [IndivSupportUtilsBigEndianU32, FixedBytes<32>]
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `DotnsGateway`'s storage queries
+   **/
+  dotnsGateway: {
+    /**
+     * Tracks which aliases have registered names via this gateway.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<IndivPalletDotnsGatewayRegistrationRecord | undefined> =} callback
+     **/
+    aliasRegistration: GenericStorageQuery<
+      (arg: FixedBytes<32>) => IndivPalletDotnsGatewayRegistrationRecord | undefined,
+      FixedBytes<32>
+    >;
+
+    /**
+     * Reverse lookup from a registering account to the alias it used.
+     *
+     * Populated alongside [`AliasRegistration`] in [`Pallet::register_name`].
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<FixedBytes<32> | undefined> =} callback
+     **/
+    accountAlias: GenericStorageQuery<(arg: AccountId32Like) => FixedBytes<32> | undefined, AccountId32>;
+
+    /**
+     * Number of username reservations an attester is allowed to grant.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number> =} callback
+     **/
+    attestationAllowance: GenericStorageQuery<(arg: AccountId32Like) => number, AccountId32>;
+
+    /**
+     * Records which account owns each reserved lite-person label, so
+     * [`Pallet::register_name`] can verify that a `Link::LiteUsername` target
+     * belongs to the caller.
+     *
+     * @param {IndivPalletDotnsGatewayBaseLabel} arg
+     * @param {Callback<AccountId32 | undefined> =} callback
+     **/
+    liteLabelOwner: GenericStorageQuery<
+      (arg: IndivPalletDotnsGatewayBaseLabel) => AccountId32 | undefined,
+      IndivPalletDotnsGatewayBaseLabel
+    >;
+
+    /**
+     * The dotNS labels each account acquired through this gateway.
+     *
+     * Keyed by account so clients can watch a set of accounts with one storage
+     * subscription.
+     *
+     * Warning: this map is not the source of truth; the dotNS contracts are. It
+     * is written on [`Pallet::reserve_name`] and [`Pallet::register_name`] only,
+     * so a label that changes purely contract-side (for example a transfer) is
+     * not reflected here and clients must re-verify on read via contract views.
+     * Names registered outside these paths never appear here at all, including
+     * pre-launch whitelist allocations, which claimants register directly against
+     * the dotNS registrar controller.
+     * The map is temporary and goes away once apps can observe contract storage
+     * directly: <https://github.com/paritytech/individuality-community/issues/52>.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<IndivPalletDotnsGatewayAccountNameRecord | undefined> =} callback
+     **/
+    accountNames: GenericStorageQuery<
+      (arg: AccountId32Like) => IndivPalletDotnsGatewayAccountNameRecord | undefined,
+      AccountId32
+    >;
+
+    /**
+     * Address of the `RootGatewayDispatcher` contract. Must be set (via genesis or
+     * [`Pallet::set_dispatcher_address`]) before [`Pallet::reserve_name`] or
+     * [`Pallet::register_name`] can succeed.
+     *
+     * @param {Callback<H160 | undefined> =} callback
+     **/
+    dispatcherAddress: GenericStorageQuery<() => H160 | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `OriginRestriction`'s storage queries
+   **/
+  originRestriction: {
+    /**
+     * The current usage for each entity.
+     *
+     * @param {AssetHubPolkadotRuntimeIndividualityRestrictedEntity} arg
+     * @param {Callback<IndivPalletOriginRestrictionUsage | undefined> =} callback
+     **/
+    usages: GenericStorageQuery<
+      (arg: AssetHubPolkadotRuntimeIndividualityRestrictedEntity) => IndivPalletOriginRestrictionUsage | undefined,
+      AssetHubPolkadotRuntimeIndividualityRestrictedEntity
+    >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `NetworkSuffix`'s storage queries
+   **/
+  networkSuffix: {
+    /**
+     * Network suffix appended to product names when deriving product contexts.
+     *
+     * @param {Callback<Bytes> =} callback
+     **/
+    networkSuffix: GenericStorageQuery<() => Bytes>;
 
     /**
      * Generic pallet storage query

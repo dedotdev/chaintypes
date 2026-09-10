@@ -18,6 +18,10 @@ import type {
   PolkadotRuntimeCommonClaimsPrevalidateAttests,
   FrameMetadataHashExtensionCheckMetadataHash,
   PalletReviveEvmTxExtensionSetOrigin,
+  PalletVerifySignatureExtensionVerifySignature,
+  IndivPalletPgasExtensionAsPgas,
+  IndivPalletDotnsGatewayExtensionAsDotnsGateway,
+  IndivPalletOriginRestrictionRestrictOrigin,
   StagingXcmV5Location,
 } from './types.js';
 import { ChainConsts } from './consts.js';
@@ -49,6 +53,11 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     FrameMetadataHashExtensionCheckMetadataHash,
     PalletReviveEvmTxExtensionSetOrigin,
     [],
+    [],
+    PalletVerifySignatureExtensionVerifySignature,
+    IndivPalletPgasExtensionAsPgas,
+    IndivPalletDotnsGatewayExtensionAsDotnsGateway,
+    IndivPalletOriginRestrictionRestrictOrigin,
   ];
   AssetId: StagingXcmV5Location;
   EventRecord: FrameSystemEventRecord;
@@ -56,7 +65,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PaseoAssetHubApi
- * @specVersion: 2004000
+ * @specVersion: 2005000
  **/
 export interface PaseoAssetHubApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

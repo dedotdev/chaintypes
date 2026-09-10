@@ -16,6 +16,13 @@ import type {
   FrameSystemExtensionsCheckWeight,
   PalletAssetTxPaymentChargeAssetTxPayment,
   FrameMetadataHashExtensionCheckMetadataHash,
+  PalletVerifySignatureExtensionVerifySignature,
+  IndivPalletPeopleExtensionAsPerson,
+  IndivPalletPeopleLiteExtensionPeopleLiteAuth,
+  IndivPalletMembersExtensionAsMember,
+  IndivPalletCoinageExtensionAsCoinage,
+  IndivPalletResourcesExtensionAsResources,
+  IndivPalletOriginRestrictionRestrictOrigin,
   StagingXcmV5Location,
 } from './types.js';
 import { ChainConsts } from './consts.js';
@@ -45,6 +52,14 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
     PalletAssetTxPaymentChargeAssetTxPayment,
     FrameMetadataHashExtensionCheckMetadataHash,
     [],
+    [],
+    PalletVerifySignatureExtensionVerifySignature,
+    IndivPalletPeopleExtensionAsPerson,
+    IndivPalletPeopleLiteExtensionPeopleLiteAuth,
+    IndivPalletMembersExtensionAsMember,
+    IndivPalletCoinageExtensionAsCoinage,
+    IndivPalletResourcesExtensionAsResources,
+    IndivPalletOriginRestrictionRestrictOrigin,
   ];
   AssetId: StagingXcmV5Location;
   EventRecord: FrameSystemEventRecord;
@@ -52,7 +67,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: PolkadotPeopleApi
- * @specVersion: 2004000
+ * @specVersion: 2005000
  **/
 export interface PolkadotPeopleApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

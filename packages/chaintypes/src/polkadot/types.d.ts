@@ -69,7 +69,6 @@ export type PolkadotRuntimeRuntimeCall =
   | { pallet: 'Auctions'; palletCall: PolkadotRuntimeCommonAuctionsPalletCall }
   | { pallet: 'Crowdloan'; palletCall: PolkadotRuntimeCommonCrowdloanPalletCall }
   | { pallet: 'Coretime'; palletCall: PolkadotRuntimeParachainsCoretimePalletCall }
-  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall }
   | { pallet: 'XcmPallet'; palletCall: PalletXcmCall }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
@@ -118,7 +117,6 @@ export type PolkadotRuntimeRuntimeCallLike =
   | { pallet: 'Auctions'; palletCall: PolkadotRuntimeCommonAuctionsPalletCallLike }
   | { pallet: 'Crowdloan'; palletCall: PolkadotRuntimeCommonCrowdloanPalletCallLike }
   | { pallet: 'Coretime'; palletCall: PolkadotRuntimeParachainsCoretimePalletCallLike }
-  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike }
   | { pallet: 'XcmPallet'; palletCall: PalletXcmCallLike }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
@@ -8612,172 +8610,6 @@ export type PolkadotRuntimeParachainsSchedulerAssignerCoretimePartsOf57600 = num
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletStateTrieMigrationCall =
-  /**
-   * Control the automatic migration.
-   *
-   * The dispatch origin of this call must be [`Config::ControlOrigin`].
-   **/
-  | { name: 'ControlAutoMigration'; params: { maybeConfig?: PalletStateTrieMigrationMigrationLimits | undefined } }
-  /**
-   * Continue the migration for the given `limits`.
-   *
-   * The dispatch origin of this call can be any signed account.
-   *
-   * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
-   * Upon successful execution, the transaction fee is returned.
-   *
-   * The (potentially over-estimated) of the byte length of all the data read must be
-   * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
-   * that executing the current `MigrationTask` with the given `limits` will not exceed
-   * `real_size_upper` bytes of read data.
-   *
-   * The `witness_task` is merely a helper to prevent the caller from being slashed or
-   * generally trigger a migration that they do not intend. This parameter is just a message
-   * from caller, saying that they believed `witness_task` was the last state of the
-   * migration, and they only wish for their transaction to do anything, if this assumption
-   * holds. In case `witness_task` does not match, the transaction fails.
-   *
-   * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
-   * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
-   * `size` limit can always be overwritten.
-   **/
-  | {
-      name: 'ContinueMigrate';
-      params: {
-        limits: PalletStateTrieMigrationMigrationLimits;
-        realSizeUpper: number;
-        witnessTask: PalletStateTrieMigrationMigrationTask;
-      };
-    }
-  /**
-   * Migrate the list of top keys by iterating each of them one by one.
-   *
-   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-   * should only be used in case any keys are leftover due to a bug.
-   **/
-  | { name: 'MigrateCustomTop'; params: { keys: Array<Bytes>; witnessSize: number } }
-  /**
-   * Migrate the list of child keys by iterating each of them one by one.
-   *
-   * All of the given child keys must be present under one `child_root`.
-   *
-   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-   * should only be used in case any keys are leftover due to a bug.
-   **/
-  | { name: 'MigrateCustomChild'; params: { root: Bytes; childKeys: Array<Bytes>; totalSize: number } }
-  /**
-   * Set the maximum limit of the signed migration.
-   **/
-  | { name: 'SetSignedMaxLimits'; params: { limits: PalletStateTrieMigrationMigrationLimits } }
-  /**
-   * Forcefully set the progress the running migration.
-   *
-   * This is only useful in one case: the next key to migrate is too big to be migrated with
-   * a signed account, in a parachain context, and we simply want to skip it. A reasonable
-   * example of this would be `:code:`, which is both very expensive to migrate, and commonly
-   * used, so probably it is already migrated.
-   *
-   * In case you mess things up, you can also, in principle, use this to reset the migration
-   * process.
-   **/
-  | {
-      name: 'ForceSetProgress';
-      params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
-    };
-
-export type PalletStateTrieMigrationCallLike =
-  /**
-   * Control the automatic migration.
-   *
-   * The dispatch origin of this call must be [`Config::ControlOrigin`].
-   **/
-  | { name: 'ControlAutoMigration'; params: { maybeConfig?: PalletStateTrieMigrationMigrationLimits | undefined } }
-  /**
-   * Continue the migration for the given `limits`.
-   *
-   * The dispatch origin of this call can be any signed account.
-   *
-   * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
-   * Upon successful execution, the transaction fee is returned.
-   *
-   * The (potentially over-estimated) of the byte length of all the data read must be
-   * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
-   * that executing the current `MigrationTask` with the given `limits` will not exceed
-   * `real_size_upper` bytes of read data.
-   *
-   * The `witness_task` is merely a helper to prevent the caller from being slashed or
-   * generally trigger a migration that they do not intend. This parameter is just a message
-   * from caller, saying that they believed `witness_task` was the last state of the
-   * migration, and they only wish for their transaction to do anything, if this assumption
-   * holds. In case `witness_task` does not match, the transaction fails.
-   *
-   * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
-   * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
-   * `size` limit can always be overwritten.
-   **/
-  | {
-      name: 'ContinueMigrate';
-      params: {
-        limits: PalletStateTrieMigrationMigrationLimits;
-        realSizeUpper: number;
-        witnessTask: PalletStateTrieMigrationMigrationTask;
-      };
-    }
-  /**
-   * Migrate the list of top keys by iterating each of them one by one.
-   *
-   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-   * should only be used in case any keys are leftover due to a bug.
-   **/
-  | { name: 'MigrateCustomTop'; params: { keys: Array<BytesLike>; witnessSize: number } }
-  /**
-   * Migrate the list of child keys by iterating each of them one by one.
-   *
-   * All of the given child keys must be present under one `child_root`.
-   *
-   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-   * should only be used in case any keys are leftover due to a bug.
-   **/
-  | { name: 'MigrateCustomChild'; params: { root: BytesLike; childKeys: Array<BytesLike>; totalSize: number } }
-  /**
-   * Set the maximum limit of the signed migration.
-   **/
-  | { name: 'SetSignedMaxLimits'; params: { limits: PalletStateTrieMigrationMigrationLimits } }
-  /**
-   * Forcefully set the progress the running migration.
-   *
-   * This is only useful in one case: the next key to migrate is too big to be migrated with
-   * a signed account, in a parachain context, and we simply want to skip it. A reasonable
-   * example of this would be `:code:`, which is both very expensive to migrate, and commonly
-   * used, so probably it is already migrated.
-   *
-   * In case you mess things up, you can also, in principle, use this to reset the migration
-   * process.
-   **/
-  | {
-      name: 'ForceSetProgress';
-      params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
-    };
-
-export type PalletStateTrieMigrationMigrationLimits = { size: number; item: number };
-
-export type PalletStateTrieMigrationMigrationTask = {
-  progressTop: PalletStateTrieMigrationProgress;
-  progressChild: PalletStateTrieMigrationProgress;
-  size: number;
-  topItems: number;
-  childItems: number;
-};
-
-export type PalletStateTrieMigrationProgress =
-  | { type: 'ToStart' }
-  | { type: 'LastKey'; value: Bytes }
-  | { type: 'Complete' };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
 export type PalletXcmCall =
   | { name: 'Send'; params: { dest: XcmVersionedLocation; message: XcmVersionedXcm } }
   /**
@@ -10453,7 +10285,6 @@ export type PolkadotRuntimeRuntimeEvent =
   | { pallet: 'Auctions'; palletEvent: PolkadotRuntimeCommonAuctionsPalletEvent }
   | { pallet: 'Crowdloan'; palletEvent: PolkadotRuntimeCommonCrowdloanPalletEvent }
   | { pallet: 'Coretime'; palletEvent: PolkadotRuntimeParachainsCoretimePalletEvent }
-  | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent }
   | { pallet: 'XcmPallet'; palletEvent: PalletXcmEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
   | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent };
@@ -10759,7 +10590,6 @@ export type PolkadotRuntimeRuntimeHoldReason =
   | { type: 'Staking'; value: PalletStakingPalletHoldReason }
   | { type: 'Session'; value: PalletSessionHoldReason }
   | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
-  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
   | { type: 'XcmPallet'; value: PalletXcmHoldReason };
 
 export type PalletPreimageHoldReason = 'Preimage';
@@ -10769,8 +10599,6 @@ export type PalletStakingPalletHoldReason = 'Staking';
 export type PalletSessionHoldReason = 'Keys';
 
 export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
-
-export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
 
 export type PalletXcmHoldReason = 'AuthorizeAlias';
 
@@ -12385,65 +12213,6 @@ export type PolkadotRuntimeParachainsCoretimePalletEvent =
    * A core has received a new assignment from the broker chain.
    **/
   | { name: 'CoreAssigned'; data: { core: PolkadotPrimitivesV9CoreIndex } };
-
-/**
- * Inner events of this pallet.
- **/
-export type PalletStateTrieMigrationEvent =
-  /**
-   * Given number of `(top, child)` keys were migrated respectively, with the given
-   * `compute`.
-   **/
-  | { name: 'Migrated'; data: { top: number; child: number; compute: PalletStateTrieMigrationMigrationCompute } }
-  /**
-   * Some account got slashed by the given amount.
-   **/
-  | { name: 'Slashed'; data: { who: AccountId32; amount: bigint } }
-  /**
-   * The auto migration task finished.
-   **/
-  | { name: 'AutoMigrationFinished' }
-  /**
-   * Migration got halted due to an error or miss-configuration.
-   **/
-  | { name: 'Halted'; data: { error: PalletStateTrieMigrationError } };
-
-export type PalletStateTrieMigrationMigrationCompute = 'Signed' | 'Auto';
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletStateTrieMigrationError =
-  /**
-   * Max signed limits not respected.
-   **/
-  | 'MaxSignedLimits'
-  /**
-   * A key was longer than the configured maximum.
-   *
-   * This means that the migration halted at the current [`Progress`] and
-   * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
-   * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
-   * The value should only be increased to avoid a storage migration for the currently
-   * stored [`crate::Progress::LastKey`].
-   **/
-  | 'KeyTooLong'
-  /**
-   * submitter does not have enough funds.
-   **/
-  | 'NotEnoughFunds'
-  /**
-   * Bad witness data provided.
-   **/
-  | 'BadWitness'
-  /**
-   * Signed migration is not allowed because the maximum limit is not set yet.
-   **/
-  | 'SignedMigrationNotAllowed'
-  /**
-   * Bad child root provided.
-   **/
-  | 'BadChildRoot';
 
 /**
  * The `Event` enum of this pallet
@@ -15885,7 +15654,6 @@ export type PolkadotRuntimeRuntimeError =
   | { pallet: 'Auctions'; palletError: PolkadotRuntimeCommonAuctionsPalletError }
   | { pallet: 'Crowdloan'; palletError: PolkadotRuntimeCommonCrowdloanPalletError }
   | { pallet: 'Coretime'; palletError: PolkadotRuntimeParachainsCoretimePalletError }
-  | { pallet: 'StateTrieMigration'; palletError: PalletStateTrieMigrationError }
   | { pallet: 'XcmPallet'; palletError: PalletXcmError }
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }
   | { pallet: 'AssetRate'; palletError: PalletAssetRateError }

@@ -52,8 +52,6 @@ import type {
   PalletConvictionVotingTally,
   FrameSupportDispatchPostDispatchInfo,
   SpRuntimeDispatchErrorWithPostInfo,
-  PalletStateTrieMigrationMigrationCompute,
-  PalletStateTrieMigrationError,
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
@@ -66,6 +64,11 @@ import type {
   PalletStakingAsyncValidatorPrefs,
   PalletStakingAsyncForcing,
   PalletStakingAsyncPalletUnexpectedKind,
+  IndivPalletPgasExtensionPgasCollection,
+  IndivPalletDotnsGatewayBaseLabel,
+  IndivPalletDotnsGatewayChatKey,
+  IndivPalletDotnsGatewayLink,
+  AssetHubPolkadotRuntimeIndividualityRestrictedEntity,
   PolkadotParachainPrimitivesPrimitivesId,
 } from './types.js';
 
@@ -3226,6 +3229,54 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `AssetsFreezer`'s events
+   **/
+  assetsFreezer: {
+    Frozen: GenericPalletEvent<'AssetsFreezer', 'Frozen', { who: AccountId32; assetId: number; amount: bigint }>;
+    Thawed: GenericPalletEvent<'AssetsFreezer', 'Thawed', { who: AccountId32; assetId: number; amount: bigint }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `AssetsHolder`'s events
+   **/
+  assetsHolder: {
+    /**
+     * `who`s balance on hold was increased by `amount`.
+     **/
+    Held: GenericPalletEvent<
+      'AssetsHolder',
+      'Held',
+      { who: AccountId32; assetId: number; reason: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint }
+    >;
+
+    /**
+     * `who`s balance on hold was decreased by `amount`.
+     **/
+    Released: GenericPalletEvent<
+      'AssetsHolder',
+      'Released',
+      { who: AccountId32; assetId: number; reason: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint }
+    >;
+
+    /**
+     * `who`s balance on hold was burned by `amount`.
+     **/
+    Burned: GenericPalletEvent<
+      'AssetsHolder',
+      'Burned',
+      { who: AccountId32; assetId: number; reason: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `Treasury`'s events
    **/
   treasury: {
@@ -3950,40 +4001,6 @@ export interface ChainEvents extends GenericChainEvents {
       'BountyValueIncreased',
       { index: number; oldValue: bigint; newValue: bigint }
     >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
-   * Pallet `StateTrieMigration`'s events
-   **/
-  stateTrieMigration: {
-    /**
-     * Given number of `(top, child)` keys were migrated respectively, with the given
-     * `compute`.
-     **/
-    Migrated: GenericPalletEvent<
-      'StateTrieMigration',
-      'Migrated',
-      { top: number; child: number; compute: PalletStateTrieMigrationMigrationCompute }
-    >;
-
-    /**
-     * Some account got slashed by the given amount.
-     **/
-    Slashed: GenericPalletEvent<'StateTrieMigration', 'Slashed', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * The auto migration task finished.
-     **/
-    AutoMigrationFinished: GenericPalletEvent<'StateTrieMigration', 'AutoMigrationFinished', null>;
-
-    /**
-     * Migration got halted due to an error or miss-configuration.
-     **/
-    Halted: GenericPalletEvent<'StateTrieMigration', 'Halted', { error: PalletStateTrieMigrationError }>;
 
     /**
      * Generic pallet event
@@ -4717,6 +4734,445 @@ export interface ChainEvents extends GenericChainEvents {
      * for failed Ethereum transactions.
      **/
     EthExtrinsicRevert: GenericPalletEvent<'Revive', 'EthExtrinsicRevert', { dispatchError: DispatchError }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `MembersSubscriber`'s events
+   **/
+  membersSubscriber: {
+    /**
+     * Ring roots have been initialized from the notifier.
+     **/
+    RingRootsInitialized: GenericPalletEvent<
+      'MembersSubscriber',
+      'RingRootsInitialized',
+      {
+        /**
+         * Number of ring roots initialized.
+         **/
+        count: number;
+
+        /**
+         * Sequence number of the initialization batch.
+         **/
+        sequence: bigint;
+      }
+    >;
+
+    /**
+     * Ring root updates have been processed.
+     **/
+    RingRootsUpdated: GenericPalletEvent<
+      'MembersSubscriber',
+      'RingRootsUpdated',
+      {
+        /**
+         * Number of updates processed.
+         **/
+        count: number;
+
+        /**
+         * Sequence number of the batch.
+         **/
+        sequence: bigint;
+      }
+    >;
+
+    /**
+     * Subscription has been terminated.
+     **/
+    SubscriptionTerminated: GenericPalletEvent<
+      'MembersSubscriber',
+      'SubscriptionTerminated',
+      {
+        /**
+         * Whether the unsubscribe XCM was successfully queued.
+         **/
+        notifierNotified: boolean;
+      }
+    >;
+
+    /**
+     * New missing ring roots detected during batch processing.
+     **/
+    MissingRingsDetected: GenericPalletEvent<
+      'MembersSubscriber',
+      'MissingRingsDetected',
+      {
+        /**
+         * Ring collection identifier.
+         **/
+        identifier: FixedBytes<32>;
+
+        /**
+         * Number of newly detected missing ring indices.
+         **/
+        count: number;
+      }
+    >;
+
+    /**
+     * Replay request successfully sent to notifier.
+     **/
+    ReplayRequestSent: GenericPalletEvent<
+      'MembersSubscriber',
+      'ReplayRequestSent',
+      {
+        /**
+         * Ring collection identifier.
+         **/
+        identifier: FixedBytes<32>;
+
+        /**
+         * Number of missing indices in this chunk.
+         **/
+        indicesCount: number;
+      }
+    >;
+
+    /**
+     * Missing ring scan skipped because deleted_indices reached capacity.
+     **/
+    DeletedIndicesAtCapacity: GenericPalletEvent<
+      'MembersSubscriber',
+      'DeletedIndicesAtCapacity',
+      {
+        /**
+         * Ring collection identifier.
+         **/
+        identifier: FixedBytes<32>;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `AliasAccounts`'s events
+   **/
+  aliasAccounts: {
+    /**
+     * An alias account has been set or updated.
+     **/
+    AliasAccountSet: GenericPalletEvent<
+      'AliasAccounts',
+      'AliasAccountSet',
+      {
+        /**
+         * The account that was linked.
+         **/
+        account: AccountId32;
+
+        /**
+         * The collection identifier.
+         **/
+        collection: FixedBytes<32>;
+
+        /**
+         * The contextual alias.
+         **/
+        alias: FixedBytes<32>;
+      }
+    >;
+
+    /**
+     * An alias account has been removed.
+     **/
+    AliasAccountUnset: GenericPalletEvent<
+      'AliasAccounts',
+      'AliasAccountUnset',
+      {
+        /**
+         * The account that was unlinked.
+         **/
+        account: AccountId32;
+      }
+    >;
+
+    /**
+     * A stale alias mapping was removed.
+     **/
+    StaleAliasRemoved: GenericPalletEvent<
+      'AliasAccounts',
+      'StaleAliasRemoved',
+      {
+        /**
+         * The account that was unlinked.
+         **/
+        account: AccountId32;
+
+        /**
+         * The collection identifier.
+         **/
+        collection: FixedBytes<32>;
+
+        /**
+         * The contextual alias.
+         **/
+        alias: FixedBytes<32>;
+      }
+    >;
+
+    /**
+     * A mapping was reported stale, which starts [`Config::MappingRetention`]. It is still
+     * stored, and a call from `removable_at` on removes it.
+     **/
+    StaleAliasReported: GenericPalletEvent<
+      'AliasAccounts',
+      'StaleAliasReported',
+      {
+        /**
+         * The account whose mapping was reported.
+         **/
+        account: AccountId32;
+
+        /**
+         * The collection identifier.
+         **/
+        collection: FixedBytes<32>;
+
+        /**
+         * The contextual alias.
+         **/
+        alias: FixedBytes<32>;
+
+        /**
+         * The second from which the mapping can be removed.
+         **/
+        removableAt: bigint;
+      }
+    >;
+
+    /**
+     * A mapping reported stale verifies again, so its report was dropped. A later staleness
+     * starts [`Config::MappingRetention`] over.
+     **/
+    StaleAliasReportCleared: GenericPalletEvent<
+      'AliasAccounts',
+      'StaleAliasReportCleared',
+      {
+        /**
+         * The account whose report was dropped.
+         **/
+        account: AccountId32;
+
+        /**
+         * The collection identifier.
+         **/
+        collection: FixedBytes<32>;
+
+        /**
+         * The contextual alias.
+         **/
+        alias: FixedBytes<32>;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Pgas`'s events
+   **/
+  pgas: {
+    /**
+     * PGAS was claimed by a person.
+     **/
+    PgasClaimed: GenericPalletEvent<
+      'Pgas',
+      'PgasClaimed',
+      {
+        alias: FixedBytes<32>;
+        target: AccountId32;
+        amount: bigint;
+        collection: IndivPalletPgasExtensionPgasCollection;
+        day: number;
+      }
+    >;
+
+    /**
+     * The PGAS asset was created.
+     **/
+    PgasAssetCreated: GenericPalletEvent<'Pgas', 'PgasAssetCreated', null>;
+
+    /**
+     * Old PGAS claim records were cleaned up.
+     **/
+    PgasClaimRecordsCleaned: GenericPalletEvent<'Pgas', 'PgasClaimRecordsCleaned', { dayIndex: number; count: number }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `DotnsGateway`'s events
+   **/
+  dotnsGateway: {
+    /**
+     * A username has been reserved for a candidate by an attester.
+     **/
+    NameReserved: GenericPalletEvent<
+      'DotnsGateway',
+      'NameReserved',
+      {
+        /**
+         * The candidate whose name was reserved.
+         **/
+        candidate: AccountId32;
+
+        /**
+         * The attester who performed the reservation.
+         **/
+        attester: AccountId32;
+
+        /**
+         * The lite-person label (`<dns-stem>.<digits>`).
+         **/
+        liteLabel: IndivPalletDotnsGatewayBaseLabel;
+
+        /**
+         * The ECDH chat key stored alongside the lite-person label.
+         **/
+        chatKey: IndivPalletDotnsGatewayChatKey;
+
+        /**
+         * The optional base label reserved for future full-person claiming.
+         **/
+        reservedBaseLabel?: IndivPalletDotnsGatewayBaseLabel | undefined;
+      }
+    >;
+
+    /**
+     * A username has been registered by a verified person.
+     **/
+    NameRegistered: GenericPalletEvent<
+      'DotnsGateway',
+      'NameRegistered',
+      {
+        /**
+         * The alias derived from the ring proof.
+         **/
+        alias: FixedBytes<32>;
+
+        /**
+         * The account that initiated the registration.
+         **/
+        account: AccountId32;
+
+        /**
+         * The registered full-person label.
+         **/
+        label: IndivPalletDotnsGatewayBaseLabel;
+
+        /**
+         * How the full-person label relates to a lite-person label.
+         **/
+        link: IndivPalletDotnsGatewayLink;
+      }
+    >;
+
+    /**
+     * Attestation allowance was increased for an account.
+     **/
+    AttestationAllowanceIncreased: GenericPalletEvent<
+      'DotnsGateway',
+      'AttestationAllowanceIncreased',
+      {
+        /**
+         * The attester account.
+         **/
+        account: AccountId32;
+
+        /**
+         * The number of attestations added.
+         **/
+        count: number;
+      }
+    >;
+
+    /**
+     * All attestation allowance has been removed for the attester.
+     **/
+    AllAttestationAllowanceCleared: GenericPalletEvent<
+      'DotnsGateway',
+      'AllAttestationAllowanceCleared',
+      {
+        /**
+         * The attester account.
+         **/
+        attester: AccountId32;
+      }
+    >;
+
+    /**
+     * The `RootGatewayDispatcher` contract address was set.
+     **/
+    DispatcherAddressSet: GenericPalletEvent<
+      'DotnsGateway',
+      'DispatcherAddressSet',
+      {
+        /**
+         * The new contract address.
+         **/
+        address: H160;
+      }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `OriginRestriction`'s events
+   **/
+  originRestriction: {
+    /**
+     * Usage for an entity is cleaned.
+     **/
+    UsageCleaned: GenericPalletEvent<
+      'OriginRestriction',
+      'UsageCleaned',
+      { entity: AssetHubPolkadotRuntimeIndividualityRestrictedEntity }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `NetworkSuffix`'s events
+   **/
+  networkSuffix: {
+    /**
+     * The network suffix changed.
+     **/
+    NetworkSuffixSet: GenericPalletEvent<'NetworkSuffix', 'NetworkSuffixSet', { old: Bytes; new: Bytes }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `PgasAllowance`'s events
+   **/
+  pgasAllowance: {
+    /**
+     * A transaction fee `actual_fee` has been paid by `who` in PGAS and burned. Mirrors
+     * [`pallet_transaction_payment::Event::TransactionFeePaid`].
+     **/
+    PgasFeePaid: GenericPalletEvent<'PgasAllowance', 'PGASFeePaid', { who: AccountId32; actualFee: bigint }>;
 
     /**
      * Generic pallet event

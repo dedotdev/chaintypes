@@ -1108,9 +1108,15 @@ export interface ChainErrors extends GenericChainErrors {
     CallbackFailed: GenericPalletError;
 
     /**
-     * The asset ID must be equal to the [`NextAssetId`].
+     * The asset ID is not the one required by [`Config::AssetIdAllocator`].
      **/
     BadAssetId: GenericPalletError;
+
+    /**
+     * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+     * exhausted.
+     **/
+    AssetIdAllocationFailed: GenericPalletError;
 
     /**
      * The asset cannot be destroyed because some accounts for this asset contain freezes.
@@ -1593,9 +1599,15 @@ export interface ChainErrors extends GenericChainErrors {
     CallbackFailed: GenericPalletError;
 
     /**
-     * The asset ID must be equal to the [`NextAssetId`].
+     * The asset ID is not the one required by [`Config::AssetIdAllocator`].
      **/
     BadAssetId: GenericPalletError;
+
+    /**
+     * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+     * exhausted.
+     **/
+    AssetIdAllocationFailed: GenericPalletError;
 
     /**
      * The asset cannot be destroyed because some accounts for this asset contain freezes.
@@ -1725,9 +1737,15 @@ export interface ChainErrors extends GenericChainErrors {
     CallbackFailed: GenericPalletError;
 
     /**
-     * The asset ID must be equal to the [`NextAssetId`].
+     * The asset ID is not the one required by [`Config::AssetIdAllocator`].
      **/
     BadAssetId: GenericPalletError;
+
+    /**
+     * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+     * exhausted.
+     **/
+    AssetIdAllocationFailed: GenericPalletError;
 
     /**
      * The asset cannot be destroyed because some accounts for this asset contain freezes.
@@ -2000,6 +2018,34 @@ export interface ChainErrors extends GenericChainErrors {
      * An unexpected invariant violation occurred. This should be reported.
      **/
     Unexpected: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `AssetsFreezer`'s errors
+   **/
+  assetsFreezer: {
+    /**
+     * Number of freezes on an account would exceed `MaxFreezes`.
+     **/
+    TooManyFreezes: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `AssetsHolder`'s errors
+   **/
+  assetsHolder: {
+    /**
+     * Number of holds on an account would exceed the count of `RuntimeHoldReason`.
+     **/
+    TooManyHolds: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2464,51 +2510,6 @@ export interface ChainErrors extends GenericChainErrors {
      * The preimage does not exist.
      **/
     PreimageNotExist: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `StateTrieMigration`'s errors
-   **/
-  stateTrieMigration: {
-    /**
-     * Max signed limits not respected.
-     **/
-    MaxSignedLimits: GenericPalletError;
-
-    /**
-     * A key was longer than the configured maximum.
-     *
-     * This means that the migration halted at the current [`Progress`] and
-     * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
-     * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
-     * The value should only be increased to avoid a storage migration for the currently
-     * stored [`crate::Progress::LastKey`].
-     **/
-    KeyTooLong: GenericPalletError;
-
-    /**
-     * submitter does not have enough funds.
-     **/
-    NotEnoughFunds: GenericPalletError;
-
-    /**
-     * Bad witness data provided.
-     **/
-    BadWitness: GenericPalletError;
-
-    /**
-     * Signed migration is not allowed because the maximum limit is not set yet.
-     **/
-    SignedMigrationNotAllowed: GenericPalletError;
-
-    /**
-     * Bad child root provided.
-     **/
-    BadChildRoot: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3509,6 +3510,262 @@ export interface ChainErrors extends GenericChainErrors {
      * The spender address is invalid (e.g., zero address).
      **/
     InvalidSpender: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `MembersSubscriber`'s errors
+   **/
+  membersSubscriber: {
+    /**
+     * XCM message send failed.
+     **/
+    XcmSendFailed: GenericPalletError;
+
+    /**
+     * Subscription is currently inactive.
+     **/
+    SubscriptionInactive: GenericPalletError;
+
+    /**
+     * Subscription is in terminated state.
+     **/
+    SubscriptionTerminated: GenericPalletError;
+
+    /**
+     * Subscription is active with a different sequence; must be terminated first.
+     **/
+    SubscriptionAlreadyActive: GenericPalletError;
+
+    /**
+     * Collection with the given identifier is not tracked.
+     **/
+    CollectionNotFound: GenericPalletError;
+
+    /**
+     * No ring root stored for the given ring index.
+     **/
+    NoRoot: GenericPalletError;
+
+    /**
+     * Proof failed to verify against any stored ring root.
+     **/
+    InvalidProof: GenericPalletError;
+
+    /**
+     * Stored ring exponent does not convert into the crypto's capacity.
+     **/
+    InvalidRingExponent: GenericPalletError;
+
+    /**
+     * Requested revision is not present in the stored sliding window.
+     **/
+    RevisionNotFound: GenericPalletError;
+
+    /**
+     * Requested revision has been superseded for longer than the retention duration.
+     **/
+    RevisionExpired: GenericPalletError;
+
+    /**
+     * The notifier initialized more than `MaxCollections` collections.
+     **/
+    TooManyCollections: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `AliasAccounts`'s errors
+   **/
+  aliasAccounts: {
+    /**
+     * The collection is not accepted.
+     **/
+    InvalidCollection: GenericPalletError;
+
+    /**
+     * The account is already in use under another alias.
+     **/
+    AccountInUse: GenericPalletError;
+
+    /**
+     * The account is not known.
+     **/
+    InvalidAccount: GenericPalletError;
+
+    /**
+     * Alias <-> Account is already set and up to date.
+     **/
+    AliasAccountAlreadySet: GenericPalletError;
+
+    /**
+     * Call is too late or too early.
+     **/
+    TimeOutOfRange: GenericPalletError;
+
+    /**
+     * The PGAS fee for alias registrations has not been set yet.
+     **/
+    AliasFeeUnset: GenericPalletError;
+
+    /**
+     * The proof passed to `reprove_alias_account` produced an alias / context
+     * that does not match the stored mapping for the signer.
+     **/
+    ReproveMismatch: GenericPalletError;
+
+    /**
+     * No ring root was found for the requested collection / ring index.
+     **/
+    RingRootNotFound: GenericPalletError;
+
+    /**
+     * The requested ring revision is no longer accepted for this ring.
+     **/
+    StaleRevision: GenericPalletError;
+
+    /**
+     * Ring-VRF proof verification failed.
+     **/
+    BadProof: GenericPalletError;
+
+    /**
+     * The configured ring capacity is invalid for this collection.
+     **/
+    InvalidRingCapacity: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `Pgas`'s errors
+   **/
+  pgas: {
+    /**
+     * This alias has already been used to claim PGAS in this period.
+     **/
+    AlreadyClaimed: GenericPalletError;
+
+    /**
+     * The PGAS asset does not exist or minting failed.
+     **/
+    PgasMintFailed: GenericPalletError;
+
+    /**
+     * `clean_pgas_claim_records` was called with a day that has no stored records.
+     **/
+    NoRecordsForDay: GenericPalletError;
+
+    /**
+     * The `first_alias` passed to `clean_pgas_claim_records` does not match the first alias
+     * currently stored under the prefix.
+     **/
+    FirstAliasMismatch: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `DotnsGateway`'s errors
+   **/
+  dotnsGateway: {
+    /**
+     * The alias has already registered a name.
+     **/
+    AlreadyRegistered: GenericPalletError;
+
+    /**
+     * The contract call failed (non-revert: out-of-gas, low-level, or
+     * undecodable revert).
+     **/
+    ContractCallFailed: GenericPalletError;
+
+    /**
+     * Contract reverted with a typed error from `RootGatewayDispatcher` or
+     * the `DotnsPopController` it forwards to.
+     **/
+    ContractRevert: GenericPalletError;
+
+    /**
+     * The name is invalid (empty or too long, or does not match the
+     * required DNS/lite-label format).
+     **/
+    InvalidName: GenericPalletError;
+
+    /**
+     * The attester has no attestation allowance remaining.
+     **/
+    NoAttestationAllowance: GenericPalletError;
+
+    /**
+     * The candidate's signature is invalid.
+     **/
+    InvalidAttestationSignature: GenericPalletError;
+
+    /**
+     * The reservation signature is older than [`Config::MaxValiditySeconds`].
+     **/
+    ReservationSignatureExpired: GenericPalletError;
+
+    /**
+     * The reservation signature claims to have been created more than
+     * [`Config::MaxValiditySeconds`] ahead of chain time.
+     **/
+    ReservationSignatureFromFuture: GenericPalletError;
+
+    /**
+     * The `Link::LiteUsername` target is not owned by the caller (or has
+     * no on-chain ownership record).
+     **/
+    NotLiteLabelOwner: GenericPalletError;
+
+    /**
+     * The `RootGatewayDispatcher` contract address has not been set.
+     **/
+    DispatcherAddressNotSet: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `OriginRestriction`'s errors
+   **/
+  originRestriction: {
+    /**
+     * The origin has no usage tracked.
+     **/
+    NoUsage: GenericPalletError;
+
+    /**
+     * The usage is not zero.
+     **/
+    NotZero: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `NetworkSuffix`'s errors
+   **/
+  networkSuffix: {
+    /**
+     * A network suffix cannot be empty.
+     **/
+    EmptySuffix: GenericPalletError;
 
     /**
      * Generic pallet error

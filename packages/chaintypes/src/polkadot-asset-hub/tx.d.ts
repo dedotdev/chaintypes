@@ -75,9 +75,6 @@ import type {
   PalletConvictionVotingConviction,
   FrameSupportPreimagesBounded,
   FrameSupportScheduleDispatchTime,
-  PalletStateTrieMigrationMigrationLimits,
-  PalletStateTrieMigrationMigrationTask,
-  PalletStateTrieMigrationProgress,
   PalletNominationPoolsBondExtra,
   PalletNominationPoolsPoolState,
   PalletNominationPoolsConfigOp,
@@ -102,6 +99,12 @@ import type {
   PalletStakingAsyncPalletConfigOpPerbill,
   PalletStakingAsyncPalletConfigOpBool,
   PalletStakingAsyncLedgerUnlockChunk,
+  IndivSupportRealityRingExponent,
+  IndivSupportMembersNotifierSubscriberRingRootUpdatesBatch,
+  IndivPalletDotnsGatewayBaseLabel,
+  IndivPalletDotnsGatewayChatKey,
+  IndivPalletDotnsGatewayLink,
+  AssetHubPolkadotRuntimeIndividualityRestrictedEntity,
   PolkadotParachainPrimitivesPrimitivesId,
 } from './types.js';
 
@@ -4083,7 +4086,8 @@ export interface ChainTx<
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+     * equal it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -4123,8 +4127,18 @@ export interface ChainTx<
      *
      * Unlike `create`, no funds are reserved.
      *
+     * Unlike `create`, the `id` does not have to be the one required by
+     * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+     * marked as allocated.
+     *
+     * # Warning
+     *
+     * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+     * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+     * most severely for bridged assets, where a collision breaks the local/remote mapping.
+     *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset, and must never have been in use previously (see warning above).
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.
@@ -7685,7 +7699,8 @@ export interface ChainTx<
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+     * equal it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -7725,8 +7740,18 @@ export interface ChainTx<
      *
      * Unlike `create`, no funds are reserved.
      *
+     * Unlike `create`, the `id` does not have to be the one required by
+     * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+     * marked as allocated.
+     *
+     * # Warning
+     *
+     * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+     * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+     * most severely for bridged assets, where a collision breaks the local/remote mapping.
+     *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset, and must never have been in use previously (see warning above).
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.
@@ -8913,7 +8938,8 @@ export interface ChainTx<
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+     * equal it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -8953,8 +8979,18 @@ export interface ChainTx<
      *
      * Unlike `create`, no funds are reserved.
      *
+     * Unlike `create`, the `id` does not have to be the one required by
+     * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+     * marked as allocated.
+     *
+     * # Warning
+     *
+     * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+     * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+     * most severely for bridged assets, where a collision breaks the local/remote mapping.
+     *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset, and must never have been in use previously (see warning above).
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.
@@ -13013,185 +13049,6 @@ export interface ChainTx<
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
-   * Pallet `StateTrieMigration`'s transaction calls
-   **/
-  stateTrieMigration: {
-    /**
-     * Control the automatic migration.
-     *
-     * The dispatch origin of this call must be [`Config::ControlOrigin`].
-     *
-     * @param {PalletStateTrieMigrationMigrationLimits | undefined} maybeConfig
-     **/
-    controlAutoMigration: GenericTxCall<
-      (maybeConfig: PalletStateTrieMigrationMigrationLimits | undefined) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'ControlAutoMigration';
-            params: { maybeConfig: PalletStateTrieMigrationMigrationLimits | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Continue the migration for the given `limits`.
-     *
-     * The dispatch origin of this call can be any signed account.
-     *
-     * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
-     * Upon successful execution, the transaction fee is returned.
-     *
-     * The (potentially over-estimated) of the byte length of all the data read must be
-     * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
-     * that executing the current `MigrationTask` with the given `limits` will not exceed
-     * `real_size_upper` bytes of read data.
-     *
-     * The `witness_task` is merely a helper to prevent the caller from being slashed or
-     * generally trigger a migration that they do not intend. This parameter is just a message
-     * from caller, saying that they believed `witness_task` was the last state of the
-     * migration, and they only wish for their transaction to do anything, if this assumption
-     * holds. In case `witness_task` does not match, the transaction fails.
-     *
-     * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
-     * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
-     * `size` limit can always be overwritten.
-     *
-     * @param {PalletStateTrieMigrationMigrationLimits} limits
-     * @param {number} realSizeUpper
-     * @param {PalletStateTrieMigrationMigrationTask} witnessTask
-     **/
-    continueMigrate: GenericTxCall<
-      (
-        limits: PalletStateTrieMigrationMigrationLimits,
-        realSizeUpper: number,
-        witnessTask: PalletStateTrieMigrationMigrationTask,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'ContinueMigrate';
-            params: {
-              limits: PalletStateTrieMigrationMigrationLimits;
-              realSizeUpper: number;
-              witnessTask: PalletStateTrieMigrationMigrationTask;
-            };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Migrate the list of top keys by iterating each of them one by one.
-     *
-     * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-     * should only be used in case any keys are leftover due to a bug.
-     *
-     * @param {Array<BytesLike>} keys
-     * @param {number} witnessSize
-     **/
-    migrateCustomTop: GenericTxCall<
-      (
-        keys: Array<BytesLike>,
-        witnessSize: number,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'MigrateCustomTop';
-            params: { keys: Array<BytesLike>; witnessSize: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Migrate the list of child keys by iterating each of them one by one.
-     *
-     * All of the given child keys must be present under one `child_root`.
-     *
-     * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-     * should only be used in case any keys are leftover due to a bug.
-     *
-     * @param {BytesLike} root
-     * @param {Array<BytesLike>} childKeys
-     * @param {number} totalSize
-     **/
-    migrateCustomChild: GenericTxCall<
-      (
-        root: BytesLike,
-        childKeys: Array<BytesLike>,
-        totalSize: number,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'MigrateCustomChild';
-            params: { root: BytesLike; childKeys: Array<BytesLike>; totalSize: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the maximum limit of the signed migration.
-     *
-     * @param {PalletStateTrieMigrationMigrationLimits} limits
-     **/
-    setSignedMaxLimits: GenericTxCall<
-      (limits: PalletStateTrieMigrationMigrationLimits) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'SetSignedMaxLimits';
-            params: { limits: PalletStateTrieMigrationMigrationLimits };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Forcefully set the progress the running migration.
-     *
-     * This is only useful in one case: the next key to migrate is too big to be migrated with
-     * a signed account, in a parachain context, and we simply want to skip it. A reasonable
-     * example of this would be `:code:`, which is both very expensive to migrate, and commonly
-     * used, so probably it is already migrated.
-     *
-     * In case you mess things up, you can also, in principle, use this to reset the migration
-     * process.
-     *
-     * @param {PalletStateTrieMigrationProgress} progressTop
-     * @param {PalletStateTrieMigrationProgress} progressChild
-     **/
-    forceSetProgress: GenericTxCall<
-      (
-        progressTop: PalletStateTrieMigrationProgress,
-        progressChild: PalletStateTrieMigrationProgress,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'ForceSetProgress';
-            params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
    * Pallet `NominationPools`'s transaction calls
    **/
   nominationPools: {
@@ -15971,6 +15828,675 @@ export interface ChainTx<
           palletCall: {
             name: 'DispatchAsFallbackAccount';
             params: { call: AssetHubPolkadotRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `MembersSubscriber`'s transaction calls
+   **/
+  membersSubscriber: {
+    /**
+     * Stores the initial ring roots received from the notifier upon subscription start.
+     * Accepts multi-part continuations (same sequence). Rejects calls with a different
+     * sequence while subscription is `Active` — a subscription must be terminated first.
+     * Can only be called by notifier XCM origin (via `EnsureNotifierOrigin`).
+     *
+     * ## Parameters
+     * - `origin`: Notifier XCM origin.
+     * - `roots`: Initial batch of ring roots.
+     *
+     * @param {IndivSupportRealityRingExponent} ringExponent
+     * @param {IndivSupportMembersNotifierSubscriberRingRootUpdatesBatch} roots
+     **/
+    initializeRingRoots: GenericTxCall<
+      (
+        ringExponent: IndivSupportRealityRingExponent,
+        roots: IndivSupportMembersNotifierSubscriberRingRootUpdatesBatch,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MembersSubscriber';
+          palletCall: {
+            name: 'InitializeRingRoots';
+            params: {
+              ringExponent: IndivSupportRealityRingExponent;
+              roots: IndivSupportMembersNotifierSubscriberRingRootUpdatesBatch;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Process ring roots updates received from the notifier.
+     *
+     * ## Parameters
+     * - `origin`: Must be the XCM origin from the notifier.
+     * - `batch`: Batch of ring root updates to process.
+     *
+     * @param {IndivSupportMembersNotifierSubscriberRingRootUpdatesBatch} batch
+     **/
+    processRingUpdates: GenericTxCall<
+      (batch: IndivSupportMembersNotifierSubscriberRingRootUpdatesBatch) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MembersSubscriber';
+          palletCall: {
+            name: 'ProcessRingUpdates';
+            params: { batch: IndivSupportMembersNotifierSubscriberRingRootUpdatesBatch };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Terminates the subscription.
+     *
+     * Accepts either notifier origin (`EnsureNotifierOrigin`) or local governance
+     * origin (`EnsureTerminationOrigin`). When called locally, sends an XCM
+     * unsubscribe message to the notifier. When called from the notifier (e.g. on
+     * governance unsubscribe), no XCM is sent back. Idempotent if already
+     * terminated.
+     *
+     * ## Parameters
+     * - `origin`: Notifier XCM origin or root/governance origin.
+     *
+     **/
+    terminateSubscription: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MembersSubscriber';
+          palletCall: {
+            name: 'TerminateSubscription';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Sends replay requests to the notifier for missing ring roots.
+     *
+     * Submitted by the offchain worker as an authorized transaction. Validates
+     * that the subscription is active and that the provided indices are actually
+     * missing before sending XCM replay requests.
+     *
+     * @param {FixedBytes<32>} identifier
+     * @param {Array<number>} indices
+     **/
+    replayMissingRoots: GenericTxCall<
+      (
+        identifier: FixedBytes<32>,
+        indices: Array<number>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MembersSubscriber';
+          palletCall: {
+            name: 'ReplayMissingRoots';
+            params: { identifier: FixedBytes<32>; indices: Array<number> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Removes a page of stale-generation `RingRoots` entries.
+     *
+     * Submitted by the offchain worker as an authorized transaction.
+     *
+     **/
+    purgeStaleRingRoots: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MembersSubscriber';
+          palletCall: {
+            name: 'PurgeStaleRingRoots';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `AliasAccounts`'s transaction calls
+   **/
+  aliasAccounts: {
+    /**
+     * Remove the alias mapping for the signer.
+     *
+     * The origin must be signed by the account currently bound to a ring alias. The
+     * mapping is removed in both directions.
+     *
+     **/
+    unsetAliasAccount: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AliasAccounts';
+          palletCall: {
+            name: 'UnsetAliasAccount';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Link an account to a ring alias, on payment of a PGAS fee.
+     *
+     * The origin must be signed; the signer becomes the bound account. The PGAS fee
+     * ([`Config::AliasFee`]) is burned from the signer's PGAS balance. The alias must verify
+     * against the supplied `collection`/`ring_index`/`ring_revision` in `context`. The
+     * collection must still be People or People Lite.
+     *
+     * If a different account is already bound to the same alias under this context, that
+     * mapping is dropped and the swap is paid for by the new signer.
+     *
+     * Re-proving the same alias under a fresher ring revision should instead use
+     * [`Pallet::reprove_alias_account`], which is free.
+     *
+     * @param {BytesLike} proof
+     * @param {FixedBytes<32>} collection
+     * @param {number} ringIndex
+     * @param {number} ringRevision
+     * @param {FixedBytes<32>} context
+     * @param {bigint} proofValidAt
+     **/
+    setAliasAccount: GenericTxCall<
+      (
+        proof: BytesLike,
+        collection: FixedBytes<32>,
+        ringIndex: number,
+        ringRevision: number,
+        context: FixedBytes<32>,
+        proofValidAt: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AliasAccounts';
+          palletCall: {
+            name: 'SetAliasAccount';
+            params: {
+              proof: BytesLike;
+              collection: FixedBytes<32>;
+              ringIndex: number;
+              ringRevision: number;
+              context: FixedBytes<32>;
+              proofValidAt: bigint;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Re-prove the holder's alias against a fresher ring revision, free of charge in case of a
+     * successful operations.
+     *
+     * The origin must be signed and must already hold a alias mapping. The
+     * proof is verified against the stored context; the resulting alias must
+     * match the stored alias. Only the `revision` and `ring` fields of the
+     * stored mapping change; collection, context, and alias are preserved.
+     *
+     * @param {BytesLike} proof
+     * @param {number} ringIndex
+     * @param {number} ringRevision
+     * @param {bigint} proofValidAt
+     **/
+    reproveAliasAccount: GenericTxCall<
+      (
+        proof: BytesLike,
+        ringIndex: number,
+        ringRevision: number,
+        proofValidAt: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AliasAccounts';
+          palletCall: {
+            name: 'ReproveAliasAccount';
+            params: { proof: BytesLike; ringIndex: number; ringRevision: number; proofValidAt: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Stamp [`StaleSince`] on each mapping in `accounts`, starting
+     * [`Config::MappingRetention`].
+     *
+     * A mapping is stale once [`Config::MemberService`] stops accepting its revision, which is
+     * when the ring was rebuilt and the old revision ran out of retention there, or when the
+     * ring was deleted. Stamping removes nothing, because a consumer that reads
+     * [`AccountToAlias`] without checking the revision still resolves the mapping;
+     * [`Pallet::retire_stale_aliases`] removes it once the retention has run out.
+     *
+     * `accounts` must be in strictly ascending order, so one account cannot be stamped twice
+     * in a batch, and every one of them must hold a stale mapping with no stamp yet.
+     *
+     * @param {Array<AccountId32Like>} accounts
+     **/
+    reportStaleAliases: GenericTxCall<
+      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AliasAccounts';
+          palletCall: {
+            name: 'ReportStaleAliases';
+            params: { accounts: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove each mapping in `accounts`, whose [`Config::MappingRetention`] has run out.
+     *
+     * Both directions of the mapping go, along with the stamp and the account's sufficient
+     * reference. `accounts` must be in strictly ascending order, and every one of them must
+     * hold a stale mapping stamped [`Config::MappingRetention`] ago or longer.
+     *
+     * @param {Array<AccountId32Like>} accounts
+     **/
+    retireStaleAliases: GenericTxCall<
+      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AliasAccounts';
+          palletCall: {
+            name: 'RetireStaleAliases';
+            params: { accounts: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Drop the [`StaleSince`] stamp of each mapping in `accounts`, which verifies again.
+     *
+     * A revision can verify again after it stopped: a collection torn down and re-created
+     * under the same identifier restarts its revisions at zero, so a stored revision can be
+     * reissued. Dropping the stamp keeps the next staleness to a full
+     * [`Config::MappingRetention`] rather than letting it remove the mapping on the spot.
+     *
+     * `accounts` must be in strictly ascending order, and every one of them must hold a
+     * stamped mapping whose revision verifies.
+     *
+     * @param {Array<AccountId32Like>} accounts
+     **/
+    clearStaleAliasReports: GenericTxCall<
+      (accounts: Array<AccountId32Like>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AliasAccounts';
+          palletCall: {
+            name: 'ClearStaleAliasReports';
+            params: { accounts: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Pgas`'s transaction calls
+   **/
+  pgas: {
+    /**
+     * Mint PGAS for a verified claim slot.
+     *
+     * Must be submitted with the [`AsPgas`] transaction extension, which
+     * verifies the ring-VRF proof and produces an [`Origin::ClaimAlias`]. The outer origin
+     * must be `None` (the extension replaces it with the local origin); any other origin is
+     * rejected.
+     *
+     * `slot_index` is part of the call payload so the extension can derive the claim context
+     * on-chain and so the proof binds to the requested slot via the inherited implication.
+     *
+     * @param {number} slotIndex
+     * @param {AccountId32Like} target
+     **/
+    claimPgas: GenericTxCall<
+      (
+        slotIndex: number,
+        target: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Pgas';
+          palletCall: {
+            name: 'ClaimPgas';
+            params: { slotIndex: number; target: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Mint PGAS for a batch of verified claim slots.
+     *
+     * Must be submitted with the [`AsPgas`] transaction extension carrying
+     * [`AsPgasInfo::BatchClaim`], which verifies a
+     * single multi-context proof covering one context per entry in `slot_indices` and
+     * produces an [`Origin::BatchClaimAliases`]. The outer origin must be `None`; any
+     * other origin is rejected.
+     *
+     * The weight is a constant worst case sized for [`Config::MaxPgasClaimsPerBatch`]
+     * contexts; smaller batches are not refunded.
+     *
+     * @param {Array<number>} slotIndices
+     * @param {AccountId32Like} target
+     **/
+    batchClaimPgas: GenericTxCall<
+      (
+        slotIndices: Array<number>,
+        target: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Pgas';
+          palletCall: {
+            name: 'BatchClaimPgas';
+            params: { slotIndices: Array<number>; target: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Create the PGAS asset. This is a permissionless authorized call that can only succeed
+     * if the PGAS asset does not already exist.
+     *
+     **/
+    createPgasAsset: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Pgas';
+          palletCall: {
+            name: 'CreatePgasAsset';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove old PGAS claim records for a specific `day_index`.
+     *
+     * This is an authorized extrinsic submitted by the offchain worker.
+     * Only records from days that have fully elapsed (outside the grace window) can
+     * be cleaned. Up to [`Config::MaxPgasClaimRecordCleanupPerCall`] entries are
+     * removed per call.
+     *
+     * `first_alias` is the first alias currently stored for `day_index` and is included in the
+     * tags for transaction uniqueness.
+     *
+     * @param {number} dayIndex
+     * @param {FixedBytes<32>} firstAlias
+     **/
+    cleanPgasClaimRecords: GenericTxCall<
+      (
+        dayIndex: number,
+        firstAlias: FixedBytes<32>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Pgas';
+          palletCall: {
+            name: 'CleanPgasClaimRecords';
+            params: { dayIndex: number; firstAlias: FixedBytes<32> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `DotnsGateway`'s transaction calls
+   **/
+  dotnsGateway: {
+    /**
+     * Reserves a lite-person label on `DotnsPopController` (via `RootGatewayDispatcher`)
+     * for a Lite Person, and optionally enqueues a reservation for a base label the user
+     * intends to claim as a Full Person later.
+     *
+     * The caller must be an attester with available allowance. The user's
+     * signature proves their consent to the reservation with this specific label
+     * and attester.
+     *
+     * # Parameters
+     * - `candidate`: the Lite Person's account for whom the label is being reserved. Also the
+     * signer of `candidate_signature`.
+     * - `candidate_signature`: signature over the bytes returned by
+     * `Pallet::construct_reservation_message` — a SCALE-encoded tuple binding the attester,
+     * candidate, the candidate's chosen *base* username, and chat key. The digit suffix of
+     * `lite_label` is **not** part of the signed message (the digits are allocated
+     * server-side after the candidate signs, so the candidate cannot commit to them at
+     * signing time).
+     * - `lite_label`: the lite-person label. Must be `<dns-stem>.<2+ digits>` (e.g.
+     * `alice.42`), matching `StringUtils.isLitePersonLabel` in the contracts. Only the
+     * `<dns-stem>` portion enters the signed message; the digits ride along as an unsigned
+     * extrinsic argument used for the contract calldata and storage key.
+     * - `chat_key`: 65-byte public key used for ECDH chat.
+     * - `reserved_base_label`: optional base label reserved for the candidate to later claim
+     * as a Full Person. Must be a single DNS label (e.g. `alice`).
+     * - `signed_at`: Unix-time second at which the candidate signed the reservation message.
+     * The signature is accepted only if `signed_at <= now + MaxFutureSkewSeconds` and `now
+     * <= signed_at + MaxValiditySeconds`, where `now` comes from [`Config::UnixTime`].
+     *
+     * @param {AccountId32Like} candidate
+     * @param {SpRuntimeMultiSignature} candidateSignature
+     * @param {IndivPalletDotnsGatewayBaseLabel} liteLabel
+     * @param {IndivPalletDotnsGatewayChatKey} chatKey
+     * @param {IndivPalletDotnsGatewayBaseLabel | undefined} reservedBaseLabel
+     * @param {bigint} signedAt
+     **/
+    reserveName: GenericTxCall<
+      (
+        candidate: AccountId32Like,
+        candidateSignature: SpRuntimeMultiSignature,
+        liteLabel: IndivPalletDotnsGatewayBaseLabel,
+        chatKey: IndivPalletDotnsGatewayChatKey,
+        reservedBaseLabel: IndivPalletDotnsGatewayBaseLabel | undefined,
+        signedAt: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'DotnsGateway';
+          palletCall: {
+            name: 'ReserveName';
+            params: {
+              candidate: AccountId32Like;
+              candidateSignature: SpRuntimeMultiSignature;
+              liteLabel: IndivPalletDotnsGatewayBaseLabel;
+              chatKey: IndivPalletDotnsGatewayChatKey;
+              reservedBaseLabel: IndivPalletDotnsGatewayBaseLabel | undefined;
+              signedAt: bigint;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Registers a full-person label on `DotnsPopController` (via `RootGatewayDispatcher`)
+     * for a fully proven person.
+     *
+     * The origin must be [`Origin::PersonRegistration`], produced by [`AsDotnsGateway`] after
+     * it verifies the ring membership proof and the off-chain signature from `who`. All
+     * authentication, format and replay checks live in the extension.
+     *
+     * # Parameters
+     * - `who`: the account that owns the full-person label; its EVM-mapped address is the
+     * recipient on the `DotnsPopController` contract. Must match the `who` already
+     * authenticated by [`AsDotnsGateway`].
+     * - `label`: the full-person label. Must be a single DNS label (e.g. `alice`), matching
+     * `StringUtils.isSingleLabel` in the contracts.
+     * - `link`: how the full-person label relates to a pre-existing lite-person label:
+     * - `Link::LiteUsername(lite_label)` — links to an existing lite-person label (must
+     * match the lite format `<dns-stem>.<2+ digits>`); the chat key is inherited from the
+     * lite entry.
+     * - `Link::None(chat_key)` — standalone registration with a fresh ECDH chat key.
+     *
+     * @param {AccountId32Like} who
+     * @param {IndivPalletDotnsGatewayBaseLabel} label
+     * @param {IndivPalletDotnsGatewayLink} link
+     **/
+    registerName: GenericTxCall<
+      (
+        who: AccountId32Like,
+        label: IndivPalletDotnsGatewayBaseLabel,
+        link: IndivPalletDotnsGatewayLink,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'DotnsGateway';
+          palletCall: {
+            name: 'RegisterName';
+            params: {
+              who: AccountId32Like;
+              label: IndivPalletDotnsGatewayBaseLabel;
+              link: IndivPalletDotnsGatewayLink;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Grants attestation allowance to an attester account.
+     *
+     * The origin must be `AttestationAllowanceManager`.
+     *
+     * @param {AccountId32Like} account
+     * @param {number} count
+     **/
+    increaseAttestationAllowance: GenericTxCall<
+      (
+        account: AccountId32Like,
+        count: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'DotnsGateway';
+          palletCall: {
+            name: 'IncreaseAttestationAllowance';
+            params: { account: AccountId32Like; count: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clears all attestation allowance for an attester account.
+     *
+     * The origin must be `AttestationAllowanceManager`.
+     *
+     * @param {AccountId32Like} account
+     **/
+    clearAttestationAllowance: GenericTxCall<
+      (account: AccountId32Like) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'DotnsGateway';
+          palletCall: {
+            name: 'ClearAttestationAllowance';
+            params: { account: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Sets the `RootGatewayDispatcher` contract address.
+     *
+     * The origin must be `DispatcherAddressManager`. Overwrites any prior value.
+     *
+     * @param {H160} address
+     **/
+    setDispatcherAddress: GenericTxCall<
+      (address: H160) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'DotnsGateway';
+          palletCall: {
+            name: 'SetDispatcherAddress';
+            params: { address: H160 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `OriginRestriction`'s transaction calls
+   **/
+  originRestriction: {
+    /**
+     * Allow to clean usage associated with an entity when it is zero or when there is no
+     * longer any allowance for the origin.
+     *
+     * @param {AssetHubPolkadotRuntimeIndividualityRestrictedEntity} entity
+     **/
+    cleanUsage: GenericTxCall<
+      (entity: AssetHubPolkadotRuntimeIndividualityRestrictedEntity) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'OriginRestriction';
+          palletCall: {
+            name: 'CleanUsage';
+            params: { entity: AssetHubPolkadotRuntimeIndividualityRestrictedEntity };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `NetworkSuffix`'s transaction calls
+   **/
+  networkSuffix: {
+    /**
+     * Set the network suffix used by all product-context derivations.
+     *
+     * @param {BytesLike} networkSuffix
+     **/
+    setNetworkSuffix: GenericTxCall<
+      (networkSuffix: BytesLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'NetworkSuffix';
+          palletCall: {
+            name: 'SetNetworkSuffix';
+            params: { networkSuffix: BytesLike };
           };
         },
         ChainKnownTypes

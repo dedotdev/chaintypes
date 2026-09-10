@@ -69,7 +69,6 @@ export type AssetHubPolkadotRuntimeRuntimeCall =
   | { pallet: 'ChildBounties'; palletCall: PalletChildBountiesCall }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
   | { pallet: 'MultiAssetBounties'; palletCall: PalletMultiAssetBountiesCall }
-  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
   | { pallet: 'VoterList'; palletCall: PalletBagsListCall }
   | { pallet: 'StakingRcClient'; palletCall: PalletStakingAsyncRcClientCall }
@@ -79,6 +78,12 @@ export type AssetHubPolkadotRuntimeRuntimeCall =
   | { pallet: 'MultiBlockElectionSigned'; palletCall: PalletElectionProviderMultiBlockSignedPalletCall }
   | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCall }
   | { pallet: 'Revive'; palletCall: PalletReviveCall }
+  | { pallet: 'MembersSubscriber'; palletCall: IndivPalletMembersSubscriberCall }
+  | { pallet: 'AliasAccounts'; palletCall: IndivPalletAliasAccountsCall }
+  | { pallet: 'Pgas'; palletCall: IndivPalletPgasCall }
+  | { pallet: 'DotnsGateway'; palletCall: IndivPalletDotnsGatewayCall }
+  | { pallet: 'OriginRestriction'; palletCall: IndivPalletOriginRestrictionCall }
+  | { pallet: 'NetworkSuffix'; palletCall: IndivPalletNetworkSuffixCall }
   | { pallet: 'AhOps'; palletCall: PalletAhOpsCall };
 
 export type AssetHubPolkadotRuntimeRuntimeCallLike =
@@ -121,7 +126,6 @@ export type AssetHubPolkadotRuntimeRuntimeCallLike =
   | { pallet: 'ChildBounties'; palletCall: PalletChildBountiesCallLike }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
   | { pallet: 'MultiAssetBounties'; palletCall: PalletMultiAssetBountiesCallLike }
-  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
   | { pallet: 'VoterList'; palletCall: PalletBagsListCallLike }
   | { pallet: 'StakingRcClient'; palletCall: PalletStakingAsyncRcClientCallLike }
@@ -131,6 +135,12 @@ export type AssetHubPolkadotRuntimeRuntimeCallLike =
   | { pallet: 'MultiBlockElectionSigned'; palletCall: PalletElectionProviderMultiBlockSignedPalletCallLike }
   | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCallLike }
   | { pallet: 'Revive'; palletCall: PalletReviveCallLike }
+  | { pallet: 'MembersSubscriber'; palletCall: IndivPalletMembersSubscriberCallLike }
+  | { pallet: 'AliasAccounts'; palletCall: IndivPalletAliasAccountsCallLike }
+  | { pallet: 'Pgas'; palletCall: IndivPalletPgasCallLike }
+  | { pallet: 'DotnsGateway'; palletCall: IndivPalletDotnsGatewayCallLike }
+  | { pallet: 'OriginRestriction'; palletCall: IndivPalletOriginRestrictionCallLike }
+  | { pallet: 'NetworkSuffix'; palletCall: IndivPalletNetworkSuffixCallLike }
   | { pallet: 'AhOps'; palletCall: PalletAhOpsCallLike };
 
 /**
@@ -742,7 +752,8 @@ export type PalletParametersCallLike =
 export type AssetHubPolkadotRuntimeRuntimeParameters =
   | { type: 'StakingElection'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionParameters }
   | { type: 'Scheduler'; value: AssetHubPolkadotRuntimeDynamicParamsSchedulerParameters }
-  | { type: 'MessageQueue'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueParameters };
+  | { type: 'MessageQueue'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueParameters }
+  | { type: 'Individuality'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityParameters };
 
 export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionParameters =
   | { type: 'SignedPhase'; value: [AssetHubPolkadotRuntimeDynamicParamsStakingElectionSignedPhase, number | undefined] }
@@ -817,6 +828,95 @@ export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueParameters =
 export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnInitWeight = {};
 
 export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnIdleWeight = {};
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityParameters =
+  | {
+      type: 'PgasClaimAmount';
+      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityPgasClaimAmount, bigint | undefined];
+    }
+  | {
+      type: 'MaxPgasClaimsPerBatch';
+      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxPgasClaimsPerBatch, number | undefined];
+    }
+  | {
+      type: 'MaxClaimsPerPeriodPerPerson';
+      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxClaimsPerPeriodPerPerson, number | undefined];
+    }
+  | {
+      type: 'MaxClaimsPerPeriodPerLitePerson';
+      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxClaimsPerPeriodPerLitePerson, number | undefined];
+    }
+  | {
+      type: 'MaxPgasClaimRecordCleanupPerCall';
+      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxPgasClaimRecordCleanupPerCall, number | undefined];
+    }
+  | {
+      type: 'AliasProofValidityWindow';
+      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityAliasProofValidityWindow, bigint | undefined];
+    }
+  | {
+      type: 'DotnsMaxContractCallWeight';
+      value: [
+        AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxContractCallWeight,
+        SpWeightsWeightV2Weight | undefined,
+      ];
+    }
+  | {
+      type: 'DotnsMaxValiditySeconds';
+      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxValiditySeconds, bigint | undefined];
+    }
+  | {
+      type: 'DotnsMaxFutureSkewSeconds';
+      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxFutureSkewSeconds, bigint | undefined];
+    }
+  | {
+      type: 'DotnsPersonRegistrationAllowanceMax';
+      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsPersonRegistrationAllowanceMax, bigint | undefined];
+    }
+  | {
+      type: 'DotnsPersonRegistrationAllowanceRecovery';
+      value: [
+        AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsPersonRegistrationAllowanceRecovery,
+        bigint | undefined,
+      ];
+    }
+  | { type: 'AliasFee'; value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityAliasFee, bigint | undefined] }
+  | {
+      type: 'StaleAliasSweepInterval';
+      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityStaleAliasSweepInterval, number | undefined];
+    }
+  | {
+      type: 'MaxStaleAliasBatch';
+      value: [AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxStaleAliasBatch, number | undefined];
+    };
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityPgasClaimAmount = {};
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxPgasClaimsPerBatch = {};
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxClaimsPerPeriodPerPerson = {};
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxClaimsPerPeriodPerLitePerson = {};
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxPgasClaimRecordCleanupPerCall = {};
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityAliasProofValidityWindow = {};
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxContractCallWeight = {};
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxValiditySeconds = {};
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxFutureSkewSeconds = {};
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsPersonRegistrationAllowanceMax = {};
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsPersonRegistrationAllowanceRecovery = {};
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityAliasFee = {};
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityStaleAliasSweepInterval = {};
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxStaleAliasBatch = {};
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3695,7 +3795,9 @@ export type AssetHubPolkadotRuntimeOriginCaller =
   | { type: 'PolkadotXcm'; value: PalletXcmOrigin }
   | { type: 'CumulusXcm'; value: CumulusPalletXcmOrigin }
   | { type: 'Origins'; value: AssetHubPolkadotRuntimeGovernanceOriginsPalletCustomOriginsOrigin }
-  | { type: 'Revive'; value: PalletReviveOrigin };
+  | { type: 'Revive'; value: PalletReviveOrigin }
+  | { type: 'Pgas'; value: IndivPalletPgasOrigin }
+  | { type: 'DotnsGateway'; value: IndivPalletDotnsGatewayOrigin };
 
 export type FrameSupportDispatchRawOrigin =
   | { type: 'Root' }
@@ -3726,11 +3828,40 @@ export type AssetHubPolkadotRuntimeGovernanceOriginsPalletCustomOriginsOrigin =
   | 'MediumSpender'
   | 'BigSpender'
   | 'WhitelistedCaller'
-  | 'WishForChange';
+  | 'WishForChange'
+  | 'TechnicalMaintenance'
+  | 'ProsperityEmergency';
 
 export type PalletReviveOrigin = { type: 'EthTransaction'; value: AccountId32 };
 
 export type AssetHubPolkadotRuntimeRuntime = {};
+
+export type IndivPalletPgasOrigin =
+  | {
+      type: 'ClaimAlias';
+      value: {
+        alias: FixedBytes<32>;
+        day: IndivSupportUtilsBigEndianU32;
+        collection: IndivPalletPgasExtensionPgasCollection;
+      };
+    }
+  | {
+      type: 'BatchClaimAliases';
+      value: {
+        aliases: Array<FixedBytes<32>>;
+        day: IndivSupportUtilsBigEndianU32;
+        collection: IndivPalletPgasExtensionPgasCollection;
+      };
+    };
+
+/**
+ * A u32 encoded in big-endian format for correct lexicographic ordering.
+ **/
+export type IndivSupportUtilsBigEndianU32 = FixedBytes<4>;
+
+export type IndivPalletPgasExtensionPgasCollection = 'People' | 'LitePeople';
+
+export type IndivPalletDotnsGatewayOrigin = { type: 'PersonRegistration'; value: FixedBytes<32> };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4670,7 +4801,8 @@ export type PalletAssetsCall =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -4690,8 +4822,18 @@ export type PalletAssetsCall =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -5248,7 +5390,8 @@ export type PalletAssetsCallLike =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -5268,8 +5411,18 @@ export type PalletAssetsCallLike =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -8247,7 +8400,8 @@ export type PalletAssetsCall002 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -8267,8 +8421,18 @@ export type PalletAssetsCall002 =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -8840,7 +9004,8 @@ export type PalletAssetsCallLike002 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -8860,8 +9025,18 @@ export type PalletAssetsCallLike002 =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -9449,7 +9624,8 @@ export type PalletAssetsCall003 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -9469,8 +9645,18 @@ export type PalletAssetsCall003 =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -10027,7 +10213,8 @@ export type PalletAssetsCallLike003 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -10047,8 +10234,18 @@ export type PalletAssetsCallLike003 =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -13745,172 +13942,6 @@ export type PalletMultiAssetBountiesCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletStateTrieMigrationCall =
-  /**
-   * Control the automatic migration.
-   *
-   * The dispatch origin of this call must be [`Config::ControlOrigin`].
-   **/
-  | { name: 'ControlAutoMigration'; params: { maybeConfig?: PalletStateTrieMigrationMigrationLimits | undefined } }
-  /**
-   * Continue the migration for the given `limits`.
-   *
-   * The dispatch origin of this call can be any signed account.
-   *
-   * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
-   * Upon successful execution, the transaction fee is returned.
-   *
-   * The (potentially over-estimated) of the byte length of all the data read must be
-   * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
-   * that executing the current `MigrationTask` with the given `limits` will not exceed
-   * `real_size_upper` bytes of read data.
-   *
-   * The `witness_task` is merely a helper to prevent the caller from being slashed or
-   * generally trigger a migration that they do not intend. This parameter is just a message
-   * from caller, saying that they believed `witness_task` was the last state of the
-   * migration, and they only wish for their transaction to do anything, if this assumption
-   * holds. In case `witness_task` does not match, the transaction fails.
-   *
-   * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
-   * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
-   * `size` limit can always be overwritten.
-   **/
-  | {
-      name: 'ContinueMigrate';
-      params: {
-        limits: PalletStateTrieMigrationMigrationLimits;
-        realSizeUpper: number;
-        witnessTask: PalletStateTrieMigrationMigrationTask;
-      };
-    }
-  /**
-   * Migrate the list of top keys by iterating each of them one by one.
-   *
-   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-   * should only be used in case any keys are leftover due to a bug.
-   **/
-  | { name: 'MigrateCustomTop'; params: { keys: Array<Bytes>; witnessSize: number } }
-  /**
-   * Migrate the list of child keys by iterating each of them one by one.
-   *
-   * All of the given child keys must be present under one `child_root`.
-   *
-   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-   * should only be used in case any keys are leftover due to a bug.
-   **/
-  | { name: 'MigrateCustomChild'; params: { root: Bytes; childKeys: Array<Bytes>; totalSize: number } }
-  /**
-   * Set the maximum limit of the signed migration.
-   **/
-  | { name: 'SetSignedMaxLimits'; params: { limits: PalletStateTrieMigrationMigrationLimits } }
-  /**
-   * Forcefully set the progress the running migration.
-   *
-   * This is only useful in one case: the next key to migrate is too big to be migrated with
-   * a signed account, in a parachain context, and we simply want to skip it. A reasonable
-   * example of this would be `:code:`, which is both very expensive to migrate, and commonly
-   * used, so probably it is already migrated.
-   *
-   * In case you mess things up, you can also, in principle, use this to reset the migration
-   * process.
-   **/
-  | {
-      name: 'ForceSetProgress';
-      params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
-    };
-
-export type PalletStateTrieMigrationCallLike =
-  /**
-   * Control the automatic migration.
-   *
-   * The dispatch origin of this call must be [`Config::ControlOrigin`].
-   **/
-  | { name: 'ControlAutoMigration'; params: { maybeConfig?: PalletStateTrieMigrationMigrationLimits | undefined } }
-  /**
-   * Continue the migration for the given `limits`.
-   *
-   * The dispatch origin of this call can be any signed account.
-   *
-   * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
-   * Upon successful execution, the transaction fee is returned.
-   *
-   * The (potentially over-estimated) of the byte length of all the data read must be
-   * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
-   * that executing the current `MigrationTask` with the given `limits` will not exceed
-   * `real_size_upper` bytes of read data.
-   *
-   * The `witness_task` is merely a helper to prevent the caller from being slashed or
-   * generally trigger a migration that they do not intend. This parameter is just a message
-   * from caller, saying that they believed `witness_task` was the last state of the
-   * migration, and they only wish for their transaction to do anything, if this assumption
-   * holds. In case `witness_task` does not match, the transaction fails.
-   *
-   * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
-   * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
-   * `size` limit can always be overwritten.
-   **/
-  | {
-      name: 'ContinueMigrate';
-      params: {
-        limits: PalletStateTrieMigrationMigrationLimits;
-        realSizeUpper: number;
-        witnessTask: PalletStateTrieMigrationMigrationTask;
-      };
-    }
-  /**
-   * Migrate the list of top keys by iterating each of them one by one.
-   *
-   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-   * should only be used in case any keys are leftover due to a bug.
-   **/
-  | { name: 'MigrateCustomTop'; params: { keys: Array<BytesLike>; witnessSize: number } }
-  /**
-   * Migrate the list of child keys by iterating each of them one by one.
-   *
-   * All of the given child keys must be present under one `child_root`.
-   *
-   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-   * should only be used in case any keys are leftover due to a bug.
-   **/
-  | { name: 'MigrateCustomChild'; params: { root: BytesLike; childKeys: Array<BytesLike>; totalSize: number } }
-  /**
-   * Set the maximum limit of the signed migration.
-   **/
-  | { name: 'SetSignedMaxLimits'; params: { limits: PalletStateTrieMigrationMigrationLimits } }
-  /**
-   * Forcefully set the progress the running migration.
-   *
-   * This is only useful in one case: the next key to migrate is too big to be migrated with
-   * a signed account, in a parachain context, and we simply want to skip it. A reasonable
-   * example of this would be `:code:`, which is both very expensive to migrate, and commonly
-   * used, so probably it is already migrated.
-   *
-   * In case you mess things up, you can also, in principle, use this to reset the migration
-   * process.
-   **/
-  | {
-      name: 'ForceSetProgress';
-      params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
-    };
-
-export type PalletStateTrieMigrationMigrationLimits = { size: number; item: number };
-
-export type PalletStateTrieMigrationMigrationTask = {
-  progressTop: PalletStateTrieMigrationProgress;
-  progressChild: PalletStateTrieMigrationProgress;
-  size: number;
-  topItems: number;
-  childItems: number;
-};
-
-export type PalletStateTrieMigrationProgress =
-  | { type: 'ToStart' }
-  | { type: 'LastKey'; value: Bytes }
-  | { type: 'Complete' };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
 export type PalletNominationPoolsCall =
   /**
    * Stake funds with a pool. The amount to bond is delegated (or transferred based on
@@ -16661,6 +16692,610 @@ export type PalletReviveCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type IndivPalletMembersSubscriberCall =
+  /**
+   * Stores the initial ring roots received from the notifier upon subscription start.
+   * Accepts multi-part continuations (same sequence). Rejects calls with a different
+   * sequence while subscription is `Active` — a subscription must be terminated first.
+   * Can only be called by notifier XCM origin (via `EnsureNotifierOrigin`).
+   *
+   * ## Parameters
+   * - `origin`: Notifier XCM origin.
+   * - `roots`: Initial batch of ring roots.
+   **/
+  | {
+      name: 'InitializeRingRoots';
+      params: {
+        ringExponent: IndivSupportRealityRingExponent;
+        roots: IndivSupportMembersNotifierSubscriberRingRootUpdatesBatch;
+      };
+    }
+  /**
+   * Process ring roots updates received from the notifier.
+   *
+   * ## Parameters
+   * - `origin`: Must be the XCM origin from the notifier.
+   * - `batch`: Batch of ring root updates to process.
+   **/
+  | { name: 'ProcessRingUpdates'; params: { batch: IndivSupportMembersNotifierSubscriberRingRootUpdatesBatch } }
+  /**
+   * Terminates the subscription.
+   *
+   * Accepts either notifier origin (`EnsureNotifierOrigin`) or local governance
+   * origin (`EnsureTerminationOrigin`). When called locally, sends an XCM
+   * unsubscribe message to the notifier. When called from the notifier (e.g. on
+   * governance unsubscribe), no XCM is sent back. Idempotent if already
+   * terminated.
+   *
+   * ## Parameters
+   * - `origin`: Notifier XCM origin or root/governance origin.
+   **/
+  | { name: 'TerminateSubscription' }
+  /**
+   * Sends replay requests to the notifier for missing ring roots.
+   *
+   * Submitted by the offchain worker as an authorized transaction. Validates
+   * that the subscription is active and that the provided indices are actually
+   * missing before sending XCM replay requests.
+   **/
+  | { name: 'ReplayMissingRoots'; params: { identifier: FixedBytes<32>; indices: Array<number> } }
+  /**
+   * Removes a page of stale-generation `RingRoots` entries.
+   *
+   * Submitted by the offchain worker as an authorized transaction.
+   **/
+  | { name: 'PurgeStaleRingRoots' };
+
+export type IndivPalletMembersSubscriberCallLike =
+  /**
+   * Stores the initial ring roots received from the notifier upon subscription start.
+   * Accepts multi-part continuations (same sequence). Rejects calls with a different
+   * sequence while subscription is `Active` — a subscription must be terminated first.
+   * Can only be called by notifier XCM origin (via `EnsureNotifierOrigin`).
+   *
+   * ## Parameters
+   * - `origin`: Notifier XCM origin.
+   * - `roots`: Initial batch of ring roots.
+   **/
+  | {
+      name: 'InitializeRingRoots';
+      params: {
+        ringExponent: IndivSupportRealityRingExponent;
+        roots: IndivSupportMembersNotifierSubscriberRingRootUpdatesBatch;
+      };
+    }
+  /**
+   * Process ring roots updates received from the notifier.
+   *
+   * ## Parameters
+   * - `origin`: Must be the XCM origin from the notifier.
+   * - `batch`: Batch of ring root updates to process.
+   **/
+  | { name: 'ProcessRingUpdates'; params: { batch: IndivSupportMembersNotifierSubscriberRingRootUpdatesBatch } }
+  /**
+   * Terminates the subscription.
+   *
+   * Accepts either notifier origin (`EnsureNotifierOrigin`) or local governance
+   * origin (`EnsureTerminationOrigin`). When called locally, sends an XCM
+   * unsubscribe message to the notifier. When called from the notifier (e.g. on
+   * governance unsubscribe), no XCM is sent back. Idempotent if already
+   * terminated.
+   *
+   * ## Parameters
+   * - `origin`: Notifier XCM origin or root/governance origin.
+   **/
+  | { name: 'TerminateSubscription' }
+  /**
+   * Sends replay requests to the notifier for missing ring roots.
+   *
+   * Submitted by the offchain worker as an authorized transaction. Validates
+   * that the subscription is active and that the provided indices are actually
+   * missing before sending XCM replay requests.
+   **/
+  | { name: 'ReplayMissingRoots'; params: { identifier: FixedBytes<32>; indices: Array<number> } }
+  /**
+   * Removes a page of stale-generation `RingRoots` entries.
+   *
+   * Submitted by the offchain worker as an authorized transaction.
+   **/
+  | { name: 'PurgeStaleRingRoots' };
+
+export type IndivSupportRealityRingExponent = 'R2e9' | 'R2e10' | 'R2e14';
+
+export type IndivSupportMembersNotifierSubscriberRingRootUpdatesBatch = {
+  identifier: FixedBytes<32>;
+  sequence: bigint;
+  sourceTime: bigint;
+  updates: Array<IndivSupportMembersNotifierSubscriberRingRootUpdate>;
+  nextRingIndex: number;
+};
+
+export type IndivSupportMembersNotifierSubscriberRingRootUpdate = {
+  ringIndex: number;
+  op: IndivSupportMembersNotifierSubscriberRingRootOp;
+};
+
+export type IndivSupportMembersNotifierSubscriberRingRootOp =
+  | { type: 'Built'; value: { revision: number; root: VerifiableRingMembersCommitment } }
+  | { type: 'Deleted' };
+
+export type VerifiableRingMembersCommitment = FixedBytes<288>;
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletAliasAccountsCall =
+  /**
+   * Remove the alias mapping for the signer.
+   *
+   * The origin must be signed by the account currently bound to a ring alias. The
+   * mapping is removed in both directions.
+   **/
+  | { name: 'UnsetAliasAccount' }
+  /**
+   * Link an account to a ring alias, on payment of a PGAS fee.
+   *
+   * The origin must be signed; the signer becomes the bound account. The PGAS fee
+   * ([`Config::AliasFee`]) is burned from the signer's PGAS balance. The alias must verify
+   * against the supplied `collection`/`ring_index`/`ring_revision` in `context`. The
+   * collection must still be People or People Lite.
+   *
+   * If a different account is already bound to the same alias under this context, that
+   * mapping is dropped and the swap is paid for by the new signer.
+   *
+   * Re-proving the same alias under a fresher ring revision should instead use
+   * [`Pallet::reprove_alias_account`], which is free.
+   **/
+  | {
+      name: 'SetAliasAccount';
+      params: {
+        proof: Bytes;
+        collection: FixedBytes<32>;
+        ringIndex: number;
+        ringRevision: number;
+        context: FixedBytes<32>;
+        proofValidAt: bigint;
+      };
+    }
+  /**
+   * Re-prove the holder's alias against a fresher ring revision, free of charge in case of a
+   * successful operations.
+   *
+   * The origin must be signed and must already hold a alias mapping. The
+   * proof is verified against the stored context; the resulting alias must
+   * match the stored alias. Only the `revision` and `ring` fields of the
+   * stored mapping change; collection, context, and alias are preserved.
+   **/
+  | {
+      name: 'ReproveAliasAccount';
+      params: { proof: Bytes; ringIndex: number; ringRevision: number; proofValidAt: bigint };
+    }
+  /**
+   * Stamp [`StaleSince`] on each mapping in `accounts`, starting
+   * [`Config::MappingRetention`].
+   *
+   * A mapping is stale once [`Config::MemberService`] stops accepting its revision, which is
+   * when the ring was rebuilt and the old revision ran out of retention there, or when the
+   * ring was deleted. Stamping removes nothing, because a consumer that reads
+   * [`AccountToAlias`] without checking the revision still resolves the mapping;
+   * [`Pallet::retire_stale_aliases`] removes it once the retention has run out.
+   *
+   * `accounts` must be in strictly ascending order, so one account cannot be stamped twice
+   * in a batch, and every one of them must hold a stale mapping with no stamp yet.
+   **/
+  | { name: 'ReportStaleAliases'; params: { accounts: Array<AccountId32> } }
+  /**
+   * Remove each mapping in `accounts`, whose [`Config::MappingRetention`] has run out.
+   *
+   * Both directions of the mapping go, along with the stamp and the account's sufficient
+   * reference. `accounts` must be in strictly ascending order, and every one of them must
+   * hold a stale mapping stamped [`Config::MappingRetention`] ago or longer.
+   **/
+  | { name: 'RetireStaleAliases'; params: { accounts: Array<AccountId32> } }
+  /**
+   * Drop the [`StaleSince`] stamp of each mapping in `accounts`, which verifies again.
+   *
+   * A revision can verify again after it stopped: a collection torn down and re-created
+   * under the same identifier restarts its revisions at zero, so a stored revision can be
+   * reissued. Dropping the stamp keeps the next staleness to a full
+   * [`Config::MappingRetention`] rather than letting it remove the mapping on the spot.
+   *
+   * `accounts` must be in strictly ascending order, and every one of them must hold a
+   * stamped mapping whose revision verifies.
+   **/
+  | { name: 'ClearStaleAliasReports'; params: { accounts: Array<AccountId32> } };
+
+export type IndivPalletAliasAccountsCallLike =
+  /**
+   * Remove the alias mapping for the signer.
+   *
+   * The origin must be signed by the account currently bound to a ring alias. The
+   * mapping is removed in both directions.
+   **/
+  | { name: 'UnsetAliasAccount' }
+  /**
+   * Link an account to a ring alias, on payment of a PGAS fee.
+   *
+   * The origin must be signed; the signer becomes the bound account. The PGAS fee
+   * ([`Config::AliasFee`]) is burned from the signer's PGAS balance. The alias must verify
+   * against the supplied `collection`/`ring_index`/`ring_revision` in `context`. The
+   * collection must still be People or People Lite.
+   *
+   * If a different account is already bound to the same alias under this context, that
+   * mapping is dropped and the swap is paid for by the new signer.
+   *
+   * Re-proving the same alias under a fresher ring revision should instead use
+   * [`Pallet::reprove_alias_account`], which is free.
+   **/
+  | {
+      name: 'SetAliasAccount';
+      params: {
+        proof: BytesLike;
+        collection: FixedBytes<32>;
+        ringIndex: number;
+        ringRevision: number;
+        context: FixedBytes<32>;
+        proofValidAt: bigint;
+      };
+    }
+  /**
+   * Re-prove the holder's alias against a fresher ring revision, free of charge in case of a
+   * successful operations.
+   *
+   * The origin must be signed and must already hold a alias mapping. The
+   * proof is verified against the stored context; the resulting alias must
+   * match the stored alias. Only the `revision` and `ring` fields of the
+   * stored mapping change; collection, context, and alias are preserved.
+   **/
+  | {
+      name: 'ReproveAliasAccount';
+      params: { proof: BytesLike; ringIndex: number; ringRevision: number; proofValidAt: bigint };
+    }
+  /**
+   * Stamp [`StaleSince`] on each mapping in `accounts`, starting
+   * [`Config::MappingRetention`].
+   *
+   * A mapping is stale once [`Config::MemberService`] stops accepting its revision, which is
+   * when the ring was rebuilt and the old revision ran out of retention there, or when the
+   * ring was deleted. Stamping removes nothing, because a consumer that reads
+   * [`AccountToAlias`] without checking the revision still resolves the mapping;
+   * [`Pallet::retire_stale_aliases`] removes it once the retention has run out.
+   *
+   * `accounts` must be in strictly ascending order, so one account cannot be stamped twice
+   * in a batch, and every one of them must hold a stale mapping with no stamp yet.
+   **/
+  | { name: 'ReportStaleAliases'; params: { accounts: Array<AccountId32Like> } }
+  /**
+   * Remove each mapping in `accounts`, whose [`Config::MappingRetention`] has run out.
+   *
+   * Both directions of the mapping go, along with the stamp and the account's sufficient
+   * reference. `accounts` must be in strictly ascending order, and every one of them must
+   * hold a stale mapping stamped [`Config::MappingRetention`] ago or longer.
+   **/
+  | { name: 'RetireStaleAliases'; params: { accounts: Array<AccountId32Like> } }
+  /**
+   * Drop the [`StaleSince`] stamp of each mapping in `accounts`, which verifies again.
+   *
+   * A revision can verify again after it stopped: a collection torn down and re-created
+   * under the same identifier restarts its revisions at zero, so a stored revision can be
+   * reissued. Dropping the stamp keeps the next staleness to a full
+   * [`Config::MappingRetention`] rather than letting it remove the mapping on the spot.
+   *
+   * `accounts` must be in strictly ascending order, and every one of them must hold a
+   * stamped mapping whose revision verifies.
+   **/
+  | { name: 'ClearStaleAliasReports'; params: { accounts: Array<AccountId32Like> } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletPgasCall =
+  /**
+   * Mint PGAS for a verified claim slot.
+   *
+   * Must be submitted with the [`AsPgas`] transaction extension, which
+   * verifies the ring-VRF proof and produces an [`Origin::ClaimAlias`]. The outer origin
+   * must be `None` (the extension replaces it with the local origin); any other origin is
+   * rejected.
+   *
+   * `slot_index` is part of the call payload so the extension can derive the claim context
+   * on-chain and so the proof binds to the requested slot via the inherited implication.
+   **/
+  | { name: 'ClaimPgas'; params: { slotIndex: number; target: AccountId32 } }
+  /**
+   * Mint PGAS for a batch of verified claim slots.
+   *
+   * Must be submitted with the [`AsPgas`] transaction extension carrying
+   * [`AsPgasInfo::BatchClaim`], which verifies a
+   * single multi-context proof covering one context per entry in `slot_indices` and
+   * produces an [`Origin::BatchClaimAliases`]. The outer origin must be `None`; any
+   * other origin is rejected.
+   *
+   * The weight is a constant worst case sized for [`Config::MaxPgasClaimsPerBatch`]
+   * contexts; smaller batches are not refunded.
+   **/
+  | { name: 'BatchClaimPgas'; params: { slotIndices: Array<number>; target: AccountId32 } }
+  /**
+   * Create the PGAS asset. This is a permissionless authorized call that can only succeed
+   * if the PGAS asset does not already exist.
+   **/
+  | { name: 'CreatePgasAsset' }
+  /**
+   * Remove old PGAS claim records for a specific `day_index`.
+   *
+   * This is an authorized extrinsic submitted by the offchain worker.
+   * Only records from days that have fully elapsed (outside the grace window) can
+   * be cleaned. Up to [`Config::MaxPgasClaimRecordCleanupPerCall`] entries are
+   * removed per call.
+   *
+   * `first_alias` is the first alias currently stored for `day_index` and is included in the
+   * tags for transaction uniqueness.
+   **/
+  | { name: 'CleanPgasClaimRecords'; params: { dayIndex: number; firstAlias: FixedBytes<32> } };
+
+export type IndivPalletPgasCallLike =
+  /**
+   * Mint PGAS for a verified claim slot.
+   *
+   * Must be submitted with the [`AsPgas`] transaction extension, which
+   * verifies the ring-VRF proof and produces an [`Origin::ClaimAlias`]. The outer origin
+   * must be `None` (the extension replaces it with the local origin); any other origin is
+   * rejected.
+   *
+   * `slot_index` is part of the call payload so the extension can derive the claim context
+   * on-chain and so the proof binds to the requested slot via the inherited implication.
+   **/
+  | { name: 'ClaimPgas'; params: { slotIndex: number; target: AccountId32Like } }
+  /**
+   * Mint PGAS for a batch of verified claim slots.
+   *
+   * Must be submitted with the [`AsPgas`] transaction extension carrying
+   * [`AsPgasInfo::BatchClaim`], which verifies a
+   * single multi-context proof covering one context per entry in `slot_indices` and
+   * produces an [`Origin::BatchClaimAliases`]. The outer origin must be `None`; any
+   * other origin is rejected.
+   *
+   * The weight is a constant worst case sized for [`Config::MaxPgasClaimsPerBatch`]
+   * contexts; smaller batches are not refunded.
+   **/
+  | { name: 'BatchClaimPgas'; params: { slotIndices: Array<number>; target: AccountId32Like } }
+  /**
+   * Create the PGAS asset. This is a permissionless authorized call that can only succeed
+   * if the PGAS asset does not already exist.
+   **/
+  | { name: 'CreatePgasAsset' }
+  /**
+   * Remove old PGAS claim records for a specific `day_index`.
+   *
+   * This is an authorized extrinsic submitted by the offchain worker.
+   * Only records from days that have fully elapsed (outside the grace window) can
+   * be cleaned. Up to [`Config::MaxPgasClaimRecordCleanupPerCall`] entries are
+   * removed per call.
+   *
+   * `first_alias` is the first alias currently stored for `day_index` and is included in the
+   * tags for transaction uniqueness.
+   **/
+  | { name: 'CleanPgasClaimRecords'; params: { dayIndex: number; firstAlias: FixedBytes<32> } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletDotnsGatewayCall =
+  /**
+   * Reserves a lite-person label on `DotnsPopController` (via `RootGatewayDispatcher`)
+   * for a Lite Person, and optionally enqueues a reservation for a base label the user
+   * intends to claim as a Full Person later.
+   *
+   * The caller must be an attester with available allowance. The user's
+   * signature proves their consent to the reservation with this specific label
+   * and attester.
+   *
+   * # Parameters
+   * - `candidate`: the Lite Person's account for whom the label is being reserved. Also the
+   * signer of `candidate_signature`.
+   * - `candidate_signature`: signature over the bytes returned by
+   * `Pallet::construct_reservation_message` — a SCALE-encoded tuple binding the attester,
+   * candidate, the candidate's chosen *base* username, and chat key. The digit suffix of
+   * `lite_label` is **not** part of the signed message (the digits are allocated
+   * server-side after the candidate signs, so the candidate cannot commit to them at
+   * signing time).
+   * - `lite_label`: the lite-person label. Must be `<dns-stem>.<2+ digits>` (e.g.
+   * `alice.42`), matching `StringUtils.isLitePersonLabel` in the contracts. Only the
+   * `<dns-stem>` portion enters the signed message; the digits ride along as an unsigned
+   * extrinsic argument used for the contract calldata and storage key.
+   * - `chat_key`: 65-byte public key used for ECDH chat.
+   * - `reserved_base_label`: optional base label reserved for the candidate to later claim
+   * as a Full Person. Must be a single DNS label (e.g. `alice`).
+   * - `signed_at`: Unix-time second at which the candidate signed the reservation message.
+   * The signature is accepted only if `signed_at <= now + MaxFutureSkewSeconds` and `now
+   * <= signed_at + MaxValiditySeconds`, where `now` comes from [`Config::UnixTime`].
+   **/
+  | {
+      name: 'ReserveName';
+      params: {
+        candidate: AccountId32;
+        candidateSignature: SpRuntimeMultiSignature;
+        liteLabel: IndivPalletDotnsGatewayBaseLabel;
+        chatKey: IndivPalletDotnsGatewayChatKey;
+        reservedBaseLabel?: IndivPalletDotnsGatewayBaseLabel | undefined;
+        signedAt: bigint;
+      };
+    }
+  /**
+   * Registers a full-person label on `DotnsPopController` (via `RootGatewayDispatcher`)
+   * for a fully proven person.
+   *
+   * The origin must be [`Origin::PersonRegistration`], produced by [`AsDotnsGateway`] after
+   * it verifies the ring membership proof and the off-chain signature from `who`. All
+   * authentication, format and replay checks live in the extension.
+   *
+   * # Parameters
+   * - `who`: the account that owns the full-person label; its EVM-mapped address is the
+   * recipient on the `DotnsPopController` contract. Must match the `who` already
+   * authenticated by [`AsDotnsGateway`].
+   * - `label`: the full-person label. Must be a single DNS label (e.g. `alice`), matching
+   * `StringUtils.isSingleLabel` in the contracts.
+   * - `link`: how the full-person label relates to a pre-existing lite-person label:
+   * - `Link::LiteUsername(lite_label)` — links to an existing lite-person label (must
+   * match the lite format `<dns-stem>.<2+ digits>`); the chat key is inherited from the
+   * lite entry.
+   * - `Link::None(chat_key)` — standalone registration with a fresh ECDH chat key.
+   **/
+  | {
+      name: 'RegisterName';
+      params: { who: AccountId32; label: IndivPalletDotnsGatewayBaseLabel; link: IndivPalletDotnsGatewayLink };
+    }
+  /**
+   * Grants attestation allowance to an attester account.
+   *
+   * The origin must be `AttestationAllowanceManager`.
+   **/
+  | { name: 'IncreaseAttestationAllowance'; params: { account: AccountId32; count: number } }
+  /**
+   * Clears all attestation allowance for an attester account.
+   *
+   * The origin must be `AttestationAllowanceManager`.
+   **/
+  | { name: 'ClearAttestationAllowance'; params: { account: AccountId32 } }
+  /**
+   * Sets the `RootGatewayDispatcher` contract address.
+   *
+   * The origin must be `DispatcherAddressManager`. Overwrites any prior value.
+   **/
+  | { name: 'SetDispatcherAddress'; params: { address: H160 } };
+
+export type IndivPalletDotnsGatewayCallLike =
+  /**
+   * Reserves a lite-person label on `DotnsPopController` (via `RootGatewayDispatcher`)
+   * for a Lite Person, and optionally enqueues a reservation for a base label the user
+   * intends to claim as a Full Person later.
+   *
+   * The caller must be an attester with available allowance. The user's
+   * signature proves their consent to the reservation with this specific label
+   * and attester.
+   *
+   * # Parameters
+   * - `candidate`: the Lite Person's account for whom the label is being reserved. Also the
+   * signer of `candidate_signature`.
+   * - `candidate_signature`: signature over the bytes returned by
+   * `Pallet::construct_reservation_message` — a SCALE-encoded tuple binding the attester,
+   * candidate, the candidate's chosen *base* username, and chat key. The digit suffix of
+   * `lite_label` is **not** part of the signed message (the digits are allocated
+   * server-side after the candidate signs, so the candidate cannot commit to them at
+   * signing time).
+   * - `lite_label`: the lite-person label. Must be `<dns-stem>.<2+ digits>` (e.g.
+   * `alice.42`), matching `StringUtils.isLitePersonLabel` in the contracts. Only the
+   * `<dns-stem>` portion enters the signed message; the digits ride along as an unsigned
+   * extrinsic argument used for the contract calldata and storage key.
+   * - `chat_key`: 65-byte public key used for ECDH chat.
+   * - `reserved_base_label`: optional base label reserved for the candidate to later claim
+   * as a Full Person. Must be a single DNS label (e.g. `alice`).
+   * - `signed_at`: Unix-time second at which the candidate signed the reservation message.
+   * The signature is accepted only if `signed_at <= now + MaxFutureSkewSeconds` and `now
+   * <= signed_at + MaxValiditySeconds`, where `now` comes from [`Config::UnixTime`].
+   **/
+  | {
+      name: 'ReserveName';
+      params: {
+        candidate: AccountId32Like;
+        candidateSignature: SpRuntimeMultiSignature;
+        liteLabel: IndivPalletDotnsGatewayBaseLabel;
+        chatKey: IndivPalletDotnsGatewayChatKey;
+        reservedBaseLabel?: IndivPalletDotnsGatewayBaseLabel | undefined;
+        signedAt: bigint;
+      };
+    }
+  /**
+   * Registers a full-person label on `DotnsPopController` (via `RootGatewayDispatcher`)
+   * for a fully proven person.
+   *
+   * The origin must be [`Origin::PersonRegistration`], produced by [`AsDotnsGateway`] after
+   * it verifies the ring membership proof and the off-chain signature from `who`. All
+   * authentication, format and replay checks live in the extension.
+   *
+   * # Parameters
+   * - `who`: the account that owns the full-person label; its EVM-mapped address is the
+   * recipient on the `DotnsPopController` contract. Must match the `who` already
+   * authenticated by [`AsDotnsGateway`].
+   * - `label`: the full-person label. Must be a single DNS label (e.g. `alice`), matching
+   * `StringUtils.isSingleLabel` in the contracts.
+   * - `link`: how the full-person label relates to a pre-existing lite-person label:
+   * - `Link::LiteUsername(lite_label)` — links to an existing lite-person label (must
+   * match the lite format `<dns-stem>.<2+ digits>`); the chat key is inherited from the
+   * lite entry.
+   * - `Link::None(chat_key)` — standalone registration with a fresh ECDH chat key.
+   **/
+  | {
+      name: 'RegisterName';
+      params: { who: AccountId32Like; label: IndivPalletDotnsGatewayBaseLabel; link: IndivPalletDotnsGatewayLink };
+    }
+  /**
+   * Grants attestation allowance to an attester account.
+   *
+   * The origin must be `AttestationAllowanceManager`.
+   **/
+  | { name: 'IncreaseAttestationAllowance'; params: { account: AccountId32Like; count: number } }
+  /**
+   * Clears all attestation allowance for an attester account.
+   *
+   * The origin must be `AttestationAllowanceManager`.
+   **/
+  | { name: 'ClearAttestationAllowance'; params: { account: AccountId32Like } }
+  /**
+   * Sets the `RootGatewayDispatcher` contract address.
+   *
+   * The origin must be `DispatcherAddressManager`. Overwrites any prior value.
+   **/
+  | { name: 'SetDispatcherAddress'; params: { address: H160 } };
+
+export type IndivPalletDotnsGatewayBaseLabel = Bytes;
+
+export type IndivPalletDotnsGatewayChatKey = FixedBytes<65>;
+
+export type IndivPalletDotnsGatewayLink =
+  | { type: 'LiteUsername'; value: IndivPalletDotnsGatewayBaseLabel }
+  | { type: 'None'; value: IndivPalletDotnsGatewayChatKey };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletOriginRestrictionCall =
+  /**
+   * Allow to clean usage associated with an entity when it is zero or when there is no
+   * longer any allowance for the origin.
+   **/
+  { name: 'CleanUsage'; params: { entity: AssetHubPolkadotRuntimeIndividualityRestrictedEntity } };
+
+export type IndivPalletOriginRestrictionCallLike =
+  /**
+   * Allow to clean usage associated with an entity when it is zero or when there is no
+   * longer any allowance for the origin.
+   **/
+  { name: 'CleanUsage'; params: { entity: AssetHubPolkadotRuntimeIndividualityRestrictedEntity } };
+
+export type AssetHubPolkadotRuntimeIndividualityRestrictedEntity = {
+  type: 'DotnsPersonRegistration';
+  value: FixedBytes<32>;
+};
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type IndivPalletNetworkSuffixCall =
+  /**
+   * Set the network suffix used by all product-context derivations.
+   **/
+  { name: 'SetNetworkSuffix'; params: { networkSuffix: Bytes } };
+
+export type IndivPalletNetworkSuffixCallLike =
+  /**
+   * Set the network suffix used by all product-context derivations.
+   **/
+  { name: 'SetNetworkSuffix'; params: { networkSuffix: BytesLike } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletAhOpsCall =
   /**
    * Unreserve the deposit that was taken for creating a crowdloan.
@@ -16841,6 +17476,45 @@ export type FrameMetadataHashExtensionMode = 'Disabled' | 'Enabled';
 
 export type PalletReviveEvmTxExtensionSetOrigin = {};
 
+export type PalletVerifySignatureExtensionVerifySignature =
+  | { type: 'Disabled' }
+  | { type: 'Signed'; value: { signature: SpRuntimeMultiSignature; account: AccountId32 } };
+
+export type IndivPalletPgasExtensionAsPgas = IndivPalletPgasExtensionAsPgasInfo | undefined;
+
+export type IndivPalletPgasExtensionAsPgasInfo =
+  | {
+      type: 'Claim';
+      value: {
+        proof: Bytes;
+        ringIndex: number;
+        revision: number;
+        collection: IndivPalletPgasExtensionPgasCollection;
+        day: number;
+      };
+    }
+  | {
+      type: 'BatchClaim';
+      value: {
+        proof: Bytes;
+        ringIndex: number;
+        revision: number;
+        collection: IndivPalletPgasExtensionPgasCollection;
+        day: number;
+      };
+    };
+
+export type IndivPalletDotnsGatewayExtensionAsDotnsGateway =
+  | IndivPalletDotnsGatewayExtensionAsDotnsGatewayInfo
+  | undefined;
+
+export type IndivPalletDotnsGatewayExtensionAsDotnsGatewayInfo = {
+  type: 'RegisterFullName';
+  value: { proof: Bytes; ringIndex: number; revision: number; signature: SpRuntimeMultiSignature };
+};
+
+export type IndivPalletOriginRestrictionRestrictOrigin = boolean;
+
 export type FrameSystemAccountInfo = {
   nonce: number;
   consumers: number;
@@ -16898,6 +17572,8 @@ export type AssetHubPolkadotRuntimeRuntimeEvent =
   | { pallet: 'PoolAssets'; palletEvent: PalletAssetsEvent }
   | { pallet: 'AssetConversion'; palletEvent: PalletAssetConversionEvent }
   | { pallet: 'Psm'; palletEvent: PalletPsmEvent }
+  | { pallet: 'AssetsFreezer'; palletEvent: PalletAssetsFreezerEvent }
+  | { pallet: 'AssetsHolder'; palletEvent: PalletAssetsHolderEvent }
   | { pallet: 'Treasury'; palletEvent: PalletTreasuryEvent }
   | { pallet: 'ConvictionVoting'; palletEvent: PalletConvictionVotingEvent }
   | { pallet: 'Referenda'; palletEvent: PalletReferendaEvent }
@@ -16906,7 +17582,6 @@ export type AssetHubPolkadotRuntimeRuntimeEvent =
   | { pallet: 'ChildBounties'; palletEvent: PalletChildBountiesEvent }
   | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
   | { pallet: 'MultiAssetBounties'; palletEvent: PalletMultiAssetBountiesEvent }
-  | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent }
   | { pallet: 'NominationPools'; palletEvent: PalletNominationPoolsEvent }
   | { pallet: 'VoterList'; palletEvent: PalletBagsListEvent }
   | { pallet: 'DelegatedStaking'; palletEvent: PalletDelegatedStakingEvent }
@@ -16916,6 +17591,13 @@ export type AssetHubPolkadotRuntimeRuntimeEvent =
   | { pallet: 'MultiBlockElectionSigned'; palletEvent: PalletElectionProviderMultiBlockSignedPalletEvent }
   | { pallet: 'Staking'; palletEvent: PalletStakingAsyncPalletEvent }
   | { pallet: 'Revive'; palletEvent: PalletReviveEvent }
+  | { pallet: 'MembersSubscriber'; palletEvent: IndivPalletMembersSubscriberEvent }
+  | { pallet: 'AliasAccounts'; palletEvent: IndivPalletAliasAccountsEvent }
+  | { pallet: 'Pgas'; palletEvent: IndivPalletPgasEvent }
+  | { pallet: 'DotnsGateway'; palletEvent: IndivPalletDotnsGatewayEvent }
+  | { pallet: 'OriginRestriction'; palletEvent: IndivPalletOriginRestrictionEvent }
+  | { pallet: 'NetworkSuffix'; palletEvent: IndivPalletNetworkSuffixEvent }
+  | { pallet: 'PgasAllowance'; palletEvent: PalletPgasAllowanceEvent }
   | { pallet: 'AhOps'; palletEvent: PalletAhOpsEvent };
 
 /**
@@ -17123,7 +17805,8 @@ export type PalletParametersEvent =
 export type AssetHubPolkadotRuntimeRuntimeParametersKey =
   | { type: 'StakingElection'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionParametersKey }
   | { type: 'Scheduler'; value: AssetHubPolkadotRuntimeDynamicParamsSchedulerParametersKey }
-  | { type: 'MessageQueue'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueParametersKey };
+  | { type: 'MessageQueue'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueParametersKey }
+  | { type: 'Individuality'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityParametersKey };
 
 export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionParametersKey =
   | { type: 'SignedPhase'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionSignedPhase }
@@ -17142,10 +17825,51 @@ export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueParametersKey =
   | { type: 'MaxOnInitWeight'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnInitWeight }
   | { type: 'MaxOnIdleWeight'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueMaxOnIdleWeight };
 
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityParametersKey =
+  | { type: 'PgasClaimAmount'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityPgasClaimAmount }
+  | { type: 'MaxPgasClaimsPerBatch'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxPgasClaimsPerBatch }
+  | {
+      type: 'MaxClaimsPerPeriodPerPerson';
+      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxClaimsPerPeriodPerPerson;
+    }
+  | {
+      type: 'MaxClaimsPerPeriodPerLitePerson';
+      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxClaimsPerPeriodPerLitePerson;
+    }
+  | {
+      type: 'MaxPgasClaimRecordCleanupPerCall';
+      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxPgasClaimRecordCleanupPerCall;
+    }
+  | {
+      type: 'AliasProofValidityWindow';
+      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityAliasProofValidityWindow;
+    }
+  | {
+      type: 'DotnsMaxContractCallWeight';
+      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxContractCallWeight;
+    }
+  | { type: 'DotnsMaxValiditySeconds'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxValiditySeconds }
+  | {
+      type: 'DotnsMaxFutureSkewSeconds';
+      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsMaxFutureSkewSeconds;
+    }
+  | {
+      type: 'DotnsPersonRegistrationAllowanceMax';
+      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsPersonRegistrationAllowanceMax;
+    }
+  | {
+      type: 'DotnsPersonRegistrationAllowanceRecovery';
+      value: AssetHubPolkadotRuntimeDynamicParamsIndividualityDotnsPersonRegistrationAllowanceRecovery;
+    }
+  | { type: 'AliasFee'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityAliasFee }
+  | { type: 'StaleAliasSweepInterval'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityStaleAliasSweepInterval }
+  | { type: 'MaxStaleAliasBatch'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityMaxStaleAliasBatch };
+
 export type AssetHubPolkadotRuntimeRuntimeParametersValue =
   | { type: 'StakingElection'; value: AssetHubPolkadotRuntimeDynamicParamsStakingElectionParametersValue }
   | { type: 'Scheduler'; value: AssetHubPolkadotRuntimeDynamicParamsSchedulerParametersValue }
-  | { type: 'MessageQueue'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueParametersValue };
+  | { type: 'MessageQueue'; value: AssetHubPolkadotRuntimeDynamicParamsMessageQueueParametersValue }
+  | { type: 'Individuality'; value: AssetHubPolkadotRuntimeDynamicParamsIndividualityParametersValue };
 
 export type AssetHubPolkadotRuntimeDynamicParamsStakingElectionParametersValue =
   | { type: 'SignedPhase'; value: number }
@@ -17163,6 +17887,22 @@ export type AssetHubPolkadotRuntimeDynamicParamsSchedulerParametersValue =
 export type AssetHubPolkadotRuntimeDynamicParamsMessageQueueParametersValue =
   | { type: 'MaxOnInitWeight'; value?: SpWeightsWeightV2Weight | undefined }
   | { type: 'MaxOnIdleWeight'; value?: SpWeightsWeightV2Weight | undefined };
+
+export type AssetHubPolkadotRuntimeDynamicParamsIndividualityParametersValue =
+  | { type: 'PgasClaimAmount'; value: bigint }
+  | { type: 'MaxPgasClaimsPerBatch'; value: number }
+  | { type: 'MaxClaimsPerPeriodPerPerson'; value: number }
+  | { type: 'MaxClaimsPerPeriodPerLitePerson'; value: number }
+  | { type: 'MaxPgasClaimRecordCleanupPerCall'; value: number }
+  | { type: 'AliasProofValidityWindow'; value: bigint }
+  | { type: 'DotnsMaxContractCallWeight'; value: SpWeightsWeightV2Weight }
+  | { type: 'DotnsMaxValiditySeconds'; value: bigint }
+  | { type: 'DotnsMaxFutureSkewSeconds'; value: bigint }
+  | { type: 'DotnsPersonRegistrationAllowanceMax'; value: bigint }
+  | { type: 'DotnsPersonRegistrationAllowanceRecovery'; value: bigint }
+  | { type: 'AliasFee'; value: bigint }
+  | { type: 'StaleAliasSweepInterval'; value: number }
+  | { type: 'MaxStaleAliasBatch'; value: number };
 
 /**
  * The `Event` enum of this pallet
@@ -17434,7 +18174,6 @@ export type AssetHubPolkadotRuntimeRuntimeHoldReason =
   | { type: 'PolkadotXcm'; value: PalletXcmHoldReason }
   | { type: 'Psm'; value: PalletPsmHoldReason }
   | { type: 'MultiAssetBounties'; value: PalletMultiAssetBountiesHoldReason }
-  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
   | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
   | { type: 'StakingRcClient'; value: PalletStakingAsyncRcClientHoldReason }
   | { type: 'MultiBlockElectionSigned'; value: PalletElectionProviderMultiBlockSignedPalletHoldReason }
@@ -17450,8 +18189,6 @@ export type PalletXcmHoldReason = 'AuthorizeAlias';
 export type PalletPsmHoldReason = 'CreationDeposit';
 
 export type PalletMultiAssetBountiesHoldReason = 'CuratorDeposit';
-
-export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
 
 export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
 
@@ -19243,6 +19980,39 @@ export type PalletPsmEvent =
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletAssetsFreezerEvent =
+  | { name: 'Frozen'; data: { who: AccountId32; assetId: number; amount: bigint } }
+  | { name: 'Thawed'; data: { who: AccountId32; assetId: number; amount: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAssetsHolderEvent =
+  /**
+   * `who`s balance on hold was increased by `amount`.
+   **/
+  | {
+      name: 'Held';
+      data: { who: AccountId32; assetId: number; reason: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint };
+    }
+  /**
+   * `who`s balance on hold was decreased by `amount`.
+   **/
+  | {
+      name: 'Released';
+      data: { who: AccountId32; assetId: number; reason: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint };
+    }
+  /**
+   * `who`s balance on hold was burned by `amount`.
+   **/
+  | {
+      name: 'Burned';
+      data: { who: AccountId32; assetId: number; reason: AssetHubPolkadotRuntimeRuntimeHoldReason; amount: bigint };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PalletTreasuryEvent =
   /**
    * We have ended a spend period and will now allocate funds.
@@ -19803,65 +20573,6 @@ export type PalletMultiAssetBountiesEvent =
   | { name: 'BountyValueIncreased'; data: { index: number; oldValue: bigint; newValue: bigint } };
 
 /**
- * Inner events of this pallet.
- **/
-export type PalletStateTrieMigrationEvent =
-  /**
-   * Given number of `(top, child)` keys were migrated respectively, with the given
-   * `compute`.
-   **/
-  | { name: 'Migrated'; data: { top: number; child: number; compute: PalletStateTrieMigrationMigrationCompute } }
-  /**
-   * Some account got slashed by the given amount.
-   **/
-  | { name: 'Slashed'; data: { who: AccountId32; amount: bigint } }
-  /**
-   * The auto migration task finished.
-   **/
-  | { name: 'AutoMigrationFinished' }
-  /**
-   * Migration got halted due to an error or miss-configuration.
-   **/
-  | { name: 'Halted'; data: { error: PalletStateTrieMigrationError } };
-
-export type PalletStateTrieMigrationMigrationCompute = 'Signed' | 'Auto';
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletStateTrieMigrationError =
-  /**
-   * Max signed limits not respected.
-   **/
-  | 'MaxSignedLimits'
-  /**
-   * A key was longer than the configured maximum.
-   *
-   * This means that the migration halted at the current [`Progress`] and
-   * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
-   * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
-   * The value should only be increased to avoid a storage migration for the currently
-   * stored [`crate::Progress::LastKey`].
-   **/
-  | 'KeyTooLong'
-  /**
-   * submitter does not have enough funds.
-   **/
-  | 'NotEnoughFunds'
-  /**
-   * Bad witness data provided.
-   **/
-  | 'BadWitness'
-  /**
-   * Signed migration is not allowed because the maximum limit is not set yet.
-   **/
-  | 'SignedMigrationNotAllowed'
-  /**
-   * Bad child root provided.
-   **/
-  | 'BadChildRoot';
-
-/**
  * Events of this pallet.
  **/
 export type PalletNominationPoolsEvent =
@@ -20401,6 +21112,374 @@ export type PalletReviveEvent =
    * for failed Ethereum transactions.
    **/
   | { name: 'EthExtrinsicRevert'; data: { dispatchError: DispatchError } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletMembersSubscriberEvent =
+  /**
+   * Ring roots have been initialized from the notifier.
+   **/
+  | {
+      name: 'RingRootsInitialized';
+      data: {
+        /**
+         * Number of ring roots initialized.
+         **/
+        count: number;
+
+        /**
+         * Sequence number of the initialization batch.
+         **/
+        sequence: bigint;
+      };
+    }
+  /**
+   * Ring root updates have been processed.
+   **/
+  | {
+      name: 'RingRootsUpdated';
+      data: {
+        /**
+         * Number of updates processed.
+         **/
+        count: number;
+
+        /**
+         * Sequence number of the batch.
+         **/
+        sequence: bigint;
+      };
+    }
+  /**
+   * Subscription has been terminated.
+   **/
+  | {
+      name: 'SubscriptionTerminated';
+      data: {
+        /**
+         * Whether the unsubscribe XCM was successfully queued.
+         **/
+        notifierNotified: boolean;
+      };
+    }
+  /**
+   * New missing ring roots detected during batch processing.
+   **/
+  | {
+      name: 'MissingRingsDetected';
+      data: {
+        /**
+         * Ring collection identifier.
+         **/
+        identifier: FixedBytes<32>;
+
+        /**
+         * Number of newly detected missing ring indices.
+         **/
+        count: number;
+      };
+    }
+  /**
+   * Replay request successfully sent to notifier.
+   **/
+  | {
+      name: 'ReplayRequestSent';
+      data: {
+        /**
+         * Ring collection identifier.
+         **/
+        identifier: FixedBytes<32>;
+
+        /**
+         * Number of missing indices in this chunk.
+         **/
+        indicesCount: number;
+      };
+    }
+  /**
+   * Missing ring scan skipped because deleted_indices reached capacity.
+   **/
+  | {
+      name: 'DeletedIndicesAtCapacity';
+      data: {
+        /**
+         * Ring collection identifier.
+         **/
+        identifier: FixedBytes<32>;
+      };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletAliasAccountsEvent =
+  /**
+   * An alias account has been set or updated.
+   **/
+  | {
+      name: 'AliasAccountSet';
+      data: {
+        /**
+         * The account that was linked.
+         **/
+        account: AccountId32;
+
+        /**
+         * The collection identifier.
+         **/
+        collection: FixedBytes<32>;
+
+        /**
+         * The contextual alias.
+         **/
+        alias: FixedBytes<32>;
+      };
+    }
+  /**
+   * An alias account has been removed.
+   **/
+  | {
+      name: 'AliasAccountUnset';
+      data: {
+        /**
+         * The account that was unlinked.
+         **/
+        account: AccountId32;
+      };
+    }
+  /**
+   * A stale alias mapping was removed.
+   **/
+  | {
+      name: 'StaleAliasRemoved';
+      data: {
+        /**
+         * The account that was unlinked.
+         **/
+        account: AccountId32;
+
+        /**
+         * The collection identifier.
+         **/
+        collection: FixedBytes<32>;
+
+        /**
+         * The contextual alias.
+         **/
+        alias: FixedBytes<32>;
+      };
+    }
+  /**
+   * A mapping was reported stale, which starts [`Config::MappingRetention`]. It is still
+   * stored, and a call from `removable_at` on removes it.
+   **/
+  | {
+      name: 'StaleAliasReported';
+      data: {
+        /**
+         * The account whose mapping was reported.
+         **/
+        account: AccountId32;
+
+        /**
+         * The collection identifier.
+         **/
+        collection: FixedBytes<32>;
+
+        /**
+         * The contextual alias.
+         **/
+        alias: FixedBytes<32>;
+
+        /**
+         * The second from which the mapping can be removed.
+         **/
+        removableAt: bigint;
+      };
+    }
+  /**
+   * A mapping reported stale verifies again, so its report was dropped. A later staleness
+   * starts [`Config::MappingRetention`] over.
+   **/
+  | {
+      name: 'StaleAliasReportCleared';
+      data: {
+        /**
+         * The account whose report was dropped.
+         **/
+        account: AccountId32;
+
+        /**
+         * The collection identifier.
+         **/
+        collection: FixedBytes<32>;
+
+        /**
+         * The contextual alias.
+         **/
+        alias: FixedBytes<32>;
+      };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletPgasEvent =
+  /**
+   * PGAS was claimed by a person.
+   **/
+  | {
+      name: 'PgasClaimed';
+      data: {
+        alias: FixedBytes<32>;
+        target: AccountId32;
+        amount: bigint;
+        collection: IndivPalletPgasExtensionPgasCollection;
+        day: number;
+      };
+    }
+  /**
+   * The PGAS asset was created.
+   **/
+  | { name: 'PgasAssetCreated' }
+  /**
+   * Old PGAS claim records were cleaned up.
+   **/
+  | { name: 'PgasClaimRecordsCleaned'; data: { dayIndex: number; count: number } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletDotnsGatewayEvent =
+  /**
+   * A username has been reserved for a candidate by an attester.
+   **/
+  | {
+      name: 'NameReserved';
+      data: {
+        /**
+         * The candidate whose name was reserved.
+         **/
+        candidate: AccountId32;
+
+        /**
+         * The attester who performed the reservation.
+         **/
+        attester: AccountId32;
+
+        /**
+         * The lite-person label (`<dns-stem>.<digits>`).
+         **/
+        liteLabel: IndivPalletDotnsGatewayBaseLabel;
+
+        /**
+         * The ECDH chat key stored alongside the lite-person label.
+         **/
+        chatKey: IndivPalletDotnsGatewayChatKey;
+
+        /**
+         * The optional base label reserved for future full-person claiming.
+         **/
+        reservedBaseLabel?: IndivPalletDotnsGatewayBaseLabel | undefined;
+      };
+    }
+  /**
+   * A username has been registered by a verified person.
+   **/
+  | {
+      name: 'NameRegistered';
+      data: {
+        /**
+         * The alias derived from the ring proof.
+         **/
+        alias: FixedBytes<32>;
+
+        /**
+         * The account that initiated the registration.
+         **/
+        account: AccountId32;
+
+        /**
+         * The registered full-person label.
+         **/
+        label: IndivPalletDotnsGatewayBaseLabel;
+
+        /**
+         * How the full-person label relates to a lite-person label.
+         **/
+        link: IndivPalletDotnsGatewayLink;
+      };
+    }
+  /**
+   * Attestation allowance was increased for an account.
+   **/
+  | {
+      name: 'AttestationAllowanceIncreased';
+      data: {
+        /**
+         * The attester account.
+         **/
+        account: AccountId32;
+
+        /**
+         * The number of attestations added.
+         **/
+        count: number;
+      };
+    }
+  /**
+   * All attestation allowance has been removed for the attester.
+   **/
+  | {
+      name: 'AllAttestationAllowanceCleared';
+      data: {
+        /**
+         * The attester account.
+         **/
+        attester: AccountId32;
+      };
+    }
+  /**
+   * The `RootGatewayDispatcher` contract address was set.
+   **/
+  | {
+      name: 'DispatcherAddressSet';
+      data: {
+        /**
+         * The new contract address.
+         **/
+        address: H160;
+      };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletOriginRestrictionEvent =
+  /**
+   * Usage for an entity is cleaned.
+   **/
+  { name: 'UsageCleaned'; data: { entity: AssetHubPolkadotRuntimeIndividualityRestrictedEntity } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type IndivPalletNetworkSuffixEvent =
+  /**
+   * The network suffix changed.
+   **/
+  { name: 'NetworkSuffixSet'; data: { old: Bytes; new: Bytes } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletPgasAllowanceEvent =
+  /**
+   * A transaction fee `actual_fee` has been paid by `who` in PGAS and burned. Mirrors
+   * [`pallet_transaction_payment::Event::TransactionFeePaid`].
+   **/
+  { name: 'PgasFeePaid'; data: { who: AccountId32; actualFee: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -21712,9 +22791,14 @@ export type PalletAssetsError =
    **/
   | 'CallbackFailed'
   /**
-   * The asset ID must be equal to the [`NextAssetId`].
+   * The asset ID is not the one required by [`Config::AssetIdAllocator`].
    **/
   | 'BadAssetId'
+  /**
+   * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+   * exhausted.
+   **/
+  | 'AssetIdAllocationFailed'
   /**
    * The asset cannot be destroyed because some accounts for this asset contain freezes.
    **/
@@ -22289,6 +23373,24 @@ export type PalletPsmError =
    * An unexpected invariant violation occurred. This should be reported.
    **/
   | 'Unexpected';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletAssetsFreezerError =
+  /**
+   * Number of freezes on an account would exceed `MaxFreezes`.
+   **/
+  'TooManyFreezes';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletAssetsHolderError =
+  /**
+   * Number of holds on an account would exceed the count of `RuntimeHoldReason`.
+   **/
+  'TooManyHolds';
 
 export type PalletTreasuryProposal = { proposer: AccountId32; value: bigint; beneficiary: AccountId32; bond: bigint };
 
@@ -23989,6 +25091,267 @@ export type PalletAssetsPrecompilesPermitPalletError =
    **/
   | 'InvalidSpender';
 
+export type IndivPalletMembersSubscriberRingCommitmentRecord = {
+  root: VerifiableRingMembersCommitment;
+  revision: number;
+  sourceTime: bigint;
+  sourceSequence: bigint;
+};
+
+export type IndivPalletMembersSubscriberRingPurgeProgress = { generation: number; page: number };
+
+export type IndivPalletMembersSubscriberRingCollectionState = {
+  ringCount: number;
+  nextRingIndex: number;
+  nextScanIndex: number;
+  missingIndices: Array<[number, number]>;
+  deletedIndices: Array<number>;
+};
+
+export type IndivPalletMembersSubscriberSubscriptionStatus =
+  | { type: 'Inactive' }
+  | { type: 'Active'; value: { initializedAtSequence: bigint } }
+  | { type: 'Terminated' };
+
+export type IndivPalletMembersSubscriberUpdatesProcessingState = {
+  lastProcessedSequence: bigint;
+  lastBatchReceivedTime: bigint;
+  lastReplayRequestTime: bigint;
+};
+
+export type IndivPalletMembersSubscriberNotifierEndpoint = { location: StagingXcmV5Location; palletIndex: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletMembersSubscriberError =
+  /**
+   * XCM message send failed.
+   **/
+  | 'XcmSendFailed'
+  /**
+   * Subscription is currently inactive.
+   **/
+  | 'SubscriptionInactive'
+  /**
+   * Subscription is in terminated state.
+   **/
+  | 'SubscriptionTerminated'
+  /**
+   * Subscription is active with a different sequence; must be terminated first.
+   **/
+  | 'SubscriptionAlreadyActive'
+  /**
+   * Collection with the given identifier is not tracked.
+   **/
+  | 'CollectionNotFound'
+  /**
+   * No ring root stored for the given ring index.
+   **/
+  | 'NoRoot'
+  /**
+   * Proof failed to verify against any stored ring root.
+   **/
+  | 'InvalidProof'
+  /**
+   * Stored ring exponent does not convert into the crypto's capacity.
+   **/
+  | 'InvalidRingExponent'
+  /**
+   * Requested revision is not present in the stored sliding window.
+   **/
+  | 'RevisionNotFound'
+  /**
+   * Requested revision has been superseded for longer than the retention duration.
+   **/
+  | 'RevisionExpired'
+  /**
+   * The notifier initialized more than `MaxCollections` collections.
+   **/
+  | 'TooManyCollections';
+
+export type IndivSupportRealityContextualAlias = { alias: FixedBytes<32>; context: FixedBytes<32> };
+
+export type IndivPalletAliasAccountsAliasAccountInfo = {
+  collection: FixedBytes<32>;
+  revision: number;
+  ring: number;
+  ca: IndivSupportRealityContextualAlias;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletAliasAccountsError =
+  /**
+   * The collection is not accepted.
+   **/
+  | 'InvalidCollection'
+  /**
+   * The account is already in use under another alias.
+   **/
+  | 'AccountInUse'
+  /**
+   * The account is not known.
+   **/
+  | 'InvalidAccount'
+  /**
+   * Alias <-> Account is already set and up to date.
+   **/
+  | 'AliasAccountAlreadySet'
+  /**
+   * Call is too late or too early.
+   **/
+  | 'TimeOutOfRange'
+  /**
+   * The PGAS fee for alias registrations has not been set yet.
+   **/
+  | 'AliasFeeUnset'
+  /**
+   * The proof passed to `reprove_alias_account` produced an alias / context
+   * that does not match the stored mapping for the signer.
+   **/
+  | 'ReproveMismatch'
+  /**
+   * No ring root was found for the requested collection / ring index.
+   **/
+  | 'RingRootNotFound'
+  /**
+   * The requested ring revision is no longer accepted for this ring.
+   **/
+  | 'StaleRevision'
+  /**
+   * Ring-VRF proof verification failed.
+   **/
+  | 'BadProof'
+  /**
+   * The configured ring capacity is invalid for this collection.
+   **/
+  | 'InvalidRingCapacity';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletPgasError =
+  /**
+   * This alias has already been used to claim PGAS in this period.
+   **/
+  | 'AlreadyClaimed'
+  /**
+   * The PGAS asset does not exist or minting failed.
+   **/
+  | 'PgasMintFailed'
+  /**
+   * `clean_pgas_claim_records` was called with a day that has no stored records.
+   **/
+  | 'NoRecordsForDay'
+  /**
+   * The `first_alias` passed to `clean_pgas_claim_records` does not match the first alias
+   * currently stored under the prefix.
+   **/
+  | 'FirstAliasMismatch';
+
+export type IndivPalletDotnsGatewayRegistrationRecord = {
+  collection: IndivPalletDotnsGatewayCollection;
+  account: AccountId32;
+};
+
+export type IndivPalletDotnsGatewayCollection = 'People' | 'PeopleLite';
+
+export type IndivPalletDotnsGatewayAccountNameRecord = {
+  lite?: IndivPalletDotnsGatewayNameEntry | undefined;
+  full?: IndivPalletDotnsGatewayNameEntry | undefined;
+};
+
+export type IndivPalletDotnsGatewayNameEntry = {
+  label: IndivPalletDotnsGatewayBaseLabel;
+  chat?: IndivPalletDotnsGatewayChatKey | undefined;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletDotnsGatewayError =
+  /**
+   * The alias has already registered a name.
+   **/
+  | { name: 'AlreadyRegistered' }
+  /**
+   * The contract call failed (non-revert: out-of-gas, low-level, or
+   * undecodable revert).
+   **/
+  | { name: 'ContractCallFailed' }
+  /**
+   * Contract reverted with a typed error from `RootGatewayDispatcher` or
+   * the `DotnsPopController` it forwards to.
+   **/
+  | { name: 'ContractRevert'; data: IndivPalletDotnsGatewayDispatcherRevert }
+  /**
+   * The name is invalid (empty or too long, or does not match the
+   * required DNS/lite-label format).
+   **/
+  | { name: 'InvalidName' }
+  /**
+   * The attester has no attestation allowance remaining.
+   **/
+  | { name: 'NoAttestationAllowance' }
+  /**
+   * The candidate's signature is invalid.
+   **/
+  | { name: 'InvalidAttestationSignature' }
+  /**
+   * The reservation signature is older than [`Config::MaxValiditySeconds`].
+   **/
+  | { name: 'ReservationSignatureExpired' }
+  /**
+   * The reservation signature claims to have been created more than
+   * [`Config::MaxValiditySeconds`] ahead of chain time.
+   **/
+  | { name: 'ReservationSignatureFromFuture' }
+  /**
+   * The `Link::LiteUsername` target is not owned by the caller (or has
+   * no on-chain ownership record).
+   **/
+  | { name: 'NotLiteLabelOwner' }
+  /**
+   * The `RootGatewayDispatcher` contract address has not been set.
+   **/
+  | { name: 'DispatcherAddressNotSet' };
+
+export type IndivPalletDotnsGatewayDispatcherRevert =
+  | 'NotRoot'
+  | 'NotGateway'
+  | 'InvalidLiteLabel'
+  | 'InvalidBaseLabel'
+  | 'NoActiveReservation'
+  | 'QueueFull'
+  | 'AlreadyReserved'
+  | 'NotHolder';
+
+export type IndivPalletOriginRestrictionUsage = { used: bigint; atBlock: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletOriginRestrictionError =
+  /**
+   * The origin has no usage tracked.
+   **/
+  | 'NoUsage'
+  /**
+   * The usage is not zero.
+   **/
+  | 'NotZero';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type IndivPalletNetworkSuffixError =
+  /**
+   * A network suffix cannot be empty.
+   **/
+  'EmptySuffix';
+
 /**
  * The `Error` enum of this pallet.
  **/
@@ -24412,6 +25775,8 @@ export type AssetHubPolkadotRuntimeRuntimeError =
   | { pallet: 'PoolAssets'; palletError: PalletAssetsError }
   | { pallet: 'AssetConversion'; palletError: PalletAssetConversionError }
   | { pallet: 'Psm'; palletError: PalletPsmError }
+  | { pallet: 'AssetsFreezer'; palletError: PalletAssetsFreezerError }
+  | { pallet: 'AssetsHolder'; palletError: PalletAssetsHolderError }
   | { pallet: 'Treasury'; palletError: PalletTreasuryError }
   | { pallet: 'ConvictionVoting'; palletError: PalletConvictionVotingError }
   | { pallet: 'Referenda'; palletError: PalletReferendaError }
@@ -24420,7 +25785,6 @@ export type AssetHubPolkadotRuntimeRuntimeError =
   | { pallet: 'ChildBounties'; palletError: PalletChildBountiesError }
   | { pallet: 'AssetRate'; palletError: PalletAssetRateError }
   | { pallet: 'MultiAssetBounties'; palletError: PalletMultiAssetBountiesError }
-  | { pallet: 'StateTrieMigration'; palletError: PalletStateTrieMigrationError }
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }
   | { pallet: 'VoterList'; palletError: PalletBagsListError }
   | { pallet: 'DelegatedStaking'; palletError: PalletDelegatedStakingError }
@@ -24430,4 +25794,10 @@ export type AssetHubPolkadotRuntimeRuntimeError =
   | { pallet: 'Staking'; palletError: PalletStakingAsyncPalletError }
   | { pallet: 'Revive'; palletError: PalletReviveError }
   | { pallet: 'AssetsPrecompilesPermit'; palletError: PalletAssetsPrecompilesPermitPalletError }
+  | { pallet: 'MembersSubscriber'; palletError: IndivPalletMembersSubscriberError }
+  | { pallet: 'AliasAccounts'; palletError: IndivPalletAliasAccountsError }
+  | { pallet: 'Pgas'; palletError: IndivPalletPgasError }
+  | { pallet: 'DotnsGateway'; palletError: IndivPalletDotnsGatewayError }
+  | { pallet: 'OriginRestriction'; palletError: IndivPalletOriginRestrictionError }
+  | { pallet: 'NetworkSuffix'; palletError: IndivPalletNetworkSuffixError }
   | { pallet: 'AhOps'; palletError: PalletAhOpsError };

@@ -28,6 +28,7 @@ import type {
   PalletMigrationsHistoricCleanupSelector,
   PalletBalancesAdjustmentDirection,
   StagingXcmV5Location,
+  PeoplePolkadotRuntimeIndividualityRestrictedEntity,
   PeoplePolkadotRuntimeSessionKeys,
   XcmVersionedLocation,
   XcmVersionedXcm,
@@ -42,6 +43,18 @@ import type {
   PeoplePolkadotRuntimeProxyType,
   PeoplePolkadotRuntimePeopleIdentityInfo,
   PalletIdentityJudgement,
+  IndivSupportRealityContextualAlias,
+  IndivPalletPeopleLiteLiteConsumerRegistrationParams,
+  IndivPalletResourcesPersonalUsernameChoice,
+  IndivPalletResourcesNotificationReference,
+  IndivSupportRealityRingExponent,
+  IndivPalletCoinageCodecPreservation,
+  IndivPalletCoinageUnpaidLoadInput,
+  IndivPalletCoinageUnloadRecyclerInput,
+  IndivPalletCoinageFeeCurrency,
+  VerifiableRingMembersCommitment,
+  PolkadotParachainPrimitivesPrimitivesId,
+  PeoplePolkadotRuntimeParametersRuntimeParameters,
 } from './types.js';
 
 export type ChainSubmittableExtrinsic<
@@ -775,7 +788,8 @@ export interface ChainTx<
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+     * equal it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -815,8 +829,18 @@ export interface ChainTx<
      *
      * Unlike `create`, no funds are reserved.
      *
+     * Unlike `create`, the `id` does not have to be the one required by
+     * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+     * marked as allocated.
+     *
+     * # Warning
+     *
+     * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+     * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+     * most severely for bridged assets, where a collision breaks the local/remote mapping.
+     *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset, and must never have been in use previously (see warning above).
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.
@@ -2054,6 +2078,1490 @@ export interface ChainTx<
           palletCall: {
             name: 'Remove';
             params: { assetKind: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `OriginRestriction`'s transaction calls
+   **/
+  originRestriction: {
+    /**
+     * Allow to clean usage associated with an entity when it is zero or when there is no
+     * longer any allowance for the origin.
+     *
+     * @param {PeoplePolkadotRuntimeIndividualityRestrictedEntity} entity
+     **/
+    cleanUsage: GenericTxCall<
+      (entity: PeoplePolkadotRuntimeIndividualityRestrictedEntity) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'OriginRestriction';
+          palletCall: {
+            name: 'CleanUsage';
+            params: { entity: PeoplePolkadotRuntimeIndividualityRestrictedEntity };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `AssetConversion`'s transaction calls
+   **/
+  assetConversion: {
+    /**
+     * Creates an empty liquidity pool and an associated new `lp_token` asset
+     * (the id of which is returned in the `Event::PoolCreated` event).
+     *
+     * Once a pool is created, someone may [`Pallet::add_liquidity`] to it.
+     *
+     * @param {StagingXcmV5Location} asset1
+     * @param {StagingXcmV5Location} asset2
+     **/
+    createPool: GenericTxCall<
+      (
+        asset1: StagingXcmV5Location,
+        asset2: StagingXcmV5Location,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetConversion';
+          palletCall: {
+            name: 'CreatePool';
+            params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Provide liquidity into the pool of `asset1` and `asset2`.
+     * NOTE: an optimal amount of asset1 and asset2 will be calculated and
+     * might be different than the provided `amount1_desired`/`amount2_desired`
+     * thus you should provide the min amount you're happy to provide.
+     * Params `amount1_min`/`amount2_min` represent that.
+     * `mint_to` will be sent the liquidity tokens that represent this share of the pool.
+     *
+     * NOTE: when encountering an incorrect exchange rate and non-withdrawable pool liquidity,
+     * batch an atomic call with [`Pallet::add_liquidity`] and
+     * [`Pallet::swap_exact_tokens_for_tokens`] or [`Pallet::swap_tokens_for_exact_tokens`]
+     * calls to render the liquidity withdrawable and rectify the exchange rate.
+     *
+     * Once liquidity is added, someone may successfully call
+     * [`Pallet::swap_exact_tokens_for_tokens`].
+     *
+     * @param {StagingXcmV5Location} asset1
+     * @param {StagingXcmV5Location} asset2
+     * @param {bigint} amount1Desired
+     * @param {bigint} amount2Desired
+     * @param {bigint} amount1Min
+     * @param {bigint} amount2Min
+     * @param {AccountId32Like} mintTo
+     **/
+    addLiquidity: GenericTxCall<
+      (
+        asset1: StagingXcmV5Location,
+        asset2: StagingXcmV5Location,
+        amount1Desired: bigint,
+        amount2Desired: bigint,
+        amount1Min: bigint,
+        amount2Min: bigint,
+        mintTo: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetConversion';
+          palletCall: {
+            name: 'AddLiquidity';
+            params: {
+              asset1: StagingXcmV5Location;
+              asset2: StagingXcmV5Location;
+              amount1Desired: bigint;
+              amount2Desired: bigint;
+              amount1Min: bigint;
+              amount2Min: bigint;
+              mintTo: AccountId32Like;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Allows you to remove liquidity by providing the `lp_token_burn` tokens that will be
+     * burned in the process. With the usage of `amount1_min_receive`/`amount2_min_receive`
+     * it's possible to control the min amount of returned tokens you're happy with.
+     *
+     * @param {StagingXcmV5Location} asset1
+     * @param {StagingXcmV5Location} asset2
+     * @param {bigint} lpTokenBurn
+     * @param {bigint} amount1MinReceive
+     * @param {bigint} amount2MinReceive
+     * @param {AccountId32Like} withdrawTo
+     **/
+    removeLiquidity: GenericTxCall<
+      (
+        asset1: StagingXcmV5Location,
+        asset2: StagingXcmV5Location,
+        lpTokenBurn: bigint,
+        amount1MinReceive: bigint,
+        amount2MinReceive: bigint,
+        withdrawTo: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetConversion';
+          palletCall: {
+            name: 'RemoveLiquidity';
+            params: {
+              asset1: StagingXcmV5Location;
+              asset2: StagingXcmV5Location;
+              lpTokenBurn: bigint;
+              amount1MinReceive: bigint;
+              amount2MinReceive: bigint;
+              withdrawTo: AccountId32Like;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Swap the exact amount of `asset1` into `asset2`.
+     * `amount_out_min` param allows you to specify the min amount of the `asset2`
+     * you're happy to receive.
+     *
+     * [`AssetConversionApi::quote_price_exact_tokens_for_tokens`] runtime call can be called
+     * for a quote.
+     *
+     * @param {Array<StagingXcmV5Location>} path
+     * @param {bigint} amountIn
+     * @param {bigint} amountOutMin
+     * @param {AccountId32Like} sendTo
+     * @param {boolean} keepAlive
+     **/
+    swapExactTokensForTokens: GenericTxCall<
+      (
+        path: Array<StagingXcmV5Location>,
+        amountIn: bigint,
+        amountOutMin: bigint,
+        sendTo: AccountId32Like,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetConversion';
+          palletCall: {
+            name: 'SwapExactTokensForTokens';
+            params: {
+              path: Array<StagingXcmV5Location>;
+              amountIn: bigint;
+              amountOutMin: bigint;
+              sendTo: AccountId32Like;
+              keepAlive: boolean;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Swap any amount of `asset1` to get the exact amount of `asset2`.
+     * `amount_in_max` param allows to specify the max amount of the `asset1`
+     * you're happy to provide.
+     *
+     * [`AssetConversionApi::quote_price_tokens_for_exact_tokens`] runtime call can be called
+     * for a quote.
+     *
+     * @param {Array<StagingXcmV5Location>} path
+     * @param {bigint} amountOut
+     * @param {bigint} amountInMax
+     * @param {AccountId32Like} sendTo
+     * @param {boolean} keepAlive
+     **/
+    swapTokensForExactTokens: GenericTxCall<
+      (
+        path: Array<StagingXcmV5Location>,
+        amountOut: bigint,
+        amountInMax: bigint,
+        sendTo: AccountId32Like,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetConversion';
+          palletCall: {
+            name: 'SwapTokensForExactTokens';
+            params: {
+              path: Array<StagingXcmV5Location>;
+              amountOut: bigint;
+              amountInMax: bigint;
+              sendTo: AccountId32Like;
+              keepAlive: boolean;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Touch an existing pool to fulfill prerequisites before providing liquidity, such as
+     * ensuring that the pool's accounts are in place. It is typically useful when a pool
+     * creator removes the pool's accounts and does not provide a liquidity. This action may
+     * involve holding assets from the caller as a deposit for creating the pool's accounts.
+     *
+     * The origin must be Signed.
+     *
+     * - `asset1`: The asset ID of an existing pool with a pair (asset1, asset2).
+     * - `asset2`: The asset ID of an existing pool with a pair (asset1, asset2).
+     *
+     * Emits `Touched` event when successful.
+     *
+     * @param {StagingXcmV5Location} asset1
+     * @param {StagingXcmV5Location} asset2
+     **/
+    touch: GenericTxCall<
+      (
+        asset1: StagingXcmV5Location,
+        asset2: StagingXcmV5Location,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetConversion';
+          palletCall: {
+            name: 'Touch';
+            params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `PoolAssets`'s transaction calls
+   **/
+  poolAssets: {
+    /**
+     * Issue a new class of fungible assets from a public origin.
+     *
+     * This new asset class has no assets initially and its owner is the origin.
+     *
+     * The origin must conform to the configured `CreateOrigin` and have sufficient funds free.
+     *
+     * Funds of sender are reserved by `AssetDeposit`.
+     *
+     * Parameters:
+     * - `id`: The identifier of the new asset. This must not be currently in use to identify
+     * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+     * equal it.
+     * - `admin`: The admin of this class of assets. The admin is the initial address of each
+     * member of the asset class's admin team.
+     * - `min_balance`: The minimum balance of this new asset that any single account must
+     * have. If an account's balance is reduced below this, then it collapses to zero.
+     *
+     * Emits `Created` event when successful.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} admin
+     * @param {bigint} minBalance
+     **/
+    create: GenericTxCall<
+      (
+        id: number,
+        admin: MultiAddressLike,
+        minBalance: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'Create';
+            params: { id: number; admin: MultiAddressLike; minBalance: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Issue a new class of fungible assets from a privileged origin.
+     *
+     * This new asset class has no assets initially.
+     *
+     * The origin must conform to `ForceOrigin`.
+     *
+     * Unlike `create`, no funds are reserved.
+     *
+     * Unlike `create`, the `id` does not have to be the one required by
+     * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+     * marked as allocated.
+     *
+     * # Warning
+     *
+     * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+     * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+     * most severely for bridged assets, where a collision breaks the local/remote mapping.
+     *
+     * - `id`: The identifier of the new asset. This must not be currently in use to identify
+     * an existing asset, and must never have been in use previously (see warning above).
+     * - `owner`: The owner of this class of assets. The owner has full superuser permissions
+     * over this asset, but may later change and configure the permissions using
+     * `transfer_ownership` and `set_team`.
+     * - `min_balance`: The minimum balance of this new asset that any single account must
+     * have. If an account's balance is reduced below this, then it collapses to zero.
+     *
+     * Emits `ForceCreated` event when successful.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} owner
+     * @param {boolean} isSufficient
+     * @param {bigint} minBalance
+     **/
+    forceCreate: GenericTxCall<
+      (
+        id: number,
+        owner: MultiAddressLike,
+        isSufficient: boolean,
+        minBalance: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'ForceCreate';
+            params: { id: number; owner: MultiAddressLike; isSufficient: boolean; minBalance: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Start the process of destroying a fungible asset class.
+     *
+     * `start_destroy` is the first in a series of extrinsics that should be called, to allow
+     * destruction of an asset class.
+     *
+     * The origin must conform to `ForceOrigin` or must be `Signed` by the asset's `owner`.
+     *
+     * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+     * asset.
+     *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * an account contains holds or freezes in place.
+     *
+     * @param {number} id
+     **/
+    startDestroy: GenericTxCall<
+      (id: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'StartDestroy';
+            params: { id: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Destroy all accounts associated with a given asset.
+     *
+     * `destroy_accounts` should only be called after `start_destroy` has been called, and the
+     * asset is in a `Destroying` state.
+     *
+     * Due to weight restrictions, this function may need to be called multiple times to fully
+     * destroy all accounts. It will destroy `RemoveItemsLimit` accounts at a time.
+     *
+     * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+     * asset.
+     *
+     * Each call emits the `Event::DestroyedAccounts` event.
+     *
+     * @param {number} id
+     **/
+    destroyAccounts: GenericTxCall<
+      (id: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'DestroyAccounts';
+            params: { id: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Destroy all approvals associated with a given asset up to the max (T::RemoveItemsLimit).
+     *
+     * `destroy_approvals` should only be called after `start_destroy` has been called, and the
+     * asset is in a `Destroying` state.
+     *
+     * Due to weight restrictions, this function may need to be called multiple times to fully
+     * destroy all approvals. It will destroy `RemoveItemsLimit` approvals at a time.
+     *
+     * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+     * asset.
+     *
+     * Each call emits the `Event::DestroyedApprovals` event.
+     *
+     * @param {number} id
+     **/
+    destroyApprovals: GenericTxCall<
+      (id: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'DestroyApprovals';
+            params: { id: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Complete destroying asset and unreserve currency.
+     *
+     * `finish_destroy` should only be called after `start_destroy` has been called, and the
+     * asset is in a `Destroying` state. All accounts or approvals should be destroyed before
+     * hand.
+     *
+     * - `id`: The identifier of the asset to be destroyed. This must identify an existing
+     * asset.
+     *
+     * Each successful call emits the `Event::Destroyed` event.
+     *
+     * @param {number} id
+     **/
+    finishDestroy: GenericTxCall<
+      (id: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'FinishDestroy';
+            params: { id: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Mint assets of a particular class.
+     *
+     * The origin must be Signed and the sender must be the Issuer of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to have some amount minted.
+     * - `beneficiary`: The account to be credited with the minted assets.
+     * - `amount`: The amount of the asset to be minted.
+     *
+     * Emits `Issued` event when successful.
+     *
+     * Weight: `O(1)`
+     * Modes: Pre-existing balance of `beneficiary`; Account pre-existence of `beneficiary`.
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} beneficiary
+     * @param {bigint} amount
+     **/
+    mint: GenericTxCall<
+      (
+        id: number,
+        beneficiary: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'Mint';
+            params: { id: number; beneficiary: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Reduce the balance of `who` by as much as possible up to `amount` assets of `id`.
+     *
+     * Origin must be Signed and the sender should be the Manager of the asset `id`.
+     *
+     * Bails with `NoAccount` if the `who` is already dead.
+     *
+     * - `id`: The identifier of the asset to have some amount burned.
+     * - `who`: The account to be debited from.
+     * - `amount`: The maximum amount by which `who`'s balance should be reduced.
+     *
+     * Emits `Burned` with the actual amount burned. If this takes the balance to below the
+     * minimum for the asset, then the amount burned is increased to take it to zero.
+     *
+     * Weight: `O(1)`
+     * Modes: Post-existence of `who`; Pre & post Zombie-status of `who`.
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} who
+     * @param {bigint} amount
+     **/
+    burn: GenericTxCall<
+      (
+        id: number,
+        who: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'Burn';
+            params: { id: number; who: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Move some assets from the sender account to another.
+     *
+     * Origin must be Signed.
+     *
+     * - `id`: The identifier of the asset to have some amount transferred.
+     * - `target`: The account to be credited.
+     * - `amount`: The amount by which the sender's balance of assets should be reduced and
+     * `target`'s balance increased. The amount actually transferred may be slightly greater in
+     * the case that the transfer would otherwise take the sender balance above zero but below
+     * the minimum balance. Must be greater than zero.
+     *
+     * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+     * to below the minimum for the asset, then the amount transferred is increased to take it
+     * to zero.
+     *
+     * Weight: `O(1)`
+     * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
+     * `target`.
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} target
+     * @param {bigint} amount
+     **/
+    transfer: GenericTxCall<
+      (
+        id: number,
+        target: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'Transfer';
+            params: { id: number; target: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Move some assets from the sender account to another, keeping the sender account alive.
+     *
+     * Origin must be Signed.
+     *
+     * - `id`: The identifier of the asset to have some amount transferred.
+     * - `target`: The account to be credited.
+     * - `amount`: The amount by which the sender's balance of assets should be reduced and
+     * `target`'s balance increased. The amount actually transferred may be slightly greater in
+     * the case that the transfer would otherwise take the sender balance above zero but below
+     * the minimum balance. Must be greater than zero.
+     *
+     * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+     * to below the minimum for the asset, then the amount transferred is increased to take it
+     * to zero.
+     *
+     * Weight: `O(1)`
+     * Modes: Pre-existence of `target`; Post-existence of sender; Account pre-existence of
+     * `target`.
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} target
+     * @param {bigint} amount
+     **/
+    transferKeepAlive: GenericTxCall<
+      (
+        id: number,
+        target: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'TransferKeepAlive';
+            params: { id: number; target: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Move some assets from one account to another.
+     *
+     * Origin must be Signed and the sender should be the Admin of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to have some amount transferred.
+     * - `source`: The account to be debited.
+     * - `dest`: The account to be credited.
+     * - `amount`: The amount by which the `source`'s balance of assets should be reduced and
+     * `dest`'s balance increased. The amount actually transferred may be slightly greater in
+     * the case that the transfer would otherwise take the `source` balance above zero but
+     * below the minimum balance. Must be greater than zero.
+     *
+     * Emits `Transferred` with the actual amount transferred. If this takes the source balance
+     * to below the minimum for the asset, then the amount transferred is increased to take it
+     * to zero.
+     *
+     * Weight: `O(1)`
+     * Modes: Pre-existence of `dest`; Post-existence of `source`; Account pre-existence of
+     * `dest`.
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} source
+     * @param {MultiAddressLike} dest
+     * @param {bigint} amount
+     **/
+    forceTransfer: GenericTxCall<
+      (
+        id: number,
+        source: MultiAddressLike,
+        dest: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'ForceTransfer';
+            params: { id: number; source: MultiAddressLike; dest: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Disallow further unprivileged transfers of an asset `id` from an account `who`. `who`
+     * must already exist as an entry in `Account`s of the asset. If you want to freeze an
+     * account that does not have an entry, use `touch_other` first.
+     *
+     * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be frozen.
+     * - `who`: The account to be frozen.
+     *
+     * Emits `Frozen`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} who
+     **/
+    freeze: GenericTxCall<
+      (
+        id: number,
+        who: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'Freeze';
+            params: { id: number; who: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Allow unprivileged transfers to and from an account again.
+     *
+     * Origin must be Signed and the sender should be the Admin of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be frozen.
+     * - `who`: The account to be unfrozen.
+     *
+     * Emits `Thawed`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} who
+     **/
+    thaw: GenericTxCall<
+      (
+        id: number,
+        who: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'Thaw';
+            params: { id: number; who: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Disallow further unprivileged transfers for the asset class.
+     *
+     * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be frozen.
+     *
+     * Emits `Frozen`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     **/
+    freezeAsset: GenericTxCall<
+      (id: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'FreezeAsset';
+            params: { id: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Allow unprivileged transfers for the asset again.
+     *
+     * Origin must be Signed and the sender should be the Admin of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be thawed.
+     *
+     * Emits `Thawed`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     **/
+    thawAsset: GenericTxCall<
+      (id: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'ThawAsset';
+            params: { id: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Change the Owner of an asset.
+     *
+     * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * - `id`: The identifier of the asset.
+     * - `owner`: The new Owner of this asset.
+     *
+     * Emits `OwnerChanged`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} owner
+     **/
+    transferOwnership: GenericTxCall<
+      (
+        id: number,
+        owner: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'TransferOwnership';
+            params: { id: number; owner: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Change the Issuer, Admin and Freezer of an asset.
+     *
+     * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * - `id`: The identifier of the asset to be frozen.
+     * - `issuer`: The new Issuer of this asset.
+     * - `admin`: The new Admin of this asset.
+     * - `freezer`: The new Freezer of this asset.
+     *
+     * Emits `TeamChanged`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} issuer
+     * @param {MultiAddressLike} admin
+     * @param {MultiAddressLike} freezer
+     **/
+    setTeam: GenericTxCall<
+      (
+        id: number,
+        issuer: MultiAddressLike,
+        admin: MultiAddressLike,
+        freezer: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'SetTeam';
+            params: { id: number; issuer: MultiAddressLike; admin: MultiAddressLike; freezer: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the metadata for an asset.
+     *
+     * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * Funds of sender are reserved according to the formula:
+     * `MetadataDepositBase + MetadataDepositPerByte * (name.len + symbol.len)` taking into
+     * account any already reserved funds.
+     *
+     * - `id`: The identifier of the asset to update.
+     * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+     * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+     * - `decimals`: The number of decimals this asset uses to represent one unit.
+     *
+     * Emits `MetadataSet`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     * @param {BytesLike} name
+     * @param {BytesLike} symbol
+     * @param {number} decimals
+     **/
+    setMetadata: GenericTxCall<
+      (
+        id: number,
+        name: BytesLike,
+        symbol: BytesLike,
+        decimals: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'SetMetadata';
+            params: { id: number; name: BytesLike; symbol: BytesLike; decimals: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clear the metadata for an asset.
+     *
+     * Origin must be Signed and the sender should be the Owner of the asset `id`.
+     *
+     * Any deposit is freed for the asset owner.
+     *
+     * - `id`: The identifier of the asset to clear.
+     *
+     * Emits `MetadataCleared`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     **/
+    clearMetadata: GenericTxCall<
+      (id: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'ClearMetadata';
+            params: { id: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Force the metadata for an asset to some value.
+     *
+     * Origin must be ForceOrigin.
+     *
+     * Any deposit is left alone.
+     *
+     * - `id`: The identifier of the asset to update.
+     * - `name`: The user friendly name of this asset. Limited in length by `StringLimit`.
+     * - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+     * - `decimals`: The number of decimals this asset uses to represent one unit.
+     *
+     * Emits `MetadataSet`.
+     *
+     * Weight: `O(N + S)` where N and S are the length of the name and symbol respectively.
+     *
+     * @param {number} id
+     * @param {BytesLike} name
+     * @param {BytesLike} symbol
+     * @param {number} decimals
+     * @param {boolean} isFrozen
+     **/
+    forceSetMetadata: GenericTxCall<
+      (
+        id: number,
+        name: BytesLike,
+        symbol: BytesLike,
+        decimals: number,
+        isFrozen: boolean,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'ForceSetMetadata';
+            params: { id: number; name: BytesLike; symbol: BytesLike; decimals: number; isFrozen: boolean };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clear the metadata for an asset.
+     *
+     * Origin must be ForceOrigin.
+     *
+     * Any deposit is returned.
+     *
+     * - `id`: The identifier of the asset to clear.
+     *
+     * Emits `MetadataCleared`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     **/
+    forceClearMetadata: GenericTxCall<
+      (id: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'ForceClearMetadata';
+            params: { id: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Alter the attributes of a given asset.
+     *
+     * Origin must be `ForceOrigin`.
+     *
+     * - `id`: The identifier of the asset.
+     * - `owner`: The new Owner of this asset.
+     * - `issuer`: The new Issuer of this asset.
+     * - `admin`: The new Admin of this asset.
+     * - `freezer`: The new Freezer of this asset.
+     * - `min_balance`: The minimum balance of this new asset that any single account must
+     * have. If an account's balance is reduced below this, then it collapses to zero.
+     * - `is_sufficient`: Whether a non-zero balance of this asset is deposit of sufficient
+     * value to account for the state bloat associated with its balance storage. If set to
+     * `true`, then non-zero balances may be stored without a `consumer` reference (and thus
+     * an ED in the Balances pallet or whatever else is used to control user-account state
+     * growth).
+     * - `is_frozen`: Whether this asset class is frozen except for permissioned/admin
+     * instructions.
+     *
+     * Emits `AssetStatusChanged` with the identity of the asset.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} owner
+     * @param {MultiAddressLike} issuer
+     * @param {MultiAddressLike} admin
+     * @param {MultiAddressLike} freezer
+     * @param {bigint} minBalance
+     * @param {boolean} isSufficient
+     * @param {boolean} isFrozen
+     **/
+    forceAssetStatus: GenericTxCall<
+      (
+        id: number,
+        owner: MultiAddressLike,
+        issuer: MultiAddressLike,
+        admin: MultiAddressLike,
+        freezer: MultiAddressLike,
+        minBalance: bigint,
+        isSufficient: boolean,
+        isFrozen: boolean,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'ForceAssetStatus';
+            params: {
+              id: number;
+              owner: MultiAddressLike;
+              issuer: MultiAddressLike;
+              admin: MultiAddressLike;
+              freezer: MultiAddressLike;
+              minBalance: bigint;
+              isSufficient: boolean;
+              isFrozen: boolean;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Approve an amount of asset for transfer by a delegated third-party account.
+     *
+     * Origin must be Signed.
+     *
+     * Ensures that `ApprovalDeposit` worth of `Currency` is reserved from signing account
+     * for the purpose of holding the approval. If some non-zero amount of assets is already
+     * approved from signing account to `delegate`, then it is topped up or unreserved to
+     * meet the right value.
+     *
+     * NOTE: The signing account does not need to own `amount` of assets at the point of
+     * making this call.
+     *
+     * - `id`: The identifier of the asset.
+     * - `delegate`: The account to delegate permission to transfer asset.
+     * - `amount`: The amount of asset that may be transferred by `delegate`. If there is
+     * already an approval in place, then this acts additively.
+     *
+     * Emits `ApprovedTransfer` on success.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} delegate
+     * @param {bigint} amount
+     **/
+    approveTransfer: GenericTxCall<
+      (
+        id: number,
+        delegate: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'ApproveTransfer';
+            params: { id: number; delegate: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Cancel all of some asset approved for delegated transfer by a third-party account.
+     *
+     * Origin must be Signed and there must be an approval in place between signer and
+     * `delegate`.
+     *
+     * Unreserves any deposit previously reserved by `approve_transfer` for the approval.
+     *
+     * - `id`: The identifier of the asset.
+     * - `delegate`: The account delegated permission to transfer asset.
+     *
+     * Emits `ApprovalCancelled` on success.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} delegate
+     **/
+    cancelApproval: GenericTxCall<
+      (
+        id: number,
+        delegate: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'CancelApproval';
+            params: { id: number; delegate: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Cancel all of some asset approved for delegated transfer by a third-party account.
+     *
+     * Origin must be either ForceOrigin or Signed origin with the signer being the Admin
+     * account of the asset `id`.
+     *
+     * Unreserves any deposit previously reserved by `approve_transfer` for the approval.
+     *
+     * - `id`: The identifier of the asset.
+     * - `delegate`: The account delegated permission to transfer asset.
+     *
+     * Emits `ApprovalCancelled` on success.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} owner
+     * @param {MultiAddressLike} delegate
+     **/
+    forceCancelApproval: GenericTxCall<
+      (
+        id: number,
+        owner: MultiAddressLike,
+        delegate: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'ForceCancelApproval';
+            params: { id: number; owner: MultiAddressLike; delegate: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Transfer some asset balance from a previously delegated account to some third-party
+     * account.
+     *
+     * Origin must be Signed and there must be an approval in place by the `owner` to the
+     * signer.
+     *
+     * If the entire amount approved for transfer is transferred, then any deposit previously
+     * reserved by `approve_transfer` is unreserved.
+     *
+     * - `id`: The identifier of the asset.
+     * - `owner`: The account which previously approved for a transfer of at least `amount` and
+     * from which the asset balance will be withdrawn.
+     * - `destination`: The account to which the asset balance of `amount` will be transferred.
+     * - `amount`: The amount of assets to transfer.
+     *
+     * Emits `TransferredApproved` on success.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} owner
+     * @param {MultiAddressLike} destination
+     * @param {bigint} amount
+     **/
+    transferApproved: GenericTxCall<
+      (
+        id: number,
+        owner: MultiAddressLike,
+        destination: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'TransferApproved';
+            params: { id: number; owner: MultiAddressLike; destination: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Create an asset account for non-provider assets.
+     *
+     * A deposit will be taken from the signer account.
+     *
+     * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+     * to be taken.
+     * - `id`: The identifier of the asset for the account to be created.
+     *
+     * Emits `Touched` event when successful.
+     *
+     * @param {number} id
+     **/
+    touch: GenericTxCall<
+      (id: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'Touch';
+            params: { id: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Return the deposit (if any) of an asset account or a consumer reference (if any) of an
+     * account.
+     *
+     * The origin must be Signed.
+     *
+     * - `id`: The identifier of the asset for which the caller would like the deposit
+     * refunded.
+     * - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
+     *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * the asset account contains holds or freezes in place.
+     *
+     * Emits `Refunded` event when successful.
+     *
+     * @param {number} id
+     * @param {boolean} allowBurn
+     **/
+    refund: GenericTxCall<
+      (
+        id: number,
+        allowBurn: boolean,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'Refund';
+            params: { id: number; allowBurn: boolean };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Sets the minimum balance of an asset.
+     *
+     * Only works if there aren't any accounts that are holding the asset or if
+     * the new value of `min_balance` is less than the old one.
+     *
+     * Origin must be Signed and the sender has to be the Owner of the
+     * asset `id`.
+     *
+     * - `id`: The identifier of the asset.
+     * - `min_balance`: The new value of `min_balance`.
+     *
+     * Emits `AssetMinBalanceChanged` event when successful.
+     *
+     * @param {number} id
+     * @param {bigint} minBalance
+     **/
+    setMinBalance: GenericTxCall<
+      (
+        id: number,
+        minBalance: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'SetMinBalance';
+            params: { id: number; minBalance: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Create an asset account for `who`.
+     *
+     * A deposit will be taken from the signer account.
+     *
+     * - `origin`: Must be Signed; the signer account must have sufficient funds for a deposit
+     * to be taken.
+     * - `id`: The identifier of the asset for the account to be created, the asset status must
+     * be live.
+     * - `who`: The account to be created.
+     *
+     * Emits `Touched` event when successful.
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} who
+     **/
+    touchOther: GenericTxCall<
+      (
+        id: number,
+        who: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'TouchOther';
+            params: { id: number; who: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Return the deposit (if any) of a target asset account. Useful if you are the depositor.
+     *
+     * The origin must be Signed and either the account owner, depositor, or asset `Admin`. In
+     * order to burn a non-zero balance of the asset, the caller must be the account and should
+     * use `refund`.
+     *
+     * - `id`: The identifier of the asset for the account holding a deposit.
+     * - `who`: The account to refund.
+     *
+     * It will fail with either [`Error::ContainsHolds`] or [`Error::ContainsFreezes`] if
+     * the asset account contains holds or freezes in place.
+     *
+     * Emits `Refunded` event when successful.
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} who
+     **/
+    refundOther: GenericTxCall<
+      (
+        id: number,
+        who: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'RefundOther';
+            params: { id: number; who: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Disallow further unprivileged transfers of an asset `id` to and from an account `who`.
+     *
+     * Origin must be Signed and the sender should be the Freezer of the asset `id`.
+     *
+     * - `id`: The identifier of the account's asset.
+     * - `who`: The account to be unblocked.
+     *
+     * Emits `Blocked`.
+     *
+     * Weight: `O(1)`
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} who
+     **/
+    block: GenericTxCall<
+      (
+        id: number,
+        who: MultiAddressLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'Block';
+            params: { id: number; who: MultiAddressLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Transfer the entire transferable balance from the caller asset account.
+     *
+     * NOTE: This function only attempts to transfer _transferable_ balances. This means that
+     * any held, frozen, or minimum balance (when `keep_alive` is `true`), will not be
+     * transferred by this function. To ensure that this function results in a killed account,
+     * you might need to prepare the account by removing any reference counters, storage
+     * deposits, etc...
+     *
+     * The dispatch origin of this call must be Signed.
+     *
+     * - `id`: The identifier of the asset for the account holding a deposit.
+     * - `dest`: The recipient of the transfer.
+     * - `keep_alive`: A boolean to determine if the `transfer_all` operation should send all
+     * of the funds the asset account has, causing the sender asset account to be killed
+     * (false), or transfer everything except at least the minimum balance, which will
+     * guarantee to keep the sender asset account alive (true).
+     *
+     * @param {number} id
+     * @param {MultiAddressLike} dest
+     * @param {boolean} keepAlive
+     **/
+    transferAll: GenericTxCall<
+      (
+        id: number,
+        dest: MultiAddressLike,
+        keepAlive: boolean,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'TransferAll';
+            params: { id: number; dest: MultiAddressLike; keepAlive: boolean };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Sets the trusted reserve information of an asset.
+     *
+     * Origin must be the Owner of the asset `id`. The origin must conform to the configured
+     * `CreateOrigin` or be the signed `owner` configured during asset creation.
+     *
+     * - `id`: The identifier of the asset.
+     * - `reserves`: The full list of trusted reserves information.
+     *
+     * Emits `AssetMinBalanceChanged` event when successful.
+     *
+     * @param {number} id
+     * @param {Array<[]>} reserves
+     **/
+    setReserves: GenericTxCall<
+      (
+        id: number,
+        reserves: Array<[]>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PoolAssets';
+          palletCall: {
+            name: 'SetReserves';
+            params: { id: number; reserves: Array<[]> };
           };
         },
         ChainKnownTypes
@@ -4734,6 +6242,3156 @@ export interface ChainTx<
           palletCall: {
             name: 'KillUsername';
             params: { username: BytesLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `People`'s transaction calls
+   **/
+  people: {
+    /**
+     * Dispatch a call under an alias using the `account <-> alias` mapping.
+     *
+     * This is a call version of the transaction extension `AsPersonalAliasWithAccount`.
+     * It is recommended to use the transaction extension instead when suitable.
+     *
+     * @param {PeoplePolkadotRuntimeRuntimeCallLike} call
+     **/
+    underAlias: GenericTxCall<
+      (call: PeoplePolkadotRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'People';
+          palletCall: {
+            name: 'UnderAlias';
+            params: { call: PeoplePolkadotRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * This transaction is refunded if successful and no alias was previously set.
+     *
+     * The call is valid from `call_valid_at` until
+     * `call_valid_at + account_setup_time_tolerance`.
+     * `account_setup_time_tolerance` is a constant available in the metadata.
+     *
+     * This call is authorized through the `AsPersonalAliasWithProof` variant of the `AsPerson`
+     * transaction extension, which provides no nonce-based replay protection. Replay is only
+     * prevented for as long as the alias still points at the account this call sets. As soon
+     * as the alias is pointed at a different account (by another `set_alias_account`), this
+     * call becomes replayable again until its validity period elapses. Consequently, if 2
+     * such transactions setting 2 different accounts have overlapping validity periods, they
+     * can be replayed against each other indefinitely for the duration of the overlap. To
+     * avoid this, the caller must not have 2 such transactions alive (within their validity
+     * period) at the same time.
+     *
+     * Parameters:
+     * - `account`: The account to set the alias for.
+     * - `call_valid_at`: The block number when the call becomes valid.
+     *
+     * @param {AccountId32Like} account
+     * @param {number} callValidAt
+     **/
+    setAliasAccount: GenericTxCall<
+      (
+        account: AccountId32Like,
+        callValidAt: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'People';
+          palletCall: {
+            name: 'SetAliasAccount';
+            params: { account: AccountId32Like; callValidAt: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove the mapping from a particular alias to its registered account.
+     *
+     **/
+    unsetAliasAccount: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'People';
+          palletCall: {
+            name: 'UnsetAliasAccount';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Recognize a set of people without any additional checks.
+     *
+     * The people are identified by the provided list of keys and will each be assigned, in
+     * order, the next available personal ID.
+     *
+     * @param {Array<FixedBytes<32>>} people
+     **/
+    forceRecognizePersonhood: GenericTxCall<
+      (people: Array<FixedBytes<32>>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'People';
+          palletCall: {
+            name: 'ForceRecognizePersonhood';
+            params: { people: Array<FixedBytes<32>> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set a personal id account.
+     *
+     * The account can then be used to sign transactions on behalf of the personal id, and
+     * provide replay protection with the nonce.
+     *
+     * This transaction is refunded if successful and no account was previously set for the
+     * personal id.
+     *
+     * The call is valid from `call_valid_at` until
+     * `call_valid_at + account_setup_time_tolerance`.
+     * `account_setup_time_tolerance` is a constant available in the metadata.
+     *
+     * Parameters:
+     * - `account`: The account to set the alias for.
+     * - `call_valid_at`: The block number when the call becomes valid.
+     *
+     * @param {AccountId32Like} account
+     * @param {number} callValidAt
+     **/
+    setPersonalIdAccount: GenericTxCall<
+      (
+        account: AccountId32Like,
+        callValidAt: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'People';
+          palletCall: {
+            name: 'SetPersonalIdAccount';
+            params: { account: AccountId32Like; callValidAt: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unset the personal id account.
+     *
+     **/
+    unsetPersonalIdAccount: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'People';
+          palletCall: {
+            name: 'UnsetPersonalIdAccount';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Create the people collection.
+     *
+     * This call is valid only if the collection doesn't exist yet. Once created,
+     * this call cannot be executed again.
+     *
+     * The collection is created with a fixed configuration:
+     * - Owner: Configured via `CollectionOwner` type
+     * - Onboarding size: `PEOPLE_ONBOARDING_SIZE` (10)
+     * - Mode: `Flexible`
+     * - Ring size: `R2e9`
+     *
+     **/
+    createPeopleCollection: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'People';
+          palletCall: {
+            name: 'CreatePeopleCollection';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove stale alias <-> account mappings.
+     *
+     * A mapping is stale when:
+     * - its context has been removed from [`Config::AccountContexts`] (governance
+     * reconfiguration, ended airdrop etc.), or
+     * - its ring has been deleted.
+     *
+     * Revision mismatches do not render an alias stale. The user can continue
+     * transacting via `AsPersonalAliasWithAccountRevised` without having to
+     * redo account setup.
+     *
+     * Typically submitted by the OCW, but the dispatch does not trust
+     * the caller. Each alias is re-validated via
+     * `Self::ensure_alias_is_stale`; those that are not stale are
+     * skipped.
+     *
+     * At most [`MAX_BULK_CLEANUP`] aliases are processed per call.
+     *
+     * The transaction source must be local or in-block. Thus, external
+     * invocations are not permitted.
+     *
+     * @param {Array<IndivSupportRealityContextualAlias>} aliases
+     **/
+    cleanUpStaleAliases: GenericTxCall<
+      (aliases: Array<IndivSupportRealityContextualAlias>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'People';
+          palletCall: {
+            name: 'CleanUpStaleAliases';
+            params: { aliases: Array<IndivSupportRealityContextualAlias> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `DummyDim`'s transaction calls
+   **/
+  dummyDim: {
+    /**
+     * Reserve a number of personal IDs.
+     *
+     * @param {number} count
+     **/
+    reserveIds: GenericTxCall<
+      (count: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'DummyDim';
+          palletCall: {
+            name: 'ReserveIds';
+            params: { count: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Renew a personal ID. The ID must not be in use.
+     *
+     * @param {bigint} id
+     **/
+    renewIdReservation: GenericTxCall<
+      (id: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'DummyDim';
+          palletCall: {
+            name: 'RenewIdReservation';
+            params: { id: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Cancel a personal ID reservation.
+     *
+     * @param {bigint} id
+     **/
+    cancelIdReservation: GenericTxCall<
+      (id: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'DummyDim';
+          palletCall: {
+            name: 'CancelIdReservation';
+            params: { id: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Grant personhood for a list of candidates that have reserved personal IDs.
+     *
+     * @param {Array<[bigint, FixedBytes<32>]>} idsAndKeys
+     **/
+    recognizePersonhood: GenericTxCall<
+      (idsAndKeys: Array<[bigint, FixedBytes<32>]>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'DummyDim';
+          palletCall: {
+            name: 'RecognizePersonhood';
+            params: { idsAndKeys: Array<[bigint, FixedBytes<32>]> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Suspend the personhood of a list of recognized people. The people must not currently be
+     * suspended.
+     *
+     * @param {Array<bigint>} ids
+     **/
+    suspendPersonhood: GenericTxCall<
+      (ids: Array<bigint>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'DummyDim';
+          palletCall: {
+            name: 'SuspendPersonhood';
+            params: { ids: Array<bigint> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Resume someone's personhood. The person must currently be suspended.
+     *
+     * @param {bigint} id
+     **/
+    resumePersonhood: GenericTxCall<
+      (id: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'DummyDim';
+          palletCall: {
+            name: 'ResumePersonhood';
+            params: { id: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Start a mutation session in the underlying `People` interface. This call does not check
+     * whether a mutation session is already ongoing and can start new sessions.
+     *
+     **/
+    startMutationSession: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'DummyDim';
+          palletCall: {
+            name: 'StartMutationSession';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * End a mutation session in the underlying `People` interface. This call can end multiple
+     * mutation sessions, even ones not started by this pallet.
+     *
+     * This call will fail if no mutation session is ongoing.
+     *
+     **/
+    endMutationSession: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'DummyDim';
+          palletCall: {
+            name: 'EndMutationSession';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `PeopleLite`'s transaction calls
+   **/
+  peopleLite: {
+    /**
+     * Grant some attestation allowance to an account so they can attest people.
+     *
+     * The origin must be `AttestationAllowanceManager`.
+     *
+     * - `account`: The account to grant attestations to.
+     * - `count`: The number of attestations to grant.
+     *
+     * @param {AccountId32Like} account
+     * @param {number} count
+     **/
+    increaseAttestationAllowance: GenericTxCall<
+      (
+        account: AccountId32Like,
+        count: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PeopleLite';
+          palletCall: {
+            name: 'IncreaseAttestationAllowance';
+            params: { account: AccountId32Like; count: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clear all attestation allowance for an account.
+     *
+     * The origin must be `AttestationAllowanceManager`.
+     *
+     * - `account`: The account to remove all attestations from.
+     *
+     * @param {AccountId32Like} account
+     **/
+    clearAttestationAllowance: GenericTxCall<
+      (account: AccountId32Like) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PeopleLite';
+          palletCall: {
+            name: 'ClearAttestationAllowance';
+            params: { account: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Attest an account.
+     *
+     * The origin must be signed by an account and have some attestation allowance left.
+     *
+     * The authority will have to get two signatures from the user:
+     * - one created using their account key attesting to the ownership of the `candidate`
+     * account;
+     * - one created using their ring-vrf key attesting to the ownership of the `ring_vrf_key`
+     * key.
+     *
+     * The message to be signed by both keys from which the signatures are generated is created
+     * by concatenating the bytes "pop:people-lite:register using" with the encoded bytes of
+     * the user's account (`candidate`), and the encoded bytes of the ring VRF key
+     * (`ring_vrf_key`).
+     *
+     * On success, this call:
+     * - stores lite registration data in `LitePeople`,
+     * - adds the user's ring VRF key to the lite member collection.
+     *
+     * The lite member collection must already have been created (via the
+     * `migration::CreateLitePeopleCollection` runtime upgrade or
+     * [`Call::create_lite_people_collection`]).
+     *
+     * - `candidate`: The candidate to be recognized as a lite person.
+     * - `candidate_signature`: The signature, provided by the candidate, to allow the attester
+     * to complete the registration process on their behalf.
+     * - `ring_vrf_key`: The ring VRF key to be associated with the lite person.
+     * - `ring_vrf_key_signature`: The ring VRF signature, provided by the candidate, to allow
+     * the attester to complete the registration process. This also prove the ownership of
+     * the ring VRF key by the candidate.
+     * - consumer_registration: Optional parameter which can contain the necessary information
+     * to forward a consumer registration request to the `LiteConsumerRegistrar` service. If
+     * present, it also contains a signature created by the user in order to validate the
+     * intent. More information on the signing payload generation available in
+     * [types::LiteConsumerRegistrationParams::signing_payload].
+     *
+     * @param {AccountId32Like} candidate
+     * @param {SpRuntimeMultiSignature} candidateSignature
+     * @param {FixedBytes<32>} ringVrfKey
+     * @param {FixedBytes<64>} proofOfOwnership
+     * @param {IndivPalletPeopleLiteLiteConsumerRegistrationParams | undefined} consumerRegistration
+     **/
+    attest: GenericTxCall<
+      (
+        candidate: AccountId32Like,
+        candidateSignature: SpRuntimeMultiSignature,
+        ringVrfKey: FixedBytes<32>,
+        proofOfOwnership: FixedBytes<64>,
+        consumerRegistration: IndivPalletPeopleLiteLiteConsumerRegistrationParams | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PeopleLite';
+          palletCall: {
+            name: 'Attest';
+            params: {
+              candidate: AccountId32Like;
+              candidateSignature: SpRuntimeMultiSignature;
+              ringVrfKey: FixedBytes<32>;
+              proofOfOwnership: FixedBytes<64>;
+              consumerRegistration: IndivPalletPeopleLiteLiteConsumerRegistrationParams | undefined;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Register as a lite person by paying the configured native registration fee.
+     *
+     * The origin must be the candidate's signed account. The candidate proves ownership of the
+     * `ring_vrf_key` by signing the same registration message used by [`Self::attest`].
+     *
+     * On success, this call transfers the configured fee to the pallet pot, stores lite
+     * registration data in `LitePeople` and adds the ring VRF key to the lite member
+     * collection. The fee is not refunded.
+     *
+     * The lite member collection must already have been created via the
+     * `migration::CreateLitePeopleCollection` runtime upgrade or
+     * [`Call::create_lite_people_collection`].
+     *
+     * - `ring_vrf_key`: The ring VRF key to be associated with the lite person.
+     * - `proof_of_ownership`: The ring VRF signature proving ownership of `ring_vrf_key`.
+     * - `consumer_registration`: Optional parameters to register the candidate as a lite
+     * consumer. The request must contain a signature over the usual consumer payload with
+     * the signed candidate account in both the account and verifier positions.
+     *
+     * @param {FixedBytes<32>} ringVrfKey
+     * @param {FixedBytes<64>} proofOfOwnership
+     * @param {IndivPalletPeopleLiteLiteConsumerRegistrationParams | undefined} consumerRegistration
+     **/
+    registerWithFee: GenericTxCall<
+      (
+        ringVrfKey: FixedBytes<32>,
+        proofOfOwnership: FixedBytes<64>,
+        consumerRegistration: IndivPalletPeopleLiteLiteConsumerRegistrationParams | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PeopleLite';
+          palletCall: {
+            name: 'RegisterWithFee';
+            params: {
+              ringVrfKey: FixedBytes<32>;
+              proofOfOwnership: FixedBytes<64>;
+              consumerRegistration: IndivPalletPeopleLiteLiteConsumerRegistrationParams | undefined;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     * @param {PeoplePolkadotRuntimeRuntimeCallLike} call
+     **/
+    dispatchAsSigner: GenericTxCall<
+      (call: PeoplePolkadotRuntimeRuntimeCallLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PeopleLite';
+          palletCall: {
+            name: 'DispatchAsSigner';
+            params: { call: PeoplePolkadotRuntimeRuntimeCallLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the account associated with a lite alias.
+     *
+     * The call is valid from `valid_at_block` until
+     * `valid_at_block + account_setup_block_tolerance`.
+     *
+     * This call is authorized through the `AsLiteAliasWithProof` variant of the
+     * `PeopleLiteAuth` transaction extension, which provides no nonce-based replay
+     * protection. Replay is only prevented for as long as the alias still points at the
+     * account this call sets. As soon as the alias is pointed at a different account (by
+     * another `set_alias_account`), this call becomes replayable again until its validity
+     * period elapses. Consequently, if 2 such transactions setting 2 different accounts have
+     * overlapping validity periods, they can be replayed against each other indefinitely for
+     * the duration of the overlap. To avoid this, the caller must not have 2 such
+     * transactions alive (within their validity period) at the same time.
+     *
+     * @param {AccountId32Like} account
+     * @param {number} validAtBlock
+     **/
+    setAliasAccount: GenericTxCall<
+      (
+        account: AccountId32Like,
+        validAtBlock: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PeopleLite';
+          palletCall: {
+            name: 'SetAliasAccount';
+            params: { account: AccountId32Like; validAtBlock: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     *
+     **/
+    unsetAliasAccount: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PeopleLite';
+          palletCall: {
+            name: 'UnsetAliasAccount';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Create the lite people collection.
+     *
+     * This call is valid only if the collection doesn't exist yet. Once created,
+     * this call cannot be executed again.
+     *
+     * The collection is created with a fixed configuration:
+     * - Owner: Configured via `CollectionOwner` type
+     * - Onboarding size: `LiteOnboardingSize`
+     * - Mode: `AppendOnly`
+     * - Ring size: `LiteRingExponent`
+     *
+     **/
+    createLitePeopleCollection: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PeopleLite';
+          palletCall: {
+            name: 'CreateLitePeopleCollection';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Resources`'s transaction calls
+   **/
+  resources: {
+    /**
+     * Register a lite person as a consumer.
+     *
+     * @param {FixedBytes<65>} identifierKey
+     * @param {BytesLike} username
+     * @param {BytesLike | undefined} reservedUsername
+     **/
+    registerLitePerson: GenericTxCall<
+      (
+        identifierKey: FixedBytes<65>,
+        username: BytesLike,
+        reservedUsername: BytesLike | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Resources';
+          palletCall: {
+            name: 'RegisterLitePerson';
+            params: { identifierKey: FixedBytes<65>; username: BytesLike; reservedUsername: BytesLike | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Register a proven person as a consumer.
+     *
+     * The person must link a previously recognized lite identity, which will be upgraded to a
+     * full person consumer. In order to prove they hold the lite identity they want to link,
+     * users must provide a `lite_identity_proof` signature, created by signing the alias bytes
+     * using their lite consumer account.
+     *
+     * The consumer can choose if they want to have a new username or use an existing
+     * reservation made in the name of the lite consumer who will be linked.
+     *
+     * @param {AccountId32Like} linkedLiteIdentity
+     * @param {SpRuntimeMultiSignature} liteIdentityProof
+     * @param {IndivPalletResourcesPersonalUsernameChoice} usernameChoice
+     **/
+    registerPerson: GenericTxCall<
+      (
+        linkedLiteIdentity: AccountId32Like,
+        liteIdentityProof: SpRuntimeMultiSignature,
+        usernameChoice: IndivPalletResourcesPersonalUsernameChoice,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Resources';
+          palletCall: {
+            name: 'RegisterPerson';
+            params: {
+              linkedLiteIdentity: AccountId32Like;
+              liteIdentityProof: SpRuntimeMultiSignature;
+              usernameChoice: IndivPalletResourcesPersonalUsernameChoice;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Update a person's authorization by ensuring they can still authenticate as people.
+     *
+     * This call must be performed at least `MinPersonAuthUpdateInterval` seconds after the
+     * last update in order to prevent spam.
+     *
+     **/
+    touchPersonAuthorization: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Resources';
+          palletCall: {
+            name: 'TouchPersonAuthorization';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove an expired entry from a username reservation queue. The target entry is
+     * identified by `account` and can be at any position in the queue.
+     * Each call removes exactly one entry, so it must be called repeatedly to
+     * clear multiple expired reservations.
+     *
+     * This is a permissionless call; the origin must be authorized. The `account`
+     * parameter is also used for transaction pool deduplication, allowing parallel
+     * submissions that target different expired entries in the same queue.
+     *
+     * @param {BytesLike} username
+     * @param {AccountId32Like} account
+     **/
+    removeExpiredUsernameReservation: GenericTxCall<
+      (
+        username: BytesLike,
+        account: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Resources';
+          palletCall: {
+            name: 'RemoveExpiredUsernameReservation';
+            params: { username: BytesLike; account: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Update the communication identifier key of a consumer.
+     *
+     * The origin must be the account registered for that consumer, regardless of their
+     * credibility.
+     *
+     * @param {FixedBytes<65>} identifierKey
+     **/
+    updateIdentifierKey: GenericTxCall<
+      (identifierKey: FixedBytes<65>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Resources';
+          palletCall: {
+            name: 'UpdateIdentifierKey';
+            params: { identifierKey: FixedBytes<65> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the duration for which a username reservation is valid, in seconds.
+     *
+     * The origin must be root.
+     *
+     * @param {bigint} duration
+     **/
+    setUsernameReservationDuration: GenericTxCall<
+      (duration: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Resources';
+          palletCall: {
+            name: 'SetUsernameReservationDuration';
+            params: { duration: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Demote a full person to a lite person after their authorization has expired.
+     *
+     * This is a permissionless call; the origin must be authorized.
+     *
+     * @param {AccountId32Like} account
+     **/
+    demoteAuthExpired: GenericTxCall<
+      (account: AccountId32Like) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Resources';
+          palletCall: {
+            name: 'DemoteAuthExpired';
+            params: { account: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Associate a statement account with a notification context sequence.
+     *
+     * The associated account can submit statements while this notification registration is
+     * active.
+     * The origin must be `Origin::NotificationAlias`, created by the `AsResources`
+     * (`RegisterNotificationWithProof(..)`) transaction extension after proof validation.
+     * On success, increases statement allowance and stores registration state
+     * `{account_id, reference}`.
+     *
+     * Parameters:
+     * * `reference`: notification period/sequence pair.
+     * - `reference.period` must be the current statement-store period.
+     * - `reference.seq` must be in `0..=NotificationSlotsPerPeriod`.
+     * * `account_id`: statement account to authorize. Must not already be used by another
+     * notification registration.
+     *
+     * @param {IndivPalletResourcesNotificationReference} reference
+     * @param {AccountId32Like} accountId
+     **/
+    setNotificationStatementAccountForSequence: GenericTxCall<
+      (
+        reference: IndivPalletResourcesNotificationReference,
+        accountId: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Resources';
+          palletCall: {
+            name: 'SetNotificationStatementAccountForSequence';
+            params: { reference: IndivPalletResourcesNotificationReference; accountId: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clear a stale notification registration and revoke its statement allowance.
+     *
+     * This is a permissionless call; the origin must be authorized.
+     * Succeeds only when the registration's period-derived expiry has elapsed.
+     * On success, removes notification registration state and decreases statement allowance.
+     *
+     * Parameters:
+     * * `account`: statement account previously associated with a notification registration.
+     * * `seq`: notification sequence to clear. Must match stored registration sequence and be
+     * in `0..=NotificationSlotsPerPeriod`.
+     *
+     * @param {AccountId32Like} account
+     * @param {number} seq
+     **/
+    clearExpiredNotificationSequence: GenericTxCall<
+      (
+        account: AccountId32Like,
+        seq: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Resources';
+          palletCall: {
+            name: 'ClearExpiredNotificationSequence';
+            params: { account: AccountId32Like; seq: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Claim an anonymous statement store allowance for a target account.
+     *
+     * The origin must be `Origin::StmtStoreAlias`, produced by the `AsResources`
+     * (`RegisterStatementStoreAllowance(..)`) transaction extension after proof validation.
+     * On success, increases the statement allowance for `target_account` and stores the
+     * mapping in `StatementStoreAllowances`.
+     *
+     * Parameters:
+     * * `period`: day number since Unix epoch. Must be in the accepted period window.
+     * * `seq`: slot number within the period, bounded by the collection-specific limit.
+     * * `target_account`: statement account to authorize.
+     *
+     * @param {number} period
+     * @param {number} seq
+     * @param {AccountId32Like} targetAccount
+     **/
+    setStatementStoreAccount: GenericTxCall<
+      (
+        period: number,
+        seq: number,
+        targetAccount: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Resources';
+          palletCall: {
+            name: 'SetStatementStoreAccount';
+            params: { period: number; seq: number; targetAccount: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove expired statement store allowances for a past period.
+     *
+     * This is a permissionless call; the origin must be authorized.
+     * Removes up to `StmtStoreCleanupLimit` entries from `StatementStoreAllowances` for
+     * the given `period`, decreasing the statement allowance for each removed account.
+     *
+     * @param {number} period
+     * @param {FixedBytes<32>} firstEntry
+     **/
+    clearExpiredStmtStoreAllowances: GenericTxCall<
+      (
+        period: number,
+        firstEntry: FixedBytes<32>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Resources';
+          palletCall: {
+            name: 'ClearExpiredStmtStoreAllowances';
+            params: { period: number; firstEntry: FixedBytes<32> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Claim long-term storage on a remote chain using an anonymous membership proof.
+     *
+     * The origin must be `Origin::LongTermStorageClaim(alias, collection)`, created by the
+     * `AsResources` (`ClaimLongTermStorage(..)`) transaction extension after ring-VRF proof
+     * validation.
+     *
+     * Parameters:
+     * * `period`: the claiming period. Must be the current period or the previous one if
+     * within the grace window.
+     * * `counter`: the claim counter within the period. Must be less than
+     * `LongTermStorageClaimsPerPeriod`. Each counter produces a distinct alias.
+     * * `account_id`: the account to authorize for storage on the remote chain.
+     *
+     * @param {number} period
+     * @param {number} counter
+     * @param {AccountId32Like} accountId
+     **/
+    claimLongTermStorage: GenericTxCall<
+      (
+        period: number,
+        counter: number,
+        accountId: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Resources';
+          palletCall: {
+            name: 'ClaimLongTermStorage';
+            params: { period: number; counter: number; accountId: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clear spent long-term storage aliases for an expired period.
+     *
+     * This is a permissionless call authorized via the `authorize` attribute. It can be
+     * called by anyone once a period has fully expired (past the grace window).
+     *
+     * Parameters:
+     * * `period`: the expired period to clear aliases for.
+     * * `limit`: the maximum number of entries to remove in this call.
+     *
+     * @param {number} period
+     * @param {number} limit
+     **/
+    clearExpiredLongTermStorageAliases: GenericTxCall<
+      (
+        period: number,
+        limit: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Resources';
+          palletCall: {
+            name: 'ClearExpiredLongTermStorageAliases';
+            params: { period: number; limit: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `ChunksManager`'s transaction calls
+   **/
+  chunksManager: {
+    /**
+     * Adds a new page of chunks.
+     *
+     * The hash of the chunks must match the hash stored on-chain in `ChunkPageHashes`.
+     * The call will fail if the page already exists on-chain.
+     *
+     * @param {IndivSupportRealityRingExponent} ringExponent
+     * @param {number} pageIndex
+     * @param {BytesLike} encodedChunks
+     **/
+    addChunks: GenericTxCall<
+      (
+        ringExponent: IndivSupportRealityRingExponent,
+        pageIndex: number,
+        encodedChunks: BytesLike,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'ChunksManager';
+          palletCall: {
+            name: 'AddChunks';
+            params: { ringExponent: IndivSupportRealityRingExponent; pageIndex: number; encodedChunks: BytesLike };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Sets the expected hashes for chunk pages for a given ring exponent.
+     *
+     * Allows setting the expected hashes that chunks must match when added via
+     * `add_chunks`.
+     *
+     * The origin must be `ManagerOrigin` or root.
+     *
+     * @param {IndivSupportRealityRingExponent} ringExponent
+     * @param {Array<FixedBytes<32>>} pageHashes
+     **/
+    setChunkPageHashes: GenericTxCall<
+      (
+        ringExponent: IndivSupportRealityRingExponent,
+        pageHashes: Array<FixedBytes<32>>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'ChunksManager';
+          palletCall: {
+            name: 'SetChunkPageHashes';
+            params: { ringExponent: IndivSupportRealityRingExponent; pageHashes: Array<FixedBytes<32>> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Members`'s transaction calls
+   **/
+  members: {
+    /**
+     * Merge the members in two rings into a single, new ring. In order for the rings to be
+     * eligible for merging, they must both be non-empty existing rings, be below 1/2 of max
+     * capacity, have no pending suspensions and not be the top ring used for onboarding.
+     *
+     * Only [`RingMode::Flexible`] collections can be merged. Their ring size never exceeds
+     * `MaxFlexibleRingExponent`, so all keys of a ring live on page 0.
+     *
+     * @param {FixedBytes<32>} identifier
+     * @param {number} baseRingIndex
+     * @param {number} targetRingIndex
+     **/
+    mergeRings: GenericTxCall<
+      (
+        identifier: FixedBytes<32>,
+        baseRingIndex: number,
+        targetRingIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Members';
+          palletCall: {
+            name: 'MergeRings';
+            params: { identifier: FixedBytes<32>; baseRingIndex: number; targetRingIndex: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Force set the onboarding size for a collection. This call requires root privileges.
+     *
+     * @param {FixedBytes<32>} identifier
+     * @param {number} onboardingSize
+     **/
+    setOnboardingSize: GenericTxCall<
+      (
+        identifier: FixedBytes<32>,
+        onboardingSize: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Members';
+          palletCall: {
+            name: 'SetOnboardingSize';
+            params: { identifier: FixedBytes<32>; onboardingSize: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Allow a member waiting in the onboarding queue to include themselves into a ring
+     * after enough time has passed. This bypasses the normal cohort-based onboarding size
+     * requirement.
+     *
+     * This call must be dispatched with a `SelfInclude` origin, authenticated by the
+     * `AsMember` transaction extension. The rings must be in append-only mode.
+     *
+     * The `call_valid_at` parameter dictates the time window in which this transaction is
+     * valid and represents the timestamp (in seconds since the UNIX epoch) when this call
+     * becomes valid.
+     *
+     * @param {FixedBytes<32>} identifier
+     * @param {FixedBytes<32>} member
+     * @param {bigint} callValidAt
+     **/
+    selfInclude: GenericTxCall<
+      (
+        identifier: FixedBytes<32>,
+        member: FixedBytes<32>,
+        callValidAt: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Members';
+          palletCall: {
+            name: 'SelfInclude';
+            params: { identifier: FixedBytes<32>; member: FixedBytes<32>; callValidAt: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Build a ring root for a specific ring in a collection.
+     *
+     * Submitted by the OCW with a `to_include` snapshot from
+     * [`Pallet::should_build_ring`]. Leftovers from later onboarding are picked up
+     * on the next OCW tick, or by the member via [`Self::self_include`] when
+     * cohort gating stalls onboarding.
+     *
+     * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+     * previous one is banned by the pool because it was validated against a different state
+     * after a re-org. As the accepted transaction source is only local, it cannot be used to
+     * spam the pool.
+     *
+     * @param {FixedBytes<32>} identifier
+     * @param {number} ringIndex
+     * @param {IndivSupportRealityRingExponent} ringExponent
+     * @param {number | undefined} revision
+     * @param {number} toInclude
+     * @param {number} discriminator
+     **/
+    buildRingAuthorized: GenericTxCall<
+      (
+        identifier: FixedBytes<32>,
+        ringIndex: number,
+        ringExponent: IndivSupportRealityRingExponent,
+        revision: number | undefined,
+        toInclude: number,
+        discriminator: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Members';
+          palletCall: {
+            name: 'BuildRingAuthorized';
+            params: {
+              identifier: FixedBytes<32>;
+              ringIndex: number;
+              ringExponent: IndivSupportRealityRingExponent;
+              revision: number | undefined;
+              toInclude: number;
+              discriminator: number;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Onboard members from the onboarding queue for a specific collection.
+     *
+     * Submitted by the offchain worker.
+     *
+     * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+     * previous one is banned by the pool because it was validated against a different state
+     * after a re-org. As the accepted transaction source is only local, it cannot be used to
+     * spam the pool.
+     *
+     * @param {FixedBytes<32>} identifier
+     * @param {number} ringIndex
+     * @param {number} head
+     * @param {FixedBytes<32> | undefined} firstMember
+     * @param {number} discriminator
+     **/
+    onboardMembersAuthorized: GenericTxCall<
+      (
+        identifier: FixedBytes<32>,
+        ringIndex: number,
+        head: number,
+        firstMember: FixedBytes<32> | undefined,
+        discriminator: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Members';
+          palletCall: {
+            name: 'OnboardMembersAuthorized';
+            params: {
+              identifier: FixedBytes<32>;
+              ringIndex: number;
+              head: number;
+              firstMember: FixedBytes<32> | undefined;
+              discriminator: number;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Merge the top two onboarding queue pages for a specific collection.
+     *
+     * Submitted by the offchain worker.
+     *
+     * @param {FixedBytes<32>} identifier
+     * @param {number} initialHead
+     * @param {number} newHead
+     **/
+    mergeQueuePagesAuthorized: GenericTxCall<
+      (
+        identifier: FixedBytes<32>,
+        initialHead: number,
+        newHead: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Members';
+          palletCall: {
+            name: 'MergeQueuePagesAuthorized';
+            params: { identifier: FixedBytes<32>; initialHead: number; newHead: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove suspended keys from a specific ring in a collection.
+     *
+     * Submitted by the offchain worker.
+     *
+     * `discriminator` is any `u32`; it lets the OCW send a different transaction when a
+     * previous one is banned by the pool because it was validated against a different state
+     * after a re-org. As the accepted transaction source is only local, it cannot be used to
+     * spam the pool.
+     *
+     * @param {FixedBytes<32>} identifier
+     * @param {number} ringIndex
+     * @param {number | undefined} revision
+     * @param {number} discriminator
+     **/
+    removeSuspendedKeysAuthorized: GenericTxCall<
+      (
+        identifier: FixedBytes<32>,
+        ringIndex: number,
+        revision: number | undefined,
+        discriminator: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Members';
+          palletCall: {
+            name: 'RemoveSuspendedKeysAuthorized';
+            params: {
+              identifier: FixedBytes<32>;
+              ringIndex: number;
+              revision: number | undefined;
+              discriminator: number;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Delete a page for a specific ring in a collection.
+     *
+     * Submitted by the offchain worker.
+     *
+     * @param {FixedBytes<32>} identifier
+     * @param {number} ringIndex
+     * @param {number} pageIndex
+     **/
+    deleteRingPageAuthorized: GenericTxCall<
+      (
+        identifier: FixedBytes<32>,
+        ringIndex: number,
+        pageIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Members';
+          palletCall: {
+            name: 'DeleteRingPageAuthorized';
+            params: { identifier: FixedBytes<32>; ringIndex: number; pageIndex: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Enqueue a ring for deletion as part of collection deletion.
+     *
+     * Archives the ring root, notifies subscribers, removes ring metadata, and
+     * enqueues ring pages into `RingDeletionQueue` for processing by
+     * `delete_ring_page_authorized`.
+     *
+     * Submitted by the offchain worker.
+     *
+     * @param {FixedBytes<32>} identifier
+     * @param {number} ringIndex
+     **/
+    enqueueRingDeletionAuthorized: GenericTxCall<
+      (
+        identifier: FixedBytes<32>,
+        ringIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Members';
+          palletCall: {
+            name: 'EnqueueRingDeletionAuthorized';
+            params: { identifier: FixedBytes<32>; ringIndex: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Delete an onboarding queue page as part of collection deletion.
+     *
+     * Removes all `Members` entries for the members in the page, then removes
+     * the page itself. Can only proceed when all rings and ring pages have been
+     * fully deleted.
+     *
+     * Submitted by the offchain worker.
+     *
+     * @param {FixedBytes<32>} identifier
+     * @param {number} pageIndex
+     **/
+    deleteOnboardingQueuePageAuthorized: GenericTxCall<
+      (
+        identifier: FixedBytes<32>,
+        pageIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Members';
+          palletCall: {
+            name: 'DeleteOnboardingQueuePageAuthorized';
+            params: { identifier: FixedBytes<32>; pageIndex: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Finalize collection deletion.
+     *
+     * Removes all remaining per-collection storage and the owner's identifier
+     * reference. Can only proceed when all rings, ring pages, and onboarding
+     * queue pages have been fully deleted.
+     *
+     * Submitted by the offchain worker.
+     *
+     * @param {FixedBytes<32>} identifier
+     **/
+    finalizeCollectionDeletionAuthorized: GenericTxCall<
+      (identifier: FixedBytes<32>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Members';
+          palletCall: {
+            name: 'FinalizeCollectionDeletionAuthorized';
+            params: { identifier: FixedBytes<32> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove orphaned `Members` entries for a suspended collection.
+     *
+     * Suspended members can leave entries in `Members` that outlive their ring, so before a
+     * collection can be finalized these must be drained. Drains up to
+     * `ORPHANED_MEMBERS_REMOVAL_LIMIT` entries for `identifier`. The offchain worker
+     * resubmits until the prefix is empty, after which the collection deletion can be
+     * finalized.
+     *
+     * Submitted by the offchain worker.
+     *
+     * @param {FixedBytes<32>} identifier
+     **/
+    removeOrphanedMembersAuthorized: GenericTxCall<
+      (identifier: FixedBytes<32>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Members';
+          palletCall: {
+            name: 'RemoveOrphanedMembersAuthorized';
+            params: { identifier: FixedBytes<32> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Mark a ring as stale so the offchain worker will rebuild it.
+     *
+     * Anyone can submit this transaction if the ring has members that are not
+     * yet included in the root (`total > included`) and the ring is not already
+     * marked stale. This is a recovery mechanism in case the `StaleRings` entry
+     * was lost or never inserted.
+     *
+     * @param {FixedBytes<32>} identifier
+     * @param {number} ringIndex
+     **/
+    markRingStaleAuthorized: GenericTxCall<
+      (
+        identifier: FixedBytes<32>,
+        ringIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Members';
+          palletCall: {
+            name: 'MarkRingStaleAuthorized';
+            params: { identifier: FixedBytes<32>; ringIndex: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clean up expired old ring roots.
+     *
+     * Removes up to `limit` old ring roots for the given ring in the given
+     * collection.
+     *
+     * The transaction source must be `Local` or `InBlock`.
+     *
+     * This is a maintenance call. Submitted by the offchain worker.
+     *
+     * @param {FixedBytes<32>} identifier
+     * @param {number} ringIndex
+     * @param {number} limit
+     **/
+    cleanUpOldRootsAuthorized: GenericTxCall<
+      (
+        identifier: FixedBytes<32>,
+        ringIndex: number,
+        limit: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Members';
+          palletCall: {
+            name: 'CleanUpOldRootsAuthorized';
+            params: { identifier: FixedBytes<32>; ringIndex: number; limit: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Coinage`'s transaction calls
+   **/
+  coinage: {
+    /**
+     * Split a coin into multiple coins.
+     *
+     * The origin must be a [Origin::Coin], which can be obtained from the transaction
+     * extension [`AsCoinage`](crate::extension::AsCoinage).
+     *
+     * The call is free and ages the resulting coins by one.
+     *
+     * The `split_into` parameter contains a vector of pairs, each pair containing a coin
+     * value and a list of destination account ids. For each pair, a new coin with the given
+     * value is created for each destination account id.
+     *
+     * Validity requirements:
+     * (an invalid transaction won't be included in a block, the coin is not consumed)
+     * * The coin's age must be less than [Config::MaximumAge].
+     * * The denomination must be within the bounds defined by [Config::MinimumExponent] and
+     * [Config::MaximumExponent].
+     * * The total value of the new coins must equal the value of the origin coin.
+     * * The number of outputs must not exceed [Config::MaxSplitOutputs].
+     * * The age of the new coins is set to the age of the origin coin plus one.
+     * * Each destination account must not already have a coin.
+     *
+     * @param {Array<[number, Array<AccountId32Like>]>} splitInto
+     **/
+    split: GenericTxCall<
+      (splitInto: Array<[number, Array<AccountId32Like>]>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'Split';
+            params: { splitInto: Array<[number, Array<AccountId32Like>]> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Transfer a coin to another account.
+     *
+     * The origin must be a [Origin::Coin], which can be obtained from the transaction
+     * extension [`AsCoinage`](crate::extension::AsCoinage).
+     *
+     * The call is free and ages the resulting coin by one.
+     *
+     * Validity requirements:
+     * (an invalid transaction won't be included in a block, the coin is not consumed)
+     * * The destination account must not already have a coin.
+     * * The coin's age must be less than [Config::MaximumAge].
+     *
+     * @param {AccountId32Like} to
+     **/
+    transfer: GenericTxCall<
+      (to: AccountId32Like) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'Transfer';
+            params: { to: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Load coin into a recycler.
+     *
+     * The origin must be a [Origin::Coin], which can be obtained from the transaction
+     * extension [`AsCoinage`](crate::extension::AsCoinage).
+     *
+     * The call is free.
+     *
+     * The `member_key` parameter is the member key to be included in the recycler, and whose
+     * alias is used to unload from the recycler.
+     *
+     * Validity requirements:
+     * (an invalid transaction won't be included in a block, the coin is not consumed)
+     * * The `member_key` must not already be used in another recycler.
+     * * The `member_key` must be valid (i.e. well formed).
+     * * The `proof_of_ownership` must be a valid signature of the coin's account id by the
+     * `member_key`.
+     * * The recycler collection for the coin's value must already exist
+     * * On a sponsored instance, the pot's free balance must cover the loaded key's deposit.
+     *
+     * @param {FixedBytes<32>} memberKey
+     * @param {FixedBytes<64>} proofOfOwnership
+     **/
+    loadRecyclerWithCoin: GenericTxCall<
+      (
+        memberKey: FixedBytes<32>,
+        proofOfOwnership: FixedBytes<64>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'LoadRecyclerWithCoin';
+            params: { memberKey: FixedBytes<32>; proofOfOwnership: FixedBytes<64> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Load external asset into a recycler.
+     *
+     * The origin must be a signed origin.
+     *
+     * The transaction fee is refunded.
+     *
+     * The `preservation` parameter indicates how the asset transfer should preserve the
+     * signer's account.
+     *
+     * The `instance_id` parameter indicates which coinage instance to load into, and hence
+     * which underlying asset is transferred.
+     *
+     * The `value` parameter indicates the denomination to be loaded into the recycler.
+     * The equivalent amount of the underlying asset is transferred from the signer to
+     * the pallet account.
+     *
+     * The `member_key` parameter is the member key to be included in the recycler, and whose
+     * alias is used to unload from the recycler.
+     *
+     * The `proof_of_ownership` parameter is the signature of the signer's account id by the
+     * `member_key`.
+     *
+     * Requirements:
+     * * The `instance_id` must refer to an existing instance.
+     * * The `member_key` must not already be used in another recycler.
+     * * The `member_key` must be valid (i.e. well formed).
+     * * The `value` must be within the bounds defined by [Config::MinimumExponent] and
+     * [Config::MaximumExponent].
+     * * The signer must have enough balance of the underlying asset to cover the equivalent
+     * amount for the given denomination.
+     * * The `proof_of_ownership` must be a valid signature of the signer's account id by the
+     * `member_key`.
+     * * On a sponsored instance, the pot's free balance must cover the loaded key's deposit.
+     *
+     * @param {number} instanceId
+     * @param {IndivPalletCoinageCodecPreservation} preservation
+     * @param {number} value
+     * @param {FixedBytes<32>} memberKey
+     * @param {FixedBytes<64>} proofOfOwnership
+     **/
+    loadRecyclerWithExternalAsset: GenericTxCall<
+      (
+        instanceId: number,
+        preservation: IndivPalletCoinageCodecPreservation,
+        value: number,
+        memberKey: FixedBytes<32>,
+        proofOfOwnership: FixedBytes<64>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'LoadRecyclerWithExternalAsset';
+            params: {
+              instanceId: number;
+              preservation: IndivPalletCoinageCodecPreservation;
+              value: number;
+              memberKey: FixedBytes<32>;
+              proofOfOwnership: FixedBytes<64>;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Load external asset into a recycler (infallible, validated unpaid variant).
+     *
+     * The origin must be [Origin::InfallibleUnpaidSigned], which can be obtained from the
+     * transaction extension variant
+     * [`AsCoinageInfo::InfallibleUnpaidSigned`](crate::extension::AsCoinageInfo::InfallibleUnpaidSigned).
+     *
+     * The transaction extension validation phase must ensure:
+     * - The `instance_id` refers to an existing instance.
+     * - The `member_key` is valid and not already used in another recycler.
+     * - The `proof_of_ownership` is a valid signature of the signer's account id by the
+     * `member_key`.
+     * - The `value` is within the bounds defined by [Config::MinimumExponent] and
+     * [Config::MaximumExponent], and can be losslessly converted to an asset amount.
+     * - The signer has enough balance of the underlying asset to cover the equivalent amount
+     * for the given denomination (respecting `preservation`).
+     * - The nonce is valid for replay protection.
+     * - The recycler collection for `instance_id` and `value` already exists.
+     * - On a sponsored instance, the pot's free balance covers the loaded key's deposit.
+     *
+     * The call is free.
+     *
+     * @param {number} instanceId
+     * @param {IndivPalletCoinageCodecPreservation} preservation
+     * @param {number} value
+     * @param {FixedBytes<32>} memberKey
+     * @param {FixedBytes<64>} proofOfOwnership
+     **/
+    loadRecyclerWithExternalAssetUnpaid: GenericTxCall<
+      (
+        instanceId: number,
+        preservation: IndivPalletCoinageCodecPreservation,
+        value: number,
+        memberKey: FixedBytes<32>,
+        proofOfOwnership: FixedBytes<64>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'LoadRecyclerWithExternalAssetUnpaid';
+            params: {
+              instanceId: number;
+              preservation: IndivPalletCoinageCodecPreservation;
+              value: number;
+              memberKey: FixedBytes<32>;
+              proofOfOwnership: FixedBytes<64>;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Batched variant of [`Self::load_recycler_with_external_asset_unpaid`].
+     *
+     * The origin must be [Origin::InfallibleUnpaidSigned], which can be obtained from the
+     * transaction extension variant
+     * [`AsCoinageInfo::InfallibleUnpaidSigned`](crate::extension::AsCoinageInfo::InfallibleUnpaidSigned).
+     * The extension validates each inner item and additionally checks within-batch
+     * member-key uniqueness and that the signer's balance covers the sum of all inner asset
+     * amounts.
+     *
+     * This call dispatches each inner load by re-running the same checks the extension
+     * just performed (see [`RecyclerManager::load`]). The redundancy matches the defensive
+     * pattern used by [`Self::load_recycler_with_external_asset_unpaid`]: a dispatch path
+     * that fails any of these checks is a logic bug in the extension, not a user error.
+     *
+     * The instance is fixed for the whole batch rather than per item, because the extension
+     * checks the signer's balance once against the summed cost of every item, which is only
+     * meaningful within one underlying asset.
+     *
+     * On a sponsored instance, the pot's free balance must cover the deposits of every key
+     * loaded here, the batch being charged as one.
+     *
+     * The call is free.
+     *
+     * @param {number} instanceId
+     * @param {Array<IndivPalletCoinageUnpaidLoadInput>} items
+     **/
+    loadRecyclerWithExternalAssetUnpaidBatch: GenericTxCall<
+      (
+        instanceId: number,
+        items: Array<IndivPalletCoinageUnpaidLoadInput>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'LoadRecyclerWithExternalAssetUnpaidBatch';
+            params: { instanceId: number; items: Array<IndivPalletCoinageUnpaidLoadInput> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unload a recycler to mint a new coin.
+     *
+     * The origin must be a [Origin::UnloadToken] with `fee: UnloadFee::Prepaid`, which can be
+     * obtained from the transaction extension [`AsCoinage`](crate::extension::AsCoinage) using
+     * `AsUnloadTokenPeople`,
+     * `AsUnloadTokenLitePeople`, or `AsUnloadTokenPaid` variants.
+     *
+     * This function allows a user to prove they own one or more coins in a recycler ring
+     * without revealing which specific coins they own. It consolidates one or multiple inputs
+     * into a single output coin.
+     *
+     * Parameters:
+     * * `aliases`: the list of aliases corresponding to the member keys included in the
+     * recycler. The proofs for these aliases are contained in the origin.
+     * * `instance_id`, `value` and `index`: identifies the recycler being unloaded.
+     * * `_revision`: the recycler revision used for the alias_proofs.
+     * * `to`: the destination account for the new coin.
+     *
+     * Requirements:
+     * * The origin must be [Origin::UnloadToken] with `fee: UnloadFee::Prepaid`.
+     * * The recycler identified by `instance_id`, `value` and `index` must exist.
+     * * The alias proofs provided in the origin must be valid for the recycler's revision.
+     * * The `aliases` provided must match the aliases derived from the proofs.
+     * * The aliases must not have been already unloaded from this recycler.
+     * * The number of aliases must be a power of two.
+     * * The resulting consolidated value must not exceed [Config::MaximumExponent].
+     *
+     * @param {number} instanceId
+     * @param {Array<FixedBytes<32>>} aliases
+     * @param {number} value
+     * @param {number} index
+     * @param {number} revision
+     * @param {AccountId32Like} to
+     **/
+    unloadRecyclerIntoCoin: GenericTxCall<
+      (
+        instanceId: number,
+        aliases: Array<FixedBytes<32>>,
+        value: number,
+        index: number,
+        revision: number,
+        to: AccountId32Like,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'UnloadRecyclerIntoCoin';
+            params: {
+              instanceId: number;
+              aliases: Array<FixedBytes<32>>;
+              value: number;
+              index: number;
+              revision: number;
+              to: AccountId32Like;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unload a recycler to withdraw the underlying external asset.
+     *
+     * The origin must be [Origin::UnloadToken], which can be obtained from the transaction
+     * extension [`AsCoinage`](crate::extension::AsCoinage).
+     *
+     * When `fee` is [UnloadFee::Prepaid] (via free or paid unload token), no fee is deducted.
+     * When `fee` is [UnloadFee::FromOutput], the fee is deducted from the unloaded assets:
+     * the asset is converted into the native currency, so the amount deducted depends on the
+     * market and is bounded by `max_fee`.
+     *
+     * This function allows a user to withdraw their coins back into the underlying
+     * asset (e.g., an external asset).
+     *
+     * Parameters:
+     * * `aliases`: the list of aliases corresponding to the member keys included in the
+     * recycler. The proofs for these aliases are contained in the origin.
+     * * `instance_id`, `value` and `index`: identifies the recycler being unloaded.
+     * * `_revision`: the recycler revision used for the alias_proofs.
+     * * `to`: the destination account for the underlying asset.
+     * * `max_fee`: the maximum amount of the unloaded asset the fee may consume. Whatever the
+     * fee does not consume goes to `to`. It is ignored for [UnloadFee::Prepaid], which takes
+     * no fee out of the output.
+     *
+     * Requirements:
+     * * The origin must be [Origin::UnloadToken].
+     * * The recycler identified by `instance_id`, `value` and `index` must exist.
+     * * The alias proofs provided in the origin must be valid for the recycler's revision.
+     * * The aliases must not have been already unloaded (except for the first one when `fee`
+     * is [UnloadFee::FromOutput], which was pre-marked in the extension).
+     *
+     * @param {number} instanceId
+     * @param {Array<FixedBytes<32>>} aliases
+     * @param {number} value
+     * @param {number} index
+     * @param {number} revision
+     * @param {AccountId32Like} to
+     * @param {bigint} maxFee
+     **/
+    unloadRecyclerIntoExternalAsset: GenericTxCall<
+      (
+        instanceId: number,
+        aliases: Array<FixedBytes<32>>,
+        value: number,
+        index: number,
+        revision: number,
+        to: AccountId32Like,
+        maxFee: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'UnloadRecyclerIntoExternalAsset';
+            params: {
+              instanceId: number;
+              aliases: Array<FixedBytes<32>>;
+              value: number;
+              index: number;
+              revision: number;
+              to: AccountId32Like;
+              maxFee: bigint;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Pay the fee to register a member key for a paid unload token using a coin.
+     *
+     * The origin must be a [Origin::Coin], which can be obtained from the transaction
+     * extension [`AsCoinage`](crate::extension::AsCoinage).
+     *
+     * The coin is consumed. The fee is deducted from the coin's value: the asset is converted
+     * into the native currency, which is transferred to [Config::FeeDestination]. The
+     * remaining value of the coin is destroyed.
+     *
+     * If the call fails, the origin coin is still consumed.
+     *
+     * To protect the user against varying fees, if the coin's value is less than the fee, the
+     * call is invalid (an invalid call never goes into a block).
+     *
+     * This is the one asset-paying call with no caller-settable bound on the fee, and it needs
+     * none: the coin is consumed whole either way, so its value is the bound, and whatever the
+     * conversion does not take is destroyed rather than returned. A caller who wants to bound
+     * what the fee costs pays for the token with
+     * [`Self::pay_for_recycler_unload_fee_token_with_external_asset`] instead.
+     *
+     * The `proof_of_ownership` is a signature of the caller's account ID by the `member_key`.
+     * This ensures the caller controls the member key to prevent front-running.
+     *
+     * Requirements:
+     * * The coin's age must be less than [Config::MaximumAge].
+     * * The denomination must be sufficient to cover the fee.
+     * * The `member_key` must be valid and not already used.
+     * * The `proof_of_ownership` must be valid.
+     *
+     * @param {FixedBytes<32>} memberKey
+     * @param {FixedBytes<64>} proofOfOwnership
+     **/
+    payForRecyclerUnloadFeeTokenWithCoin: GenericTxCall<
+      (
+        memberKey: FixedBytes<32>,
+        proofOfOwnership: FixedBytes<64>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'PayForRecyclerUnloadFeeTokenWithCoin';
+            params: { memberKey: FixedBytes<32>; proofOfOwnership: FixedBytes<64> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Pay the fee to register a member key for a paid unload token using the native currency.
+     *
+     * The origin must be Signed.
+     *
+     * This adds the `member_key` to a "paid unload token ring". Being part of this ring
+     * allows the user to later generate an `UnloadToken` to unload a recycler.
+     *
+     * The fee is transferred from the caller to [Config::FeeDestination].
+     *
+     * The `proof_of_ownership` is a signature of the caller's account ID by the `member_key`.
+     * This ensures the caller controls the member key to prevent front-running.
+     *
+     * Requirements:
+     * * The `member_key` must be valid and not already used.
+     * * The `proof_of_ownership` must be valid.
+     *
+     * @param {FixedBytes<32>} memberKey
+     * @param {FixedBytes<64>} proofOfOwnership
+     **/
+    payForRecyclerUnloadFeeTokenWithNative: GenericTxCall<
+      (
+        memberKey: FixedBytes<32>,
+        proofOfOwnership: FixedBytes<64>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'PayForRecyclerUnloadFeeTokenWithNative';
+            params: { memberKey: FixedBytes<32>; proofOfOwnership: FixedBytes<64> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Pay the fee to register a member key for a paid unload token using the underlying
+     * asset of the given instance.
+     *
+     * The origin must be Signed.
+     *
+     * This adds the `member_key` to a "paid unload token ring". Being part of this ring
+     * allows the user to later generate an `UnloadToken` to unload a recycler.
+     *
+     * The fee are charged in the underlying asset of the specified instance, and converted
+     * into the native currency to be transferred to the fee destination.
+     * `max_fee` bounds how much of the asset the conversion may take.
+     *
+     * The `proof_of_ownership` is a signature of the caller's account ID by the `member_key`.
+     * This ensures the caller controls the member key to prevent front-running.
+     *
+     * The `instance_id` only selects which instance's underlying asset the fee is paid in.
+     * The resulting token is not bound to that instance and can be consumed to unload any
+     * instance's recycler, which is why the fee is the same for all of them.
+     *
+     * Unlike the signed unload calls, this one is not pre-checked against `max_fee` during
+     * transaction validation and does not refund the weight it did not use: a conversion that
+     * moved past `max_fee` between the caller quoting it and the transaction being included
+     * fails the dispatch at the full benchmarked weight. Callers should leave headroom in
+     * `max_fee`.
+     *
+     * Requirements:
+     * * The `instance_id` must refer to an existing instance.
+     * * The `member_key` must be valid and not already used.
+     * * The `proof_of_ownership` must be valid.
+     * * `max_fee` must cover the converted fee.
+     *
+     * @param {number} instanceId
+     * @param {FixedBytes<32>} memberKey
+     * @param {FixedBytes<64>} proofOfOwnership
+     * @param {bigint} maxFee
+     **/
+    payForRecyclerUnloadFeeTokenWithExternalAsset: GenericTxCall<
+      (
+        instanceId: number,
+        memberKey: FixedBytes<32>,
+        proofOfOwnership: FixedBytes<64>,
+        maxFee: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'PayForRecyclerUnloadFeeTokenWithExternalAsset';
+            params: { instanceId: number; memberKey: FixedBytes<32>; proofOfOwnership: FixedBytes<64>; maxFee: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unload a recycler into a mixed output of external asset and freshly loaded coins.
+     *
+     * The origin must be [Origin::UnloadToken], which can be obtained from the transaction
+     * extension [`AsCoinage`](crate::extension::AsCoinage).
+     *
+     * This function allows a user to offboard part of the unloaded value into the underlying
+     * asset while reminting the rest as freshly loaded recycler coins.
+     *
+     * When `fee` is [UnloadFee::Prepaid], `external_asset_amount` is transferred as-is.
+     * When `fee` is [UnloadFee::FromOutput], the fee is deducted from the specified
+     * `external_asset_amount`, so the recipient receives the remainder. The asset is
+     * converted into the native currency to pay the fee, so the amount deducted depends on
+     * the market and is bounded by `max_fee`.
+     *
+     * Parameters:
+     * * `aliases`: the list of aliases corresponding to the member keys included in the
+     * recycler. The proofs for these aliases are contained in the origin.
+     * * `instance_id`, `value` and `index`: identifies the recycler being unloaded.
+     * * `revision`: the recycler revision used for the alias proofs.
+     * * `to`: the destination account for the external asset portion.
+     * * `external_asset_amount`: the gross asset portion to offboard from the unloaded value.
+     * * `loaded_coins`: the freshly loaded recycler coins to mint from the remaining unloaded
+     * value.
+     * * `max_fee`: the maximum amount of `external_asset_amount` the fee may consume. Whatever
+     * the fee does not consume goes to `to`. It is ignored for [UnloadFee::Prepaid], which
+     * takes no fee out of the output.
+     *
+     * The total unloaded value must always equal the asset portion plus the loaded-coin
+     * portion. In `FromOutput` mode, the asset portion must be large enough to cover the
+     * unload fee.
+     *
+     * Requirements:
+     * * The origin must be [Origin::UnloadToken].
+     * * The recycler identified by `instance_id`, `value` and `index` must exist.
+     * * The alias proofs provided in the origin must be valid for the recycler's revision.
+     * * The aliases must not have been already unloaded (except for the first one when `fee`
+     * is [UnloadFee::FromOutput], which was pre-marked in the extension).
+     * * `loaded_coins` must not be empty, and all loaded-coin member keys must be valid and
+     * unused.
+     * * The total unloaded value must equal `external_asset_amount` plus the total asset value
+     * of `loaded_coins`.
+     * * When using [UnloadFee::FromOutput], `external_asset_amount` must cover the fee.
+     * * On a sponsored instance, the pot's free balance must cover the deposits of the
+     * `loaded_coins` keys, without crediting the deposits this unload releases.
+     *
+     * @param {number} instanceId
+     * @param {Array<FixedBytes<32>>} aliases
+     * @param {number} value
+     * @param {number} index
+     * @param {number} revision
+     * @param {AccountId32Like} to
+     * @param {bigint} externalAssetAmount
+     * @param {Array<[number, FixedBytes<32>]>} loadedCoins
+     * @param {bigint} maxFee
+     **/
+    unloadRecyclerIntoExternalAssetAndLoadedCoins: GenericTxCall<
+      (
+        instanceId: number,
+        aliases: Array<FixedBytes<32>>,
+        value: number,
+        index: number,
+        revision: number,
+        to: AccountId32Like,
+        externalAssetAmount: bigint,
+        loadedCoins: Array<[number, FixedBytes<32>]>,
+        maxFee: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'UnloadRecyclerIntoExternalAssetAndLoadedCoins';
+            params: {
+              instanceId: number;
+              aliases: Array<FixedBytes<32>>;
+              value: number;
+              index: number;
+              revision: number;
+              to: AccountId32Like;
+              externalAssetAmount: bigint;
+              loadedCoins: Array<[number, FixedBytes<32>]>;
+              maxFee: bigint;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unload a recycler to withdraw the underlying external asset (non-anonymous).
+     *
+     * Convenience wrapper around [Self::unload_recyclers_into_external_asset_non_anonymous]
+     * for the single-recycler case.
+     *
+     * See [Self::unload_recyclers_into_external_asset_non_anonymous] for full documentation.
+     *
+     * @param {number} instanceId
+     * @param {IndivPalletCoinageUnloadRecyclerInput} input
+     * @param {Array<BytesLike>} aliasProofs
+     * @param {AccountId32Like} to
+     * @param {IndivPalletCoinageFeeCurrency} feeCurrency
+     * @param {bigint} maxFee
+     **/
+    unloadRecyclerIntoExternalAssetNonAnonymous: GenericTxCall<
+      (
+        instanceId: number,
+        input: IndivPalletCoinageUnloadRecyclerInput,
+        aliasProofs: Array<BytesLike>,
+        to: AccountId32Like,
+        feeCurrency: IndivPalletCoinageFeeCurrency,
+        maxFee: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'UnloadRecyclerIntoExternalAssetNonAnonymous';
+            params: {
+              instanceId: number;
+              input: IndivPalletCoinageUnloadRecyclerInput;
+              aliasProofs: Array<BytesLike>;
+              to: AccountId32Like;
+              feeCurrency: IndivPalletCoinageFeeCurrency;
+              maxFee: bigint;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unload multiple recyclers to withdraw the underlying external asset (non-anonymous).
+     *
+     * This is a signed-origin version of [`Self::unload_recycler_into_external_asset`]
+     * where the fee is paid explicitly by the signer rather than through the
+     * ring-authenticated unload token, and for multiple recyclers.
+     *
+     * The fee charged is one unload token fee per recycler (i.e., `inputs.len()`).
+     *
+     * Every input unloads from `instance_id`: one call cannot span instances, because the
+     * unloaded value is summed and paid out as a single transfer of one underlying asset.
+     *
+     * Parameters:
+     * * `instance_id`: the instance every input unloads from.
+     * * `inputs`: A list of inputs, specifying the recycler and aliases to unload. At most
+     * [`Config::MaxConsolidation`] inputs, one alias of one input per proof.
+     * * `alias_proofs`: the proofs for all aliases across all inputs, signed over a message
+     * that includes the signer. The proofs must correspond sequentially to the aliases in
+     * `inputs`.
+     * * `to`: the destination account for the asset.
+     * * `fee_currency`: whether to pay the fee in native currency or external asset.
+     * * `max_fee`: the most the fee may cost the signer, in `fee_currency`: the native fee for
+     * [FeeCurrency::Native], and the amount of the signer's asset the conversion into the
+     * native fee may take for [FeeCurrency::ExternalAsset].
+     *
+     * Requirements:
+     * * The origin must be Signed.
+     * * The `instance_id` must refer to an existing instance.
+     * * All specified recyclers must exist.
+     * * The alias proofs must correspond sequentially to the aliases in `inputs`.
+     * * `inputs` must not be empty and each element must contain at least one alias.
+     * * `alias_proofs` must hold exactly one proof per alias across all `inputs`.
+     * * The signer must have sufficient balance to pay the fee (one fee per recycler).
+     * * `max_fee` must cover the fee in `fee_currency`.
+     *
+     * @param {number} instanceId
+     * @param {Array<IndivPalletCoinageUnloadRecyclerInput>} inputs
+     * @param {Array<BytesLike>} aliasProofs
+     * @param {AccountId32Like} to
+     * @param {IndivPalletCoinageFeeCurrency} feeCurrency
+     * @param {bigint} maxFee
+     **/
+    unloadRecyclersIntoExternalAssetNonAnonymous: GenericTxCall<
+      (
+        instanceId: number,
+        inputs: Array<IndivPalletCoinageUnloadRecyclerInput>,
+        aliasProofs: Array<BytesLike>,
+        to: AccountId32Like,
+        feeCurrency: IndivPalletCoinageFeeCurrency,
+        maxFee: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'UnloadRecyclersIntoExternalAssetNonAnonymous';
+            params: {
+              instanceId: number;
+              inputs: Array<IndivPalletCoinageUnloadRecyclerInput>;
+              aliasProofs: Array<BytesLike>;
+              to: AccountId32Like;
+              feeCurrency: IndivPalletCoinageFeeCurrency;
+              maxFee: bigint;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Recover a coin from an archived recycler into the external asset.
+     *
+     * This is a signed call.
+     *
+     * It allows a user to unload a coin from an archived recycler.
+     * The unload token fee is charged to the signer, and the call is not refunded, as it
+     * accounts for the extra proof verification and archived recycler update.
+     *
+     * Parameters:
+     * * `instance_id`, `value` and `index`: identify the archived recycler ring.
+     * * `recycler_root`: the deleted ring's ring-VRF root; validated together with
+     * `unloaded_root` against the stored archival commitment.
+     * * `unloaded_root`: the current root of the unloaded-aliases trie.
+     * * `alias_proof`: a ring-VRF membership proof, created over the message binding
+     * `blake2_256(UNLOAD_ARCHIVED_MSG_PREFIX ++ signer)` in the recycler unloading context
+     * UNLOADING_RECYCLER_CONTEXT.
+     * * `non_inclusion_proof`: trie nodes proving the caller's alias is absent from
+     * `unloaded_root` (i.e. it was never unloaded); must also cover the insertion path of
+     * the alias so the new root can be recomputed.
+     * * `to`: the account receiving the recovered denomination.
+     * * `fee_currency`: whether the unload fee is paid in native currency or external asset.
+     * * `max_fee`: the most the fee may cost the signer, in `fee_currency`: the native fee for
+     * [FeeCurrency::Native], and the amount of the signer's asset the conversion into the
+     * native fee may take for [FeeCurrency::ExternalAsset].
+     *
+     * On success the full denomination is released to `to`, the alias is added to the unloaded
+     * set (so it cannot be recovered again), and the archive's recoverable count is
+     * decremented (the entry is removed once drained).
+     * (No [`Config::LoadDeposit`] is settled here, it was already settled when the recycler
+     * was archived.)
+     *
+     * The unloaded-aliases trie needed for `unloaded_root` and `non_inclusion_proof` can be
+     * reconstructed offchain by listening to the [`Event::RecyclerAliasUnloaded`],
+     * [`Event::RecyclerArchived`] and [`Event::ArchivedRecyclerUnloadedIntoExternalAsset`]
+     * events.
+     *
+     * This call conflicts with any other call that unloads from the same archived recycler:
+     * each unload updates the commitment, so the proofs in the competing call become outdated.
+     * `recycler_root` and `unloaded_root` are checked against the stored commitment at
+     * transaction validation, therefore resolving such conflicts without charging fees by
+     * marking outdated proofs as invalid.
+     *
+     * @param {number} instanceId
+     * @param {number} value
+     * @param {number} index
+     * @param {VerifiableRingMembersCommitment} recyclerRoot
+     * @param {H256} unloadedRoot
+     * @param {BytesLike} aliasProof
+     * @param {Array<BytesLike>} nonInclusionProof
+     * @param {AccountId32Like} to
+     * @param {IndivPalletCoinageFeeCurrency} feeCurrency
+     * @param {bigint} maxFee
+     **/
+    unloadArchivedRecyclerIntoExternalAsset: GenericTxCall<
+      (
+        instanceId: number,
+        value: number,
+        index: number,
+        recyclerRoot: VerifiableRingMembersCommitment,
+        unloadedRoot: H256,
+        aliasProof: BytesLike,
+        nonInclusionProof: Array<BytesLike>,
+        to: AccountId32Like,
+        feeCurrency: IndivPalletCoinageFeeCurrency,
+        maxFee: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'UnloadArchivedRecyclerIntoExternalAsset';
+            params: {
+              instanceId: number;
+              value: number;
+              index: number;
+              recyclerRoot: VerifiableRingMembersCommitment;
+              unloadedRoot: H256;
+              aliasProof: BytesLike;
+              nonInclusionProof: Array<BytesLike>;
+              to: AccountId32Like;
+              feeCurrency: IndivPalletCoinageFeeCurrency;
+              maxFee: bigint;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unload a recycler to mint multiple new coins (split).
+     *
+     * The origin must be a [Origin::UnloadToken] with `fee: UnloadFee::Prepaid`.
+     *
+     * This function combines the functionality of [Self::unload_recycler_into_coin] and
+     * [Self::split] in a single atomic operation. The resulting coins' age is 1 because
+     * the action of splitting age coins. This is also important because resulting coins
+     * are not entirely fresh, they can be linked to other coins.
+     *
+     * Unlike [Self::unload_recycler_into_coin], this call does **not** require the number of
+     * aliases to be a power of two.
+     *
+     * Parameters:
+     * * `aliases`: the list of aliases corresponding to the member keys included in the
+     * recycler. The proofs for these aliases are contained in the origin.
+     * * `instance_id`, `value` and `index`: identifies the recycler being unloaded.
+     * * `revision`: the recycler revision used for the alias_proofs.
+     * * `split_into`: a vector of pairs, each pair containing a denomination and a list of
+     * destination account ids.
+     * * `max_fee`: the maximum fee the caller is willing to pay, expressed in the underlying
+     * asset balance. It must be equal to the difference between the total value of the
+     * unloaded coins and the total value of the new coins defined in `split_into`.
+     *
+     * When using [UnloadFee::Prepaid], it must be zero: nothing is set aside for the fee, so
+     * `split_into` takes the whole unloaded value.
+     * When using [UnloadFee::FromOutput], this amount is deducted from the input: the asset
+     * is converted into the native network fee, which is transferred to
+     * [Config::FeeDestination], and any remainder is burned. The caller can query
+     * `get_paid_unload_token_fee_in_asset` to estimate the fee.
+     *
+     * This parameter serves as a safeguard: the transaction is rejected at validation if the
+     * actual network fee exceeds `max_fee`, protecting the caller from excessive fee
+     * increases that would render the argument `split_into` invalid (unloaded funds must be
+     * higher than the split plus the fee).
+     *
+     * Requirements:
+     * * The origin must be [Origin::UnloadToken].
+     * * The recycler identified by `instance_id`, `value` and `index` must exist.
+     * * The alias proofs provided in the origin must be valid for the recycler's revision.
+     * * The `aliases` provided must match the aliases derived from the proofs.
+     * * Each destination account must not already have a coin.
+     * * The total value of the new coins defined in `split_into` plus `max_fee` must equal the
+     * total value of the unloaded coins.
+     * * `max_fee` must be a multiple of the minimum coin. (This is implied by the condition
+     * above).
+     * * When using [UnloadFee::Prepaid], `max_fee` must be 0.
+     * * When using [UnloadFee::FromOutput], `max_fee` must cover the network fee.
+     *
+     * @param {number} instanceId
+     * @param {Array<FixedBytes<32>>} aliases
+     * @param {number} value
+     * @param {number} index
+     * @param {number} revision
+     * @param {Array<[number, Array<AccountId32Like>]>} splitInto
+     * @param {bigint} maxFee
+     **/
+    unloadRecyclerIntoCoins: GenericTxCall<
+      (
+        instanceId: number,
+        aliases: Array<FixedBytes<32>>,
+        value: number,
+        index: number,
+        revision: number,
+        splitInto: Array<[number, Array<AccountId32Like>]>,
+        maxFee: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'UnloadRecyclerIntoCoins';
+            params: {
+              instanceId: number;
+              aliases: Array<FixedBytes<32>>;
+              value: number;
+              index: number;
+              revision: number;
+              splitInto: Array<[number, Array<AccountId32Like>]>;
+              maxFee: bigint;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Directly offboard a coin into the underlying external asset.
+     *
+     * The origin must be a [Origin::Coin], obtained through
+     * [`AsCoinage`](crate::extension::AsCoinage) using `AsCoin`.
+     *
+     * This call bypasses the recycler/unload-token offboarding flow and releases the
+     * underlying asset directly, whatever the coin's age.
+     *
+     * # Privacy warning
+     *
+     * Directly offboarding a coin with non-zero age publicly links the coin's transfer
+     * chain to the destination account, which compromises, to some extent, the anonymity of
+     * every previous holder in the chain: if Alice sends a coin to Bob and Bob to Charlie
+     * and Charlie directly offboards it, Alice may deduce what Bob did with the coin. A
+     * fresh coin (`age == 0`) has just been unloaded from a recycler and carries no transfer
+     * history, so it can be offboarded directly without this privacy loss. For maximum
+     * privacy, offboard coins with non-zero age through the recycler instead.
+     *
+     * Parameters:
+     * * `to`: destination account that receives the released underlying asset amount.
+     *
+     * Requirements:
+     * * The origin must be [Origin::Coin].
+     * * The denomination must be representable as underlying-asset amount.
+     *
+     * @param {AccountId32Like} to
+     **/
+    directOffboardCoinIntoExternalAsset: GenericTxCall<
+      (to: AccountId32Like) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'DirectOffboardCoinIntoExternalAsset';
+            params: { to: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Create a sufficient coinage instance for an underlying asset.
+     *
+     * The origin must satisfy [`Config::AdminOrigin`]. The asset must exist in
+     * [`Config::Fungibles`]; it may already be wrapped by other instances, so admin can
+     * always wrap it at the granularity it wants, whatever was created before.
+     *
+     * The instance's recycler collections are created within this call. The pallet account
+     * must already be able to receive the underlying asset: for a non-sufficient asset it
+     * must have been touched beforehand. It must also already hold the asset's minimum
+     * balance as a buffer to avoid dustings.
+     *
+     * Parameters:
+     * * `asset_id`: the underlying asset backing this instance's coins.
+     * * `asset_unit`: the asset amount of a coin of denomination zero. Must be non-zero, and
+     * must represent every denomination in `[MinimumExponent, MaximumExponent]` without
+     * truncation.
+     *
+     * @param {StagingXcmV5Location} assetId
+     * @param {bigint} assetUnit
+     **/
+    createSufficientInstance: GenericTxCall<
+      (
+        assetId: StagingXcmV5Location,
+        assetUnit: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'CreateSufficientInstance';
+            params: { assetId: StagingXcmV5Location; assetUnit: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Create a sponsored coinage instance wrapping `asset_id`.
+     *
+     * The origin must satisfy [`Config::SponsorOrigin`], which yields the paying account;
+     * with `EnsureSigned` anyone can call this. [`Config::EnablePermissionless`] must be
+     * true, otherwise no sponsored instance can be created at all. The instance's load-side
+     * costs are underwritten by a pot account derived from the instance id (see
+     * [`Pallet::pot_account`]), kept funded by sponsors through [`Pallet::fund_pot`].
+     *
+     * The caller provides:
+     * - the instance creation deposit ([`Config::InstanceCreationDeposit`], taken from the
+     * caller and kept for as long as the instance is sponsored, since instances are never
+     * removed; the caller and its ticket are recorded in [`InstanceRecord::creator`]),
+     * - the pallet account's minimum balance of the underlying asset (transferred rather than
+     * minted, so a permissionless call cannot create unbacked funds),
+     * - optionally `initial_funding`, recorded as the caller's pot contribution exactly as
+     * [`Pallet::fund_pot`] would. Bundled here because the instance id is only assigned
+     * inside the call, so a separate `fund_pot` cannot be batched with the creation
+     * race-free.
+     *
+     * `asset_unit` is fixed at creation and instances are never removed, but an asset is not
+     * first-come: anyone, admin included, can wrap the same asset again in its own
+     * instance at another unit, so one creator cannot fix the coin granularity of an asset
+     * for everybody else. What stops a flood of near-duplicate instances is
+     * [`Config::InstanceCreationDeposit`], held on each creator for as long as its instance
+     * is sponsored.
+     *
+     * Parameters:
+     * * `asset_id`: the underlying asset backing this instance's coins.
+     * * `asset_unit`: the asset amount of a coin of denomination zero. Must be non-zero, and
+     * must represent every denomination in `[MinimumExponent, MaximumExponent]` without
+     * truncation.
+     * * `initial_funding`: an optional `(currency, amount)` pot contribution.
+     *
+     * @param {StagingXcmV5Location} assetId
+     * @param {bigint} assetUnit
+     * @param {[StagingXcmV5Location, bigint] | undefined} initialFunding
+     **/
+    createSponsoredInstance: GenericTxCall<
+      (
+        assetId: StagingXcmV5Location,
+        assetUnit: bigint,
+        initialFunding: [StagingXcmV5Location, bigint] | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'CreateSponsoredInstance';
+            params: {
+              assetId: StagingXcmV5Location;
+              assetUnit: bigint;
+              initialFunding: [StagingXcmV5Location, bigint] | undefined;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Fund the pot of the sponsored instance `instance_id` with `amount` of `currency`.
+     *
+     * The contribution is recorded per funder and per currency: the part of it not
+     * currently held as load-deposit collateral can be taken back with
+     * [`Pallet::withdraw_pot_funds`]. A plain transfer to the pot account backs loads all
+     * the same but is a donation, not withdrawable.
+     *
+     * Any existing `currency` is accepted, not just the current deposit currency, so a
+     * sponsor can prefund ahead of an admin currency switch.
+     *
+     * A pot with no account for `currency` has one created for it first, at the caller's
+     * expense. Whatever that costs is not part of the recorded contribution and is never
+     * refunded. The `amount` must be at least the currency's minimum balance, so a
+     * funding cannot be dusted on arrival; the pot's account then survives any withdrawal
+     * or hold.
+     *
+     * @param {number} instanceId
+     * @param {StagingXcmV5Location} currency
+     * @param {bigint} amount
+     **/
+    fundPot: GenericTxCall<
+      (
+        instanceId: number,
+        currency: StagingXcmV5Location,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'FundPot';
+            params: { instanceId: number; currency: StagingXcmV5Location; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Take back up to the caller's recorded contribution to the pot of `instance_id` in
+     * `currency`.
+     *
+     * Only the pot's free balance can be withdrawn: held collateral is out of reach.
+     *
+     * @param {number} instanceId
+     * @param {StagingXcmV5Location} currency
+     * @param {bigint} amount
+     **/
+    withdrawPotFunds: GenericTxCall<
+      (
+        instanceId: number,
+        currency: StagingXcmV5Location,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'WithdrawPotFunds';
+            params: { instanceId: number; currency: StagingXcmV5Location; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Re-price every live load deposit of `instance_id` to the current
+     * [`Config::LoadDeposit`], converting the collateral to the current currency.
+     *
+     * Anybody may call this. It is the only operation that changes how much collateral
+     * backs already-loaded keys, in either direction: the pot is charged the shortfall when
+     * admin has raised the price since those loads, and refunded the excess when it
+     * has lowered it. Nothing is converted between currencies: old collateral is released
+     * to the pot's free balance and the new requirement is taken fresh, so no rate feed is
+     * involved.
+     *
+     * This is the companion to an admin change of [`Config::LoadDeposit`], and the
+     * permissionless remedy for an instance whose loads are refused because its old tier is
+     * still occupied.
+     *
+     * @param {number} instanceId
+     **/
+    collapseLoadDeposits: GenericTxCall<
+      (instanceId: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'CollapseLoadDeposits';
+            params: { instanceId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Switch a sponsored instance to `InstanceMode::Sufficient`.
+     *
+     * The origin must satisfy [`Config::AdminOrigin`]: this is admin blessing
+     * an instance into the stranded-value economics. Every load deposit is released to the
+     * pot's free balance, where funders reclaim their contributions through
+     * [`Pallet::withdraw_pot_funds`] (withdrawal does not require the instance to be
+     * sponsored); only donations stay stranded. The ledger is removed, and from here on
+     * loads take no deposit and unloads release none.
+     *
+     * The instance creation deposit is released if some.
+     *
+     * @param {number} instanceId
+     **/
+    makeInstanceSufficient: GenericTxCall<
+      (instanceId: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'MakeInstanceSufficient';
+            params: { instanceId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Switch a sufficient instance to `InstanceMode::Sponsored`.
+     *
+     * The origin must satisfy [`Config::AdminOrigin`]. The deposit ledger restarts
+     * from zero: keys loaded while the instance was sufficient carry no deposit, so their
+     * unloads settle against whatever the ledger holds at the time, possibly releasing
+     * deposits taken for keys loaded after the switch, or nothing once the ledger is
+     * drained. The instance therefore runs under-collateralized until its pre-switch keys
+     * stop resolving, which admin accepts by making the switch.
+     *
+     * Loads stay invalid until [`Config::LoadDeposit`] is set and the pot is funded through
+     * [`Pallet::fund_pot`].
+     *
+     * No [`Config::InstanceCreationDeposit`] is taken, and
+     * [`InstanceRecord::creator`] stays as it is, so an instance that went through
+     * [`Pallet::make_instance_sufficient`] comes back with no creator and no deposit, the
+     * same as one admin created.
+     *
+     * @param {number} instanceId
+     **/
+    makeInstanceSponsored: GenericTxCall<
+      (instanceId: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'MakeInstanceSponsored';
+            params: { instanceId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clean up an expired recycler.
+     *
+     * This is a maintenance call. The origin must be authorized and from local source.
+     *
+     * This removes an old recycler that has exceeded its expiration time.
+     * Any remaining (not-yet-unloaded) coins are not destroyed: the ring is archived and their
+     * backing asset stays held in the pallet account, recoverable via
+     * [`Pallet::unload_archived_recycler_into_external_asset`].
+     *
+     * On a sponsored instance this settles the [`Config::LoadDeposit`] of every remaining
+     * key.
+     *
+     * @param {number} instanceId
+     * @param {number} value
+     **/
+    cleanRecycler: GenericTxCall<
+      (
+        instanceId: number,
+        value: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'CleanRecycler';
+            params: { instanceId: number; value: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Cleanup storage for consumed free unload tokens of old periods.
+     *
+     * This is a maintenance call. The origin must be authorized and from local source.
+     *
+     * @param {number} period
+     **/
+    cleanConsumedFreeToken: GenericTxCall<
+      (period: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'CleanConsumedFreeToken';
+            params: { period: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clean up a single ring in an expired paid unload token collection.
+     *
+     * This is a maintenance call. The origin must be authorized and from local source.
+     * Rings must be cleaned sequentially (ring 0 first, then 1, etc.) before the
+     * collection can be deleted via
+     * [`delete_expired_paid_unload_token_collection`](Self::delete_expired_paid_unload_token_collection).
+     *
+     * @param {number} period
+     * @param {number} ringIndex
+     **/
+    cleanPaidUnloadTokenRing: GenericTxCall<
+      (
+        period: number,
+        ringIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'CleanPaidUnloadTokenRing';
+            params: { period: number; ringIndex: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clean up dust for recyclers.
+     *
+     * This is a maintenance call. The origin must be authorized and from local source.
+     * Removes up to DUST_CLEANUP_BATCH_SIZE entries from [RecyclerAliasStates] per call to
+     * bound the operation.
+     *
+     **/
+    cleanRecyclerDust: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'CleanRecyclerDust';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clean up dust for paid unload tokens.
+     *
+     * This is a maintenance call. The origin must be authorized and from local source.
+     *
+     **/
+    cleanPaidUnloadTokenDust: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'CleanPaidUnloadTokenDust';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Delete an expired paid unload token collection after all rings have been cleaned.
+     *
+     * This is a maintenance call. The origin must be authorized and from local source.
+     * All rings must have been cleaned via
+     * [`clean_paid_unload_token_ring`](Self::clean_paid_unload_token_ring) before this
+     * can be called.
+     *
+     * @param {number} period
+     **/
+    deleteExpiredPaidUnloadTokenCollection: GenericTxCall<
+      (period: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coinage';
+          palletCall: {
+            name: 'DeleteExpiredPaidUnloadTokenCollection';
+            params: { period: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `MembersNotifier`'s transaction calls
+   **/
+  membersNotifier: {
+    /**
+     * Registers the parachain as a subscriber.
+     * The initial state will be sent over shortly via XCM.
+     *
+     * ## Origin
+     * Requires `ManageOrigin` (governance/root).
+     *
+     * ## Parameters
+     * - `subscriber_parachain_id`: The ParaId of the subscribing parachain.
+     * - `members_collections`: List of collection identifiers to subscribe to and their
+     * respective ring exponents.
+     * - `pallet_index`: Pallet index of members-subscriber on the subscriber chain.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} subscriberParachainId
+     * @param {Array<[FixedBytes<32>, IndivSupportRealityRingExponent]>} membersCollections
+     * @param {number} palletIndex
+     **/
+    subscribe: GenericTxCall<
+      (
+        subscriberParachainId: PolkadotParachainPrimitivesPrimitivesId,
+        membersCollections: Array<[FixedBytes<32>, IndivSupportRealityRingExponent]>,
+        palletIndex: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MembersNotifier';
+          palletCall: {
+            name: 'Subscribe';
+            params: {
+              subscriberParachainId: PolkadotParachainPrimitivesPrimitivesId;
+              membersCollections: Array<[FixedBytes<32>, IndivSupportRealityRingExponent]>;
+              palletIndex: number;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unsubscribes a parachain.
+     *
+     * ## Origin
+     * - **Self-unsubscribe**: Subscriber parachain via XCM (`EnsureSubscriberOrigin`)
+     * - **Governance unsubscribe**: Requires `ManageOrigin`
+     *
+     * ## Parameters
+     * - `subscriber_parachain_id`: The ParaId to unsubscribe. Required for governance, ignored
+     * for self-unsubscribe (derived from XCM origin).
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId | undefined} subscriberParachainId
+     **/
+    unsubscribe: GenericTxCall<
+      (subscriberParachainId: PolkadotParachainPrimitivesPrimitivesId | undefined) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MembersNotifier';
+          palletCall: {
+            name: 'Unsubscribe';
+            params: { subscriberParachainId: PolkadotParachainPrimitivesPrimitivesId | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Requests replay of specific ring roots.
+     *
+     * Permissionless — any signed origin can request a replay for any subscriber.
+     * The subscriber parachain is identified by the `subscriber_parachain_id` parameter.
+     *
+     * Parameters:
+     * - `subscriber_parachain_id`: The ParaId of the subscriber.
+     * - `identifier`: Collection identifier.
+     * - `ring_root_indices`: List of ring root indices, must be in strictly ascending order.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} subscriberParachainId
+     * @param {FixedBytes<32>} identifier
+     * @param {Array<number>} ringRootIndices
+     **/
+    requestReplay: GenericTxCall<
+      (
+        subscriberParachainId: PolkadotParachainPrimitivesPrimitivesId,
+        identifier: FixedBytes<32>,
+        ringRootIndices: Array<number>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MembersNotifier';
+          palletCall: {
+            name: 'RequestReplay';
+            params: {
+              subscriberParachainId: PolkadotParachainPrimitivesPrimitivesId;
+              identifier: FixedBytes<32>;
+              ringRootIndices: Array<number>;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Enqueues pending updates into a sealed batch for distribution.
+     *
+     * Authorized call submitted by the offchain worker.
+     *
+     * @param {number} sendPage
+     * @param {number} discriminator
+     **/
+    enqueueUpdates: GenericTxCall<
+      (
+        sendPage: number,
+        discriminator: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MembersNotifier';
+          palletCall: {
+            name: 'EnqueueUpdates';
+            params: { sendPage: number; discriminator: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Sends the current batch to a specific subscriber.
+     *
+     * Authorized maintenance call submitted by the offchain worker.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
+     * @param {bigint} sequence
+     * @param {number} discriminator
+     **/
+    sendBatch: GenericTxCall<
+      (
+        paraId: PolkadotParachainPrimitivesPrimitivesId,
+        sequence: bigint,
+        discriminator: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MembersNotifier';
+          palletCall: {
+            name: 'SendBatch';
+            params: { paraId: PolkadotParachainPrimitivesPrimitivesId; sequence: bigint; discriminator: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Sends one page of initialization data to a subscriber.
+     *
+     * Authorized maintenance call submitted by the offchain worker.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} paraId
+     * @param {number} currentCollectionIndex
+     * @param {number | undefined} afterRingIndex
+     * @param {number} discriminator
+     **/
+    sendInitPage: GenericTxCall<
+      (
+        paraId: PolkadotParachainPrimitivesPrimitivesId,
+        currentCollectionIndex: number,
+        afterRingIndex: number | undefined,
+        discriminator: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MembersNotifier';
+          palletCall: {
+            name: 'SendInitPage';
+            params: {
+              paraId: PolkadotParachainPrimitivesPrimitivesId;
+              currentCollectionIndex: number;
+              afterRingIndex: number | undefined;
+              discriminator: number;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Abandons a stuck batch that exceeded `StuckBatchTimeout`.
+     * Subscribers that did not receive the batch can recover via `request_replay`.
+     *
+     * Authorized maintenance call submitted by the offchain worker when a batch has
+     * been active longer than `StuckBatchTimeout`.
+     *
+     * @param {number} discriminator
+     **/
+    abandonStuckBatch: GenericTxCall<
+      (discriminator: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MembersNotifier';
+          palletCall: {
+            name: 'AbandonStuckBatch';
+            params: { discriminator: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Registers a whitelisted parachain as a subscriber, using the collections and pallet
+     * index recorded in the whitelist.
+     *
+     * The whitelist entry is consumed, so a parachain can be subscribed this way only
+     * once. After an `unsubscribe`, only `ManageOrigin` can subscribe it again.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} subscriberParachainId
+     **/
+    subscribeWhitelisted: GenericTxCall<
+      (subscriberParachainId: PolkadotParachainPrimitivesPrimitivesId) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MembersNotifier';
+          palletCall: {
+            name: 'SubscribeWhitelisted';
+            params: { subscriberParachainId: PolkadotParachainPrimitivesPrimitivesId };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `Parameters`'s transaction calls
+   **/
+  parameters: {
+    /**
+     * Set the value of a parameter.
+     *
+     * The dispatch origin of this call must be `AdminOrigin` for the given `key`. Values be
+     * deleted by setting them to `None`.
+     *
+     * @param {PeoplePolkadotRuntimeParametersRuntimeParameters} keyValue
+     **/
+    setParameter: GenericTxCall<
+      (keyValue: PeoplePolkadotRuntimeParametersRuntimeParameters) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Parameters';
+          palletCall: {
+            name: 'SetParameter';
+            params: { keyValue: PeoplePolkadotRuntimeParametersRuntimeParameters };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `NetworkSuffix`'s transaction calls
+   **/
+  networkSuffix: {
+    /**
+     * Set the network suffix used by all product-context derivations.
+     *
+     * @param {BytesLike} networkSuffix
+     **/
+    setNetworkSuffix: GenericTxCall<
+      (networkSuffix: BytesLike) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'NetworkSuffix';
+          palletCall: {
+            name: 'SetNetworkSuffix';
+            params: { networkSuffix: BytesLike };
           };
         },
         ChainKnownTypes

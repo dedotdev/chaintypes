@@ -146,6 +146,7 @@ import type {
   PalletElectionProviderMultiBlockVerifierImplsPartialBackings,
   SpNposElectionsElectionScore,
   PalletElectionProviderMultiBlockVerifierImplsStatus,
+  PalletElectionProviderMultiBlockSignedUnpaidReward,
   AssetHubWestendRuntimeStakingNposCompactSolution16,
   PalletElectionProviderMultiBlockSignedSubmissionMetadata,
   PalletConvictionVotingVoteVoting,
@@ -3824,11 +3825,24 @@ export interface ChainStorage extends GenericChainStorage {
      * [`Config::InvulnerableDeposit`]. They pay no page deposit.
      * * If _ejected_ by better solution from [`SortedScores`], they will get their full deposit
      * back.
-     * * They always get their tx-fee back even if they are _discarded_.
+     * * They always get their tx-fee back even if they are _discarded_, up to
+     * [`Config::MaxFeeRefund`].
      *
      * @param {Callback<Array<AccountId32>> =} callback
      **/
     invulnerables: GenericStorageQuery<() => Array<AccountId32>>;
+
+    /**
+     * Round-winner rewards that failed to pay out of [`Config::RewardSource`], pending a
+     * permissionless claim via [`Pallet::claim_unpaid_reward`].
+     *
+     * Expected to stay empty in normal operation; only grows when the pot is depleted. Bounded
+     * to [`MAX_UNPAID_REWARDS`] entries, pushed in round order, so if full, the oldest one is
+     * evicted (see [`Pallet::pay_reward`]).
+     *
+     * @param {Callback<Array<PalletElectionProviderMultiBlockSignedUnpaidReward>> =} callback
+     **/
+    unpaidRewards: GenericStorageQuery<() => Array<PalletElectionProviderMultiBlockSignedUnpaidReward>>;
 
     /**
      *

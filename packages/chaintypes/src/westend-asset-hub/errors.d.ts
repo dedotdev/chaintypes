@@ -2636,7 +2636,7 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyAssets: GenericPalletError;
 
     /**
-     * Live decimals diverged from the snapshot taken at registration or genesis.
+     * Reserved legacy error; retained to preserve error variant indices.
      **/
     DecimalsMismatch: GenericPalletError;
 
@@ -3350,6 +3350,16 @@ export interface ChainErrors extends GenericChainErrors {
      * Too many invulnerable accounts are provided,
      **/
     TooManyInvulnerables: GenericPalletError;
+
+    /**
+     * No [`UnpaidRewards`] entry exists for the caller in the given round.
+     **/
+    NoUnpaidReward: GenericPalletError;
+
+    /**
+     * The [`Config::RewardSource`] pot is still insufficient to pay the unpaid reward.
+     **/
+    PotStillDepleted: GenericPalletError;
 
     /**
      * Generic pallet error

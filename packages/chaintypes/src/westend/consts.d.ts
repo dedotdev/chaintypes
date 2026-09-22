@@ -203,8 +203,8 @@ export interface ChainConsts extends GenericChainConsts {
    **/
   accumulateForward: {
     /**
-     * Minimum number of blocks between successive forwards.
-     * Acts as a rate limiter to avoid sending too many messages.
+     * Minimum number of blocks, as counted by [`Config::BlockNumberProvider`], between
+     * successive forwards. Acts as a rate limiter to avoid sending too many messages.
      **/
     transferPeriod: number;
 

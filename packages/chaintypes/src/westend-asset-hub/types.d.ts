@@ -11695,8 +11695,6 @@ export type PalletPsmCall =
    * - [`Error::FeeTooHigh`]: If the configured minting fee exceeds `max_fee`.
    * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed this PSM's debt ceiling
    * (aggregate or per-asset).
-   * - [`Error::DecimalsMismatch`]: If live decimals diverged from the snapshot taken at
-   * registration.
    * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
    * rounds to zero; swap would transfer nothing.
    *
@@ -11998,8 +11996,6 @@ export type PalletPsmCall =
    * - [`Error::AssetAlreadyApproved`]: If `external_asset` is already approved on this PSM.
    * - [`Error::AssetDoesNotExist`]: If `external_asset` does not exist in the underlying
    * fungibles backend.
-   * - [`Error::DecimalsMismatch`]: If the internal asset's live decimals diverged from the
-   * snapshot in [`PsmInfo`].
    * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
    * [`MAX_DECIMALS_DIFF`].
    *
@@ -12123,8 +12119,6 @@ export type PalletPsmCallLike =
    * - [`Error::FeeTooHigh`]: If the configured minting fee exceeds `max_fee`.
    * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed this PSM's debt ceiling
    * (aggregate or per-asset).
-   * - [`Error::DecimalsMismatch`]: If live decimals diverged from the snapshot taken at
-   * registration.
    * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
    * rounds to zero; swap would transfer nothing.
    *
@@ -12426,8 +12420,6 @@ export type PalletPsmCallLike =
    * - [`Error::AssetAlreadyApproved`]: If `external_asset` is already approved on this PSM.
    * - [`Error::AssetDoesNotExist`]: If `external_asset` does not exist in the underlying
    * fungibles backend.
-   * - [`Error::DecimalsMismatch`]: If the internal asset's live decimals diverged from the
-   * snapshot in [`PsmInfo`].
    * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
    * [`MAX_DECIMALS_DIFF`].
    *
@@ -14921,7 +14913,12 @@ export type PalletElectionProviderMultiBlockSignedPalletCall =
    *
    * Dispatch origin must the the same as [`crate::Config::AdminOrigin`].
    **/
-  | { name: 'SetInvulnerables'; params: { inv: Array<AccountId32> } };
+  | { name: 'SetInvulnerables'; params: { inv: Array<AccountId32> } }
+  /**
+   * Pay out a round's [`UnpaidRewards`] entry to its winner. Permissionless: anyone may
+   * call it for any round. Free on success, normal fee on failure to discourage spam.
+   **/
+  | { name: 'ClaimUnpaidReward'; params: { round: number } };
 
 export type PalletElectionProviderMultiBlockSignedPalletCallLike =
   /**
@@ -14964,7 +14961,12 @@ export type PalletElectionProviderMultiBlockSignedPalletCallLike =
    *
    * Dispatch origin must the the same as [`crate::Config::AdminOrigin`].
    **/
-  | { name: 'SetInvulnerables'; params: { inv: Array<AccountId32Like> } };
+  | { name: 'SetInvulnerables'; params: { inv: Array<AccountId32Like> } }
+  /**
+   * Pay out a round's [`UnpaidRewards`] entry to its winner. Permissionless: anyone may
+   * call it for any round. Free on success, normal fee on failure to discourage spam.
+   **/
+  | { name: 'ClaimUnpaidReward'; params: { round: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -19867,6 +19869,20 @@ export type PalletElectionProviderMultiBlockSignedPalletEvent =
    **/
   | { name: 'Rewarded'; data: [number, AccountId32, bigint] }
   /**
+   * A reward payout failed and has been queued in [`UnpaidRewards`]; claimable via
+   * [`Pallet::claim_unpaid_reward`] once the pot is refilled.
+   **/
+  | { name: 'RewardPaymentDeferred'; data: [number, AccountId32, bigint] }
+  /**
+   * [`UnpaidRewards`] was full, so this (the oldest) entry was evicted to make room for a
+   * new deferral; no funds moved, the reward is now unrecoverable.
+   **/
+  | { name: 'UnpaidRewardEvicted'; data: [number, AccountId32, bigint] }
+  /**
+   * An invulnerable's transaction fee refund failed; no funds moved, no recovery.
+   **/
+  | { name: 'FeeRefundFailed'; data: [number, AccountId32, bigint] }
+  /**
    * The given account has been slashed with the given amount.
    **/
   | { name: 'Slashed'; data: [number, AccountId32, bigint] }
@@ -23086,7 +23102,7 @@ export type PalletPsmError =
    **/
   | 'TooManyAssets'
   /**
-   * Live decimals diverged from the snapshot taken at registration or genesis.
+   * Reserved legacy error; retained to preserve error variant indices.
    **/
   | 'DecimalsMismatch'
   /**
@@ -23729,6 +23745,8 @@ export type PalletElectionProviderMultiBlockVerifierImplsStatus =
   | { type: 'Ongoing'; value: number }
   | { type: 'Nothing' };
 
+export type PalletElectionProviderMultiBlockSignedUnpaidReward = { round: number; who: AccountId32; amount: bigint };
+
 export type PalletElectionProviderMultiBlockSignedSubmissionMetadata = {
   deposit: bigint;
   fee: bigint;
@@ -23776,7 +23794,15 @@ export type PalletElectionProviderMultiBlockSignedPalletError =
   /**
    * Too many invulnerable accounts are provided,
    **/
-  | 'TooManyInvulnerables';
+  | 'TooManyInvulnerables'
+  /**
+   * No [`UnpaidRewards`] entry exists for the caller in the given round.
+   **/
+  | 'NoUnpaidReward'
+  /**
+   * The [`Config::RewardSource`] pot is still insufficient to pay the unpaid reward.
+   **/
+  | 'PotStillDepleted';
 
 export type PalletConvictionVotingVoteVoting =
   | { type: 'Casting'; value: PalletConvictionVotingVoteCasting }

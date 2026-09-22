@@ -4363,6 +4363,31 @@ export interface ChainEvents extends GenericChainEvents {
     Rewarded: GenericPalletEvent<'MultiBlockElectionSigned', 'Rewarded', [number, AccountId32, bigint]>;
 
     /**
+     * A reward payout failed and has been queued in [`UnpaidRewards`]; claimable via
+     * [`Pallet::claim_unpaid_reward`] once the pot is refilled.
+     **/
+    RewardPaymentDeferred: GenericPalletEvent<
+      'MultiBlockElectionSigned',
+      'RewardPaymentDeferred',
+      [number, AccountId32, bigint]
+    >;
+
+    /**
+     * [`UnpaidRewards`] was full, so this (the oldest) entry was evicted to make room for a
+     * new deferral; no funds moved, the reward is now unrecoverable.
+     **/
+    UnpaidRewardEvicted: GenericPalletEvent<
+      'MultiBlockElectionSigned',
+      'UnpaidRewardEvicted',
+      [number, AccountId32, bigint]
+    >;
+
+    /**
+     * An invulnerable's transaction fee refund failed; no funds moved, no recovery.
+     **/
+    FeeRefundFailed: GenericPalletEvent<'MultiBlockElectionSigned', 'FeeRefundFailed', [number, AccountId32, bigint]>;
+
+    /**
      * The given account has been slashed with the given amount.
      **/
     Slashed: GenericPalletEvent<'MultiBlockElectionSigned', 'Slashed', [number, AccountId32, bigint]>;

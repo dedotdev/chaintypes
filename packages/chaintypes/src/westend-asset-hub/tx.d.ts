@@ -11427,8 +11427,6 @@ export interface ChainTx<
      * - [`Error::FeeTooHigh`]: If the configured minting fee exceeds `max_fee`.
      * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed this PSM's debt ceiling
      * (aggregate or per-asset).
-     * - [`Error::DecimalsMismatch`]: If live decimals diverged from the snapshot taken at
-     * registration.
      * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
      * rounds to zero; swap would transfer nothing.
      *
@@ -11891,8 +11889,6 @@ export interface ChainTx<
      * - [`Error::AssetAlreadyApproved`]: If `external_asset` is already approved on this PSM.
      * - [`Error::AssetDoesNotExist`]: If `external_asset` does not exist in the underlying
      * fungibles backend.
-     * - [`Error::DecimalsMismatch`]: If the internal asset's live decimals diverged from the
-     * snapshot in [`PsmInfo`].
      * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
      * [`MAX_DECIMALS_DIFF`].
      *
@@ -14534,6 +14530,25 @@ export interface ChainTx<
           palletCall: {
             name: 'SetInvulnerables';
             params: { inv: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Pay out a round's [`UnpaidRewards`] entry to its winner. Permissionless: anyone may
+     * call it for any round. Free on success, normal fee on failure to discourage spam.
+     *
+     * @param {number} round
+     **/
+    claimUnpaidReward: GenericTxCall<
+      (round: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockElectionSigned';
+          palletCall: {
+            name: 'ClaimUnpaidReward';
+            params: { round: number };
           };
         },
         ChainKnownTypes

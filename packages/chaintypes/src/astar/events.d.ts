@@ -25,12 +25,10 @@ import type {
   XcmVersionedAssets,
   StagingXcmV5AssetAssets,
   XcmVersionedLocation,
-  StagingXcmV5Asset,
   CumulusPrimitivesCoreAggregateMessageOrigin,
   FrameSupportMessagesProcessMessageError,
   EthereumLog,
   EvmCoreErrorExitReason,
-  PalletContractsOrigin,
   PalletDemocracyVoteThreshold,
   PalletDemocracyVoteAccountVote,
   PalletDemocracyMetadataOwner,
@@ -1700,24 +1698,6 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
-   * Pallet `XTokens`'s events
-   **/
-  xTokens: {
-    /**
-     * Transferred `Asset` with fee.
-     **/
-    TransferredAssets: GenericPalletEvent<
-      'XTokens',
-      'TransferredAssets',
-      { sender: AccountId32; assets: StagingXcmV5AssetAssets; fee: StagingXcmV5Asset; dest: StagingXcmV5Location }
-    >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
    * Pallet `MessageQueue`'s events
    **/
   messageQueue: {
@@ -1895,175 +1875,6 @@ export interface ChainEvents extends GenericChainEvents {
      * New `base fee per gas` value has been force-set.
      **/
     NewBaseFeePerGas: GenericPalletEvent<'DynamicEvmBaseFee', 'NewBaseFeePerGas', { fee: U256 }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
-   * Pallet `Contracts`'s events
-   **/
-  contracts: {
-    /**
-     * Contract deployed by address at the specified address.
-     **/
-    Instantiated: GenericPalletEvent<'Contracts', 'Instantiated', { deployer: AccountId32; contract: AccountId32 }>;
-
-    /**
-     * Contract has been removed.
-     *
-     * # Note
-     *
-     * The only way for a contract to be removed and emitting this event is by calling
-     * `seal_terminate`.
-     **/
-    Terminated: GenericPalletEvent<
-      'Contracts',
-      'Terminated',
-      {
-        /**
-         * The contract that was terminated.
-         **/
-        contract: AccountId32;
-
-        /**
-         * The account that received the contracts remaining balance
-         **/
-        beneficiary: AccountId32;
-      }
-    >;
-
-    /**
-     * Code with the specified hash has been stored.
-     **/
-    CodeStored: GenericPalletEvent<
-      'Contracts',
-      'CodeStored',
-      { codeHash: H256; depositHeld: bigint; uploader: AccountId32 }
-    >;
-
-    /**
-     * A custom event emitted by the contract.
-     **/
-    ContractEmitted: GenericPalletEvent<
-      'Contracts',
-      'ContractEmitted',
-      {
-        /**
-         * The contract that emitted the event.
-         **/
-        contract: AccountId32;
-
-        /**
-         * Data supplied by the contract. Metadata generated during contract compilation
-         * is needed to decode it.
-         **/
-        data: Bytes;
-      }
-    >;
-
-    /**
-     * A code with the specified hash was removed.
-     **/
-    CodeRemoved: GenericPalletEvent<
-      'Contracts',
-      'CodeRemoved',
-      { codeHash: H256; depositReleased: bigint; remover: AccountId32 }
-    >;
-
-    /**
-     * A contract's code was updated.
-     **/
-    ContractCodeUpdated: GenericPalletEvent<
-      'Contracts',
-      'ContractCodeUpdated',
-      {
-        /**
-         * The contract that has been updated.
-         **/
-        contract: AccountId32;
-
-        /**
-         * New code hash that was set for the contract.
-         **/
-        newCodeHash: H256;
-
-        /**
-         * Previous code hash of the contract.
-         **/
-        oldCodeHash: H256;
-      }
-    >;
-
-    /**
-     * A contract was called either by a plain account or another contract.
-     *
-     * # Note
-     *
-     * Please keep in mind that like all events this is only emitted for successful
-     * calls. This is because on failure all storage changes including events are
-     * rolled back.
-     **/
-    Called: GenericPalletEvent<
-      'Contracts',
-      'Called',
-      {
-        /**
-         * The caller of the `contract`.
-         **/
-        caller: PalletContractsOrigin;
-
-        /**
-         * The contract that was called.
-         **/
-        contract: AccountId32;
-      }
-    >;
-
-    /**
-     * A contract delegate called a code hash.
-     *
-     * # Note
-     *
-     * Please keep in mind that like all events this is only emitted for successful
-     * calls. This is because on failure all storage changes including events are
-     * rolled back.
-     **/
-    DelegateCalled: GenericPalletEvent<
-      'Contracts',
-      'DelegateCalled',
-      {
-        /**
-         * The contract that performed the delegate call and hence in whose context
-         * the `code_hash` is executed.
-         **/
-        contract: AccountId32;
-
-        /**
-         * The code hash that was delegate called.
-         **/
-        codeHash: H256;
-      }
-    >;
-
-    /**
-     * Some funds have been transferred and held as storage deposit.
-     **/
-    StorageDepositTransferredAndHeld: GenericPalletEvent<
-      'Contracts',
-      'StorageDepositTransferredAndHeld',
-      { from: AccountId32; to: AccountId32; amount: bigint }
-    >;
-
-    /**
-     * Some storage deposit funds have been transferred and released.
-     **/
-    StorageDepositTransferredAndReleased: GenericPalletEvent<
-      'Contracts',
-      'StorageDepositTransferredAndReleased',
-      { from: AccountId32; to: AccountId32; amount: bigint }
-    >;
 
     /**
      * Generic pallet event

@@ -41,12 +41,6 @@ import type {
   EthereumReceiptReceiptV4,
   FpRpcTransactionStatus,
   EthereumTransactionTransactionV3,
-  PalletContractsPrimitivesContractResult,
-  PalletContractsPrimitivesContractResultResult,
-  PalletContractsPrimitivesCode,
-  PalletContractsPrimitivesCodeUploadReturnValue,
-  PalletContractsWasmDeterminism,
-  PalletContractsPrimitivesContractAccessError,
   AstarPrimitivesDappStakingRankedTier,
   XcmVersionedAssetId,
   XcmRuntimeApisFeesError,
@@ -674,103 +668,6 @@ export interface RuntimeApis extends GenericRuntimeApis {
      **/
     convertTransaction: GenericRuntimeApiMethod<
       (transaction: EthereumTransactionTransactionV3) => Promise<FpSelfContainedUncheckedExtrinsic>
-    >;
-
-    /**
-     * Generic runtime api call
-     **/
-    [method: string]: GenericRuntimeApiMethod;
-  };
-  /**
-   * @runtimeapi: ContractsApi - 0x68b66ba122c93fa7
-   **/
-  contractsApi: {
-    /**
-     * Perform a call from a specified account to a given contract.
-     *
-     * See [`crate::Pallet::bare_call`].
-     *
-     * @callname: ContractsApi_call
-     * @param {AccountId32Like} origin
-     * @param {AccountId32Like} dest
-     * @param {bigint} value
-     * @param {SpWeightsWeightV2Weight | undefined} gas_limit
-     * @param {bigint | undefined} storage_deposit_limit
-     * @param {BytesLike} input_data
-     **/
-    call: GenericRuntimeApiMethod<
-      (
-        origin: AccountId32Like,
-        dest: AccountId32Like,
-        value: bigint,
-        gasLimit: SpWeightsWeightV2Weight | undefined,
-        storageDepositLimit: bigint | undefined,
-        inputData: BytesLike,
-      ) => Promise<PalletContractsPrimitivesContractResult>
-    >;
-
-    /**
-     * Instantiate a new contract.
-     *
-     * See `[crate::Pallet::bare_instantiate]`.
-     *
-     * @callname: ContractsApi_instantiate
-     * @param {AccountId32Like} origin
-     * @param {bigint} value
-     * @param {SpWeightsWeightV2Weight | undefined} gas_limit
-     * @param {bigint | undefined} storage_deposit_limit
-     * @param {PalletContractsPrimitivesCode} code
-     * @param {BytesLike} data
-     * @param {BytesLike} salt
-     **/
-    instantiate: GenericRuntimeApiMethod<
-      (
-        origin: AccountId32Like,
-        value: bigint,
-        gasLimit: SpWeightsWeightV2Weight | undefined,
-        storageDepositLimit: bigint | undefined,
-        code: PalletContractsPrimitivesCode,
-        data: BytesLike,
-        salt: BytesLike,
-      ) => Promise<PalletContractsPrimitivesContractResultResult>
-    >;
-
-    /**
-     * Upload new code without instantiating a contract from it.
-     *
-     * See [`crate::Pallet::bare_upload_code`].
-     *
-     * @callname: ContractsApi_upload_code
-     * @param {AccountId32Like} origin
-     * @param {BytesLike} code
-     * @param {bigint | undefined} storage_deposit_limit
-     * @param {PalletContractsWasmDeterminism} determinism
-     **/
-    uploadCode: GenericRuntimeApiMethod<
-      (
-        origin: AccountId32Like,
-        code: BytesLike,
-        storageDepositLimit: bigint | undefined,
-        determinism: PalletContractsWasmDeterminism,
-      ) => Promise<Result<PalletContractsPrimitivesCodeUploadReturnValue, DispatchError>>
-    >;
-
-    /**
-     * Query a given storage key in a given contract.
-     *
-     * Returns `Ok(Some(Vec<u8>))` if the storage value exists under the given key in the
-     * specified account and `Ok(None)` if it doesn't. If the account specified by the address
-     * doesn't exist, or doesn't have a contract then `Err` is returned.
-     *
-     * @callname: ContractsApi_get_storage
-     * @param {AccountId32Like} address
-     * @param {BytesLike} key
-     **/
-    getStorage: GenericRuntimeApiMethod<
-      (
-        address: AccountId32Like,
-        key: BytesLike,
-      ) => Promise<Result<Bytes | undefined, PalletContractsPrimitivesContractAccessError>>
     >;
 
     /**

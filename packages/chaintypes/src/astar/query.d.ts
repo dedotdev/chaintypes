@@ -95,9 +95,6 @@ import type {
   FpRpcTransactionStatus,
   EthereumReceiptReceiptV4,
   EthereumBlock,
-  PalletContractsWasmCodeInfo,
-  PalletContractsStorageContractInfo,
-  PalletContractsStorageDeletionQueueManager,
   PalletPreimageOldRequestStatus,
   PalletPreimageRequestStatus,
   AstarRuntimeRuntimeCall,
@@ -1829,99 +1826,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<U256> =} callback
      **/
     baseFeePerGas: GenericStorageQuery<() => U256>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `Contracts`'s storage queries
-   **/
-  contracts: {
-    /**
-     * A mapping from a contract's code hash to its code.
-     *
-     * @param {H256} arg
-     * @param {Callback<Bytes | undefined> =} callback
-     **/
-    pristineCode: GenericStorageQuery<(arg: H256) => Bytes | undefined, H256>;
-
-    /**
-     * A mapping from a contract's code hash to its code info.
-     *
-     * @param {H256} arg
-     * @param {Callback<PalletContractsWasmCodeInfo | undefined> =} callback
-     **/
-    codeInfoOf: GenericStorageQuery<(arg: H256) => PalletContractsWasmCodeInfo | undefined, H256>;
-
-    /**
-     * This is a **monotonic** counter incremented on contract instantiation.
-     *
-     * This is used in order to generate unique trie ids for contracts.
-     * The trie id of a new contract is calculated from hash(account_id, nonce).
-     * The nonce is required because otherwise the following sequence would lead to
-     * a possible collision of storage:
-     *
-     * 1. Create a new contract.
-     * 2. Terminate the contract.
-     * 3. Immediately recreate the contract with the same account_id.
-     *
-     * This is bad because the contents of a trie are deleted lazily and there might be
-     * storage of the old instantiation still in it when the new contract is created. Please
-     * note that we can't replace the counter by the block number because the sequence above
-     * can happen in the same block. We also can't keep the account counter in memory only
-     * because storage is the only way to communicate across different extrinsics in the
-     * same block.
-     *
-     * # Note
-     *
-     * Do not use it to determine the number of contracts. It won't be decremented if
-     * a contract is destroyed.
-     *
-     * @param {Callback<bigint> =} callback
-     **/
-    nonce: GenericStorageQuery<() => bigint>;
-
-    /**
-     * The code associated with a given account.
-     *
-     * TWOX-NOTE: SAFE since `AccountId` is a secure hash.
-     *
-     * @param {AccountId32Like} arg
-     * @param {Callback<PalletContractsStorageContractInfo | undefined> =} callback
-     **/
-    contractInfoOf: GenericStorageQuery<
-      (arg: AccountId32Like) => PalletContractsStorageContractInfo | undefined,
-      AccountId32
-    >;
-
-    /**
-     * Evicted contracts that await child trie deletion.
-     *
-     * Child trie deletion is a heavy operation depending on the amount of storage items
-     * stored in said trie. Therefore this operation is performed lazily in `on_idle`.
-     *
-     * @param {number} arg
-     * @param {Callback<Bytes | undefined> =} callback
-     **/
-    deletionQueue: GenericStorageQuery<(arg: number) => Bytes | undefined, number>;
-
-    /**
-     * A pair of monotonic counters used to track the latest contract marked for deletion
-     * and the latest deleted contract in queue.
-     *
-     * @param {Callback<PalletContractsStorageDeletionQueueManager> =} callback
-     **/
-    deletionQueueCounter: GenericStorageQuery<() => PalletContractsStorageDeletionQueueManager>;
-
-    /**
-     * A migration can span across multiple blocks. This storage defines a cursor to track the
-     * progress of the migration, enabling us to resume from the last completed position.
-     *
-     * @param {Callback<Bytes | undefined> =} callback
-     **/
-    migrationInProgress: GenericStorageQuery<() => Bytes | undefined>;
 
     /**
      * Generic pallet storage query

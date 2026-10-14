@@ -6279,6 +6279,28 @@ export interface ChainTx<
     >;
 
     /**
+     * Receive on-demand coretime orders from the `ExternalBrokerOrigin`.
+     *
+     * Parameters:
+     * -`origin`: The `ExternalBrokerOrigin`, assumed to be the coretime chain.
+     * -`batch`: The batch of on-demand orders.
+     *
+     * @param {Array<[PolkadotParachainPrimitivesPrimitivesId, number]>} batch
+     **/
+    queueOnDemandBatch: GenericTxCall<
+      (batch: Array<[PolkadotParachainPrimitivesPrimitivesId, number]>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Coretime';
+          palletCall: {
+            name: 'QueueOnDemandBatch';
+            params: { batch: Array<[PolkadotParachainPrimitivesPrimitivesId, number]> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;

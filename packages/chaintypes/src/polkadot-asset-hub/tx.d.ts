@@ -15931,17 +15931,19 @@ export interface ChainTx<
      *
      * @param {FixedBytes<32>} identifier
      * @param {Array<number>} indices
+     * @param {number} discriminator
      **/
     replayMissingRoots: GenericTxCall<
       (
         identifier: FixedBytes<32>,
         indices: Array<number>,
+        discriminator: number,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'MembersSubscriber';
           palletCall: {
             name: 'ReplayMissingRoots';
-            params: { identifier: FixedBytes<32>; indices: Array<number> };
+            params: { identifier: FixedBytes<32>; indices: Array<number>; discriminator: number };
           };
         },
         ChainKnownTypes
@@ -15953,13 +15955,48 @@ export interface ChainTx<
      *
      * Submitted by the offchain worker as an authorized transaction.
      *
+     * @param {number} generation
+     * @param {number} page
+     * @param {number} discriminator
      **/
     purgeStaleRingRoots: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
+      (
+        generation: number,
+        page: number,
+        discriminator: number,
+      ) => ChainSubmittableExtrinsic<
         {
           pallet: 'MembersSubscriber';
           palletCall: {
             name: 'PurgeStaleRingRoots';
+            params: { generation: number; page: number; discriminator: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Scans one page of the collection's ring index space and records missing ring
+     * indices for replay.
+     *
+     * Submitted by the offchain worker as an authorized transaction.
+     *
+     * @param {FixedBytes<32>} identifier
+     * @param {number} scanFrom
+     * @param {number} discriminator
+     **/
+    detectMissingRings: GenericTxCall<
+      (
+        identifier: FixedBytes<32>,
+        scanFrom: number,
+        discriminator: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MembersSubscriber';
+          palletCall: {
+            name: 'DetectMissingRings';
+            params: { identifier: FixedBytes<32>; scanFrom: number; discriminator: number };
           };
         },
         ChainKnownTypes
@@ -16127,10 +16164,9 @@ export interface ChainTx<
     /**
      * Drop the [`StaleSince`] stamp of each mapping in `accounts`, which verifies again.
      *
-     * A revision can verify again after it stopped: a collection torn down and re-created
-     * under the same identifier restarts its revisions at zero, so a stored revision can be
-     * reissued. Dropping the stamp keeps the next staleness to a full
-     * [`Config::MappingRetention`] rather than letting it remove the mapping on the spot.
+     * A revision verifies again when the subscriber rebuilds its ring window. Without this
+     * call, the next staleness removes the mapping at once instead of after
+     * [`Config::MappingRetention`].
      *
      * `accounts` must be in strictly ascending order, and every one of them must hold a
      * stamped mapping whose revision verifies.

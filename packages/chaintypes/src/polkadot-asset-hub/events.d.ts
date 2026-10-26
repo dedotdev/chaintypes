@@ -4835,7 +4835,7 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * Missing ring scan skipped because deleted_indices reached capacity.
+     * A notifier deletion could not be tracked because `deleted_indices` is full.
      **/
     DeletedIndicesAtCapacity: GenericPalletEvent<
       'MembersSubscriber',

@@ -16738,13 +16738,23 @@ export type IndivPalletMembersSubscriberCall =
    * that the subscription is active and that the provided indices are actually
    * missing before sending XCM replay requests.
    **/
-  | { name: 'ReplayMissingRoots'; params: { identifier: FixedBytes<32>; indices: Array<number> } }
+  | {
+      name: 'ReplayMissingRoots';
+      params: { identifier: FixedBytes<32>; indices: Array<number>; discriminator: number };
+    }
   /**
    * Removes a page of stale-generation `RingRoots` entries.
    *
    * Submitted by the offchain worker as an authorized transaction.
    **/
-  | { name: 'PurgeStaleRingRoots' };
+  | { name: 'PurgeStaleRingRoots'; params: { generation: number; page: number; discriminator: number } }
+  /**
+   * Scans one page of the collection's ring index space and records missing ring
+   * indices for replay.
+   *
+   * Submitted by the offchain worker as an authorized transaction.
+   **/
+  | { name: 'DetectMissingRings'; params: { identifier: FixedBytes<32>; scanFrom: number; discriminator: number } };
 
 export type IndivPalletMembersSubscriberCallLike =
   /**
@@ -16792,13 +16802,23 @@ export type IndivPalletMembersSubscriberCallLike =
    * that the subscription is active and that the provided indices are actually
    * missing before sending XCM replay requests.
    **/
-  | { name: 'ReplayMissingRoots'; params: { identifier: FixedBytes<32>; indices: Array<number> } }
+  | {
+      name: 'ReplayMissingRoots';
+      params: { identifier: FixedBytes<32>; indices: Array<number>; discriminator: number };
+    }
   /**
    * Removes a page of stale-generation `RingRoots` entries.
    *
    * Submitted by the offchain worker as an authorized transaction.
    **/
-  | { name: 'PurgeStaleRingRoots' };
+  | { name: 'PurgeStaleRingRoots'; params: { generation: number; page: number; discriminator: number } }
+  /**
+   * Scans one page of the collection's ring index space and records missing ring
+   * indices for replay.
+   *
+   * Submitted by the offchain worker as an authorized transaction.
+   **/
+  | { name: 'DetectMissingRings'; params: { identifier: FixedBytes<32>; scanFrom: number; discriminator: number } };
 
 export type IndivSupportRealityRingExponent = 'R2e9' | 'R2e10' | 'R2e14';
 
@@ -16895,10 +16915,9 @@ export type IndivPalletAliasAccountsCall =
   /**
    * Drop the [`StaleSince`] stamp of each mapping in `accounts`, which verifies again.
    *
-   * A revision can verify again after it stopped: a collection torn down and re-created
-   * under the same identifier restarts its revisions at zero, so a stored revision can be
-   * reissued. Dropping the stamp keeps the next staleness to a full
-   * [`Config::MappingRetention`] rather than letting it remove the mapping on the spot.
+   * A revision verifies again when the subscriber rebuilds its ring window. Without this
+   * call, the next staleness removes the mapping at once instead of after
+   * [`Config::MappingRetention`].
    *
    * `accounts` must be in strictly ascending order, and every one of them must hold a
    * stamped mapping whose revision verifies.
@@ -16976,10 +16995,9 @@ export type IndivPalletAliasAccountsCallLike =
   /**
    * Drop the [`StaleSince`] stamp of each mapping in `accounts`, which verifies again.
    *
-   * A revision can verify again after it stopped: a collection torn down and re-created
-   * under the same identifier restarts its revisions at zero, so a stored revision can be
-   * reissued. Dropping the stamp keeps the next staleness to a full
-   * [`Config::MappingRetention`] rather than letting it remove the mapping on the spot.
+   * A revision verifies again when the subscriber rebuilds its ring window. Without this
+   * call, the next staleness removes the mapping at once instead of after
+   * [`Config::MappingRetention`].
    *
    * `accounts` must be in strictly ascending order, and every one of them must hold a
    * stamped mapping whose revision verifies.
@@ -21198,7 +21216,7 @@ export type IndivPalletMembersSubscriberEvent =
       };
     }
   /**
-   * Missing ring scan skipped because deleted_indices reached capacity.
+   * A notifier deletion could not be tracked because `deleted_indices` is full.
    **/
   | {
       name: 'DeletedIndicesAtCapacity';
@@ -25106,6 +25124,7 @@ export type IndivPalletMembersSubscriberRingCollectionState = {
   nextScanIndex: number;
   missingIndices: Array<[number, number]>;
   deletedIndices: Array<number>;
+  lastBatchReceivedTime: bigint;
 };
 
 export type IndivPalletMembersSubscriberSubscriptionStatus =
@@ -25115,7 +25134,6 @@ export type IndivPalletMembersSubscriberSubscriptionStatus =
 
 export type IndivPalletMembersSubscriberUpdatesProcessingState = {
   lastProcessedSequence: bigint;
-  lastBatchReceivedTime: bigint;
   lastReplayRequestTime: bigint;
 };
 

@@ -1821,11 +1821,18 @@ export interface ChainConsts extends GenericChainConsts {
     maxDeletedRingsPerCollection: number;
 
     /**
-     * Number of ring indices the gap scan examines per batch.
-     * It must exceed `MaxUpdatesPerBatch`, otherwise the scan cursor
-     * advances no faster than the ring index frontier and never catches up.
+     * Number of ring indices the gap scan examines per `detect_missing_rings` call.
+     * Must exceed `MaxUpdatesPerBatch`, so a lagging collection's cursor advances faster
+     * than its frontier can grow between scans.
      **/
-    maxGapScanPerBatch: number;
+    maxGapScanPerCall: number;
+
+    /**
+     * Cooldown (in seconds) after a collection receives a batch before its gap scan runs.
+     * Allows time for multi-part batches to arrive, so that indices still on the way are
+     * not recorded as missing.
+     **/
+    gapScanCooldownSeconds: bigint;
 
     /**
      * Maximum number of `RingRoots` entries removed per `purge_stale_ring_roots` call.
@@ -1840,8 +1847,9 @@ export interface ChainConsts extends GenericChainConsts {
     maxCollections: number;
 
     /**
-     * Cooldown period (in seconds) after receiving a batch before sending replay requests.
-     * Allows time for multi-part batches to arrive via XCM.
+     * Cooldown period (in seconds) after a collection receives a batch before replay requests
+     * for it are sent, and between consecutive replay requests. Allows time for multi-part
+     * batches to arrive via XCM. The batch cooldown is counted per collection.
      **/
     replayCooldownSeconds: bigint;
 

@@ -63,7 +63,6 @@ export type AssetHubKusamaRuntimeRuntimeCall =
   | { pallet: 'Recovery'; palletCall: PalletRecoveryCall }
   | { pallet: 'Society'; palletCall: PalletSocietyCall }
   | { pallet: 'Revive'; palletCall: PalletReviveCall }
-  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
   | { pallet: 'VoterList'; palletCall: PalletBagsListCall }
   | { pallet: 'StakingRcClient'; palletCall: PalletStakingAsyncRcClientCall }
@@ -116,7 +115,6 @@ export type AssetHubKusamaRuntimeRuntimeCallLike =
   | { pallet: 'Recovery'; palletCall: PalletRecoveryCallLike }
   | { pallet: 'Society'; palletCall: PalletSocietyCallLike }
   | { pallet: 'Revive'; palletCall: PalletReviveCallLike }
-  | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
   | { pallet: 'VoterList'; palletCall: PalletBagsListCallLike }
   | { pallet: 'StakingRcClient'; palletCall: PalletStakingAsyncRcClientCallLike }
@@ -2119,6 +2117,8 @@ export type PalletXcmCall =
    * - `assets`: The exact assets that were trapped. Use the version to specify what version
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
+   *
+   * The weight of this call is linear in the number of assets claimed.
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
@@ -2455,6 +2455,8 @@ export type PalletXcmCallLike =
    * - `assets`: The exact assets that were trapped. Use the version to specify what version
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
+   *
+   * The weight of this call is linear in the number of assets claimed.
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
@@ -4793,7 +4795,8 @@ export type PalletAssetsCall =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -4813,8 +4816,18 @@ export type PalletAssetsCall =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -5371,7 +5384,8 @@ export type PalletAssetsCallLike =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -5391,8 +5405,18 @@ export type PalletAssetsCallLike =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -8370,7 +8394,8 @@ export type PalletAssetsCall002 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -8390,8 +8415,18 @@ export type PalletAssetsCall002 =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -8963,7 +8998,8 @@ export type PalletAssetsCallLike002 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -8983,8 +9019,18 @@ export type PalletAssetsCallLike002 =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -9672,7 +9718,8 @@ export type PalletAssetsCall003 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -9692,8 +9739,18 @@ export type PalletAssetsCall003 =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -10250,7 +10307,8 @@ export type PalletAssetsCallLike003 =
    *
    * Parameters:
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+   * equal it.
    * - `admin`: The admin of this class of assets. The admin is the initial address of each
    * member of the asset class's admin team.
    * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -10270,8 +10328,18 @@ export type PalletAssetsCallLike003 =
    *
    * Unlike `create`, no funds are reserved.
    *
+   * Unlike `create`, the `id` does not have to be the one required by
+   * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+   * marked as allocated.
+   *
+   * # Warning
+   *
+   * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+   * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+   * most severely for bridged assets, where a collision breaks the local/remote mapping.
+   *
    * - `id`: The identifier of the new asset. This must not be currently in use to identify
-   * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+   * an existing asset, and must never have been in use previously (see warning above).
    * - `owner`: The owner of this class of assets. The owner has full superuser permissions
    * over this asset, but may later change and configure the permissions using
    * `transfer_ownership` and `set_team`.
@@ -12163,172 +12231,6 @@ export type PalletReviveCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
-export type PalletStateTrieMigrationCall =
-  /**
-   * Control the automatic migration.
-   *
-   * The dispatch origin of this call must be [`Config::ControlOrigin`].
-   **/
-  | { name: 'ControlAutoMigration'; params: { maybeConfig?: PalletStateTrieMigrationMigrationLimits | undefined } }
-  /**
-   * Continue the migration for the given `limits`.
-   *
-   * The dispatch origin of this call can be any signed account.
-   *
-   * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
-   * Upon successful execution, the transaction fee is returned.
-   *
-   * The (potentially over-estimated) of the byte length of all the data read must be
-   * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
-   * that executing the current `MigrationTask` with the given `limits` will not exceed
-   * `real_size_upper` bytes of read data.
-   *
-   * The `witness_task` is merely a helper to prevent the caller from being slashed or
-   * generally trigger a migration that they do not intend. This parameter is just a message
-   * from caller, saying that they believed `witness_task` was the last state of the
-   * migration, and they only wish for their transaction to do anything, if this assumption
-   * holds. In case `witness_task` does not match, the transaction fails.
-   *
-   * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
-   * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
-   * `size` limit can always be overwritten.
-   **/
-  | {
-      name: 'ContinueMigrate';
-      params: {
-        limits: PalletStateTrieMigrationMigrationLimits;
-        realSizeUpper: number;
-        witnessTask: PalletStateTrieMigrationMigrationTask;
-      };
-    }
-  /**
-   * Migrate the list of top keys by iterating each of them one by one.
-   *
-   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-   * should only be used in case any keys are leftover due to a bug.
-   **/
-  | { name: 'MigrateCustomTop'; params: { keys: Array<Bytes>; witnessSize: number } }
-  /**
-   * Migrate the list of child keys by iterating each of them one by one.
-   *
-   * All of the given child keys must be present under one `child_root`.
-   *
-   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-   * should only be used in case any keys are leftover due to a bug.
-   **/
-  | { name: 'MigrateCustomChild'; params: { root: Bytes; childKeys: Array<Bytes>; totalSize: number } }
-  /**
-   * Set the maximum limit of the signed migration.
-   **/
-  | { name: 'SetSignedMaxLimits'; params: { limits: PalletStateTrieMigrationMigrationLimits } }
-  /**
-   * Forcefully set the progress the running migration.
-   *
-   * This is only useful in one case: the next key to migrate is too big to be migrated with
-   * a signed account, in a parachain context, and we simply want to skip it. A reasonable
-   * example of this would be `:code:`, which is both very expensive to migrate, and commonly
-   * used, so probably it is already migrated.
-   *
-   * In case you mess things up, you can also, in principle, use this to reset the migration
-   * process.
-   **/
-  | {
-      name: 'ForceSetProgress';
-      params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
-    };
-
-export type PalletStateTrieMigrationCallLike =
-  /**
-   * Control the automatic migration.
-   *
-   * The dispatch origin of this call must be [`Config::ControlOrigin`].
-   **/
-  | { name: 'ControlAutoMigration'; params: { maybeConfig?: PalletStateTrieMigrationMigrationLimits | undefined } }
-  /**
-   * Continue the migration for the given `limits`.
-   *
-   * The dispatch origin of this call can be any signed account.
-   *
-   * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
-   * Upon successful execution, the transaction fee is returned.
-   *
-   * The (potentially over-estimated) of the byte length of all the data read must be
-   * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
-   * that executing the current `MigrationTask` with the given `limits` will not exceed
-   * `real_size_upper` bytes of read data.
-   *
-   * The `witness_task` is merely a helper to prevent the caller from being slashed or
-   * generally trigger a migration that they do not intend. This parameter is just a message
-   * from caller, saying that they believed `witness_task` was the last state of the
-   * migration, and they only wish for their transaction to do anything, if this assumption
-   * holds. In case `witness_task` does not match, the transaction fails.
-   *
-   * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
-   * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
-   * `size` limit can always be overwritten.
-   **/
-  | {
-      name: 'ContinueMigrate';
-      params: {
-        limits: PalletStateTrieMigrationMigrationLimits;
-        realSizeUpper: number;
-        witnessTask: PalletStateTrieMigrationMigrationTask;
-      };
-    }
-  /**
-   * Migrate the list of top keys by iterating each of them one by one.
-   *
-   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-   * should only be used in case any keys are leftover due to a bug.
-   **/
-  | { name: 'MigrateCustomTop'; params: { keys: Array<BytesLike>; witnessSize: number } }
-  /**
-   * Migrate the list of child keys by iterating each of them one by one.
-   *
-   * All of the given child keys must be present under one `child_root`.
-   *
-   * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-   * should only be used in case any keys are leftover due to a bug.
-   **/
-  | { name: 'MigrateCustomChild'; params: { root: BytesLike; childKeys: Array<BytesLike>; totalSize: number } }
-  /**
-   * Set the maximum limit of the signed migration.
-   **/
-  | { name: 'SetSignedMaxLimits'; params: { limits: PalletStateTrieMigrationMigrationLimits } }
-  /**
-   * Forcefully set the progress the running migration.
-   *
-   * This is only useful in one case: the next key to migrate is too big to be migrated with
-   * a signed account, in a parachain context, and we simply want to skip it. A reasonable
-   * example of this would be `:code:`, which is both very expensive to migrate, and commonly
-   * used, so probably it is already migrated.
-   *
-   * In case you mess things up, you can also, in principle, use this to reset the migration
-   * process.
-   **/
-  | {
-      name: 'ForceSetProgress';
-      params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
-    };
-
-export type PalletStateTrieMigrationMigrationLimits = { size: number; item: number };
-
-export type PalletStateTrieMigrationMigrationTask = {
-  progressTop: PalletStateTrieMigrationProgress;
-  progressChild: PalletStateTrieMigrationProgress;
-  size: number;
-  topItems: number;
-  childItems: number;
-};
-
-export type PalletStateTrieMigrationProgress =
-  | { type: 'ToStart' }
-  | { type: 'LastKey'; value: Bytes }
-  | { type: 'Complete' };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
 export type PalletNominationPoolsCall =
   /**
    * Stake funds with a pool. The amount to bond is delegated (or transferred based on
@@ -13792,11 +13694,17 @@ export type PalletStakingAsyncPalletCall =
    * Remove all data structures concerning a staker/stash once it is at a state where it can
    * be considered `dust` in the staking system. The requirements are:
    *
-   * 1. the `total_balance` of the stash is below `min_chilled_bond` or is zero.
-   * 2. or, the `ledger.total` of the stash is below `min_chilled_bond` or is zero.
+   * 1. the `total_balance` of the stash is below the existential deposit.
+   * 2. or, the `ledger.total` of the stash is below the existential deposit.
    *
    * The former can happen in cases like a slash; the latter when a fully unbonded account
    * is still receiving staking rewards in `RewardDestination::Staked`.
+   *
+   * The gate is intentionally the existential deposit and *not* `min_chilled_bond`: a
+   * governance change to `MinValidatorBond` / `MinNominatorBond` must not turn previously
+   * safe stashes into permissionlessly reapable ones. Accounts that fall below the new
+   * minimums after such a change should be `chill_other`-ed (which has a density gate and
+   * does not destroy the ledger), not reaped.
    *
    * It can be called by anyone, as long as `stash` meets the above requirements.
    *
@@ -14275,11 +14183,17 @@ export type PalletStakingAsyncPalletCallLike =
    * Remove all data structures concerning a staker/stash once it is at a state where it can
    * be considered `dust` in the staking system. The requirements are:
    *
-   * 1. the `total_balance` of the stash is below `min_chilled_bond` or is zero.
-   * 2. or, the `ledger.total` of the stash is below `min_chilled_bond` or is zero.
+   * 1. the `total_balance` of the stash is below the existential deposit.
+   * 2. or, the `ledger.total` of the stash is below the existential deposit.
    *
    * The former can happen in cases like a slash; the latter when a fully unbonded account
    * is still receiving staking rewards in `RewardDestination::Staked`.
+   *
+   * The gate is intentionally the existential deposit and *not* `min_chilled_bond`: a
+   * governance change to `MinValidatorBond` / `MinNominatorBond` must not turn previously
+   * safe stashes into permissionlessly reapable ones. Accounts that fall below the new
+   * minimums after such a change should be `chill_other`-ed (which has a density gate and
+   * does not destroy the ledger), not reaped.
    *
    * It can be called by anyone, as long as `stash` meets the above requirements.
    *
@@ -16876,7 +16790,6 @@ export type AssetHubKusamaRuntimeRuntimeEvent =
   | { pallet: 'Recovery'; palletEvent: PalletRecoveryEvent }
   | { pallet: 'Society'; palletEvent: PalletSocietyEvent }
   | { pallet: 'Revive'; palletEvent: PalletReviveEvent }
-  | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent }
   | { pallet: 'NominationPools'; palletEvent: PalletNominationPoolsEvent }
   | { pallet: 'VoterList'; palletEvent: PalletBagsListEvent }
   | { pallet: 'DelegatedStaking'; palletEvent: PalletDelegatedStakingEvent }
@@ -17431,7 +17344,6 @@ export type AssetHubKusamaRuntimeRuntimeHoldReason =
   | { type: 'NftFractionalization'; value: PalletNftFractionalizationHoldReason }
   | { type: 'Recovery'; value: PalletRecoveryHoldReason }
   | { type: 'Revive'; value: PalletReviveHoldReason }
-  | { type: 'StateTrieMigration'; value: PalletStateTrieMigrationHoldReason }
   | { type: 'DelegatedStaking'; value: PalletDelegatedStakingHoldReason }
   | { type: 'StakingRcClient'; value: PalletStakingAsyncRcClientHoldReason }
   | { type: 'MultiBlockElectionSigned'; value: PalletElectionProviderMultiBlockSignedPalletHoldReason }
@@ -17453,8 +17365,6 @@ export type PalletRecoveryHoldReason =
   | 'SecurityDeposit';
 
 export type PalletReviveHoldReason = 'CodeUploadDepositReserve' | 'StorageDepositReserve' | 'AddressMapping';
-
-export type PalletStateTrieMigrationHoldReason = 'SlashForMigrate';
 
 export type PalletDelegatedStakingHoldReason = 'StakingDelegation';
 
@@ -19247,65 +19157,6 @@ export type PalletReviveEvent =
   | { name: 'EthExtrinsicRevert'; data: { dispatchError: DispatchError } };
 
 /**
- * Inner events of this pallet.
- **/
-export type PalletStateTrieMigrationEvent =
-  /**
-   * Given number of `(top, child)` keys were migrated respectively, with the given
-   * `compute`.
-   **/
-  | { name: 'Migrated'; data: { top: number; child: number; compute: PalletStateTrieMigrationMigrationCompute } }
-  /**
-   * Some account got slashed by the given amount.
-   **/
-  | { name: 'Slashed'; data: { who: AccountId32; amount: bigint } }
-  /**
-   * The auto migration task finished.
-   **/
-  | { name: 'AutoMigrationFinished' }
-  /**
-   * Migration got halted due to an error or miss-configuration.
-   **/
-  | { name: 'Halted'; data: { error: PalletStateTrieMigrationError } };
-
-export type PalletStateTrieMigrationMigrationCompute = 'Signed' | 'Auto';
-
-/**
- * The `Error` enum of this pallet.
- **/
-export type PalletStateTrieMigrationError =
-  /**
-   * Max signed limits not respected.
-   **/
-  | 'MaxSignedLimits'
-  /**
-   * A key was longer than the configured maximum.
-   *
-   * This means that the migration halted at the current [`Progress`] and
-   * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
-   * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
-   * The value should only be increased to avoid a storage migration for the currently
-   * stored [`crate::Progress::LastKey`].
-   **/
-  | 'KeyTooLong'
-  /**
-   * submitter does not have enough funds.
-   **/
-  | 'NotEnoughFunds'
-  /**
-   * Bad witness data provided.
-   **/
-  | 'BadWitness'
-  /**
-   * Signed migration is not allowed because the maximum limit is not set yet.
-   **/
-  | 'SignedMigrationNotAllowed'
-  /**
-   * Bad child root provided.
-   **/
-  | 'BadChildRoot';
-
-/**
  * Events of this pallet.
  **/
 export type PalletNominationPoolsEvent =
@@ -21009,6 +20860,7 @@ export type CumulusPalletXcmpQueueOutboundChannelDetails = {
   firstIndex: number;
   lastIndex: number;
   flags: CumulusPalletXcmpQueueOutboundChannelFlags;
+  queuedBytes: number;
 };
 
 export type CumulusPalletXcmpQueueOutboundState = 'Ok' | 'Suspended';
@@ -21637,9 +21489,14 @@ export type PalletAssetsError =
    **/
   | 'CallbackFailed'
   /**
-   * The asset ID must be equal to the [`NextAssetId`].
+   * The asset ID is not the one required by [`Config::AssetIdAllocator`].
    **/
   | 'BadAssetId'
+  /**
+   * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+   * exhausted.
+   **/
+  | 'AssetIdAllocationFailed'
   /**
    * The asset cannot be destroyed because some accounts for this asset contain freezes.
    **/
@@ -24534,7 +24391,6 @@ export type AssetHubKusamaRuntimeRuntimeError =
   | { pallet: 'Society'; palletError: PalletSocietyError }
   | { pallet: 'Revive'; palletError: PalletReviveError }
   | { pallet: 'AssetsPrecompilesPermit'; palletError: PalletAssetsPrecompilesPermitPalletError }
-  | { pallet: 'StateTrieMigration'; palletError: PalletStateTrieMigrationError }
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }
   | { pallet: 'VoterList'; palletError: PalletBagsListError }
   | { pallet: 'DelegatedStaking'; palletError: PalletDelegatedStakingError }

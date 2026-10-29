@@ -9567,6 +9567,8 @@ export type PalletXcmCall =
    * - `assets`: The exact assets that were trapped. Use the version to specify what version
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
+   *
+   * The weight of this call is linear in the number of assets claimed.
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
@@ -9903,6 +9905,8 @@ export type PalletXcmCallLike =
    * - `assets`: The exact assets that were trapped. Use the version to specify what version
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
+   *
+   * The weight of this call is linear in the number of assets claimed.
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
@@ -10982,6 +10986,7 @@ export type StagingKusamaRuntimeRuntimeEvent =
   | { pallet: 'FastUnstake'; palletEvent: PalletFastUnstakeEvent }
   | { pallet: 'DelegatedStaking'; palletEvent: PalletDelegatedStakingEvent }
   | { pallet: 'StakingAhClient'; palletEvent: PalletStakingAsyncAhClientEvent }
+  | { pallet: 'AccumulateForward'; palletEvent: PalletAccumulateAndForwardEvent }
   | { pallet: 'ParaInclusion'; palletEvent: PolkadotRuntimeParachainsInclusionPalletEvent }
   | { pallet: 'Paras'; palletEvent: PolkadotRuntimeParachainsParasPalletEvent }
   | { pallet: 'Hrmp'; palletEvent: PolkadotRuntimeParachainsHrmpPalletEvent }
@@ -12952,6 +12957,20 @@ export type PalletStakingAsyncAhClientUnexpectedKind =
   | 'InvalidKeysFromAssetHub';
 
 export type PalletStakingAsyncAhClientSessionKeysUpdate = 'Set' | 'Purged';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAccumulateAndForwardEvent =
+  /**
+   * Successfully forwarded accumulated funds to the destination.
+   **/
+  | { name: 'ForwardSucceeded'; data: { amount: bigint } }
+  /**
+   * Failed to forward funds. They will remain in the accumulation account
+   * and forwarding will be retried after another `TransferPeriod` blocks.
+   **/
+  | { name: 'ForwardFailed'; data: { amount: bigint } };
 
 /**
  * The `Event` enum of this pallet

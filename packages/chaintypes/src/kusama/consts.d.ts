@@ -1070,6 +1070,28 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
+   * Pallet `AccumulateForward`'s constants
+   **/
+  accumulateForward: {
+    /**
+     * Minimum number of blocks, as counted by [`Config::BlockNumberProvider`], between
+     * successive forwards. Acts as a rate limiter to avoid sending too many messages.
+     **/
+    transferPeriod: number;
+
+    /**
+     * Minimum transferable balance required to trigger a forward.
+     * This avoids forwarding very small / negligible amounts.
+     * The accumulation account always retains its existential deposit on top of this.
+     **/
+    minTransferAmount: bigint;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
    * Pallet `ParachainsOrigin`'s constants
    **/
   parachainsOrigin: {

@@ -1176,6 +1176,8 @@ export type PalletXcmCall =
    * - `assets`: The exact assets that were trapped. Use the version to specify what version
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
+   *
+   * The weight of this call is linear in the number of assets claimed.
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
@@ -1512,6 +1514,8 @@ export type PalletXcmCallLike =
    * - `assets`: The exact assets that were trapped. Use the version to specify what version
    * was the latest when they were trapped.
    * - `beneficiary`: The location/account where the claimed assets will be deposited.
+   *
+   * The weight of this call is linear in the number of assets claimed.
    **/
   | { name: 'ClaimAssets'; params: { assets: XcmVersionedAssets; beneficiary: XcmVersionedLocation } }
   /**
@@ -4014,6 +4018,7 @@ export type PeopleKusamaRuntimeRuntimeEvent =
   | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent }
   | { pallet: 'Balances'; palletEvent: PalletBalancesEvent }
   | { pallet: 'TransactionPayment'; palletEvent: PalletTransactionPaymentEvent }
+  | { pallet: 'AccumulateForward'; palletEvent: PalletAccumulateAndForwardEvent }
   | { pallet: 'CollatorSelection'; palletEvent: PalletCollatorSelectionEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
@@ -4395,6 +4400,20 @@ export type PalletTransactionPaymentEvent =
    * has been paid by `who`.
    **/
   { name: 'TransactionFeePaid'; data: { who: AccountId32; actualFee: bigint; tip: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAccumulateAndForwardEvent =
+  /**
+   * Successfully forwarded accumulated funds to the destination.
+   **/
+  | { name: 'ForwardSucceeded'; data: { amount: bigint } }
+  /**
+   * Failed to forward funds. They will remain in the accumulation account
+   * and forwarding will be retried after another `TransferPeriod` blocks.
+   **/
+  | { name: 'ForwardFailed'; data: { amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -5509,6 +5528,7 @@ export type CumulusPalletXcmpQueueOutboundChannelDetails = {
   firstIndex: number;
   lastIndex: number;
   flags: CumulusPalletXcmpQueueOutboundChannelFlags;
+  queuedBytes: number;
 };
 
 export type CumulusPalletXcmpQueueOutboundState = 'Ok' | 'Suspended';

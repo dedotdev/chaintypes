@@ -1058,9 +1058,15 @@ export interface ChainErrors extends GenericChainErrors {
     CallbackFailed: GenericPalletError;
 
     /**
-     * The asset ID must be equal to the [`NextAssetId`].
+     * The asset ID is not the one required by [`Config::AssetIdAllocator`].
      **/
     BadAssetId: GenericPalletError;
+
+    /**
+     * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+     * exhausted.
+     **/
+    AssetIdAllocationFailed: GenericPalletError;
 
     /**
      * The asset cannot be destroyed because some accounts for this asset contain freezes.
@@ -1543,9 +1549,15 @@ export interface ChainErrors extends GenericChainErrors {
     CallbackFailed: GenericPalletError;
 
     /**
-     * The asset ID must be equal to the [`NextAssetId`].
+     * The asset ID is not the one required by [`Config::AssetIdAllocator`].
      **/
     BadAssetId: GenericPalletError;
+
+    /**
+     * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+     * exhausted.
+     **/
+    AssetIdAllocationFailed: GenericPalletError;
 
     /**
      * The asset cannot be destroyed because some accounts for this asset contain freezes.
@@ -1704,9 +1716,15 @@ export interface ChainErrors extends GenericChainErrors {
     CallbackFailed: GenericPalletError;
 
     /**
-     * The asset ID must be equal to the [`NextAssetId`].
+     * The asset ID is not the one required by [`Config::AssetIdAllocator`].
      **/
     BadAssetId: GenericPalletError;
+
+    /**
+     * The [`Config::AssetIdAllocator`] cannot allocate the asset ID: the id space is
+     * exhausted.
+     **/
+    AssetIdAllocationFailed: GenericPalletError;
 
     /**
      * The asset cannot be destroyed because some accounts for this asset contain freezes.
@@ -2531,51 +2549,6 @@ export interface ChainErrors extends GenericChainErrors {
      * The spender address is invalid (e.g., zero address).
      **/
     InvalidSpender: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `StateTrieMigration`'s errors
-   **/
-  stateTrieMigration: {
-    /**
-     * Max signed limits not respected.
-     **/
-    MaxSignedLimits: GenericPalletError;
-
-    /**
-     * A key was longer than the configured maximum.
-     *
-     * This means that the migration halted at the current [`Progress`] and
-     * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
-     * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
-     * The value should only be increased to avoid a storage migration for the currently
-     * stored [`crate::Progress::LastKey`].
-     **/
-    KeyTooLong: GenericPalletError;
-
-    /**
-     * submitter does not have enough funds.
-     **/
-    NotEnoughFunds: GenericPalletError;
-
-    /**
-     * Bad witness data provided.
-     **/
-    BadWitness: GenericPalletError;
-
-    /**
-     * Signed migration is not allowed because the maximum limit is not set yet.
-     **/
-    SignedMigrationNotAllowed: GenericPalletError;
-
-    /**
-     * Bad child root provided.
-     **/
-    BadChildRoot: GenericPalletError;
 
     /**
      * Generic pallet error

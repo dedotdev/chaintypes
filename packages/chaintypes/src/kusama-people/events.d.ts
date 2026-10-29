@@ -467,6 +467,26 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `AccumulateForward`'s events
+   **/
+  accumulateForward: {
+    /**
+     * Successfully forwarded accumulated funds to the destination.
+     **/
+    ForwardSucceeded: GenericPalletEvent<'AccumulateForward', 'ForwardSucceeded', { amount: bigint }>;
+
+    /**
+     * Failed to forward funds. They will remain in the accumulation account
+     * and forwarding will be retried after another `TransferPeriod` blocks.
+     **/
+    ForwardFailed: GenericPalletEvent<'AccumulateForward', 'ForwardFailed', { amount: bigint }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `CollatorSelection`'s events
    **/
   collatorSelection: {

@@ -42,8 +42,6 @@ import type {
   PalletNftsPalletAttributes,
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
   PalletSocietyGroupParams,
-  PalletStateTrieMigrationMigrationCompute,
-  PalletStateTrieMigrationError,
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
@@ -3256,40 +3254,6 @@ export interface ChainEvents extends GenericChainEvents {
      * for failed Ethereum transactions.
      **/
     EthExtrinsicRevert: GenericPalletEvent<'Revive', 'EthExtrinsicRevert', { dispatchError: DispatchError }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
-   * Pallet `StateTrieMigration`'s events
-   **/
-  stateTrieMigration: {
-    /**
-     * Given number of `(top, child)` keys were migrated respectively, with the given
-     * `compute`.
-     **/
-    Migrated: GenericPalletEvent<
-      'StateTrieMigration',
-      'Migrated',
-      { top: number; child: number; compute: PalletStateTrieMigrationMigrationCompute }
-    >;
-
-    /**
-     * Some account got slashed by the given amount.
-     **/
-    Slashed: GenericPalletEvent<'StateTrieMigration', 'Slashed', { who: AccountId32; amount: bigint }>;
-
-    /**
-     * The auto migration task finished.
-     **/
-    AutoMigrationFinished: GenericPalletEvent<'StateTrieMigration', 'AutoMigrationFinished', null>;
-
-    /**
-     * Migration got halted due to an error or miss-configuration.
-     **/
-    Halted: GenericPalletEvent<'StateTrieMigration', 'Halted', { error: PalletStateTrieMigrationError }>;
 
     /**
      * Generic pallet event

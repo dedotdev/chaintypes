@@ -2761,6 +2761,24 @@ export interface ChainStorage extends GenericChainStorage {
     [storage: string]: GenericStorageQuery;
   };
   /**
+   * Pallet `AccumulateForward`'s storage queries
+   **/
+  accumulateForward: {
+    /**
+     * Block of [`Config::BlockNumberProvider`] at which a forward was last attempted.
+     *
+     * `None` means none was attempted yet, so the next one is not rate limited.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    lastForwardBlock: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
    * Pallet `Configuration`'s storage queries
    **/
   configuration: {

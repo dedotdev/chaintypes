@@ -56,7 +56,7 @@ interface ChainKnownTypes extends GenericChainKnownTypes {
 
 /**
  * @name: KusamaAssetHubApi
- * @specVersion: 2003002
+ * @specVersion: 2005001
  **/
 export interface KusamaAssetHubApi extends GenericSubstrateApi {
   rpc: ChainJsonRpcApis;

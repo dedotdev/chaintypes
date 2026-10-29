@@ -65,9 +65,6 @@ import type {
   PalletNftsPreSignedAttributes,
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
   PalletRecoveryFriendGroup,
-  PalletStateTrieMigrationMigrationLimits,
-  PalletStateTrieMigrationMigrationTask,
-  PalletStateTrieMigrationProgress,
   PalletNominationPoolsBondExtra,
   PalletNominationPoolsPoolState,
   PalletNominationPoolsConfigOp,
@@ -2546,6 +2543,8 @@ export interface ChainTx<
      * was the latest when they were trapped.
      * - `beneficiary`: The location/account where the claimed assets will be deposited.
      *
+     * The weight of this call is linear in the number of assets claimed.
+     *
      * @param {XcmVersionedAssets} assets
      * @param {XcmVersionedLocation} beneficiary
      **/
@@ -4097,7 +4096,8 @@ export interface ChainTx<
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+     * equal it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -4137,8 +4137,18 @@ export interface ChainTx<
      *
      * Unlike `create`, no funds are reserved.
      *
+     * Unlike `create`, the `id` does not have to be the one required by
+     * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+     * marked as allocated.
+     *
+     * # Warning
+     *
+     * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+     * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+     * most severely for bridged assets, where a collision breaks the local/remote mapping.
+     *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset, and must never have been in use previously (see warning above).
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.
@@ -7699,7 +7709,8 @@ export interface ChainTx<
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+     * equal it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -7739,8 +7750,18 @@ export interface ChainTx<
      *
      * Unlike `create`, no funds are reserved.
      *
+     * Unlike `create`, the `id` does not have to be the one required by
+     * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+     * marked as allocated.
+     *
+     * # Warning
+     *
+     * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+     * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+     * most severely for bridged assets, where a collision breaks the local/remote mapping.
+     *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset, and must never have been in use previously (see warning above).
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.
@@ -9027,7 +9048,8 @@ export interface ChainTx<
      *
      * Parameters:
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset. If [`Config::AssetIdAllocator`] requires a specific id, this must
+     * equal it.
      * - `admin`: The admin of this class of assets. The admin is the initial address of each
      * member of the asset class's admin team.
      * - `min_balance`: The minimum balance of this new asset that any single account must
@@ -9067,8 +9089,18 @@ export interface ChainTx<
      *
      * Unlike `create`, no funds are reserved.
      *
+     * Unlike `create`, the `id` does not have to be the one required by
+     * [`Config::AssetIdAllocator`]: a privileged origin may pick any `id`, which is then
+     * marked as allocated.
+     *
+     * # Warning
+     *
+     * Forcing an arbitrary `id` is dangerous: the pallet only checks that `id` is not
+     * *currently* in use, not that it was never used before. Reusing an id can corrupt state,
+     * most severely for bridged assets, where a collision breaks the local/remote mapping.
+     *
      * - `id`: The identifier of the new asset. This must not be currently in use to identify
-     * an existing asset. If [`NextAssetId`] is set, then this must be equal to it.
+     * an existing asset, and must never have been in use previously (see warning above).
      * - `owner`: The owner of this class of assets. The owner has full superuser permissions
      * over this asset, but may later change and configure the permissions using
      * `transfer_ownership` and `set_team`.
@@ -11746,185 +11778,6 @@ export interface ChainTx<
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
-   * Pallet `StateTrieMigration`'s transaction calls
-   **/
-  stateTrieMigration: {
-    /**
-     * Control the automatic migration.
-     *
-     * The dispatch origin of this call must be [`Config::ControlOrigin`].
-     *
-     * @param {PalletStateTrieMigrationMigrationLimits | undefined} maybeConfig
-     **/
-    controlAutoMigration: GenericTxCall<
-      (maybeConfig: PalletStateTrieMigrationMigrationLimits | undefined) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'ControlAutoMigration';
-            params: { maybeConfig: PalletStateTrieMigrationMigrationLimits | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Continue the migration for the given `limits`.
-     *
-     * The dispatch origin of this call can be any signed account.
-     *
-     * This transaction has NO MONETARY INCENTIVES. calling it will not reward anyone. Albeit,
-     * Upon successful execution, the transaction fee is returned.
-     *
-     * The (potentially over-estimated) of the byte length of all the data read must be
-     * provided for up-front fee-payment and weighing. In essence, the caller is guaranteeing
-     * that executing the current `MigrationTask` with the given `limits` will not exceed
-     * `real_size_upper` bytes of read data.
-     *
-     * The `witness_task` is merely a helper to prevent the caller from being slashed or
-     * generally trigger a migration that they do not intend. This parameter is just a message
-     * from caller, saying that they believed `witness_task` was the last state of the
-     * migration, and they only wish for their transaction to do anything, if this assumption
-     * holds. In case `witness_task` does not match, the transaction fails.
-     *
-     * Based on the documentation of [`MigrationTask::migrate_until_exhaustion`], the
-     * recommended way of doing this is to pass a `limit` that only bounds `count`, as the
-     * `size` limit can always be overwritten.
-     *
-     * @param {PalletStateTrieMigrationMigrationLimits} limits
-     * @param {number} realSizeUpper
-     * @param {PalletStateTrieMigrationMigrationTask} witnessTask
-     **/
-    continueMigrate: GenericTxCall<
-      (
-        limits: PalletStateTrieMigrationMigrationLimits,
-        realSizeUpper: number,
-        witnessTask: PalletStateTrieMigrationMigrationTask,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'ContinueMigrate';
-            params: {
-              limits: PalletStateTrieMigrationMigrationLimits;
-              realSizeUpper: number;
-              witnessTask: PalletStateTrieMigrationMigrationTask;
-            };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Migrate the list of top keys by iterating each of them one by one.
-     *
-     * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-     * should only be used in case any keys are leftover due to a bug.
-     *
-     * @param {Array<BytesLike>} keys
-     * @param {number} witnessSize
-     **/
-    migrateCustomTop: GenericTxCall<
-      (
-        keys: Array<BytesLike>,
-        witnessSize: number,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'MigrateCustomTop';
-            params: { keys: Array<BytesLike>; witnessSize: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Migrate the list of child keys by iterating each of them one by one.
-     *
-     * All of the given child keys must be present under one `child_root`.
-     *
-     * This does not affect the global migration process tracker ([`MigrationProcess`]), and
-     * should only be used in case any keys are leftover due to a bug.
-     *
-     * @param {BytesLike} root
-     * @param {Array<BytesLike>} childKeys
-     * @param {number} totalSize
-     **/
-    migrateCustomChild: GenericTxCall<
-      (
-        root: BytesLike,
-        childKeys: Array<BytesLike>,
-        totalSize: number,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'MigrateCustomChild';
-            params: { root: BytesLike; childKeys: Array<BytesLike>; totalSize: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set the maximum limit of the signed migration.
-     *
-     * @param {PalletStateTrieMigrationMigrationLimits} limits
-     **/
-    setSignedMaxLimits: GenericTxCall<
-      (limits: PalletStateTrieMigrationMigrationLimits) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'SetSignedMaxLimits';
-            params: { limits: PalletStateTrieMigrationMigrationLimits };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Forcefully set the progress the running migration.
-     *
-     * This is only useful in one case: the next key to migrate is too big to be migrated with
-     * a signed account, in a parachain context, and we simply want to skip it. A reasonable
-     * example of this would be `:code:`, which is both very expensive to migrate, and commonly
-     * used, so probably it is already migrated.
-     *
-     * In case you mess things up, you can also, in principle, use this to reset the migration
-     * process.
-     *
-     * @param {PalletStateTrieMigrationProgress} progressTop
-     * @param {PalletStateTrieMigrationProgress} progressChild
-     **/
-    forceSetProgress: GenericTxCall<
-      (
-        progressTop: PalletStateTrieMigrationProgress,
-        progressChild: PalletStateTrieMigrationProgress,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'StateTrieMigration';
-          palletCall: {
-            name: 'ForceSetProgress';
-            params: { progressTop: PalletStateTrieMigrationProgress; progressChild: PalletStateTrieMigrationProgress };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
    * Pallet `NominationPools`'s transaction calls
    **/
   nominationPools: {
@@ -13692,11 +13545,17 @@ export interface ChainTx<
      * Remove all data structures concerning a staker/stash once it is at a state where it can
      * be considered `dust` in the staking system. The requirements are:
      *
-     * 1. the `total_balance` of the stash is below `min_chilled_bond` or is zero.
-     * 2. or, the `ledger.total` of the stash is below `min_chilled_bond` or is zero.
+     * 1. the `total_balance` of the stash is below the existential deposit.
+     * 2. or, the `ledger.total` of the stash is below the existential deposit.
      *
      * The former can happen in cases like a slash; the latter when a fully unbonded account
      * is still receiving staking rewards in `RewardDestination::Staked`.
+     *
+     * The gate is intentionally the existential deposit and *not* `min_chilled_bond`: a
+     * governance change to `MinValidatorBond` / `MinNominatorBond` must not turn previously
+     * safe stashes into permissionlessly reapable ones. Accounts that fall below the new
+     * minimums after such a change should be `chill_other`-ed (which has a density gate and
+     * does not destroy the ledger), not reaped.
      *
      * It can be called by anyone, as long as `stash` meets the above requirements.
      *

@@ -120,8 +120,6 @@ import type {
   PalletReviveEvmBlockHashReceiptGasInfo,
   PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR,
   PalletReviveDebugDebugSettings,
-  PalletStateTrieMigrationMigrationTask,
-  PalletStateTrieMigrationMigrationLimits,
   PalletNominationPoolsPoolMember,
   PalletNominationPoolsBondedPoolInner,
   PalletNominationPoolsRewardPool,
@@ -1668,9 +1666,8 @@ export interface ChainStorage extends GenericChainStorage {
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
      * item has no effect.
      *
-     * This can be useful for setting up constraints for IDs of the new assets. For example, by
-     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
-     * auto-increment model can be applied to all new asset IDs.
+     * Only read by [`crate::AutoIncAssetId`]: configure it as [`Config::AssetIdAllocator`] and
+     * provide an initial value here to apply an auto-increment model to all new asset IDs.
      *
      * The initial next asset ID can be set using the [`GenesisConfig`] or the
      * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
@@ -1998,9 +1995,8 @@ export interface ChainStorage extends GenericChainStorage {
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
      * item has no effect.
      *
-     * This can be useful for setting up constraints for IDs of the new assets. For example, by
-     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
-     * auto-increment model can be applied to all new asset IDs.
+     * Only read by [`crate::AutoIncAssetId`]: configure it as [`Config::AssetIdAllocator`] and
+     * provide an initial value here to apply an auto-increment model to all new asset IDs.
      *
      * The initial next asset ID can be set using the [`GenesisConfig`] or the
      * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
@@ -2090,9 +2086,8 @@ export interface ChainStorage extends GenericChainStorage {
      * The asset ID enforced for the next asset creation, if any present. Otherwise, this storage
      * item has no effect.
      *
-     * This can be useful for setting up constraints for IDs of the new assets. For example, by
-     * providing an initial [`NextAssetId`] and using the [`crate::AutoIncAssetId`] callback, an
-     * auto-increment model can be applied to all new asset IDs.
+     * Only read by [`crate::AutoIncAssetId`]: configure it as [`Config::AssetIdAllocator`] and
+     * provide an initial value here to apply an auto-increment model to all new asset IDs.
      *
      * The initial next asset ID can be set using the [`GenesisConfig`] or the
      * [SetNextAssetId](`migration::next_asset_id::SetNextAssetId`) migration.
@@ -2577,43 +2572,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<U256> =} callback
      **/
     nonces: GenericStorageQuery<(arg: [H160, H160]) => U256, [H160, H160]>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `StateTrieMigration`'s storage queries
-   **/
-  stateTrieMigration: {
-    /**
-     * Migration progress.
-     *
-     * This stores the snapshot of the last migrated keys. It can be set into motion and move
-     * forward by any of the means provided by this pallet.
-     *
-     * @param {Callback<PalletStateTrieMigrationMigrationTask> =} callback
-     **/
-    migrationProcess: GenericStorageQuery<() => PalletStateTrieMigrationMigrationTask>;
-
-    /**
-     * The limits that are imposed on automatic migrations.
-     *
-     * If set to None, then no automatic migration happens.
-     *
-     * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
-     **/
-    autoLimits: GenericStorageQuery<() => PalletStateTrieMigrationMigrationLimits | undefined>;
-
-    /**
-     * The maximum limits that the signed migration could use.
-     *
-     * If not set, no signed submission is allowed.
-     *
-     * @param {Callback<PalletStateTrieMigrationMigrationLimits | undefined> =} callback
-     **/
-    signedMigrationMaxLimits: GenericStorageQuery<() => PalletStateTrieMigrationMigrationLimits | undefined>;
 
     /**
      * Generic pallet storage query
@@ -3336,6 +3294,43 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [number, AccountId32Like]) => bigint | undefined,
       [number, AccountId32]
     >;
+
+    /**
+     * Running sum of `validator_incentive_weight × era_points` across all validators
+     * with non-zero era points for the era.
+     *
+     * Maintained incrementally inside [`session_rotation::Eras::reward_active_era`] every
+     * time validator points are credited. Used as the denominator of the weighted-points
+     * share that determines each validator's slice of [`ErasValidatorIncentiveBudget`].
+     *
+     * @param {number} arg
+     * @param {Callback<bigint> =} callback
+     **/
+    erasSumWeightedPoints: GenericStorageQuery<(arg: number) => bigint, number>;
+
+    /**
+     * Cutoff era from which the validator self-stake incentive switches to the
+     * weighted-points formula.
+     *
+     * `None` is the pre-migration state for chains whose storage predates this item. Until the
+     * migration records a cutoff, [`session_rotation::Eras::uses_weighted_points`] treats all
+     * eras as weighted-points eras. Chains initialized with this storage item set the cutoff to
+     * `0` in `genesis_build`, and the upgrade migration leaves any existing value untouched.
+     *
+     * See [`session_rotation::Eras::uses_weighted_points`] for the exact semantics and
+     * the rationale for the cutoff.
+     *
+     * TODO(staking-async): remove this storage item, the legacy stake-only branch in
+     * [`crate::Pallet::calculate_validator_incentive_for_page`], the
+     * [`session_rotation::Eras::uses_weighted_points`] cutoff helper, and the
+     * [`crate::migrations::SetWeightedPointsFormulaStartEra`] migration once
+     * [`Config::HistoryDepth`] eras have elapsed since the upgrade — i.e. once the cutoff
+     * satisfies `cutoff <= active_era - HistoryDepth`, at which point no pre-cutoff era
+     * remains claimable and every live era uses the weighted-points formula.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    weightedPointsFormulaStartEra: GenericStorageQuery<() => number | undefined>;
 
     /**
      * Whether nominators are slashable or not.

@@ -1882,6 +1882,11 @@ export interface ChainErrors extends GenericChainErrors {
     CollectionAlreadyExists: GenericPalletError;
 
     /**
+     * The identifier belonged to a deleted collection and cannot be reused.
+     **/
+    IdentifierRetired: GenericPalletError;
+
+    /**
      * Too many collections for this owner.
      **/
     TooManyCollections: GenericPalletError;

@@ -14267,6 +14267,10 @@ export type IndivPalletMembersError =
    **/
   | 'CollectionAlreadyExists'
   /**
+   * The identifier belonged to a deleted collection and cannot be reused.
+   **/
+  | 'IdentifierRetired'
+  /**
    * Too many collections for this owner.
    **/
   | 'TooManyCollections'

@@ -2053,6 +2053,15 @@ export interface ChainStorage extends GenericChainStorage {
     >;
 
     /**
+     * Identifiers of collections marked for deletion. No new collection can use them. Entries
+     * are never removed.
+     *
+     * @param {FixedBytes<32>} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    retiredIdentifiers: GenericStorageQuery<(arg: FixedBytes<32>) => [] | undefined, FixedBytes<32>>;
+
+    /**
      * Collections that have been marked for deletion and are being processed.
      * Once a collection is moved here, normal operations will fail with CollectionNotFound.
      *

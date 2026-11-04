@@ -32,13 +32,14 @@ import type {
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   CumulusPalletParachainSystemParachainInherentInboundMessageId,
+  CumulusPalletParachainSystemParachainInherentInboundHrmpMessageId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
   CumulusPalletParachainSystemPoVMessages,
   PalletBalancesAccountData,
   PalletBalancesBalanceLock,
   PalletBalancesReserveData,
   FrameSupportTokensMiscIdAmount,
-  FrameSupportTokensMiscIdAmount002,
+  FrameSupportTokensMiscIdAmountRuntimeFreezeReason,
   PalletTransactionPaymentReleases,
   FrameSupportStorageNoDrop,
   PalletCollatorSelectionCandidateInfo,
@@ -47,6 +48,10 @@ import type {
   SpCoreCryptoKeyTypeId,
   SpConsensusAuraSr25519AppSr25519Public,
   SpConsensusSlotsSlot,
+  PalletValidatorCollatorsEraValidatorSet,
+  PalletValidatorCollatorsEraCollators,
+  PalletValidatorCollatorsRotationState,
+  SpAuthorityDiscoveryAppPublic,
   CumulusPalletXcmpQueueOutboundChannelDetails,
   CumulusPalletXcmpQueueQueueConfigData,
   PalletXcmQueryStatus,
@@ -461,10 +466,10 @@ export interface ChainStorage extends GenericChainStorage {
      *
      * We need to keep track of this to filter the messages that have been already processed.
      *
-     * @param {Callback<CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined> =} callback
+     * @param {Callback<CumulusPalletParachainSystemParachainInherentInboundHrmpMessageId | undefined> =} callback
      **/
     lastProcessedHrmpMessage: GenericStorageQuery<
-      () => CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined
+      () => CumulusPalletParachainSystemParachainInherentInboundHrmpMessageId | undefined
     >;
 
     /**
@@ -617,6 +622,10 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * The total units of outstanding deactivated balance in the system.
      *
+     * This is not guaranteed to be less than or equal to [`TotalIssuance`]. Total issuance may be
+     * reduced independently of this value, including while a reversible imbalance is outstanding.
+     * Active issuance is therefore derived using saturating subtraction.
+     *
      * @param {Callback<bigint> =} callback
      **/
     inactiveIssuance: GenericStorageQuery<() => bigint>;
@@ -685,9 +694,12 @@ export interface ChainStorage extends GenericChainStorage {
      * Freeze locks on account balances.
      *
      * @param {AccountId32Like} arg
-     * @param {Callback<Array<FrameSupportTokensMiscIdAmount002>> =} callback
+     * @param {Callback<Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>> =} callback
      **/
-    freezes: GenericStorageQuery<(arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmount002>, AccountId32>;
+    freezes: GenericStorageQuery<
+      (arg: AccountId32Like) => Array<FrameSupportTokensMiscIdAmountRuntimeFreezeReason>,
+      AccountId32
+    >;
 
     /**
      * Generic pallet storage query
@@ -940,6 +952,151 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<[SpConsensusSlotsSlot, number] | undefined> =} callback
      **/
     relaySlotInfo: GenericStorageQuery<() => [SpConsensusSlotsSlot, number] | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `ValidatorCollators`'s storage queries
+   **/
+  validatorCollators: {
+    /**
+     * The latest received validator set.
+     *
+     * @param {Callback<PalletValidatorCollatorsEraValidatorSet | undefined> =} callback
+     **/
+    externalValidatorSet: GenericStorageQuery<() => PalletValidatorCollatorsEraValidatorSet | undefined>;
+
+    /**
+     * Time at which we received the last [`ExternalValidatorSet`], in milliseconds. Removed when
+     * the report before the expected end of its era is made.
+     *
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    externalSetReceivedAt: GenericStorageQuery<() => bigint | undefined>;
+
+    /**
+     * Maximum number of validators returned as collators, `None` returns every validator with
+     * registered keys. Only validators with keys count against the cap.
+     *
+     * The cap applies before the union with the other session manager. A validator that the
+     * other session manager also returns takes a place under the cap without adding a collator.
+     *
+     * The merged list becomes Aura's authority list, which Aura writes into the block header
+     * whenever it changes, and the relay chain rejects a header above its head-data limit. Size
+     * the cap so that the merged list, invulnerables and candidates included, keeps a
+     * session-change header within that limit.
+     *
+     * Under a cap the validators are drawn at random, see [`DrawnCollators`].
+     *
+     * A change with a stored set forces two rotations. The first draws [`DrawnCollators`] again
+     * from the stored set, so the drawn validators can change. The change is in force two blocks
+     * later. Removing the cap returns every validator of the stored set with registered keys.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    maxCollators: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * The collators last returned to pallet-session, taken from [`ExternalValidatorSet`].
+     *
+     * Written at every session rotation, and holds only validators that had registered keys at
+     * that rotation. Without [`MaxCollators`] it is every validator of the set with keys, in
+     * account order. Under a cap it is the draw made at the first rotation after a set arrives or
+     * the cap changes, and each later rotation returns it again without the validators that have
+     * removed their keys since. `None` when the last rotation returned no list, as before the
+     * first set arrives.
+     *
+     * Pallet-session queues the returned list at one rotation and enacts it at the next, so this
+     * is ahead of the session validators while [`PendingRotation`] is
+     * [`RotationState::AwaitingEnactment`].
+     *
+     * While [`PendingRotation`] is [`RotationState::AwaitingQueue`] it still belongs to the
+     * previous set or cap: it can be of an older era, missing before the first draw, and not a
+     * subset of [`ExternalValidatorSet`]. Otherwise it belongs to the era of
+     * [`ExternalValidatorSet`] and is a subset of it, of at most [`MaxCollators`] validators.
+     *
+     * @param {Callback<PalletValidatorCollatorsEraCollators | undefined> =} callback
+     **/
+    drawnCollators: GenericStorageQuery<() => PalletValidatorCollatorsEraCollators | undefined>;
+
+    /**
+     * Progress of the forced rotations for the latest received set.
+     *
+     * @param {Callback<PalletValidatorCollatorsRotationState> =} callback
+     **/
+    pendingRotation: GenericStorageQuery<() => PalletValidatorCollatorsRotationState>;
+
+    /**
+     * The relay chain randomness of one epoch ago, read from the relay chain state proof of every
+     * block and written when it changes.
+     *
+     * @param {Callback<FixedBytes<32> | undefined> =} callback
+     **/
+    epochRandomness: GenericStorageQuery<() => FixedBytes<32> | undefined>;
+
+    /**
+     * Number of blocks between two reports of [`AuthoredBlocks`]. A report is made in every
+     * block whose number is a multiple of it.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    reportPeriod: GenericStorageQuery<() => number>;
+
+    /**
+     * Blocks authored since the last report, per author.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number> =} callback
+     **/
+    authoredBlocks: GenericStorageQuery<(arg: AccountId32Like) => number, AccountId32>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForAuthoredBlocks: GenericStorageQuery<() => number>;
+
+    /**
+     * Expected time from the arrival of a validator set to the end of its era, in milliseconds.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    expectedEraDuration: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Time before the expected end of an era at which the counts are reported, in milliseconds.
+     * Used up to [`Config::MaxReportMargin`] and up to half of [`ExpectedEraDuration`].
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    reportMargin: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AuthorityDiscovery`'s storage queries
+   **/
+  authorityDiscovery: {
+    /**
+     * Keys of the current authority set.
+     *
+     * @param {Callback<Array<SpAuthorityDiscoveryAppPublic>> =} callback
+     **/
+    keys: GenericStorageQuery<() => Array<SpAuthorityDiscoveryAppPublic>>;
+
+    /**
+     * Keys of the next authority set.
+     *
+     * @param {Callback<Array<SpAuthorityDiscoveryAppPublic>> =} callback
+     **/
+    nextKeys: GenericStorageQuery<() => Array<SpAuthorityDiscoveryAppPublic>>;
 
     /**
      * Generic pallet storage query

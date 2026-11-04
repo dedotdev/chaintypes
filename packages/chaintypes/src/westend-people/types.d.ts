@@ -28,6 +28,7 @@ export type PeopleWestendRuntimeRuntimeCall =
   | { pallet: 'Balances'; palletCall: PalletBalancesCall }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCall }
   | { pallet: 'Session'; palletCall: PalletSessionCall }
+  | { pallet: 'ValidatorCollators'; palletCall: PalletValidatorCollatorsCall }
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCall }
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCall }
   | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCall }
@@ -48,6 +49,7 @@ export type PeopleWestendRuntimeRuntimeCallLike =
   | { pallet: 'Balances'; palletCall: PalletBalancesCallLike }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCallLike }
   | { pallet: 'Session'; palletCall: PalletSessionCallLike }
+  | { pallet: 'ValidatorCollators'; palletCall: PalletValidatorCollatorsCallLike }
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCallLike }
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCallLike }
   | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCallLike }
@@ -756,9 +758,85 @@ export type PalletSessionCallLike =
    **/
   | { name: 'PurgeKeys' };
 
-export type PeopleWestendRuntimeSessionKeys = { aura: SpConsensusAuraSr25519AppSr25519Public };
+export type PeopleWestendRuntimeSessionKeys = {
+  aura: SpConsensusAuraSr25519AppSr25519Public;
+  authorityDiscovery: SpAuthorityDiscoveryAppPublic;
+};
 
 export type SpConsensusAuraSr25519AppSr25519Public = FixedBytes<32>;
+
+export type SpAuthorityDiscoveryAppPublic = FixedBytes<32>;
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletValidatorCollatorsCall =
+  /**
+   * Store the validator set of `era`.
+   **/
+  | { name: 'SetValidators'; params: { era: number; validators: Array<AccountId32> } }
+  /**
+   * Set the maximum number of validators returned as collators.
+   *
+   * With a stored set, the change forces two rotations and the first draws
+   * [`DrawnCollators`] again, so the drawn validators can change. `None` returns the whole
+   * stored set from then on.
+   **/
+  | { name: 'SetMaxCollators'; params: { max?: number | undefined } }
+  /**
+   * Set the number of blocks between two reports of the authored blocks.
+   *
+   * The next report is made at the next multiple of `period`.
+   **/
+  | { name: 'SetReportPeriod'; params: { period: number } }
+  /**
+   * Set the expected time from the arrival of a validator set to the end of its era, in
+   * milliseconds.
+   *
+   * It applies to the stored set too, whose arrival time is kept.
+   **/
+  | { name: 'SetExpectedEraDuration'; params: { duration: bigint } }
+  /**
+   * Set the time before the expected end of an era at which the counts are reported, in
+   * milliseconds.
+   *
+   * It applies to the stored set too, whose arrival time is kept.
+   **/
+  | { name: 'SetReportMargin'; params: { margin: bigint } };
+
+export type PalletValidatorCollatorsCallLike =
+  /**
+   * Store the validator set of `era`.
+   **/
+  | { name: 'SetValidators'; params: { era: number; validators: Array<AccountId32Like> } }
+  /**
+   * Set the maximum number of validators returned as collators.
+   *
+   * With a stored set, the change forces two rotations and the first draws
+   * [`DrawnCollators`] again, so the drawn validators can change. `None` returns the whole
+   * stored set from then on.
+   **/
+  | { name: 'SetMaxCollators'; params: { max?: number | undefined } }
+  /**
+   * Set the number of blocks between two reports of the authored blocks.
+   *
+   * The next report is made at the next multiple of `period`.
+   **/
+  | { name: 'SetReportPeriod'; params: { period: number } }
+  /**
+   * Set the expected time from the arrival of a validator set to the end of its era, in
+   * milliseconds.
+   *
+   * It applies to the stored set too, whose arrival time is kept.
+   **/
+  | { name: 'SetExpectedEraDuration'; params: { duration: bigint } }
+  /**
+   * Set the time before the expected end of an era at which the counts are reported, in
+   * milliseconds.
+   *
+   * It applies to the stored set too, whose arrival time is kept.
+   **/
+  | { name: 'SetReportMargin'; params: { margin: bigint } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4144,6 +4222,7 @@ export type PeopleWestendRuntimeRuntimeEvent =
   | { pallet: 'AccumulateForward'; palletEvent: PalletAccumulateAndForwardEvent }
   | { pallet: 'CollatorSelection'; palletEvent: PalletCollatorSelectionEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
+  | { pallet: 'ValidatorCollators'; palletEvent: PalletValidatorCollatorsEvent }
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
   | { pallet: 'PolkadotXcm'; palletEvent: PalletXcmEvent }
   | { pallet: 'CumulusXcm'; palletEvent: CumulusPalletXcmEvent }
@@ -4498,6 +4577,62 @@ export type PalletSessionEvent =
    * Validator has been re-enabled.
    **/
   | { name: 'ValidatorReenabled'; data: { validator: AccountId32 } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletValidatorCollatorsEvent =
+  /**
+   * A validator set was stored for an era.
+   **/
+  | { name: 'ValidatorSetReceived'; data: { era: number; count: number } }
+  /**
+   * The maximum number of validator collators was changed.
+   **/
+  | { name: 'MaxCollatorsSet'; data: { max?: number | undefined } }
+  /**
+   * No external set is stored, so no validators were returned for the session, with or
+   * without a cap. This happens in the sessions after this pallet is added to a runtime and
+   * before the first set arrives, so it is not an `UnexpectedKind`.
+   **/
+  | { name: 'NothingToDraw' }
+  /**
+   * `drawn_len` of the `external_len` validators of the set of `era`, all with registered
+   * keys, were returned for a session and recorded in [`DrawnCollators`]. `new_external` is
+   * `true` at the first rotation after a set arrives or the cap changes, and `false` at the
+   * later ones, which under a cap return the previous draw again.
+   **/
+  | { name: 'CollatorsDrawn'; data: { era: number; externalLen: number; drawnLen: number; newExternal: boolean } }
+  /**
+   * The number of blocks between two reports was changed.
+   **/
+  | { name: 'ReportPeriodSet'; data: { period: number } }
+  /**
+   * The block counts of `authors` authors were removed. The `reported` of them in the
+   * stored set were handed to the reporter and the others were dropped.
+   **/
+  | { name: 'BlocksReported'; data: { authors: number; reported: number } }
+  /**
+   * The reporter rejected the block counts. The counts of the `kept` authors in the stored
+   * set are kept for the next report, and those of the `dropped` other authors were
+   * removed.
+   **/
+  | { name: 'BlocksReportFailed'; data: { kept: number; dropped: number } }
+  /**
+   * The expected time from the arrival of a set to the end of its era was changed.
+   **/
+  | { name: 'ExpectedEraDurationSet'; data: { duration: bigint } }
+  /**
+   * The time before the expected end of an era at which the counts are reported was
+   * changed.
+   **/
+  | { name: 'ReportMarginSet'; data: { margin: bigint } }
+  /**
+   * Something that should never happen happened. See [`UnexpectedKind`].
+   **/
+  | { name: 'Unexpected'; data: PalletValidatorCollatorsUnexpectedKind };
+
+export type PalletValidatorCollatorsUnexpectedKind = 'NoPreviousDrawSet' | 'StoredSetUndecodable';
 
 /**
  * The `Event` enum of this pallet
@@ -5445,6 +5580,13 @@ export type CumulusPrimitivesParachainInherentMessageQueueChain = H256;
 
 export type CumulusPalletParachainSystemParachainInherentInboundMessageId = { sentAt: number; reverseIdx: number };
 
+export type CumulusPalletParachainSystemParachainInherentInboundHrmpMessageId =
+  | { type: 'Generic'; value: CumulusPalletParachainSystemParachainInherentInboundMessageId }
+  | {
+      type: 'Specific';
+      value: { sentAt: number; sender: PolkadotParachainPrimitivesPrimitivesId; reverseIdx: number };
+    };
+
 export type PolkadotCorePrimitivesOutboundHrmpMessage = {
   recipient: PolkadotParachainPrimitivesPrimitivesId;
   data: Bytes;
@@ -5497,7 +5639,12 @@ export type PalletBalancesReserveData = { id: FixedBytes<8>; amount: bigint };
 
 export type FrameSupportTokensMiscIdAmount = { id: PeopleWestendRuntimeRuntimeHoldReason; amount: bigint };
 
-export type FrameSupportTokensMiscIdAmount002 = { id: []; amount: bigint };
+export type FrameSupportTokensMiscIdAmountRuntimeFreezeReason = {
+  id: PeopleWestendRuntimeRuntimeFreezeReason;
+  amount: bigint;
+};
+
+export type PeopleWestendRuntimeRuntimeFreezeReason = null;
 
 /**
  * The `Error` enum of this pallet.
@@ -5540,7 +5687,7 @@ export type PalletBalancesError =
    **/
   | 'TooManyHolds'
   /**
-   * Number of freezes exceed `MaxFreezes`.
+   * Number of freezes exceed `VariantCountOf<T::RuntimeFreezeReason>`.
    **/
   | 'TooManyFreezes'
   /**
@@ -5666,6 +5813,41 @@ export type PalletSessionError =
 
 export type SpConsensusSlotsSlot = bigint;
 
+export type PalletValidatorCollatorsEraValidatorSet = { era: number; validators: Array<AccountId32> };
+
+export type PalletValidatorCollatorsEraCollators = { era: number; collators: Array<AccountId32> };
+
+export type PalletValidatorCollatorsRotationState = 'Idle' | 'AwaitingQueue' | 'AwaitingEnactment';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletValidatorCollatorsError =
+  /**
+   * The era of the set is not newer than the era of the stored set.
+   **/
+  | 'StaleEra'
+  /**
+   * The set has more validators than [`Config::MaxValidators`].
+   **/
+  | 'TooManyValidators'
+  /**
+   * The report period must be greater than zero.
+   **/
+  | 'ZeroReportPeriod'
+  /**
+   * The expected era duration must be greater than zero.
+   **/
+  | 'ZeroExpectedEraDuration'
+  /**
+   * The report margin must be greater than zero.
+   **/
+  | 'ZeroReportMargin'
+  /**
+   * The report margin is above [`Config::MaxReportMargin`].
+   **/
+  | 'ReportMarginTooHigh';
+
 export type CumulusPalletXcmpQueueOutboundChannelDetails = {
   recipient: PolkadotParachainPrimitivesPrimitivesId;
   state: CumulusPalletXcmpQueueOutboundState;
@@ -5709,7 +5891,11 @@ export type CumulusPalletXcmpQueueError =
   /**
    * The message is too big.
    **/
-  | 'TooBig';
+  | 'TooBig'
+  /**
+   * The page couldn't be processed, but it should be retried.
+   **/
+  | 'RetryPage';
 
 export type PalletXcmQueryStatus =
   | {
@@ -6340,7 +6526,10 @@ export type SpRuntimeTransactionValidityInvalidTransaction =
   | { type: 'MandatoryValidation' }
   | { type: 'BadSigner' }
   | { type: 'IndeterminateImplicit' }
-  | { type: 'UnknownOrigin' };
+  | { type: 'UnknownOrigin' }
+  | { type: 'Module'; value: SpRuntimeModuleInvalidity };
+
+export type SpRuntimeModuleInvalidity = { index: number; error: number };
 
 export type SpRuntimeTransactionValidityUnknownTransaction =
   | { type: 'CannotLookup' }
@@ -6421,12 +6610,19 @@ export type CumulusPrimitivesCoreCollationInfo = {
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
 
+export type CumulusPrimitivesCoreRelayProofRequest = { keys: Array<CumulusPrimitivesCoreRelayStorageKey> };
+
+export type CumulusPrimitivesCoreRelayStorageKey =
+  | { type: 'Top'; value: Bytes }
+  | { type: 'Child'; value: { storageKey: Bytes; key: Bytes } };
+
 export type PeopleWestendRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }
   | { pallet: 'ParachainSystem'; palletError: CumulusPalletParachainSystemError }
   | { pallet: 'Balances'; palletError: PalletBalancesError }
   | { pallet: 'CollatorSelection'; palletError: PalletCollatorSelectionError }
   | { pallet: 'Session'; palletError: PalletSessionError }
+  | { pallet: 'ValidatorCollators'; palletError: PalletValidatorCollatorsError }
   | { pallet: 'XcmpQueue'; palletError: CumulusPalletXcmpQueueError }
   | { pallet: 'PolkadotXcm'; palletError: PalletXcmError }
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }

@@ -36,6 +36,7 @@ import type {
   CumulusPrimitivesParachainInherentMessageQueueChain,
   PolkadotParachainPrimitivesPrimitivesId,
   CumulusPalletParachainSystemParachainInherentInboundMessageId,
+  CumulusPalletParachainSystemParachainInherentInboundHrmpMessageId,
   PolkadotCorePrimitivesOutboundHrmpMessage,
   CumulusPalletParachainSystemPoVMessages,
   PalletMigrationsMigrationCursor,
@@ -58,6 +59,11 @@ import type {
   SpCoreCryptoKeyTypeId,
   SpConsensusAuraSr25519AppSr25519Public,
   SpConsensusSlotsSlot,
+  PalletValidatorCollatorsEraValidatorSet,
+  PalletValidatorCollatorsEraCollators,
+  PalletValidatorCollatorsRotationState,
+  SpAuthorityDiscoveryAppPublic,
+  SpStakingServiceKind,
   CumulusPalletXcmpQueueOutboundChannelDetails,
   CumulusPalletXcmpQueueQueueConfigData,
   PalletXcmQueryStatus,
@@ -107,7 +113,10 @@ import type {
   PalletReviveStorageDeletionQueueManager,
   PalletReviveEvmApiBlock,
   PalletReviveEvmBlockHashReceiptGasInfo,
+  PalletReviveEvmBlockHashSyntheticTransactionInfo,
+  PalletReviveEvmBlockHashReceiptCommittedReceiptLogs,
   PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR,
+  PalletReviveEvmBlockHashOutsideFrameLog,
   PalletReviveDebugDebugSettings,
   PalletAssetRewardsPoolStakerInfo,
   PalletAssetRewardsPoolInfo,
@@ -549,10 +558,10 @@ export interface ChainStorage extends GenericChainStorage {
      *
      * We need to keep track of this to filter the messages that have been already processed.
      *
-     * @param {Callback<CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined> =} callback
+     * @param {Callback<CumulusPalletParachainSystemParachainInherentInboundHrmpMessageId | undefined> =} callback
      **/
     lastProcessedHrmpMessage: GenericStorageQuery<
-      () => CumulusPalletParachainSystemParachainInherentInboundMessageId | undefined
+      () => CumulusPalletParachainSystemParachainInherentInboundHrmpMessageId | undefined
     >;
 
     /**
@@ -826,6 +835,10 @@ export interface ChainStorage extends GenericChainStorage {
 
     /**
      * The total units of outstanding deactivated balance in the system.
+     *
+     * This is not guaranteed to be less than or equal to [`TotalIssuance`]. Total issuance may be
+     * reduced independently of this value, including while a reversible imbalance is outstanding.
+     * Active issuance is therefore derived using saturating subtraction.
      *
      * @param {Callback<bigint> =} callback
      **/
@@ -1161,6 +1174,175 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<[SpConsensusSlotsSlot, number] | undefined> =} callback
      **/
     relaySlotInfo: GenericStorageQuery<() => [SpConsensusSlotsSlot, number] | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `ValidatorCollators`'s storage queries
+   **/
+  validatorCollators: {
+    /**
+     * The latest received validator set.
+     *
+     * @param {Callback<PalletValidatorCollatorsEraValidatorSet | undefined> =} callback
+     **/
+    externalValidatorSet: GenericStorageQuery<() => PalletValidatorCollatorsEraValidatorSet | undefined>;
+
+    /**
+     * Time at which we received the last [`ExternalValidatorSet`], in milliseconds. Removed when
+     * the report before the expected end of its era is made.
+     *
+     * @param {Callback<bigint | undefined> =} callback
+     **/
+    externalSetReceivedAt: GenericStorageQuery<() => bigint | undefined>;
+
+    /**
+     * Maximum number of validators returned as collators, `None` returns every validator with
+     * registered keys. Only validators with keys count against the cap.
+     *
+     * The cap applies before the union with the other session manager. A validator that the
+     * other session manager also returns takes a place under the cap without adding a collator.
+     *
+     * The merged list becomes Aura's authority list, which Aura writes into the block header
+     * whenever it changes, and the relay chain rejects a header above its head-data limit. Size
+     * the cap so that the merged list, invulnerables and candidates included, keeps a
+     * session-change header within that limit.
+     *
+     * Under a cap the validators are drawn at random, see [`DrawnCollators`].
+     *
+     * A change with a stored set forces two rotations. The first draws [`DrawnCollators`] again
+     * from the stored set, so the drawn validators can change. The change is in force two blocks
+     * later. Removing the cap returns every validator of the stored set with registered keys.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    maxCollators: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * The collators last returned to pallet-session, taken from [`ExternalValidatorSet`].
+     *
+     * Written at every session rotation, and holds only validators that had registered keys at
+     * that rotation. Without [`MaxCollators`] it is every validator of the set with keys, in
+     * account order. Under a cap it is the draw made at the first rotation after a set arrives or
+     * the cap changes, and each later rotation returns it again without the validators that have
+     * removed their keys since. `None` when the last rotation returned no list, as before the
+     * first set arrives.
+     *
+     * Pallet-session queues the returned list at one rotation and enacts it at the next, so this
+     * is ahead of the session validators while [`PendingRotation`] is
+     * [`RotationState::AwaitingEnactment`].
+     *
+     * While [`PendingRotation`] is [`RotationState::AwaitingQueue`] it still belongs to the
+     * previous set or cap: it can be of an older era, missing before the first draw, and not a
+     * subset of [`ExternalValidatorSet`]. Otherwise it belongs to the era of
+     * [`ExternalValidatorSet`] and is a subset of it, of at most [`MaxCollators`] validators.
+     *
+     * @param {Callback<PalletValidatorCollatorsEraCollators | undefined> =} callback
+     **/
+    drawnCollators: GenericStorageQuery<() => PalletValidatorCollatorsEraCollators | undefined>;
+
+    /**
+     * Progress of the forced rotations for the latest received set.
+     *
+     * @param {Callback<PalletValidatorCollatorsRotationState> =} callback
+     **/
+    pendingRotation: GenericStorageQuery<() => PalletValidatorCollatorsRotationState>;
+
+    /**
+     * The relay chain randomness of one epoch ago, read from the relay chain state proof of every
+     * block and written when it changes.
+     *
+     * @param {Callback<FixedBytes<32> | undefined> =} callback
+     **/
+    epochRandomness: GenericStorageQuery<() => FixedBytes<32> | undefined>;
+
+    /**
+     * Number of blocks between two reports of [`AuthoredBlocks`]. A report is made in every
+     * block whose number is a multiple of it.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    reportPeriod: GenericStorageQuery<() => number>;
+
+    /**
+     * Blocks authored since the last report, per author.
+     *
+     * @param {AccountId32Like} arg
+     * @param {Callback<number> =} callback
+     **/
+    authoredBlocks: GenericStorageQuery<(arg: AccountId32Like) => number, AccountId32>;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForAuthoredBlocks: GenericStorageQuery<() => number>;
+
+    /**
+     * Expected time from the arrival of a validator set to the end of its era, in milliseconds.
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    expectedEraDuration: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Time before the expected end of an era at which the counts are reported, in milliseconds.
+     * Used up to [`Config::MaxReportMargin`] and up to half of [`ExpectedEraDuration`].
+     *
+     * @param {Callback<bigint> =} callback
+     **/
+    reportMargin: GenericStorageQuery<() => bigint>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AuthorityDiscovery`'s storage queries
+   **/
+  authorityDiscovery: {
+    /**
+     * Keys of the current authority set.
+     *
+     * @param {Callback<Array<SpAuthorityDiscoveryAppPublic>> =} callback
+     **/
+    keys: GenericStorageQuery<() => Array<SpAuthorityDiscoveryAppPublic>>;
+
+    /**
+     * Keys of the next authority set.
+     *
+     * @param {Callback<Array<SpAuthorityDiscoveryAppPublic>> =} callback
+     **/
+    nextKeys: GenericStorageQuery<() => Array<SpAuthorityDiscoveryAppPublic>>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `StakingPointsConverter`'s storage queries
+   **/
+  stakingPointsConverter: {
+    /**
+     * Era points a validator earns for each unit of a service on a source, bounded by
+     * [`Config::MaxPointsPerService`] when crediting. Absent means zero.
+     *
+     * A unit is specific to the service. For [`ServiceKind::Collation`] it is one block
+     * authored. The result is credited to staking as era points.
+     *
+     * @param {[PolkadotParachainPrimitivesPrimitivesId, SpStakingServiceKind]} arg
+     * @param {Callback<number> =} callback
+     **/
+    pointsPerService: GenericStorageQuery<
+      (arg: [PolkadotParachainPrimitivesPrimitivesId, SpStakingServiceKind]) => number,
+      [PolkadotParachainPrimitivesPrimitivesId, SpStakingServiceKind]
+    >;
 
     /**
      * Generic pallet storage query
@@ -2351,6 +2533,39 @@ export interface ChainStorage extends GenericChainStorage {
     receiptInfoData: GenericStorageQuery<() => Array<PalletReviveEvmBlockHashReceiptGasInfo>>;
 
     /**
+     * What the block committed to its synthetic transaction, if it has one.
+     *
+     * Separate from [`ReceiptInfoData`] rather than a field alongside it, so that item's encoding
+     * is unchanged: a runtime upgrade enacts mid-block, and a runtime API call at the enacting
+     * block reads what the previous runtime wrote.
+     *
+     * @param {Callback<PalletReviveEvmBlockHashSyntheticTransactionInfo | undefined> =} callback
+     **/
+    syntheticReceiptInfo: GenericStorageQuery<() => PalletReviveEvmBlockHashSyntheticTransactionInfo | undefined>;
+
+    /**
+     * What the open ethereum transaction has committed to its receipt, see
+     * `block_storage::capture_into_receipt`. Taken when the transaction's receipt is built, so it
+     * is empty between transactions.
+     *
+     * Accessed only while a receipt is open, in an ethereum transaction or its dry run. Read on
+     * every log, and written as well until a log overflows the receipt. Read, for its overflow
+     * flag, see `block_storage::ensure_receipt_within_limit`:
+     * - at the successful end of every contract frame;
+     * - after the storage deposits in `bare_call` and a successful `bare_instantiate`;
+     * - after the runtime call dispatched by `eth_substrate_call`;
+     * - after the runtime call dispatched by a dry run.
+     *
+     * Whitelisted like `frame_system::Events`: accessed this often, yet never in a block's
+     * pre-state, so a block pays one absence lookup for it however many logs and frames it holds.
+     * Without the whitelist the benchmark bills each `LOG` and each frame for that lookup as if it
+     * were the first access of the block.
+     *
+     * @param {Callback<PalletReviveEvmBlockHashReceiptCommittedReceiptLogs> =} callback
+     **/
+    receiptLogsCommitted: GenericStorageQuery<() => PalletReviveEvmBlockHashReceiptCommittedReceiptLogs>;
+
+    /**
      * Incremental ethereum block builder.
      *
      * @param {Callback<PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR> =} callback
@@ -2366,6 +2581,37 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<[Bytes, Bytes] | undefined> =} callback
      **/
     ethBlockBuilderFirstValues: GenericStorageQuery<() => [Bytes, Bytes] | undefined>;
+
+    /**
+     * Logs emitted during the block outside of any ethereum transaction (e.g. by pallet-assets
+     * balance-change callbacks on non-`eth_transact` paths), in emission order.
+     *
+     * One value grown with `append`, like `frame_system::Events`: buffering a log extends the
+     * encoding in place at the cost of that log's bytes. Written and taken within one block, so
+     * it is never in the pre-state and the proof holds one absence lookup for the key, nothing
+     * per entry. Drained in `on_finalize` and flushed
+     * as a single synthetic transaction receipt, so the logs enter the block's `logs_bloom`,
+     * `receipts_root` and transaction trie.
+     *
+     * Whitelisted like `frame_system::Events` and for the same reason: a block pays that one
+     * lookup however many logs it buffers, so counting it in every producer's benchmark would
+     * bill each mirrored balance change for a database access the block makes once.
+     *
+     * NOTE: unbounded; accumulated across the block and consumed in `on_finalize`.
+     *
+     * @param {Callback<Array<PalletReviveEvmBlockHashOutsideFrameLog>> =} callback
+     **/
+    outsideFrameLogs: GenericStorageQuery<() => Array<PalletReviveEvmBlockHashOutsideFrameLog>>;
+
+    /**
+     * The bytes the logs in [`OutsideFrameLogs`] take up on the synthetic transaction's receipt,
+     * counted like an ethereum transaction's logs against [`limits::MAX_RECEIPT_LOGS_BYTES`].
+     *
+     * Written and taken together with [`OutsideFrameLogs`], and whitelisted for the same reason.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    outsideFrameLogsBytes: GenericStorageQuery<() => number>;
 
     /**
      * Debugging settings that can be configured when DebugEnabled config is true.
@@ -3082,10 +3328,29 @@ export interface ChainStorage extends GenericChainStorage {
      * Rewards for the last [`Config::HistoryDepth`] eras.
      * If reward hasn't been set or has been removed then 0 reward is returned.
      *
+     * The same points split by the service that earned them are in [`ErasRewardPointsByService`].
+     * This pot is essentially the _total_ points earned by the validator.
+     *
      * @param {number} arg
      * @param {Callback<PalletStakingAsyncEraRewardPoints> =} callback
      **/
     erasRewardPoints: GenericStorageQuery<(arg: number) => PalletStakingAsyncEraRewardPoints, number>;
+
+    /**
+     * The points of [`ErasRewardPoints`] split by the service that earned them.
+     *
+     * Values are era points as credited, in the same unit as [`ErasRewardPoints`]. A service
+     * measured in other units, such as blocks authored, is converted to points before it is
+     * credited. Written with [`ErasRewardPoints`] and pruned with it. An entry never holds more
+     * than the tally does for the same account.
+     *
+     * @param {[number, SpStakingServiceKind]} arg
+     * @param {Callback<PalletStakingAsyncEraRewardPoints> =} callback
+     **/
+    erasRewardPointsByService: GenericStorageQuery<
+      (arg: [number, SpStakingServiceKind]) => PalletStakingAsyncEraRewardPoints,
+      [number, SpStakingServiceKind]
+    >;
 
     /**
      * The total amount staked for the last [`Config::HistoryDepth`] eras.
@@ -3262,6 +3527,18 @@ export interface ChainStorage extends GenericChainStorage {
     electableStashes: GenericStorageQuery<() => Array<AccountId32>>;
 
     /**
+     * The validators elected for the planned era, kept from the moment its election completes
+     * until the era starts, for [`Config::OnEraStart`].
+     *
+     * Only written when [`OnEraStart::enabled`] is true, and removed at the start of its era
+     * whether or not the hook is still enabled. An era whose election completed before the hook
+     * was enabled has no copy and is not notified.
+     *
+     * @param {Callback<[number, Array<AccountId32>] | undefined> =} callback
+     **/
+    nextEraValidators: GenericStorageQuery<() => [number, Array<AccountId32>] | undefined>;
+
+    /**
      * Tracks the current step of era pruning process for each era being lazily pruned.
      *
      * @param {number} arg
@@ -3273,11 +3550,14 @@ export interface ChainStorage extends GenericChainStorage {
      * The number of eras a validator can remain inactive during the last
      * [`Config::HistoryDepth`] before being subject to chilling because of inactivity.
      *
-     * This must be less than or equal [`Config::HistoryDepth`] and bigger than 1.
+     * This must be less than or equal [`Config::HistoryDepth`] and bigger than 1. The weight of
+     * `chill_inactive` with a proof of this length must fit in one normal extrinsic.
      *
-     * @param {Callback<number> =} callback
+     * If `None`, the default, `chill_inactive` is disabled.
+     *
+     * @param {Callback<number | undefined> =} callback
      **/
-    chillInactiveThreshold: GenericStorageQuery<() => number>;
+    chillInactiveThreshold: GenericStorageQuery<() => number | undefined>;
 
     /**
      * Generic pallet storage query
@@ -4138,7 +4418,7 @@ export interface ChainStorage extends GenericChainStorage {
 
     /**
      * The cumulative child-bounty value for each parent bounty. To be subtracted from the parent
-     * bounty payout when awarding bounty.
+     * bounty payout and refund.
      *
      * Indexed by `parent_bounty_id`.
      *

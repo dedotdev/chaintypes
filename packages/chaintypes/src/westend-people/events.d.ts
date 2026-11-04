@@ -8,6 +8,7 @@ import type {
   FrameSupportTokensMiscBalanceStatus,
   PeopleWestendRuntimeRuntimeHoldReason,
   PalletBalancesUnexpectedKind,
+  PalletValidatorCollatorsUnexpectedKind,
   StagingXcmV5TraitsOutcome,
   StagingXcmV5Location,
   StagingXcmV5Xcm,
@@ -468,6 +469,86 @@ export interface ChainEvents extends GenericChainEvents {
      * Validator has been re-enabled.
      **/
     ValidatorReenabled: GenericPalletEvent<'Session', 'ValidatorReenabled', { validator: AccountId32 }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `ValidatorCollators`'s events
+   **/
+  validatorCollators: {
+    /**
+     * A validator set was stored for an era.
+     **/
+    ValidatorSetReceived: GenericPalletEvent<
+      'ValidatorCollators',
+      'ValidatorSetReceived',
+      { era: number; count: number }
+    >;
+
+    /**
+     * The maximum number of validator collators was changed.
+     **/
+    MaxCollatorsSet: GenericPalletEvent<'ValidatorCollators', 'MaxCollatorsSet', { max?: number | undefined }>;
+
+    /**
+     * No external set is stored, so no validators were returned for the session, with or
+     * without a cap. This happens in the sessions after this pallet is added to a runtime and
+     * before the first set arrives, so it is not an `UnexpectedKind`.
+     **/
+    NothingToDraw: GenericPalletEvent<'ValidatorCollators', 'NothingToDraw', null>;
+
+    /**
+     * `drawn_len` of the `external_len` validators of the set of `era`, all with registered
+     * keys, were returned for a session and recorded in [`DrawnCollators`]. `new_external` is
+     * `true` at the first rotation after a set arrives or the cap changes, and `false` at the
+     * later ones, which under a cap return the previous draw again.
+     **/
+    CollatorsDrawn: GenericPalletEvent<
+      'ValidatorCollators',
+      'CollatorsDrawn',
+      { era: number; externalLen: number; drawnLen: number; newExternal: boolean }
+    >;
+
+    /**
+     * The number of blocks between two reports was changed.
+     **/
+    ReportPeriodSet: GenericPalletEvent<'ValidatorCollators', 'ReportPeriodSet', { period: number }>;
+
+    /**
+     * The block counts of `authors` authors were removed. The `reported` of them in the
+     * stored set were handed to the reporter and the others were dropped.
+     **/
+    BlocksReported: GenericPalletEvent<'ValidatorCollators', 'BlocksReported', { authors: number; reported: number }>;
+
+    /**
+     * The reporter rejected the block counts. The counts of the `kept` authors in the stored
+     * set are kept for the next report, and those of the `dropped` other authors were
+     * removed.
+     **/
+    BlocksReportFailed: GenericPalletEvent<
+      'ValidatorCollators',
+      'BlocksReportFailed',
+      { kept: number; dropped: number }
+    >;
+
+    /**
+     * The expected time from the arrival of a set to the end of its era was changed.
+     **/
+    ExpectedEraDurationSet: GenericPalletEvent<'ValidatorCollators', 'ExpectedEraDurationSet', { duration: bigint }>;
+
+    /**
+     * The time before the expected end of an era at which the counts are reported was
+     * changed.
+     **/
+    ReportMarginSet: GenericPalletEvent<'ValidatorCollators', 'ReportMarginSet', { margin: bigint }>;
+
+    /**
+     * Something that should never happen happened. See [`UnexpectedKind`].
+     **/
+    Unexpected: GenericPalletEvent<'ValidatorCollators', 'Unexpected', PalletValidatorCollatorsUnexpectedKind>;
 
     /**
      * Generic pallet event

@@ -21,6 +21,7 @@ import type {
   SpConsensusSlotsSlotDuration,
   SpConsensusAuraSr25519AppSr25519Public,
   PolkadotParachainPrimitivesPrimitivesId,
+  CumulusPrimitivesCoreRelayProofRequest,
   SpConsensusSlotsSlot,
   SpRuntimeBlockLazyBlock,
   SpRuntimeExtrinsicInclusionMode,
@@ -34,6 +35,7 @@ import type {
   SpRuntimeTransactionValidityTransactionSource,
   SpSessionRuntimeApiOpaqueGeneratedSessionKeys,
   SpCoreCryptoKeyTypeId,
+  SpAuthorityDiscoveryAppPublic,
   StagingXcmV5Location,
   PalletTransactionPaymentRuntimeDispatchInfo,
   PalletTransactionPaymentFeeDetails,
@@ -250,6 +252,24 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: TargetBlockRate_target_block_rate
      **/
     targetBlockRate: GenericRuntimeApiMethod<() => Promise<number>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: KeyToIncludeInRelayProof - 0x075f8cd374350e84
+   **/
+  keyToIncludeInRelayProof: {
+    /**
+     * Returns relay chain storage proof requests.
+     *
+     * The collator will include them in the relay chain proof that is passed alongside the parachain inherent into the runtime.
+     *
+     * @callname: KeyToIncludeInRelayProof_keys_to_prove
+     **/
+    keysToProve: GenericRuntimeApiMethod<() => Promise<CumulusPrimitivesCoreRelayProofRequest>>;
 
     /**
      * Generic runtime api call
@@ -510,6 +530,22 @@ export interface RuntimeApis extends GenericRuntimeApis {
     decodeSessionKeys: GenericRuntimeApiMethod<
       (encoded: BytesLike) => Promise<Array<[Bytes, SpCoreCryptoKeyTypeId]> | undefined>
     >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: AuthorityDiscoveryApi - 0x687ad44ad37f03c2
+   **/
+  authorityDiscoveryApi: {
+    /**
+     * Retrieve authority identifiers of the current and next authority set.
+     *
+     * @callname: AuthorityDiscoveryApi_authorities
+     **/
+    authorities: GenericRuntimeApiMethod<() => Promise<Array<SpAuthorityDiscoveryAppPublic>>>;
 
     /**
      * Generic runtime api call
@@ -1253,7 +1289,10 @@ export interface RuntimeApis extends GenericRuntimeApis {
      *
      * # Note
      *
-     * Each entry corresponds to the appropriate Ethereum transaction in the current block.
+     * Each entry corresponds to the appropriate Ethereum transaction in the current block. A
+     * block may also carry a synthetic transaction for the logs emitted outside any ethereum
+     * transaction; it has no entry here, and only `eth_receipt_data_versioned` at version 2
+     * or above reports it.
      *
      * @callname: ReviveApi_eth_receipt_data
      *

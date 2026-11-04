@@ -28,6 +28,7 @@ import type {
   SpRuntimeTransactionValidityTransactionSource,
   SpSessionRuntimeApiOpaqueGeneratedSessionKeys,
   SpCoreCryptoKeyTypeId,
+  SpAuthorityDiscoveryAppPublic,
   PalletTransactionPaymentRuntimeDispatchInfo,
   PalletTransactionPaymentFeeDetails,
   SpWeightsWeightV2Weight,
@@ -48,6 +49,7 @@ import type {
   XcmRuntimeApisAuthorizedAliasesError,
   CumulusPrimitivesCoreCollationInfo,
   PolkadotParachainPrimitivesPrimitivesId,
+  CumulusPrimitivesCoreRelayProofRequest,
 } from './types.js';
 
 export interface RuntimeApis extends GenericRuntimeApis {
@@ -381,6 +383,22 @@ export interface RuntimeApis extends GenericRuntimeApis {
     decodeSessionKeys: GenericRuntimeApiMethod<
       (encoded: BytesLike) => Promise<Array<[Bytes, SpCoreCryptoKeyTypeId]> | undefined>
     >;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: AuthorityDiscoveryApi - 0x687ad44ad37f03c2
+   **/
+  authorityDiscoveryApi: {
+    /**
+     * Retrieve authority identifiers of the current and next authority set.
+     *
+     * @callname: AuthorityDiscoveryApi_authorities
+     **/
+    authorities: GenericRuntimeApiMethod<() => Promise<Array<SpAuthorityDiscoveryAppPublic>>>;
 
     /**
      * Generic runtime api call
@@ -815,6 +833,24 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: TargetBlockRate_target_block_rate
      **/
     targetBlockRate: GenericRuntimeApiMethod<() => Promise<number>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: KeyToIncludeInRelayProof - 0x075f8cd374350e84
+   **/
+  keyToIncludeInRelayProof: {
+    /**
+     * Returns relay chain storage proof requests.
+     *
+     * The collator will include them in the relay chain proof that is passed alongside the parachain inherent into the runtime.
+     *
+     * @callname: KeyToIncludeInRelayProof_keys_to_prove
+     **/
+    keysToProve: GenericRuntimeApiMethod<() => Promise<CumulusPrimitivesCoreRelayProofRequest>>;
 
     /**
      * Generic runtime api call

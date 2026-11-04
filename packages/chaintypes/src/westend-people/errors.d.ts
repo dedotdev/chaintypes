@@ -151,7 +151,7 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyHolds: GenericPalletError;
 
     /**
-     * Number of freezes exceed `MaxFreezes`.
+     * Number of freezes exceed `VariantCountOf<T::RuntimeFreezeReason>`.
      **/
     TooManyFreezes: GenericPalletError;
 
@@ -299,6 +299,45 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `ValidatorCollators`'s errors
+   **/
+  validatorCollators: {
+    /**
+     * The era of the set is not newer than the era of the stored set.
+     **/
+    StaleEra: GenericPalletError;
+
+    /**
+     * The set has more validators than [`Config::MaxValidators`].
+     **/
+    TooManyValidators: GenericPalletError;
+
+    /**
+     * The report period must be greater than zero.
+     **/
+    ZeroReportPeriod: GenericPalletError;
+
+    /**
+     * The expected era duration must be greater than zero.
+     **/
+    ZeroExpectedEraDuration: GenericPalletError;
+
+    /**
+     * The report margin must be greater than zero.
+     **/
+    ZeroReportMargin: GenericPalletError;
+
+    /**
+     * The report margin is above [`Config::MaxReportMargin`].
+     **/
+    ReportMarginTooHigh: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `XcmpQueue`'s errors
    **/
   xcmpQueue: {
@@ -326,6 +365,11 @@ export interface ChainErrors extends GenericChainErrors {
      * The message is too big.
      **/
     TooBig: GenericPalletError;
+
+    /**
+     * The page couldn't be processed, but it should be retried.
+     **/
+    RetryPage: GenericPalletError;
 
     /**
      * Generic pallet error

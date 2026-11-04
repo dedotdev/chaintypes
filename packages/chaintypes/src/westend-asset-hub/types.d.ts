@@ -39,6 +39,8 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'Vesting'; palletCall: PalletVestingCall }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCall }
   | { pallet: 'Session'; palletCall: PalletSessionCall }
+  | { pallet: 'ValidatorCollators'; palletCall: PalletValidatorCollatorsCall }
+  | { pallet: 'StakingPointsConverter'; palletCall: PalletStakingAsyncPointsConverterCall }
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCall }
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCall }
   | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCall }
@@ -93,6 +95,8 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'Vesting'; palletCall: PalletVestingCallLike }
   | { pallet: 'CollatorSelection'; palletCall: PalletCollatorSelectionCallLike }
   | { pallet: 'Session'; palletCall: PalletSessionCallLike }
+  | { pallet: 'ValidatorCollators'; palletCall: PalletValidatorCollatorsCallLike }
+  | { pallet: 'StakingPointsConverter'; palletCall: PalletStakingAsyncPointsConverterCallLike }
   | { pallet: 'XcmpQueue'; palletCall: CumulusPalletXcmpQueueCallLike }
   | { pallet: 'PolkadotXcm'; palletCall: PalletXcmCallLike }
   | { pallet: 'CumulusXcm'; palletCall: CumulusPalletXcmCallLike }
@@ -668,7 +672,8 @@ export type PalletSchedulerCall =
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
    *
-   * This call **cannot** be used to set a retry configuration for a named task.
+   * This call **cannot** be used to set a retry configuration for a named task; it fails
+   * with [`Error::Named`]. Use [`Pallet::set_retry_named`] for those.
    **/
   | { name: 'SetRetry'; params: { task: [number, number]; retries: number; period: number } }
   /**
@@ -690,6 +695,10 @@ export type PalletSchedulerCall =
   | { name: 'SetRetryNamed'; params: { id: FixedBytes<32>; retries: number; period: number } }
   /**
    * Removes the retry configuration of a task.
+   *
+   * Unlike [`Pallet::set_retry`], this accepts named tasks too: dropping a retry
+   * configuration is always safe, and configurations left by older runtimes still need a
+   * way out. The `RetryCancelled` event therefore carries `id: None` even for a named task.
    **/
   | { name: 'CancelRetry'; params: { task: [number, number] } }
   /**
@@ -773,7 +782,8 @@ export type PalletSchedulerCallLike =
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
    *
-   * This call **cannot** be used to set a retry configuration for a named task.
+   * This call **cannot** be used to set a retry configuration for a named task; it fails
+   * with [`Error::Named`]. Use [`Pallet::set_retry_named`] for those.
    **/
   | { name: 'SetRetry'; params: { task: [number, number]; retries: number; period: number } }
   /**
@@ -795,6 +805,10 @@ export type PalletSchedulerCallLike =
   | { name: 'SetRetryNamed'; params: { id: FixedBytes<32>; retries: number; period: number } }
   /**
    * Removes the retry configuration of a task.
+   *
+   * Unlike [`Pallet::set_retry`], this accepts named tasks too: dropping a retry
+   * configuration is always safe, and configurations left by older runtimes still need a
+   * way out. The `RetryCancelled` event therefore carries `id: None` even for a named task.
    **/
   | { name: 'CancelRetry'; params: { task: [number, number] } }
   /**
@@ -1481,9 +1495,128 @@ export type PalletSessionCallLike =
    **/
   | { name: 'PurgeKeys' };
 
-export type AssetHubWestendRuntimeSessionKeys = { aura: SpConsensusAuraSr25519AppSr25519Public };
+export type AssetHubWestendRuntimeSessionKeys = {
+  aura: SpConsensusAuraSr25519AppSr25519Public;
+  authorityDiscovery: SpAuthorityDiscoveryAppPublic;
+};
 
 export type SpConsensusAuraSr25519AppSr25519Public = FixedBytes<32>;
+
+export type SpAuthorityDiscoveryAppPublic = FixedBytes<32>;
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletValidatorCollatorsCall =
+  /**
+   * Store the validator set of `era`.
+   **/
+  | { name: 'SetValidators'; params: { era: number; validators: Array<AccountId32> } }
+  /**
+   * Set the maximum number of validators returned as collators.
+   *
+   * With a stored set, the change forces two rotations and the first draws
+   * [`DrawnCollators`] again, so the drawn validators can change. `None` returns the whole
+   * stored set from then on.
+   **/
+  | { name: 'SetMaxCollators'; params: { max?: number | undefined } }
+  /**
+   * Set the number of blocks between two reports of the authored blocks.
+   *
+   * The next report is made at the next multiple of `period`.
+   **/
+  | { name: 'SetReportPeriod'; params: { period: number } }
+  /**
+   * Set the expected time from the arrival of a validator set to the end of its era, in
+   * milliseconds.
+   *
+   * It applies to the stored set too, whose arrival time is kept.
+   **/
+  | { name: 'SetExpectedEraDuration'; params: { duration: bigint } }
+  /**
+   * Set the time before the expected end of an era at which the counts are reported, in
+   * milliseconds.
+   *
+   * It applies to the stored set too, whose arrival time is kept.
+   **/
+  | { name: 'SetReportMargin'; params: { margin: bigint } };
+
+export type PalletValidatorCollatorsCallLike =
+  /**
+   * Store the validator set of `era`.
+   **/
+  | { name: 'SetValidators'; params: { era: number; validators: Array<AccountId32Like> } }
+  /**
+   * Set the maximum number of validators returned as collators.
+   *
+   * With a stored set, the change forces two rotations and the first draws
+   * [`DrawnCollators`] again, so the drawn validators can change. `None` returns the whole
+   * stored set from then on.
+   **/
+  | { name: 'SetMaxCollators'; params: { max?: number | undefined } }
+  /**
+   * Set the number of blocks between two reports of the authored blocks.
+   *
+   * The next report is made at the next multiple of `period`.
+   **/
+  | { name: 'SetReportPeriod'; params: { period: number } }
+  /**
+   * Set the expected time from the arrival of a validator set to the end of its era, in
+   * milliseconds.
+   *
+   * It applies to the stored set too, whose arrival time is kept.
+   **/
+  | { name: 'SetExpectedEraDuration'; params: { duration: bigint } }
+  /**
+   * Set the time before the expected end of an era at which the counts are reported, in
+   * milliseconds.
+   *
+   * It applies to the stored set too, whose arrival time is kept.
+   **/
+  | { name: 'SetReportMargin'; params: { margin: bigint } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
+export type PalletStakingAsyncPointsConverterCall =
+  /**
+   * Set the era points a validator earns for each unit of `service` on `source`.
+   *
+   * Zero removes the entry, so `source` earns nothing for `service`. Fails with
+   * [`Error::PointsPerServiceTooHigh`] above [`Config::MaxPointsPerService`], and with
+   * [`Error::RelayConsensusNotWeighted`] for [`ServiceKind::RelayConsensus`].
+   **/
+  | {
+      name: 'SetPointsPerService';
+      params: { source: PolkadotParachainPrimitivesPrimitivesId; service: SpStakingServiceKind; points: number };
+    }
+  /**
+   * Credit the blocks the validators authored on the calling chain.
+   *
+   * The weight of crediting is refunded when the calling chain earns no points.
+   **/
+  | { name: 'ReportAuthoredBlocks'; params: { blocks: Array<[AccountId32, number]> } };
+
+export type PalletStakingAsyncPointsConverterCallLike =
+  /**
+   * Set the era points a validator earns for each unit of `service` on `source`.
+   *
+   * Zero removes the entry, so `source` earns nothing for `service`. Fails with
+   * [`Error::PointsPerServiceTooHigh`] above [`Config::MaxPointsPerService`], and with
+   * [`Error::RelayConsensusNotWeighted`] for [`ServiceKind::RelayConsensus`].
+   **/
+  | {
+      name: 'SetPointsPerService';
+      params: { source: PolkadotParachainPrimitivesPrimitivesId; service: SpStakingServiceKind; points: number };
+    }
+  /**
+   * Credit the blocks the validators authored on the calling chain.
+   *
+   * The weight of crediting is refunded when the calling chain earns no points.
+   **/
+  | { name: 'ReportAuthoredBlocks'; params: { blocks: Array<[AccountId32Like, number]> } };
+
+export type SpStakingServiceKind = 'RelayConsensus' | 'Collation';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5044,16 +5177,18 @@ export type PalletAssetsCall =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -5640,16 +5775,18 @@ export type PalletAssetsCallLike =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -8654,16 +8791,18 @@ export type PalletAssetsCall002 =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -9270,16 +9409,18 @@ export type PalletAssetsCallLike002 =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -9443,6 +9584,10 @@ export type PalletNftFractionalizationCall =
   /**
    * Burn the total issuance of the fungible asset and return (unlock) the locked NFT.
    *
+   * The asset is destroyed as well, unless it still has asset accounts -- from `touch` --
+   * or approvals, or the asset registry refuses, in which case anyone can finish the
+   * destruction later.
+   *
    * The dispatch origin for this call must be Signed.
    *
    * `Deposit` funds will be returned to `asset_creator`.
@@ -9492,6 +9637,10 @@ export type PalletNftFractionalizationCallLike =
     }
   /**
    * Burn the total issuance of the fungible asset and return (unlock) the locked NFT.
+   *
+   * The asset is destroyed as well, unless it still has asset accounts -- from `touch` --
+   * or approvals, or the asset registry refuses, in which case anyone can finish the
+   * destruction later.
    *
    * The dispatch origin for this call must be Signed.
    *
@@ -9977,16 +10126,18 @@ export type PalletAssetsCall003 =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -10573,16 +10724,18 @@ export type PalletAssetsCallLike003 =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -11081,8 +11234,8 @@ export type PalletReviveCall =
    * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
    * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
    * is used for building the Ethereum transaction root.
-   * * effective_gas_price: the price of a unit of gas
-   * * encoded len: the byte code size of the `eth_transact` extrinsic
+   * * `effective_gas_price`: the price of a unit of gas
+   * * `encoded_len`: the byte code size of the `eth_transact` extrinsic
    *
    * Calling this dispatchable ensures that the origin's nonce is bumped only once,
    * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
@@ -11117,8 +11270,9 @@ export type PalletReviveCall =
    * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
    * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
    * is used for building the Ethereum transaction root.
-   * * effective_gas_price: the price of a unit of gas
-   * * encoded len: the byte code size of the `eth_transact` extrinsic
+   * * `effective_gas_price`: the price of a unit of gas
+   * * `encoded_len`: the byte code size of the `eth_transact` extrinsic
+   * * `authorization_list`: EIP-7702 authorization tuples to process before execution
    **/
   | {
       name: 'EthCall';
@@ -11131,6 +11285,7 @@ export type PalletReviveCall =
         transactionEncoded: Bytes;
         effectiveGasPrice: U256;
         encodedLen: number;
+        authorizationList: Array<PalletReviveEvmApiTransactionAuthorizationListEntry>;
       };
     }
   /**
@@ -11333,8 +11488,8 @@ export type PalletReviveCallLike =
    * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
    * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
    * is used for building the Ethereum transaction root.
-   * * effective_gas_price: the price of a unit of gas
-   * * encoded len: the byte code size of the `eth_transact` extrinsic
+   * * `effective_gas_price`: the price of a unit of gas
+   * * `encoded_len`: the byte code size of the `eth_transact` extrinsic
    *
    * Calling this dispatchable ensures that the origin's nonce is bumped only once,
    * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
@@ -11369,8 +11524,9 @@ export type PalletReviveCallLike =
    * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
    * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
    * is used for building the Ethereum transaction root.
-   * * effective_gas_price: the price of a unit of gas
-   * * encoded len: the byte code size of the `eth_transact` extrinsic
+   * * `effective_gas_price`: the price of a unit of gas
+   * * `encoded_len`: the byte code size of the `eth_transact` extrinsic
+   * * `authorization_list`: EIP-7702 authorization tuples to process before execution
    **/
   | {
       name: 'EthCall';
@@ -11383,6 +11539,7 @@ export type PalletReviveCallLike =
         transactionEncoded: BytesLike;
         effectiveGasPrice: U256;
         encodedLen: number;
+        authorizationList: Array<PalletReviveEvmApiTransactionAuthorizationListEntry>;
       };
     }
   /**
@@ -11467,6 +11624,15 @@ export type PalletReviveCallLike =
    * recovery function in case an `AccountId20` was used without creating a mapping first.
    **/
   | { name: 'DispatchAsFallbackAccount'; params: { call: AssetHubWestendRuntimeRuntimeCallLike } };
+
+export type PalletReviveEvmApiTransactionAuthorizationListEntry = {
+  chainId: U256;
+  address: H160;
+  nonce: U256;
+  yParity: U256;
+  r: U256;
+  s: U256;
+};
 
 /**
  * Pallet's callable functions.
@@ -11674,7 +11840,8 @@ export type PalletPsmCall =
    * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
    * caller minus the minting fee. The fee is calculated using ceiling rounding
    * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
-   * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
+   * transferred to [`PsmInfo::fee_destination`] of the targeted instance, and waived
+   * if that account cannot receive it.
    *
    * ## Parameters
    *
@@ -11721,8 +11888,9 @@ export type PalletPsmCall =
    * ## Details
    *
    * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
-   * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
-   * amount in `external_asset` from the PSM reserve to the caller. The fee is
+   * to the instance's [`PsmInfo::fee_destination`], or waived if that account cannot
+   * receive it), then transfers the resulting amount in `external_asset` from the PSM
+   * reserve to the caller. The fee is
    * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
    * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
    * was registered, allowing existing positions to unwind even if live metadata later
@@ -11782,7 +11950,8 @@ export type PalletPsmCall =
    * fungibles backend; must not already have a PSM registered.
    * - `full_admin`: Origin granted full management of the new PSM.
    * - `emergency_admin`: Origin granted emergency management of the new PSM.
-   * - `fee_destination`: Account that will receive mint/redeem fees.
+   * - `fee_destination`: Account that will receive mint/redeem fees. Fees are waived while
+   * it cannot receive the internal asset.
    * - `max_debt`: Initial absolute internal-asset debt ceiling.
    * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
    * Must be non-zero.
@@ -11790,6 +11959,7 @@ export type PalletPsmCall =
    * ## Errors
    *
    * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
+   * - [`Error::InvalidAdminOrigin`]: Either admin is the system `None` origin.
    * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
    * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
    * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
@@ -11979,6 +12149,10 @@ export type PalletPsmCall =
    * Snapshots the external asset's live decimals at registration time and
    * increments [`PsmInfo::external_count`].
    *
+   * The reserve account ([`Pallet::reserve_account`]) must already be able to receive
+   * `external_asset`. For a non-sufficient asset, create its asset account first (e.g. via
+   * `touch_other`).
+   *
    * ## Dispatch Origin
    *
    * Must match the PSM instance's `full_admin` (the `Full` privilege level).
@@ -11998,6 +12172,8 @@ export type PalletPsmCall =
    * fungibles backend.
    * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
    * [`MAX_DECIMALS_DIFF`].
+   * - [`Error::ReserveCannotReceive`]: If the reserve account cannot receive
+   * `external_asset`.
    *
    * ## Events
    *
@@ -12050,6 +12226,7 @@ export type PalletPsmCall =
    * ## Errors
    *
    * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
    *
    * ## Events
    *
@@ -12074,6 +12251,7 @@ export type PalletPsmCall =
    * ## Errors
    *
    * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
    *
    * ## Events
    *
@@ -12098,7 +12276,8 @@ export type PalletPsmCallLike =
    * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
    * caller minus the minting fee. The fee is calculated using ceiling rounding
    * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
-   * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
+   * transferred to [`PsmInfo::fee_destination`] of the targeted instance, and waived
+   * if that account cannot receive it.
    *
    * ## Parameters
    *
@@ -12145,8 +12324,9 @@ export type PalletPsmCallLike =
    * ## Details
    *
    * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
-   * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
-   * amount in `external_asset` from the PSM reserve to the caller. The fee is
+   * to the instance's [`PsmInfo::fee_destination`], or waived if that account cannot
+   * receive it), then transfers the resulting amount in `external_asset` from the PSM
+   * reserve to the caller. The fee is
    * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
    * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
    * was registered, allowing existing positions to unwind even if live metadata later
@@ -12206,7 +12386,8 @@ export type PalletPsmCallLike =
    * fungibles backend; must not already have a PSM registered.
    * - `full_admin`: Origin granted full management of the new PSM.
    * - `emergency_admin`: Origin granted emergency management of the new PSM.
-   * - `fee_destination`: Account that will receive mint/redeem fees.
+   * - `fee_destination`: Account that will receive mint/redeem fees. Fees are waived while
+   * it cannot receive the internal asset.
    * - `max_debt`: Initial absolute internal-asset debt ceiling.
    * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
    * Must be non-zero.
@@ -12214,6 +12395,7 @@ export type PalletPsmCallLike =
    * ## Errors
    *
    * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
+   * - [`Error::InvalidAdminOrigin`]: Either admin is the system `None` origin.
    * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
    * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
    * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
@@ -12403,6 +12585,10 @@ export type PalletPsmCallLike =
    * Snapshots the external asset's live decimals at registration time and
    * increments [`PsmInfo::external_count`].
    *
+   * The reserve account ([`Pallet::reserve_account`]) must already be able to receive
+   * `external_asset`. For a non-sufficient asset, create its asset account first (e.g. via
+   * `touch_other`).
+   *
    * ## Dispatch Origin
    *
    * Must match the PSM instance's `full_admin` (the `Full` privilege level).
@@ -12422,6 +12608,8 @@ export type PalletPsmCallLike =
    * fungibles backend.
    * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
    * [`MAX_DECIMALS_DIFF`].
+   * - [`Error::ReserveCannotReceive`]: If the reserve account cannot receive
+   * `external_asset`.
    *
    * ## Events
    *
@@ -12474,6 +12662,7 @@ export type PalletPsmCallLike =
    * ## Errors
    *
    * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
    *
    * ## Events
    *
@@ -12498,6 +12687,7 @@ export type PalletPsmCallLike =
    * ## Errors
    *
    * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
    *
    * ## Events
    *
@@ -12960,7 +13150,8 @@ export type PalletStakingAsyncPalletCall =
    * This is checked only upon calling `validate`. Existing validators are not affected.
    * * `chill_inactive_threshold`: The number of eras a validator can remain inactive during
    * the last [`Config::HistoryDepth`] eras before being subject to chilling becuase of
-   * inactivity.
+   * inactivity. The weight of `chill_inactive` with a proof of this length must fit in one
+   * normal extrinsic. When removed, `chill_inactive` is disabled.
    *
    * RuntimeOrigin must be Root to call this function.
    *
@@ -13176,6 +13367,8 @@ export type PalletStakingAsyncPalletCall =
    *
    * This extrinsic can be called by anyone, given that the valid inactivity proof is
    * provided. Inactivity proof is a vector of eras where the given validator was inactive.
+   *
+   * Disabled while [`ChillInactiveThreshold`] is not set.
    *
    * Requirements for the inactivity proof:
    * - The length must be equal to [`ChillInactiveThreshold`].
@@ -13470,7 +13663,8 @@ export type PalletStakingAsyncPalletCallLike =
    * This is checked only upon calling `validate`. Existing validators are not affected.
    * * `chill_inactive_threshold`: The number of eras a validator can remain inactive during
    * the last [`Config::HistoryDepth`] eras before being subject to chilling becuase of
-   * inactivity.
+   * inactivity. The weight of `chill_inactive` with a proof of this length must fit in one
+   * normal extrinsic. When removed, `chill_inactive` is disabled.
    *
    * RuntimeOrigin must be Root to call this function.
    *
@@ -13686,6 +13880,8 @@ export type PalletStakingAsyncPalletCallLike =
    *
    * This extrinsic can be called by anyone, given that the valid inactivity proof is
    * provided. Inactivity proof is a vector of eras where the given validator was inactive.
+   *
+   * Disabled while [`ChillInactiveThreshold`] is not set.
    *
    * Requirements for the inactivity proof:
    * - The length must be equal to [`ChillInactiveThreshold`].
@@ -15446,6 +15642,12 @@ export type SpRuntimeBlakeTwo256 = {};
  **/
 export type PalletWhitelistCall =
   | { name: 'WhitelistCall'; params: { callHash: H256 } }
+  /**
+   * Remove a call hash from the whitelist.
+   *
+   * Leaves any live [`DeferredDispatch`] entry in place, so re-whitelisting the hash before
+   * it expires re-enables relayed execution.
+   **/
   | { name: 'RemoveWhitelistedCall'; params: { callHash: H256 } }
   | {
       name: 'DispatchWhitelistedCall';
@@ -15456,6 +15658,12 @@ export type PalletWhitelistCall =
 
 export type PalletWhitelistCallLike =
   | { name: 'WhitelistCall'; params: { callHash: H256 } }
+  /**
+   * Remove a call hash from the whitelist.
+   *
+   * Leaves any live [`DeferredDispatch`] entry in place, so re-whitelisting the hash before
+   * it expires re-enables relayed execution.
+   **/
   | { name: 'RemoveWhitelistedCall'; params: { callHash: H256 } }
   | {
       name: 'DispatchWhitelistedCall';
@@ -16690,6 +16898,9 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'PgasAllowance'; palletEvent: PalletPgasAllowanceEvent }
   | { pallet: 'CollatorSelection'; palletEvent: PalletCollatorSelectionEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
+  | { pallet: 'ValidatorCollators'; palletEvent: PalletValidatorCollatorsEvent }
+  | { pallet: 'ValidatorSetAnnouncer'; palletEvent: PalletValidatorSetAnnouncerEvent }
+  | { pallet: 'StakingPointsConverter'; palletEvent: PalletStakingAsyncPointsConverterEvent }
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
   | { pallet: 'PolkadotXcm'; palletEvent: PalletXcmEvent }
   | { pallet: 'CumulusXcm'; palletEvent: CumulusPalletXcmEvent }
@@ -17330,6 +17541,109 @@ export type PalletSessionEvent =
    * Validator has been re-enabled.
    **/
   | { name: 'ValidatorReenabled'; data: { validator: AccountId32 } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletValidatorCollatorsEvent =
+  /**
+   * A validator set was stored for an era.
+   **/
+  | { name: 'ValidatorSetReceived'; data: { era: number; count: number } }
+  /**
+   * The maximum number of validator collators was changed.
+   **/
+  | { name: 'MaxCollatorsSet'; data: { max?: number | undefined } }
+  /**
+   * No external set is stored, so no validators were returned for the session, with or
+   * without a cap. This happens in the sessions after this pallet is added to a runtime and
+   * before the first set arrives, so it is not an `UnexpectedKind`.
+   **/
+  | { name: 'NothingToDraw' }
+  /**
+   * `drawn_len` of the `external_len` validators of the set of `era`, all with registered
+   * keys, were returned for a session and recorded in [`DrawnCollators`]. `new_external` is
+   * `true` at the first rotation after a set arrives or the cap changes, and `false` at the
+   * later ones, which under a cap return the previous draw again.
+   **/
+  | { name: 'CollatorsDrawn'; data: { era: number; externalLen: number; drawnLen: number; newExternal: boolean } }
+  /**
+   * The number of blocks between two reports was changed.
+   **/
+  | { name: 'ReportPeriodSet'; data: { period: number } }
+  /**
+   * The block counts of `authors` authors were removed. The `reported` of them in the
+   * stored set were handed to the reporter and the others were dropped.
+   **/
+  | { name: 'BlocksReported'; data: { authors: number; reported: number } }
+  /**
+   * The reporter rejected the block counts. The counts of the `kept` authors in the stored
+   * set are kept for the next report, and those of the `dropped` other authors were
+   * removed.
+   **/
+  | { name: 'BlocksReportFailed'; data: { kept: number; dropped: number } }
+  /**
+   * The expected time from the arrival of a set to the end of its era was changed.
+   **/
+  | { name: 'ExpectedEraDurationSet'; data: { duration: bigint } }
+  /**
+   * The time before the expected end of an era at which the counts are reported was
+   * changed.
+   **/
+  | { name: 'ReportMarginSet'; data: { margin: bigint } }
+  /**
+   * Something that should never happen happened. See [`UnexpectedKind`].
+   **/
+  | { name: 'Unexpected'; data: PalletValidatorCollatorsUnexpectedKind };
+
+export type PalletValidatorCollatorsUnexpectedKind = 'NoPreviousDrawSet' | 'StoredSetUndecodable';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletValidatorSetAnnouncerEvent =
+  /**
+   * The sender accepted the set of `era` for `destination`. Delivery and execution there
+   * are not confirmed.
+   **/
+  | {
+      name: 'AnnouncementSent';
+      data: { destination: AssetHubWestendRuntimeStakingValidatorSetDestination; era: number };
+    }
+  /**
+   * The sender did not accept the set of `era` for `destination`. It is not retried.
+   **/
+  | {
+      name: 'AnnouncementFailed';
+      data: { destination: AssetHubWestendRuntimeStakingValidatorSetDestination; era: number };
+    }
+  /**
+   * The set of `era` was not announced because it was rejected with `error`.
+   **/
+  | { name: 'AnnouncementRejected'; data: { era: number; error: DispatchError } };
+
+export type AssetHubWestendRuntimeStakingValidatorSetDestination = 'People';
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletStakingAsyncPointsConverterEvent =
+  /**
+   * Validators earn `points` era points for each unit of `service` on `source`.
+   **/
+  | {
+      name: 'PointsPerServiceSet';
+      data: { source: PolkadotParachainPrimitivesPrimitivesId; service: SpStakingServiceKind; points: number };
+    }
+  /**
+   * Era points for `blocks` blocks authored on `source` were handed to
+   * [`Config::RewardPoints`].
+   **/
+  | { name: 'BlocksCredited'; data: { source: PolkadotParachainPrimitivesPrimitivesId; blocks: number } }
+  /**
+   * `blocks` blocks authored on `source` earned no points and were not credited.
+   **/
+  | { name: 'BlocksIgnored'; data: { source: PolkadotParachainPrimitivesPrimitivesId; blocks: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -19527,6 +19841,14 @@ export type PalletStakingAsyncPalletEvent =
   | {
       name: 'ValidatorIncentiveConfigSet';
       data: { optimumSelfStake: bigint; hardCapSelfStake: bigint; slopeFactor: Perbill };
+    }
+  /**
+   * Points earned for `service` were credited to `era`. `credited` entries were exposed in
+   * `era` and `dropped` entries were not.
+   **/
+  | {
+      name: 'ServicePointsCredited';
+      data: { service: SpStakingServiceKind; era: number; credited: number; dropped: number };
     };
 
 export type PalletStakingAsyncForcing = 'NotForcing' | 'ForceNew' | 'ForceNone' | 'ForceAlways';
@@ -20699,6 +21021,13 @@ export type CumulusPrimitivesParachainInherentMessageQueueChain = H256;
 
 export type CumulusPalletParachainSystemParachainInherentInboundMessageId = { sentAt: number; reverseIdx: number };
 
+export type CumulusPalletParachainSystemParachainInherentInboundHrmpMessageId =
+  | { type: 'Generic'; value: CumulusPalletParachainSystemParachainInherentInboundMessageId }
+  | {
+      type: 'Specific';
+      value: { sentAt: number; sender: PolkadotParachainPrimitivesPrimitivesId; reverseIdx: number };
+    };
+
 export type PolkadotCorePrimitivesOutboundHrmpMessage = {
   recipient: PolkadotParachainPrimitivesPrimitivesId;
   data: Bytes;
@@ -20933,7 +21262,7 @@ export type PalletBalancesError =
    **/
   | 'TooManyHolds'
   /**
-   * Number of freezes exceed `MaxFreezes`.
+   * Number of freezes exceed `VariantCountOf<T::RuntimeFreezeReason>`.
    **/
   | 'TooManyFreezes'
   /**
@@ -21087,6 +21416,60 @@ export type PalletSessionError =
 
 export type SpConsensusSlotsSlot = bigint;
 
+export type PalletValidatorCollatorsEraValidatorSet = { era: number; validators: Array<AccountId32> };
+
+export type PalletValidatorCollatorsEraCollators = { era: number; collators: Array<AccountId32> };
+
+export type PalletValidatorCollatorsRotationState = 'Idle' | 'AwaitingQueue' | 'AwaitingEnactment';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletValidatorCollatorsError =
+  /**
+   * The era of the set is not newer than the era of the stored set.
+   **/
+  | 'StaleEra'
+  /**
+   * The set has more validators than [`Config::MaxValidators`].
+   **/
+  | 'TooManyValidators'
+  /**
+   * The report period must be greater than zero.
+   **/
+  | 'ZeroReportPeriod'
+  /**
+   * The expected era duration must be greater than zero.
+   **/
+  | 'ZeroExpectedEraDuration'
+  /**
+   * The report margin must be greater than zero.
+   **/
+  | 'ZeroReportMargin'
+  /**
+   * The report margin is above [`Config::MaxReportMargin`].
+   **/
+  | 'ReportMarginTooHigh';
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletStakingAsyncPointsConverterError =
+  /**
+   * The points per service exceed [`Config::MaxPointsPerService`].
+   **/
+  | 'PointsPerServiceTooHigh'
+  /**
+   * Relay consensus points are weighted by the relay chain, not by this pallet.
+   *
+   * Note: This is because relay-chain issues its own points, and never sends its units of
+   * work to this pallet to be converted to points. This is for legacy reasons, and while
+   * unifying the interface would be more ergonomic, we keep it as-is for now due to JAM
+   * being on the horizon, and the effort of altering relay chain not being considered
+   * worthwhile.
+   **/
+  | 'RelayConsensusNotWeighted';
+
 export type CumulusPalletXcmpQueueOutboundChannelDetails = {
   recipient: PolkadotParachainPrimitivesPrimitivesId;
   state: CumulusPalletXcmpQueueOutboundState;
@@ -21130,7 +21513,11 @@ export type CumulusPalletXcmpQueueError =
   /**
    * The message is too big.
    **/
-  | 'TooBig';
+  | 'TooBig'
+  /**
+   * The page couldn't be processed, but it should be retried.
+   **/
+  | 'RetryPage';
 
 export type PalletXcmQueryStatus =
   | {
@@ -22398,14 +22785,19 @@ export type PalletAssetConversionError =
   /**
    * The fee exceeds [`Config::MaxSwapFee`].
    **/
-  | 'FeeTooHigh';
+  | 'FeeTooHigh'
+  /**
+   * The pool account can't send one of its assets (e.g. the asset class is frozen or the
+   * pool account is blocked).
+   **/
+  | 'PoolUnavailable';
 
 /**
  * The `Error` enum of this pallet.
  **/
 export type PalletAssetsFreezerError =
   /**
-   * Number of freezes on an account would exceed `MaxFreezes`.
+   * Number of freezes on an account would exceed `VariantCountOf<T::RuntimeFreezeReason>`.
    **/
   'TooManyFreezes';
 
@@ -22424,7 +22816,15 @@ export type PalletReviveStorageAccountInfo = { accountType: PalletReviveStorageA
 
 export type PalletReviveStorageAccountType =
   | { type: 'Contract'; value: PalletReviveStorageContractInfo }
-  | { type: 'Eoa' };
+  | { type: 'Eoa' }
+  | {
+      type: 'DelegatedEOA';
+      value: {
+        delegateTarget?: H160 | undefined;
+        contractInfo: PalletReviveStorageContractInfo;
+        payer?: AccountId32 | undefined;
+      };
+    };
 
 export type PalletReviveStorageContractInfo = {
   trieId: Bytes;
@@ -22521,15 +22921,6 @@ export type PalletReviveEvmApiTransactionTransaction7702Unsigned = {
 
 export type PalletReviveEvmApiTransactionAccessListEntry = { address: H160; storageKeys: Array<H256> };
 
-export type PalletReviveEvmApiTransactionAuthorizationListEntry = {
-  chainId: U256;
-  address: H160;
-  nonce: U256;
-  yParity: U256;
-  r: U256;
-  s: U256;
-};
-
 export type PalletReviveEvmApiTransactionTransaction4844Signed = {
   transaction4844Unsigned: PalletReviveEvmApiTransactionTransaction4844Unsigned;
   r: U256;
@@ -22616,6 +23007,17 @@ export type PalletReviveEvmApiBlockWithdrawal = { address: H160; amount: U256; i
 
 export type PalletReviveEvmBlockHashReceiptGasInfo = { gasUsed: U256; effectiveGasPrice: U256 };
 
+export type PalletReviveEvmBlockHashSyntheticTransactionInfo = {
+  gasInfo: PalletReviveEvmBlockHashReceiptGasInfo;
+  logEventIndices: Array<number>;
+};
+
+export type PalletReviveEvmBlockHashReceiptCommittedReceiptLogs = {
+  encodedLen: number;
+  bloom: FixedBytes<256>;
+  exceeded: boolean;
+};
+
 export type PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR = {
   transactionRootBuilder: PalletReviveEvmBlockHashHashBuilderIncrementalHashBuilderIR;
   receiptsRootBuilder: PalletReviveEvmBlockHashHashBuilderIncrementalHashBuilderIR;
@@ -22638,6 +23040,13 @@ export type PalletReviveEvmBlockHashHashBuilderIncrementalHashBuilderIR = {
   storedInDatabase: boolean;
   rlpBuf: Bytes;
   index: bigint;
+};
+
+export type PalletReviveEvmBlockHashOutsideFrameLog = {
+  eventIndex: number;
+  contract: H160;
+  topics: Array<H256>;
+  data: Bytes;
 };
 
 export type PalletReviveDebugDebugSettings = {
@@ -22913,7 +23322,17 @@ export type PalletReviveError =
    * [`NativeDepositOf`] entries from a previously terminated contract that the deletion
    * queue has not yet drained.
    **/
-  | 'PendingDepositCleanup';
+  | 'PendingDepositCleanup'
+  /**
+   * `seal_terminate` was invoked on an EIP-7702 delegated EOA. Delegated accounts
+   * cannot be torn down via the contract-termination path.
+   **/
+  | 'CannotTerminateDelegatedAccount'
+  /**
+   * The logs of the ethereum transaction would exceed
+   * [`limits::MAX_RECEIPT_LOGS_BYTES`] in its receipt.
+   **/
+  | 'ReceiptTooLarge';
 
 /**
  * The `Error` enum of this pallet.
@@ -23132,7 +23551,16 @@ export type PalletPsmError =
   /**
    * An unexpected invariant violation occurred. This should be reported.
    **/
-  | 'Unexpected';
+  | 'Unexpected'
+  /**
+   * An admin origin was supplied that cannot be used as an authority, such as the system
+   * `None` origin.
+   **/
+  | 'InvalidAdminOrigin'
+  /**
+   * The PSM reserve account cannot receive the external asset.
+   **/
+  | 'ReserveCannotReceive';
 
 export type PalletStakingAsyncLedgerStakingLedger = {
   stash: AccountId32;
@@ -23356,7 +23784,11 @@ export type PalletStakingAsyncPalletError =
   /**
    * Cannot set [`ChillInactiveThreshold`] to the provided value.
    **/
-  | { name: 'InvalidChillInactiveThreshold' };
+  | { name: 'InvalidChillInactiveThreshold' }
+  /**
+   * `chill_inactive` is disabled, as [`ChillInactiveThreshold`] is not set.
+   **/
+  | { name: 'ChillInactiveDisabled' };
 
 export type PalletStakingAsyncPalletInvalidInactivityProofError =
   | 'InvalidLen'
@@ -24340,6 +24772,12 @@ export type PalletAhOpsError =
 
 export type SpConsensusSlotsSlotDuration = bigint;
 
+export type CumulusPrimitivesCoreRelayProofRequest = { keys: Array<CumulusPrimitivesCoreRelayStorageKey> };
+
+export type CumulusPrimitivesCoreRelayStorageKey =
+  | { type: 'Top'; value: Bytes }
+  | { type: 'Child'; value: { storageKey: Bytes; key: Bytes } };
+
 export type SpRuntimeBlockLazyBlock = { header: Header; extrinsics: Array<SpRuntimeOpaqueExtrinsic> };
 
 export type SpRuntimeOpaqueExtrinsic = Bytes;
@@ -24372,7 +24810,10 @@ export type SpRuntimeTransactionValidityInvalidTransaction =
   | { type: 'MandatoryValidation' }
   | { type: 'BadSigner' }
   | { type: 'IndeterminateImplicit' }
-  | { type: 'UnknownOrigin' };
+  | { type: 'UnknownOrigin' }
+  | { type: 'Module'; value: SpRuntimeModuleInvalidity };
+
+export type SpRuntimeModuleInvalidity = { index: number; error: number };
 
 export type SpRuntimeTransactionValidityUnknownTransaction =
   | { type: 'CannotLookup' }
@@ -24933,20 +25374,30 @@ export type PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashVersionedOutput
 
 export type PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashOutputPayloadV1 = { blockHash?: H256 | undefined };
 
-export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedInputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataInputPayloadV1;
-};
+export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedInputPayload =
+  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataInputPayloadV1 }
+  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataInputPayloadV2 };
 
 export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataInputPayloadV1 = {};
 
-export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedOutputPayload = {
-  type: 'V1';
-  value: PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataOutputPayloadV1;
-};
+export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataInputPayloadV2 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedOutputPayload =
+  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataOutputPayloadV1 }
+  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataOutputPayloadV2 };
 
 export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataOutputPayloadV1 = {
   receiptData: Array<PalletReviveTypesRuntimeApiTypesReceiptReceiptGasInfoV1>;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataOutputPayloadV2 = {
+  receiptData: Array<PalletReviveTypesRuntimeApiTypesReceiptReceiptGasInfoV1>;
+  synthetic?: PalletReviveTypesRuntimeApiTypesReceiptSyntheticTransactionV1 | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiTypesReceiptSyntheticTransactionV1 = {
+  gasInfo: PalletReviveTypesRuntimeApiTypesReceiptReceiptGasInfoV1;
+  logEventIndices: Array<number>;
 };
 
 export type PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitVersionedInputPayload = {
@@ -25378,6 +25829,8 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'Vesting'; palletError: PalletVestingError }
   | { pallet: 'CollatorSelection'; palletError: PalletCollatorSelectionError }
   | { pallet: 'Session'; palletError: PalletSessionError }
+  | { pallet: 'ValidatorCollators'; palletError: PalletValidatorCollatorsError }
+  | { pallet: 'StakingPointsConverter'; palletError: PalletStakingAsyncPointsConverterError }
   | { pallet: 'XcmpQueue'; palletError: CumulusPalletXcmpQueueError }
   | { pallet: 'PolkadotXcm'; palletError: PalletXcmError }
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }

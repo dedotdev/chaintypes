@@ -139,11 +139,6 @@ export interface ChainConsts extends GenericChainConsts {
     maxReserves: number;
 
     /**
-     * The maximum number of individual freeze locks that can exist on an account at any time.
-     **/
-    maxFreezes: number;
-
-    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -288,6 +283,64 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `AuraExt`'s constants
    **/
   auraExt: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `ValidatorCollators`'s constants
+   **/
+  validatorCollators: {
+    /**
+     * Maximum number of validators in a received set.
+     **/
+    maxValidators: number;
+
+    /**
+     * Maximum number of entries of [`AuthoredBlocks`] that one report reads.
+     *
+     * Authors are counted between two reports: the validators of the stored set, and the
+     * other collators of the chain, such as invulnerables and candidates. A sensible value is
+     * [`Config::MaxValidators`], plus the maximum number of other collators the chain may
+     * have, plus a small buffer for the authors that leave the collators before the next
+     * report. Entries beyond it wait for the next report. The `integrity_test` checks that a
+     * report of this many entries fits a block.
+     **/
+    maxEntriesPerReport: number;
+
+    /**
+     * Number of blocks between two reports until governance sets [`ReportPeriod`].
+     **/
+    defaultReportPeriod: number;
+
+    /**
+     * Value of [`ExpectedEraDuration`] until governance sets it, in milliseconds.
+     **/
+    defaultExpectedEraDuration: bigint;
+
+    /**
+     * Value of [`ReportMargin`] until governance sets it, in milliseconds.
+     **/
+    defaultReportMargin: bigint;
+
+    /**
+     * Largest value [`Pallet::set_report_margin`] accepts, in milliseconds.
+     *
+     * A stored [`ReportMargin`] above it, as after a runtime upgrade that lowers it, is used
+     * up to it.
+     **/
+    maxReportMargin: bigint;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `AuthorityDiscovery`'s constants
+   **/
+  authorityDiscovery: {
     /**
      * Generic pallet constant
      **/

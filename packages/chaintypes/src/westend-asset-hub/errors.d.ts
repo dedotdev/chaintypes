@@ -262,7 +262,7 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyHolds: GenericPalletError;
 
     /**
-     * Number of freezes exceed `MaxFreezes`.
+     * Number of freezes exceed `VariantCountOf<T::RuntimeFreezeReason>`.
      **/
     TooManyFreezes: GenericPalletError;
 
@@ -445,6 +445,70 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
+   * Pallet `ValidatorCollators`'s errors
+   **/
+  validatorCollators: {
+    /**
+     * The era of the set is not newer than the era of the stored set.
+     **/
+    StaleEra: GenericPalletError;
+
+    /**
+     * The set has more validators than [`Config::MaxValidators`].
+     **/
+    TooManyValidators: GenericPalletError;
+
+    /**
+     * The report period must be greater than zero.
+     **/
+    ZeroReportPeriod: GenericPalletError;
+
+    /**
+     * The expected era duration must be greater than zero.
+     **/
+    ZeroExpectedEraDuration: GenericPalletError;
+
+    /**
+     * The report margin must be greater than zero.
+     **/
+    ZeroReportMargin: GenericPalletError;
+
+    /**
+     * The report margin is above [`Config::MaxReportMargin`].
+     **/
+    ReportMarginTooHigh: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `StakingPointsConverter`'s errors
+   **/
+  stakingPointsConverter: {
+    /**
+     * The points per service exceed [`Config::MaxPointsPerService`].
+     **/
+    PointsPerServiceTooHigh: GenericPalletError;
+
+    /**
+     * Relay consensus points are weighted by the relay chain, not by this pallet.
+     *
+     * Note: This is because relay-chain issues its own points, and never sends its units of
+     * work to this pallet to be converted to points. This is for legacy reasons, and while
+     * unifying the interface would be more ergonomic, we keep it as-is for now due to JAM
+     * being on the horizon, and the effort of altering relay chain not being considered
+     * worthwhile.
+     **/
+    RelayConsensusNotWeighted: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
    * Pallet `XcmpQueue`'s errors
    **/
   xcmpQueue: {
@@ -472,6 +536,11 @@ export interface ChainErrors extends GenericChainErrors {
      * The message is too big.
      **/
     TooBig: GenericPalletError;
+
+    /**
+     * The page couldn't be processed, but it should be retried.
+     **/
+    RetryPage: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2057,6 +2126,12 @@ export interface ChainErrors extends GenericChainErrors {
     FeeTooHigh: GenericPalletError;
 
     /**
+     * The pool account can't send one of its assets (e.g. the asset class is frozen or the
+     * pool account is blocked).
+     **/
+    PoolUnavailable: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -2066,7 +2141,7 @@ export interface ChainErrors extends GenericChainErrors {
    **/
   assetsFreezer: {
     /**
-     * Number of freezes on an account would exceed `MaxFreezes`.
+     * Number of freezes on an account would exceed `VariantCountOf<T::RuntimeFreezeReason>`.
      **/
     TooManyFreezes: GenericPalletError;
 
@@ -2080,7 +2155,7 @@ export interface ChainErrors extends GenericChainErrors {
    **/
   foreignAssetsFreezer: {
     /**
-     * Number of freezes on an account would exceed `MaxFreezes`.
+     * Number of freezes on an account would exceed `VariantCountOf<T::RuntimeFreezeReason>`.
      **/
     TooManyFreezes: GenericPalletError;
 
@@ -2094,7 +2169,7 @@ export interface ChainErrors extends GenericChainErrors {
    **/
   poolAssetsFreezer: {
     /**
-     * Number of freezes on an account would exceed `MaxFreezes`.
+     * Number of freezes on an account would exceed `VariantCountOf<T::RuntimeFreezeReason>`.
      **/
     TooManyFreezes: GenericPalletError;
 
@@ -2429,6 +2504,18 @@ export interface ChainErrors extends GenericChainErrors {
     PendingDepositCleanup: GenericPalletError;
 
     /**
+     * `seal_terminate` was invoked on an EIP-7702 delegated EOA. Delegated accounts
+     * cannot be torn down via the contract-termination path.
+     **/
+    CannotTerminateDelegatedAccount: GenericPalletError;
+
+    /**
+     * The logs of the ethereum transaction would exceed
+     * [`limits::MAX_RECEIPT_LOGS_BYTES`] in its receipt.
+     **/
+    ReceiptTooLarge: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -2674,6 +2761,17 @@ export interface ChainErrors extends GenericChainErrors {
      * An unexpected invariant violation occurred. This should be reported.
      **/
     Unexpected: GenericPalletError;
+
+    /**
+     * An admin origin was supplied that cannot be used as an authority, such as the system
+     * `None` origin.
+     **/
+    InvalidAdminOrigin: GenericPalletError;
+
+    /**
+     * The PSM reserve account cannot receive the external asset.
+     **/
+    ReserveCannotReceive: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2934,6 +3032,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Cannot set [`ChillInactiveThreshold`] to the provided value.
      **/
     InvalidChillInactiveThreshold: GenericPalletError;
+
+    /**
+     * `chill_inactive` is disabled, as [`ChillInactiveThreshold`] is not set.
+     **/
+    ChillInactiveDisabled: GenericPalletError;
 
     /**
      * Generic pallet error

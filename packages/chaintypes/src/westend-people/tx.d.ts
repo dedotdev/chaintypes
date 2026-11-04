@@ -934,6 +934,121 @@ export interface ChainTx<
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
+   * Pallet `ValidatorCollators`'s transaction calls
+   **/
+  validatorCollators: {
+    /**
+     * Store the validator set of `era`.
+     *
+     * @param {number} era
+     * @param {Array<AccountId32Like>} validators
+     **/
+    setValidators: GenericTxCall<
+      (
+        era: number,
+        validators: Array<AccountId32Like>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'ValidatorCollators';
+          palletCall: {
+            name: 'SetValidators';
+            params: { era: number; validators: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the maximum number of validators returned as collators.
+     *
+     * With a stored set, the change forces two rotations and the first draws
+     * [`DrawnCollators`] again, so the drawn validators can change. `None` returns the whole
+     * stored set from then on.
+     *
+     * @param {number | undefined} max
+     **/
+    setMaxCollators: GenericTxCall<
+      (max: number | undefined) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'ValidatorCollators';
+          palletCall: {
+            name: 'SetMaxCollators';
+            params: { max: number | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the number of blocks between two reports of the authored blocks.
+     *
+     * The next report is made at the next multiple of `period`.
+     *
+     * @param {number} period
+     **/
+    setReportPeriod: GenericTxCall<
+      (period: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'ValidatorCollators';
+          palletCall: {
+            name: 'SetReportPeriod';
+            params: { period: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the expected time from the arrival of a validator set to the end of its era, in
+     * milliseconds.
+     *
+     * It applies to the stored set too, whose arrival time is kept.
+     *
+     * @param {bigint} duration
+     **/
+    setExpectedEraDuration: GenericTxCall<
+      (duration: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'ValidatorCollators';
+          palletCall: {
+            name: 'SetExpectedEraDuration';
+            params: { duration: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the time before the expected end of an era at which the counts are reported, in
+     * milliseconds.
+     *
+     * It applies to the stored set too, whose arrival time is kept.
+     *
+     * @param {bigint} margin
+     **/
+    setReportMargin: GenericTxCall<
+      (margin: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'ValidatorCollators';
+          palletCall: {
+            name: 'SetReportMargin';
+            params: { margin: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
    * Pallet `XcmpQueue`'s transaction calls
    **/
   xcmpQueue: {

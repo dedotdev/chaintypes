@@ -208,11 +208,6 @@ export interface ChainConsts extends GenericChainConsts {
     maxReserves: number;
 
     /**
-     * The maximum number of individual freeze locks that can exist on an account at any time.
-     **/
-    maxFreezes: number;
-
-    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -368,6 +363,96 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `AuraExt`'s constants
    **/
   auraExt: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `ValidatorCollators`'s constants
+   **/
+  validatorCollators: {
+    /**
+     * Maximum number of validators in a received set.
+     **/
+    maxValidators: number;
+
+    /**
+     * Maximum number of entries of [`AuthoredBlocks`] that one report reads.
+     *
+     * Authors are counted between two reports: the validators of the stored set, and the
+     * other collators of the chain, such as invulnerables and candidates. A sensible value is
+     * [`Config::MaxValidators`], plus the maximum number of other collators the chain may
+     * have, plus a small buffer for the authors that leave the collators before the next
+     * report. Entries beyond it wait for the next report. The `integrity_test` checks that a
+     * report of this many entries fits a block.
+     **/
+    maxEntriesPerReport: number;
+
+    /**
+     * Number of blocks between two reports until governance sets [`ReportPeriod`].
+     **/
+    defaultReportPeriod: number;
+
+    /**
+     * Value of [`ExpectedEraDuration`] until governance sets it, in milliseconds.
+     **/
+    defaultExpectedEraDuration: bigint;
+
+    /**
+     * Value of [`ReportMargin`] until governance sets it, in milliseconds.
+     **/
+    defaultReportMargin: bigint;
+
+    /**
+     * Largest value [`Pallet::set_report_margin`] accepts, in milliseconds.
+     *
+     * A stored [`ReportMargin`] above it, as after a runtime upgrade that lowers it, is used
+     * up to it.
+     **/
+    maxReportMargin: bigint;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `ValidatorSetAnnouncer`'s constants
+   **/
+  validatorSetAnnouncer: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `AuthorityDiscovery`'s constants
+   **/
+  authorityDiscovery: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `StakingPointsConverter`'s constants
+   **/
+  stakingPointsConverter: {
+    /**
+     * Largest points per service [`Pallet::set_points_per_service`] and the genesis config
+     * accept, for every service.
+     *
+     * Crediting also bounds a stored value by it.
+     **/
+    maxPointsPerService: number;
+
+    /**
+     * Largest count of blocks credited for one entry of a report. A larger count is credited
+     * as this many blocks.
+     **/
+    maxBlocksPerEntry: number;
+
     /**
      * Generic pallet constant
      **/
@@ -1162,6 +1247,16 @@ export interface ChainConsts extends GenericChainConsts {
      * Requirement: `GasScale` must not be 0
      **/
     gasScale: number;
+
+    /**
+     * Maximum number of logs that may be buffered outside any ethereum transaction within a
+     * single block, for the block's synthetic transaction.
+     *
+     * Each log's drain is charged where it is emitted, so this bounds the buffer's size, not
+     * its cost. Zero disables the buffer; a log arriving past a non-zero cap is likewise not
+     * buffered, so the block's bloom omits it while its `ContractEmitted` still stands.
+     **/
+    maxOutsideFrameLogs: number;
 
     /**
      * Generic pallet constant

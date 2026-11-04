@@ -34,6 +34,8 @@ import type {
   PalletBalancesAdjustmentDirection,
   PalletVestingVestingInfo,
   AssetHubWestendRuntimeSessionKeys,
+  PolkadotParachainPrimitivesPrimitivesId,
+  SpStakingServiceKind,
   XcmVersionedLocation,
   XcmVersionedXcm,
   XcmVersionedAssets,
@@ -65,6 +67,7 @@ import type {
   PalletNftsPreSignedMint,
   PalletNftsPreSignedAttributes,
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
+  PalletReviveEvmApiTransactionAuthorizationListEntry,
   FrameSupportScheduleDispatchTime,
   PalletPsmCircuitBreakerLevel,
   PalletStateTrieMigrationMigrationLimits,
@@ -871,7 +874,8 @@ export interface ChainTx<
      * original task's configuration, but will have a lower value for `remaining` than the
      * original `total_retries`.
      *
-     * This call **cannot** be used to set a retry configuration for a named task.
+     * This call **cannot** be used to set a retry configuration for a named task; it fails
+     * with [`Error::Named`]. Use [`Pallet::set_retry_named`] for those.
      *
      * @param {[number, number]} task
      * @param {number} retries
@@ -933,6 +937,10 @@ export interface ChainTx<
 
     /**
      * Removes the retry configuration of a task.
+     *
+     * Unlike [`Pallet::set_retry`], this accepts named tasks too: dropping a retry
+     * configuration is always safe, and configurations left by older runtimes still need a
+     * way out. The `RetryCancelled` event therefore carries `id: None` even for a named task.
      *
      * @param {[number, number]} task
      **/
@@ -1811,6 +1819,178 @@ export interface ChainTx<
           pallet: 'Session';
           palletCall: {
             name: 'PurgeKeys';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `ValidatorCollators`'s transaction calls
+   **/
+  validatorCollators: {
+    /**
+     * Store the validator set of `era`.
+     *
+     * @param {number} era
+     * @param {Array<AccountId32Like>} validators
+     **/
+    setValidators: GenericTxCall<
+      (
+        era: number,
+        validators: Array<AccountId32Like>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'ValidatorCollators';
+          palletCall: {
+            name: 'SetValidators';
+            params: { era: number; validators: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the maximum number of validators returned as collators.
+     *
+     * With a stored set, the change forces two rotations and the first draws
+     * [`DrawnCollators`] again, so the drawn validators can change. `None` returns the whole
+     * stored set from then on.
+     *
+     * @param {number | undefined} max
+     **/
+    setMaxCollators: GenericTxCall<
+      (max: number | undefined) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'ValidatorCollators';
+          palletCall: {
+            name: 'SetMaxCollators';
+            params: { max: number | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the number of blocks between two reports of the authored blocks.
+     *
+     * The next report is made at the next multiple of `period`.
+     *
+     * @param {number} period
+     **/
+    setReportPeriod: GenericTxCall<
+      (period: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'ValidatorCollators';
+          palletCall: {
+            name: 'SetReportPeriod';
+            params: { period: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the expected time from the arrival of a validator set to the end of its era, in
+     * milliseconds.
+     *
+     * It applies to the stored set too, whose arrival time is kept.
+     *
+     * @param {bigint} duration
+     **/
+    setExpectedEraDuration: GenericTxCall<
+      (duration: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'ValidatorCollators';
+          palletCall: {
+            name: 'SetExpectedEraDuration';
+            params: { duration: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the time before the expected end of an era at which the counts are reported, in
+     * milliseconds.
+     *
+     * It applies to the stored set too, whose arrival time is kept.
+     *
+     * @param {bigint} margin
+     **/
+    setReportMargin: GenericTxCall<
+      (margin: bigint) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'ValidatorCollators';
+          palletCall: {
+            name: 'SetReportMargin';
+            params: { margin: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `StakingPointsConverter`'s transaction calls
+   **/
+  stakingPointsConverter: {
+    /**
+     * Set the era points a validator earns for each unit of `service` on `source`.
+     *
+     * Zero removes the entry, so `source` earns nothing for `service`. Fails with
+     * [`Error::PointsPerServiceTooHigh`] above [`Config::MaxPointsPerService`], and with
+     * [`Error::RelayConsensusNotWeighted`] for [`ServiceKind::RelayConsensus`].
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} source
+     * @param {SpStakingServiceKind} service
+     * @param {number} points
+     **/
+    setPointsPerService: GenericTxCall<
+      (
+        source: PolkadotParachainPrimitivesPrimitivesId,
+        service: SpStakingServiceKind,
+        points: number,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'StakingPointsConverter';
+          palletCall: {
+            name: 'SetPointsPerService';
+            params: { source: PolkadotParachainPrimitivesPrimitivesId; service: SpStakingServiceKind; points: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Credit the blocks the validators authored on the calling chain.
+     *
+     * The weight of crediting is refunded when the calling chain earns no points.
+     *
+     * @param {Array<[AccountId32Like, number]>} blocks
+     **/
+    reportAuthoredBlocks: GenericTxCall<
+      (blocks: Array<[AccountId32Like, number]>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'StakingPointsConverter';
+          palletCall: {
+            name: 'ReportAuthoredBlocks';
+            params: { blocks: Array<[AccountId32Like, number]> };
           };
         },
         ChainKnownTypes
@@ -5053,16 +5233,18 @@ export interface ChainTx<
      * Origin must be Signed and there must be an approval in place by the `owner` to the
      * signer.
      *
-     * If the entire amount approved for transfer is transferred, then any deposit previously
-     * reserved by `approve_transfer` is unreserved.
+     * If the debit spends the approval in full, then any deposit previously reserved by
+     * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+     * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+     * balance, so a request smaller than the approval can still spend it in full.
      *
      * - `id`: The identifier of the asset.
-     * - `owner`: The account which previously approved for a transfer of at least `amount` and
-     * from which the asset balance will be withdrawn.
-     * - `destination`: The account to which the asset balance of `amount` will be transferred.
+     * - `owner`: The account which previously approved for a transfer of at least the debit
+     * and from which the asset balance will be withdrawn.
+     * - `destination`: The account to which the debited balance will be transferred.
      * - `amount`: The amount of assets to transfer.
      *
-     * Emits `TransferredApproved` on success.
+     * Emits `Transferred` on success.
      *
      * Weight: `O(1)`
      *
@@ -8681,16 +8863,18 @@ export interface ChainTx<
      * Origin must be Signed and there must be an approval in place by the `owner` to the
      * signer.
      *
-     * If the entire amount approved for transfer is transferred, then any deposit previously
-     * reserved by `approve_transfer` is unreserved.
+     * If the debit spends the approval in full, then any deposit previously reserved by
+     * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+     * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+     * balance, so a request smaller than the approval can still spend it in full.
      *
      * - `id`: The identifier of the asset.
-     * - `owner`: The account which previously approved for a transfer of at least `amount` and
-     * from which the asset balance will be withdrawn.
-     * - `destination`: The account to which the asset balance of `amount` will be transferred.
+     * - `owner`: The account which previously approved for a transfer of at least the debit
+     * and from which the asset balance will be withdrawn.
+     * - `destination`: The account to which the debited balance will be transferred.
      * - `amount`: The amount of assets to transfer.
      *
-     * Emits `TransferredApproved` on success.
+     * Emits `Transferred` on success.
      *
      * Weight: `O(1)`
      *
@@ -9045,6 +9229,10 @@ export interface ChainTx<
 
     /**
      * Burn the total issuance of the fungible asset and return (unlock) the locked NFT.
+     *
+     * The asset is destroyed as well, unless it still has asset accounts -- from `touch` --
+     * or approvals, or the asset registry refuses, in which case anyone can finish the
+     * destruction later.
      *
      * The dispatch origin for this call must be Signed.
      *
@@ -10013,16 +10201,18 @@ export interface ChainTx<
      * Origin must be Signed and there must be an approval in place by the `owner` to the
      * signer.
      *
-     * If the entire amount approved for transfer is transferred, then any deposit previously
-     * reserved by `approve_transfer` is unreserved.
+     * If the debit spends the approval in full, then any deposit previously reserved by
+     * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+     * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+     * balance, so a request smaller than the approval can still spend it in full.
      *
      * - `id`: The identifier of the asset.
-     * - `owner`: The account which previously approved for a transfer of at least `amount` and
-     * from which the asset balance will be withdrawn.
-     * - `destination`: The account to which the asset balance of `amount` will be transferred.
+     * - `owner`: The account which previously approved for a transfer of at least the debit
+     * and from which the asset balance will be withdrawn.
+     * - `destination`: The account to which the debited balance will be transferred.
      * - `amount`: The amount of assets to transfer.
      *
-     * Emits `TransferredApproved` on success.
+     * Emits `Transferred` on success.
      *
      * Weight: `O(1)`
      *
@@ -10814,8 +11004,8 @@ export interface ChainTx<
      * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
      * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
      * is used for building the Ethereum transaction root.
-     * * effective_gas_price: the price of a unit of gas
-     * * encoded len: the byte code size of the `eth_transact` extrinsic
+     * * `effective_gas_price`: the price of a unit of gas
+     * * `encoded_len`: the byte code size of the `eth_transact` extrinsic
      *
      * Calling this dispatchable ensures that the origin's nonce is bumped only once,
      * via the `CheckNonce` transaction extension. In contrast, [`Self::instantiate_with_code`]
@@ -10877,8 +11067,9 @@ export interface ChainTx<
      * * `transaction_encoded`: The RLP encoding of the signed Ethereum transaction,
      * represented as [crate::evm::TransactionSigned], provided by the Ethereum wallet. This
      * is used for building the Ethereum transaction root.
-     * * effective_gas_price: the price of a unit of gas
-     * * encoded len: the byte code size of the `eth_transact` extrinsic
+     * * `effective_gas_price`: the price of a unit of gas
+     * * `encoded_len`: the byte code size of the `eth_transact` extrinsic
+     * * `authorization_list`: EIP-7702 authorization tuples to process before execution
      *
      * @param {H160} dest
      * @param {U256} value
@@ -10888,6 +11079,7 @@ export interface ChainTx<
      * @param {BytesLike} transactionEncoded
      * @param {U256} effectiveGasPrice
      * @param {number} encodedLen
+     * @param {Array<PalletReviveEvmApiTransactionAuthorizationListEntry>} authorizationList
      **/
     ethCall: GenericTxCall<
       (
@@ -10899,6 +11091,7 @@ export interface ChainTx<
         transactionEncoded: BytesLike,
         effectiveGasPrice: U256,
         encodedLen: number,
+        authorizationList: Array<PalletReviveEvmApiTransactionAuthorizationListEntry>,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Revive';
@@ -10913,6 +11106,7 @@ export interface ChainTx<
               transactionEncoded: BytesLike;
               effectiveGasPrice: U256;
               encodedLen: number;
+              authorizationList: Array<PalletReviveEvmApiTransactionAuthorizationListEntry>;
             };
           };
         },
@@ -11406,7 +11600,8 @@ export interface ChainTx<
      * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
      * caller minus the minting fee. The fee is calculated using ceiling rounding
      * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
-     * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
+     * transferred to [`PsmInfo::fee_destination`] of the targeted instance, and waived
+     * if that account cannot receive it.
      *
      * ## Parameters
      *
@@ -11472,8 +11667,9 @@ export interface ChainTx<
      * ## Details
      *
      * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
-     * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
-     * amount in `external_asset` from the PSM reserve to the caller. The fee is
+     * to the instance's [`PsmInfo::fee_destination`], or waived if that account cannot
+     * receive it), then transfers the resulting amount in `external_asset` from the PSM
+     * reserve to the caller. The fee is
      * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
      * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
      * was registered, allowing existing positions to unwind even if live metadata later
@@ -11552,7 +11748,8 @@ export interface ChainTx<
      * fungibles backend; must not already have a PSM registered.
      * - `full_admin`: Origin granted full management of the new PSM.
      * - `emergency_admin`: Origin granted emergency management of the new PSM.
-     * - `fee_destination`: Account that will receive mint/redeem fees.
+     * - `fee_destination`: Account that will receive mint/redeem fees. Fees are waived while
+     * it cannot receive the internal asset.
      * - `max_debt`: Initial absolute internal-asset debt ceiling.
      * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
      * Must be non-zero.
@@ -11560,6 +11757,7 @@ export interface ChainTx<
      * ## Errors
      *
      * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
+     * - [`Error::InvalidAdminOrigin`]: Either admin is the system `None` origin.
      * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
      * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
      * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
@@ -11872,6 +12070,10 @@ export interface ChainTx<
      * Snapshots the external asset's live decimals at registration time and
      * increments [`PsmInfo::external_count`].
      *
+     * The reserve account ([`Pallet::reserve_account`]) must already be able to receive
+     * `external_asset`. For a non-sufficient asset, create its asset account first (e.g. via
+     * `touch_other`).
+     *
      * ## Dispatch Origin
      *
      * Must match the PSM instance's `full_admin` (the `Full` privilege level).
@@ -11891,6 +12093,8 @@ export interface ChainTx<
      * fungibles backend.
      * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
      * [`MAX_DECIMALS_DIFF`].
+     * - [`Error::ReserveCannotReceive`]: If the reserve account cannot receive
+     * `external_asset`.
      *
      * ## Events
      *
@@ -11976,6 +12180,7 @@ export interface ChainTx<
      * ## Errors
      *
      * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+     * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
      *
      * ## Events
      *
@@ -12015,6 +12220,7 @@ export interface ChainTx<
      * ## Errors
      *
      * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+     * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
      *
      * ## Events
      *
@@ -12811,7 +13017,8 @@ export interface ChainTx<
      * This is checked only upon calling `validate`. Existing validators are not affected.
      * * `chill_inactive_threshold`: The number of eras a validator can remain inactive during
      * the last [`Config::HistoryDepth`] eras before being subject to chilling becuase of
-     * inactivity.
+     * inactivity. The weight of `chill_inactive` with a proof of this length must fit in one
+     * normal extrinsic. When removed, `chill_inactive` is disabled.
      *
      * RuntimeOrigin must be Root to call this function.
      *
@@ -13242,6 +13449,8 @@ export interface ChainTx<
      *
      * This extrinsic can be called by anyone, given that the valid inactivity proof is
      * provided. Inactivity proof is a vector of eras where the given validator was inactive.
+     *
+     * Disabled while [`ChillInactiveThreshold`] is not set.
      *
      * Requirements for the inactivity proof:
      * - The length must be equal to [`ChillInactiveThreshold`].
@@ -15063,6 +15272,10 @@ export interface ChainTx<
     >;
 
     /**
+     * Remove a call hash from the whitelist.
+     *
+     * Leaves any live [`DeferredDispatch`] entry in place, so re-whitelisting the hash before
+     * it expires re-enables relayed execution.
      *
      * @param {H256} callHash
      **/

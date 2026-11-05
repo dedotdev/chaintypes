@@ -2317,51 +2317,6 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
-   * Pallet `StateTrieMigration`'s errors
-   **/
-  stateTrieMigration: {
-    /**
-     * Max signed limits not respected.
-     **/
-    MaxSignedLimits: GenericPalletError;
-
-    /**
-     * A key was longer than the configured maximum.
-     *
-     * This means that the migration halted at the current [`Progress`] and
-     * can be resumed with a larger [`crate::Config::MaxKeyLen`] value.
-     * Retrying with the same [`crate::Config::MaxKeyLen`] value will not work.
-     * The value should only be increased to avoid a storage migration for the currently
-     * stored [`crate::Progress::LastKey`].
-     **/
-    KeyTooLong: GenericPalletError;
-
-    /**
-     * submitter does not have enough funds.
-     **/
-    NotEnoughFunds: GenericPalletError;
-
-    /**
-     * Bad witness data provided.
-     **/
-    BadWitness: GenericPalletError;
-
-    /**
-     * Signed migration is not allowed because the maximum limit is not set yet.
-     **/
-    SignedMigrationNotAllowed: GenericPalletError;
-
-    /**
-     * Bad child root provided.
-     **/
-    BadChildRoot: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
    * Pallet `XcmPallet`'s errors
    **/
   xcmPallet: {

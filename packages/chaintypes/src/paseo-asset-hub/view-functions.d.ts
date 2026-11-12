@@ -291,6 +291,22 @@ export interface ChainViewFunctions extends GenericChainViewFunctions {
     [name: string]: GenericViewFunction;
   };
   /**
+   * Pallet `Psm`'s view functions
+   **/
+  psm: {
+    /**
+     * The reserve account of the PSM instance for `internal_asset`.
+     *
+     * @param {StagingXcmV5Location} internalAsset
+     **/
+    reserveAccount: GenericViewFunction<(internalAsset: StagingXcmV5Location) => Promise<AccountId32>>;
+
+    /**
+     * Generic pallet view function
+     **/
+    [name: string]: GenericViewFunction;
+  };
+  /**
    * Pallet `VoterList`'s view functions
    **/
   voterList: {

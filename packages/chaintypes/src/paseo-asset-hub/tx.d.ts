@@ -10396,7 +10396,8 @@ export interface ChainTx<
      * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
      * caller minus the minting fee. The fee is calculated using ceiling rounding
      * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
-     * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
+     * transferred to [`PsmInfo::fee_destination`] of the targeted instance, and waived
+     * if that account cannot receive it.
      *
      * ## Parameters
      *
@@ -10417,8 +10418,6 @@ export interface ChainTx<
      * - [`Error::FeeTooHigh`]: If the configured minting fee exceeds `max_fee`.
      * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed this PSM's debt ceiling
      * (aggregate or per-asset).
-     * - [`Error::DecimalsMismatch`]: If live decimals diverged from the snapshot taken at
-     * registration.
      * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
      * rounds to zero; swap would transfer nothing.
      *
@@ -10464,8 +10463,9 @@ export interface ChainTx<
      * ## Details
      *
      * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
-     * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
-     * amount in `external_asset` from the PSM reserve to the caller. The fee is
+     * to the instance's [`PsmInfo::fee_destination`], or waived if that account cannot
+     * receive it), then transfers the resulting amount in `external_asset` from the PSM
+     * reserve to the caller. The fee is
      * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
      * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
      * was registered, allowing existing positions to unwind even if live metadata later
@@ -10544,7 +10544,8 @@ export interface ChainTx<
      * fungibles backend; must not already have a PSM registered.
      * - `full_admin`: Origin granted full management of the new PSM.
      * - `emergency_admin`: Origin granted emergency management of the new PSM.
-     * - `fee_destination`: Account that will receive mint/redeem fees.
+     * - `fee_destination`: Account that will receive mint/redeem fees. Fees are waived while
+     * it cannot receive the internal asset.
      * - `max_debt`: Initial absolute internal-asset debt ceiling.
      * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
      * Must be non-zero.
@@ -10552,6 +10553,7 @@ export interface ChainTx<
      * ## Errors
      *
      * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
+     * - [`Error::InvalidAdminOrigin`]: Either admin is the system `None` origin.
      * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
      * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
      * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
@@ -10864,6 +10866,10 @@ export interface ChainTx<
      * Snapshots the external asset's live decimals at registration time and
      * increments [`PsmInfo::external_count`].
      *
+     * The reserve account ([`Pallet::reserve_account`]) must already be able to receive
+     * `external_asset`. For a non-sufficient asset, create its asset account first (e.g. via
+     * `touch_other`).
+     *
      * ## Dispatch Origin
      *
      * Must match the PSM instance's `full_admin` (the `Full` privilege level).
@@ -10881,10 +10887,10 @@ export interface ChainTx<
      * - [`Error::AssetAlreadyApproved`]: If `external_asset` is already approved on this PSM.
      * - [`Error::AssetDoesNotExist`]: If `external_asset` does not exist in the underlying
      * fungibles backend.
-     * - [`Error::DecimalsMismatch`]: If the internal asset's live decimals diverged from the
-     * snapshot in [`PsmInfo`].
      * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
      * [`MAX_DECIMALS_DIFF`].
+     * - [`Error::ReserveCannotReceive`]: If the reserve account cannot receive
+     * `external_asset`.
      *
      * ## Events
      *
@@ -10970,6 +10976,7 @@ export interface ChainTx<
      * ## Errors
      *
      * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+     * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
      *
      * ## Events
      *
@@ -11009,6 +11016,7 @@ export interface ChainTx<
      * ## Errors
      *
      * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+     * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
      *
      * ## Events
      *

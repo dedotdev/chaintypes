@@ -8557,7 +8557,15 @@ export type PolkadotRuntimeParachainsCoretimePalletCall =
         >;
         endHint?: number | undefined;
       };
-    };
+    }
+  /**
+   * Receive on-demand coretime orders from the `ExternalBrokerOrigin`.
+   *
+   * Parameters:
+   * -`origin`: The `ExternalBrokerOrigin`, assumed to be the coretime chain.
+   * -`batch`: The batch of on-demand orders.
+   **/
+  | { name: 'QueueOnDemandBatch'; params: { batch: Array<[PolkadotParachainPrimitivesPrimitivesId, number]> } };
 
 export type PolkadotRuntimeParachainsCoretimePalletCallLike =
   /**
@@ -8598,7 +8606,15 @@ export type PolkadotRuntimeParachainsCoretimePalletCallLike =
         >;
         endHint?: number | undefined;
       };
-    };
+    }
+  /**
+   * Receive on-demand coretime orders from the `ExternalBrokerOrigin`.
+   *
+   * Parameters:
+   * -`origin`: The `ExternalBrokerOrigin`, assumed to be the coretime chain.
+   * -`batch`: The batch of on-demand orders.
+   **/
+  | { name: 'QueueOnDemandBatch'; params: { batch: Array<[PolkadotParachainPrimitivesPrimitivesId, number]> } };
 
 export type PalletBrokerCoretimeInterfaceCoreAssignment =
   | { type: 'Idle' }
@@ -12061,7 +12077,17 @@ export type PolkadotRuntimeParachainsOnDemandPalletEvent =
   /**
    * An account was given credits.
    **/
-  | { name: 'AccountCredited'; data: { who: AccountId32; amount: bigint } };
+  | { name: 'AccountCredited'; data: { who: AccountId32; amount: bigint } }
+  /**
+   * The order queue was unexpectedly full - this indicates a problem with the configuration
+   * of the on-demand pallet on the Coretime chain. `dropped` indicates how many orders were
+   * dropped because they couldn't be queued.
+   **/
+  | { name: 'UnexpectedQueueFull'; data: { dropped: number } }
+  /**
+   * A batch of on-demand orders from the broker chain has been queued.
+   **/
+  | { name: 'BatchQueued'; data: { batch: Array<[PolkadotParachainPrimitivesPrimitivesId, number]> } };
 
 /**
  * The `Event` enum of this pallet

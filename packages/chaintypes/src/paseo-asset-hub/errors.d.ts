@@ -1980,7 +1980,7 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyAssets: GenericPalletError;
 
     /**
-     * Live decimals diverged from the snapshot taken at registration or genesis.
+     * Reserved legacy error; retained to preserve error variant indices.
      **/
     DecimalsMismatch: GenericPalletError;
 
@@ -2018,6 +2018,17 @@ export interface ChainErrors extends GenericChainErrors {
      * An unexpected invariant violation occurred. This should be reported.
      **/
     Unexpected: GenericPalletError;
+
+    /**
+     * An admin origin was supplied that cannot be used as an authority, such as the system
+     * `None` origin.
+     **/
+    InvalidAdminOrigin: GenericPalletError;
+
+    /**
+     * The PSM reserve account cannot receive the external asset.
+     **/
+    ReserveCannotReceive: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -3461,6 +3472,12 @@ export interface ChainErrors extends GenericChainErrors {
      * queue has not yet drained.
      **/
     PendingDepositCleanup: GenericPalletError;
+
+    /**
+     * The logs of the ethereum transaction would exceed
+     * [`limits::MAX_RECEIPT_LOGS_BYTES`] in its receipt.
+     **/
+    ReceiptTooLarge: GenericPalletError;
 
     /**
      * Generic pallet error

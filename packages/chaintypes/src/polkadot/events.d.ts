@@ -2306,6 +2306,22 @@ export interface ChainEvents extends GenericChainEvents {
     AccountCredited: GenericPalletEvent<'OnDemand', 'AccountCredited', { who: AccountId32; amount: bigint }>;
 
     /**
+     * The order queue was unexpectedly full - this indicates a problem with the configuration
+     * of the on-demand pallet on the Coretime chain. `dropped` indicates how many orders were
+     * dropped because they couldn't be queued.
+     **/
+    UnexpectedQueueFull: GenericPalletEvent<'OnDemand', 'UnexpectedQueueFull', { dropped: number }>;
+
+    /**
+     * A batch of on-demand orders from the broker chain has been queued.
+     **/
+    BatchQueued: GenericPalletEvent<
+      'OnDemand',
+      'BatchQueued',
+      { batch: Array<[PolkadotParachainPrimitivesPrimitivesId, number]> }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;

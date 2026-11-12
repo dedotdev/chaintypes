@@ -627,6 +627,10 @@ export interface ChainStorage extends GenericChainStorage {
     /**
      * The total units of outstanding deactivated balance in the system.
      *
+     * This is not guaranteed to be less than or equal to [`TotalIssuance`]. Total issuance may be
+     * reduced independently of this value, including while a reversible imbalance is outstanding.
+     * Active issuance is therefore derived using saturating subtraction.
+     *
      * @param {Callback<bigint> =} callback
      **/
     inactiveIssuance: GenericStorageQuery<() => bigint>;

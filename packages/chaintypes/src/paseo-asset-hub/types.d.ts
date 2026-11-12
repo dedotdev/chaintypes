@@ -11022,7 +11022,8 @@ export type PalletPsmCall =
    * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
    * caller minus the minting fee. The fee is calculated using ceiling rounding
    * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
-   * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
+   * transferred to [`PsmInfo::fee_destination`] of the targeted instance, and waived
+   * if that account cannot receive it.
    *
    * ## Parameters
    *
@@ -11043,8 +11044,6 @@ export type PalletPsmCall =
    * - [`Error::FeeTooHigh`]: If the configured minting fee exceeds `max_fee`.
    * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed this PSM's debt ceiling
    * (aggregate or per-asset).
-   * - [`Error::DecimalsMismatch`]: If live decimals diverged from the snapshot taken at
-   * registration.
    * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
    * rounds to zero; swap would transfer nothing.
    *
@@ -11071,8 +11070,9 @@ export type PalletPsmCall =
    * ## Details
    *
    * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
-   * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
-   * amount in `external_asset` from the PSM reserve to the caller. The fee is
+   * to the instance's [`PsmInfo::fee_destination`], or waived if that account cannot
+   * receive it), then transfers the resulting amount in `external_asset` from the PSM
+   * reserve to the caller. The fee is
    * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
    * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
    * was registered, allowing existing positions to unwind even if live metadata later
@@ -11132,7 +11132,8 @@ export type PalletPsmCall =
    * fungibles backend; must not already have a PSM registered.
    * - `full_admin`: Origin granted full management of the new PSM.
    * - `emergency_admin`: Origin granted emergency management of the new PSM.
-   * - `fee_destination`: Account that will receive mint/redeem fees.
+   * - `fee_destination`: Account that will receive mint/redeem fees. Fees are waived while
+   * it cannot receive the internal asset.
    * - `max_debt`: Initial absolute internal-asset debt ceiling.
    * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
    * Must be non-zero.
@@ -11140,6 +11141,7 @@ export type PalletPsmCall =
    * ## Errors
    *
    * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
+   * - [`Error::InvalidAdminOrigin`]: Either admin is the system `None` origin.
    * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
    * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
    * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
@@ -11329,6 +11331,10 @@ export type PalletPsmCall =
    * Snapshots the external asset's live decimals at registration time and
    * increments [`PsmInfo::external_count`].
    *
+   * The reserve account ([`Pallet::reserve_account`]) must already be able to receive
+   * `external_asset`. For a non-sufficient asset, create its asset account first (e.g. via
+   * `touch_other`).
+   *
    * ## Dispatch Origin
    *
    * Must match the PSM instance's `full_admin` (the `Full` privilege level).
@@ -11346,10 +11352,10 @@ export type PalletPsmCall =
    * - [`Error::AssetAlreadyApproved`]: If `external_asset` is already approved on this PSM.
    * - [`Error::AssetDoesNotExist`]: If `external_asset` does not exist in the underlying
    * fungibles backend.
-   * - [`Error::DecimalsMismatch`]: If the internal asset's live decimals diverged from the
-   * snapshot in [`PsmInfo`].
    * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
    * [`MAX_DECIMALS_DIFF`].
+   * - [`Error::ReserveCannotReceive`]: If the reserve account cannot receive
+   * `external_asset`.
    *
    * ## Events
    *
@@ -11402,6 +11408,7 @@ export type PalletPsmCall =
    * ## Errors
    *
    * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
    *
    * ## Events
    *
@@ -11426,6 +11433,7 @@ export type PalletPsmCall =
    * ## Errors
    *
    * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
    *
    * ## Events
    *
@@ -11450,7 +11458,8 @@ export type PalletPsmCallLike =
    * `internal_asset`'s PSM reserve account, then mints `internal_asset` to the
    * caller minus the minting fee. The fee is calculated using ceiling rounding
    * (`mul_ceil`), ensuring the protocol never undercharges. The fee is
-   * transferred to [`PsmInfo::fee_destination`] of the targeted instance.
+   * transferred to [`PsmInfo::fee_destination`] of the targeted instance, and waived
+   * if that account cannot receive it.
    *
    * ## Parameters
    *
@@ -11471,8 +11480,6 @@ export type PalletPsmCallLike =
    * - [`Error::FeeTooHigh`]: If the configured minting fee exceeds `max_fee`.
    * - [`Error::ExceedsMaxPsmDebt`]: If minting would exceed this PSM's debt ceiling
    * (aggregate or per-asset).
-   * - [`Error::DecimalsMismatch`]: If live decimals diverged from the snapshot taken at
-   * registration.
    * - [`Error::AmountTooSmallAfterConversion`]: If the conversion to the counter-asset
    * rounds to zero; swap would transfer nothing.
    *
@@ -11499,8 +11506,9 @@ export type PalletPsmCallLike =
    * ## Details
    *
    * Burns `internal_amount` of `internal_asset` from the caller minus fee (transferred
-   * to the instance's [`PsmInfo::fee_destination`]), then transfers the resulting
-   * amount in `external_asset` from the PSM reserve to the caller. The fee is
+   * to the instance's [`PsmInfo::fee_destination`], or waived if that account cannot
+   * receive it), then transfers the resulting amount in `external_asset` from the PSM
+   * reserve to the caller. The fee is
    * calculated using ceiling rounding (`mul_ceil`), ensuring the protocol never
    * undercharges. Redemptions use the decimals snapshotted when the PSM/external pair
    * was registered, allowing existing positions to unwind even if live metadata later
@@ -11560,7 +11568,8 @@ export type PalletPsmCallLike =
    * fungibles backend; must not already have a PSM registered.
    * - `full_admin`: Origin granted full management of the new PSM.
    * - `emergency_admin`: Origin granted emergency management of the new PSM.
-   * - `fee_destination`: Account that will receive mint/redeem fees.
+   * - `fee_destination`: Account that will receive mint/redeem fees. Fees are waived while
+   * it cannot receive the internal asset.
    * - `max_debt`: Initial absolute internal-asset debt ceiling.
    * - `min_swap_amount`: Minimum swap amount for this instance, in internal-asset units.
    * Must be non-zero.
@@ -11568,6 +11577,7 @@ export type PalletPsmCallLike =
    * ## Errors
    *
    * - [`DispatchError::BadOrigin`]: The origin is not permitted by [`Config::CreateOrigin`].
+   * - [`Error::InvalidAdminOrigin`]: Either admin is the system `None` origin.
    * - [`Error::PsmAlreadyExists`]: A PSM is already registered for `internal_asset`.
    * - [`Error::ZeroMinSwapAmount`]: `min_swap_amount` is zero.
    * - [`Error::AssetDoesNotExist`]: The internal asset does not exist.
@@ -11757,6 +11767,10 @@ export type PalletPsmCallLike =
    * Snapshots the external asset's live decimals at registration time and
    * increments [`PsmInfo::external_count`].
    *
+   * The reserve account ([`Pallet::reserve_account`]) must already be able to receive
+   * `external_asset`. For a non-sufficient asset, create its asset account first (e.g. via
+   * `touch_other`).
+   *
    * ## Dispatch Origin
    *
    * Must match the PSM instance's `full_admin` (the `Full` privilege level).
@@ -11774,10 +11788,10 @@ export type PalletPsmCallLike =
    * - [`Error::AssetAlreadyApproved`]: If `external_asset` is already approved on this PSM.
    * - [`Error::AssetDoesNotExist`]: If `external_asset` does not exist in the underlying
    * fungibles backend.
-   * - [`Error::DecimalsMismatch`]: If the internal asset's live decimals diverged from the
-   * snapshot in [`PsmInfo`].
    * - [`Error::DecimalsRangeExceeded`]: If `|asset_decimals − internal_decimals|` exceeds
    * [`MAX_DECIMALS_DIFF`].
+   * - [`Error::ReserveCannotReceive`]: If the reserve account cannot receive
+   * `external_asset`.
    *
    * ## Events
    *
@@ -11830,6 +11844,7 @@ export type PalletPsmCallLike =
    * ## Errors
    *
    * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
    *
    * ## Events
    *
@@ -11854,6 +11869,7 @@ export type PalletPsmCallLike =
    * ## Errors
    *
    * - [`Error::PsmNotFound`]: No PSM is registered for `internal_asset`.
+   * - [`Error::InvalidAdminOrigin`]: `new_admin` is the system `None` origin.
    *
    * ## Events
    *
@@ -23360,7 +23376,7 @@ export type PalletPsmError =
    **/
   | 'TooManyAssets'
   /**
-   * Live decimals diverged from the snapshot taken at registration or genesis.
+   * Reserved legacy error; retained to preserve error variant indices.
    **/
   | 'DecimalsMismatch'
   /**
@@ -23390,7 +23406,16 @@ export type PalletPsmError =
   /**
    * An unexpected invariant violation occurred. This should be reported.
    **/
-  | 'Unexpected';
+  | 'Unexpected'
+  /**
+   * An admin origin was supplied that cannot be used as an authority, such as the system
+   * `None` origin.
+   **/
+  | 'InvalidAdminOrigin'
+  /**
+   * The PSM reserve account cannot receive the external asset.
+   **/
+  | 'ReserveCannotReceive';
 
 /**
  * The `Error` enum of this pallet.
@@ -24773,6 +24798,12 @@ export type PalletReviveEvmApiRpcTypesGenWithdrawal = {
 
 export type PalletReviveEvmBlockHashReceiptGasInfo = { gasUsed: U256; effectiveGasPrice: U256 };
 
+export type PalletReviveEvmBlockHashReceiptCommittedReceiptLogs = {
+  encodedLen: number;
+  bloom: FixedBytes<256>;
+  exceeded: boolean;
+};
+
 export type PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR = {
   transactionRootBuilder: PalletReviveEvmBlockHashHashBuilderIncrementalHashBuilderIR;
   receiptsRootBuilder: PalletReviveEvmBlockHashHashBuilderIncrementalHashBuilderIR;
@@ -25070,7 +25101,12 @@ export type PalletReviveError =
    * [`NativeDepositOf`] entries from a previously terminated contract that the deletion
    * queue has not yet drained.
    **/
-  | 'PendingDepositCleanup';
+  | 'PendingDepositCleanup'
+  /**
+   * The logs of the ethereum transaction would exceed
+   * [`limits::MAX_RECEIPT_LOGS_BYTES`] in its receipt.
+   **/
+  | 'ReceiptTooLarge';
 
 /**
  * Error types for the permit pallet.

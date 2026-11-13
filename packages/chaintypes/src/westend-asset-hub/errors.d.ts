@@ -1440,6 +1440,11 @@ export interface ChainErrors extends GenericChainErrors {
     WrongAttribute: GenericPalletError;
 
     /**
+     * The collection deposit could not be fully moved due to a lock or freeze on the owner.
+     **/
+    IncompleteDepositTransfer: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1672,6 +1677,11 @@ export interface ChainErrors extends GenericChainErrors {
      * The witness data should be provided.
      **/
     WitnessRequired: GenericPalletError;
+
+    /**
+     * The collection deposit could not be fully moved due to a lock or freeze on the owner.
+     **/
+    IncompleteDepositTransfer: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2772,6 +2782,50 @@ export interface ChainErrors extends GenericChainErrors {
      * The PSM reserve account cannot receive the external asset.
      **/
     ReserveCannotReceive: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `PriceOracle`'s errors
+   **/
+  priceOracle: {
+    /**
+     * A parameter is out of its valid range.
+     **/
+    InvalidParameters: GenericPalletError;
+
+    /**
+     * The venue is not registered.
+     **/
+    UnknownVenue: GenericPalletError;
+
+    /**
+     * The market is not registered.
+     **/
+    UnknownMarket: GenericPalletError;
+
+    /**
+     * The pair is not registered.
+     **/
+    UnknownPair: GenericPalletError;
+
+    /**
+     * The venue still has markets.
+     **/
+    VenueInUse: GenericPalletError;
+
+    /**
+     * More reports than signers in one block.
+     **/
+    TooManyReports: GenericPalletError;
+
+    /**
+     * Reports were already processed in this block.
+     **/
+    AlreadyProcessed: GenericPalletError;
 
     /**
      * Generic pallet error

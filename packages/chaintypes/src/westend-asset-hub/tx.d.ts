@@ -34,6 +34,7 @@ import type {
   PalletBalancesAdjustmentDirection,
   PalletVestingVestingInfo,
   AssetHubWestendRuntimeSessionKeys,
+  PalletValidatorCollatorsCollatorDraw,
   PolkadotParachainPrimitivesPrimitivesId,
   SpStakingServiceKind,
   XcmVersionedLocation,
@@ -70,6 +71,15 @@ import type {
   PalletReviveEvmApiTransactionAuthorizationListEntry,
   FrameSupportScheduleDispatchTime,
   PalletPsmCircuitBreakerLevel,
+  SpPriceOracleSignedPriceReport,
+  PalletPriceOracleParameters,
+  PalletPriceOraclePause,
+  SpPriceOracleMarketVenueId,
+  PalletPriceOracleRegistryVenue,
+  SpPriceOracleMarketMarketId,
+  PalletPriceOracleRegistryStoredMarket,
+  SpPriceOraclePairId,
+  PalletPriceOraclePairConfig,
   PalletStateTrieMigrationMigrationLimits,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationProgress,
@@ -1860,18 +1870,17 @@ export interface ChainTx<
      * Set the maximum number of validators returned as collators.
      *
      * With a stored set, the change forces two rotations and the first draws
-     * [`DrawnCollators`] again, so the drawn validators can change. `None` returns the whole
-     * stored set from then on.
+     * [`DrawnCollators`] again, so the drawn validators can change.
      *
-     * @param {number | undefined} max
+     * @param {PalletValidatorCollatorsCollatorDraw} max
      **/
     setMaxCollators: GenericTxCall<
-      (max: number | undefined) => ChainSubmittableExtrinsic<
+      (max: PalletValidatorCollatorsCollatorDraw) => ChainSubmittableExtrinsic<
         {
           pallet: 'ValidatorCollators';
           palletCall: {
             name: 'SetMaxCollators';
-            params: { max: number | undefined };
+            params: { max: PalletValidatorCollatorsCollatorDraw };
           };
         },
         ChainKnownTypes
@@ -5921,6 +5930,10 @@ export interface ChainTx<
      *
      * Origin must be Signed and the sender should be the Owner of the `collection`.
      *
+     * The collection's total deposit is moved from the current to the new owner. Fails with
+     * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+     * the full transfer; clear it and retry.
+     *
      * - `collection`: The collection whose owner should be changed.
      * - `owner`: The new Owner of this collection. They must have called
      * `set_accept_ownership` with `collection` in order for this operation to succeed.
@@ -6886,6 +6899,10 @@ export interface ChainTx<
      *
      * Origin must be Signed and the sender should be the Owner of the `collection`.
      *
+     * The collection deposit is moved from the current to the new owner. Fails with
+     * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+     * the full transfer; clear it and retry.
+     *
      * - `collection`: The collection whose owner should be changed.
      * - `owner`: The new Owner of this collection. They must have called
      * `set_accept_ownership` with `collection` in order for this operation to succeed.
@@ -6963,6 +6980,10 @@ export interface ChainTx<
      * Change the Owner of a collection.
      *
      * Origin must be `ForceOrigin`.
+     *
+     * The collection deposit is moved from the current to the new owner. Fails with
+     * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+     * the full transfer; clear it and retry.
      *
      * - `collection`: The identifier of the collection.
      * - `owner`: The new Owner of this collection.
@@ -12251,6 +12272,222 @@ export interface ChainTx<
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
   };
   /**
+   * Pallet `PriceOracle`'s transaction calls
+   **/
+  priceOracle: {
+    /**
+     * Process the price reports collected by the block author.
+     *
+     * Reports that are stale, from an unknown signer, or carry an invalid signature are
+     * ignored. The votes of the remaining reports replace the votes of the same signers
+     * anchored at the same or an earlier block, expired votes are dropped, and the price of
+     * every pair with enough votes is recomputed.
+     *
+     * @param {Array<SpPriceOracleSignedPriceReport>} reports
+     **/
+    processReports: GenericTxCall<
+      (reports: Array<SpPriceOracleSignedPriceReport>) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PriceOracle';
+          palletCall: {
+            name: 'ProcessReports';
+            params: { reports: Array<SpPriceOracleSignedPriceReport> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the parameters. Reports are processed once they are set.
+     *
+     * `report_window`, `report_window_ms` and `quorum` must be at least one.
+     *
+     * @param {PalletPriceOracleParameters} params
+     **/
+    setParameters: GenericTxCall<
+      (params: PalletPriceOracleParameters) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PriceOracle';
+          palletCall: {
+            name: 'SetParameters';
+            params: { params: PalletPriceOracleParameters };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set what is paused. `None` lifts the pause.
+     *
+     * @param {PalletPriceOraclePause | undefined} pause
+     **/
+    setPause: GenericTxCall<
+      (pause: PalletPriceOraclePause | undefined) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PriceOracle';
+          palletCall: {
+            name: 'SetPause';
+            params: { pause: PalletPriceOraclePause | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Add or update a venue.
+     *
+     * @param {SpPriceOracleMarketVenueId} id
+     * @param {PalletPriceOracleRegistryVenue} venue
+     **/
+    setVenue: GenericTxCall<
+      (
+        id: SpPriceOracleMarketVenueId,
+        venue: PalletPriceOracleRegistryVenue,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PriceOracle';
+          palletCall: {
+            name: 'SetVenue';
+            params: { id: SpPriceOracleMarketVenueId; venue: PalletPriceOracleRegistryVenue };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove a venue. Fails while any market refers to it.
+     *
+     * @param {SpPriceOracleMarketVenueId} id
+     **/
+    removeVenue: GenericTxCall<
+      (id: SpPriceOracleMarketVenueId) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PriceOracle';
+          palletCall: {
+            name: 'RemoveVenue';
+            params: { id: SpPriceOracleMarketVenueId };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Add or update a market. Its venue and pair must be registered.
+     *
+     * @param {SpPriceOracleMarketMarketId} id
+     * @param {PalletPriceOracleRegistryStoredMarket} market
+     **/
+    setMarket: GenericTxCall<
+      (
+        id: SpPriceOracleMarketMarketId,
+        market: PalletPriceOracleRegistryStoredMarket,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PriceOracle';
+          palletCall: {
+            name: 'SetMarket';
+            params: { id: SpPriceOracleMarketMarketId; market: PalletPriceOracleRegistryStoredMarket };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Add or update a pair.
+     *
+     * `market_quorum` must be non-zero.
+     *
+     * @param {SpPriceOraclePairId} pair
+     * @param {PalletPriceOraclePairConfig} config
+     **/
+    setPair: GenericTxCall<
+      (
+        pair: SpPriceOraclePairId,
+        config: PalletPriceOraclePairConfig,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PriceOracle';
+          palletCall: {
+            name: 'SetPair';
+            params: { pair: SpPriceOraclePairId; config: PalletPriceOraclePairConfig };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove a market.
+     *
+     * @param {SpPriceOracleMarketMarketId} id
+     **/
+    removeMarket: GenericTxCall<
+      (id: SpPriceOracleMarketMarketId) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PriceOracle';
+          palletCall: {
+            name: 'RemoveMarket';
+            params: { id: SpPriceOracleMarketMarketId };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the cross rates of a pair. An empty list removes them.
+     *
+     * All pairs involved must be registered.
+     *
+     * @param {SpPriceOraclePairId} pair
+     * @param {Array<[SpPriceOraclePairId, SpPriceOraclePairId]>} crossRates
+     **/
+    setCrossRates: GenericTxCall<
+      (
+        pair: SpPriceOraclePairId,
+        crossRates: Array<[SpPriceOraclePairId, SpPriceOraclePairId]>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PriceOracle';
+          palletCall: {
+            name: 'SetCrossRates';
+            params: { pair: SpPriceOraclePairId; crossRates: Array<[SpPriceOraclePairId, SpPriceOraclePairId]> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Remove a pair, along with its cross rates, votes and price.
+     *
+     * @param {SpPriceOraclePairId} pair
+     **/
+    removePair: GenericTxCall<
+      (pair: SpPriceOraclePairId) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'PriceOracle';
+          palletCall: {
+            name: 'RemovePair';
+            params: { pair: SpPriceOraclePairId };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
    * Pallet `StateTrieMigration`'s transaction calls
    **/
   stateTrieMigration: {
@@ -14656,8 +14893,9 @@ export interface ChainTx<
      *
      * `maybe_solution` can be set to `None` to erase the page.
      *
-     * Collects deposits from the signed origin based on [`Config::DepositBase`] and
-     * [`Config::DepositPerPage`].
+     * The held deposit becomes the base deposit charged at [`Pallet::register`] plus the
+     * [`Config::DepositPerPage`] deposit of the stored pages. Invulnerables have no per-page
+     * part.
      *
      * @param {number} page
      * @param {AssetHubWestendRuntimeStakingNposCompactSolution16 | undefined} maybeSolution
@@ -15210,6 +15448,30 @@ export interface ChainTx<
           pallet: 'Referenda';
           palletCall: {
             name: 'RefundSubmissionDeposit';
+            params: { index: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Slash the Submission Deposit for a rejected or timed-out referendum.
+     *
+     * - `origin`: must be `Signed` or `Root`.
+     * - `index`: The index of a rejected or timed-out referendum whose Submission Deposit has
+     * not yet been slashed.
+     *
+     * Emits `DepositSlashed`.
+     *
+     * @param {number} index
+     **/
+    slashSubmissionDeposit: GenericTxCall<
+      (index: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Referenda';
+          palletCall: {
+            name: 'SlashSubmissionDeposit';
             params: { index: number };
           };
         },

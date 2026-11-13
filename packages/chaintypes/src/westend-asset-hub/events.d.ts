@@ -20,6 +20,7 @@ import type {
   AssetHubWestendRuntimeRuntimeHoldReason,
   PalletBalancesUnexpectedKind,
   StagingXcmV5Location,
+  PalletValidatorCollatorsCollatorDraw,
   PalletValidatorCollatorsUnexpectedKind,
   AssetHubWestendRuntimeStakingValidatorSetDestination,
   PolkadotParachainPrimitivesPrimitivesId,
@@ -46,6 +47,11 @@ import type {
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
   PalletPsmCircuitBreakerLevel,
   AssetHubWestendRuntimeOriginCaller,
+  SpPriceOraclePairId,
+  PalletPriceOracleParameters,
+  PalletPriceOraclePause,
+  SpPriceOracleMarketVenueId,
+  SpPriceOracleMarketMarketId,
   PalletStateTrieMigrationMigrationCompute,
   PalletStateTrieMigrationError,
   PalletStakingAsyncRewardDestination,
@@ -878,7 +884,11 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * The maximum number of validator collators was changed.
      **/
-    MaxCollatorsSet: GenericPalletEvent<'ValidatorCollators', 'MaxCollatorsSet', { max?: number | undefined }>;
+    MaxCollatorsSet: GenericPalletEvent<
+      'ValidatorCollators',
+      'MaxCollatorsSet',
+      { max: PalletValidatorCollatorsCollatorDraw }
+    >;
 
     /**
      * No external set is stored, so no validators were returned for the session, with or
@@ -891,7 +901,7 @@ export interface ChainEvents extends GenericChainEvents {
      * `drawn_len` of the `external_len` validators of the set of `era`, all with registered
      * keys, were returned for a session and recorded in [`DrawnCollators`]. `new_external` is
      * `true` at the first rotation after a set arrives or the cap changes, and `false` at the
-     * later ones, which under a cap return the previous draw again.
+     * later ones, which return the previous draw again.
      **/
     CollatorsDrawn: GenericPalletEvent<
       'ValidatorCollators',
@@ -3810,6 +3820,74 @@ export interface ChainEvents extends GenericChainEvents {
         newAdmin: AssetHubWestendRuntimeOriginCaller;
       }
     >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `PriceOracle`'s events
+   **/
+  priceOracle: {
+    /**
+     * The price of a pair changed.
+     **/
+    PriceUpdated: GenericPalletEvent<
+      'PriceOracle',
+      'PriceUpdated',
+      { pair: SpPriceOraclePairId; price: FixedU128; signers: number }
+    >;
+
+    /**
+     * The reports of a block were processed.
+     **/
+    ReportsProcessed: GenericPalletEvent<'PriceOracle', 'ReportsProcessed', { accepted: number; rejected: number }>;
+
+    /**
+     * The parameters were set.
+     **/
+    ParametersSet: GenericPalletEvent<'PriceOracle', 'ParametersSet', { params: PalletPriceOracleParameters }>;
+
+    /**
+     * The pause was set, or lifted if `None`.
+     **/
+    PauseSet: GenericPalletEvent<'PriceOracle', 'PauseSet', { pause?: PalletPriceOraclePause | undefined }>;
+
+    /**
+     * A venue was added or updated.
+     **/
+    VenueSet: GenericPalletEvent<'PriceOracle', 'VenueSet', { id: SpPriceOracleMarketVenueId }>;
+
+    /**
+     * A venue was removed.
+     **/
+    VenueRemoved: GenericPalletEvent<'PriceOracle', 'VenueRemoved', { id: SpPriceOracleMarketVenueId }>;
+
+    /**
+     * A market was added or updated.
+     **/
+    MarketSet: GenericPalletEvent<'PriceOracle', 'MarketSet', { id: SpPriceOracleMarketMarketId }>;
+
+    /**
+     * A market was removed.
+     **/
+    MarketRemoved: GenericPalletEvent<'PriceOracle', 'MarketRemoved', { id: SpPriceOracleMarketMarketId }>;
+
+    /**
+     * A pair was added or updated.
+     **/
+    PairSet: GenericPalletEvent<'PriceOracle', 'PairSet', { pair: SpPriceOraclePairId }>;
+
+    /**
+     * The cross rates of a pair were set.
+     **/
+    CrossRatesSet: GenericPalletEvent<'PriceOracle', 'CrossRatesSet', { pair: SpPriceOraclePairId }>;
+
+    /**
+     * A pair was removed.
+     **/
+    PairRemoved: GenericPalletEvent<'PriceOracle', 'PairRemoved', { pair: SpPriceOraclePairId }>;
 
     /**
      * Generic pallet event

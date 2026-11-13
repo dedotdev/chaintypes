@@ -15,10 +15,10 @@ import type {
   Permill,
   H160,
   U256,
+  FixedU128,
   Percent,
   Perbill,
   PerU16,
-  FixedU128,
   Phase,
   DispatchError,
   Result,
@@ -63,6 +63,7 @@ export type AssetHubWestendRuntimeRuntimeCall =
   | { pallet: 'Revive'; palletCall: PalletReviveCall }
   | { pallet: 'AssetRewards'; palletCall: PalletAssetRewardsCall }
   | { pallet: 'Psm'; palletCall: PalletPsmCall }
+  | { pallet: 'PriceOracle'; palletCall: PalletPriceOracleCall }
   | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCall }
   | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCall }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
@@ -119,6 +120,7 @@ export type AssetHubWestendRuntimeRuntimeCallLike =
   | { pallet: 'Revive'; palletCall: PalletReviveCallLike }
   | { pallet: 'AssetRewards'; palletCall: PalletAssetRewardsCallLike }
   | { pallet: 'Psm'; palletCall: PalletPsmCallLike }
+  | { pallet: 'PriceOracle'; palletCall: PalletPriceOracleCallLike }
   | { pallet: 'StateTrieMigration'; palletCall: PalletStateTrieMigrationCallLike }
   | { pallet: 'Staking'; palletCall: PalletStakingAsyncPalletCallLike }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
@@ -1516,10 +1518,9 @@ export type PalletValidatorCollatorsCall =
    * Set the maximum number of validators returned as collators.
    *
    * With a stored set, the change forces two rotations and the first draws
-   * [`DrawnCollators`] again, so the drawn validators can change. `None` returns the whole
-   * stored set from then on.
+   * [`DrawnCollators`] again, so the drawn validators can change.
    **/
-  | { name: 'SetMaxCollators'; params: { max?: number | undefined } }
+  | { name: 'SetMaxCollators'; params: { max: PalletValidatorCollatorsCollatorDraw } }
   /**
    * Set the number of blocks between two reports of the authored blocks.
    *
@@ -1550,10 +1551,9 @@ export type PalletValidatorCollatorsCallLike =
    * Set the maximum number of validators returned as collators.
    *
    * With a stored set, the change forces two rotations and the first draws
-   * [`DrawnCollators`] again, so the drawn validators can change. `None` returns the whole
-   * stored set from then on.
+   * [`DrawnCollators`] again, so the drawn validators can change.
    **/
-  | { name: 'SetMaxCollators'; params: { max?: number | undefined } }
+  | { name: 'SetMaxCollators'; params: { max: PalletValidatorCollatorsCollatorDraw } }
   /**
    * Set the number of blocks between two reports of the authored blocks.
    *
@@ -1574,6 +1574,8 @@ export type PalletValidatorCollatorsCallLike =
    * It applies to the stored set too, whose arrival time is kept.
    **/
   | { name: 'SetReportMargin'; params: { margin: bigint } };
+
+export type PalletValidatorCollatorsCollatorDraw = { type: 'All' } | { type: 'UpTo'; value: number } | { type: 'None' };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -6100,6 +6102,10 @@ export type PalletUniquesCall =
    *
    * Origin must be Signed and the sender should be the Owner of the `collection`.
    *
+   * The collection's total deposit is moved from the current to the new owner. Fails with
+   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+   * the full transfer; clear it and retry.
+   *
    * - `collection`: The collection whose owner should be changed.
    * - `owner`: The new Owner of this collection. They must have called
    * `set_accept_ownership` with `collection` in order for this operation to succeed.
@@ -6549,6 +6555,10 @@ export type PalletUniquesCallLike =
    * Change the Owner of a collection.
    *
    * Origin must be Signed and the sender should be the Owner of the `collection`.
+   *
+   * The collection's total deposit is moved from the current to the new owner. Fails with
+   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+   * the full transfer; clear it and retry.
    *
    * - `collection`: The collection whose owner should be changed.
    * - `owner`: The new Owner of this collection. They must have called
@@ -7023,6 +7033,10 @@ export type PalletNftsCall =
    *
    * Origin must be Signed and the sender should be the Owner of the `collection`.
    *
+   * The collection deposit is moved from the current to the new owner. Fails with
+   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+   * the full transfer; clear it and retry.
+   *
    * - `collection`: The collection whose owner should be changed.
    * - `owner`: The new Owner of this collection. They must have called
    * `set_accept_ownership` with `collection` in order for this operation to succeed.
@@ -7063,6 +7077,10 @@ export type PalletNftsCall =
    * Change the Owner of a collection.
    *
    * Origin must be `ForceOrigin`.
+   *
+   * The collection deposit is moved from the current to the new owner. Fails with
+   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+   * the full transfer; clear it and retry.
    *
    * - `collection`: The identifier of the collection.
    * - `owner`: The new Owner of this collection.
@@ -7737,6 +7755,10 @@ export type PalletNftsCallLike =
    *
    * Origin must be Signed and the sender should be the Owner of the `collection`.
    *
+   * The collection deposit is moved from the current to the new owner. Fails with
+   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+   * the full transfer; clear it and retry.
+   *
    * - `collection`: The collection whose owner should be changed.
    * - `owner`: The new Owner of this collection. They must have called
    * `set_accept_ownership` with `collection` in order for this operation to succeed.
@@ -7777,6 +7799,10 @@ export type PalletNftsCallLike =
    * Change the Owner of a collection.
    *
    * Origin must be `ForceOrigin`.
+   *
+   * The collection deposit is moved from the current to the new owner. Fails with
+   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+   * the full transfer; clear it and retry.
    *
    * - `collection`: The identifier of the collection.
    * - `owner`: The new Owner of this collection.
@@ -12703,6 +12729,217 @@ export type PalletPsmCircuitBreakerLevel = 'AllEnabled' | 'MintingDisabled' | 'A
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletPriceOracleCall =
+  /**
+   * Process the price reports collected by the block author.
+   *
+   * Reports that are stale, from an unknown signer, or carry an invalid signature are
+   * ignored. The votes of the remaining reports replace the votes of the same signers
+   * anchored at the same or an earlier block, expired votes are dropped, and the price of
+   * every pair with enough votes is recomputed.
+   **/
+  | { name: 'ProcessReports'; params: { reports: Array<SpPriceOracleSignedPriceReport> } }
+  /**
+   * Set the parameters. Reports are processed once they are set.
+   *
+   * `report_window`, `report_window_ms` and `quorum` must be at least one.
+   **/
+  | { name: 'SetParameters'; params: { params: PalletPriceOracleParameters } }
+  /**
+   * Set what is paused. `None` lifts the pause.
+   **/
+  | { name: 'SetPause'; params: { pause?: PalletPriceOraclePause | undefined } }
+  /**
+   * Add or update a venue.
+   **/
+  | { name: 'SetVenue'; params: { id: SpPriceOracleMarketVenueId; venue: PalletPriceOracleRegistryVenue } }
+  /**
+   * Remove a venue. Fails while any market refers to it.
+   **/
+  | { name: 'RemoveVenue'; params: { id: SpPriceOracleMarketVenueId } }
+  /**
+   * Add or update a market. Its venue and pair must be registered.
+   **/
+  | { name: 'SetMarket'; params: { id: SpPriceOracleMarketMarketId; market: PalletPriceOracleRegistryStoredMarket } }
+  /**
+   * Add or update a pair.
+   *
+   * `market_quorum` must be non-zero.
+   **/
+  | { name: 'SetPair'; params: { pair: SpPriceOraclePairId; config: PalletPriceOraclePairConfig } }
+  /**
+   * Remove a market.
+   **/
+  | { name: 'RemoveMarket'; params: { id: SpPriceOracleMarketMarketId } }
+  /**
+   * Set the cross rates of a pair. An empty list removes them.
+   *
+   * All pairs involved must be registered.
+   **/
+  | {
+      name: 'SetCrossRates';
+      params: { pair: SpPriceOraclePairId; crossRates: Array<[SpPriceOraclePairId, SpPriceOraclePairId]> };
+    }
+  /**
+   * Remove a pair, along with its cross rates, votes and price.
+   **/
+  | { name: 'RemovePair'; params: { pair: SpPriceOraclePairId } };
+
+export type PalletPriceOracleCallLike =
+  /**
+   * Process the price reports collected by the block author.
+   *
+   * Reports that are stale, from an unknown signer, or carry an invalid signature are
+   * ignored. The votes of the remaining reports replace the votes of the same signers
+   * anchored at the same or an earlier block, expired votes are dropped, and the price of
+   * every pair with enough votes is recomputed.
+   **/
+  | { name: 'ProcessReports'; params: { reports: Array<SpPriceOracleSignedPriceReport> } }
+  /**
+   * Set the parameters. Reports are processed once they are set.
+   *
+   * `report_window`, `report_window_ms` and `quorum` must be at least one.
+   **/
+  | { name: 'SetParameters'; params: { params: PalletPriceOracleParameters } }
+  /**
+   * Set what is paused. `None` lifts the pause.
+   **/
+  | { name: 'SetPause'; params: { pause?: PalletPriceOraclePause | undefined } }
+  /**
+   * Add or update a venue.
+   **/
+  | { name: 'SetVenue'; params: { id: SpPriceOracleMarketVenueId; venue: PalletPriceOracleRegistryVenue } }
+  /**
+   * Remove a venue. Fails while any market refers to it.
+   **/
+  | { name: 'RemoveVenue'; params: { id: SpPriceOracleMarketVenueId } }
+  /**
+   * Add or update a market. Its venue and pair must be registered.
+   **/
+  | { name: 'SetMarket'; params: { id: SpPriceOracleMarketMarketId; market: PalletPriceOracleRegistryStoredMarket } }
+  /**
+   * Add or update a pair.
+   *
+   * `market_quorum` must be non-zero.
+   **/
+  | { name: 'SetPair'; params: { pair: SpPriceOraclePairId; config: PalletPriceOraclePairConfig } }
+  /**
+   * Remove a market.
+   **/
+  | { name: 'RemoveMarket'; params: { id: SpPriceOracleMarketMarketId } }
+  /**
+   * Set the cross rates of a pair. An empty list removes them.
+   *
+   * All pairs involved must be registered.
+   **/
+  | {
+      name: 'SetCrossRates';
+      params: { pair: SpPriceOraclePairId; crossRates: Array<[SpPriceOraclePairId, SpPriceOraclePairId]> };
+    }
+  /**
+   * Remove a pair, along with its cross rates, votes and price.
+   **/
+  | { name: 'RemovePair'; params: { pair: SpPriceOraclePairId } };
+
+export type SpPriceOracleSignedPriceReport = {
+  report: SpPriceOraclePriceReport;
+  signer: SpConsensusAuraSr25519AppSr25519Public;
+  signature: SpConsensusAuraSr25519AppSr25519Signature;
+};
+
+export type SpConsensusAuraSr25519AppSr25519Signature = FixedBytes<64>;
+
+export type SpPriceOraclePriceReport = { anchor: SpPriceOracleAnchor; quotes: Array<SpPriceOracleQuote> };
+
+export type SpPriceOracleAnchor = { block: number; timestampMs: bigint };
+
+export type SpPriceOracleQuote = { pair: SpPriceOraclePairId; price: FixedU128 };
+
+export type SpPriceOraclePairId = number;
+
+export type PalletPriceOracleParameters = {
+  reportWindow: number;
+  reportWindowMs: bigint;
+  quorum: number;
+  tickIntervalMs: number;
+};
+
+export type PalletPriceOraclePause = 'Full' | 'Publishing' | 'Processing';
+
+export type SpPriceOracleMarketVenueId = number;
+
+export type PalletPriceOracleRegistryVenue = { name: Bytes };
+
+export type SpPriceOracleMarketMarketId = number;
+
+export type PalletPriceOracleRegistryStoredMarket = {
+  venue: SpPriceOracleMarketVenueId;
+  pair: SpPriceOraclePairId;
+  pricing: PalletPriceOracleOrderBookOrderBookParams;
+  active: boolean;
+};
+
+export type PalletPriceOracleOrderBookOrderBookParams = {
+  queries: Array<[PalletPriceOracleRegistryStoredQuery, PalletPriceOracleOrderBookSchemaResponseSchema]>;
+  contractSize: FixedU128;
+  limits: PalletPriceOracleOrderBookHealthLimits;
+};
+
+export type PalletPriceOracleRegistryStoredQuery = {
+  tag: SpPriceOracleMarketQueryTag;
+  request: PalletPriceOracleRegistryStoredRequest;
+};
+
+export type SpPriceOracleMarketQueryTag = number;
+
+export type PalletPriceOracleRegistryStoredRequest = {
+  method: SpPriceOracleMarketMethod;
+  host: Bytes;
+  path: Bytes;
+  query: Array<[Bytes, Bytes]>;
+  headers: Array<PalletPriceOracleRegistryStoredHeader>;
+  body: Bytes;
+  timeoutMs: number;
+  maxResponseBytes: number;
+};
+
+export type SpPriceOracleMarketMethod = 'Get' | 'Post';
+
+export type PalletPriceOracleRegistryStoredHeader = { name: Bytes; value: Bytes };
+
+export type PalletPriceOracleOrderBookSchemaResponseSchema =
+  | {
+      type: 'OrderBook';
+      value: {
+        bids: Array<PalletPriceOracleOrderBookSchemaPathStep>;
+        asks: Array<PalletPriceOracleOrderBookSchemaPathStep>;
+        layout: PalletPriceOracleOrderBookSchemaLevelLayout;
+      };
+    }
+  | {
+      type: 'Trades';
+      value: {
+        trades: Array<PalletPriceOracleOrderBookSchemaPathStep>;
+        time: Array<PalletPriceOracleOrderBookSchemaPathStep>;
+        format: PalletPriceOracleOrderBookSchemaTimeFormat;
+      };
+    };
+
+export type PalletPriceOracleOrderBookSchemaPathStep = { type: 'Key'; value: Bytes } | { type: 'Index'; value: number };
+
+export type PalletPriceOracleOrderBookSchemaLevelLayout =
+  | { type: 'Array'; value: { price: number; amount: number } }
+  | { type: 'Object'; value: { price: Bytes; amount: Bytes } };
+
+export type PalletPriceOracleOrderBookSchemaTimeFormat = 'Seconds' | 'Millis' | 'Nanos' | 'Iso8601';
+
+export type PalletPriceOracleOrderBookHealthLimits = { impactSize: FixedU128; maxTradeAgeMs: number };
+
+export type PalletPriceOraclePairConfig = { marketQuorum: number };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletStateTrieMigrationCall =
   /**
    * Control the automatic migration.
@@ -15080,8 +15317,9 @@ export type PalletElectionProviderMultiBlockSignedPalletCall =
    *
    * `maybe_solution` can be set to `None` to erase the page.
    *
-   * Collects deposits from the signed origin based on [`Config::DepositBase`] and
-   * [`Config::DepositPerPage`].
+   * The held deposit becomes the base deposit charged at [`Pallet::register`] plus the
+   * [`Config::DepositPerPage`] deposit of the stored pages. Invulnerables have no per-page
+   * part.
    **/
   | {
       name: 'SubmitPage';
@@ -15128,8 +15366,9 @@ export type PalletElectionProviderMultiBlockSignedPalletCallLike =
    *
    * `maybe_solution` can be set to `None` to erase the page.
    *
-   * Collects deposits from the signed origin based on [`Config::DepositBase`] and
-   * [`Config::DepositPerPage`].
+   * The held deposit becomes the base deposit charged at [`Pallet::register`] plus the
+   * [`Config::DepositPerPage`] deposit of the stored pages. Invulnerables have no per-page
+   * part.
    **/
   | {
       name: 'SubmitPage';
@@ -15521,6 +15760,16 @@ export type PalletReferendaCall =
    **/
   | { name: 'RefundSubmissionDeposit'; params: { index: number } }
   /**
+   * Slash the Submission Deposit for a rejected or timed-out referendum.
+   *
+   * - `origin`: must be `Signed` or `Root`.
+   * - `index`: The index of a rejected or timed-out referendum whose Submission Deposit has
+   * not yet been slashed.
+   *
+   * Emits `DepositSlashed`.
+   **/
+  | { name: 'SlashSubmissionDeposit'; params: { index: number } }
+  /**
    * Set or clear metadata of a referendum.
    *
    * Parameters:
@@ -15619,6 +15868,16 @@ export type PalletReferendaCallLike =
    * Emits `SubmissionDepositRefunded`.
    **/
   | { name: 'RefundSubmissionDeposit'; params: { index: number } }
+  /**
+   * Slash the Submission Deposit for a rejected or timed-out referendum.
+   *
+   * - `origin`: must be `Signed` or `Root`.
+   * - `index`: The index of a rejected or timed-out referendum whose Submission Deposit has
+   * not yet been slashed.
+   *
+   * Emits `DepositSlashed`.
+   **/
+  | { name: 'SlashSubmissionDeposit'; params: { index: number } }
   /**
    * Set or clear metadata of a referendum.
    *
@@ -16927,6 +17186,7 @@ export type AssetHubWestendRuntimeRuntimeEvent =
   | { pallet: 'AssetsHolder'; palletEvent: PalletAssetsHolderEvent }
   | { pallet: 'AssetRewards'; palletEvent: PalletAssetRewardsEvent }
   | { pallet: 'Psm'; palletEvent: PalletPsmEvent }
+  | { pallet: 'PriceOracle'; palletEvent: PalletPriceOracleEvent }
   | { pallet: 'StateTrieMigration'; palletEvent: PalletStateTrieMigrationEvent }
   | { pallet: 'Staking'; palletEvent: PalletStakingAsyncPalletEvent }
   | { pallet: 'NominationPools'; palletEvent: PalletNominationPoolsEvent }
@@ -17553,7 +17813,7 @@ export type PalletValidatorCollatorsEvent =
   /**
    * The maximum number of validator collators was changed.
    **/
-  | { name: 'MaxCollatorsSet'; data: { max?: number | undefined } }
+  | { name: 'MaxCollatorsSet'; data: { max: PalletValidatorCollatorsCollatorDraw } }
   /**
    * No external set is stored, so no validators were returned for the session, with or
    * without a cap. This happens in the sessions after this pallet is added to a runtime and
@@ -17564,7 +17824,7 @@ export type PalletValidatorCollatorsEvent =
    * `drawn_len` of the `external_len` validators of the set of `era`, all with registered
    * keys, were returned for a session and recorded in [`DrawnCollators`]. `new_external` is
    * `true` at the first rotation after a set arrives or the cap changes, and `false` at the
-   * later ones, which under a cap return the previous draw again.
+   * later ones, which return the previous draw again.
    **/
   | { name: 'CollatorsDrawn'; data: { era: number; externalLen: number; drawnLen: number; newExternal: boolean } }
   /**
@@ -19629,6 +19889,55 @@ export type PalletPsmEvent =
         newAdmin: AssetHubWestendRuntimeOriginCaller;
       };
     };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletPriceOracleEvent =
+  /**
+   * The price of a pair changed.
+   **/
+  | { name: 'PriceUpdated'; data: { pair: SpPriceOraclePairId; price: FixedU128; signers: number } }
+  /**
+   * The reports of a block were processed.
+   **/
+  | { name: 'ReportsProcessed'; data: { accepted: number; rejected: number } }
+  /**
+   * The parameters were set.
+   **/
+  | { name: 'ParametersSet'; data: { params: PalletPriceOracleParameters } }
+  /**
+   * The pause was set, or lifted if `None`.
+   **/
+  | { name: 'PauseSet'; data: { pause?: PalletPriceOraclePause | undefined } }
+  /**
+   * A venue was added or updated.
+   **/
+  | { name: 'VenueSet'; data: { id: SpPriceOracleMarketVenueId } }
+  /**
+   * A venue was removed.
+   **/
+  | { name: 'VenueRemoved'; data: { id: SpPriceOracleMarketVenueId } }
+  /**
+   * A market was added or updated.
+   **/
+  | { name: 'MarketSet'; data: { id: SpPriceOracleMarketMarketId } }
+  /**
+   * A market was removed.
+   **/
+  | { name: 'MarketRemoved'; data: { id: SpPriceOracleMarketMarketId } }
+  /**
+   * A pair was added or updated.
+   **/
+  | { name: 'PairSet'; data: { pair: SpPriceOraclePairId } }
+  /**
+   * The cross rates of a pair were set.
+   **/
+  | { name: 'CrossRatesSet'; data: { pair: SpPriceOraclePairId } }
+  /**
+   * A pair was removed.
+   **/
+  | { name: 'PairRemoved'; data: { pair: SpPriceOraclePairId } };
 
 /**
  * Inner events of this pallet.
@@ -22422,7 +22731,11 @@ export type PalletUniquesError =
   /**
    * Wrong attribute key/value bytes supplied.
    **/
-  | 'WrongAttribute';
+  | 'WrongAttribute'
+  /**
+   * The collection deposit could not be fully moved due to a lock or freeze on the owner.
+   **/
+  | 'IncompleteDepositTransfer';
 
 export type PalletNftsCollectionDetails = {
   owner: AccountId32;
@@ -22647,7 +22960,11 @@ export type PalletNftsError =
   /**
    * The witness data should be provided.
    **/
-  | 'WitnessRequired';
+  | 'WitnessRequired'
+  /**
+   * The collection deposit could not be fully moved due to a lock or freeze on the owner.
+   **/
+  | 'IncompleteDepositTransfer';
 
 export type PalletNftFractionalizationDetails = {
   asset: number;
@@ -23562,6 +23879,47 @@ export type PalletPsmError =
    **/
   | 'ReserveCannotReceive';
 
+export type PalletPriceOracleVote = {
+  signer: SpConsensusAuraSr25519AppSr25519Public;
+  anchor: SpPriceOracleAnchor;
+  price: FixedU128;
+};
+
+export type FrameSupportPricePricePoint = { price: FixedU128; updatedAt: number; signers: number };
+
+/**
+ * The `Error` enum of this pallet.
+ **/
+export type PalletPriceOracleError =
+  /**
+   * A parameter is out of its valid range.
+   **/
+  | 'InvalidParameters'
+  /**
+   * The venue is not registered.
+   **/
+  | 'UnknownVenue'
+  /**
+   * The market is not registered.
+   **/
+  | 'UnknownMarket'
+  /**
+   * The pair is not registered.
+   **/
+  | 'UnknownPair'
+  /**
+   * The venue still has markets.
+   **/
+  | 'VenueInUse'
+  /**
+   * More reports than signers in one block.
+   **/
+  | 'TooManyReports'
+  /**
+   * Reports were already processed in this block.
+   **/
+  | 'AlreadyProcessed';
+
 export type PalletStakingAsyncLedgerStakingLedger = {
   stash: AccountId32;
   total: bigint;
@@ -24185,6 +24543,7 @@ export type PalletElectionProviderMultiBlockSignedSubmissionMetadata = {
   reward: bigint;
   claimedScore: SpNposElectionsElectionScore;
   pages: Array<boolean>;
+  base: bigint;
 };
 
 /**
@@ -24895,6 +25254,49 @@ export type CumulusPrimitivesCoreCollationInfo = {
 };
 
 export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
+
+export type SpPriceOracleSettings = {
+  signers: Array<SpConsensusAuraSr25519AppSr25519Public>;
+  reportWindow: number;
+  reportWindowMs: bigint;
+  tickIntervalMs: number;
+};
+
+export type SpPriceOracleMarket = {
+  id: SpPriceOracleMarketMarketId;
+  venue: SpPriceOracleMarketVenueId;
+  pair: SpPriceOraclePairId;
+  queries: Array<SpPriceOracleMarketQuery>;
+};
+
+export type SpPriceOracleMarketQuery = { tag: SpPriceOracleMarketQueryTag; request: SpPriceOracleMarketRequest };
+
+export type SpPriceOracleMarketRequest = {
+  method: SpPriceOracleMarketMethod;
+  host: Bytes;
+  path: Bytes;
+  query: Array<[Bytes, Bytes]>;
+  headers: Array<SpPriceOracleMarketHeader>;
+  body: Bytes;
+  timeoutMs: number;
+  maxResponseBytes: number;
+};
+
+export type SpPriceOracleMarketHeader = { name: Bytes; value: Bytes };
+
+export type SpPriceOracleRuntimeApiMarketOutput = Bytes;
+
+export type SpPriceOracleRuntimeApiParseError = Bytes;
+
+export type SpPriceOracleRuntimeApiPricingState = Bytes;
+
+export type SpPriceOraclePairAggregate = {
+  pair: SpPriceOraclePairId;
+  inputs: number;
+  quorum: number;
+  price?: FixedU128 | undefined;
+  note: Bytes;
+};
 
 export type PalletReviveTypesRuntimeApiTypesBlockBlockV1 = {
   baseFeePerGas: U256;
@@ -25856,6 +26258,7 @@ export type AssetHubWestendRuntimeRuntimeError =
   | { pallet: 'AssetRewards'; palletError: PalletAssetRewardsError }
   | { pallet: 'AssetsPrecompilesPermit'; palletError: PalletAssetsPrecompilesPermitPalletError }
   | { pallet: 'Psm'; palletError: PalletPsmError }
+  | { pallet: 'PriceOracle'; palletError: PalletPriceOracleError }
   | { pallet: 'StateTrieMigration'; palletError: PalletStateTrieMigrationError }
   | { pallet: 'Staking'; palletError: PalletStakingAsyncPalletError }
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }

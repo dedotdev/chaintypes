@@ -9,6 +9,7 @@ import type {
   PolkadotParachainPrimitivesPrimitivesId,
   SpWeightsWeightV2Weight,
   FrameSupportPalletId,
+  PalletValidatorCollatorsCollatorDraw,
   StagingXcmV5Junctions,
   PalletNftsBitFlagsPalletFeature,
   StagingXcmV5Location,
@@ -388,6 +389,15 @@ export interface ChainConsts extends GenericChainConsts {
      * report of this many entries fits a block.
      **/
     maxEntriesPerReport: number;
+
+    /**
+     * Value of [`MaxCollators`] until governance sets it.
+     *
+     * A runtime upgrade that changes it keeps the collators drawn under the previous value
+     * until the next draw, unless the upgrade sets [`PendingRotation`] to
+     * [`RotationState::AwaitingQueue`].
+     **/
+    defaultMaxCollators: PalletValidatorCollatorsCollatorDraw;
 
     /**
      * Number of blocks between two reports until governance sets [`ReportPeriod`].
@@ -1333,6 +1343,25 @@ export interface ChainConsts extends GenericChainConsts {
      * Maximum number of approved external assets per PSM instance.
      **/
     maxExternals: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `PriceOracle`'s constants
+   **/
+  priceOracle: {
+    /**
+     * Upper bound on the size of the signer set.
+     **/
+    maxSigners: number;
+
+    /**
+     * Maximum number of cross rates of a pair.
+     **/
+    maxCrossRates: number;
 
     /**
      * Generic pallet constant

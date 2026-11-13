@@ -60,6 +60,7 @@ import type {
   SpConsensusAuraSr25519AppSr25519Public,
   SpConsensusSlotsSlot,
   PalletValidatorCollatorsEraValidatorSet,
+  PalletValidatorCollatorsCollatorDraw,
   PalletValidatorCollatorsEraCollators,
   PalletValidatorCollatorsRotationState,
   SpAuthorityDiscoveryAppPublic,
@@ -123,6 +124,16 @@ import type {
   PalletPsmPsmInfo,
   PalletPsmPsmAdminInfo,
   PalletPsmExternalAssetInfo,
+  PalletPriceOracleVote,
+  SpPriceOraclePairId,
+  FrameSupportPricePricePoint,
+  PalletPriceOracleParameters,
+  PalletPriceOraclePause,
+  PalletPriceOraclePairConfig,
+  PalletPriceOracleRegistryVenue,
+  SpPriceOracleMarketVenueId,
+  PalletPriceOracleRegistryStoredMarket,
+  SpPriceOracleMarketMarketId,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationMigrationLimits,
   PalletStakingAsyncLedgerStakingLedger,
@@ -1200,8 +1211,9 @@ export interface ChainStorage extends GenericChainStorage {
     externalSetReceivedAt: GenericStorageQuery<() => bigint | undefined>;
 
     /**
-     * Maximum number of validators returned as collators, `None` returns every validator with
-     * registered keys. Only validators with keys count against the cap.
+     * How many validators are returned as collators, see [`CollatorDraw`]. Only validators with
+     * keys count against the cap. It is [`Config::DefaultMaxCollators`] until
+     * [`Pallet::set_max_collators`] stores a value.
      *
      * The cap applies before the union with the other session manager. A validator that the
      * other session manager also returns takes a place under the cap without adding a collator.
@@ -1211,22 +1223,21 @@ export interface ChainStorage extends GenericChainStorage {
      * the cap so that the merged list, invulnerables and candidates included, keeps a
      * session-change header within that limit.
      *
-     * Under a cap the validators are drawn at random, see [`DrawnCollators`].
+     * The validators are drawn at random, see [`DrawnCollators`].
      *
      * A change with a stored set forces two rotations. The first draws [`DrawnCollators`] again
      * from the stored set, so the drawn validators can change. The change is in force two blocks
      * later. Removing the cap returns every validator of the stored set with registered keys.
      *
-     * @param {Callback<number | undefined> =} callback
+     * @param {Callback<PalletValidatorCollatorsCollatorDraw> =} callback
      **/
-    maxCollators: GenericStorageQuery<() => number | undefined>;
+    maxCollators: GenericStorageQuery<() => PalletValidatorCollatorsCollatorDraw>;
 
     /**
      * The collators last returned to pallet-session, taken from [`ExternalValidatorSet`].
      *
      * Written at every session rotation, and holds only validators that had registered keys at
-     * that rotation. Without [`MaxCollators`] it is every validator of the set with keys, in
-     * account order. Under a cap it is the draw made at the first rotation after a set arrives or
+     * that rotation. It is the draw made at the first rotation after a set arrives or
      * the cap changes, and each later rotation returns it again without the validators that have
      * removed their keys since. `None` when the last rotation returned no list, as before the
      * first set arrives.
@@ -2845,6 +2856,105 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [StagingXcmV5Location, StagingXcmV5Location]) => PalletPsmExternalAssetInfo | undefined,
       [StagingXcmV5Location, StagingXcmV5Location]
     >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `PriceOracle`'s storage queries
+   **/
+  priceOracle: {
+    /**
+     * Latest vote of every signer, per pair. Sorted by signer.
+     *
+     * @param {SpPriceOraclePairId} arg
+     * @param {Callback<Array<PalletPriceOracleVote>> =} callback
+     **/
+    votes: GenericStorageQuery<(arg: SpPriceOraclePairId) => Array<PalletPriceOracleVote>, SpPriceOraclePairId>;
+
+    /**
+     * Current price per pair, stamped with the block number of [`Config::BlockNumberProvider`].
+     *
+     * @param {SpPriceOraclePairId} arg
+     * @param {Callback<FrameSupportPricePricePoint | undefined> =} callback
+     **/
+    prices: GenericStorageQuery<
+      (arg: SpPriceOraclePairId) => FrameSupportPricePricePoint | undefined,
+      SpPriceOraclePairId
+    >;
+
+    /**
+     * Tunable parameters, set by [`Config::AdminOrigin`].
+     *
+     * While unset, no reports are accepted and no prices are published.
+     *
+     * @param {Callback<PalletPriceOracleParameters | undefined> =} callback
+     **/
+    params: GenericStorageQuery<() => PalletPriceOracleParameters | undefined>;
+
+    /**
+     * What is paused, set by [`Config::AdminOrigin`]. Nothing is paused while unset.
+     *
+     * @param {Callback<PalletPriceOraclePause | undefined> =} callback
+     **/
+    paused: GenericStorageQuery<() => PalletPriceOraclePause | undefined>;
+
+    /**
+     * Registered pairs and their settings.
+     *
+     * @param {SpPriceOraclePairId} arg
+     * @param {Callback<PalletPriceOraclePairConfig | undefined> =} callback
+     **/
+    pairs: GenericStorageQuery<
+      (arg: SpPriceOraclePairId) => PalletPriceOraclePairConfig | undefined,
+      SpPriceOraclePairId
+    >;
+
+    /**
+     * Other ways to price a pair, as `(source, rate)` such that `pair = source * rate`.
+     *
+     * E.g. DOT/USD => [(DOT/USDT, USDT/USD), (DOT/USDC, USDC/USD)].
+     *
+     * Read by the oracle nodes; not used by the on-chain vote.
+     *
+     * @param {SpPriceOraclePairId} arg
+     * @param {Callback<Array<[SpPriceOraclePairId, SpPriceOraclePairId]>> =} callback
+     **/
+    crossRates: GenericStorageQuery<
+      (arg: SpPriceOraclePairId) => Array<[SpPriceOraclePairId, SpPriceOraclePairId]>,
+      SpPriceOraclePairId
+    >;
+
+    /**
+     * Registered venues. Read by the oracle nodes; not used by the on-chain vote.
+     *
+     * @param {SpPriceOracleMarketVenueId} arg
+     * @param {Callback<PalletPriceOracleRegistryVenue | undefined> =} callback
+     **/
+    venues: GenericStorageQuery<
+      (arg: SpPriceOracleMarketVenueId) => PalletPriceOracleRegistryVenue | undefined,
+      SpPriceOracleMarketVenueId
+    >;
+
+    /**
+     * Registered markets. Read by the oracle nodes; not used by the on-chain vote.
+     *
+     * @param {SpPriceOracleMarketMarketId} arg
+     * @param {Callback<PalletPriceOracleRegistryStoredMarket | undefined> =} callback
+     **/
+    markets: GenericStorageQuery<
+      (arg: SpPriceOracleMarketMarketId) => PalletPriceOracleRegistryStoredMarket | undefined,
+      SpPriceOracleMarketMarketId
+    >;
+
+    /**
+     * Whether the inherent has been processed in the current block.
+     *
+     * @param {Callback<boolean> =} callback
+     **/
+    didProcess: GenericStorageQuery<() => boolean>;
 
     /**
      * Generic pallet storage query

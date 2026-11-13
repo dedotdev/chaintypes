@@ -57,6 +57,15 @@ import type {
   XcmRuntimeApisAuthorizedAliasesError,
   AssetsCommonRuntimeApiFungiblesAccessError,
   CumulusPrimitivesCoreCollationInfo,
+  SpPriceOracleSettings,
+  SpPriceOracleAnchor,
+  SpPriceOracleMarket,
+  SpPriceOracleRuntimeApiMarketOutput,
+  SpPriceOracleRuntimeApiParseError,
+  SpPriceOracleMarketMarketId,
+  SpPriceOracleMarketQueryTag,
+  SpPriceOraclePairAggregate,
+  SpPriceOracleRuntimeApiPricingState,
   PalletReviveTypesRuntimeApiTypesBlockBlockV1,
   PalletReviveTypesRuntimeApiTypesReceiptReceiptGasInfoV1,
   PalletReviveTypesRuntimeApiTypesContractContractResultV1,
@@ -1253,6 +1262,69 @@ export interface RuntimeApis extends GenericRuntimeApis {
      * @callname: GenesisBuilder_preset_names
      **/
     presetNames: GenericRuntimeApiMethod<() => Promise<Array<string>>>;
+
+    /**
+     * Generic runtime api call
+     **/
+    [method: string]: GenericRuntimeApiMethod;
+  };
+  /**
+   * @runtimeapi: PriceOracleApi - 0x05b65d846a648954
+   **/
+  priceOracleApi: {
+    /**
+     * The rules in force: who may sign, how old a report may be, how often to tick.
+     *
+     * @callname: PriceOracleApi_settings
+     **/
+    settings: GenericRuntimeApiMethod<() => Promise<SpPriceOracleSettings>>;
+
+    /**
+     * Anchor of the most recent report already on chain, per signer.
+     *
+     * @callname: PriceOracleApi_latest_anchors
+     **/
+    latestAnchors: GenericRuntimeApiMethod<
+      () => Promise<Array<[SpConsensusAuraSr25519AppSr25519Public, SpPriceOracleAnchor]>>
+    >;
+
+    /**
+     * Active markets with their queries.
+     *
+     * @callname: PriceOracleApi_markets
+     **/
+    markets: GenericRuntimeApiMethod<() => Promise<Array<SpPriceOracleMarket>>>;
+
+    /**
+     * Price one market from the responses to its queries, given the node's clock.
+     *
+     * @callname: PriceOracleApi_parse
+     * @param {SpPriceOracleMarketMarketId} market
+     * @param {Array<[SpPriceOracleMarketQueryTag, BytesLike]>} responses
+     * @param {bigint} now_ms
+     **/
+    parse: GenericRuntimeApiMethod<
+      (
+        market: SpPriceOracleMarketMarketId,
+        responses: Array<[SpPriceOracleMarketQueryTag, BytesLike]>,
+        nowMs: bigint,
+      ) => Promise<Result<SpPriceOracleRuntimeApiMarketOutput, SpPriceOracleRuntimeApiParseError>>
+    >;
+
+    /**
+     * Turn market outputs into pair prices, one entry per registered pair, and the state for
+     * the next tick. The pairs with a price are the ones to report.
+     *
+     * @callname: PriceOracleApi_aggregate
+     * @param {Array<[SpPriceOracleMarketMarketId, SpPriceOracleRuntimeApiMarketOutput]>} outputs
+     * @param {SpPriceOracleRuntimeApiPricingState} state
+     **/
+    aggregate: GenericRuntimeApiMethod<
+      (
+        outputs: Array<[SpPriceOracleMarketMarketId, SpPriceOracleRuntimeApiMarketOutput]>,
+        state: SpPriceOracleRuntimeApiPricingState,
+      ) => Promise<[Array<SpPriceOraclePairAggregate>, SpPriceOracleRuntimeApiPricingState]>
+    >;
 
     /**
      * Generic runtime api call

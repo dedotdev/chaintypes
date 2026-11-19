@@ -22,7 +22,6 @@ import type {
   StagingXcmV5Location,
   PalletValidatorCollatorsCollatorDraw,
   PalletValidatorCollatorsUnexpectedKind,
-  AssetHubWestendRuntimeStakingValidatorSetDestination,
   PolkadotParachainPrimitivesPrimitivesId,
   SpStakingServiceKind,
   StagingXcmV5TraitsOutcome,
@@ -963,7 +962,7 @@ export interface ChainEvents extends GenericChainEvents {
     AnnouncementSent: GenericPalletEvent<
       'ValidatorSetAnnouncer',
       'AnnouncementSent',
-      { destination: AssetHubWestendRuntimeStakingValidatorSetDestination; era: number }
+      { destination: PolkadotParachainPrimitivesPrimitivesId; era: number }
     >;
 
     /**
@@ -972,7 +971,7 @@ export interface ChainEvents extends GenericChainEvents {
     AnnouncementFailed: GenericPalletEvent<
       'ValidatorSetAnnouncer',
       'AnnouncementFailed',
-      { destination: AssetHubWestendRuntimeStakingValidatorSetDestination; era: number }
+      { destination: PolkadotParachainPrimitivesPrimitivesId; era: number }
     >;
 
     /**

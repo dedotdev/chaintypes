@@ -1228,6 +1228,9 @@ export interface ChainTx<
     /**
      * Unreserve some balance from a user by force.
      *
+     * Only acts on the part of the reserved balance that does not back a hold or a named
+     * reserve.
+     *
      * Can only be called by ROOT.
      *
      * @param {MultiAddressLike} who
@@ -1243,6 +1246,35 @@ export interface ChainTx<
           palletCall: {
             name: 'ForceUnreserve';
             params: { who: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unreserve some balance of the named reserve `id` from a user by force.
+     *
+     * Only acts on that named reserve, and never on the part of the reserved balance that
+     * backs a hold.
+     *
+     * Can only be called by ROOT.
+     *
+     * @param {FixedBytes<8>} id
+     * @param {MultiAddressLike} who
+     * @param {bigint} amount
+     **/
+    forceUnreserveNamed: GenericTxCall<
+      (
+        id: FixedBytes<8>,
+        who: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Balances';
+          palletCall: {
+            name: 'ForceUnreserveNamed';
+            params: { id: FixedBytes<8>; who: MultiAddressLike; amount: bigint };
           };
         },
         ChainKnownTypes

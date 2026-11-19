@@ -2486,8 +2486,12 @@ export interface ChainStorage extends GenericChainStorage {
     deletionQueue: GenericStorageQuery<(arg: number) => PalletReviveStorageDeletionQueueItem | undefined, number>;
 
     /**
-     * A pair of monotonic counters used to track the latest contract marked for deletion
+     * A pair of counters used to track the latest contract marked for deletion
      * and the latest deleted contract in queue.
+     *
+     * Both counters only ever increment, wrapping on overflow. `ContractInfo::new` mixes the
+     * insert counter into the child trie id of every contract it creates, so it must never
+     * decrease or be reset, apart from wrapping.
      *
      * @param {Callback<PalletReviveStorageDeletionQueueManager> =} callback
      **/

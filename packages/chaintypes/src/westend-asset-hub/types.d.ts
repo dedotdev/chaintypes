@@ -942,9 +942,21 @@ export type PalletBalancesCall =
   /**
    * Unreserve some balance from a user by force.
    *
+   * Only acts on the part of the reserved balance that does not back a hold or a named
+   * reserve.
+   *
    * Can only be called by ROOT.
    **/
   | { name: 'ForceUnreserve'; params: { who: MultiAddress; amount: bigint } }
+  /**
+   * Unreserve some balance of the named reserve `id` from a user by force.
+   *
+   * Only acts on that named reserve, and never on the part of the reserved balance that
+   * backs a hold.
+   *
+   * Can only be called by ROOT.
+   **/
+  | { name: 'ForceUnreserveNamed'; params: { id: FixedBytes<8>; who: MultiAddress; amount: bigint } }
   /**
    * Upgrade a specified account.
    *
@@ -1027,9 +1039,21 @@ export type PalletBalancesCallLike =
   /**
    * Unreserve some balance from a user by force.
    *
+   * Only acts on the part of the reserved balance that does not back a hold or a named
+   * reserve.
+   *
    * Can only be called by ROOT.
    **/
   | { name: 'ForceUnreserve'; params: { who: MultiAddressLike; amount: bigint } }
+  /**
+   * Unreserve some balance of the named reserve `id` from a user by force.
+   *
+   * Only acts on that named reserve, and never on the part of the reserved balance that
+   * backs a hold.
+   *
+   * Can only be called by ROOT.
+   **/
+  | { name: 'ForceUnreserveNamed'; params: { id: FixedBytes<8>; who: MultiAddressLike; amount: bigint } }
   /**
    * Upgrade a specified account.
    *
@@ -17866,23 +17890,15 @@ export type PalletValidatorSetAnnouncerEvent =
    * The sender accepted the set of `era` for `destination`. Delivery and execution there
    * are not confirmed.
    **/
-  | {
-      name: 'AnnouncementSent';
-      data: { destination: AssetHubWestendRuntimeStakingValidatorSetDestination; era: number };
-    }
+  | { name: 'AnnouncementSent'; data: { destination: PolkadotParachainPrimitivesPrimitivesId; era: number } }
   /**
    * The sender did not accept the set of `era` for `destination`. It is not retried.
    **/
-  | {
-      name: 'AnnouncementFailed';
-      data: { destination: AssetHubWestendRuntimeStakingValidatorSetDestination; era: number };
-    }
+  | { name: 'AnnouncementFailed'; data: { destination: PolkadotParachainPrimitivesPrimitivesId; era: number } }
   /**
    * The set of `era` was not announced because it was rejected with `error`.
    **/
   | { name: 'AnnouncementRejected'; data: { era: number; error: DispatchError } };
-
-export type AssetHubWestendRuntimeStakingValidatorSetDestination = 'People';
 
 /**
  * The `Event` enum of this pallet

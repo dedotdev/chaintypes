@@ -318,6 +318,11 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyReserves: GenericPalletError;
 
     /**
+     * The asset deposit could not be fully moved due to a lock or freeze on the owner.
+     **/
+    IncompleteDepositTransfer: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -507,6 +512,17 @@ export interface ChainErrors extends GenericChainErrors {
     PoolEmpty: GenericPalletError;
 
     /**
+     * The fee exceeds [`Config::MaxSwapFee`].
+     **/
+    FeeTooHigh: GenericPalletError;
+
+    /**
+     * The pool account can't send one of its assets (e.g. the asset class is frozen or the
+     * pool account is blocked).
+     **/
+    PoolUnavailable: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -643,6 +659,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Tried setting too many reserves.
      **/
     TooManyReserves: GenericPalletError;
+
+    /**
+     * The asset deposit could not be fully moved due to a lock or freeze on the owner.
+     **/
+    IncompleteDepositTransfer: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1520,6 +1541,11 @@ export interface ChainErrors extends GenericChainErrors {
     NoStaleAliases: GenericPalletError;
 
     /**
+     * A personal id appears more than once in a suspension batch.
+     **/
+    DuplicateSuspension: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1616,6 +1642,16 @@ export interface ChainErrors extends GenericChainErrors {
      * The consumer registration account does not match the candidate.
      **/
     InvalidConsumerRegistrationAccount: GenericPalletError;
+
+    /**
+     * The paid registrations allowed in the current period are used up.
+     **/
+    PaidRegistrationLimitReached: GenericPalletError;
+
+    /**
+     * The number of lite people reached `MaxLitePeople`.
+     **/
+    TooManyLitePeople: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1737,7 +1773,7 @@ export interface ChainErrors extends GenericChainErrors {
     NotificationRegistrationAlreadyExists: GenericPalletError;
 
     /**
-     * The replacement cooldown has not elapsed since the entry was last set.
+     * The statement store slot entry was written at the current timestamp.
      **/
     StmtStoreReplacementTooEarly: GenericPalletError;
 
@@ -1745,6 +1781,26 @@ export interface ChainErrors extends GenericChainErrors {
      * The provided `limit` exceeds `LongTermStorageCleanupLimit`.
      **/
     LongTermStorageCleanupLimitExceeded: GenericPalletError;
+
+    /**
+     * The statement store slot already has an entry for this period.
+     **/
+    StmtStoreSlotAlreadyClaimed: GenericPalletError;
+
+    /**
+     * No statement store allowance entry exists for the alias in this period.
+     **/
+    StmtStoreEntryNotFound: GenericPalletError;
+
+    /**
+     * The statement account already holds the statement store slot.
+     **/
+    StmtStoreReplacementSameAccount: GenericPalletError;
+
+    /**
+     * The `since` witness differs from the timestamp recorded in the slot entry.
+     **/
+    StmtStoreReplacementSinceMismatch: GenericPalletError;
 
     /**
      * Generic pallet error

@@ -131,6 +131,7 @@ import type {
   PalletElectionProviderMultiBlockVerifierImplsPartialBackings,
   SpNposElectionsElectionScore,
   PalletElectionProviderMultiBlockVerifierImplsStatus,
+  PalletElectionProviderMultiBlockSignedUnpaidReward,
   AssetHubPolkadotRuntimeStakingNposCompactSolution16,
   PalletElectionProviderMultiBlockSignedSubmissionMetadata,
   PalletStakingAsyncLedgerStakingLedger,
@@ -150,7 +151,7 @@ import type {
   PalletReviveStorageAccountInfo,
   PalletReviveStorageDeletionQueueItem,
   PalletReviveStorageDeletionQueueManager,
-  PalletReviveEvmApiRpcTypesGenBlock,
+  PalletReviveEvmApiBlock,
   PalletReviveEvmBlockHashReceiptGasInfo,
   PalletReviveEvmBlockHashReceiptCommittedReceiptLogs,
   PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR,
@@ -2149,6 +2150,21 @@ export interface ChainStorage extends GenericChainStorage {
     nextPoolAssetId: GenericStorageQuery<() => number | undefined>;
 
     /**
+     * Per-pool swap fee overrides.
+     *
+     * When a pool has no entry here, the global [`Config::LPFee`] applies. This storage is purely
+     * additive: existing pools and runtimes that never set a per-pool fee behave exactly as before
+     * and require no migration. See [`Pallet::pool_fee`] for the resolution logic.
+     *
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
+     * @param {Callback<Permill | undefined> =} callback
+     **/
+    poolFees: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => Permill | undefined,
+      [StagingXcmV5Location, StagingXcmV5Location]
+    >;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
@@ -2463,6 +2479,15 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<[] | undefined> =} callback
      **/
     whitelistedCall: GenericStorageQuery<(arg: H256) => [] | undefined, H256>;
+
+    /**
+     * Deferred dispatches, mapping a call hash to the provided block number at which the deferral
+     * expires and the entry can be permissionlessly removed.
+     *
+     * @param {H256} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    deferredDispatch: GenericStorageQuery<(arg: H256) => number | undefined, H256>;
 
     /**
      * Generic pallet storage query
@@ -3235,11 +3260,24 @@ export interface ChainStorage extends GenericChainStorage {
      * [`Config::InvulnerableDeposit`]. They pay no page deposit.
      * * If _ejected_ by better solution from [`SortedScores`], they will get their full deposit
      * back.
-     * * They always get their tx-fee back even if they are _discarded_.
+     * * They always get their tx-fee back even if they are _discarded_, up to
+     * [`Config::MaxFeeRefund`].
      *
      * @param {Callback<Array<AccountId32>> =} callback
      **/
     invulnerables: GenericStorageQuery<() => Array<AccountId32>>;
+
+    /**
+     * Round-winner rewards that failed to pay out of [`Config::RewardSource`], pending a
+     * permissionless claim via [`Pallet::claim_unpaid_reward`].
+     *
+     * Expected to stay empty in normal operation; only grows when the pot is depleted. Bounded
+     * to [`MAX_UNPAID_REWARDS`] entries, pushed in round order, so if full, the oldest one is
+     * evicted (see [`Pallet::pay_reward`]).
+     *
+     * @param {Callback<Array<PalletElectionProviderMultiBlockSignedUnpaidReward>> =} callback
+     **/
+    unpaidRewards: GenericStorageQuery<() => Array<PalletElectionProviderMultiBlockSignedUnpaidReward>>;
 
     /**
      *
@@ -3906,6 +3944,16 @@ export interface ChainStorage extends GenericChainStorage {
     eraPruningState: GenericStorageQuery<(arg: number) => PalletStakingAsyncPalletPruningStep | undefined, number>;
 
     /**
+     * The number of eras a validator can remain inactive during the last
+     * [`Config::HistoryDepth`] before being subject to chilling because of inactivity.
+     *
+     * This must be less than or equal [`Config::HistoryDepth`] and bigger than 1.
+     *
+     * @param {Callback<number> =} callback
+     **/
+    chillInactiveThreshold: GenericStorageQuery<() => number>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
@@ -4012,9 +4060,9 @@ export interface ChainStorage extends GenericChainStorage {
      * Since the block is convenient to have around, and the extra details are capped
      * by a few hashes and the vector of transaction hashes, we store the block here.
      *
-     * @param {Callback<PalletReviveEvmApiRpcTypesGenBlock> =} callback
+     * @param {Callback<PalletReviveEvmApiBlock> =} callback
      **/
-    ethereumBlock: GenericStorageQuery<() => PalletReviveEvmApiRpcTypesGenBlock>;
+    ethereumBlock: GenericStorageQuery<() => PalletReviveEvmApiBlock>;
 
     /**
      * Mapping for block number and hashes.

@@ -728,92 +728,6 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
-   * Pallet `ElectionProviderMultiPhase`'s constants
-   **/
-  electionProviderMultiPhase: {
-    /**
-     * The minimum amount of improvement to the solution score that defines a solution as
-     * "better" in the Signed phase.
-     **/
-    betterSignedThreshold: Perbill;
-
-    /**
-     * The repeat threshold of the offchain worker.
-     *
-     * For example, if it is 5, that means that at least 5 blocks will elapse between attempts
-     * to submit the worker's solution.
-     **/
-    offchainRepeat: number;
-
-    /**
-     * The priority of the unsigned transaction submitted in the unsigned-phase
-     **/
-    minerTxPriority: bigint;
-
-    /**
-     * Maximum number of signed submissions that can be queued.
-     *
-     * It is best to avoid adjusting this during an election, as it impacts downstream data
-     * structures. In particular, `SignedSubmissionIndices<T>` is bounded on this value. If you
-     * update this value during an election, you _must_ ensure that
-     * `SignedSubmissionIndices.len()` is less than or equal to the new value. Otherwise,
-     * attempts to submit new solutions may cause a runtime panic.
-     **/
-    signedMaxSubmissions: number;
-
-    /**
-     * Maximum weight of a signed solution.
-     *
-     * If [`Config::MinerConfig`] is being implemented to submit signed solutions (outside of
-     * this pallet), then [`MinerConfig::solution_weight`] is used to compare against
-     * this value.
-     **/
-    signedMaxWeight: SpWeightsWeightV2Weight;
-
-    /**
-     * The maximum amount of unchecked solutions to refund the call fee for.
-     **/
-    signedMaxRefunds: number;
-
-    /**
-     * Base reward for a signed solution
-     **/
-    signedRewardBase: bigint;
-
-    /**
-     * Per-byte deposit for a signed solution.
-     **/
-    signedDepositByte: bigint;
-
-    /**
-     * Per-weight deposit for a signed solution.
-     **/
-    signedDepositWeight: bigint;
-
-    /**
-     * Maximum number of winners that an election supports.
-     *
-     * Note: This must always be greater or equal to `T::DataProvider::desired_targets()`.
-     **/
-    maxWinners: number;
-
-    /**
-     * Maximum number of voters that can support a winner in an election solution.
-     *
-     * This is needed to ensure election computation is bounded.
-     **/
-    maxBackersPerWinner: number;
-    minerMaxLength: number;
-    minerMaxWeight: SpWeightsWeightV2Weight;
-    minerMaxVotesPerVoter: number;
-    minerMaxWinners: number;
-
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
    * Pallet `VoterList`'s constants
    **/
   voterList: {
@@ -908,6 +822,16 @@ export interface ChainConsts extends GenericChainConsts {
     maxUnbonding: number;
 
     /**
+     * The maximum number of distinct era-keyed unbonding sub-pools ([`SubPools::with_era`])
+     * that may exist at once. This is also the basis for how long each sub-pool is kept on
+     * its own (correct) points-to-balance ratio: a sub-pool is merged into the era-agnostic
+     * [`SubPools::no_era`] pool only after `MaxUnbondingPools - bonding_duration` eras
+     * have passed since its unlock era (see `SubPools::maybe_merge_pools`). Once merged
+     * the ratio can become skewed due to some slashed ratio getting merged in at some point.
+     **/
+    maxUnbondingPools: number;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -959,6 +883,28 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `Parameters`'s constants
    **/
   parameters: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `AccumulateForward`'s constants
+   **/
+  accumulateForward: {
+    /**
+     * Minimum number of blocks, as counted by [`Config::BlockNumberProvider`], between
+     * successive forwards. Acts as a rate limiter to avoid sending too many messages.
+     **/
+    transferPeriod: number;
+
+    /**
+     * Minimum transferable balance required to trigger a forward.
+     * This avoids forwarding very small / negligible amounts.
+     * The accumulation account always retains its existential deposit on top of this.
+     **/
+    minTransferAmount: bigint;
+
     /**
      * Generic pallet constant
      **/
@@ -1293,6 +1239,31 @@ export interface ChainConsts extends GenericChainConsts {
    * Pallet `AssetRate`'s constants
    **/
   assetRate: {
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s constants
+   **/
+  multiBlockMigrations: {
+    /**
+     * The maximal length of an encoded cursor.
+     *
+     * A good default needs to selected such that no migration will ever have a cursor with MEL
+     * above this limit. This is statically checked in `integrity_test`.
+     **/
+    cursorMaxLen: number;
+
+    /**
+     * The maximal length of an encoded identifier.
+     *
+     * A good default needs to selected such that no migration will ever have an identifier
+     * with MEL above this limit. This is statically checked in `integrity_test`.
+     **/
+    identifierMaxLen: number;
+
     /**
      * Generic pallet constant
      **/

@@ -50,10 +50,6 @@ import type {
   PalletVestingVestingInfo,
   PolkadotRuntimeConstantsProxyProxyType,
   PalletMultisigTimepoint,
-  PalletElectionProviderMultiPhaseRawSolution,
-  PalletElectionProviderMultiPhaseSolutionOrSnapshotSize,
-  SpNposElectionsElectionScore,
-  SpNposElectionsSupport,
   PalletNominationPoolsBondExtra,
   PalletNominationPoolsPoolState,
   PalletNominationPoolsConfigOp,
@@ -89,6 +85,8 @@ import type {
   StagingXcmExecutorAssetTransferTransferType,
   XcmVersionedAssetId,
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
+  PalletMigrationsMigrationCursor,
+  PalletMigrationsHistoricCleanupSelector,
   SpConsensusBeefyDoubleVotingProof,
   SpConsensusBeefyForkVotingProof,
   SpConsensusBeefyFutureBlockVotingProof,
@@ -3270,6 +3268,23 @@ export interface ChainTx<
     >;
 
     /**
+     *
+     * @param {H256} callHash
+     **/
+    removeDeferredDispatch: GenericTxCall<
+      (callHash: H256) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Whitelist';
+          palletCall: {
+            name: 'RemoveDeferredDispatch';
+            params: { callHash: H256 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -4931,6 +4946,34 @@ export interface ChainTx<
     >;
 
     /**
+     * Reclaim funds stranded in a closed bounty's account back to the treasury.
+     *
+     * Permissionless. Moves all remaining assets from a closed bounty's account back to the
+     * treasury in a single call. Which assets are swept depends on the `TransferAllAssets`
+     * configuration.
+     *
+     * The call is free if funds were reclaimed and paid otherwise, so no-op calls cannot be
+     * used to grief the network. Emits `BountyFundsReclaimed` on success.
+     *
+     * ## Complexity
+     * - O(A) where A is the number of relevant assets configured in `TransferAllAssets`.
+     *
+     * @param {number} bountyId
+     **/
+    reclaimBountyFunds: GenericTxCall<
+      (bountyId: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Bounties';
+          palletCall: {
+            name: 'ReclaimBountyFunds';
+            params: { bountyId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -5230,145 +5273,6 @@ export interface ChainTx<
           palletCall: {
             name: 'CloseChildBounty';
             params: { parentBountyId: number; childBountyId: number };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Generic pallet tx call
-     **/
-    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
-  };
-  /**
-   * Pallet `ElectionProviderMultiPhase`'s transaction calls
-   **/
-  electionProviderMultiPhase: {
-    /**
-     * Submit a solution for the unsigned phase.
-     *
-     * The dispatch origin fo this call must be __none__.
-     *
-     * This submission is checked on the fly. Moreover, this unsigned solution is only
-     * validated when submitted to the pool from the **local** node. Effectively, this means
-     * that only active validators can submit this transaction when authoring a block (similar
-     * to an inherent).
-     *
-     * To prevent any incorrect solution (and thus wasted time/weight), this transaction will
-     * panic if the solution submitted by the validator is invalid in any way, effectively
-     * putting their authoring reward at risk.
-     *
-     * No deposit or reward is associated with this submission.
-     *
-     * @param {PalletElectionProviderMultiPhaseRawSolution} rawSolution
-     * @param {PalletElectionProviderMultiPhaseSolutionOrSnapshotSize} witness
-     **/
-    submitUnsigned: GenericTxCall<
-      (
-        rawSolution: PalletElectionProviderMultiPhaseRawSolution,
-        witness: PalletElectionProviderMultiPhaseSolutionOrSnapshotSize,
-      ) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'ElectionProviderMultiPhase';
-          palletCall: {
-            name: 'SubmitUnsigned';
-            params: {
-              rawSolution: PalletElectionProviderMultiPhaseRawSolution;
-              witness: PalletElectionProviderMultiPhaseSolutionOrSnapshotSize;
-            };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set a new value for `MinimumUntrustedScore`.
-     *
-     * Dispatch origin must be aligned with `T::ForceOrigin`.
-     *
-     * This check can be turned off by setting the value to `None`.
-     *
-     * @param {SpNposElectionsElectionScore | undefined} maybeNextScore
-     **/
-    setMinimumUntrustedScore: GenericTxCall<
-      (maybeNextScore: SpNposElectionsElectionScore | undefined) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'ElectionProviderMultiPhase';
-          palletCall: {
-            name: 'SetMinimumUntrustedScore';
-            params: { maybeNextScore: SpNposElectionsElectionScore | undefined };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Set a solution in the queue, to be handed out to the client of this pallet in the next
-     * call to `ElectionProvider::elect`.
-     *
-     * This can only be set by `T::ForceOrigin`, and only when the phase is `Emergency`.
-     *
-     * The solution is not checked for any feasibility and is assumed to be trustworthy, as any
-     * feasibility check itself can in principle cause the election process to fail (due to
-     * memory/weight constrains).
-     *
-     * @param {Array<[AccountId32Like, SpNposElectionsSupport]>} supports
-     **/
-    setEmergencyElectionResult: GenericTxCall<
-      (supports: Array<[AccountId32Like, SpNposElectionsSupport]>) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'ElectionProviderMultiPhase';
-          palletCall: {
-            name: 'SetEmergencyElectionResult';
-            params: { supports: Array<[AccountId32Like, SpNposElectionsSupport]> };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Submit a solution for the signed phase.
-     *
-     * The dispatch origin fo this call must be __signed__.
-     *
-     * The solution is potentially queued, based on the claimed score and processed at the end
-     * of the signed phase.
-     *
-     * A deposit is reserved and recorded for the solution. Based on the outcome, the solution
-     * might be rewarded, slashed, or get all or a part of the deposit back.
-     *
-     * @param {PalletElectionProviderMultiPhaseRawSolution} rawSolution
-     **/
-    submit: GenericTxCall<
-      (rawSolution: PalletElectionProviderMultiPhaseRawSolution) => ChainSubmittableExtrinsic<
-        {
-          pallet: 'ElectionProviderMultiPhase';
-          palletCall: {
-            name: 'Submit';
-            params: { rawSolution: PalletElectionProviderMultiPhaseRawSolution };
-          };
-        },
-        ChainKnownTypes
-      >
-    >;
-
-    /**
-     * Trigger the governance fallback.
-     *
-     * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
-     * calling [`Call::set_emergency_election_result`].
-     *
-     **/
-    governanceFallback: GenericTxCall<
-      () => ChainSubmittableExtrinsic<
-        {
-          pallet: 'ElectionProviderMultiPhase';
-          palletCall: {
-            name: 'GovernanceFallback';
           };
         },
         ChainKnownTypes
@@ -9974,6 +9878,107 @@ export interface ChainTx<
           palletCall: {
             name: 'Remove';
             params: { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Generic pallet tx call
+     **/
+    [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s transaction calls
+   **/
+  multiBlockMigrations: {
+    /**
+     * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+     *
+     * Should normally not be needed and is only in place as emergency measure. Note that
+     * restarting the migration process in this manner will not call the
+     * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+     *
+     * @param {PalletMigrationsMigrationCursor | undefined} cursor
+     **/
+    forceSetCursor: GenericTxCall<
+      (cursor: PalletMigrationsMigrationCursor | undefined) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceSetCursor';
+            params: { cursor: PalletMigrationsMigrationCursor | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Allows root to set an active cursor to forcefully start/forward the migration process.
+     *
+     * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+     * `started_at` value to the next block number. Otherwise this would not be possible, since
+     * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+     * indicates that the current block number plus one should be used.
+     *
+     * @param {number} index
+     * @param {BytesLike | undefined} innerCursor
+     * @param {number | undefined} startedAt
+     **/
+    forceSetActiveCursor: GenericTxCall<
+      (
+        index: number,
+        innerCursor: BytesLike | undefined,
+        startedAt: number | undefined,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceSetActiveCursor';
+            params: { index: number; innerCursor: BytesLike | undefined; startedAt: number | undefined };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Forces the onboarding of the migrations.
+     *
+     * This process happens automatically on a runtime upgrade. It is in place as an emergency
+     * measurement. The cursor needs to be `None` for this to succeed.
+     *
+     **/
+    forceOnboardMbms: GenericTxCall<
+      () => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ForceOnboardMbms';
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Clears the `Historic` set.
+     *
+     * `map_cursor` must be set to the last value that was returned by the
+     * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+     * way that will result in a sensible weight.
+     *
+     * @param {PalletMigrationsHistoricCleanupSelector} selector
+     **/
+    clearHistoric: GenericTxCall<
+      (selector: PalletMigrationsHistoricCleanupSelector) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockMigrations';
+          palletCall: {
+            name: 'ClearHistoric';
+            params: { selector: PalletMigrationsHistoricCleanupSelector };
           };
         },
         ChainKnownTypes

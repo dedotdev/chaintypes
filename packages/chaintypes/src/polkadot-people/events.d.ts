@@ -861,6 +861,26 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * A pool's swap fee was set, either at creation via [`Pallet::create_pool_with_fee`]
+     * or afterwards via [`Pallet::set_pool_fee`].
+     **/
+    PoolFeeSet: GenericPalletEvent<
+      'AssetConversion',
+      'PoolFeeSet',
+      {
+        /**
+         * The pool whose fee was set.
+         **/
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
+
+        /**
+         * The swap fee now applied to the pool.
+         **/
+        fee: Permill;
+      }
+    >;
+
+    /**
      * A successful call of the `AddLiquidity` extrinsic will create this event.
      **/
     LiquidityAdded: GenericPalletEvent<
@@ -1238,6 +1258,26 @@ export interface ChainEvents extends GenericChainEvents {
      * Some assets Debt was destroyed (and assets issued).
      **/
     BurnedDebt: GenericPalletEvent<'PoolAssets', 'BurnedDebt', { assetId: number; amount: bigint }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `AccumulateForward`'s events
+   **/
+  accumulateForward: {
+    /**
+     * Successfully forwarded accumulated funds to the destination.
+     **/
+    ForwardSucceeded: GenericPalletEvent<'AccumulateForward', 'ForwardSucceeded', { amount: bigint }>;
+
+    /**
+     * Failed to forward funds. They will remain in the accumulation account
+     * and forwarding will be retried after another `TransferPeriod` blocks.
+     **/
+    ForwardFailed: GenericPalletEvent<'AccumulateForward', 'ForwardFailed', { amount: bigint }>;
 
     /**
      * Generic pallet event
@@ -2065,6 +2105,11 @@ export interface ChainEvents extends GenericChainEvents {
     RegistrarAdded: GenericPalletEvent<'Identity', 'RegistrarAdded', { registrarIndex: number }>;
 
     /**
+     * A registrar was removed.
+     **/
+    RegistrarRemoved: GenericPalletEvent<'Identity', 'RegistrarRemoved', { registrarIndex: number }>;
+
+    /**
      * A sub-identity was added to an identity and the deposit paid.
      **/
     SubIdentityAdded: GenericPalletEvent<
@@ -2496,6 +2541,15 @@ export interface ChainEvents extends GenericChainEvents {
       'Resources',
       'LongTermStorageAliasesCleared',
       { period: number; count: number }
+    >;
+
+    /**
+     * The statement account holding a statement store slot was replaced.
+     **/
+    StmtStoreAccountReplaced: GenericPalletEvent<
+      'Resources',
+      'StmtStoreAccountReplaced',
+      { alias: FixedBytes<32>; period: number; seq: number; previousAccount: AccountId32; newAccount: AccountId32 }
     >;
 
     /**

@@ -15,7 +15,6 @@ import type {
   FixedArray,
   EthereumAddress,
   EthereumAddressLike,
-  PerU16,
   BitSequence,
   FixedU128,
   Era,
@@ -48,7 +47,6 @@ export type PolkadotRuntimeRuntimeCall =
   | { pallet: 'Multisig'; palletCall: PalletMultisigCall }
   | { pallet: 'Bounties'; palletCall: PalletBountiesCall }
   | { pallet: 'ChildBounties'; palletCall: PalletChildBountiesCall }
-  | { pallet: 'ElectionProviderMultiPhase'; palletCall: PalletElectionProviderMultiPhaseCall }
   | { pallet: 'VoterList'; palletCall: PalletBagsListCall }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCall }
   | { pallet: 'FastUnstake'; palletCall: PalletFastUnstakeCall }
@@ -72,6 +70,7 @@ export type PolkadotRuntimeRuntimeCall =
   | { pallet: 'XcmPallet'; palletCall: PalletXcmCall }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCall }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCall }
+  | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCall }
   | { pallet: 'Beefy'; palletCall: PalletBeefyCall };
 
 export type PolkadotRuntimeRuntimeCallLike =
@@ -96,7 +95,6 @@ export type PolkadotRuntimeRuntimeCallLike =
   | { pallet: 'Multisig'; palletCall: PalletMultisigCallLike }
   | { pallet: 'Bounties'; palletCall: PalletBountiesCallLike }
   | { pallet: 'ChildBounties'; palletCall: PalletChildBountiesCallLike }
-  | { pallet: 'ElectionProviderMultiPhase'; palletCall: PalletElectionProviderMultiPhaseCallLike }
   | { pallet: 'VoterList'; palletCall: PalletBagsListCallLike }
   | { pallet: 'NominationPools'; palletCall: PalletNominationPoolsCallLike }
   | { pallet: 'FastUnstake'; palletCall: PalletFastUnstakeCallLike }
@@ -120,6 +118,7 @@ export type PolkadotRuntimeRuntimeCallLike =
   | { pallet: 'XcmPallet'; palletCall: PalletXcmCallLike }
   | { pallet: 'MessageQueue'; palletCall: PalletMessageQueueCallLike }
   | { pallet: 'AssetRate'; palletCall: PalletAssetRateCallLike }
+  | { pallet: 'MultiBlockMigrations'; palletCall: PalletMigrationsCallLike }
   | { pallet: 'Beefy'; palletCall: PalletBeefyCallLike };
 
 /**
@@ -3228,7 +3227,8 @@ export type PalletWhitelistCall =
       name: 'DispatchWhitelistedCall';
       params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
-  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: PolkadotRuntimeRuntimeCall } };
+  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: PolkadotRuntimeRuntimeCall } }
+  | { name: 'RemoveDeferredDispatch'; params: { callHash: H256 } };
 
 export type PalletWhitelistCallLike =
   | { name: 'WhitelistCall'; params: { callHash: H256 } }
@@ -3237,7 +3237,8 @@ export type PalletWhitelistCallLike =
       name: 'DispatchWhitelistedCall';
       params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
-  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: PolkadotRuntimeRuntimeCallLike } };
+  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: PolkadotRuntimeRuntimeCallLike } }
+  | { name: 'RemoveDeferredDispatch'; params: { callHash: H256 } };
 
 export type SpWeightsWeightV2Weight = { refTime: bigint; proofSize: bigint };
 
@@ -4811,7 +4812,21 @@ export type PalletBountiesCall =
    *
    * Emits `DepositPoked` if the deposit is updated.
    **/
-  | { name: 'PokeDeposit'; params: { bountyId: number } };
+  | { name: 'PokeDeposit'; params: { bountyId: number } }
+  /**
+   * Reclaim funds stranded in a closed bounty's account back to the treasury.
+   *
+   * Permissionless. Moves all remaining assets from a closed bounty's account back to the
+   * treasury in a single call. Which assets are swept depends on the `TransferAllAssets`
+   * configuration.
+   *
+   * The call is free if funds were reclaimed and paid otherwise, so no-op calls cannot be
+   * used to grief the network. Emits `BountyFundsReclaimed` on success.
+   *
+   * ## Complexity
+   * - O(A) where A is the number of relevant assets configured in `TransferAllAssets`.
+   **/
+  | { name: 'ReclaimBountyFunds'; params: { bountyId: number } };
 
 export type PalletBountiesCallLike =
   /**
@@ -4957,7 +4972,21 @@ export type PalletBountiesCallLike =
    *
    * Emits `DepositPoked` if the deposit is updated.
    **/
-  | { name: 'PokeDeposit'; params: { bountyId: number } };
+  | { name: 'PokeDeposit'; params: { bountyId: number } }
+  /**
+   * Reclaim funds stranded in a closed bounty's account back to the treasury.
+   *
+   * Permissionless. Moves all remaining assets from a closed bounty's account back to the
+   * treasury in a single call. Which assets are swept depends on the `TransferAllAssets`
+   * configuration.
+   *
+   * The call is free if funds were reclaimed and paid otherwise, so no-op calls cannot be
+   * used to grief the network. Emits `BountyFundsReclaimed` on success.
+   *
+   * ## Complexity
+   * - O(A) where A is the number of relevant assets configured in `TransferAllAssets`.
+   **/
+  | { name: 'ReclaimBountyFunds'; params: { bountyId: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -5300,166 +5329,6 @@ export type PalletChildBountiesCallLike =
    * - `child_bounty_id`: Index of child bounty.
    **/
   | { name: 'CloseChildBounty'; params: { parentBountyId: number; childBountyId: number } };
-
-/**
- * Contains a variant per dispatchable extrinsic that this pallet has.
- **/
-export type PalletElectionProviderMultiPhaseCall =
-  /**
-   * Submit a solution for the unsigned phase.
-   *
-   * The dispatch origin fo this call must be __none__.
-   *
-   * This submission is checked on the fly. Moreover, this unsigned solution is only
-   * validated when submitted to the pool from the **local** node. Effectively, this means
-   * that only active validators can submit this transaction when authoring a block (similar
-   * to an inherent).
-   *
-   * To prevent any incorrect solution (and thus wasted time/weight), this transaction will
-   * panic if the solution submitted by the validator is invalid in any way, effectively
-   * putting their authoring reward at risk.
-   *
-   * No deposit or reward is associated with this submission.
-   **/
-  | {
-      name: 'SubmitUnsigned';
-      params: {
-        rawSolution: PalletElectionProviderMultiPhaseRawSolution;
-        witness: PalletElectionProviderMultiPhaseSolutionOrSnapshotSize;
-      };
-    }
-  /**
-   * Set a new value for `MinimumUntrustedScore`.
-   *
-   * Dispatch origin must be aligned with `T::ForceOrigin`.
-   *
-   * This check can be turned off by setting the value to `None`.
-   **/
-  | { name: 'SetMinimumUntrustedScore'; params: { maybeNextScore?: SpNposElectionsElectionScore | undefined } }
-  /**
-   * Set a solution in the queue, to be handed out to the client of this pallet in the next
-   * call to `ElectionProvider::elect`.
-   *
-   * This can only be set by `T::ForceOrigin`, and only when the phase is `Emergency`.
-   *
-   * The solution is not checked for any feasibility and is assumed to be trustworthy, as any
-   * feasibility check itself can in principle cause the election process to fail (due to
-   * memory/weight constrains).
-   **/
-  | { name: 'SetEmergencyElectionResult'; params: { supports: Array<[AccountId32, SpNposElectionsSupport]> } }
-  /**
-   * Submit a solution for the signed phase.
-   *
-   * The dispatch origin fo this call must be __signed__.
-   *
-   * The solution is potentially queued, based on the claimed score and processed at the end
-   * of the signed phase.
-   *
-   * A deposit is reserved and recorded for the solution. Based on the outcome, the solution
-   * might be rewarded, slashed, or get all or a part of the deposit back.
-   **/
-  | { name: 'Submit'; params: { rawSolution: PalletElectionProviderMultiPhaseRawSolution } }
-  /**
-   * Trigger the governance fallback.
-   *
-   * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
-   * calling [`Call::set_emergency_election_result`].
-   **/
-  | { name: 'GovernanceFallback' };
-
-export type PalletElectionProviderMultiPhaseCallLike =
-  /**
-   * Submit a solution for the unsigned phase.
-   *
-   * The dispatch origin fo this call must be __none__.
-   *
-   * This submission is checked on the fly. Moreover, this unsigned solution is only
-   * validated when submitted to the pool from the **local** node. Effectively, this means
-   * that only active validators can submit this transaction when authoring a block (similar
-   * to an inherent).
-   *
-   * To prevent any incorrect solution (and thus wasted time/weight), this transaction will
-   * panic if the solution submitted by the validator is invalid in any way, effectively
-   * putting their authoring reward at risk.
-   *
-   * No deposit or reward is associated with this submission.
-   **/
-  | {
-      name: 'SubmitUnsigned';
-      params: {
-        rawSolution: PalletElectionProviderMultiPhaseRawSolution;
-        witness: PalletElectionProviderMultiPhaseSolutionOrSnapshotSize;
-      };
-    }
-  /**
-   * Set a new value for `MinimumUntrustedScore`.
-   *
-   * Dispatch origin must be aligned with `T::ForceOrigin`.
-   *
-   * This check can be turned off by setting the value to `None`.
-   **/
-  | { name: 'SetMinimumUntrustedScore'; params: { maybeNextScore?: SpNposElectionsElectionScore | undefined } }
-  /**
-   * Set a solution in the queue, to be handed out to the client of this pallet in the next
-   * call to `ElectionProvider::elect`.
-   *
-   * This can only be set by `T::ForceOrigin`, and only when the phase is `Emergency`.
-   *
-   * The solution is not checked for any feasibility and is assumed to be trustworthy, as any
-   * feasibility check itself can in principle cause the election process to fail (due to
-   * memory/weight constrains).
-   **/
-  | { name: 'SetEmergencyElectionResult'; params: { supports: Array<[AccountId32Like, SpNposElectionsSupport]> } }
-  /**
-   * Submit a solution for the signed phase.
-   *
-   * The dispatch origin fo this call must be __signed__.
-   *
-   * The solution is potentially queued, based on the claimed score and processed at the end
-   * of the signed phase.
-   *
-   * A deposit is reserved and recorded for the solution. Based on the outcome, the solution
-   * might be rewarded, slashed, or get all or a part of the deposit back.
-   **/
-  | { name: 'Submit'; params: { rawSolution: PalletElectionProviderMultiPhaseRawSolution } }
-  /**
-   * Trigger the governance fallback.
-   *
-   * This can only be called when [`Phase::Emergency`] is enabled, as an alternative to
-   * calling [`Call::set_emergency_election_result`].
-   **/
-  | { name: 'GovernanceFallback' };
-
-export type PalletElectionProviderMultiPhaseRawSolution = {
-  solution: PolkadotRuntimeNposCompactSolution16;
-  score: SpNposElectionsElectionScore;
-  round: number;
-};
-
-export type PolkadotRuntimeNposCompactSolution16 = {
-  votes1: Array<[number, number]>;
-  votes2: Array<[number, [number, PerU16], number]>;
-  votes3: Array<[number, FixedArray<[number, PerU16], 2>, number]>;
-  votes4: Array<[number, FixedArray<[number, PerU16], 3>, number]>;
-  votes5: Array<[number, FixedArray<[number, PerU16], 4>, number]>;
-  votes6: Array<[number, FixedArray<[number, PerU16], 5>, number]>;
-  votes7: Array<[number, FixedArray<[number, PerU16], 6>, number]>;
-  votes8: Array<[number, FixedArray<[number, PerU16], 7>, number]>;
-  votes9: Array<[number, FixedArray<[number, PerU16], 8>, number]>;
-  votes10: Array<[number, FixedArray<[number, PerU16], 9>, number]>;
-  votes11: Array<[number, FixedArray<[number, PerU16], 10>, number]>;
-  votes12: Array<[number, FixedArray<[number, PerU16], 11>, number]>;
-  votes13: Array<[number, FixedArray<[number, PerU16], 12>, number]>;
-  votes14: Array<[number, FixedArray<[number, PerU16], 13>, number]>;
-  votes15: Array<[number, FixedArray<[number, PerU16], 14>, number]>;
-  votes16: Array<[number, FixedArray<[number, PerU16], 15>, number]>;
-};
-
-export type SpNposElectionsElectionScore = { minimalStake: bigint; sumStake: bigint; sumStakeSquared: bigint };
-
-export type PalletElectionProviderMultiPhaseSolutionOrSnapshotSize = { voters: number; targets: number };
-
-export type SpNposElectionsSupport = { total: bigint; voters: Array<[AccountId32, bigint]> };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -10016,6 +9885,93 @@ export type PalletAssetRateCallLike =
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
  **/
+export type PalletMigrationsCall =
+  /**
+   * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+   *
+   * Should normally not be needed and is only in place as emergency measure. Note that
+   * restarting the migration process in this manner will not call the
+   * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+   **/
+  | { name: 'ForceSetCursor'; params: { cursor?: PalletMigrationsMigrationCursor | undefined } }
+  /**
+   * Allows root to set an active cursor to forcefully start/forward the migration process.
+   *
+   * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+   * `started_at` value to the next block number. Otherwise this would not be possible, since
+   * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+   * indicates that the current block number plus one should be used.
+   **/
+  | {
+      name: 'ForceSetActiveCursor';
+      params: { index: number; innerCursor?: Bytes | undefined; startedAt?: number | undefined };
+    }
+  /**
+   * Forces the onboarding of the migrations.
+   *
+   * This process happens automatically on a runtime upgrade. It is in place as an emergency
+   * measurement. The cursor needs to be `None` for this to succeed.
+   **/
+  | { name: 'ForceOnboardMbms' }
+  /**
+   * Clears the `Historic` set.
+   *
+   * `map_cursor` must be set to the last value that was returned by the
+   * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+   * way that will result in a sensible weight.
+   **/
+  | { name: 'ClearHistoric'; params: { selector: PalletMigrationsHistoricCleanupSelector } };
+
+export type PalletMigrationsCallLike =
+  /**
+   * Allows root to set a cursor to forcefully start, stop or forward the migration process.
+   *
+   * Should normally not be needed and is only in place as emergency measure. Note that
+   * restarting the migration process in this manner will not call the
+   * [`MigrationStatusHandler::started`] hook or emit an `UpgradeStarted` event.
+   **/
+  | { name: 'ForceSetCursor'; params: { cursor?: PalletMigrationsMigrationCursor | undefined } }
+  /**
+   * Allows root to set an active cursor to forcefully start/forward the migration process.
+   *
+   * This is an edge-case version of [`Self::force_set_cursor`] that allows to set the
+   * `started_at` value to the next block number. Otherwise this would not be possible, since
+   * `force_set_cursor` takes an absolute block number. Setting `started_at` to `None`
+   * indicates that the current block number plus one should be used.
+   **/
+  | {
+      name: 'ForceSetActiveCursor';
+      params: { index: number; innerCursor?: BytesLike | undefined; startedAt?: number | undefined };
+    }
+  /**
+   * Forces the onboarding of the migrations.
+   *
+   * This process happens automatically on a runtime upgrade. It is in place as an emergency
+   * measurement. The cursor needs to be `None` for this to succeed.
+   **/
+  | { name: 'ForceOnboardMbms' }
+  /**
+   * Clears the `Historic` set.
+   *
+   * `map_cursor` must be set to the last value that was returned by the
+   * `HistoricCleared` event. The first time `None` can be used. `limit` must be chosen in a
+   * way that will result in a sensible weight.
+   **/
+  | { name: 'ClearHistoric'; params: { selector: PalletMigrationsHistoricCleanupSelector } };
+
+export type PalletMigrationsMigrationCursor =
+  | { type: 'Active'; value: PalletMigrationsActiveCursor }
+  | { type: 'Stuck' };
+
+export type PalletMigrationsActiveCursor = { index: number; innerCursor?: Bytes | undefined; startedAt: number };
+
+export type PalletMigrationsHistoricCleanupSelector =
+  | { type: 'Specific'; value: Array<Bytes> }
+  | { type: 'Wildcard'; value: { limit?: number | undefined; previousCursor?: Bytes | undefined } };
+
+/**
+ * Contains a variant per dispatchable extrinsic that this pallet has.
+ **/
 export type PalletBeefyCall =
   /**
    * Report voter equivocation/misbehavior. This method will verify the
@@ -10284,15 +10240,16 @@ export type PolkadotRuntimeRuntimeEvent =
   | { pallet: 'Multisig'; palletEvent: PalletMultisigEvent }
   | { pallet: 'Bounties'; palletEvent: PalletBountiesEvent }
   | { pallet: 'ChildBounties'; palletEvent: PalletChildBountiesEvent }
-  | { pallet: 'ElectionProviderMultiPhase'; palletEvent: PalletElectionProviderMultiPhaseEvent }
   | { pallet: 'VoterList'; palletEvent: PalletBagsListEvent }
   | { pallet: 'NominationPools'; palletEvent: PalletNominationPoolsEvent }
   | { pallet: 'FastUnstake'; palletEvent: PalletFastUnstakeEvent }
   | { pallet: 'DelegatedStaking'; palletEvent: PalletDelegatedStakingEvent }
   | { pallet: 'StakingAhClient'; palletEvent: PalletStakingAsyncAhClientEvent }
   | { pallet: 'Parameters'; palletEvent: PalletParametersEvent }
+  | { pallet: 'AccumulateForward'; palletEvent: PalletAccumulateAndForwardEvent }
   | { pallet: 'ParaInclusion'; palletEvent: PolkadotRuntimeParachainsInclusionPalletEvent }
   | { pallet: 'Paras'; palletEvent: PolkadotRuntimeParachainsParasPalletEvent }
+  | { pallet: 'Dmp'; palletEvent: PolkadotRuntimeParachainsDmpPalletEvent }
   | { pallet: 'Hrmp'; palletEvent: PolkadotRuntimeParachainsHrmpPalletEvent }
   | { pallet: 'ParasDisputes'; palletEvent: PolkadotRuntimeParachainsDisputesPalletEvent }
   | { pallet: 'OnDemand'; palletEvent: PolkadotRuntimeParachainsOnDemandPalletEvent }
@@ -10303,7 +10260,8 @@ export type PolkadotRuntimeRuntimeEvent =
   | { pallet: 'Coretime'; palletEvent: PolkadotRuntimeParachainsCoretimePalletEvent }
   | { pallet: 'XcmPallet'; palletEvent: PalletXcmEvent }
   | { pallet: 'MessageQueue'; palletEvent: PalletMessageQueueEvent }
-  | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent };
+  | { pallet: 'AssetRate'; palletEvent: PalletAssetRateEvent }
+  | { pallet: 'MultiBlockMigrations'; palletEvent: PalletMigrationsEvent };
 
 /**
  * Event for the System pallet.
@@ -10731,9 +10689,9 @@ export type PalletOffencesEvent =
   /**
    * There is an offence reported of the given `kind` happened at the `session_index` and
    * (kind-specific) time slot. This event is not deposited for duplicate slashes.
-   * \[kind, timeslot\].
+   * \[kind, slot\].
    **/
-  { name: 'Offence'; data: { kind: FixedBytes<16>; timeslot: Bytes } };
+  { name: 'Offence'; data: { kind: FixedBytes<16>; slot: Bytes } };
 
 /**
  * The `Event` enum of this pallet
@@ -11177,7 +11135,23 @@ export type PalletWhitelistEvent =
         callHash: H256;
         result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
       };
-    };
+    }
+  /**
+   * A call dispatch has been deferred to a future provided block.
+   **/
+  | { name: 'DispatchDeferred'; data: { callHash: H256 } }
+  /**
+   * A deferred dispatch entry has been removed after expiration.
+   **/
+  | { name: 'DeferredDispatchRemoved'; data: { callHash: H256 } }
+  /**
+   * A relayer (signed origin) executed a deferred dispatch.
+   *
+   * Emitted whenever the deferred entry is consumed by a relayer, regardless of whether the
+   * inner call itself succeeded; the inner call's outcome is reported separately by
+   * [`Event::WhitelistedCallDispatched`].
+   **/
+  | { name: 'DeferredDispatchExecuted'; data: { callHash: H256; who: AccountId32 } };
 
 export type FrameSupportDispatchPostDispatchInfo = {
   actualWeight?: SpWeightsWeightV2Weight | undefined;
@@ -11431,7 +11405,11 @@ export type PalletBountiesEvent =
   /**
    * A bounty deposit has been poked.
    **/
-  | { name: 'DepositPoked'; data: { bountyId: number; proposer: AccountId32; oldDeposit: bigint; newDeposit: bigint } };
+  | { name: 'DepositPoked'; data: { bountyId: number; proposer: AccountId32; oldDeposit: bigint; newDeposit: bigint } }
+  /**
+   * Stranded funds left in a closed bounty's account were reclaimed to the treasury.
+   **/
+  | { name: 'BountyFundsReclaimed'; data: { bountyId: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -11453,69 +11431,6 @@ export type PalletChildBountiesEvent =
    * A child-bounty is cancelled.
    **/
   | { name: 'Canceled'; data: { index: number; childIndex: number } };
-
-/**
- * The `Event` enum of this pallet
- **/
-export type PalletElectionProviderMultiPhaseEvent =
-  /**
-   * A solution was stored with the given compute.
-   *
-   * The `origin` indicates the origin of the solution. If `origin` is `Some(AccountId)`,
-   * the stored solution was submitted in the signed phase by a miner with the `AccountId`.
-   * Otherwise, the solution was stored either during the unsigned phase or by
-   * `T::ForceOrigin`. The `bool` is `true` when a previous solution was ejected to make
-   * room for this one.
-   **/
-  | {
-      name: 'SolutionStored';
-      data: {
-        compute: PalletElectionProviderMultiPhaseElectionCompute;
-        origin?: AccountId32 | undefined;
-        prevEjected: boolean;
-      };
-    }
-  /**
-   * The election has been finalized, with the given computation and score.
-   **/
-  | {
-      name: 'ElectionFinalized';
-      data: { compute: PalletElectionProviderMultiPhaseElectionCompute; score: SpNposElectionsElectionScore };
-    }
-  /**
-   * An election failed.
-   *
-   * Not much can be said about which computes failed in the process.
-   **/
-  | { name: 'ElectionFailed' }
-  /**
-   * An account has been rewarded for their signed submission being finalized.
-   **/
-  | { name: 'Rewarded'; data: { account: AccountId32; value: bigint } }
-  /**
-   * An account has been slashed for submitting an invalid signed submission.
-   **/
-  | { name: 'Slashed'; data: { account: AccountId32; value: bigint } }
-  /**
-   * There was a phase transition in a given round.
-   **/
-  | {
-      name: 'PhaseTransitioned';
-      data: { from: PalletElectionProviderMultiPhasePhase; to: PalletElectionProviderMultiPhasePhase; round: number };
-    };
-
-export type PalletElectionProviderMultiPhaseElectionCompute =
-  | 'OnChain'
-  | 'Signed'
-  | 'Unsigned'
-  | 'Fallback'
-  | 'Emergency';
-
-export type PalletElectionProviderMultiPhasePhase =
-  | { type: 'Off' }
-  | { type: 'Signed' }
-  | { type: 'Unsigned'; value: [boolean, number] }
-  | { type: 'Emergency' };
 
 /**
  * The `Event` enum of this pallet
@@ -11820,6 +11735,20 @@ export type PolkadotRuntimeDynamicParamsAhClientParametersValue = { type: 'Minim
 /**
  * The `Event` enum of this pallet
  **/
+export type PalletAccumulateAndForwardEvent =
+  /**
+   * Successfully forwarded accumulated funds to the destination.
+   **/
+  | { name: 'ForwardSucceeded'; data: { amount: bigint } }
+  /**
+   * Failed to forward funds. They will remain in the accumulation account
+   * and forwarding will be retried after another `TransferPeriod` blocks.
+   **/
+  | { name: 'ForwardFailed'; data: { amount: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
 export type PolkadotRuntimeParachainsInclusionPalletEvent =
   /**
    * A candidate was backed. `[candidate, head_data]`
@@ -11952,6 +11881,15 @@ export type PolkadotRuntimeParachainsParasPalletEvent =
         expireAt: number;
       };
     };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PolkadotRuntimeParachainsDmpPalletEvent =
+  /**
+   * Legacy V0 DMP queue storage has been cleaned.
+   **/
+  { name: 'DmpQueueV0Cleaned'; data: { para: PolkadotParachainPrimitivesPrimitivesId } };
 
 /**
  * The `Event` enum of this pallet
@@ -12595,6 +12533,117 @@ export type PalletAssetRateEvent =
   | {
       name: 'AssetRateUpdated';
       data: { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; old: FixedU128; new: FixedU128 };
+    };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletMigrationsEvent =
+  /**
+   * A Runtime upgrade started.
+   *
+   * Its end is indicated by `UpgradeCompleted` or `UpgradeFailed`.
+   **/
+  | {
+      name: 'UpgradeStarted';
+      data: {
+        /**
+         * The number of migrations that this upgrade contains.
+         *
+         * This can be used to design a progress indicator in combination with counting the
+         * `MigrationCompleted` and `MigrationSkipped` events.
+         **/
+        migrations: number;
+      };
+    }
+  /**
+   * The current runtime upgrade completed.
+   *
+   * This implies that all of its migrations completed successfully as well.
+   **/
+  | { name: 'UpgradeCompleted' }
+  /**
+   * Runtime upgrade failed.
+   *
+   * This is very bad and will require governance intervention.
+   **/
+  | { name: 'UpgradeFailed' }
+  /**
+   * A migration was skipped since it was already executed in the past.
+   **/
+  | {
+      name: 'MigrationSkipped';
+      data: {
+        /**
+         * The index of the skipped migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+      };
+    }
+  /**
+   * A migration progressed.
+   **/
+  | {
+      name: 'MigrationAdvanced';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * A Migration completed.
+   **/
+  | {
+      name: 'MigrationCompleted';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * A Migration failed.
+   *
+   * This implies that the whole upgrade failed and governance intervention is required.
+   **/
+  | {
+      name: 'MigrationFailed';
+      data: {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      };
+    }
+  /**
+   * The set of historical migrations has been cleared.
+   **/
+  | {
+      name: 'HistoricCleared';
+      data: {
+        /**
+         * Should be passed to `clear_historic` in a successive call.
+         **/
+        nextCursor?: Bytes | undefined;
+      };
     };
 
 export type FrameSystemLastRuntimeUpgradeInfo = { specVersion: number; specName: string };
@@ -13451,7 +13500,23 @@ export type PalletWhitelistError =
   /**
    * The call was already whitelisted; No-Op.
    **/
-  | 'CallAlreadyWhitelisted';
+  | 'CallAlreadyWhitelisted'
+  /**
+   * No deferred dispatch entry exists for this call hash.
+   **/
+  | 'DeferredDispatchNotFound'
+  /**
+   * The deferred dispatch entry has not yet expired.
+   **/
+  | 'DeferredDispatchNotExpired'
+  /**
+   * The dispatch has already been deferred.
+   **/
+  | 'AlreadyDeferred'
+  /**
+   * The deferred dispatch has expired.
+   **/
+  | 'DeferredDispatchExpired';
 
 /**
  * The `Error` enum of this pallet.
@@ -13481,7 +13546,12 @@ export type PolkadotRuntimeCommonClaimsPalletError =
   /**
    * The account already has a vested balance.
    **/
-  | 'VestedBalanceExists';
+  | 'VestedBalanceExists'
+  /**
+   * The claim has a vesting schedule but its value is below the existential deposit, so the
+   * destination account could not be kept alive to carry the vesting lock.
+   **/
+  | 'ClaimBelowExistentialDeposit';
 
 export type PalletVestingReleases = 'V0' | 'V1';
 
@@ -13704,7 +13774,11 @@ export type PalletBountiesError =
   /**
    * User is not the proposer of the bounty.
    **/
-  | 'NotProposer';
+  | 'NotProposer'
+  /**
+   * The bounty is still active and its account cannot be reclaimed.
+   **/
+  | 'BountyStillActive';
 
 export type PalletChildBountiesChildBounty = {
   parentBounty: number;
@@ -13736,95 +13810,6 @@ export type PalletChildBountiesError =
    * Number of child bounties exceeds limit `MaxActiveChildBountyCount`.
    **/
   | 'TooManyChildBounties';
-
-export type PalletElectionProviderMultiPhaseReadySolution = {
-  supports: FrameElectionProviderSupportBoundedSupports;
-  score: SpNposElectionsElectionScore;
-  compute: PalletElectionProviderMultiPhaseElectionCompute;
-};
-
-export type FrameElectionProviderSupportBoundedSupports = Array<
-  [AccountId32, FrameElectionProviderSupportBoundedSupport]
->;
-
-export type FrameElectionProviderSupportBoundedSupport = { total: bigint; voters: Array<[AccountId32, bigint]> };
-
-export type PalletElectionProviderMultiPhaseRoundSnapshot = {
-  voters: Array<[AccountId32, bigint, Array<AccountId32>]>;
-  targets: Array<AccountId32>;
-};
-
-export type PalletElectionProviderMultiPhaseSignedSignedSubmission = {
-  who: AccountId32;
-  deposit: bigint;
-  rawSolution: PalletElectionProviderMultiPhaseRawSolution;
-  callFee: bigint;
-};
-
-/**
- * Error of the pallet that can be returned in response to dispatches.
- **/
-export type PalletElectionProviderMultiPhaseError =
-  /**
-   * Submission was too early.
-   **/
-  | 'PreDispatchEarlySubmission'
-  /**
-   * Wrong number of winners presented.
-   **/
-  | 'PreDispatchWrongWinnerCount'
-  /**
-   * Submission was too weak, score-wise.
-   **/
-  | 'PreDispatchWeakSubmission'
-  /**
-   * The queue was full, and the solution was not better than any of the existing ones.
-   **/
-  | 'SignedQueueFull'
-  /**
-   * The origin failed to pay the deposit.
-   **/
-  | 'SignedCannotPayDeposit'
-  /**
-   * Witness data to dispatchable is invalid.
-   **/
-  | 'SignedInvalidWitness'
-  /**
-   * The signed submission consumes too much weight
-   **/
-  | 'SignedTooMuchWeight'
-  /**
-   * OCW submitted solution for wrong round
-   **/
-  | 'OcwCallWrongEra'
-  /**
-   * Snapshot metadata should exist but didn't.
-   **/
-  | 'MissingSnapshotMetadata'
-  /**
-   * `Self::insert_submission` returned an invalid index.
-   **/
-  | 'InvalidSubmissionIndex'
-  /**
-   * The call is not allowed at this point.
-   **/
-  | 'CallNotAllowed'
-  /**
-   * The fallback failed
-   **/
-  | 'FallbackFailed'
-  /**
-   * Some bound not met
-   **/
-  | 'BoundNotMet'
-  /**
-   * Submitted solution has too many winners
-   **/
-  | 'TooManyWinners'
-  /**
-   * Submission was prepared for a different round.
-   **/
-  | 'PreDispatchDifferentRound';
 
 export type PalletBagsListListNode = {
   id: AccountId32;
@@ -14546,6 +14531,8 @@ export type PolkadotRuntimeParachainsInitializerBufferedSessionChange = {
   queued: Array<PolkadotPrimitivesV9ValidatorAppPublic>;
   sessionIndex: number;
 };
+
+export type PolkadotCorePrimitivesInboundDownwardQueueMeta = { firstFull: bigint; firstFree: bigint };
 
 export type PolkadotCorePrimitivesInboundDownwardMessage = { sentAt: number; msg: Bytes };
 
@@ -15339,6 +15326,30 @@ export type PalletAssetRateError =
 /**
  * The `Error` enum of this pallet.
  **/
+export type PalletMigrationsError =
+  /**
+   * The operation cannot complete since some MBMs are ongoing.
+   **/
+  'Ongoing';
+
+export type PalletMigrationsMbmIsOngoing = 'Yes' | 'No' | 'Stuck';
+
+export type PalletMigrationsMbmProgress = {
+  currentMigration: number;
+  totalMigrations: number;
+  currentMigrationSteps: number;
+  currentMigrationMaxSteps?: number | undefined;
+};
+
+export type PalletMigrationsMbmStatus = {
+  ongoing: PalletMigrationsMbmIsOngoing;
+  progress?: PalletMigrationsMbmProgress | undefined;
+  prefixes: Array<Bytes>;
+};
+
+/**
+ * The `Error` enum of this pallet.
+ **/
 export type PalletBeefyError =
   /**
    * A key ownership proof provided as part of an equivocation report is invalid.
@@ -15660,7 +15671,6 @@ export type PolkadotRuntimeRuntimeError =
   | { pallet: 'Multisig'; palletError: PalletMultisigError }
   | { pallet: 'Bounties'; palletError: PalletBountiesError }
   | { pallet: 'ChildBounties'; palletError: PalletChildBountiesError }
-  | { pallet: 'ElectionProviderMultiPhase'; palletError: PalletElectionProviderMultiPhaseError }
   | { pallet: 'VoterList'; palletError: PalletBagsListError }
   | { pallet: 'NominationPools'; palletError: PalletNominationPoolsError }
   | { pallet: 'FastUnstake'; palletError: PalletFastUnstakeError }
@@ -15683,5 +15693,6 @@ export type PolkadotRuntimeRuntimeError =
   | { pallet: 'XcmPallet'; palletError: PalletXcmError }
   | { pallet: 'MessageQueue'; palletError: PalletMessageQueueError }
   | { pallet: 'AssetRate'; palletError: PalletAssetRateError }
+  | { pallet: 'MultiBlockMigrations'; palletError: PalletMigrationsError }
   | { pallet: 'Beefy'; palletError: PalletBeefyError }
   | { pallet: 'RcMigrator'; palletError: PalletRcMigratorError };

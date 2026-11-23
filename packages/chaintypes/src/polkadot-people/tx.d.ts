@@ -15,6 +15,7 @@ import type {
   H256,
   AccountId32Like,
   FixedU128,
+  Permill,
   FixedBytes,
   Data,
 } from 'dedot/codecs';
@@ -1308,6 +1309,10 @@ export interface ChainTx<
      *
      * Origin must be Signed and the sender should be the Owner of the asset `id`.
      *
+     * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+     * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+     * blocks the full transfer; clear it and retry.
+     *
      * - `id`: The identifier of the asset.
      * - `owner`: The new Owner of this asset.
      *
@@ -1704,16 +1709,18 @@ export interface ChainTx<
      * Origin must be Signed and there must be an approval in place by the `owner` to the
      * signer.
      *
-     * If the entire amount approved for transfer is transferred, then any deposit previously
-     * reserved by `approve_transfer` is unreserved.
+     * If the debit spends the approval in full, then any deposit previously reserved by
+     * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+     * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+     * balance, so a request smaller than the approval can still spend it in full.
      *
      * - `id`: The identifier of the asset.
-     * - `owner`: The account which previously approved for a transfer of at least `amount` and
-     * from which the asset balance will be withdrawn.
-     * - `destination`: The account to which the asset balance of `amount` will be transferred.
+     * - `owner`: The account which previously approved for a transfer of at least the debit
+     * and from which the asset balance will be withdrawn.
+     * - `destination`: The account to which the debited balance will be transferred.
      * - `amount`: The amount of assets to transfer.
      *
-     * Emits `TransferredApproved` on success.
+     * Emits `Transferred` on success.
      *
      * Weight: `O(1)`
      *
@@ -2349,6 +2356,70 @@ export interface ChainTx<
     >;
 
     /**
+     * Like [`Pallet::create_pool`], but sets an initial per-pool swap `fee` overriding the
+     * global [`Config::LPFee`].
+     *
+     * Requires [`Config::AdminOrigin`]. `creator` pays the pool setup fee and deposits.
+     * `fee` must not exceed [`Config::MaxSwapFee`].
+     *
+     * Emits both [`Event::PoolCreated`] and [`Event::PoolFeeSet`] on success.
+     *
+     * @param {AccountId32Like} creator
+     * @param {StagingXcmV5Location} asset1
+     * @param {StagingXcmV5Location} asset2
+     * @param {Permill} fee
+     **/
+    createPoolWithFee: GenericTxCall<
+      (
+        creator: AccountId32Like,
+        asset1: StagingXcmV5Location,
+        asset2: StagingXcmV5Location,
+        fee: Permill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetConversion';
+          palletCall: {
+            name: 'CreatePoolWithFee';
+            params: {
+              creator: AccountId32Like;
+              asset1: StagingXcmV5Location;
+              asset2: StagingXcmV5Location;
+              fee: Permill;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the per-pool swap `fee` for an existing pool, overriding the global
+     * [`Config::LPFee`].
+     *
+     * Requires [`Config::AdminOrigin`]. `fee` must not exceed [`Config::MaxSwapFee`].
+     *
+     * Emits [`Event::PoolFeeSet`] on success.
+     *
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} poolId
+     * @param {Permill} fee
+     **/
+    setPoolFee: GenericTxCall<
+      (
+        poolId: [StagingXcmV5Location, StagingXcmV5Location],
+        fee: Permill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetConversion';
+          palletCall: {
+            name: 'SetPoolFee';
+            params: { poolId: [StagingXcmV5Location, StagingXcmV5Location]; fee: Permill };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -2888,6 +2959,10 @@ export interface ChainTx<
      *
      * Origin must be Signed and the sender should be the Owner of the asset `id`.
      *
+     * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+     * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+     * blocks the full transfer; clear it and retry.
+     *
      * - `id`: The identifier of the asset.
      * - `owner`: The new Owner of this asset.
      *
@@ -3273,16 +3348,18 @@ export interface ChainTx<
      * Origin must be Signed and there must be an approval in place by the `owner` to the
      * signer.
      *
-     * If the entire amount approved for transfer is transferred, then any deposit previously
-     * reserved by `approve_transfer` is unreserved.
+     * If the debit spends the approval in full, then any deposit previously reserved by
+     * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+     * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+     * balance, so a request smaller than the approval can still spend it in full.
      *
      * - `id`: The identifier of the asset.
-     * - `owner`: The account which previously approved for a transfer of at least `amount` and
-     * from which the asset balance will be withdrawn.
-     * - `destination`: The account to which the asset balance of `amount` will be transferred.
+     * - `owner`: The account which previously approved for a transfer of at least the debit
+     * and from which the asset balance will be withdrawn.
+     * - `destination`: The account to which the debited balance will be transferred.
      * - `amount`: The amount of assets to transfer.
      *
-     * Emits `TransferredApproved` on success.
+     * Emits `Transferred` on success.
      *
      * Weight: `O(1)`
      *
@@ -5646,6 +5723,41 @@ export interface ChainTx<
     >;
 
     /**
+     * Remove a registrar from the system.
+     *
+     * The dispatch origin for this call must be `T::RegistrarOrigin`.
+     *
+     * The registrar's slot is tombstoned (set to `None`) rather than removed, so that the
+     * `RegistrarIndex` of every other registrar — and any judgements already recorded against
+     * them — stays stable. The freed index is not reused by `add_registrar`, so each removal
+     * permanently consumes one slot against `MaxRegistrars` (reusing the slot would let a new
+     * registrar inherit an index that historical judgements still reference).
+     *
+     * Deposits reserved by pending `request_judgement` calls against this registrar are
+     * **not** returned; once the registrar is removed `provide_judgement` can no longer
+     * release them, so affected users should reclaim their funds manually with
+     * `cancel_request`.
+     *
+     * - `index`: the index of the registrar to remove.
+     *
+     * Emits `RegistrarRemoved` if successful.
+     *
+     * @param {number} index
+     **/
+    removeRegistrar: GenericTxCall<
+      (index: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Identity';
+          palletCall: {
+            name: 'RemoveRegistrar';
+            params: { index: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Set an account's identity information and reserve the appropriate deposit.
      *
      * If the account already has identity information, the deposit is taken as part payment
@@ -6692,10 +6804,9 @@ export interface ChainTx<
      * - one created using their ring-vrf key attesting to the ownership of the `ring_vrf_key`
      * key.
      *
-     * The message to be signed by both keys from which the signatures are generated is created
-     * by concatenating the bytes "pop:people-lite:register using" with the encoded bytes of
-     * the user's account (`candidate`), and the encoded bytes of the ring VRF key
-     * (`ring_vrf_key`).
+     * The registration message concatenates the bytes "pop:people-lite:register using", the
+     * encoded `candidate` account and the encoded `ring_vrf_key`. The ring VRF key signs this
+     * message. The account key signs [`Pallet::account_signing_payload`] of this message.
      *
      * On success, this call:
      * - stores lite registration data in `LitePeople`,
@@ -6706,17 +6817,17 @@ export interface ChainTx<
      * [`Call::create_lite_people_collection`]).
      *
      * - `candidate`: The candidate to be recognized as a lite person.
-     * - `candidate_signature`: The signature, provided by the candidate, to allow the attester
-     * to complete the registration process on their behalf.
+     * - `candidate_signature`: The candidate's account signature over the registration message
+     * in the personhood signing context. It allows the attester to register the candidate.
      * - `ring_vrf_key`: The ring VRF key to be associated with the lite person.
      * - `ring_vrf_key_signature`: The ring VRF signature, provided by the candidate, to allow
      * the attester to complete the registration process. This also prove the ownership of
      * the ring VRF key by the candidate.
      * - consumer_registration: Optional parameter which can contain the necessary information
      * to forward a consumer registration request to the `LiteConsumerRegistrar` service. If
-     * present, it also contains a signature created by the user in order to validate the
-     * intent. More information on the signing payload generation available in
-     * [types::LiteConsumerRegistrationParams::signing_payload].
+     * present, it also contains the user's signature over the payload from
+     * [types::LiteConsumerRegistrationParams::signing_payload] in the personhood signing
+     * context.
      *
      * @param {AccountId32Like} candidate
      * @param {SpRuntimeMultiSignature} candidateSignature
@@ -6759,6 +6870,10 @@ export interface ChainTx<
      * registration data in `LitePeople` and adds the ring VRF key to the lite member
      * collection. The fee is not refunded.
      *
+     * Once the number of lite people reaches `PaidRegistrationThreshold`, the call fails with
+     * [`Error::PaidRegistrationLimitReached`] after `PaidRegistrationsPerPeriod` paid
+     * registrations in the current period.
+     *
      * The lite member collection must already have been created via the
      * `migration::CreateLitePeopleCollection` runtime upgrade or
      * [`Call::create_lite_people_collection`].
@@ -6766,8 +6881,9 @@ export interface ChainTx<
      * - `ring_vrf_key`: The ring VRF key to be associated with the lite person.
      * - `proof_of_ownership`: The ring VRF signature proving ownership of `ring_vrf_key`.
      * - `consumer_registration`: Optional parameters to register the candidate as a lite
-     * consumer. The request must contain a signature over the usual consumer payload with
-     * the signed candidate account in both the account and verifier positions.
+     * consumer. The request must contain a signature over the consumer payload in the
+     * personhood signing context, with the signed candidate account in both the account and
+     * verifier positions.
      *
      * @param {FixedBytes<32>} ringVrfKey
      * @param {FixedBytes<64>} proofOfOwnership
@@ -6924,8 +7040,8 @@ export interface ChainTx<
      *
      * The person must link a previously recognized lite identity, which will be upgraded to a
      * full person consumer. In order to prove they hold the lite identity they want to link,
-     * users must provide a `lite_identity_proof` signature, created by signing the alias bytes
-     * using their lite consumer account.
+     * users must provide a `lite_identity_proof` signature. The lite consumer account signs
+     * [`Pallet::account_signing_payload`] of [`Pallet::register_person_message`].
      *
      * The consumer can choose if they want to have a new username or use an existing
      * reservation made in the name of the lite consumer who will be linked.
@@ -7137,7 +7253,8 @@ export interface ChainTx<
      * The origin must be `Origin::StmtStoreAlias`, produced by the `AsResources`
      * (`RegisterStatementStoreAllowance(..)`) transaction extension after proof validation.
      * On success, increases the statement allowance for `target_account` and stores the
-     * mapping in `StatementStoreAllowances`.
+     * mapping in `StatementStoreAllowances`. Fails if the slot already has an entry in this
+     * period. [`Call::replace_statement_store_account`] moves a slot to another account.
      *
      * Parameters:
      * * `period`: day number since Unix epoch. Must be in the accepted period window.
@@ -7159,6 +7276,46 @@ export interface ChainTx<
           palletCall: {
             name: 'SetStatementStoreAccount';
             params: { period: number; seq: number; targetAccount: AccountId32Like };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Move a claimed statement store slot to another statement account.
+     *
+     * The origin must be `Origin::StmtStoreHolder`, produced by the `AsResources`
+     * (`ReplaceStatementStoreAccount(..)`) transaction extension after it verifies the
+     * signature of the account that holds the slot. Revokes that account's allowance and
+     * grants the current allowance to `new_account`.
+     *
+     * The entry timestamp must be earlier than the current timestamp, so submit after a
+     * block whose timestamp is later than the one in the entry.
+     *
+     * Parameters:
+     * * `period`: day number since Unix epoch. Must be the current period.
+     * * `alias`: the alias the slot was claimed under. Must match the origin.
+     * * `new_account`: statement account that takes over the slot.
+     * * `since`: the timestamp recorded in the slot's entry. Must match the entry.
+     *
+     * @param {number} period
+     * @param {FixedBytes<32>} alias
+     * @param {AccountId32Like} newAccount
+     * @param {bigint} since
+     **/
+    replaceStatementStoreAccount: GenericTxCall<
+      (
+        period: number,
+        alias: FixedBytes<32>,
+        newAccount: AccountId32Like,
+        since: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Resources';
+          palletCall: {
+            name: 'ReplaceStatementStoreAccount';
+            params: { period: number; alias: FixedBytes<32>; newAccount: AccountId32Like; since: bigint };
           };
         },
         ChainKnownTypes

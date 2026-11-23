@@ -273,11 +273,6 @@ export interface ChainViewFunctions extends GenericChainViewFunctions {
     getStmtStoreCleanupLimit: GenericViewFunction<() => Promise<number>>;
 
     /**
-     * Returns the current value of [`Config::StmtStoreReplacementCooldown`].
-     **/
-    getStmtStoreReplacementCooldown: GenericViewFunction<() => Promise<number>>;
-
-    /**
      * Returns the current value of [`Config::StmtStoreGraceWindow`].
      **/
     getStmtStoreGraceWindow: GenericViewFunction<() => Promise<number>>;

@@ -332,11 +332,14 @@ export interface ChainViewFunctions extends GenericChainViewFunctions {
    **/
   multiBlockElectionSigned: {
     /**
-     * Get the deposit amount that will be held for a solution of `pages`.
+     * Get the deposit `who` would hold if it registered now and then submitted `pages` pages.
      *
-     * This allows an offchain application to know what [`Config::DepositPerPage`] and
-     * [`Config::DepositBase`] are doing under the hood. It also takes into account if `who` is
-     * [`Invulnerables`] or not.
+     * The base part is priced from the number of submitters currently registered, so the
+     * result only matches what `who` would pay if it has not registered in this round yet. A
+     * submitter that already registered holds the base charged at its registration, plus the
+     * per-page deposit of the pages it has stored.
+     *
+     * It also takes into account whether `who` is in [`Invulnerables`].
      *
      * @param {AccountId32Like} who
      * @param {number} pages

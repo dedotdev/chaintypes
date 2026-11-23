@@ -118,6 +118,7 @@ import type {
   PalletReviveStorageDeletionQueueManager,
   PalletReviveEvmApiRpcTypesGenBlock,
   PalletReviveEvmBlockHashReceiptGasInfo,
+  PalletReviveEvmBlockHashReceiptCommittedReceiptLogs,
   PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR,
   PalletReviveDebugDebugSettings,
   PalletNominationPoolsPoolMember,
@@ -835,6 +836,10 @@ export interface ChainStorage extends GenericChainStorage {
 
     /**
      * The total units of outstanding deactivated balance in the system.
+     *
+     * This is not guaranteed to be less than or equal to [`TotalIssuance`]. Total issuance may be
+     * reduced independently of this value, including while a reversible imbalance is outstanding.
+     * Active issuance is therefore derived using saturating subtraction.
      *
      * @param {Callback<bigint> =} callback
      **/
@@ -2489,6 +2494,25 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<Array<PalletReviveEvmBlockHashReceiptGasInfo>> =} callback
      **/
     receiptInfoData: GenericStorageQuery<() => Array<PalletReviveEvmBlockHashReceiptGasInfo>>;
+
+    /**
+     * What the open ethereum transaction has committed to its receipt, see
+     * `block_storage::capture_into_receipt`. Taken when the transaction's receipt is built, so it
+     * is empty between transactions.
+     *
+     * Accessed only while a receipt is open, in an ethereum transaction or its dry run. Read on
+     * every log, and written as well until a log overflows the receipt. Read for its overflow
+     * flag at the successful end of every contract frame, see
+     * `block_storage::ensure_receipt_within_limit`.
+     *
+     * Whitelisted like `frame_system::Events`: accessed this often, yet never in a block's
+     * pre-state, so a block pays one absence lookup for it however many logs and frames it holds.
+     * Without the whitelist the benchmark bills each `LOG` and each frame for that lookup as if it
+     * were the first access of the block.
+     *
+     * @param {Callback<PalletReviveEvmBlockHashReceiptCommittedReceiptLogs> =} callback
+     **/
+    receiptLogsCommitted: GenericStorageQuery<() => PalletReviveEvmBlockHashReceiptCommittedReceiptLogs>;
 
     /**
      * Incremental ethereum block builder.

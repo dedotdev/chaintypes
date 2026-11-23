@@ -12,11 +12,11 @@ import type {
   FixedArray,
   FixedBytes,
   FixedU128,
+  Permill,
   Data,
   Era,
   Phase,
   DispatchError,
-  Permill,
   Result,
   UncheckedExtrinsic,
   Perbill,
@@ -918,6 +918,10 @@ export type PalletAssetsCall =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
+   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -1110,16 +1114,18 @@ export type PalletAssetsCall =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -1519,6 +1525,10 @@ export type PalletAssetsCallLike =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
+   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -1719,16 +1729,18 @@ export type PalletAssetsCallLike =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -1978,7 +1990,8 @@ export type PeoplePolkadotRuntimeIndividualityRestrictedEntity =
   | { type: 'PersonalAlias'; value: FixedBytes<32> }
   | { type: 'PersonalIdentity'; value: bigint }
   | { type: 'LitePerson'; value: AccountId32 }
-  | { type: 'LiteAlias'; value: FixedBytes<32> };
+  | { type: 'LiteAlias'; value: FixedBytes<32> }
+  | { type: 'StmtStoreHolder'; value: FixedBytes<32> };
 
 /**
  * Pallet's callable functions.
@@ -2084,7 +2097,29 @@ export type PalletAssetConversionCall =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
+  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } }
+  /**
+   * Like [`Pallet::create_pool`], but sets an initial per-pool swap `fee` overriding the
+   * global [`Config::LPFee`].
+   *
+   * Requires [`Config::AdminOrigin`]. `creator` pays the pool setup fee and deposits.
+   * `fee` must not exceed [`Config::MaxSwapFee`].
+   *
+   * Emits both [`Event::PoolCreated`] and [`Event::PoolFeeSet`] on success.
+   **/
+  | {
+      name: 'CreatePoolWithFee';
+      params: { creator: AccountId32; asset1: StagingXcmV5Location; asset2: StagingXcmV5Location; fee: Permill };
+    }
+  /**
+   * Set the per-pool swap `fee` for an existing pool, overriding the global
+   * [`Config::LPFee`].
+   *
+   * Requires [`Config::AdminOrigin`]. `fee` must not exceed [`Config::MaxSwapFee`].
+   *
+   * Emits [`Event::PoolFeeSet`] on success.
+   **/
+  | { name: 'SetPoolFee'; params: { poolId: [StagingXcmV5Location, StagingXcmV5Location]; fee: Permill } };
 
 export type PalletAssetConversionCallLike =
   /**
@@ -2187,7 +2222,29 @@ export type PalletAssetConversionCallLike =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
+  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } }
+  /**
+   * Like [`Pallet::create_pool`], but sets an initial per-pool swap `fee` overriding the
+   * global [`Config::LPFee`].
+   *
+   * Requires [`Config::AdminOrigin`]. `creator` pays the pool setup fee and deposits.
+   * `fee` must not exceed [`Config::MaxSwapFee`].
+   *
+   * Emits both [`Event::PoolCreated`] and [`Event::PoolFeeSet`] on success.
+   **/
+  | {
+      name: 'CreatePoolWithFee';
+      params: { creator: AccountId32Like; asset1: StagingXcmV5Location; asset2: StagingXcmV5Location; fee: Permill };
+    }
+  /**
+   * Set the per-pool swap `fee` for an existing pool, overriding the global
+   * [`Config::LPFee`].
+   *
+   * Requires [`Config::AdminOrigin`]. `fee` must not exceed [`Config::MaxSwapFee`].
+   *
+   * Emits [`Event::PoolFeeSet`] on success.
+   **/
+  | { name: 'SetPoolFee'; params: { poolId: [StagingXcmV5Location, StagingXcmV5Location]; fee: Permill } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -2460,6 +2517,10 @@ export type PalletAssetsCall002 =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
+   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -2649,16 +2710,18 @@ export type PalletAssetsCall002 =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -3049,6 +3112,10 @@ export type PalletAssetsCallLike002 =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
+   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -3241,16 +3308,18 @@ export type PalletAssetsCallLike002 =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -5443,7 +5512,8 @@ export type IndivPalletPeopleLiteOrigin =
 export type IndivPalletResourcesOrigin =
   | { type: 'NotificationAlias'; value: FixedBytes<32> }
   | { type: 'StmtStoreAlias'; value: FixedBytes<32> }
-  | { type: 'LongTermStorageClaim'; value: [FixedBytes<32>, IndivPalletResourcesMembershipCollection] };
+  | { type: 'LongTermStorageClaim'; value: [FixedBytes<32>, IndivPalletResourcesMembershipCollection] }
+  | { type: 'StmtStoreHolder'; value: FixedBytes<32> };
 
 export type IndivPalletResourcesMembershipCollection = 'People' | 'LitePeople';
 
@@ -6213,6 +6283,27 @@ export type PalletIdentityCall =
    **/
   | { name: 'AddRegistrar'; params: { account: MultiAddress } }
   /**
+   * Remove a registrar from the system.
+   *
+   * The dispatch origin for this call must be `T::RegistrarOrigin`.
+   *
+   * The registrar's slot is tombstoned (set to `None`) rather than removed, so that the
+   * `RegistrarIndex` of every other registrar — and any judgements already recorded against
+   * them — stays stable. The freed index is not reused by `add_registrar`, so each removal
+   * permanently consumes one slot against `MaxRegistrars` (reusing the slot would let a new
+   * registrar inherit an index that historical judgements still reference).
+   *
+   * Deposits reserved by pending `request_judgement` calls against this registrar are
+   * **not** returned; once the registrar is removed `provide_judgement` can no longer
+   * release them, so affected users should reclaim their funds manually with
+   * `cancel_request`.
+   *
+   * - `index`: the index of the registrar to remove.
+   *
+   * Emits `RegistrarRemoved` if successful.
+   **/
+  | { name: 'RemoveRegistrar'; params: { index: number } }
+  /**
    * Set an account's identity information and reserve the appropriate deposit.
    *
    * If the account already has identity information, the deposit is taken as part payment
@@ -6465,6 +6556,27 @@ export type PalletIdentityCallLike =
    * Emits `RegistrarAdded` if successful.
    **/
   | { name: 'AddRegistrar'; params: { account: MultiAddressLike } }
+  /**
+   * Remove a registrar from the system.
+   *
+   * The dispatch origin for this call must be `T::RegistrarOrigin`.
+   *
+   * The registrar's slot is tombstoned (set to `None`) rather than removed, so that the
+   * `RegistrarIndex` of every other registrar — and any judgements already recorded against
+   * them — stays stable. The freed index is not reused by `add_registrar`, so each removal
+   * permanently consumes one slot against `MaxRegistrars` (reusing the slot would let a new
+   * registrar inherit an index that historical judgements still reference).
+   *
+   * Deposits reserved by pending `request_judgement` calls against this registrar are
+   * **not** returned; once the registrar is removed `provide_judgement` can no longer
+   * release them, so affected users should reclaim their funds manually with
+   * `cancel_request`.
+   *
+   * - `index`: the index of the registrar to remove.
+   *
+   * Emits `RegistrarRemoved` if successful.
+   **/
+  | { name: 'RemoveRegistrar'; params: { index: number } }
   /**
    * Set an account's identity information and reserve the appropriate deposit.
    *
@@ -7051,10 +7163,9 @@ export type IndivPalletPeopleLiteCall =
    * - one created using their ring-vrf key attesting to the ownership of the `ring_vrf_key`
    * key.
    *
-   * The message to be signed by both keys from which the signatures are generated is created
-   * by concatenating the bytes "pop:people-lite:register using" with the encoded bytes of
-   * the user's account (`candidate`), and the encoded bytes of the ring VRF key
-   * (`ring_vrf_key`).
+   * The registration message concatenates the bytes "pop:people-lite:register using", the
+   * encoded `candidate` account and the encoded `ring_vrf_key`. The ring VRF key signs this
+   * message. The account key signs [`Pallet::account_signing_payload`] of this message.
    *
    * On success, this call:
    * - stores lite registration data in `LitePeople`,
@@ -7065,17 +7176,17 @@ export type IndivPalletPeopleLiteCall =
    * [`Call::create_lite_people_collection`]).
    *
    * - `candidate`: The candidate to be recognized as a lite person.
-   * - `candidate_signature`: The signature, provided by the candidate, to allow the attester
-   * to complete the registration process on their behalf.
+   * - `candidate_signature`: The candidate's account signature over the registration message
+   * in the personhood signing context. It allows the attester to register the candidate.
    * - `ring_vrf_key`: The ring VRF key to be associated with the lite person.
    * - `ring_vrf_key_signature`: The ring VRF signature, provided by the candidate, to allow
    * the attester to complete the registration process. This also prove the ownership of
    * the ring VRF key by the candidate.
    * - consumer_registration: Optional parameter which can contain the necessary information
    * to forward a consumer registration request to the `LiteConsumerRegistrar` service. If
-   * present, it also contains a signature created by the user in order to validate the
-   * intent. More information on the signing payload generation available in
-   * [types::LiteConsumerRegistrationParams::signing_payload].
+   * present, it also contains the user's signature over the payload from
+   * [types::LiteConsumerRegistrationParams::signing_payload] in the personhood signing
+   * context.
    **/
   | {
       name: 'Attest';
@@ -7097,6 +7208,10 @@ export type IndivPalletPeopleLiteCall =
    * registration data in `LitePeople` and adds the ring VRF key to the lite member
    * collection. The fee is not refunded.
    *
+   * Once the number of lite people reaches `PaidRegistrationThreshold`, the call fails with
+   * [`Error::PaidRegistrationLimitReached`] after `PaidRegistrationsPerPeriod` paid
+   * registrations in the current period.
+   *
    * The lite member collection must already have been created via the
    * `migration::CreateLitePeopleCollection` runtime upgrade or
    * [`Call::create_lite_people_collection`].
@@ -7104,8 +7219,9 @@ export type IndivPalletPeopleLiteCall =
    * - `ring_vrf_key`: The ring VRF key to be associated with the lite person.
    * - `proof_of_ownership`: The ring VRF signature proving ownership of `ring_vrf_key`.
    * - `consumer_registration`: Optional parameters to register the candidate as a lite
-   * consumer. The request must contain a signature over the usual consumer payload with
-   * the signed candidate account in both the account and verifier positions.
+   * consumer. The request must contain a signature over the consumer payload in the
+   * personhood signing context, with the signed candidate account in both the account and
+   * verifier positions.
    **/
   | {
       name: 'RegisterWithFee';
@@ -7177,10 +7293,9 @@ export type IndivPalletPeopleLiteCallLike =
    * - one created using their ring-vrf key attesting to the ownership of the `ring_vrf_key`
    * key.
    *
-   * The message to be signed by both keys from which the signatures are generated is created
-   * by concatenating the bytes "pop:people-lite:register using" with the encoded bytes of
-   * the user's account (`candidate`), and the encoded bytes of the ring VRF key
-   * (`ring_vrf_key`).
+   * The registration message concatenates the bytes "pop:people-lite:register using", the
+   * encoded `candidate` account and the encoded `ring_vrf_key`. The ring VRF key signs this
+   * message. The account key signs [`Pallet::account_signing_payload`] of this message.
    *
    * On success, this call:
    * - stores lite registration data in `LitePeople`,
@@ -7191,17 +7306,17 @@ export type IndivPalletPeopleLiteCallLike =
    * [`Call::create_lite_people_collection`]).
    *
    * - `candidate`: The candidate to be recognized as a lite person.
-   * - `candidate_signature`: The signature, provided by the candidate, to allow the attester
-   * to complete the registration process on their behalf.
+   * - `candidate_signature`: The candidate's account signature over the registration message
+   * in the personhood signing context. It allows the attester to register the candidate.
    * - `ring_vrf_key`: The ring VRF key to be associated with the lite person.
    * - `ring_vrf_key_signature`: The ring VRF signature, provided by the candidate, to allow
    * the attester to complete the registration process. This also prove the ownership of
    * the ring VRF key by the candidate.
    * - consumer_registration: Optional parameter which can contain the necessary information
    * to forward a consumer registration request to the `LiteConsumerRegistrar` service. If
-   * present, it also contains a signature created by the user in order to validate the
-   * intent. More information on the signing payload generation available in
-   * [types::LiteConsumerRegistrationParams::signing_payload].
+   * present, it also contains the user's signature over the payload from
+   * [types::LiteConsumerRegistrationParams::signing_payload] in the personhood signing
+   * context.
    **/
   | {
       name: 'Attest';
@@ -7223,6 +7338,10 @@ export type IndivPalletPeopleLiteCallLike =
    * registration data in `LitePeople` and adds the ring VRF key to the lite member
    * collection. The fee is not refunded.
    *
+   * Once the number of lite people reaches `PaidRegistrationThreshold`, the call fails with
+   * [`Error::PaidRegistrationLimitReached`] after `PaidRegistrationsPerPeriod` paid
+   * registrations in the current period.
+   *
    * The lite member collection must already have been created via the
    * `migration::CreateLitePeopleCollection` runtime upgrade or
    * [`Call::create_lite_people_collection`].
@@ -7230,8 +7349,9 @@ export type IndivPalletPeopleLiteCallLike =
    * - `ring_vrf_key`: The ring VRF key to be associated with the lite person.
    * - `proof_of_ownership`: The ring VRF signature proving ownership of `ring_vrf_key`.
    * - `consumer_registration`: Optional parameters to register the candidate as a lite
-   * consumer. The request must contain a signature over the usual consumer payload with
-   * the signed candidate account in both the account and verifier positions.
+   * consumer. The request must contain a signature over the consumer payload in the
+   * personhood signing context, with the signed candidate account in both the account and
+   * verifier positions.
    **/
   | {
       name: 'RegisterWithFee';
@@ -7298,8 +7418,8 @@ export type IndivPalletResourcesCall =
    *
    * The person must link a previously recognized lite identity, which will be upgraded to a
    * full person consumer. In order to prove they hold the lite identity they want to link,
-   * users must provide a `lite_identity_proof` signature, created by signing the alias bytes
-   * using their lite consumer account.
+   * users must provide a `lite_identity_proof` signature. The lite consumer account signs
+   * [`Pallet::account_signing_payload`] of [`Pallet::register_person_message`].
    *
    * The consumer can choose if they want to have a new username or use an existing
    * reservation made in the name of the lite consumer who will be linked.
@@ -7389,7 +7509,8 @@ export type IndivPalletResourcesCall =
    * The origin must be `Origin::StmtStoreAlias`, produced by the `AsResources`
    * (`RegisterStatementStoreAllowance(..)`) transaction extension after proof validation.
    * On success, increases the statement allowance for `target_account` and stores the
-   * mapping in `StatementStoreAllowances`.
+   * mapping in `StatementStoreAllowances`. Fails if the slot already has an entry in this
+   * period. [`Call::replace_statement_store_account`] moves a slot to another account.
    *
    * Parameters:
    * * `period`: day number since Unix epoch. Must be in the accepted period window.
@@ -7397,6 +7518,27 @@ export type IndivPalletResourcesCall =
    * * `target_account`: statement account to authorize.
    **/
   | { name: 'SetStatementStoreAccount'; params: { period: number; seq: number; targetAccount: AccountId32 } }
+  /**
+   * Move a claimed statement store slot to another statement account.
+   *
+   * The origin must be `Origin::StmtStoreHolder`, produced by the `AsResources`
+   * (`ReplaceStatementStoreAccount(..)`) transaction extension after it verifies the
+   * signature of the account that holds the slot. Revokes that account's allowance and
+   * grants the current allowance to `new_account`.
+   *
+   * The entry timestamp must be earlier than the current timestamp, so submit after a
+   * block whose timestamp is later than the one in the entry.
+   *
+   * Parameters:
+   * * `period`: day number since Unix epoch. Must be the current period.
+   * * `alias`: the alias the slot was claimed under. Must match the origin.
+   * * `new_account`: statement account that takes over the slot.
+   * * `since`: the timestamp recorded in the slot's entry. Must match the entry.
+   **/
+  | {
+      name: 'ReplaceStatementStoreAccount';
+      params: { period: number; alias: FixedBytes<32>; newAccount: AccountId32; since: bigint };
+    }
   /**
    * Remove expired statement store allowances for a past period.
    *
@@ -7445,8 +7587,8 @@ export type IndivPalletResourcesCallLike =
    *
    * The person must link a previously recognized lite identity, which will be upgraded to a
    * full person consumer. In order to prove they hold the lite identity they want to link,
-   * users must provide a `lite_identity_proof` signature, created by signing the alias bytes
-   * using their lite consumer account.
+   * users must provide a `lite_identity_proof` signature. The lite consumer account signs
+   * [`Pallet::account_signing_payload`] of [`Pallet::register_person_message`].
    *
    * The consumer can choose if they want to have a new username or use an existing
    * reservation made in the name of the lite consumer who will be linked.
@@ -7536,7 +7678,8 @@ export type IndivPalletResourcesCallLike =
    * The origin must be `Origin::StmtStoreAlias`, produced by the `AsResources`
    * (`RegisterStatementStoreAllowance(..)`) transaction extension after proof validation.
    * On success, increases the statement allowance for `target_account` and stores the
-   * mapping in `StatementStoreAllowances`.
+   * mapping in `StatementStoreAllowances`. Fails if the slot already has an entry in this
+   * period. [`Call::replace_statement_store_account`] moves a slot to another account.
    *
    * Parameters:
    * * `period`: day number since Unix epoch. Must be in the accepted period window.
@@ -7544,6 +7687,27 @@ export type IndivPalletResourcesCallLike =
    * * `target_account`: statement account to authorize.
    **/
   | { name: 'SetStatementStoreAccount'; params: { period: number; seq: number; targetAccount: AccountId32Like } }
+  /**
+   * Move a claimed statement store slot to another statement account.
+   *
+   * The origin must be `Origin::StmtStoreHolder`, produced by the `AsResources`
+   * (`ReplaceStatementStoreAccount(..)`) transaction extension after it verifies the
+   * signature of the account that holds the slot. Revokes that account's allowance and
+   * grants the current allowance to `new_account`.
+   *
+   * The entry timestamp must be earlier than the current timestamp, so submit after a
+   * block whose timestamp is later than the one in the entry.
+   *
+   * Parameters:
+   * * `period`: day number since Unix epoch. Must be the current period.
+   * * `alias`: the alias the slot was claimed under. Must match the origin.
+   * * `new_account`: statement account that takes over the slot.
+   * * `since`: the timestamp recorded in the slot's entry. Must match the entry.
+   **/
+  | {
+      name: 'ReplaceStatementStoreAccount';
+      params: { period: number; alias: FixedBytes<32>; newAccount: AccountId32Like; since: bigint };
+    }
   /**
    * Remove expired statement store allowances for a past period.
    *
@@ -9820,13 +9984,6 @@ export type PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageParamete
       value: [PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageStmtStoreCleanupLimit, number | undefined];
     }
   | {
-      type: 'StmtStoreReplacementCooldown';
-      value: [
-        PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageStmtStoreReplacementCooldown,
-        number | undefined,
-      ];
-    }
-  | {
       type: 'StmtStoreGraceWindow';
       value: [PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageStmtStoreGraceWindow, number | undefined];
     }
@@ -9848,14 +10005,14 @@ export type PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageParamete
       type: 'LitePersonStatementLimit';
       value: [
         PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageLitePersonStatementLimit,
-        IndivSupportParametersStatementAllowanceParameter | undefined,
+        IndivSupportStatementAllowanceBoundedStatementAllowance | undefined,
       ];
     }
   | {
       type: 'PersonStatementLimit';
       value: [
         PeoplePolkadotRuntimeParametersDynamicParamsStatementStoragePersonStatementLimit,
-        IndivSupportParametersStatementAllowanceParameter | undefined,
+        IndivSupportStatementAllowanceBoundedStatementAllowance | undefined,
       ];
     };
 
@@ -9865,8 +10022,6 @@ export type PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageLiteStmt
 
 export type PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageStmtStoreCleanupLimit = {};
 
-export type PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageStmtStoreReplacementCooldown = {};
-
 export type PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageStmtStoreGraceWindow = {};
 
 export type PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageNotificationSlotsPerPeriod = {};
@@ -9875,7 +10030,7 @@ export type PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageLiteNoti
 
 export type PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageLitePersonStatementLimit = {};
 
-export type IndivSupportParametersStatementAllowanceParameter = { maxSize: number; maxCount: number };
+export type IndivSupportStatementAllowanceBoundedStatementAllowance = { maxSize: number; maxCount: number };
 
 export type PeoplePolkadotRuntimeParametersDynamicParamsStatementStoragePersonStatementLimit = {};
 
@@ -9972,12 +10127,37 @@ export type PeoplePolkadotRuntimeParametersDynamicParamsOriginRestrictionLitePeo
 
 export type PeoplePolkadotRuntimeParametersDynamicParamsOriginRestrictionLitePeopleAllowanceRecovery = {};
 
-export type PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodParameters = {
-  type: 'RegistrationFee';
-  value: [PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodRegistrationFee, bigint | undefined];
-};
+export type PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodParameters =
+  | {
+      type: 'RegistrationFee';
+      value: [PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodRegistrationFee, bigint | undefined];
+    }
+  | {
+      type: 'PaidRegistrationThreshold';
+      value: [PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodPaidRegistrationThreshold, number | undefined];
+    }
+  | {
+      type: 'PaidRegistrationPeriod';
+      value: [PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodPaidRegistrationPeriod, number | undefined];
+    }
+  | {
+      type: 'PaidRegistrationsPerPeriod';
+      value: [PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodPaidRegistrationsPerPeriod, number | undefined];
+    }
+  | {
+      type: 'MaxLitePeople';
+      value: [PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodMaxLitePeople, number | undefined];
+    };
 
 export type PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodRegistrationFee = {};
+
+export type PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodPaidRegistrationThreshold = {};
+
+export type PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodPaidRegistrationPeriod = {};
+
+export type PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodPaidRegistrationsPerPeriod = {};
+
+export type PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodMaxLitePeople = {};
 
 export type PeoplePolkadotRuntimeParametersDynamicParamsCoinageParameters =
   | {
@@ -10103,7 +10283,8 @@ export type IndivPalletResourcesExtensionAsResourcesInfo =
       type: 'RegisterStatementStoreAllowance';
       value: [Bytes, number, number, IndivPalletResourcesMembershipCollection];
     }
-  | { type: 'ClaimLongTermStorage'; value: [Bytes, number, number, IndivPalletResourcesMembershipCollection] };
+  | { type: 'ClaimLongTermStorage'; value: [Bytes, number, number, IndivPalletResourcesMembershipCollection] }
+  | { type: 'ReplaceStatementStoreAccount'; value: SpRuntimeMultiSignature };
 
 export type IndivPalletOriginRestrictionRestrictOrigin = boolean;
 
@@ -10145,6 +10326,7 @@ export type PeoplePolkadotRuntimeRuntimeEvent =
   | { pallet: 'OriginRestriction'; palletEvent: IndivPalletOriginRestrictionEvent }
   | { pallet: 'AssetConversion'; palletEvent: PalletAssetConversionEvent }
   | { pallet: 'PoolAssets'; palletEvent: PalletAssetsEvent002 }
+  | { pallet: 'AccumulateForward'; palletEvent: PalletAccumulateAndForwardEvent }
   | { pallet: 'CollatorSelection'; palletEvent: PalletCollatorSelectionEvent }
   | { pallet: 'Session'; palletEvent: PalletSessionEvent }
   | { pallet: 'XcmpQueue'; palletEvent: CumulusPalletXcmpQueueEvent }
@@ -10803,6 +10985,24 @@ export type PalletAssetConversionEvent =
       };
     }
   /**
+   * A pool's swap fee was set, either at creation via [`Pallet::create_pool_with_fee`]
+   * or afterwards via [`Pallet::set_pool_fee`].
+   **/
+  | {
+      name: 'PoolFeeSet';
+      data: {
+        /**
+         * The pool whose fee was set.
+         **/
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
+
+        /**
+         * The swap fee now applied to the pool.
+         **/
+        fee: Permill;
+      };
+    }
+  /**
    * A successful call of the `AddLiquidity` extrinsic will create this event.
    **/
   | {
@@ -11102,6 +11302,20 @@ export type PalletAssetsEvent002 =
    * Some assets Debt was destroyed (and assets issued).
    **/
   | { name: 'BurnedDebt'; data: { assetId: number; amount: bigint } };
+
+/**
+ * The `Event` enum of this pallet
+ **/
+export type PalletAccumulateAndForwardEvent =
+  /**
+   * Successfully forwarded accumulated funds to the destination.
+   **/
+  | { name: 'ForwardSucceeded'; data: { amount: bigint } }
+  /**
+   * Failed to forward funds. They will remain in the accumulation account
+   * and forwarding will be retried after another `TransferPeriod` blocks.
+   **/
+  | { name: 'ForwardFailed'; data: { amount: bigint } };
 
 /**
  * The `Event` enum of this pallet
@@ -11741,6 +11955,10 @@ export type PalletIdentityEvent =
    **/
   | { name: 'RegistrarAdded'; data: { registrarIndex: number } }
   /**
+   * A registrar was removed.
+   **/
+  | { name: 'RegistrarRemoved'; data: { registrarIndex: number } }
+  /**
    * A sub-identity was added to an identity and the deposit paid.
    **/
   | { name: 'SubIdentityAdded'; data: { sub: AccountId32; main: AccountId32; deposit: bigint } }
@@ -12006,7 +12224,20 @@ export type IndivPalletResourcesEvent =
   /**
    * Expired long-term storage aliases have been cleared for a period.
    **/
-  | { name: 'LongTermStorageAliasesCleared'; data: { period: number; count: number } };
+  | { name: 'LongTermStorageAliasesCleared'; data: { period: number; count: number } }
+  /**
+   * The statement account holding a statement store slot was replaced.
+   **/
+  | {
+      name: 'StmtStoreAccountReplaced';
+      data: {
+        alias: FixedBytes<32>;
+        period: number;
+        seq: number;
+        previousAccount: AccountId32;
+        newAccount: AccountId32;
+      };
+    };
 
 /**
  * The `Event` enum of this pallet
@@ -12316,10 +12547,6 @@ export type PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageParamete
       value: PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageStmtStoreCleanupLimit;
     }
   | {
-      type: 'StmtStoreReplacementCooldown';
-      value: PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageStmtStoreReplacementCooldown;
-    }
-  | {
       type: 'StmtStoreGraceWindow';
       value: PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageStmtStoreGraceWindow;
     }
@@ -12384,10 +12611,21 @@ export type PeoplePolkadotRuntimeParametersDynamicParamsOriginRestrictionParamet
       value: PeoplePolkadotRuntimeParametersDynamicParamsOriginRestrictionLitePeopleAllowanceRecovery;
     };
 
-export type PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodParametersKey = {
-  type: 'RegistrationFee';
-  value: PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodRegistrationFee;
-};
+export type PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodParametersKey =
+  | { type: 'RegistrationFee'; value: PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodRegistrationFee }
+  | {
+      type: 'PaidRegistrationThreshold';
+      value: PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodPaidRegistrationThreshold;
+    }
+  | {
+      type: 'PaidRegistrationPeriod';
+      value: PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodPaidRegistrationPeriod;
+    }
+  | {
+      type: 'PaidRegistrationsPerPeriod';
+      value: PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodPaidRegistrationsPerPeriod;
+    }
+  | { type: 'MaxLitePeople'; value: PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodMaxLitePeople };
 
 export type PeoplePolkadotRuntimeParametersDynamicParamsCoinageParametersKey =
   | { type: 'LoadDepositPrice'; value: PeoplePolkadotRuntimeParametersDynamicParamsCoinageLoadDepositPrice }
@@ -12407,12 +12645,11 @@ export type PeoplePolkadotRuntimeParametersDynamicParamsStatementStorageParamete
   | { type: 'StmtStoreSlotsPerPeriod'; value: number }
   | { type: 'LiteStmtStoreSlotsPerPeriod'; value: number }
   | { type: 'StmtStoreCleanupLimit'; value: number }
-  | { type: 'StmtStoreReplacementCooldown'; value: number }
   | { type: 'StmtStoreGraceWindow'; value: number }
   | { type: 'NotificationSlotsPerPeriod'; value: number }
   | { type: 'LiteNotificationSlotsPerPeriod'; value: number }
-  | { type: 'LitePersonStatementLimit'; value: IndivSupportParametersStatementAllowanceParameter }
-  | { type: 'PersonStatementLimit'; value: IndivSupportParametersStatementAllowanceParameter };
+  | { type: 'LitePersonStatementLimit'; value: IndivSupportStatementAllowanceBoundedStatementAllowance }
+  | { type: 'PersonStatementLimit'; value: IndivSupportStatementAllowanceBoundedStatementAllowance };
 
 export type PeoplePolkadotRuntimeParametersDynamicParamsBulletinStorageParametersValue =
   | { type: 'BulletinChainLocation'; value: StagingXcmV5Location }
@@ -12428,10 +12665,12 @@ export type PeoplePolkadotRuntimeParametersDynamicParamsOriginRestrictionParamet
   | { type: 'LitePeopleAllowanceMax'; value: bigint }
   | { type: 'LitePeopleAllowanceRecovery'; value: bigint };
 
-export type PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodParametersValue = {
-  type: 'RegistrationFee';
-  value: bigint;
-};
+export type PeoplePolkadotRuntimeParametersDynamicParamsLitePersonhoodParametersValue =
+  | { type: 'RegistrationFee'; value: bigint }
+  | { type: 'PaidRegistrationThreshold'; value: number }
+  | { type: 'PaidRegistrationPeriod'; value: number }
+  | { type: 'PaidRegistrationsPerPeriod'; value: number }
+  | { type: 'MaxLitePeople'; value: number };
 
 export type PeoplePolkadotRuntimeParametersDynamicParamsCoinageParametersValue =
   | { type: 'LoadDepositPrice'; value: bigint }
@@ -12911,7 +13150,11 @@ export type PalletAssetsError =
   /**
    * Tried setting too many reserves.
    **/
-  | 'TooManyReserves';
+  | 'TooManyReserves'
+  /**
+   * The asset deposit could not be fully moved due to a lock or freeze on the owner.
+   **/
+  | 'IncompleteDepositTransfer';
 
 /**
  * The `Error` enum of this pallet.
@@ -13060,7 +13303,16 @@ export type PalletAssetConversionError =
   /**
    * The pool exists but has no liquidity (at least one of the reserves is zero).
    **/
-  | 'PoolEmpty';
+  | 'PoolEmpty'
+  /**
+   * The fee exceeds [`Config::MaxSwapFee`].
+   **/
+  | 'FeeTooHigh'
+  /**
+   * The pool account can't send one of its assets (e.g. the asset class is frozen or the
+   * pool account is blocked).
+   **/
+  | 'PoolUnavailable';
 
 export type PalletCollatorSelectionCandidateInfo = { who: AccountId32; deposit: bigint };
 
@@ -13758,7 +14010,19 @@ export type PalletIdentityError =
    **/
   | 'InsufficientPrivileges';
 
-export type IndivPalletPeoplePersonRecord = { key: FixedBytes<32>; account?: AccountId32 | undefined };
+export type IndivPalletPeoplePersonRecord = {
+  key: FixedBytes<32>;
+  account?: AccountId32 | undefined;
+  history: IndivSupportRealityRecognitionHistory;
+};
+
+export type IndivSupportRealityRecognitionHistory = {
+  recognizedSince?: bigint | undefined;
+  periods: Array<IndivSupportRealityRecognitionPeriod>;
+  settled: bigint;
+};
+
+export type IndivSupportRealityRecognitionPeriod = { start: bigint; end: bigint };
 
 /**
  * The `Error` enum of this pallet.
@@ -13912,7 +14176,11 @@ export type IndivPalletPeopleError =
   /**
    * None of the supplied aliases were stale.
    **/
-  | 'NoStaleAliases';
+  | 'NoStaleAliases'
+  /**
+   * A personal id appears more than once in a suspension batch.
+   **/
+  | 'DuplicateSuspension';
 
 export type IndivPalletDummyDimRecord = { key: FixedBytes<32>; suspended: boolean };
 
@@ -13943,6 +14211,8 @@ export type IndivPalletPeopleLiteLitePersonInfo = {
 };
 
 export type IndivPalletPeopleLiteRecognitionMethod = { type: 'UniqueDevice'; value: AccountId32 } | { type: 'Fee' };
+
+export type IndivPalletPeopleLitePaidRegistrationWindow = { period: number; registrations: number };
 
 /**
  * The `Error` enum of this pallet.
@@ -13995,7 +14265,15 @@ export type IndivPalletPeopleLiteError =
   /**
    * The consumer registration account does not match the candidate.
    **/
-  | 'InvalidConsumerRegistrationAccount';
+  | 'InvalidConsumerRegistrationAccount'
+  /**
+   * The paid registrations allowed in the current period are used up.
+   **/
+  | 'PaidRegistrationLimitReached'
+  /**
+   * The number of lite people reached `MaxLitePeople`.
+   **/
+  | 'TooManyLitePeople';
 
 export type IndivPalletResourcesConsumerInfo = {
   identifierKey: FixedBytes<65>;
@@ -14013,16 +14291,20 @@ export type IndivPalletResourcesCredibility =
  **/
 export type IndivSupportUtilsBigEndianU32 = FixedBytes<4>;
 
-export type IndivPalletResourcesStmtStoreAllowanceEntry = { accountId: AccountId32; seq: number; since: bigint };
+export type IndivPalletResourcesStmtStoreAllowanceEntry = {
+  accountId: AccountId32;
+  seq: number;
+  since: bigint;
+  allowance: IndivSupportStatementAllowanceBoundedStatementAllowance;
+};
 
 export type IndivPalletResourcesNotificationRegistration = {
   accountId: AccountId32;
   reference: IndivPalletResourcesNotificationReference;
+  allowance: IndivSupportStatementAllowanceBoundedStatementAllowance;
 };
 
 export type IndivPalletResourcesReservationQueueEntry = { account: AccountId32; joinedAt: bigint };
-
-export type SpStatementStoreStatementAllowance = { maxCount: number; maxSize: number };
 
 /**
  * The `Error` enum of this pallet.
@@ -14117,13 +14399,29 @@ export type IndivPalletResourcesError =
    **/
   | 'NotificationRegistrationAlreadyExists'
   /**
-   * The replacement cooldown has not elapsed since the entry was last set.
+   * The statement store slot entry was written at the current timestamp.
    **/
   | 'StmtStoreReplacementTooEarly'
   /**
    * The provided `limit` exceeds `LongTermStorageCleanupLimit`.
    **/
-  | 'LongTermStorageCleanupLimitExceeded';
+  | 'LongTermStorageCleanupLimitExceeded'
+  /**
+   * The statement store slot already has an entry for this period.
+   **/
+  | 'StmtStoreSlotAlreadyClaimed'
+  /**
+   * No statement store allowance entry exists for the alias in this period.
+   **/
+  | 'StmtStoreEntryNotFound'
+  /**
+   * The statement account already holds the statement store slot.
+   **/
+  | 'StmtStoreReplacementSameAccount'
+  /**
+   * The `since` witness differs from the timestamp recorded in the slot entry.
+   **/
+  | 'StmtStoreReplacementSinceMismatch';
 
 export type IndivPalletChunksManagerUncheckedChunk = VerifiableRingStaticChunk;
 

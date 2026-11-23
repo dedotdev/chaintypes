@@ -5057,6 +5057,10 @@ export type PalletAssetsCall =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
+   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -5246,16 +5250,18 @@ export type PalletAssetsCall =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -5646,6 +5652,10 @@ export type PalletAssetsCallLike =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
+   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -5838,16 +5848,18 @@ export type PalletAssetsCallLike =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -6160,6 +6172,10 @@ export type PalletUniquesCall =
    * Change the Owner of a collection.
    *
    * Origin must be Signed and the sender should be the Owner of the `collection`.
+   *
+   * The collection's total deposit is moved from the current to the new owner. Fails with
+   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+   * the full transfer; clear it and retry.
    *
    * - `collection`: The collection whose owner should be changed.
    * - `owner`: The new Owner of this collection. They must have called
@@ -6610,6 +6626,10 @@ export type PalletUniquesCallLike =
    * Change the Owner of a collection.
    *
    * Origin must be Signed and the sender should be the Owner of the `collection`.
+   *
+   * The collection's total deposit is moved from the current to the new owner. Fails with
+   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+   * the full transfer; clear it and retry.
    *
    * - `collection`: The collection whose owner should be changed.
    * - `owner`: The new Owner of this collection. They must have called
@@ -7084,6 +7104,10 @@ export type PalletNftsCall =
    *
    * Origin must be Signed and the sender should be the Owner of the `collection`.
    *
+   * The collection deposit is moved from the current to the new owner. Fails with
+   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+   * the full transfer; clear it and retry.
+   *
    * - `collection`: The collection whose owner should be changed.
    * - `owner`: The new Owner of this collection. They must have called
    * `set_accept_ownership` with `collection` in order for this operation to succeed.
@@ -7124,6 +7148,10 @@ export type PalletNftsCall =
    * Change the Owner of a collection.
    *
    * Origin must be `ForceOrigin`.
+   *
+   * The collection deposit is moved from the current to the new owner. Fails with
+   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+   * the full transfer; clear it and retry.
    *
    * - `collection`: The identifier of the collection.
    * - `owner`: The new Owner of this collection.
@@ -7798,6 +7826,10 @@ export type PalletNftsCallLike =
    *
    * Origin must be Signed and the sender should be the Owner of the `collection`.
    *
+   * The collection deposit is moved from the current to the new owner. Fails with
+   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+   * the full transfer; clear it and retry.
+   *
    * - `collection`: The collection whose owner should be changed.
    * - `owner`: The new Owner of this collection. They must have called
    * `set_accept_ownership` with `collection` in order for this operation to succeed.
@@ -7838,6 +7870,10 @@ export type PalletNftsCallLike =
    * Change the Owner of a collection.
    *
    * Origin must be `ForceOrigin`.
+   *
+   * The collection deposit is moved from the current to the new owner. Fails with
+   * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+   * the full transfer; clear it and retry.
    *
    * - `collection`: The identifier of the collection.
    * - `owner`: The new Owner of this collection.
@@ -8662,6 +8698,10 @@ export type PalletAssetsCall002 =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
+   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -8854,16 +8894,18 @@ export type PalletAssetsCall002 =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -9266,6 +9308,10 @@ export type PalletAssetsCallLike002 =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
+   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -9466,16 +9512,18 @@ export type PalletAssetsCallLike002 =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -9880,6 +9928,10 @@ export type PalletAssetsCall003 =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
+   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -10069,16 +10121,18 @@ export type PalletAssetsCall003 =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -10469,6 +10523,10 @@ export type PalletAssetsCallLike003 =
    *
    * Origin must be Signed and the sender should be the Owner of the asset `id`.
    *
+   * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+   * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+   * blocks the full transfer; clear it and retry.
+   *
    * - `id`: The identifier of the asset.
    * - `owner`: The new Owner of this asset.
    *
@@ -10661,16 +10719,18 @@ export type PalletAssetsCallLike003 =
    * Origin must be Signed and there must be an approval in place by the `owner` to the
    * signer.
    *
-   * If the entire amount approved for transfer is transferred, then any deposit previously
-   * reserved by `approve_transfer` is unreserved.
+   * If the debit spends the approval in full, then any deposit previously reserved by
+   * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+   * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+   * balance, so a request smaller than the approval can still spend it in full.
    *
    * - `id`: The identifier of the asset.
-   * - `owner`: The account which previously approved for a transfer of at least `amount` and
-   * from which the asset balance will be withdrawn.
-   * - `destination`: The account to which the asset balance of `amount` will be transferred.
+   * - `owner`: The account which previously approved for a transfer of at least the debit
+   * and from which the asset balance will be withdrawn.
+   * - `destination`: The account to which the debited balance will be transferred.
    * - `amount`: The amount of assets to transfer.
    *
-   * Emits `TransferredApproved` on success.
+   * Emits `Transferred` on success.
    *
    * Weight: `O(1)`
    **/
@@ -10900,7 +10960,29 @@ export type PalletAssetConversionCall =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
+  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } }
+  /**
+   * Like [`Pallet::create_pool`], but sets an initial per-pool swap `fee` overriding the
+   * global [`Config::LPFee`].
+   *
+   * Requires [`Config::AdminOrigin`]. `creator` pays the pool setup fee and deposits.
+   * `fee` must not exceed [`Config::MaxSwapFee`].
+   *
+   * Emits both [`Event::PoolCreated`] and [`Event::PoolFeeSet`] on success.
+   **/
+  | {
+      name: 'CreatePoolWithFee';
+      params: { creator: AccountId32; asset1: StagingXcmV5Location; asset2: StagingXcmV5Location; fee: Permill };
+    }
+  /**
+   * Set the per-pool swap `fee` for an existing pool, overriding the global
+   * [`Config::LPFee`].
+   *
+   * Requires [`Config::AdminOrigin`]. `fee` must not exceed [`Config::MaxSwapFee`].
+   *
+   * Emits [`Event::PoolFeeSet`] on success.
+   **/
+  | { name: 'SetPoolFee'; params: { poolId: [StagingXcmV5Location, StagingXcmV5Location]; fee: Permill } };
 
 export type PalletAssetConversionCallLike =
   /**
@@ -11003,7 +11085,29 @@ export type PalletAssetConversionCallLike =
    *
    * Emits `Touched` event when successful.
    **/
-  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } };
+  | { name: 'Touch'; params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location } }
+  /**
+   * Like [`Pallet::create_pool`], but sets an initial per-pool swap `fee` overriding the
+   * global [`Config::LPFee`].
+   *
+   * Requires [`Config::AdminOrigin`]. `creator` pays the pool setup fee and deposits.
+   * `fee` must not exceed [`Config::MaxSwapFee`].
+   *
+   * Emits both [`Event::PoolCreated`] and [`Event::PoolFeeSet`] on success.
+   **/
+  | {
+      name: 'CreatePoolWithFee';
+      params: { creator: AccountId32Like; asset1: StagingXcmV5Location; asset2: StagingXcmV5Location; fee: Permill };
+    }
+  /**
+   * Set the per-pool swap `fee` for an existing pool, overriding the global
+   * [`Config::LPFee`].
+   *
+   * Requires [`Config::AdminOrigin`]. `fee` must not exceed [`Config::MaxSwapFee`].
+   *
+   * Emits [`Event::PoolFeeSet`] on success.
+   **/
+  | { name: 'SetPoolFee'; params: { poolId: [StagingXcmV5Location, StagingXcmV5Location]; fee: Permill } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -12671,7 +12775,8 @@ export type PalletWhitelistCall =
       name: 'DispatchWhitelistedCall';
       params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
-  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubPolkadotRuntimeRuntimeCall } };
+  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubPolkadotRuntimeRuntimeCall } }
+  | { name: 'RemoveDeferredDispatch'; params: { callHash: H256 } };
 
 export type PalletWhitelistCallLike =
   | { name: 'WhitelistCall'; params: { callHash: H256 } }
@@ -12680,7 +12785,8 @@ export type PalletWhitelistCallLike =
       name: 'DispatchWhitelistedCall';
       params: { callHash: H256; callEncodedLen: number; callWeightWitness: SpWeightsWeightV2Weight };
     }
-  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubPolkadotRuntimeRuntimeCallLike } };
+  | { name: 'DispatchWhitelistedCallWithPreimage'; params: { call: AssetHubPolkadotRuntimeRuntimeCallLike } }
+  | { name: 'RemoveDeferredDispatch'; params: { callHash: H256 } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -12829,7 +12935,21 @@ export type PalletBountiesCall =
    *
    * Emits `DepositPoked` if the deposit is updated.
    **/
-  | { name: 'PokeDeposit'; params: { bountyId: number } };
+  | { name: 'PokeDeposit'; params: { bountyId: number } }
+  /**
+   * Reclaim funds stranded in a closed bounty's account back to the treasury.
+   *
+   * Permissionless. Moves all remaining assets from a closed bounty's account back to the
+   * treasury in a single call. Which assets are swept depends on the `TransferAllAssets`
+   * configuration.
+   *
+   * The call is free if funds were reclaimed and paid otherwise, so no-op calls cannot be
+   * used to grief the network. Emits `BountyFundsReclaimed` on success.
+   *
+   * ## Complexity
+   * - O(A) where A is the number of relevant assets configured in `TransferAllAssets`.
+   **/
+  | { name: 'ReclaimBountyFunds'; params: { bountyId: number } };
 
 export type PalletBountiesCallLike =
   /**
@@ -12975,7 +13095,21 @@ export type PalletBountiesCallLike =
    *
    * Emits `DepositPoked` if the deposit is updated.
    **/
-  | { name: 'PokeDeposit'; params: { bountyId: number } };
+  | { name: 'PokeDeposit'; params: { bountyId: number } }
+  /**
+   * Reclaim funds stranded in a closed bounty's account back to the treasury.
+   *
+   * Permissionless. Moves all remaining assets from a closed bounty's account back to the
+   * treasury in a single call. Which assets are swept depends on the `TransferAllAssets`
+   * configuration.
+   *
+   * The call is free if funds were reclaimed and paid otherwise, so no-op calls cannot be
+   * used to grief the network. Emits `BountyFundsReclaimed` on success.
+   *
+   * ## Complexity
+   * - O(A) where A is the number of relevant assets configured in `TransferAllAssets`.
+   **/
+  | { name: 'ReclaimBountyFunds'; params: { bountyId: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -15107,8 +15241,9 @@ export type PalletElectionProviderMultiBlockSignedPalletCall =
    *
    * `maybe_solution` can be set to `None` to erase the page.
    *
-   * Collects deposits from the signed origin based on [`Config::DepositBase`] and
-   * [`Config::DepositPerPage`].
+   * The held deposit becomes the base deposit charged at [`Pallet::register`] plus the
+   * [`Config::DepositPerPage`] deposit of the stored pages. Invulnerables have no per-page
+   * part.
    **/
   | {
       name: 'SubmitPage';
@@ -15136,7 +15271,12 @@ export type PalletElectionProviderMultiBlockSignedPalletCall =
    *
    * Dispatch origin must the the same as [`crate::Config::AdminOrigin`].
    **/
-  | { name: 'SetInvulnerables'; params: { inv: Array<AccountId32> } };
+  | { name: 'SetInvulnerables'; params: { inv: Array<AccountId32> } }
+  /**
+   * Pay out a round's [`UnpaidRewards`] entry to its winner. Permissionless: anyone may
+   * call it for any round. Free on success, normal fee on failure to discourage spam.
+   **/
+  | { name: 'ClaimUnpaidReward'; params: { round: number } };
 
 export type PalletElectionProviderMultiBlockSignedPalletCallLike =
   /**
@@ -15150,8 +15290,9 @@ export type PalletElectionProviderMultiBlockSignedPalletCallLike =
    *
    * `maybe_solution` can be set to `None` to erase the page.
    *
-   * Collects deposits from the signed origin based on [`Config::DepositBase`] and
-   * [`Config::DepositPerPage`].
+   * The held deposit becomes the base deposit charged at [`Pallet::register`] plus the
+   * [`Config::DepositPerPage`] deposit of the stored pages. Invulnerables have no per-page
+   * part.
    **/
   | {
       name: 'SubmitPage';
@@ -15179,7 +15320,12 @@ export type PalletElectionProviderMultiBlockSignedPalletCallLike =
    *
    * Dispatch origin must the the same as [`crate::Config::AdminOrigin`].
    **/
-  | { name: 'SetInvulnerables'; params: { inv: Array<AccountId32Like> } };
+  | { name: 'SetInvulnerables'; params: { inv: Array<AccountId32Like> } }
+  /**
+   * Pay out a round's [`UnpaidRewards`] entry to its winner. Permissionless: anyone may
+   * call it for any round. Free on success, normal fee on failure to discourage spam.
+   **/
+  | { name: 'ClaimUnpaidReward'; params: { round: number } };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -15463,6 +15609,9 @@ export type PalletStakingAsyncPalletCall =
    * should be filled in order for the `chill_other` transaction to work.
    * * `min_commission`: The minimum amount of commission that each validators must maintain.
    * This is checked only upon calling `validate`. Existing validators are not affected.
+   * * `chill_inactive_threshold`: The number of eras a validator can remain inactive during
+   * the last [`Config::HistoryDepth`] eras before being subject to chilling becuase of
+   * inactivity.
    *
    * RuntimeOrigin must be Root to call this function.
    *
@@ -15480,6 +15629,7 @@ export type PalletStakingAsyncPalletCall =
         minCommission: PalletStakingAsyncPalletConfigOpPerbill;
         maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
         areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool;
+        chillInactiveThreshold: PalletStakingAsyncPalletConfigOpU32;
       };
     }
   /**
@@ -15671,7 +15821,24 @@ export type PalletStakingAsyncPalletCall =
         hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
         selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
       };
-    };
+    }
+  /**
+   * Chill an inactive validator.
+   *
+   * This extrinsic can be called by anyone, given that the valid inactivity proof is
+   * provided. Inactivity proof is a vector of eras where the given validator was inactive.
+   *
+   * Requirements for the inactivity proof:
+   * - The length must be equal to [`ChillInactiveThreshold`].
+   * - It must be sorted in ascending order.
+   * - It must not contain duplicate entries.
+   * - For every era the `stash` account must be exposed.
+   * - Every item must pass the check provided by [`Config::IsValidatorInactive`].
+   * - Every era must be less than the active era.
+   *
+   * On a successfull execution, caller doesn't pay fees.
+   **/
+  | { name: 'ChillInactive'; params: { stash: AccountId32; proof: Array<number> } };
 
 export type PalletStakingAsyncPalletCallLike =
   /**
@@ -15952,6 +16119,9 @@ export type PalletStakingAsyncPalletCallLike =
    * should be filled in order for the `chill_other` transaction to work.
    * * `min_commission`: The minimum amount of commission that each validators must maintain.
    * This is checked only upon calling `validate`. Existing validators are not affected.
+   * * `chill_inactive_threshold`: The number of eras a validator can remain inactive during
+   * the last [`Config::HistoryDepth`] eras before being subject to chilling becuase of
+   * inactivity.
    *
    * RuntimeOrigin must be Root to call this function.
    *
@@ -15969,6 +16139,7 @@ export type PalletStakingAsyncPalletCallLike =
         minCommission: PalletStakingAsyncPalletConfigOpPerbill;
         maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
         areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool;
+        chillInactiveThreshold: PalletStakingAsyncPalletConfigOpU32;
       };
     }
   /**
@@ -16160,7 +16331,24 @@ export type PalletStakingAsyncPalletCallLike =
         hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
         selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
       };
-    };
+    }
+  /**
+   * Chill an inactive validator.
+   *
+   * This extrinsic can be called by anyone, given that the valid inactivity proof is
+   * provided. Inactivity proof is a vector of eras where the given validator was inactive.
+   *
+   * Requirements for the inactivity proof:
+   * - The length must be equal to [`ChillInactiveThreshold`].
+   * - It must be sorted in ascending order.
+   * - It must not contain duplicate entries.
+   * - For every era the `stash` account must be exposed.
+   * - Every item must pass the check provided by [`Config::IsValidatorInactive`].
+   * - Every era must be less than the active era.
+   *
+   * On a successfull execution, caller doesn't pay fees.
+   **/
+  | { name: 'ChillInactive'; params: { stash: AccountId32Like; proof: Array<number> } };
 
 export type PalletStakingAsyncRewardDestination =
   | { type: 'Staked' }
@@ -17128,9 +17316,10 @@ export type IndivPalletDotnsGatewayCall =
    * - `candidate`: the Lite Person's account for whom the label is being reserved. Also the
    * signer of `candidate_signature`.
    * - `candidate_signature`: signature over the bytes returned by
-   * `Pallet::construct_reservation_message` — a SCALE-encoded tuple binding the attester,
-   * candidate, the candidate's chosen *base* username, and chat key. The digit suffix of
-   * `lite_label` is **not** part of the signed message (the digits are allocated
+   * `Pallet::construct_reservation_message` in the personhood signing context (see
+   * [`Pallet::account_signing_payload`]). The message is a SCALE-encoded tuple binding the
+   * attester, candidate, the candidate's chosen *base* username and chat key. The digit
+   * suffix of `lite_label` is **not** part of the signed message (the digits are allocated
    * server-side after the candidate signs, so the candidate cannot commit to them at
    * signing time).
    * - `lite_label`: the lite-person label. Must be `<dns-stem>.<2+ digits>` (e.g.
@@ -17212,9 +17401,10 @@ export type IndivPalletDotnsGatewayCallLike =
    * - `candidate`: the Lite Person's account for whom the label is being reserved. Also the
    * signer of `candidate_signature`.
    * - `candidate_signature`: signature over the bytes returned by
-   * `Pallet::construct_reservation_message` — a SCALE-encoded tuple binding the attester,
-   * candidate, the candidate's chosen *base* username, and chat key. The digit suffix of
-   * `lite_label` is **not** part of the signed message (the digits are allocated
+   * `Pallet::construct_reservation_message` in the personhood signing context (see
+   * [`Pallet::account_signing_payload`]). The message is a SCALE-encoded tuple binding the
+   * attester, candidate, the candidate's chosen *base* username and chat key. The digit
+   * suffix of `lite_label` is **not** part of the signed message (the digits are allocated
    * server-side after the candidate signs, so the candidate cannot commit to them at
    * signing time).
    * - `lite_label`: the lite-person label. Must be `<dns-stem>.<2+ digits>` (e.g.
@@ -19717,6 +19907,24 @@ export type PalletAssetConversionEvent =
       };
     }
   /**
+   * A pool's swap fee was set, either at creation via [`Pallet::create_pool_with_fee`]
+   * or afterwards via [`Pallet::set_pool_fee`].
+   **/
+  | {
+      name: 'PoolFeeSet';
+      data: {
+        /**
+         * The pool whose fee was set.
+         **/
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
+
+        /**
+         * The swap fee now applied to the pool.
+         **/
+        fee: Permill;
+      };
+    }
+  /**
    * A successful call of the `AddLiquidity` extrinsic will create this event.
    **/
   | {
@@ -20433,7 +20641,23 @@ export type PalletWhitelistEvent =
         callHash: H256;
         result: Result<FrameSupportDispatchPostDispatchInfo, SpRuntimeDispatchErrorWithPostInfo>;
       };
-    };
+    }
+  /**
+   * A call dispatch has been deferred to a future provided block.
+   **/
+  | { name: 'DispatchDeferred'; data: { callHash: H256 } }
+  /**
+   * A deferred dispatch entry has been removed after expiration.
+   **/
+  | { name: 'DeferredDispatchRemoved'; data: { callHash: H256 } }
+  /**
+   * A relayer (signed origin) executed a deferred dispatch.
+   *
+   * Emitted whenever the deferred entry is consumed by a relayer, regardless of whether the
+   * inner call itself succeeded; the inner call's outcome is reported separately by
+   * [`Event::WhitelistedCallDispatched`].
+   **/
+  | { name: 'DeferredDispatchExecuted'; data: { callHash: H256; who: AccountId32 } };
 
 export type FrameSupportDispatchPostDispatchInfo = {
   actualWeight?: SpWeightsWeightV2Weight | undefined;
@@ -20496,7 +20720,11 @@ export type PalletBountiesEvent =
   /**
    * A bounty deposit has been poked.
    **/
-  | { name: 'DepositPoked'; data: { bountyId: number; proposer: AccountId32; oldDeposit: bigint; newDeposit: bigint } };
+  | { name: 'DepositPoked'; data: { bountyId: number; proposer: AccountId32; oldDeposit: bigint; newDeposit: bigint } }
+  /**
+   * Stranded funds left in a closed bounty's account were reclaimed to the treasury.
+   **/
+  | { name: 'BountyFundsReclaimed'; data: { bountyId: number } };
 
 /**
  * The `Event` enum of this pallet
@@ -20933,6 +21161,20 @@ export type PalletElectionProviderMultiBlockSignedPalletEvent =
    **/
   | { name: 'Rewarded'; data: [number, AccountId32, bigint] }
   /**
+   * A reward payout failed and has been queued in [`UnpaidRewards`]; claimable via
+   * [`Pallet::claim_unpaid_reward`] once the pot is refilled.
+   **/
+  | { name: 'RewardPaymentDeferred'; data: [number, AccountId32, bigint] }
+  /**
+   * [`UnpaidRewards`] was full, so this (the oldest) entry was evicted to make room for a
+   * new deferral; no funds moved, the reward is now unrecoverable.
+   **/
+  | { name: 'UnpaidRewardEvicted'; data: [number, AccountId32, bigint] }
+  /**
+   * An invulnerable's transaction fee refund failed; no funds moved, no recovery.
+   **/
+  | { name: 'FeeRefundFailed'; data: [number, AccountId32, bigint] }
+  /**
    * The given account has been slashed with the given amount.
    **/
   | { name: 'Slashed'; data: [number, AccountId32, bigint] }
@@ -20984,7 +21226,18 @@ export type PalletStakingAsyncPalletEvent =
   /**
    * An account has unbonded this amount.
    **/
-  | { name: 'Unbonded'; data: { stash: AccountId32; amount: bigint } }
+  | {
+      name: 'Unbonded';
+      data: {
+        stash: AccountId32;
+        amount: bigint;
+
+        /**
+         * The era at which `amount` becomes withdrawable.
+         **/
+        era: number;
+      };
+    }
   /**
    * An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
    * from the unlocking queue.
@@ -22041,7 +22294,12 @@ export type PolkadotRuntimeCommonClaimsPalletError =
   /**
    * The account already has a vested balance.
    **/
-  | 'VestedBalanceExists';
+  | 'VestedBalanceExists'
+  /**
+   * The claim has a vesting schedule but its value is below the existential deposit, so the
+   * destination account could not be kept alive to carry the vesting lock.
+   **/
+  | 'ClaimBelowExistentialDeposit';
 
 export type FrameSupportPalletId = FixedBytes<8>;
 
@@ -22844,7 +23102,11 @@ export type PalletAssetsError =
   /**
    * Tried setting too many reserves.
    **/
-  | 'TooManyReserves';
+  | 'TooManyReserves'
+  /**
+   * The asset deposit could not be fully moved due to a lock or freeze on the owner.
+   **/
+  | 'IncompleteDepositTransfer';
 
 export type PalletUniquesCollectionDetails = {
   owner: AccountId32;
@@ -22961,7 +23223,11 @@ export type PalletUniquesError =
   /**
    * Wrong attribute key/value bytes supplied.
    **/
-  | 'WrongAttribute';
+  | 'WrongAttribute'
+  /**
+   * The collection deposit could not be fully moved due to a lock or freeze on the owner.
+   **/
+  | 'IncompleteDepositTransfer';
 
 export type PalletNftsCollectionDetails = {
   owner: AccountId32;
@@ -23186,7 +23452,11 @@ export type PalletNftsError =
   /**
    * The witness data should be provided.
    **/
-  | 'WitnessRequired';
+  | 'WitnessRequired'
+  /**
+   * The collection deposit could not be fully moved due to a lock or freeze on the owner.
+   **/
+  | 'IncompleteDepositTransfer';
 
 export type PalletAssetConversionPoolInfo = { lpToken: number };
 
@@ -23292,7 +23562,16 @@ export type PalletAssetConversionError =
   /**
    * The pool exists but has no liquidity (at least one of the reserves is zero).
    **/
-  | 'PoolEmpty';
+  | 'PoolEmpty'
+  /**
+   * The fee exceeds [`Config::MaxSwapFee`].
+   **/
+  | 'FeeTooHigh'
+  /**
+   * The pool account can't send one of its assets (e.g. the asset class is frozen or the
+   * pool account is blocked).
+   **/
+  | 'PoolUnavailable';
 
 export type PalletPsmPsmInfo = {
   feeDestination: AccountId32;
@@ -23704,7 +23983,23 @@ export type PalletWhitelistError =
   /**
    * The call was already whitelisted; No-Op.
    **/
-  | 'CallAlreadyWhitelisted';
+  | 'CallAlreadyWhitelisted'
+  /**
+   * No deferred dispatch entry exists for this call hash.
+   **/
+  | 'DeferredDispatchNotFound'
+  /**
+   * The deferred dispatch entry has not yet expired.
+   **/
+  | 'DeferredDispatchNotExpired'
+  /**
+   * The dispatch has already been deferred.
+   **/
+  | 'AlreadyDeferred'
+  /**
+   * The deferred dispatch has expired.
+   **/
+  | 'DeferredDispatchExpired';
 
 export type PalletBountiesBounty = {
   proposer: AccountId32;
@@ -23776,7 +24071,11 @@ export type PalletBountiesError =
   /**
    * User is not the proposer of the bounty.
    **/
-  | 'NotProposer';
+  | 'NotProposer'
+  /**
+   * The bounty is still active and its account cannot be reclaimed.
+   **/
+  | 'BountyStillActive';
 
 export type PalletChildBountiesChildBounty = {
   parentBounty: number;
@@ -24313,12 +24612,15 @@ export type PalletElectionProviderMultiBlockVerifierImplsStatus =
   | { type: 'Ongoing'; value: number }
   | { type: 'Nothing' };
 
+export type PalletElectionProviderMultiBlockSignedUnpaidReward = { round: number; who: AccountId32; amount: bigint };
+
 export type PalletElectionProviderMultiBlockSignedSubmissionMetadata = {
   deposit: bigint;
   fee: bigint;
   reward: bigint;
   claimedScore: SpNposElectionsElectionScore;
   pages: Array<boolean>;
+  base: bigint;
 };
 
 /**
@@ -24360,7 +24662,15 @@ export type PalletElectionProviderMultiBlockSignedPalletError =
   /**
    * Too many invulnerable accounts are provided,
    **/
-  | 'TooManyInvulnerables';
+  | 'TooManyInvulnerables'
+  /**
+   * No [`UnpaidRewards`] entry exists for the caller in the given round.
+   **/
+  | 'NoUnpaidReward'
+  /**
+   * The [`Config::RewardSource`] pot is still insufficient to pay the unpaid reward.
+   **/
+  | 'PotStillDepleted';
 
 export type PalletStakingAsyncLedgerStakingLedger = {
   stash: AccountId32;
@@ -24422,161 +24732,176 @@ export type PalletStakingAsyncPalletError =
   /**
    * Not a controller account.
    **/
-  | 'NotController'
+  | { name: 'NotController' }
   /**
    * Not a stash account.
    **/
-  | 'NotStash'
+  | { name: 'NotStash' }
   /**
    * Stash is already bonded.
    **/
-  | 'AlreadyBonded'
+  | { name: 'AlreadyBonded' }
   /**
    * Controller is already paired.
    **/
-  | 'AlreadyPaired'
+  | { name: 'AlreadyPaired' }
   /**
    * Targets cannot be empty.
    **/
-  | 'EmptyTargets'
+  | { name: 'EmptyTargets' }
   /**
    * Duplicate index.
    **/
-  | 'DuplicateIndex'
+  | { name: 'DuplicateIndex' }
   /**
    * Slash record not found.
    **/
-  | 'InvalidSlashRecord'
+  | { name: 'InvalidSlashRecord' }
   /**
    * Cannot bond, nominate or validate with value less than the minimum defined by
    * governance (see `MinValidatorBond` and `MinNominatorBond`). If unbonding is the
    * intention, `chill` first to remove one's role as validator/nominator.
    **/
-  | 'InsufficientBond'
+  | { name: 'InsufficientBond' }
   /**
    * Can not schedule more unlock chunks.
    **/
-  | 'NoMoreChunks'
+  | { name: 'NoMoreChunks' }
   /**
    * Can not rebond without unlocking chunks.
    **/
-  | 'NoUnlockChunk'
+  | { name: 'NoUnlockChunk' }
   /**
    * Attempting to target a stash that still has funds.
    **/
-  | 'FundedTarget'
+  | { name: 'FundedTarget' }
   /**
    * Invalid era to reward.
    **/
-  | 'InvalidEraToReward'
+  | { name: 'InvalidEraToReward' }
   /**
    * Invalid number of nominations.
    **/
-  | 'InvalidNumberOfNominations'
+  | { name: 'InvalidNumberOfNominations' }
   /**
    * Rewards for this era have already been claimed for this validator.
    **/
-  | 'AlreadyClaimed'
+  | { name: 'AlreadyClaimed' }
   /**
    * No nominators exist on this page.
    **/
-  | 'InvalidPage'
+  | { name: 'InvalidPage' }
   /**
    * Incorrect previous history depth input provided.
    **/
-  | 'IncorrectHistoryDepth'
+  | { name: 'IncorrectHistoryDepth' }
   /**
    * Internal state has become somehow corrupted and the operation cannot continue.
    **/
-  | 'BadState'
+  | { name: 'BadState' }
   /**
    * Too many nomination targets supplied.
    **/
-  | 'TooManyTargets'
+  | { name: 'TooManyTargets' }
   /**
    * A nomination target was supplied that was blocked or otherwise not a validator.
    **/
-  | 'BadTarget'
+  | { name: 'BadTarget' }
   /**
    * The user has enough bond and thus cannot be chilled forcefully by an external person.
    **/
-  | 'CannotChillOther'
+  | { name: 'CannotChillOther' }
   /**
    * There are too many nominators in the system. Governance needs to adjust the staking
    * settings to keep things safe for the runtime.
    **/
-  | 'TooManyNominators'
+  | { name: 'TooManyNominators' }
   /**
    * There are too many validator candidates in the system. Governance needs to adjust the
    * staking settings to keep things safe for the runtime.
    **/
-  | 'TooManyValidators'
+  | { name: 'TooManyValidators' }
   /**
    * Commission is too low. Must be at least `MinCommission`.
    **/
-  | 'CommissionTooLow'
+  | { name: 'CommissionTooLow' }
   /**
    * Some bound is not met.
    **/
-  | 'BoundNotMet'
+  | { name: 'BoundNotMet' }
   /**
    * Used when attempting to use deprecated controller account logic.
    **/
-  | 'ControllerDeprecated'
+  | { name: 'ControllerDeprecated' }
   /**
    * Cannot reset a ledger.
    **/
-  | 'CannotRestoreLedger'
+  | { name: 'CannotRestoreLedger' }
   /**
    * Provided reward destination is not allowed.
    **/
-  | 'RewardDestinationRestricted'
+  | { name: 'RewardDestinationRestricted' }
   /**
    * Not enough funds available to withdraw.
    **/
-  | 'NotEnoughFunds'
+  | { name: 'NotEnoughFunds' }
   /**
    * Operation not allowed for virtual stakers.
    **/
-  | 'VirtualStakerNotAllowed'
+  | { name: 'VirtualStakerNotAllowed' }
   /**
    * Stash could not be reaped as other pallet might depend on it.
    **/
-  | 'CannotReapStash'
+  | { name: 'CannotReapStash' }
   /**
    * The stake of this account is already migrated to `Fungible` holds.
    **/
-  | 'AlreadyMigrated'
+  | { name: 'AlreadyMigrated' }
   /**
    * Era not yet started.
    **/
-  | 'EraNotStarted'
+  | { name: 'EraNotStarted' }
   /**
    * Account is restricted from participation in staking. This may happen if the account is
    * staking in another way already, such as via pool.
    **/
-  | 'Restricted'
+  | { name: 'Restricted' }
   /**
    * Unapplied slashes in the recently concluded era is blocking this operation.
    * See `Call::apply_slash` to apply them.
    **/
-  | 'UnappliedSlashesInPreviousEra'
+  | { name: 'UnappliedSlashesInPreviousEra' }
   /**
    * The era is not eligible for pruning.
    **/
-  | 'EraNotPrunable'
+  | { name: 'EraNotPrunable' }
   /**
    * The slash has been cancelled and cannot be applied.
    **/
-  | 'CancelledSlash'
+  | { name: 'CancelledSlash' }
   /**
    * Commission is higher than the allowed maximum `MaxCommission`.
    **/
-  | 'CommissionTooHigh'
+  | { name: 'CommissionTooHigh' }
   /**
    * Optimum self-stake cannot be greater than hard cap.
    **/
-  | 'OptimumGreaterThanCap';
+  | { name: 'OptimumGreaterThanCap' }
+  /**
+   * Validator inactivity proof is invalid.
+   **/
+  | { name: 'InvalidInactivityProof'; data: PalletStakingAsyncPalletInvalidInactivityProofError }
+  /**
+   * Cannot set [`ChillInactiveThreshold`] to the provided value.
+   **/
+  | { name: 'InvalidChillInactiveThreshold' };
+
+export type PalletStakingAsyncPalletInvalidInactivityProofError =
+  | 'InvalidLen'
+  | 'NotSorted'
+  | 'ValidatorNotExposed'
+  | 'ValidatorActive'
+  | 'InvalidEra';
 
 export type PalletStakingAsyncRewardPot =
   | { type: 'General'; value: PalletStakingAsyncRewardKind }
@@ -24618,19 +24943,19 @@ export type PalletReviveStorageDeletionQueueItem = { trieId: Bytes; accountId: A
 
 export type PalletReviveStorageDeletionQueueManager = { insertCounter: number; deleteCounter: number };
 
-export type PalletReviveEvmApiRpcTypesGenBlock = {
+export type PalletReviveEvmApiBlock = {
   baseFeePerGas: U256;
   blobGasUsed: U256;
   difficulty: U256;
   excessBlobGas: U256;
-  extraData: PalletReviveEvmApiByteBytes;
+  extraData: PalletReviveTypesCommonByteBytes;
   gasLimit: U256;
   gasUsed: U256;
   hash: H256;
-  logsBloom: PalletReviveEvmApiByteBytes256;
+  logsBloom: PalletReviveTypesCommonByteBytes256;
   miner: H160;
   mixHash: H256;
-  nonce: PalletReviveEvmApiByteBytes8;
+  nonce: PalletReviveTypesCommonByteBytes8;
   number: U256;
   parentBeaconBlockRoot?: H256 | undefined;
   parentHash: H256;
@@ -24641,53 +24966,53 @@ export type PalletReviveEvmApiRpcTypesGenBlock = {
   stateRoot: H256;
   timestamp: U256;
   totalDifficulty?: U256 | undefined;
-  transactions: PalletReviveEvmApiRpcTypesGenHashesOrTransactionInfos;
+  transactions: PalletReviveEvmApiTransactionHashesOrTransactionInfos;
   transactionsRoot: H256;
   uncles: Array<H256>;
-  withdrawals: Array<PalletReviveEvmApiRpcTypesGenWithdrawal>;
+  withdrawals: Array<PalletReviveEvmApiBlockWithdrawal>;
   withdrawalsRoot: H256;
 };
 
-export type PalletReviveEvmApiByteBytes = Bytes;
+export type PalletReviveTypesCommonByteBytes = Bytes;
 
-export type PalletReviveEvmApiByteBytes256 = FixedBytes<256>;
+export type PalletReviveTypesCommonByteBytes256 = FixedBytes<256>;
 
-export type PalletReviveEvmApiByteBytes8 = FixedBytes<8>;
+export type PalletReviveTypesCommonByteBytes8 = FixedBytes<8>;
 
-export type PalletReviveEvmApiRpcTypesGenHashesOrTransactionInfos =
+export type PalletReviveEvmApiTransactionHashesOrTransactionInfos =
   | { type: 'Hashes'; value: Array<H256> }
-  | { type: 'TransactionInfos'; value: Array<PalletReviveEvmApiRpcTypesGenTransactionInfo> };
+  | { type: 'TransactionInfos'; value: Array<PalletReviveEvmApiTransactionTransactionInfo> };
 
-export type PalletReviveEvmApiRpcTypesGenTransactionInfo = {
+export type PalletReviveEvmApiTransactionTransactionInfo = {
   blockHash: H256;
   blockNumber: U256;
   from: H160;
   hash: H256;
   transactionIndex: U256;
-  transactionSigned: PalletReviveEvmApiRpcTypesGenTransactionSigned;
+  transactionSigned: PalletReviveEvmApiTransactionTransactionSigned;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransactionSigned =
-  | { type: 'Transaction7702Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction7702Signed }
-  | { type: 'Transaction4844Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction4844Signed }
-  | { type: 'Transaction1559Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction1559Signed }
-  | { type: 'Transaction2930Signed'; value: PalletReviveEvmApiRpcTypesGenTransaction2930Signed }
-  | { type: 'TransactionLegacySigned'; value: PalletReviveEvmApiRpcTypesGenTransactionLegacySigned };
+export type PalletReviveEvmApiTransactionTransactionSigned =
+  | { type: 'Transaction7702Signed'; value: PalletReviveEvmApiTransactionTransaction7702Signed }
+  | { type: 'Transaction4844Signed'; value: PalletReviveEvmApiTransactionTransaction4844Signed }
+  | { type: 'Transaction1559Signed'; value: PalletReviveEvmApiTransactionTransaction1559Signed }
+  | { type: 'Transaction2930Signed'; value: PalletReviveEvmApiTransactionTransaction2930Signed }
+  | { type: 'TransactionLegacySigned'; value: PalletReviveEvmApiTransactionTransactionLegacySigned };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction7702Signed = {
-  transaction7702Unsigned: PalletReviveEvmApiRpcTypesGenTransaction7702Unsigned;
+export type PalletReviveEvmApiTransactionTransaction7702Signed = {
+  transaction7702Unsigned: PalletReviveEvmApiTransactionTransaction7702Unsigned;
   r: U256;
   s: U256;
   v?: U256 | undefined;
   yParity: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction7702Unsigned = {
-  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
-  authorizationList: Array<PalletReviveEvmApiRpcTypesGenAuthorizationListEntry>;
+export type PalletReviveEvmApiTransactionTransaction7702Unsigned = {
+  accessList: Array<PalletReviveEvmApiTransactionAccessListEntry>;
+  authorizationList: Array<PalletReviveEvmApiTransactionAuthorizationListEntry>;
   chainId: U256;
   gas: U256;
-  input: PalletReviveEvmApiByteBytes;
+  input: PalletReviveTypesCommonByteBytes;
   maxFeePerGas: U256;
   maxPriorityFeePerGas: U256;
   nonce: U256;
@@ -24696,9 +25021,9 @@ export type PalletReviveEvmApiRpcTypesGenTransaction7702Unsigned = {
   value: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenAccessListEntry = { address: H160; storageKeys: Array<H256> };
+export type PalletReviveEvmApiTransactionAccessListEntry = { address: H160; storageKeys: Array<H256> };
 
-export type PalletReviveEvmApiRpcTypesGenAuthorizationListEntry = {
+export type PalletReviveEvmApiTransactionAuthorizationListEntry = {
   chainId: U256;
   address: H160;
   nonce: U256;
@@ -24707,19 +25032,19 @@ export type PalletReviveEvmApiRpcTypesGenAuthorizationListEntry = {
   s: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction4844Signed = {
-  transaction4844Unsigned: PalletReviveEvmApiRpcTypesGenTransaction4844Unsigned;
+export type PalletReviveEvmApiTransactionTransaction4844Signed = {
+  transaction4844Unsigned: PalletReviveEvmApiTransactionTransaction4844Unsigned;
   r: U256;
   s: U256;
   yParity: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction4844Unsigned = {
-  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
+export type PalletReviveEvmApiTransactionTransaction4844Unsigned = {
+  accessList: Array<PalletReviveEvmApiTransactionAccessListEntry>;
   blobVersionedHashes: Array<H256>;
   chainId: U256;
   gas: U256;
-  input: PalletReviveEvmApiByteBytes;
+  input: PalletReviveTypesCommonByteBytes;
   maxFeePerBlobGas: U256;
   maxFeePerGas: U256;
   maxPriorityFeePerGas: U256;
@@ -24729,20 +25054,20 @@ export type PalletReviveEvmApiRpcTypesGenTransaction4844Unsigned = {
   value: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction1559Signed = {
-  transaction1559Unsigned: PalletReviveEvmApiRpcTypesGenTransaction1559Unsigned;
+export type PalletReviveEvmApiTransactionTransaction1559Signed = {
+  transaction1559Unsigned: PalletReviveEvmApiTransactionTransaction1559Unsigned;
   r: U256;
   s: U256;
   v?: U256 | undefined;
   yParity: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction1559Unsigned = {
-  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
+export type PalletReviveEvmApiTransactionTransaction1559Unsigned = {
+  accessList: Array<PalletReviveEvmApiTransactionAccessListEntry>;
   chainId: U256;
   gas: U256;
   gasPrice: U256;
-  input: PalletReviveEvmApiByteBytes;
+  input: PalletReviveTypesCommonByteBytes;
   maxFeePerGas: U256;
   maxPriorityFeePerGas: U256;
   nonce: U256;
@@ -24751,50 +25076,45 @@ export type PalletReviveEvmApiRpcTypesGenTransaction1559Unsigned = {
   value: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction2930Signed = {
-  transaction2930Unsigned: PalletReviveEvmApiRpcTypesGenTransaction2930Unsigned;
+export type PalletReviveEvmApiTransactionTransaction2930Signed = {
+  transaction2930Unsigned: PalletReviveEvmApiTransactionTransaction2930Unsigned;
   r: U256;
   s: U256;
   v?: U256 | undefined;
   yParity: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransaction2930Unsigned = {
-  accessList: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry>;
+export type PalletReviveEvmApiTransactionTransaction2930Unsigned = {
+  accessList: Array<PalletReviveEvmApiTransactionAccessListEntry>;
   chainId: U256;
   gas: U256;
   gasPrice: U256;
-  input: PalletReviveEvmApiByteBytes;
+  input: PalletReviveTypesCommonByteBytes;
   nonce: U256;
   to?: H160 | undefined;
   rType: number;
   value: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransactionLegacySigned = {
-  transactionLegacyUnsigned: PalletReviveEvmApiRpcTypesGenTransactionLegacyUnsigned;
+export type PalletReviveEvmApiTransactionTransactionLegacySigned = {
+  transactionLegacyUnsigned: PalletReviveEvmApiTransactionTransactionLegacyUnsigned;
   r: U256;
   s: U256;
   v: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenTransactionLegacyUnsigned = {
+export type PalletReviveEvmApiTransactionTransactionLegacyUnsigned = {
   chainId?: U256 | undefined;
   gas: U256;
   gasPrice: U256;
-  input: PalletReviveEvmApiByteBytes;
+  input: PalletReviveTypesCommonByteBytes;
   nonce: U256;
   to?: H160 | undefined;
   rType: number;
   value: U256;
 };
 
-export type PalletReviveEvmApiRpcTypesGenWithdrawal = {
-  address: H160;
-  amount: U256;
-  index: U256;
-  validatorIndex: U256;
-};
+export type PalletReviveEvmApiBlockWithdrawal = { address: H160; amount: U256; index: U256; validatorIndex: U256 };
 
 export type PalletReviveEvmBlockHashReceiptGasInfo = { gasUsed: U256; effectiveGasPrice: U256 };
 
@@ -25590,66 +25910,245 @@ export type PolkadotParachainPrimitivesPrimitivesValidationCode = Bytes;
 
 export type SystemParachainsCommonApisInflationInfo = { issuance: Perquintill; nextMint: [bigint, bigint] };
 
-export type PalletRevivePrimitivesContractResult = {
-  weightConsumed: SpWeightsWeightV2Weight;
-  weightRequired: SpWeightsWeightV2Weight;
-  storageDeposit: PalletRevivePrimitivesStorageDeposit;
-  maxStorageDeposit: PalletRevivePrimitivesStorageDeposit;
-  gasConsumed: bigint;
-  result: Result<PalletRevivePrimitivesExecReturnValue, DispatchError>;
+export type PalletReviveTypesRuntimeApiTypesBlockBlockV1 = {
+  baseFeePerGas: U256;
+  blobGasUsed: U256;
+  difficulty: U256;
+  excessBlobGas: U256;
+  extraData: PalletReviveTypesCommonByteBytes;
+  gasLimit: U256;
+  gasUsed: U256;
+  hash: H256;
+  logsBloom: PalletReviveTypesCommonByteBytes256;
+  miner: H160;
+  mixHash: H256;
+  nonce: PalletReviveTypesCommonByteBytes8;
+  number: U256;
+  parentBeaconBlockRoot?: H256 | undefined;
+  parentHash: H256;
+  receiptsRoot: H256;
+  requestsHash?: H256 | undefined;
+  sha3Uncles: H256;
+  size: U256;
+  stateRoot: H256;
+  timestamp: U256;
+  totalDifficulty?: U256 | undefined;
+  transactions: PalletReviveTypesRuntimeApiTypesTransactionHashesOrTransactionInfosV1;
+  transactionsRoot: H256;
+  uncles: Array<H256>;
+  withdrawals: Array<PalletReviveTypesRuntimeApiTypesBlockWithdrawalV1>;
+  withdrawalsRoot: H256;
 };
 
-export type PalletRevivePrimitivesExecReturnValue = { flags: PalletReviveUapiFlagsReturnFlags; data: Bytes };
+export type PalletReviveTypesRuntimeApiTypesTransactionHashesOrTransactionInfosV1 =
+  | { type: 'Hashes'; value: Array<H256> }
+  | { type: 'TransactionInfos'; value: Array<PalletReviveTypesRuntimeApiTypesTransactionTransactionInfoV1> };
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransactionInfoV1 = {
+  blockHash: H256;
+  blockNumber: U256;
+  from: H160;
+  hash: H256;
+  transactionIndex: U256;
+  transactionSigned: PalletReviveTypesRuntimeApiTypesTransactionTransactionSignedV1;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransactionSignedV1 =
+  | { type: 'Transaction7702Signed'; value: PalletReviveTypesRuntimeApiTypesTransactionTransaction7702SignedV1 }
+  | { type: 'Transaction4844Signed'; value: PalletReviveTypesRuntimeApiTypesTransactionTransaction4844SignedV1 }
+  | { type: 'Transaction1559Signed'; value: PalletReviveTypesRuntimeApiTypesTransactionTransaction1559SignedV1 }
+  | { type: 'Transaction2930Signed'; value: PalletReviveTypesRuntimeApiTypesTransactionTransaction2930SignedV1 }
+  | { type: 'TransactionLegacySigned'; value: PalletReviveTypesRuntimeApiTypesTransactionTransactionLegacySignedV1 };
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction7702SignedV1 = {
+  transaction7702Unsigned: PalletReviveTypesRuntimeApiTypesTransactionTransaction7702UnsignedV1;
+  r: U256;
+  s: U256;
+  v?: U256 | undefined;
+  yParity: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction7702UnsignedV1 = {
+  accessList: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1>;
+  authorizationList: Array<PalletReviveTypesRuntimeApiTypesTransactionAuthorizationListEntryV1>;
+  chainId: U256;
+  gas: U256;
+  input: PalletReviveTypesCommonByteBytes;
+  maxFeePerGas: U256;
+  maxPriorityFeePerGas: U256;
+  nonce: U256;
+  to: H160;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1 = { address: H160; storageKeys: Array<H256> };
+
+export type PalletReviveTypesRuntimeApiTypesTransactionAuthorizationListEntryV1 = {
+  chainId: U256;
+  address: H160;
+  nonce: U256;
+  yParity: U256;
+  r: U256;
+  s: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction4844SignedV1 = {
+  transaction4844Unsigned: PalletReviveTypesRuntimeApiTypesTransactionTransaction4844UnsignedV1;
+  r: U256;
+  s: U256;
+  yParity: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction4844UnsignedV1 = {
+  accessList: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1>;
+  blobVersionedHashes: Array<H256>;
+  chainId: U256;
+  gas: U256;
+  input: PalletReviveTypesCommonByteBytes;
+  maxFeePerBlobGas: U256;
+  maxFeePerGas: U256;
+  maxPriorityFeePerGas: U256;
+  nonce: U256;
+  to: H160;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction1559SignedV1 = {
+  transaction1559Unsigned: PalletReviveTypesRuntimeApiTypesTransactionTransaction1559UnsignedV1;
+  r: U256;
+  s: U256;
+  v?: U256 | undefined;
+  yParity: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction1559UnsignedV1 = {
+  accessList: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1>;
+  chainId: U256;
+  gas: U256;
+  gasPrice: U256;
+  input: PalletReviveTypesCommonByteBytes;
+  maxFeePerGas: U256;
+  maxPriorityFeePerGas: U256;
+  nonce: U256;
+  to?: H160 | undefined;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction2930SignedV1 = {
+  transaction2930Unsigned: PalletReviveTypesRuntimeApiTypesTransactionTransaction2930UnsignedV1;
+  r: U256;
+  s: U256;
+  v?: U256 | undefined;
+  yParity: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransaction2930UnsignedV1 = {
+  accessList: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1>;
+  chainId: U256;
+  gas: U256;
+  gasPrice: U256;
+  input: PalletReviveTypesCommonByteBytes;
+  nonce: U256;
+  to?: H160 | undefined;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransactionLegacySignedV1 = {
+  transactionLegacyUnsigned: PalletReviveTypesRuntimeApiTypesTransactionTransactionLegacyUnsignedV1;
+  r: U256;
+  s: U256;
+  v: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTransactionTransactionLegacyUnsignedV1 = {
+  chainId?: U256 | undefined;
+  gas: U256;
+  gasPrice: U256;
+  input: PalletReviveTypesCommonByteBytes;
+  nonce: U256;
+  to?: H160 | undefined;
+  rType: number;
+  value: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesBlockWithdrawalV1 = {
+  address: H160;
+  amount: U256;
+  index: U256;
+  validatorIndex: U256;
+};
+
+export type PalletReviveTypesRuntimeApiTypesReceiptReceiptGasInfoV1 = { gasUsed: U256; effectiveGasPrice: U256 };
+
+export type PalletReviveTypesRuntimeApiTypesContractContractResultV1 = {
+  weightConsumed: SpWeightsWeightV2Weight;
+  weightRequired: SpWeightsWeightV2Weight;
+  storageDeposit: PalletReviveTypesRuntimeApiTypesContractStorageDepositV1;
+  maxStorageDeposit: PalletReviveTypesRuntimeApiTypesContractStorageDepositV1;
+  gasConsumed: bigint;
+  result: Result<PalletReviveTypesRuntimeApiTypesContractExecReturnValueV1, DispatchError>;
+};
+
+export type PalletReviveTypesRuntimeApiTypesContractExecReturnValueV1 = {
+  flags: PalletReviveUapiFlagsReturnFlags;
+  data: Bytes;
+};
 
 export type PalletReviveUapiFlagsReturnFlags = { bits: number };
 
-export type PalletRevivePrimitivesStorageDeposit =
+export type PalletReviveTypesRuntimeApiTypesContractStorageDepositV1 =
   | { type: 'Refund'; value: bigint }
   | { type: 'Charge'; value: bigint };
 
-export type PalletRevivePrimitivesCode = { type: 'Upload'; value: Bytes } | { type: 'Existing'; value: H256 };
+export type PalletReviveTypesRuntimeApiTypesContractCodeV1 =
+  | { type: 'Upload'; value: Bytes }
+  | { type: 'Existing'; value: H256 };
 
-export type PalletRevivePrimitivesContractResultInstantiateReturnValue = {
+export type PalletReviveTypesRuntimeApiTypesContractContractResultV1InstantiateReturnValueV1 = {
   weightConsumed: SpWeightsWeightV2Weight;
   weightRequired: SpWeightsWeightV2Weight;
-  storageDeposit: PalletRevivePrimitivesStorageDeposit;
-  maxStorageDeposit: PalletRevivePrimitivesStorageDeposit;
+  storageDeposit: PalletReviveTypesRuntimeApiTypesContractStorageDepositV1;
+  maxStorageDeposit: PalletReviveTypesRuntimeApiTypesContractStorageDepositV1;
   gasConsumed: bigint;
-  result: Result<PalletRevivePrimitivesInstantiateReturnValue, DispatchError>;
+  result: Result<PalletReviveTypesRuntimeApiTypesContractInstantiateReturnValueV1, DispatchError>;
 };
 
-export type PalletRevivePrimitivesInstantiateReturnValue = {
-  result: PalletRevivePrimitivesExecReturnValue;
+export type PalletReviveTypesRuntimeApiTypesContractInstantiateReturnValueV1 = {
+  result: PalletReviveTypesRuntimeApiTypesContractExecReturnValueV1;
   addr: H160;
 };
 
-export type PalletReviveEvmApiRpcTypesGenGenericTransaction = {
-  accessList?: Array<PalletReviveEvmApiRpcTypesGenAccessListEntry> | undefined;
-  authorizationList: Array<PalletReviveEvmApiRpcTypesGenAuthorizationListEntry>;
+export type PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1 = {
+  accessList?: Array<PalletReviveTypesRuntimeApiTypesTransactionAccessListEntryV1> | undefined;
+  authorizationList: Array<PalletReviveTypesRuntimeApiTypesTransactionAuthorizationListEntryV1>;
   blobVersionedHashes: Array<H256>;
-  blobs: Array<PalletReviveEvmApiByteBytes>;
+  blobs: Array<PalletReviveTypesCommonByteBytes>;
   chainId?: U256 | undefined;
   from?: H160 | undefined;
   gas?: U256 | undefined;
   gasPrice?: U256 | undefined;
-  input: PalletReviveEvmApiRpcTypesGenInputOrData;
+  input: PalletReviveTypesRuntimeApiTypesTransactionInputOrDataV1;
   maxFeePerBlobGas?: U256 | undefined;
   maxFeePerGas?: U256 | undefined;
   maxPriorityFeePerGas?: U256 | undefined;
   nonce?: U256 | undefined;
   to?: H160 | undefined;
-  rType?: PalletReviveEvmApiByte | undefined;
+  rType?: PalletReviveTypesCommonByte | undefined;
   value?: U256 | undefined;
 };
 
-export type PalletReviveEvmApiRpcTypesGenInputOrData = {
-  input?: PalletReviveEvmApiByteBytes | undefined;
-  data?: PalletReviveEvmApiByteBytes | undefined;
+export type PalletReviveTypesRuntimeApiTypesTransactionInputOrDataV1 = {
+  input?: PalletReviveTypesCommonByteBytes | undefined;
+  data?: PalletReviveTypesCommonByteBytes | undefined;
 };
 
-export type PalletReviveEvmApiByte = number;
+export type PalletReviveTypesCommonByte = number;
 
-export type PalletRevivePrimitivesEthTransactInfo = {
+export type PalletReviveTypesRuntimeApiTypesDryRunEthTransactInfoV1 = {
   weightRequired: SpWeightsWeightV2Weight;
   storageDeposit: bigint;
   maxStorageDeposit: bigint;
@@ -25661,47 +26160,49 @@ export type PalletRevivePrimitivesEthTransactError =
   | { type: 'Data'; value: Bytes }
   | { type: 'Message'; value: string };
 
-export type PalletReviveEvmApiRpcTypesDryRunConfig = {
+export type PalletReviveTypesRuntimeApiTypesDryRunDryRunConfigV1 = {
   timestampOverride?: bigint | undefined;
   performBalanceChecks?: boolean | undefined;
-  stateOverrides?: PalletReviveEvmApiRpcTypesGenStateOverrideSet | undefined;
+  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
 };
 
-export type PalletReviveEvmApiRpcTypesGenStateOverrideSet = Array<[H160, PalletReviveEvmApiRpcTypesGenStateOverride]>;
+export type PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 = Array<
+  [H160, PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideV1]
+>;
 
-export type PalletReviveEvmApiRpcTypesGenStateOverride = {
+export type PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideV1 = {
   balance?: U256 | undefined;
   nonce?: U256 | undefined;
-  code?: PalletReviveEvmApiByteBytes | undefined;
-  storage?: PalletReviveEvmApiRpcTypesGenStorageOverride | undefined;
+  code?: PalletReviveTypesCommonByteBytes | undefined;
+  storage?: PalletReviveTypesRuntimeApiTypesStateOverridesStorageOverrideV1 | undefined;
   movePrecompileToAddress?: H160 | undefined;
 };
 
-export type PalletReviveEvmApiRpcTypesGenStorageOverride =
+export type PalletReviveTypesRuntimeApiTypesStateOverridesStorageOverrideV1 =
   | { type: 'State'; value: Array<[H256, H256]> }
   | { type: 'StateDiff'; value: Array<[H256, H256]> };
 
-export type PalletRevivePrimitivesCodeUploadReturnValue = { codeHash: H256; deposit: bigint };
+export type PalletReviveTypesRuntimeApiTypesUploadCodeUploadReturnValueV1 = { codeHash: H256; deposit: bigint };
 
 export type PalletRevivePrimitivesContractAccessError =
   | { type: 'DoesntExist' }
   | { type: 'KeyDecodingFailed' }
   | { type: 'StorageWriteFailed'; value: DispatchError };
 
-export type PalletReviveEvmApiDebugRpcTypesTracerType =
-  | { type: 'CallTracer'; value?: PalletReviveEvmApiDebugRpcTypesCallTracerConfig | undefined }
-  | { type: 'PrestateTracer'; value?: PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig | undefined }
-  | { type: 'ExecutionTracer'; value?: PalletReviveEvmApiDebugRpcTypesExecutionTracerConfig | undefined };
+export type PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1 =
+  | { type: 'CallTracer'; value?: PalletReviveTypesRuntimeApiTypesTracerCallTracerConfigV1 | undefined }
+  | { type: 'PrestateTracer'; value?: PalletReviveTypesRuntimeApiTypesTracerPrestateTracerConfigV1 | undefined }
+  | { type: 'ExecutionTracer'; value?: PalletReviveTypesRuntimeApiTypesTracerExecutionTracerConfigV1 | undefined };
 
-export type PalletReviveEvmApiDebugRpcTypesCallTracerConfig = { withLogs: boolean; onlyTopCall: boolean };
+export type PalletReviveTypesRuntimeApiTypesTracerCallTracerConfigV1 = { withLogs: boolean; onlyTopCall: boolean };
 
-export type PalletReviveEvmApiDebugRpcTypesPrestateTracerConfig = {
+export type PalletReviveTypesRuntimeApiTypesTracerPrestateTracerConfigV1 = {
   diffMode: boolean;
   disableStorage: boolean;
   disableCode: boolean;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesExecutionTracerConfig = {
+export type PalletReviveTypesRuntimeApiTypesTracerExecutionTracerConfigV1 = {
   enableMemory: boolean;
   disableStack: boolean;
   disableStorage: boolean;
@@ -25711,35 +26212,35 @@ export type PalletReviveEvmApiDebugRpcTypesExecutionTracerConfig = {
   memoryWordLimit: number;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesTrace =
-  | { type: 'Call'; value: PalletReviveEvmApiDebugRpcTypesCallTrace }
-  | { type: 'Prestate'; value: PalletReviveEvmApiDebugRpcTypesPrestateTrace }
-  | { type: 'Execution'; value: PalletReviveEvmApiDebugRpcTypesExecutionTrace };
+export type PalletReviveTypesRuntimeApiTypesTracesTraceV1 =
+  | { type: 'Call'; value: PalletReviveTypesRuntimeApiTypesTracesCallTraceV1 }
+  | { type: 'Prestate'; value: PalletReviveTypesRuntimeApiTypesTracesPrestateTraceV1 }
+  | { type: 'Execution'; value: PalletReviveTypesRuntimeApiTypesTracesExecutionTraceV1 };
 
-export type PalletReviveEvmApiDebugRpcTypesCallTrace = {
+export type PalletReviveTypesRuntimeApiTypesTracesCallTraceV1 = {
   from: H160;
   gas: bigint;
   gasUsed: bigint;
   to: H160;
-  input: PalletReviveEvmApiByteBytes;
-  output: PalletReviveEvmApiByteBytes;
+  input: PalletReviveTypesCommonByteBytes;
+  output: PalletReviveTypesCommonByteBytes;
   error?: string | undefined;
   revertReason?: string | undefined;
-  calls: Array<PalletReviveEvmApiDebugRpcTypesCallTrace>;
-  logs: Array<PalletReviveEvmApiDebugRpcTypesCallLog>;
+  calls: Array<PalletReviveTypesRuntimeApiTypesTracesCallTraceV1>;
+  logs: Array<PalletReviveTypesRuntimeApiTypesTracesCallLogV1>;
   value?: U256 | undefined;
-  callType: PalletReviveEvmApiDebugRpcTypesCallType;
+  callType: PalletReviveTypesRuntimeApiTypesTracesCallTypeV1;
   childCallCount: number;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesCallLog = {
+export type PalletReviveTypesRuntimeApiTypesTracesCallLogV1 = {
   address: H160;
   topics: Array<H256>;
-  data: PalletReviveEvmApiByteBytes;
+  data: PalletReviveTypesCommonByteBytes;
   position: number;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesCallType =
+export type PalletReviveTypesRuntimeApiTypesTracesCallTypeV1 =
   | 'Call'
   | 'StaticCall'
   | 'DelegateCall'
@@ -25747,60 +26248,579 @@ export type PalletReviveEvmApiDebugRpcTypesCallType =
   | 'Create2'
   | 'Selfdestruct';
 
-export type PalletReviveEvmApiDebugRpcTypesPrestateTrace =
-  | { type: 'Prestate'; value: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]> }
+export type PalletReviveTypesRuntimeApiTypesTracesPrestateTraceV1 =
+  | { type: 'Prestate'; value: Array<[H160, PalletReviveTypesRuntimeApiTypesTracesPrestateTraceInfoV1]> }
   | {
       type: 'DiffMode';
       value: {
-        pre: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]>;
-        post: Array<[H160, PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo]>;
+        pre: Array<[H160, PalletReviveTypesRuntimeApiTypesTracesPrestateTraceInfoV1]>;
+        post: Array<[H160, PalletReviveTypesRuntimeApiTypesTracesPrestateTraceInfoV1]>;
       };
     };
 
-export type PalletReviveEvmApiDebugRpcTypesPrestateTraceInfo = {
+export type PalletReviveTypesRuntimeApiTypesTracesPrestateTraceInfoV1 = {
   balance?: U256 | undefined;
   nonce?: number | undefined;
-  code?: PalletReviveEvmApiByteBytes | undefined;
-  storage: Array<[PalletReviveEvmApiByteBytes, PalletReviveEvmApiByteBytes | undefined]>;
+  code?: PalletReviveTypesCommonByteBytes | undefined;
+  storage: Array<[PalletReviveTypesCommonByteBytes, PalletReviveTypesCommonByteBytes | undefined]>;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesExecutionTrace = {
+export type PalletReviveTypesRuntimeApiTypesTracesExecutionTraceV1 = {
   gas: bigint;
   weightConsumed: SpWeightsWeightV2Weight;
   baseCallWeight: SpWeightsWeightV2Weight;
   failed: boolean;
-  returnValue: PalletReviveEvmApiByteBytes;
-  structLogs: Array<PalletReviveEvmApiDebugRpcTypesExecutionStep>;
+  returnValue: PalletReviveTypesCommonByteBytes;
+  structLogs: Array<PalletReviveTypesRuntimeApiTypesTracesExecutionStepV1>;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesExecutionStep = {
+export type PalletReviveTypesRuntimeApiTypesTracesExecutionStepV1 = {
   gas: bigint;
   gasCost: bigint;
   weightCost: SpWeightsWeightV2Weight;
   depth: number;
-  returnData: PalletReviveEvmApiByteBytes;
+  returnData: PalletReviveTypesCommonByteBytes;
   error?: string | undefined;
-  kind: PalletReviveEvmApiDebugRpcTypesExecutionStepKind;
+  kind: PalletReviveTypesRuntimeApiTypesTracesExecutionStepKindV1;
 };
 
-export type PalletReviveEvmApiDebugRpcTypesExecutionStepKind =
+export type PalletReviveTypesRuntimeApiTypesTracesExecutionStepKindV1 =
   | {
       type: 'EvmOpcode';
       value: {
         pc: number;
-        op: number;
-        stack: Array<PalletReviveEvmApiByteBytes>;
-        memory: Array<PalletReviveEvmApiByteBytes>;
-        storage?: Array<[PalletReviveEvmApiByteBytes, PalletReviveEvmApiByteBytes]> | undefined;
+        op: PalletReviveTypesRuntimeApiTypesTracesEvmOpcodeV1;
+        stack: Array<PalletReviveTypesCommonByteBytes>;
+        memory: Array<PalletReviveTypesCommonByteBytes>;
+        storage?: Array<[PalletReviveTypesCommonByteBytes, PalletReviveTypesCommonByteBytes]> | undefined;
       };
     }
-  | { type: 'PvmSyscall'; value: { op: number; args: Array<bigint>; returned?: bigint | undefined } };
+  | {
+      type: 'PvmSyscall';
+      value: {
+        op: PalletReviveTypesRuntimeApiTypesTracesPolkavmSyscallV1;
+        args: Array<bigint>;
+        returned?: bigint | undefined;
+      };
+    };
 
-export type PalletReviveEvmApiRpcTypesTracingConfig = {
-  stateOverrides?: PalletReviveEvmApiRpcTypesGenStateOverrideSet | undefined;
+export type PalletReviveTypesRuntimeApiTypesTracesEvmOpcodeV1 = number;
+
+export type PalletReviveTypesRuntimeApiTypesTracesPolkavmSyscallV1 =
+  | 'Noop'
+  | 'SetStorage'
+  | 'SetStorageOrClear'
+  | 'GetStorage'
+  | 'GetStorageOrZero'
+  | 'Call'
+  | 'CallEvm'
+  | 'DelegateCall'
+  | 'DelegateCallEvm'
+  | 'Instantiate'
+  | 'CallDataSize'
+  | 'CallDataCopy'
+  | 'CallDataLoad'
+  | 'SealReturn'
+  | 'Caller'
+  | 'Origin'
+  | 'CodeHash'
+  | 'CodeSize'
+  | 'Address'
+  | 'GetImmutableData'
+  | 'SetImmutableData'
+  | 'Balance'
+  | 'BalanceOf'
+  | 'ChainId'
+  | 'GasLimit'
+  | 'ValueTransferred'
+  | 'GasPrice'
+  | 'BaseFee'
+  | 'Now'
+  | 'DepositEvent'
+  | 'BlockNumber'
+  | 'BlockHash'
+  | 'BlockAuthor'
+  | 'HashKeccak256'
+  | 'ReturnDataSize'
+  | 'ReturnDataCopy'
+  | 'RefTimeLeft'
+  | 'ConsumeAllGas'
+  | 'EcdsaToEthAddress'
+  | 'Sr25519Verify'
+  | 'Terminate'
+  | 'PvmFuel';
+
+export type PalletReviveTypesRuntimeApiTypesStateOverridesTracingConfigV1 = {
+  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
 };
 
 export type PalletRevivePrimitivesBalanceConversionError = 'Value' | 'Dust';
+
+export type PalletReviveTypesRuntimeApiDeclarationReviveRuntimeApiVersionDeclarations = Array<[string, number]>;
+
+export type PalletReviveTypesRuntimeApiPayloadsEthBlockBlockVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthBlockBlockInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthBlockBlockInputPayloadV1 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthBlockBlockVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthBlockBlockOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthBlockBlockOutputPayloadV1 = {
+  block: PalletReviveTypesRuntimeApiTypesBlockBlockV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashInputPayloadV1 = { blockNumber: U256 };
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockHashBlockHashOutputPayloadV1 = { blockHash?: H256 | undefined };
+
+export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataInputPayloadV1 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsReceiptDataReceiptDataOutputPayloadV1 = {
+  receiptData: Array<PalletReviveTypesRuntimeApiTypesReceiptReceiptGasInfoV1>;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitInputPayloadV1 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockGasLimitBlockGasLimitOutputPayloadV1 = { blockGasLimit: U256 };
+
+export type PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasInputPayloadV1 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsMaxExtrinsicWeightInGasMaxExtrinsicWeightInGasOutputPayloadV1 = {
+  maxExtrinsicWeightInGas: U256;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBalanceBalanceVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBalanceBalanceInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBalanceBalanceInputPayloadV1 = { address: H160 };
+
+export type PalletReviveTypesRuntimeApiPayloadsBalanceBalanceVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBalanceBalanceOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBalanceBalanceOutputPayloadV1 = { balance: U256 };
+
+export type PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceInputPayloadV1 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsGasPriceGasPriceOutputPayloadV1 = { gasPrice: U256 };
+
+export type PalletReviveTypesRuntimeApiPayloadsNonceNonceVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsNonceNonceInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsNonceNonceInputPayloadV1 = { address: H160 };
+
+export type PalletReviveTypesRuntimeApiPayloadsNonceNonceVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsNonceNonceOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsNonceNonceOutputPayloadV1 = { nonce: number };
+
+export type PalletReviveTypesRuntimeApiPayloadsCallCallVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsCallCallInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsCallCallInputPayloadV1 = {
+  origin: AccountId32;
+  dest: H160;
+  value: bigint;
+  gasLimit?: SpWeightsWeightV2Weight | undefined;
+  storageDepositLimit?: bigint | undefined;
+  inputData: Bytes;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsCallCallVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsCallCallOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsCallCallOutputPayloadV1 = {
+  contractResult: PalletReviveTypesRuntimeApiTypesContractContractResultV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateInputPayloadV1 = {
+  origin: AccountId32;
+  value: bigint;
+  gasLimit?: SpWeightsWeightV2Weight | undefined;
+  storageDepositLimit?: bigint | undefined;
+  code: PalletReviveTypesRuntimeApiTypesContractCodeV1;
+  data: Bytes;
+  salt?: FixedBytes<32> | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsInstantiateInstantiateOutputPayloadV1 = {
+  contractResult: PalletReviveTypesRuntimeApiTypesContractContractResultV1InstantiateReturnValueV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthTransactTransactVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthTransactTransactInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthTransactTransactInputPayloadV1 = {
+  tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1;
+  timestampOverride?: bigint | undefined;
+  performBalanceChecks: boolean;
+  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthTransactTransactVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthTransactTransactOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthTransactTransactOutputPayloadV1 = {
+  transactInfo: PalletReviveTypesRuntimeApiTypesDryRunEthTransactInfoV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasInputPayloadV1 = {
+  tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1;
+  timestampOverride?: bigint | undefined;
+  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthEstimateGasEstimateGasOutputPayloadV1 = { gasEstimate: U256 };
+
+export type PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightInputPayloadV1 = { tx: Bytes };
+
+export type PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsEthPreDispatchWeightPreDispatchWeightOutputPayloadV1 = {
+  weight: SpWeightsWeightV2Weight;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeInputPayloadV1 = {
+  origin: AccountId32;
+  code: Bytes;
+  storageDepositLimit?: bigint | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsUploadCodeUploadCodeOutputPayloadV1 = {
+  codeUploadReturnValue: PalletReviveTypesRuntimeApiTypesUploadCodeUploadReturnValueV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageInputPayloadV1 = {
+  address: H160;
+  key: PalletReviveTypesRuntimeApiTypesStorageStorageKeyV1;
+};
+
+export type PalletReviveTypesRuntimeApiTypesStorageStorageKeyV1 =
+  | { type: 'Fixed'; value: FixedBytes<32> }
+  | { type: 'Variable'; value: Bytes };
+
+export type PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsGetStorageGetStorageOutputPayloadV1 = { storage?: Bytes | undefined };
+
+export type PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressInputPayloadV1 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsRuntimePalletsAddressRuntimePalletsAddressOutputPayloadV1 = {
+  runtimePalletsAddress: H160;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsCodeCodeVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsCodeCodeInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsCodeCodeInputPayloadV1 = { address: H160 };
+
+export type PalletReviveTypesRuntimeApiPayloadsCodeCodeVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsCodeCodeOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsCodeCodeOutputPayloadV1 = { code: Bytes };
+
+export type PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdInputPayloadV1 = { address: H160 };
+
+export type PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsAccountIdAccountIdOutputPayloadV1 = { accountId: AccountId32 };
+
+export type PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustInputPayloadV1 = { balance: U256 };
+
+export type PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsNewBalanceWithDustNewBalanceWithDustOutputPayloadV1 = {
+  newBalance: bigint;
+  dust: number;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorInputPayloadV1 = {};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsBlockAuthorBlockAuthorOutputPayloadV1 = { blockAuthor: H160 };
+
+export type PalletReviveTypesRuntimeApiPayloadsAddressAddressVersionedInputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsAddressAddressInputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsAddressAddressInputPayloadV1 = { accountId: AccountId32 };
+
+export type PalletReviveTypesRuntimeApiPayloadsAddressAddressVersionedOutputPayload = {
+  type: 'V1';
+  value: PalletReviveTypesRuntimeApiPayloadsAddressAddressOutputPayloadV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsAddressAddressOutputPayloadV1 = { address: H160 };
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockVersionedInputPayload =
+  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockInputPayloadV1 }
+  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockInputPayloadV2 };
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockInputPayloadV1 = {
+  block: SpRuntimeBlock;
+  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockInputPayloadV2 = {
+  block: SpRuntimeBlock;
+  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockVersionedOutputPayload =
+  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockOutputPayloadV1 }
+  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockOutputPayloadV2 };
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockOutputPayloadV1 = {
+  traces: Array<[number, PalletReviveTypesRuntimeApiTypesTracesTraceV1]>;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceBlockTraceBlockOutputPayloadV2 = {
+  entries: Array<[number, PalletReviveTypesRuntimeApiTypesTracesTraceEntryV1]>;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTracesTraceEntryV1 =
+  | { type: 'Traced'; value: PalletReviveTypesRuntimeApiTypesTracesTraceV2 }
+  | { type: 'NotTraced' };
+
+export type PalletReviveTypesRuntimeApiTypesTracesTraceV2 =
+  | { type: 'Call'; value: PalletReviveTypesRuntimeApiTypesTracesCallTraceV2 }
+  | { type: 'Prestate'; value: PalletReviveTypesRuntimeApiTypesTracesPrestateTraceV1 }
+  | { type: 'Execution'; value: PalletReviveTypesRuntimeApiTypesTracesExecutionTraceV1 };
+
+export type PalletReviveTypesRuntimeApiTypesTracesCallTraceV2 = {
+  from: H160;
+  gas: bigint;
+  gasUsed: bigint;
+  to: H160;
+  input: PalletReviveTypesCommonByteBytes;
+  output: PalletReviveTypesCommonByteBytes;
+  error?: string | undefined;
+  revertReason?: string | undefined;
+  calls: Array<PalletReviveTypesRuntimeApiTypesTracesCallTraceV2>;
+  logs: Array<PalletReviveTypesRuntimeApiTypesTracesCallLogV2>;
+  value?: U256 | undefined;
+  callType: PalletReviveTypesRuntimeApiTypesTracesCallTypeV1;
+};
+
+export type PalletReviveTypesRuntimeApiTypesTracesCallLogV2 = {
+  address: H160;
+  topics: Array<H256>;
+  data: PalletReviveTypesCommonByteBytes;
+  position: number;
+  index: number;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxVersionedInputPayload =
+  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxInputPayloadV1 }
+  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxInputPayloadV2 };
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxInputPayloadV1 = {
+  block: SpRuntimeBlock;
+  txIndex: number;
+  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxInputPayloadV2 = {
+  block: SpRuntimeBlock;
+  txIndex: number;
+  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxVersionedOutputPayload =
+  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxOutputPayloadV1 }
+  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxOutputPayloadV2 };
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxOutputPayloadV1 = {
+  trace?: PalletReviveTypesRuntimeApiTypesTracesTraceV1 | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceTxTraceTxOutputPayloadV2 = {
+  entry?: PalletReviveTypesRuntimeApiTypesTracesTraceEntryV1 | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallVersionedInputPayload =
+  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallInputPayloadV1 }
+  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallInputPayloadV2 };
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallInputPayloadV1 = {
+  tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1;
+  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
+  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallInputPayloadV2 = {
+  tx: PalletReviveTypesRuntimeApiTypesTransactionGenericTransactionV1;
+  config: PalletReviveTypesRuntimeApiTypesTracerTracerTypeV1;
+  stateOverrides?: PalletReviveTypesRuntimeApiTypesStateOverridesStateOverrideSetV1 | undefined;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallVersionedOutputPayload =
+  | { type: 'V1'; value: PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallOutputPayloadV1 }
+  | { type: 'V2'; value: PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallOutputPayloadV2 };
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallOutputPayloadV1 = {
+  trace: PalletReviveTypesRuntimeApiTypesTracesTraceV1;
+};
+
+export type PalletReviveTypesRuntimeApiPayloadsTraceCallTraceCallOutputPayloadV2 = {
+  trace: PalletReviveTypesRuntimeApiTypesTracesTraceV2;
+};
 
 export type AssetHubPolkadotRuntimeRuntimeError =
   | { pallet: 'System'; palletError: FrameSystemError }

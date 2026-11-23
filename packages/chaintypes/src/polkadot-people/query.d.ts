@@ -10,6 +10,7 @@ import type {
   Phase,
   FixedU128,
   BytesLike,
+  Permill,
   FixedBytes,
   Data,
 } from 'dedot/codecs';
@@ -82,6 +83,7 @@ import type {
   IndivSupportRealityRevisedContextualAlias,
   IndivPalletDummyDimRecord,
   IndivPalletPeopleLiteLitePersonInfo,
+  IndivPalletPeopleLitePaidRegistrationWindow,
   IndivPalletResourcesConsumerInfo,
   IndivPalletResourcesStmtStoreAllowanceEntry,
   IndivSupportUtilsBigEndianU32,
@@ -990,6 +992,21 @@ export interface ChainStorage extends GenericChainStorage {
     nextPoolAssetId: GenericStorageQuery<() => number | undefined>;
 
     /**
+     * Per-pool swap fee overrides.
+     *
+     * When a pool has no entry here, the global [`Config::LPFee`] applies. This storage is purely
+     * additive: existing pools and runtimes that never set a per-pool fee behave exactly as before
+     * and require no migration. See [`Pallet::pool_fee`] for the resolution logic.
+     *
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} arg
+     * @param {Callback<Permill | undefined> =} callback
+     **/
+    poolFees: GenericStorageQuery<
+      (arg: [StagingXcmV5Location, StagingXcmV5Location]) => Permill | undefined,
+      [StagingXcmV5Location, StagingXcmV5Location]
+    >;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
@@ -1059,6 +1076,24 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<number | undefined> =} callback
      **/
     nextAssetId: GenericStorageQuery<() => number | undefined>;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AccumulateForward`'s storage queries
+   **/
+  accumulateForward: {
+    /**
+     * Block of [`Config::BlockNumberProvider`] at which a forward was last attempted.
+     *
+     * `None` means none was attempted yet, so the next one is not rate limited.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    lastForwardBlock: GenericStorageQuery<() => number | undefined>;
 
     /**
      * Generic pallet storage query
@@ -1825,6 +1860,9 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   peopleLite: {
     /**
+     * Registered lite people.
+     *
+     * The counter gives the number of lite people for the cap and the throttling.
      *
      * @param {AccountId32Like} arg
      * @param {Callback<IndivPalletPeopleLiteLitePersonInfo | undefined> =} callback
@@ -1833,6 +1871,13 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: AccountId32Like) => IndivPalletPeopleLiteLitePersonInfo | undefined,
       AccountId32
     >;
+
+    /**
+     * Counter for the related counted storage map
+     *
+     * @param {Callback<number> =} callback
+     **/
+    counterForLitePeople: GenericStorageQuery<() => number>;
 
     /**
      * Conversion of a lite contextual alias to an account ID.
@@ -1855,6 +1900,16 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: AccountId32Like) => IndivSupportRealityRevisedContextualAlias | undefined,
       AccountId32
     >;
+
+    /**
+     * Paid registrations accepted in the latest throttled period.
+     *
+     * The pallet updates it only while the number of lite people is at or above
+     * `PaidRegistrationThreshold`. An entry from an earlier period counts as zero registrations.
+     *
+     * @param {Callback<IndivPalletPeopleLitePaidRegistrationWindow> =} callback
+     **/
+    paidRegistrations: GenericStorageQuery<() => IndivPalletPeopleLitePaidRegistrationWindow>;
 
     /**
      * Whether the lite people member collection has been created.

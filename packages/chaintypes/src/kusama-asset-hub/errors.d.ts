@@ -2502,6 +2502,12 @@ export interface ChainErrors extends GenericChainErrors {
     PendingDepositCleanup: GenericPalletError;
 
     /**
+     * The logs of the ethereum transaction would exceed
+     * [`limits::MAX_RECEIPT_LOGS_BYTES`] in its receipt.
+     **/
+    ReceiptTooLarge: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;

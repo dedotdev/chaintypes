@@ -31,9 +31,6 @@ import type {
   PolkadotRuntimeConstantsProxyProxyType,
   PalletProxyDepositKind,
   PalletMultisigTimepoint,
-  PalletElectionProviderMultiPhaseElectionCompute,
-  SpNposElectionsElectionScore,
-  PalletElectionProviderMultiPhasePhase,
   PalletNominationPoolsPoolState,
   PalletNominationPoolsCommissionChangeRate,
   PalletNominationPoolsCommissionClaimPermission,
@@ -607,9 +604,9 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * There is an offence reported of the given `kind` happened at the `session_index` and
      * (kind-specific) time slot. This event is not deposited for duplicate slashes.
-     * \[kind, timeslot\].
+     * \[kind, slot\].
      **/
-    Offence: GenericPalletEvent<'Offences', 'Offence', { kind: FixedBytes<16>; timeslot: Bytes }>;
+    Offence: GenericPalletEvent<'Offences', 'Offence', { kind: FixedBytes<16>; slot: Bytes }>;
 
     /**
      * Generic pallet event
@@ -1154,6 +1151,29 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * A call dispatch has been deferred to a future provided block.
+     **/
+    DispatchDeferred: GenericPalletEvent<'Whitelist', 'DispatchDeferred', { callHash: H256 }>;
+
+    /**
+     * A deferred dispatch entry has been removed after expiration.
+     **/
+    DeferredDispatchRemoved: GenericPalletEvent<'Whitelist', 'DeferredDispatchRemoved', { callHash: H256 }>;
+
+    /**
+     * A relayer (signed origin) executed a deferred dispatch.
+     *
+     * Emitted whenever the deferred entry is consumed by a relayer, regardless of whether the
+     * inner call itself succeeded; the inner call's outcome is reported separately by
+     * [`Event::WhitelistedCallDispatched`].
+     **/
+    DeferredDispatchExecuted: GenericPalletEvent<
+      'Whitelist',
+      'DeferredDispatchExecuted',
+      { callHash: H256; who: AccountId32 }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -1471,6 +1491,11 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * Stranded funds left in a closed bounty's account were reclaimed to the treasury.
+     **/
+    BountyFundsReclaimed: GenericPalletEvent<'Bounties', 'BountyFundsReclaimed', { bountyId: number }>;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -1506,69 +1531,6 @@ export interface ChainEvents extends GenericChainEvents {
      * A child-bounty is cancelled.
      **/
     Canceled: GenericPalletEvent<'ChildBounties', 'Canceled', { index: number; childIndex: number }>;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
-   * Pallet `ElectionProviderMultiPhase`'s events
-   **/
-  electionProviderMultiPhase: {
-    /**
-     * A solution was stored with the given compute.
-     *
-     * The `origin` indicates the origin of the solution. If `origin` is `Some(AccountId)`,
-     * the stored solution was submitted in the signed phase by a miner with the `AccountId`.
-     * Otherwise, the solution was stored either during the unsigned phase or by
-     * `T::ForceOrigin`. The `bool` is `true` when a previous solution was ejected to make
-     * room for this one.
-     **/
-    SolutionStored: GenericPalletEvent<
-      'ElectionProviderMultiPhase',
-      'SolutionStored',
-      {
-        compute: PalletElectionProviderMultiPhaseElectionCompute;
-        origin?: AccountId32 | undefined;
-        prevEjected: boolean;
-      }
-    >;
-
-    /**
-     * The election has been finalized, with the given computation and score.
-     **/
-    ElectionFinalized: GenericPalletEvent<
-      'ElectionProviderMultiPhase',
-      'ElectionFinalized',
-      { compute: PalletElectionProviderMultiPhaseElectionCompute; score: SpNposElectionsElectionScore }
-    >;
-
-    /**
-     * An election failed.
-     *
-     * Not much can be said about which computes failed in the process.
-     **/
-    ElectionFailed: GenericPalletEvent<'ElectionProviderMultiPhase', 'ElectionFailed', null>;
-
-    /**
-     * An account has been rewarded for their signed submission being finalized.
-     **/
-    Rewarded: GenericPalletEvent<'ElectionProviderMultiPhase', 'Rewarded', { account: AccountId32; value: bigint }>;
-
-    /**
-     * An account has been slashed for submitting an invalid signed submission.
-     **/
-    Slashed: GenericPalletEvent<'ElectionProviderMultiPhase', 'Slashed', { account: AccountId32; value: bigint }>;
-
-    /**
-     * There was a phase transition in a given round.
-     **/
-    PhaseTransitioned: GenericPalletEvent<
-      'ElectionProviderMultiPhase',
-      'PhaseTransitioned',
-      { from: PalletElectionProviderMultiPhasePhase; to: PalletElectionProviderMultiPhasePhase; round: number }
-    >;
 
     /**
      * Generic pallet event
@@ -1993,6 +1955,26 @@ export interface ChainEvents extends GenericChainEvents {
     [prop: string]: GenericPalletEvent;
   };
   /**
+   * Pallet `AccumulateForward`'s events
+   **/
+  accumulateForward: {
+    /**
+     * Successfully forwarded accumulated funds to the destination.
+     **/
+    ForwardSucceeded: GenericPalletEvent<'AccumulateForward', 'ForwardSucceeded', { amount: bigint }>;
+
+    /**
+     * Failed to forward funds. They will remain in the accumulation account
+     * and forwarding will be retried after another `TransferPeriod` blocks.
+     **/
+    ForwardFailed: GenericPalletEvent<'AccumulateForward', 'ForwardFailed', { amount: bigint }>;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
    * Pallet `ParaInclusion`'s events
    **/
   paraInclusion: {
@@ -2146,6 +2128,24 @@ export interface ChainEvents extends GenericChainEvents {
          **/
         expireAt: number;
       }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `Dmp`'s events
+   **/
+  dmp: {
+    /**
+     * Legacy V0 DMP queue storage has been cleaned.
+     **/
+    DmpQueueV0Cleaned: GenericPalletEvent<
+      'Dmp',
+      'DmpQueueV0Cleaned',
+      { para: PolkadotParachainPrimitivesPrimitivesId }
     >;
 
     /**
@@ -3001,6 +3001,135 @@ export interface ChainEvents extends GenericChainEvents {
       'AssetRate',
       'AssetRateUpdated',
       { assetKind: PolkadotRuntimeCommonImplsVersionedLocatableAsset; old: FixedU128; new: FixedU128 }
+    >;
+
+    /**
+     * Generic pallet event
+     **/
+    [prop: string]: GenericPalletEvent;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s events
+   **/
+  multiBlockMigrations: {
+    /**
+     * A Runtime upgrade started.
+     *
+     * Its end is indicated by `UpgradeCompleted` or `UpgradeFailed`.
+     **/
+    UpgradeStarted: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'UpgradeStarted',
+      {
+        /**
+         * The number of migrations that this upgrade contains.
+         *
+         * This can be used to design a progress indicator in combination with counting the
+         * `MigrationCompleted` and `MigrationSkipped` events.
+         **/
+        migrations: number;
+      }
+    >;
+
+    /**
+     * The current runtime upgrade completed.
+     *
+     * This implies that all of its migrations completed successfully as well.
+     **/
+    UpgradeCompleted: GenericPalletEvent<'MultiBlockMigrations', 'UpgradeCompleted', null>;
+
+    /**
+     * Runtime upgrade failed.
+     *
+     * This is very bad and will require governance intervention.
+     **/
+    UpgradeFailed: GenericPalletEvent<'MultiBlockMigrations', 'UpgradeFailed', null>;
+
+    /**
+     * A migration was skipped since it was already executed in the past.
+     **/
+    MigrationSkipped: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationSkipped',
+      {
+        /**
+         * The index of the skipped migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+      }
+    >;
+
+    /**
+     * A migration progressed.
+     **/
+    MigrationAdvanced: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationAdvanced',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * A Migration completed.
+     **/
+    MigrationCompleted: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationCompleted',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * A Migration failed.
+     *
+     * This implies that the whole upgrade failed and governance intervention is required.
+     **/
+    MigrationFailed: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'MigrationFailed',
+      {
+        /**
+         * The index of the migration within the [`Config::Migrations`] list.
+         **/
+        index: number;
+
+        /**
+         * The number of blocks that this migration took so far.
+         **/
+        took: number;
+      }
+    >;
+
+    /**
+     * The set of historical migrations has been cleared.
+     **/
+    HistoricCleared: GenericPalletEvent<
+      'MultiBlockMigrations',
+      'HistoricCleared',
+      {
+        /**
+         * Should be passed to `clear_historic` in a successive call.
+         **/
+        nextCursor?: Bytes | undefined;
+      }
     >;
 
     /**

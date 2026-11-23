@@ -950,8 +950,16 @@ export interface ChainConsts extends GenericChainConsts {
   assetConversion: {
     /**
      * The fraction of every swap that the liquidity providers take as a fee.
+     *
+     * Used as the default swap fee for any pool that has no per-pool override set in
+     * [`PoolFees`]. See [`Pallet::pool_fee`].
      **/
     lpFee: Permill;
+
+    /**
+     * The maximum swap fee that can be set for a pool.
+     **/
+    maxSwapFee: Permill;
 
     /**
      * A one-time fee to setup the pool.
@@ -1296,6 +1304,16 @@ export interface ChainConsts extends GenericChainConsts {
      * The maximum number of simultaneous unbonding chunks that can exist per member.
      **/
     maxUnbonding: number;
+
+    /**
+     * The maximum number of distinct era-keyed unbonding sub-pools ([`SubPools::with_era`])
+     * that may exist at once. This is also the basis for how long each sub-pool is kept on
+     * its own (correct) points-to-balance ratio: a sub-pool is merged into the era-agnostic
+     * [`SubPools::no_era`] pool only after `MaxUnbondingPools - bonding_duration` eras
+     * have passed since its unlock era (see `SubPools::maybe_merge_pools`). Once merged
+     * the ratio can become skewed due to some slashed ratio getting merged in at some point.
+     **/
+    maxUnbondingPools: number;
 
     /**
      * Generic pallet constant
@@ -2013,6 +2031,13 @@ export interface ChainConsts extends GenericChainConsts {
      * A signature is accepted only if `signed_at <= now + MaxFutureSkewSeconds`.
      **/
     maxFutureSkewSeconds: bigint;
+
+    /**
+     * The personhood signing context on this network. An account signs this context
+     * followed by the message when it signs a message that is not a transaction; see
+     * [`Pallet::account_signing_payload`].
+     **/
+    signingContext: FixedBytes<32>;
 
     /**
      * Generic pallet constant

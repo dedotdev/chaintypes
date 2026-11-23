@@ -784,6 +784,26 @@ export interface ChainErrors extends GenericChainErrors {
     CallAlreadyWhitelisted: GenericPalletError;
 
     /**
+     * No deferred dispatch entry exists for this call hash.
+     **/
+    DeferredDispatchNotFound: GenericPalletError;
+
+    /**
+     * The deferred dispatch entry has not yet expired.
+     **/
+    DeferredDispatchNotExpired: GenericPalletError;
+
+    /**
+     * The dispatch has already been deferred.
+     **/
+    AlreadyDeferred: GenericPalletError;
+
+    /**
+     * The deferred dispatch has expired.
+     **/
+    DeferredDispatchExpired: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -822,6 +842,12 @@ export interface ChainErrors extends GenericChainErrors {
      * The account already has a vested balance.
      **/
     VestedBalanceExists: GenericPalletError;
+
+    /**
+     * The claim has a vesting schedule but its value is below the existential deposit, so the
+     * destination account could not be kept alive to carry the vesting lock.
+     **/
+    ClaimBelowExistentialDeposit: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1072,6 +1098,11 @@ export interface ChainErrors extends GenericChainErrors {
     NotProposer: GenericPalletError;
 
     /**
+     * The bounty is still active and its account cannot be reclaimed.
+     **/
+    BountyStillActive: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1094,90 +1125,6 @@ export interface ChainErrors extends GenericChainErrors {
      * Number of child bounties exceeds limit `MaxActiveChildBountyCount`.
      **/
     TooManyChildBounties: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
-   * Pallet `ElectionProviderMultiPhase`'s errors
-   **/
-  electionProviderMultiPhase: {
-    /**
-     * Submission was too early.
-     **/
-    PreDispatchEarlySubmission: GenericPalletError;
-
-    /**
-     * Wrong number of winners presented.
-     **/
-    PreDispatchWrongWinnerCount: GenericPalletError;
-
-    /**
-     * Submission was too weak, score-wise.
-     **/
-    PreDispatchWeakSubmission: GenericPalletError;
-
-    /**
-     * The queue was full, and the solution was not better than any of the existing ones.
-     **/
-    SignedQueueFull: GenericPalletError;
-
-    /**
-     * The origin failed to pay the deposit.
-     **/
-    SignedCannotPayDeposit: GenericPalletError;
-
-    /**
-     * Witness data to dispatchable is invalid.
-     **/
-    SignedInvalidWitness: GenericPalletError;
-
-    /**
-     * The signed submission consumes too much weight
-     **/
-    SignedTooMuchWeight: GenericPalletError;
-
-    /**
-     * OCW submitted solution for wrong round
-     **/
-    OcwCallWrongEra: GenericPalletError;
-
-    /**
-     * Snapshot metadata should exist but didn't.
-     **/
-    MissingSnapshotMetadata: GenericPalletError;
-
-    /**
-     * `Self::insert_submission` returned an invalid index.
-     **/
-    InvalidSubmissionIndex: GenericPalletError;
-
-    /**
-     * The call is not allowed at this point.
-     **/
-    CallNotAllowed: GenericPalletError;
-
-    /**
-     * The fallback failed
-     **/
-    FallbackFailed: GenericPalletError;
-
-    /**
-     * Some bound not met
-     **/
-    BoundNotMet: GenericPalletError;
-
-    /**
-     * Submitted solution has too many winners
-     **/
-    TooManyWinners: GenericPalletError;
-
-    /**
-     * Submission was prepared for a different round.
-     **/
-    PreDispatchDifferentRound: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2549,6 +2496,20 @@ export interface ChainErrors extends GenericChainErrors {
      * Overflow ocurred when calculating the inverse rate.
      **/
     Overflow: GenericPalletError;
+
+    /**
+     * Generic pallet error
+     **/
+    [error: string]: GenericPalletError;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s errors
+   **/
+  multiBlockMigrations: {
+    /**
+     * The operation cannot complete since some MBMs are ongoing.
+     **/
+    Ongoing: GenericPalletError;
 
     /**
      * Generic pallet error

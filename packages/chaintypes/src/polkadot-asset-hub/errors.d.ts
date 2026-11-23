@@ -348,6 +348,12 @@ export interface ChainErrors extends GenericChainErrors {
     VestedBalanceExists: GenericPalletError;
 
     /**
+     * The claim has a vesting schedule but its value is below the existential deposit, so the
+     * destination account could not be kept alive to carry the vesting lock.
+     **/
+    ClaimBelowExistentialDeposit: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1134,6 +1140,11 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyReserves: GenericPalletError;
 
     /**
+     * The asset deposit could not be fully moved due to a lock or freeze on the owner.
+     **/
+    IncompleteDepositTransfer: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1251,6 +1262,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Wrong attribute key/value bytes supplied.
      **/
     WrongAttribute: GenericPalletError;
+
+    /**
+     * The collection deposit could not be fully moved due to a lock or freeze on the owner.
+     **/
+    IncompleteDepositTransfer: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1487,6 +1503,11 @@ export interface ChainErrors extends GenericChainErrors {
     WitnessRequired: GenericPalletError;
 
     /**
+     * The collection deposit could not be fully moved due to a lock or freeze on the owner.
+     **/
+    IncompleteDepositTransfer: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1623,6 +1644,11 @@ export interface ChainErrors extends GenericChainErrors {
      * Tried setting too many reserves.
      **/
     TooManyReserves: GenericPalletError;
+
+    /**
+     * The asset deposit could not be fully moved due to a lock or freeze on the owner.
+     **/
+    IncompleteDepositTransfer: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -1763,6 +1789,11 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyReserves: GenericPalletError;
 
     /**
+     * The asset deposit could not be fully moved due to a lock or freeze on the owner.
+     **/
+    IncompleteDepositTransfer: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1893,6 +1924,17 @@ export interface ChainErrors extends GenericChainErrors {
      * The pool exists but has no liquidity (at least one of the reserves is zero).
      **/
     PoolEmpty: GenericPalletError;
+
+    /**
+     * The fee exceeds [`Config::MaxSwapFee`].
+     **/
+    FeeTooHigh: GenericPalletError;
+
+    /**
+     * The pool account can't send one of its assets (e.g. the asset class is frozen or the
+     * pool account is blocked).
+     **/
+    PoolUnavailable: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2307,6 +2349,26 @@ export interface ChainErrors extends GenericChainErrors {
     CallAlreadyWhitelisted: GenericPalletError;
 
     /**
+     * No deferred dispatch entry exists for this call hash.
+     **/
+    DeferredDispatchNotFound: GenericPalletError;
+
+    /**
+     * The deferred dispatch entry has not yet expired.
+     **/
+    DeferredDispatchNotExpired: GenericPalletError;
+
+    /**
+     * The dispatch has already been deferred.
+     **/
+    AlreadyDeferred: GenericPalletError;
+
+    /**
+     * The deferred dispatch has expired.
+     **/
+    DeferredDispatchExpired: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -2375,6 +2437,11 @@ export interface ChainErrors extends GenericChainErrors {
      * User is not the proposer of the bounty.
      **/
     NotProposer: GenericPalletError;
+
+    /**
+     * The bounty is still active and its account cannot be reclaimed.
+     **/
+    BountyStillActive: GenericPalletError;
 
     /**
      * Generic pallet error
@@ -2939,6 +3006,16 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyInvulnerables: GenericPalletError;
 
     /**
+     * No [`UnpaidRewards`] entry exists for the caller in the given round.
+     **/
+    NoUnpaidReward: GenericPalletError;
+
+    /**
+     * The [`Config::RewardSource`] pot is still insufficient to pay the unpaid reward.
+     **/
+    PotStillDepleted: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -3142,6 +3219,16 @@ export interface ChainErrors extends GenericChainErrors {
      * Optimum self-stake cannot be greater than hard cap.
      **/
     OptimumGreaterThanCap: GenericPalletError;
+
+    /**
+     * Validator inactivity proof is invalid.
+     **/
+    InvalidInactivityProof: GenericPalletError;
+
+    /**
+     * Cannot set [`ChillInactiveThreshold`] to the provided value.
+     **/
+    InvalidChillInactiveThreshold: GenericPalletError;
 
     /**
      * Generic pallet error

@@ -12,7 +12,6 @@ import type {
   StagingXcmV5Junctions,
   SpWeightsWeightV2Weight,
   IndivSupportRealityRingExponent,
-  SpStatementStoreStatementAllowance,
 } from './types.js';
 
 export interface ChainConsts extends GenericChainConsts {
@@ -309,8 +308,16 @@ export interface ChainConsts extends GenericChainConsts {
   assetConversion: {
     /**
      * The fraction of every swap that the liquidity providers take as a fee.
+     *
+     * Used as the default swap fee for any pool that has no per-pool override set in
+     * [`PoolFees`]. See [`Pallet::pool_fee`].
      **/
     lpFee: Permill;
+
+    /**
+     * The maximum swap fee that can be set for a pool.
+     **/
+    maxSwapFee: Permill;
 
     /**
      * A one-time fee to setup the pool.
@@ -389,6 +396,28 @@ export interface ChainConsts extends GenericChainConsts {
      * The maximum length of a name or symbol stored on-chain.
      **/
     stringLimit: number;
+
+    /**
+     * Generic pallet constant
+     **/
+    [name: string]: any;
+  };
+  /**
+   * Pallet `AccumulateForward`'s constants
+   **/
+  accumulateForward: {
+    /**
+     * Minimum number of blocks, as counted by [`Config::BlockNumberProvider`], between
+     * successive forwards. Acts as a rate limiter to avoid sending too many messages.
+     **/
+    transferPeriod: number;
+
+    /**
+     * Minimum transferable balance required to trigger a forward.
+     * This avoids forwarding very small / negligible amounts.
+     * The accumulation account always retains its existential deposit on top of this.
+     **/
+    minTransferAmount: bigint;
 
     /**
      * Generic pallet constant
@@ -854,6 +883,13 @@ export interface ChainConsts extends GenericChainConsts {
     accountSetupBlockTolerance: number;
 
     /**
+     * The personhood signing context on this network. An account signs this context
+     * followed by the message when it signs a message that is not a transaction; see
+     * [`Pallet::account_signing_payload`].
+     **/
+    signingContext: FixedBytes<32>;
+
+    /**
      * Generic pallet constant
      **/
     [name: string]: any;
@@ -884,20 +920,6 @@ export interface ChainConsts extends GenericChainConsts {
      * Maximum number of accounts that can queue for a single reserved username.
      **/
     maxReservationQueueLength: number;
-
-    /**
-     * The Statement Store allowance for the accounts API.
-     *
-     * Changing this value requires a migration that updates the existing state.
-     **/
-    accountsApiAllowance: SpStatementStoreStatementAllowance;
-
-    /**
-     * The Statement Store allowance for notification statement registration.
-     *
-     * Changing this value requires a migration that updates the existing state.
-     **/
-    notificationAllowance: SpStatementStoreStatementAllowance;
 
     /**
      * Rolling time window for rate-limiting notifications, in seconds.
@@ -940,6 +962,13 @@ export interface ChainConsts extends GenericChainConsts {
      * Changing this value requires a migration that updates the existing state.
      **/
     longTermStorageGraceWindow: number;
+
+    /**
+     * The personhood signing context on this network. An account signs this context
+     * followed by the message when it signs a message that is not a transaction; see
+     * [`Pallet::account_signing_payload`].
+     **/
+    signingContext: FixedBytes<32>;
 
     /**
      * Generic pallet constant

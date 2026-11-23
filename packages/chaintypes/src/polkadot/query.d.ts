@@ -73,12 +73,6 @@ import type {
   PalletMultisigMultisig,
   PalletBountiesBounty,
   PalletChildBountiesChildBounty,
-  PalletElectionProviderMultiPhasePhase,
-  PalletElectionProviderMultiPhaseReadySolution,
-  PalletElectionProviderMultiPhaseRoundSnapshot,
-  PalletElectionProviderMultiPhaseSolutionOrSnapshotSize,
-  SpNposElectionsElectionScore,
-  PalletElectionProviderMultiPhaseSignedSignedSubmission,
   PalletBagsListListNode,
   PalletBagsListListBag,
   PalletNominationPoolsPoolMember,
@@ -117,6 +111,7 @@ import type {
   PolkadotRuntimeParachainsParasParaGenesisArgs,
   PolkadotParachainPrimitivesPrimitivesValidationCode,
   PolkadotRuntimeParachainsInitializerBufferedSessionChange,
+  PolkadotCorePrimitivesInboundDownwardQueueMeta,
   PolkadotCorePrimitivesInboundDownwardMessage,
   PolkadotRuntimeParachainsHrmpHrmpOpenChannelRequest,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
@@ -142,6 +137,7 @@ import type {
   PolkadotRuntimeParachainsInclusionAggregateMessageOrigin,
   PalletMessageQueuePage,
   PolkadotRuntimeCommonImplsVersionedLocatableAsset,
+  PalletMigrationsMigrationCursor,
   SpConsensusBeefyEcdsaCryptoPublic,
   SpConsensusBeefyMmrBeefyAuthoritySet,
   PalletRcMigratorAccountState,
@@ -1611,6 +1607,15 @@ export interface ChainStorage extends GenericChainStorage {
     whitelistedCall: GenericStorageQuery<(arg: H256) => [] | undefined, H256>;
 
     /**
+     * Deferred dispatches, mapping a call hash to the provided block number at which the deferral
+     * expires and the entry can be permissionlessly removed.
+     *
+     * @param {H256} arg
+     * @param {Callback<number | undefined> =} callback
+     **/
+    deferredDispatch: GenericStorageQuery<(arg: H256) => number | undefined, H256>;
+
+    /**
      * Generic pallet storage query
      **/
     [storage: string]: GenericStorageQuery;
@@ -1847,127 +1852,6 @@ export interface ChainStorage extends GenericChainStorage {
      * @param {Callback<bigint> =} callback
      **/
     childrenCuratorFees: GenericStorageQuery<(arg: number) => bigint, number>;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `ElectionProviderMultiPhase`'s storage queries
-   **/
-  electionProviderMultiPhase: {
-    /**
-     * Internal counter for the number of rounds.
-     *
-     * This is useful for de-duplication of transactions submitted to the pool, and general
-     * diagnostics of the pallet.
-     *
-     * This is merely incremented once per every time that an upstream `elect` is called.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    round: GenericStorageQuery<() => number>;
-
-    /**
-     * Current phase.
-     *
-     * @param {Callback<PalletElectionProviderMultiPhasePhase> =} callback
-     **/
-    currentPhase: GenericStorageQuery<() => PalletElectionProviderMultiPhasePhase>;
-
-    /**
-     * Current best solution, signed or unsigned, queued to be returned upon `elect`.
-     *
-     * Always sorted by score.
-     *
-     * @param {Callback<PalletElectionProviderMultiPhaseReadySolution | undefined> =} callback
-     **/
-    queuedSolution: GenericStorageQuery<() => PalletElectionProviderMultiPhaseReadySolution | undefined>;
-
-    /**
-     * Snapshot data of the round.
-     *
-     * This is created at the beginning of the signed phase and cleared upon calling `elect`.
-     * Note: This storage type must only be mutated through [`SnapshotWrapper`].
-     *
-     * @param {Callback<PalletElectionProviderMultiPhaseRoundSnapshot | undefined> =} callback
-     **/
-    snapshot: GenericStorageQuery<() => PalletElectionProviderMultiPhaseRoundSnapshot | undefined>;
-
-    /**
-     * Desired number of targets to elect for this round.
-     *
-     * Only exists when [`Snapshot`] is present.
-     * Note: This storage type must only be mutated through [`SnapshotWrapper`].
-     *
-     * @param {Callback<number | undefined> =} callback
-     **/
-    desiredTargets: GenericStorageQuery<() => number | undefined>;
-
-    /**
-     * The metadata of the [`RoundSnapshot`]
-     *
-     * Only exists when [`Snapshot`] is present.
-     * Note: This storage type must only be mutated through [`SnapshotWrapper`].
-     *
-     * @param {Callback<PalletElectionProviderMultiPhaseSolutionOrSnapshotSize | undefined> =} callback
-     **/
-    snapshotMetadata: GenericStorageQuery<() => PalletElectionProviderMultiPhaseSolutionOrSnapshotSize | undefined>;
-
-    /**
-     * The next index to be assigned to an incoming signed submission.
-     *
-     * Every accepted submission is assigned a unique index; that index is bound to that particular
-     * submission for the duration of the election. On election finalization, the next index is
-     * reset to 0.
-     *
-     * We can't just use `SignedSubmissionIndices.len()`, because that's a bounded set; past its
-     * capacity, it will simply saturate. We can't just iterate over `SignedSubmissionsMap`,
-     * because iteration is slow. Instead, we store the value here.
-     *
-     * @param {Callback<number> =} callback
-     **/
-    signedSubmissionNextIndex: GenericStorageQuery<() => number>;
-
-    /**
-     * A sorted, bounded vector of `(score, block_number, index)`, where each `index` points to a
-     * value in `SignedSubmissions`.
-     *
-     * We never need to process more than a single signed submission at a time. Signed submissions
-     * can be quite large, so we're willing to pay the cost of multiple database accesses to access
-     * them one at a time instead of reading and decoding all of them at once.
-     *
-     * @param {Callback<Array<[SpNposElectionsElectionScore, number, number]>> =} callback
-     **/
-    signedSubmissionIndices: GenericStorageQuery<() => Array<[SpNposElectionsElectionScore, number, number]>>;
-
-    /**
-     * Unchecked, signed solutions.
-     *
-     * Together with `SubmissionIndices`, this stores a bounded set of `SignedSubmissions` while
-     * allowing us to keep only a single one in memory at a time.
-     *
-     * Twox note: the key of the map is an auto-incrementing index which users cannot inspect or
-     * affect; we shouldn't need a cryptographically secure hasher.
-     *
-     * @param {number} arg
-     * @param {Callback<PalletElectionProviderMultiPhaseSignedSignedSubmission | undefined> =} callback
-     **/
-    signedSubmissionsMap: GenericStorageQuery<
-      (arg: number) => PalletElectionProviderMultiPhaseSignedSignedSubmission | undefined,
-      number
-    >;
-
-    /**
-     * The minimum score that each 'untrusted' solution must attain in order to be considered
-     * feasible.
-     *
-     * Can be set via `set_minimum_untrusted_score`.
-     *
-     * @param {Callback<SpNposElectionsElectionScore | undefined> =} callback
-     **/
-    minimumUntrustedScore: GenericStorageQuery<() => SpNposElectionsElectionScore | undefined>;
 
     /**
      * Generic pallet storage query
@@ -2450,6 +2334,24 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: PolkadotRuntimeRuntimeParametersKey) => PolkadotRuntimeRuntimeParametersValue | undefined,
       PolkadotRuntimeRuntimeParametersKey
     >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `AccumulateForward`'s storage queries
+   **/
+  accumulateForward: {
+    /**
+     * Block of [`Config::BlockNumberProvider`] at which a forward was last attempted.
+     *
+     * `None` means none was attempted yet, so the next one is not rate limited.
+     *
+     * @param {Callback<number | undefined> =} callback
+     **/
+    lastForwardBlock: GenericStorageQuery<() => number | undefined>;
 
     /**
      * Generic pallet storage query
@@ -3019,13 +2921,44 @@ export interface ChainStorage extends GenericChainStorage {
    **/
   dmp: {
     /**
-     * The downward messages addressed for a certain para.
+     * Metadata for managing `DownwardMessageQueuePages`.
+     *
+     * DO NOT MODIFY manually. Only use `InboundDownwardQueue` to preserve invariants.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} arg
-     * @param {Callback<Array<PolkadotCorePrimitivesInboundDownwardMessage>> =} callback
+     * @param {Callback<PolkadotCorePrimitivesInboundDownwardQueueMeta | undefined> =} callback
      **/
-    downwardMessageQueues: GenericStorageQuery<
-      (arg: PolkadotParachainPrimitivesPrimitivesId) => Array<PolkadotCorePrimitivesInboundDownwardMessage>,
+    downwardMessageQueueMeta: GenericStorageQuery<
+      (arg: PolkadotParachainPrimitivesPrimitivesId) => PolkadotCorePrimitivesInboundDownwardQueueMeta | undefined,
+      PolkadotParachainPrimitivesPrimitivesId
+    >;
+
+    /**
+     * Linked message data list to hold inbound downward message pages.
+     *
+     * Messages are not packed and one page is equivalent to one message.
+     * DO NOT MODIFY manually. Only use `InboundDownwardQueue` to preserve invariants.
+     *
+     * @param {[PolkadotParachainPrimitivesPrimitivesId, bigint]} arg
+     * @param {Callback<PolkadotCorePrimitivesInboundDownwardMessage | undefined> =} callback
+     **/
+    downwardMessageQueuePages: GenericStorageQuery<
+      (
+        arg: [PolkadotParachainPrimitivesPrimitivesId, bigint],
+      ) => PolkadotCorePrimitivesInboundDownwardMessage | undefined,
+      [PolkadotParachainPrimitivesPrimitivesId, bigint]
+    >;
+
+    /**
+     * Queue with ParaIds and the [first, last) page range to be deleted.
+     *
+     * DO NOT MODIFY manually. Only use `InboundDownwardQueue` to preserve invariants.
+     *
+     * @param {PolkadotParachainPrimitivesPrimitivesId} arg
+     * @param {Callback<[bigint, bigint] | undefined> =} callback
+     **/
+    downwardMessageQueueLazyDelete: GenericStorageQuery<
+      (arg: PolkadotParachainPrimitivesPrimitivesId) => [bigint, bigint] | undefined,
       PolkadotParachainPrimitivesPrimitivesId
     >;
 
@@ -3790,6 +3723,35 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: PolkadotRuntimeCommonImplsVersionedLocatableAsset) => FixedU128 | undefined,
       PolkadotRuntimeCommonImplsVersionedLocatableAsset
     >;
+
+    /**
+     * Generic pallet storage query
+     **/
+    [storage: string]: GenericStorageQuery;
+  };
+  /**
+   * Pallet `MultiBlockMigrations`'s storage queries
+   **/
+  multiBlockMigrations: {
+    /**
+     * The currently active migration to run and its cursor.
+     *
+     * `None` indicates that no migration is running.
+     *
+     * @param {Callback<PalletMigrationsMigrationCursor | undefined> =} callback
+     **/
+    cursor: GenericStorageQuery<() => PalletMigrationsMigrationCursor | undefined>;
+
+    /**
+     * Set of all successfully executed migrations.
+     *
+     * This is used as blacklist, to not re-execute migrations that have not been removed from the
+     * codebase yet. Governance can regularly clear this out via `clear_historic`.
+     *
+     * @param {BytesLike} arg
+     * @param {Callback<[] | undefined> =} callback
+     **/
+    historic: GenericStorageQuery<(arg: BytesLike) => [] | undefined, Bytes>;
 
     /**
      * Generic pallet storage query

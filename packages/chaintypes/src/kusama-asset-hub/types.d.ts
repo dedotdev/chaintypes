@@ -22478,6 +22478,12 @@ export type PalletReviveEvmApiRpcTypesGenWithdrawal = {
 
 export type PalletReviveEvmBlockHashReceiptGasInfo = { gasUsed: U256; effectiveGasPrice: U256 };
 
+export type PalletReviveEvmBlockHashReceiptCommittedReceiptLogs = {
+  encodedLen: number;
+  bloom: FixedBytes<256>;
+  exceeded: boolean;
+};
+
 export type PalletReviveEvmBlockHashBlockBuilderEthereumBlockBuilderIR = {
   transactionRootBuilder: PalletReviveEvmBlockHashHashBuilderIncrementalHashBuilderIR;
   receiptsRootBuilder: PalletReviveEvmBlockHashHashBuilderIncrementalHashBuilderIR;
@@ -22775,7 +22781,12 @@ export type PalletReviveError =
    * [`NativeDepositOf`] entries from a previously terminated contract that the deletion
    * queue has not yet drained.
    **/
-  | 'PendingDepositCleanup';
+  | 'PendingDepositCleanup'
+  /**
+   * The logs of the ethereum transaction would exceed
+   * [`limits::MAX_RECEIPT_LOGS_BYTES`] in its receipt.
+   **/
+  | 'ReceiptTooLarge';
 
 /**
  * Error types for the permit pallet.

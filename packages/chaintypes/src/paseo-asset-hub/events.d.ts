@@ -2901,6 +2901,26 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * A pool's swap fee was set, either at creation via [`Pallet::create_pool_with_fee`]
+     * or afterwards via [`Pallet::set_pool_fee`].
+     **/
+    PoolFeeSet: GenericPalletEvent<
+      'AssetConversion',
+      'PoolFeeSet',
+      {
+        /**
+         * The pool whose fee was set.
+         **/
+        poolId: [StagingXcmV5Location, StagingXcmV5Location];
+
+        /**
+         * The swap fee now applied to the pool.
+         **/
+        fee: Permill;
+      }
+    >;
+
+    /**
      * A successful call of the `AddLiquidity` extrinsic will create this event.
      **/
     LiquidityAdded: GenericPalletEvent<
@@ -3736,6 +3756,29 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
+     * A call dispatch has been deferred to a future provided block.
+     **/
+    DispatchDeferred: GenericPalletEvent<'Whitelist', 'DispatchDeferred', { callHash: H256 }>;
+
+    /**
+     * A deferred dispatch entry has been removed after expiration.
+     **/
+    DeferredDispatchRemoved: GenericPalletEvent<'Whitelist', 'DeferredDispatchRemoved', { callHash: H256 }>;
+
+    /**
+     * A relayer (signed origin) executed a deferred dispatch.
+     *
+     * Emitted whenever the deferred entry is consumed by a relayer, regardless of whether the
+     * inner call itself succeeded; the inner call's outcome is reported separately by
+     * [`Event::WhitelistedCallDispatched`].
+     **/
+    DeferredDispatchExecuted: GenericPalletEvent<
+      'Whitelist',
+      'DeferredDispatchExecuted',
+      { callHash: H256; who: AccountId32 }
+    >;
+
+    /**
      * Generic pallet event
      **/
     [prop: string]: GenericPalletEvent;
@@ -3811,6 +3854,11 @@ export interface ChainEvents extends GenericChainEvents {
       'DepositPoked',
       { bountyId: number; proposer: AccountId32; oldDeposit: bigint; newDeposit: bigint }
     >;
+
+    /**
+     * Stranded funds left in a closed bounty's account were reclaimed to the treasury.
+     **/
+    BountyFundsReclaimed: GenericPalletEvent<'Bounties', 'BountyFundsReclaimed', { bountyId: number }>;
 
     /**
      * Generic pallet event
@@ -4462,6 +4510,31 @@ export interface ChainEvents extends GenericChainEvents {
     Rewarded: GenericPalletEvent<'MultiBlockElectionSigned', 'Rewarded', [number, AccountId32, bigint]>;
 
     /**
+     * A reward payout failed and has been queued in [`UnpaidRewards`]; claimable via
+     * [`Pallet::claim_unpaid_reward`] once the pot is refilled.
+     **/
+    RewardPaymentDeferred: GenericPalletEvent<
+      'MultiBlockElectionSigned',
+      'RewardPaymentDeferred',
+      [number, AccountId32, bigint]
+    >;
+
+    /**
+     * [`UnpaidRewards`] was full, so this (the oldest) entry was evicted to make room for a
+     * new deferral; no funds moved, the reward is now unrecoverable.
+     **/
+    UnpaidRewardEvicted: GenericPalletEvent<
+      'MultiBlockElectionSigned',
+      'UnpaidRewardEvicted',
+      [number, AccountId32, bigint]
+    >;
+
+    /**
+     * An invulnerable's transaction fee refund failed; no funds moved, no recovery.
+     **/
+    FeeRefundFailed: GenericPalletEvent<'MultiBlockElectionSigned', 'FeeRefundFailed', [number, AccountId32, bigint]>;
+
+    /**
      * The given account has been slashed with the given amount.
      **/
     Slashed: GenericPalletEvent<'MultiBlockElectionSigned', 'Slashed', [number, AccountId32, bigint]>;
@@ -4530,7 +4603,19 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * An account has unbonded this amount.
      **/
-    Unbonded: GenericPalletEvent<'Staking', 'Unbonded', { stash: AccountId32; amount: bigint }>;
+    Unbonded: GenericPalletEvent<
+      'Staking',
+      'Unbonded',
+      {
+        stash: AccountId32;
+        amount: bigint;
+
+        /**
+         * The era at which `amount` becomes withdrawable.
+         **/
+        era: number;
+      }
+    >;
 
     /**
      * An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`

@@ -4606,6 +4606,10 @@ export interface ChainTx<
      *
      * Origin must be Signed and the sender should be the Owner of the asset `id`.
      *
+     * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+     * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+     * blocks the full transfer; clear it and retry.
+     *
      * - `id`: The identifier of the asset.
      * - `owner`: The new Owner of this asset.
      *
@@ -4991,16 +4995,18 @@ export interface ChainTx<
      * Origin must be Signed and there must be an approval in place by the `owner` to the
      * signer.
      *
-     * If the entire amount approved for transfer is transferred, then any deposit previously
-     * reserved by `approve_transfer` is unreserved.
+     * If the debit spends the approval in full, then any deposit previously reserved by
+     * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+     * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+     * balance, so a request smaller than the approval can still spend it in full.
      *
      * - `id`: The identifier of the asset.
-     * - `owner`: The account which previously approved for a transfer of at least `amount` and
-     * from which the asset balance will be withdrawn.
-     * - `destination`: The account to which the asset balance of `amount` will be transferred.
+     * - `owner`: The account which previously approved for a transfer of at least the debit
+     * and from which the asset balance will be withdrawn.
+     * - `destination`: The account to which the debited balance will be transferred.
      * - `amount`: The amount of assets to transfer.
      *
-     * Emits `TransferredApproved` on success.
+     * Emits `Transferred` on success.
      *
      * Weight: `O(1)`
      *
@@ -5676,6 +5682,10 @@ export interface ChainTx<
      * Change the Owner of a collection.
      *
      * Origin must be Signed and the sender should be the Owner of the `collection`.
+     *
+     * The collection's total deposit is moved from the current to the new owner. Fails with
+     * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+     * the full transfer; clear it and retry.
      *
      * - `collection`: The collection whose owner should be changed.
      * - `owner`: The new Owner of this collection. They must have called
@@ -6642,6 +6652,10 @@ export interface ChainTx<
      *
      * Origin must be Signed and the sender should be the Owner of the `collection`.
      *
+     * The collection deposit is moved from the current to the new owner. Fails with
+     * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+     * the full transfer; clear it and retry.
+     *
      * - `collection`: The collection whose owner should be changed.
      * - `owner`: The new Owner of this collection. They must have called
      * `set_accept_ownership` with `collection` in order for this operation to succeed.
@@ -6719,6 +6733,10 @@ export interface ChainTx<
      * Change the Owner of a collection.
      *
      * Origin must be `ForceOrigin`.
+     *
+     * The collection deposit is moved from the current to the new owner. Fails with
+     * [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner blocks
+     * the full transfer; clear it and retry.
      *
      * - `collection`: The identifier of the collection.
      * - `owner`: The new Owner of this collection.
@@ -8219,6 +8237,10 @@ export interface ChainTx<
      *
      * Origin must be Signed and the sender should be the Owner of the asset `id`.
      *
+     * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+     * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+     * blocks the full transfer; clear it and retry.
+     *
      * - `id`: The identifier of the asset.
      * - `owner`: The new Owner of this asset.
      *
@@ -8615,16 +8637,18 @@ export interface ChainTx<
      * Origin must be Signed and there must be an approval in place by the `owner` to the
      * signer.
      *
-     * If the entire amount approved for transfer is transferred, then any deposit previously
-     * reserved by `approve_transfer` is unreserved.
+     * If the debit spends the approval in full, then any deposit previously reserved by
+     * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+     * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+     * balance, so a request smaller than the approval can still spend it in full.
      *
      * - `id`: The identifier of the asset.
-     * - `owner`: The account which previously approved for a transfer of at least `amount` and
-     * from which the asset balance will be withdrawn.
-     * - `destination`: The account to which the asset balance of `amount` will be transferred.
+     * - `owner`: The account which previously approved for a transfer of at least the debit
+     * and from which the asset balance will be withdrawn.
+     * - `destination`: The account to which the debited balance will be transferred.
      * - `amount`: The amount of assets to transfer.
      *
-     * Emits `TransferredApproved` on success.
+     * Emits `Transferred` on success.
      *
      * Weight: `O(1)`
      *
@@ -9458,6 +9482,10 @@ export interface ChainTx<
      *
      * Origin must be Signed and the sender should be the Owner of the asset `id`.
      *
+     * The asset (and metadata) deposit is moved from the current to the new owner. Fails
+     * with [`Error::IncompleteDepositTransfer`] if a lock or freeze on the current owner
+     * blocks the full transfer; clear it and retry.
+     *
      * - `id`: The identifier of the asset.
      * - `owner`: The new Owner of this asset.
      *
@@ -9843,16 +9871,18 @@ export interface ChainTx<
      * Origin must be Signed and there must be an approval in place by the `owner` to the
      * signer.
      *
-     * If the entire amount approved for transfer is transferred, then any deposit previously
-     * reserved by `approve_transfer` is unreserved.
+     * If the debit spends the approval in full, then any deposit previously reserved by
+     * `approve_transfer` is unreserved. The debit exceeds `amount` where transferring
+     * `amount` would leave `owner` holding a non-zero remainder below the asset's minimum
+     * balance, so a request smaller than the approval can still spend it in full.
      *
      * - `id`: The identifier of the asset.
-     * - `owner`: The account which previously approved for a transfer of at least `amount` and
-     * from which the asset balance will be withdrawn.
-     * - `destination`: The account to which the asset balance of `amount` will be transferred.
+     * - `owner`: The account which previously approved for a transfer of at least the debit
+     * and from which the asset balance will be withdrawn.
+     * - `destination`: The account to which the debited balance will be transferred.
      * - `amount`: The amount of assets to transfer.
      *
-     * Emits `TransferredApproved` on success.
+     * Emits `Transferred` on success.
      *
      * Weight: `O(1)`
      *
@@ -10368,6 +10398,70 @@ export interface ChainTx<
           palletCall: {
             name: 'Touch';
             params: { asset1: StagingXcmV5Location; asset2: StagingXcmV5Location };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Like [`Pallet::create_pool`], but sets an initial per-pool swap `fee` overriding the
+     * global [`Config::LPFee`].
+     *
+     * Requires [`Config::AdminOrigin`]. `creator` pays the pool setup fee and deposits.
+     * `fee` must not exceed [`Config::MaxSwapFee`].
+     *
+     * Emits both [`Event::PoolCreated`] and [`Event::PoolFeeSet`] on success.
+     *
+     * @param {AccountId32Like} creator
+     * @param {StagingXcmV5Location} asset1
+     * @param {StagingXcmV5Location} asset2
+     * @param {Permill} fee
+     **/
+    createPoolWithFee: GenericTxCall<
+      (
+        creator: AccountId32Like,
+        asset1: StagingXcmV5Location,
+        asset2: StagingXcmV5Location,
+        fee: Permill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetConversion';
+          palletCall: {
+            name: 'CreatePoolWithFee';
+            params: {
+              creator: AccountId32Like;
+              asset1: StagingXcmV5Location;
+              asset2: StagingXcmV5Location;
+              fee: Permill;
+            };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Set the per-pool swap `fee` for an existing pool, overriding the global
+     * [`Config::LPFee`].
+     *
+     * Requires [`Config::AdminOrigin`]. `fee` must not exceed [`Config::MaxSwapFee`].
+     *
+     * Emits [`Event::PoolFeeSet`] on success.
+     *
+     * @param {[StagingXcmV5Location, StagingXcmV5Location]} poolId
+     * @param {Permill} fee
+     **/
+    setPoolFee: GenericTxCall<
+      (
+        poolId: [StagingXcmV5Location, StagingXcmV5Location],
+        fee: Permill,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'AssetConversion';
+          palletCall: {
+            name: 'SetPoolFee';
+            params: { poolId: [StagingXcmV5Location, StagingXcmV5Location]; fee: Permill };
           };
         },
         ChainKnownTypes
@@ -11856,6 +11950,23 @@ export interface ChainTx<
     >;
 
     /**
+     *
+     * @param {H256} callHash
+     **/
+    removeDeferredDispatch: GenericTxCall<
+      (callHash: H256) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Whitelist';
+          palletCall: {
+            name: 'RemoveDeferredDispatch';
+            params: { callHash: H256 };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
      * Generic pallet tx call
      **/
     [callName: string]: GenericTxCall<TxCall<ChainKnownTypes>>;
@@ -12179,6 +12290,34 @@ export interface ChainTx<
           pallet: 'Bounties';
           palletCall: {
             name: 'PokeDeposit';
+            params: { bountyId: number };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Reclaim funds stranded in a closed bounty's account back to the treasury.
+     *
+     * Permissionless. Moves all remaining assets from a closed bounty's account back to the
+     * treasury in a single call. Which assets are swept depends on the `TransferAllAssets`
+     * configuration.
+     *
+     * The call is free if funds were reclaimed and paid otherwise, so no-op calls cannot be
+     * used to grief the network. Emits `BountyFundsReclaimed` on success.
+     *
+     * ## Complexity
+     * - O(A) where A is the number of relevant assets configured in `TransferAllAssets`.
+     *
+     * @param {number} bountyId
+     **/
+    reclaimBountyFunds: GenericTxCall<
+      (bountyId: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Bounties';
+          palletCall: {
+            name: 'ReclaimBountyFunds';
             params: { bountyId: number };
           };
         },
@@ -14226,8 +14365,9 @@ export interface ChainTx<
      *
      * `maybe_solution` can be set to `None` to erase the page.
      *
-     * Collects deposits from the signed origin based on [`Config::DepositBase`] and
-     * [`Config::DepositPerPage`].
+     * The held deposit becomes the base deposit charged at [`Pallet::register`] plus the
+     * [`Config::DepositPerPage`] deposit of the stored pages. Invulnerables have no per-page
+     * part.
      *
      * @param {number} page
      * @param {AssetHubPolkadotRuntimeStakingNposCompactSolution16 | undefined} maybeSolution
@@ -14309,6 +14449,25 @@ export interface ChainTx<
           palletCall: {
             name: 'SetInvulnerables';
             params: { inv: Array<AccountId32Like> };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Pay out a round's [`UnpaidRewards`] entry to its winner. Permissionless: anyone may
+     * call it for any round. Free on success, normal fee on failure to discourage spam.
+     *
+     * @param {number} round
+     **/
+    claimUnpaidReward: GenericTxCall<
+      (round: number) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'MultiBlockElectionSigned';
+          palletCall: {
+            name: 'ClaimUnpaidReward';
+            params: { round: number };
           };
         },
         ChainKnownTypes
@@ -14906,6 +15065,9 @@ export interface ChainTx<
      * should be filled in order for the `chill_other` transaction to work.
      * * `min_commission`: The minimum amount of commission that each validators must maintain.
      * This is checked only upon calling `validate`. Existing validators are not affected.
+     * * `chill_inactive_threshold`: The number of eras a validator can remain inactive during
+     * the last [`Config::HistoryDepth`] eras before being subject to chilling becuase of
+     * inactivity.
      *
      * RuntimeOrigin must be Root to call this function.
      *
@@ -14920,6 +15082,7 @@ export interface ChainTx<
      * @param {PalletStakingAsyncPalletConfigOpPerbill} minCommission
      * @param {PalletStakingAsyncPalletConfigOpPercent} maxStakedRewards
      * @param {PalletStakingAsyncPalletConfigOpBool} areNominatorsSlashable
+     * @param {PalletStakingAsyncPalletConfigOpU32} chillInactiveThreshold
      **/
     setStakingConfigs: GenericTxCall<
       (
@@ -14931,6 +15094,7 @@ export interface ChainTx<
         minCommission: PalletStakingAsyncPalletConfigOpPerbill,
         maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent,
         areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool,
+        chillInactiveThreshold: PalletStakingAsyncPalletConfigOpU32,
       ) => ChainSubmittableExtrinsic<
         {
           pallet: 'Staking';
@@ -14945,6 +15109,7 @@ export interface ChainTx<
               minCommission: PalletStakingAsyncPalletConfigOpPerbill;
               maxStakedRewards: PalletStakingAsyncPalletConfigOpPercent;
               areNominatorsSlashable: PalletStakingAsyncPalletConfigOpBool;
+              chillInactiveThreshold: PalletStakingAsyncPalletConfigOpU32;
             };
           };
         },
@@ -15322,6 +15487,41 @@ export interface ChainTx<
               hardCapSelfStake: PalletStakingAsyncPalletConfigOp;
               selfStakeSlopeFactor: PalletStakingAsyncPalletConfigOpPerbill;
             };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Chill an inactive validator.
+     *
+     * This extrinsic can be called by anyone, given that the valid inactivity proof is
+     * provided. Inactivity proof is a vector of eras where the given validator was inactive.
+     *
+     * Requirements for the inactivity proof:
+     * - The length must be equal to [`ChillInactiveThreshold`].
+     * - It must be sorted in ascending order.
+     * - It must not contain duplicate entries.
+     * - For every era the `stash` account must be exposed.
+     * - Every item must pass the check provided by [`Config::IsValidatorInactive`].
+     * - Every era must be less than the active era.
+     *
+     * On a successfull execution, caller doesn't pay fees.
+     *
+     * @param {AccountId32Like} stash
+     * @param {Array<number>} proof
+     **/
+    chillInactive: GenericTxCall<
+      (
+        stash: AccountId32Like,
+        proof: Array<number>,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Staking';
+          palletCall: {
+            name: 'ChillInactive';
+            params: { stash: AccountId32Like; proof: Array<number> };
           };
         },
         ChainKnownTypes
@@ -16333,9 +16533,10 @@ export interface ChainTx<
      * - `candidate`: the Lite Person's account for whom the label is being reserved. Also the
      * signer of `candidate_signature`.
      * - `candidate_signature`: signature over the bytes returned by
-     * `Pallet::construct_reservation_message` — a SCALE-encoded tuple binding the attester,
-     * candidate, the candidate's chosen *base* username, and chat key. The digit suffix of
-     * `lite_label` is **not** part of the signed message (the digits are allocated
+     * `Pallet::construct_reservation_message` in the personhood signing context (see
+     * [`Pallet::account_signing_payload`]). The message is a SCALE-encoded tuple binding the
+     * attester, candidate, the candidate's chosen *base* username and chat key. The digit
+     * suffix of `lite_label` is **not** part of the signed message (the digits are allocated
      * server-side after the candidate signs, so the candidate cannot commit to them at
      * signing time).
      * - `lite_label`: the lite-person label. Must be `<dns-stem>.<2+ digits>` (e.g.

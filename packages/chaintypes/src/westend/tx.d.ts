@@ -13,9 +13,9 @@ import type {
   Extrinsic,
   BytesLike,
   H256,
+  FixedBytes,
   AccountId32Like,
   Data,
-  FixedBytes,
   Perbill,
   FixedU128,
 } from 'dedot/codecs';
@@ -768,6 +768,9 @@ export interface ChainTx<
     /**
      * Unreserve some balance from a user by force.
      *
+     * Only acts on the part of the reserved balance that does not back a hold or a named
+     * reserve.
+     *
      * Can only be called by ROOT.
      *
      * @param {MultiAddressLike} who
@@ -783,6 +786,35 @@ export interface ChainTx<
           palletCall: {
             name: 'ForceUnreserve';
             params: { who: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unreserve some balance of the named reserve `id` from a user by force.
+     *
+     * Only acts on that named reserve, and never on the part of the reserved balance that
+     * backs a hold.
+     *
+     * Can only be called by ROOT.
+     *
+     * @param {FixedBytes<8>} id
+     * @param {MultiAddressLike} who
+     * @param {bigint} amount
+     **/
+    forceUnreserveNamed: GenericTxCall<
+      (
+        id: FixedBytes<8>,
+        who: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Balances';
+          palletCall: {
+            name: 'ForceUnreserveNamed';
+            params: { id: FixedBytes<8>; who: MultiAddressLike; amount: bigint };
           };
         },
         ChainKnownTypes
@@ -2413,7 +2445,8 @@ export interface ChainTx<
      * original task's configuration, but will have a lower value for `remaining` than the
      * original `total_retries`.
      *
-     * This call **cannot** be used to set a retry configuration for a named task.
+     * This call **cannot** be used to set a retry configuration for a named task; it fails
+     * with [`Error::Named`]. Use [`Pallet::set_retry_named`] for those.
      *
      * @param {[number, number]} task
      * @param {number} retries
@@ -2475,6 +2508,10 @@ export interface ChainTx<
 
     /**
      * Removes the retry configuration of a task.
+     *
+     * Unlike [`Pallet::set_retry`], this accepts named tasks too: dropping a retry
+     * configuration is always safe, and configurations left by older runtimes still need a
+     * way out. The `RetryCancelled` event therefore carries `id: None` even for a named task.
      *
      * @param {[number, number]} task
      **/
@@ -4675,6 +4712,9 @@ export interface ChainTx<
      * The channel can be opened only after the recipient confirms it and only on a session
      * change.
      *
+     * If the deposit provider answers later, the request is recorded once it does. Until then,
+     * other deposit requests for the sender's side of the channel are refused.
+     *
      * @param {PolkadotParachainPrimitivesPrimitivesId} recipient
      * @param {number} proposedMaxCapacity
      * @param {number} proposedMaxMessageSize
@@ -4704,6 +4744,9 @@ export interface ChainTx<
      * Accept a pending open channel request from the given sender.
      *
      * The channel will be opened only on the next session boundary.
+     *
+     * If the deposit provider answers later, the request is confirmed once it does. Until
+     * then, other deposit requests for the recipient's side of the channel are refused.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} sender
      **/
@@ -4860,6 +4903,9 @@ export interface ChainTx<
      *
      * Origin must be the `ChannelManager`.
      *
+     * If the deposit provider answers later, the request is recorded and confirmed once it
+     * does. Until then, other deposit requests for both sides of the channel are refused.
+     *
      * @param {PolkadotParachainPrimitivesPrimitivesId} sender
      * @param {PolkadotParachainPrimitivesPrimitivesId} recipient
      * @param {number} maxCapacity
@@ -4934,6 +4980,9 @@ export interface ChainTx<
      * - `recipient`: A chain, `ParaId`.
      *
      * Any signed origin can call this function.
+     *
+     * If the deposit provider answers later, the deposits are recorded once it does. Until
+     * then, other deposit requests for both sides of the channel are refused.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} sender
      * @param {PolkadotParachainPrimitivesPrimitivesId} recipient
@@ -5219,6 +5268,9 @@ export interface ChainTx<
      *
      * The deposit taken can be specified for this registration. Any `ParaId`
      * can be registered, including sub-1000 IDs which are System Parachains.
+     *
+     * Deprecated where registration runs through `pallet-registrar-para`: use its
+     * `force_register` there, since a para registered here is unknown to that pallet.
      *
      * @param {AccountId32Like} who
      * @param {bigint} deposit
@@ -5653,8 +5705,8 @@ export interface ChainTx<
     /**
      * Forcefully establish a channel from the sender to the recipient.
      *
-     * This is equivalent to sending an `Hrmp::hrmp_init_open_channel` extrinsic followed by
-     * `Hrmp::hrmp_accept_open_channel`.
+     * This is similar to sending an `Hrmp::hrmp_init_open_channel` extrinsic followed by
+     * `Hrmp::hrmp_accept_open_channel` but in one go.
      *
      * @param {PolkadotParachainPrimitivesPrimitivesId} sender
      * @param {PolkadotParachainPrimitivesPrimitivesId} recipient

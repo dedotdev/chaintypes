@@ -174,7 +174,7 @@ export interface ChainErrors extends GenericChainErrors {
     TooManyHolds: GenericPalletError;
 
     /**
-     * Number of freezes exceed `MaxFreezes`.
+     * Number of freezes exceed `VariantCountOf<T::RuntimeFreezeReason>`.
      **/
     TooManyFreezes: GenericPalletError;
 
@@ -1068,6 +1068,27 @@ export interface ChainErrors extends GenericChainErrors {
     ChannelCreationNotAuthorized: GenericPalletError;
 
     /**
+     * The sender is not a valid para.
+     **/
+    OpenHrmpChannelInvalidSender: GenericPalletError;
+
+    /**
+     * The recipient's deposit changed while it was being taken.
+     **/
+    AcceptHrmpChannelDepositChanged: GenericPalletError;
+
+    /**
+     * The open channel request was canceled and made anew with other limits while the
+     * recipient's deposit was being taken.
+     **/
+    AcceptHrmpChannelRequestChanged: GenericPalletError;
+
+    /**
+     * The channel's deposits changed while they were being updated.
+     **/
+    ChannelDepositsChanged: GenericPalletError;
+
+    /**
      * Generic pallet error
      **/
     [error: string]: GenericPalletError;
@@ -1266,6 +1287,11 @@ export interface ChainErrors extends GenericChainErrors {
      * are correct for the swap to work.
      **/
     CannotSwap: GenericPalletError;
+
+    /**
+     * The operation is scaffolded but not implemented yet.
+     **/
+    NotImplemented: GenericPalletError;
 
     /**
      * Generic pallet error

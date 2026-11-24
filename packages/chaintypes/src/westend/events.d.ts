@@ -20,6 +20,7 @@ import type {
   PolkadotParachainPrimitivesPrimitivesId,
   PolkadotParachainPrimitivesPrimitivesValidationCodeHash,
   PolkadotParachainPrimitivesPrimitivesHrmpChannelId,
+  PolkadotRuntimeParachainsHrmpDepositsDepositError,
   PolkadotCorePrimitivesCandidateHash,
   PolkadotRuntimeParachainsDisputesDisputeLocation,
   PolkadotRuntimeParachainsDisputesDisputeResult,
@@ -1253,7 +1254,7 @@ export interface ChainEvents extends GenericChainEvents {
     >;
 
     /**
-     * An HRMP channel was opened via Root origin.
+     * An HRMP channel was opened via Root origin, once both deposits were taken.
      **/
     HrmpChannelForceOpened: GenericPalletEvent<
       'Hrmp',
@@ -1287,6 +1288,28 @@ export interface ChainEvents extends GenericChainEvents {
       'Hrmp',
       'OpenChannelDepositsUpdated',
       { sender: PolkadotParachainPrimitivesPrimitivesId; recipient: PolkadotParachainPrimitivesPrimitivesId }
+    >;
+
+    /**
+     * The deposit provider refused a pending deposit change. Nothing was recorded.
+     **/
+    DepositRefused: GenericPalletEvent<
+      'Hrmp',
+      'DepositRefused',
+      {
+        channelId: PolkadotParachainPrimitivesPrimitivesHrmpChannelId;
+        error: PolkadotRuntimeParachainsHrmpDepositsDepositError;
+      }
+    >;
+
+    /**
+     * A pending deposit change came back after its checks stopped passing. The deposits it
+     * took were given back and nothing was recorded.
+     **/
+    DepositReturned: GenericPalletEvent<
+      'Hrmp',
+      'DepositReturned',
+      { channelId: PolkadotParachainPrimitivesPrimitivesHrmpChannelId; error: DispatchError }
     >;
 
     /**

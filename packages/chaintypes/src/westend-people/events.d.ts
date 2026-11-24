@@ -8,6 +8,7 @@ import type {
   FrameSupportTokensMiscBalanceStatus,
   PeopleWestendRuntimeRuntimeHoldReason,
   PalletBalancesUnexpectedKind,
+  PalletValidatorCollatorsCollatorDraw,
   PalletValidatorCollatorsUnexpectedKind,
   StagingXcmV5TraitsOutcome,
   StagingXcmV5Location,
@@ -491,7 +492,11 @@ export interface ChainEvents extends GenericChainEvents {
     /**
      * The maximum number of validator collators was changed.
      **/
-    MaxCollatorsSet: GenericPalletEvent<'ValidatorCollators', 'MaxCollatorsSet', { max?: number | undefined }>;
+    MaxCollatorsSet: GenericPalletEvent<
+      'ValidatorCollators',
+      'MaxCollatorsSet',
+      { max: PalletValidatorCollatorsCollatorDraw }
+    >;
 
     /**
      * No external set is stored, so no validators were returned for the session, with or
@@ -504,7 +509,7 @@ export interface ChainEvents extends GenericChainEvents {
      * `drawn_len` of the `external_len` validators of the set of `era`, all with registered
      * keys, were returned for a session and recorded in [`DrawnCollators`]. `new_external` is
      * `true` at the first rotation after a set arrives or the cap changes, and `false` at the
-     * later ones, which under a cap return the previous draw again.
+     * later ones, which return the previous draw again.
      **/
     CollatorsDrawn: GenericPalletEvent<
       'ValidatorCollators',

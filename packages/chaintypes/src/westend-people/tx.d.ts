@@ -8,7 +8,7 @@ import type {
   ISubmittableResult,
   IRuntimeTxCall,
 } from 'dedot/types';
-import type { MultiAddressLike, Extrinsic, BytesLike, H256, AccountId32Like, FixedBytes, Data } from 'dedot/codecs';
+import type { MultiAddressLike, Extrinsic, BytesLike, H256, FixedBytes, AccountId32Like, Data } from 'dedot/codecs';
 import type {
   PeopleWestendRuntimeRuntimeCallLike,
   SpRuntimeMultiSignature,
@@ -17,6 +17,7 @@ import type {
   CumulusPalletParachainSystemParachainInherentInboundMessagesData,
   PalletBalancesAdjustmentDirection,
   PeopleWestendRuntimeSessionKeys,
+  PalletValidatorCollatorsCollatorDraw,
   XcmVersionedLocation,
   XcmVersionedXcm,
   XcmVersionedAssets,
@@ -522,6 +523,9 @@ export interface ChainTx<
     /**
      * Unreserve some balance from a user by force.
      *
+     * Only acts on the part of the reserved balance that does not back a hold or a named
+     * reserve.
+     *
      * Can only be called by ROOT.
      *
      * @param {MultiAddressLike} who
@@ -537,6 +541,35 @@ export interface ChainTx<
           palletCall: {
             name: 'ForceUnreserve';
             params: { who: MultiAddressLike; amount: bigint };
+          };
+        },
+        ChainKnownTypes
+      >
+    >;
+
+    /**
+     * Unreserve some balance of the named reserve `id` from a user by force.
+     *
+     * Only acts on that named reserve, and never on the part of the reserved balance that
+     * backs a hold.
+     *
+     * Can only be called by ROOT.
+     *
+     * @param {FixedBytes<8>} id
+     * @param {MultiAddressLike} who
+     * @param {bigint} amount
+     **/
+    forceUnreserveNamed: GenericTxCall<
+      (
+        id: FixedBytes<8>,
+        who: MultiAddressLike,
+        amount: bigint,
+      ) => ChainSubmittableExtrinsic<
+        {
+          pallet: 'Balances';
+          palletCall: {
+            name: 'ForceUnreserveNamed';
+            params: { id: FixedBytes<8>; who: MultiAddressLike; amount: bigint };
           };
         },
         ChainKnownTypes
@@ -963,18 +996,17 @@ export interface ChainTx<
      * Set the maximum number of validators returned as collators.
      *
      * With a stored set, the change forces two rotations and the first draws
-     * [`DrawnCollators`] again, so the drawn validators can change. `None` returns the whole
-     * stored set from then on.
+     * [`DrawnCollators`] again, so the drawn validators can change.
      *
-     * @param {number | undefined} max
+     * @param {PalletValidatorCollatorsCollatorDraw} max
      **/
     setMaxCollators: GenericTxCall<
-      (max: number | undefined) => ChainSubmittableExtrinsic<
+      (max: PalletValidatorCollatorsCollatorDraw) => ChainSubmittableExtrinsic<
         {
           pallet: 'ValidatorCollators';
           palletCall: {
             name: 'SetMaxCollators';
-            params: { max: number | undefined };
+            params: { max: PalletValidatorCollatorsCollatorDraw };
           };
         },
         ChainKnownTypes

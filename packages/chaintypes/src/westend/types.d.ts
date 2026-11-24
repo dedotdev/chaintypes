@@ -635,9 +635,21 @@ export type PalletBalancesCall =
   /**
    * Unreserve some balance from a user by force.
    *
+   * Only acts on the part of the reserved balance that does not back a hold or a named
+   * reserve.
+   *
    * Can only be called by ROOT.
    **/
   | { name: 'ForceUnreserve'; params: { who: MultiAddress; amount: bigint } }
+  /**
+   * Unreserve some balance of the named reserve `id` from a user by force.
+   *
+   * Only acts on that named reserve, and never on the part of the reserved balance that
+   * backs a hold.
+   *
+   * Can only be called by ROOT.
+   **/
+  | { name: 'ForceUnreserveNamed'; params: { id: FixedBytes<8>; who: MultiAddress; amount: bigint } }
   /**
    * Upgrade a specified account.
    *
@@ -720,9 +732,21 @@ export type PalletBalancesCallLike =
   /**
    * Unreserve some balance from a user by force.
    *
+   * Only acts on the part of the reserved balance that does not back a hold or a named
+   * reserve.
+   *
    * Can only be called by ROOT.
    **/
   | { name: 'ForceUnreserve'; params: { who: MultiAddressLike; amount: bigint } }
+  /**
+   * Unreserve some balance of the named reserve `id` from a user by force.
+   *
+   * Only acts on that named reserve, and never on the part of the reserved balance that
+   * backs a hold.
+   *
+   * Can only be called by ROOT.
+   **/
+  | { name: 'ForceUnreserveNamed'; params: { id: FixedBytes<8>; who: MultiAddressLike; amount: bigint } }
   /**
    * Upgrade a specified account.
    *
@@ -2179,7 +2203,8 @@ export type PalletSchedulerCall =
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
    *
-   * This call **cannot** be used to set a retry configuration for a named task.
+   * This call **cannot** be used to set a retry configuration for a named task; it fails
+   * with [`Error::Named`]. Use [`Pallet::set_retry_named`] for those.
    **/
   | { name: 'SetRetry'; params: { task: [number, number]; retries: number; period: number } }
   /**
@@ -2201,6 +2226,10 @@ export type PalletSchedulerCall =
   | { name: 'SetRetryNamed'; params: { id: FixedBytes<32>; retries: number; period: number } }
   /**
    * Removes the retry configuration of a task.
+   *
+   * Unlike [`Pallet::set_retry`], this accepts named tasks too: dropping a retry
+   * configuration is always safe, and configurations left by older runtimes still need a
+   * way out. The `RetryCancelled` event therefore carries `id: None` even for a named task.
    **/
   | { name: 'CancelRetry'; params: { task: [number, number] } }
   /**
@@ -2284,7 +2313,8 @@ export type PalletSchedulerCallLike =
    * original task's configuration, but will have a lower value for `remaining` than the
    * original `total_retries`.
    *
-   * This call **cannot** be used to set a retry configuration for a named task.
+   * This call **cannot** be used to set a retry configuration for a named task; it fails
+   * with [`Error::Named`]. Use [`Pallet::set_retry_named`] for those.
    **/
   | { name: 'SetRetry'; params: { task: [number, number]; retries: number; period: number } }
   /**
@@ -2306,6 +2336,10 @@ export type PalletSchedulerCallLike =
   | { name: 'SetRetryNamed'; params: { id: FixedBytes<32>; retries: number; period: number } }
   /**
    * Removes the retry configuration of a task.
+   *
+   * Unlike [`Pallet::set_retry`], this accepts named tasks too: dropping a retry
+   * configuration is always safe, and configurations left by older runtimes still need a
+   * way out. The `RetryCancelled` event therefore carries `id: None` even for a named task.
    **/
   | { name: 'CancelRetry'; params: { task: [number, number] } }
   /**
@@ -4043,6 +4077,9 @@ export type PolkadotRuntimeParachainsHrmpPalletCall =
    *
    * The channel can be opened only after the recipient confirms it and only on a session
    * change.
+   *
+   * If the deposit provider answers later, the request is recorded once it does. Until then,
+   * other deposit requests for the sender's side of the channel are refused.
    **/
   | {
       name: 'HrmpInitOpenChannel';
@@ -4056,6 +4093,9 @@ export type PolkadotRuntimeParachainsHrmpPalletCall =
    * Accept a pending open channel request from the given sender.
    *
    * The channel will be opened only on the next session boundary.
+   *
+   * If the deposit provider answers later, the request is confirmed once it does. Until
+   * then, other deposit requests for the recipient's side of the channel are refused.
    **/
   | { name: 'HrmpAcceptOpenChannel'; params: { sender: PolkadotParachainPrimitivesPrimitivesId } }
   /**
@@ -4123,6 +4163,9 @@ export type PolkadotRuntimeParachainsHrmpPalletCall =
    * governed by the system, e.g. a system parachain.
    *
    * Origin must be the `ChannelManager`.
+   *
+   * If the deposit provider answers later, the request is recorded and confirmed once it
+   * does. Until then, other deposit requests for both sides of the channel are refused.
    **/
   | {
       name: 'ForceOpenHrmpChannel';
@@ -4161,6 +4204,9 @@ export type PolkadotRuntimeParachainsHrmpPalletCall =
    * - `recipient`: A chain, `ParaId`.
    *
    * Any signed origin can call this function.
+   *
+   * If the deposit provider answers later, the deposits are recorded once it does. Until
+   * then, other deposit requests for both sides of the channel are refused.
    **/
   | {
       name: 'PokeChannelDeposits';
@@ -4189,6 +4235,9 @@ export type PolkadotRuntimeParachainsHrmpPalletCallLike =
    *
    * The channel can be opened only after the recipient confirms it and only on a session
    * change.
+   *
+   * If the deposit provider answers later, the request is recorded once it does. Until then,
+   * other deposit requests for the sender's side of the channel are refused.
    **/
   | {
       name: 'HrmpInitOpenChannel';
@@ -4202,6 +4251,9 @@ export type PolkadotRuntimeParachainsHrmpPalletCallLike =
    * Accept a pending open channel request from the given sender.
    *
    * The channel will be opened only on the next session boundary.
+   *
+   * If the deposit provider answers later, the request is confirmed once it does. Until
+   * then, other deposit requests for the recipient's side of the channel are refused.
    **/
   | { name: 'HrmpAcceptOpenChannel'; params: { sender: PolkadotParachainPrimitivesPrimitivesId } }
   /**
@@ -4269,6 +4321,9 @@ export type PolkadotRuntimeParachainsHrmpPalletCallLike =
    * governed by the system, e.g. a system parachain.
    *
    * Origin must be the `ChannelManager`.
+   *
+   * If the deposit provider answers later, the request is recorded and confirmed once it
+   * does. Until then, other deposit requests for both sides of the channel are refused.
    **/
   | {
       name: 'ForceOpenHrmpChannel';
@@ -4307,6 +4362,9 @@ export type PolkadotRuntimeParachainsHrmpPalletCallLike =
    * - `recipient`: A chain, `ParaId`.
    *
    * Any signed origin can call this function.
+   *
+   * If the deposit provider answers later, the deposits are recorded once it does. Until
+   * then, other deposit requests for both sides of the channel are refused.
    **/
   | {
       name: 'PokeChannelDeposits';
@@ -4522,6 +4580,9 @@ export type PolkadotRuntimeCommonParasRegistrarPalletCall =
    *
    * The deposit taken can be specified for this registration. Any `ParaId`
    * can be registered, including sub-1000 IDs which are System Parachains.
+   *
+   * Deprecated where registration runs through `pallet-registrar-para`: use its
+   * `force_register` there, since a para registered here is unknown to that pallet.
    **/
   | {
       name: 'ForceRegister';
@@ -4662,6 +4723,9 @@ export type PolkadotRuntimeCommonParasRegistrarPalletCallLike =
    *
    * The deposit taken can be specified for this registration. Any `ParaId`
    * can be registered, including sub-1000 IDs which are System Parachains.
+   *
+   * Deprecated where registration runs through `pallet-registrar-para`: use its
+   * `force_register` there, since a para registered here is unknown to that pallet.
    **/
   | {
       name: 'ForceRegister';
@@ -4872,8 +4936,8 @@ export type PolkadotRuntimeCommonParasSudoWrapperPalletCall =
   /**
    * Forcefully establish a channel from the sender to the recipient.
    *
-   * This is equivalent to sending an `Hrmp::hrmp_init_open_channel` extrinsic followed by
-   * `Hrmp::hrmp_accept_open_channel`.
+   * This is similar to sending an `Hrmp::hrmp_init_open_channel` extrinsic followed by
+   * `Hrmp::hrmp_accept_open_channel` but in one go.
    **/
   | {
       name: 'SudoEstablishHrmpChannel';
@@ -4919,8 +4983,8 @@ export type PolkadotRuntimeCommonParasSudoWrapperPalletCallLike =
   /**
    * Forcefully establish a channel from the sender to the recipient.
    *
-   * This is equivalent to sending an `Hrmp::hrmp_init_open_channel` extrinsic followed by
-   * `Hrmp::hrmp_accept_open_channel`.
+   * This is similar to sending an `Hrmp::hrmp_init_open_channel` extrinsic followed by
+   * `Hrmp::hrmp_accept_open_channel` but in one go.
    **/
   | {
       name: 'SudoEstablishHrmpChannel';
@@ -8426,7 +8490,7 @@ export type PolkadotRuntimeParachainsHrmpPalletEvent =
       };
     }
   /**
-   * An HRMP channel was opened via Root origin.
+   * An HRMP channel was opened via Root origin, once both deposits were taken.
    **/
   | {
       name: 'HrmpChannelForceOpened';
@@ -8455,7 +8519,27 @@ export type PolkadotRuntimeParachainsHrmpPalletEvent =
   | {
       name: 'OpenChannelDepositsUpdated';
       data: { sender: PolkadotParachainPrimitivesPrimitivesId; recipient: PolkadotParachainPrimitivesPrimitivesId };
+    }
+  /**
+   * The deposit provider refused a pending deposit change. Nothing was recorded.
+   **/
+  | {
+      name: 'DepositRefused';
+      data: {
+        channelId: PolkadotParachainPrimitivesPrimitivesHrmpChannelId;
+        error: PolkadotRuntimeParachainsHrmpDepositsDepositError;
+      };
+    }
+  /**
+   * A pending deposit change came back after its checks stopped passing. The deposits it
+   * took were given back and nothing was recorded.
+   **/
+  | {
+      name: 'DepositReturned';
+      data: { channelId: PolkadotParachainPrimitivesPrimitivesHrmpChannelId; error: DispatchError };
     };
+
+export type PolkadotRuntimeParachainsHrmpDepositsDepositError = 'InsufficientFunds' | 'Other';
 
 /**
  * The `Event` enum of this pallet
@@ -9448,7 +9532,7 @@ export type PalletBalancesError =
    **/
   | 'TooManyHolds'
   /**
-   * Number of freezes exceed `MaxFreezes`.
+   * Number of freezes exceed `VariantCountOf<T::RuntimeFreezeReason>`.
    **/
   | 'TooManyFreezes'
   /**
@@ -10402,7 +10486,24 @@ export type PolkadotRuntimeParachainsHrmpPalletError =
   /**
    * The channel between these two chains cannot be authorized.
    **/
-  | 'ChannelCreationNotAuthorized';
+  | 'ChannelCreationNotAuthorized'
+  /**
+   * The sender is not a valid para.
+   **/
+  | 'OpenHrmpChannelInvalidSender'
+  /**
+   * The recipient's deposit changed while it was being taken.
+   **/
+  | 'AcceptHrmpChannelDepositChanged'
+  /**
+   * The open channel request was canceled and made anew with other limits while the
+   * recipient's deposit was being taken.
+   **/
+  | 'AcceptHrmpChannelRequestChanged'
+  /**
+   * The channel's deposits changed while they were being updated.
+   **/
+  | 'ChannelDepositsChanged';
 
 export type PolkadotPrimitivesV9SessionInfo = {
   activeValidatorIndices: Array<PolkadotPrimitivesV9ValidatorIndex>;
@@ -10608,7 +10709,11 @@ export type PolkadotRuntimeCommonParasRegistrarPalletError =
    * Cannot perform a parachain slot / lifecycle swap. Check that the state of both paras
    * are correct for the swap to work.
    **/
-  | 'CannotSwap';
+  | 'CannotSwap'
+  /**
+   * The operation is scaffolded but not implemented yet.
+   **/
+  | 'NotImplemented';
 
 /**
  * The `Error` enum of this pallet.
@@ -11307,7 +11412,10 @@ export type SpRuntimeTransactionValidityInvalidTransaction =
   | { type: 'MandatoryValidation' }
   | { type: 'BadSigner' }
   | { type: 'IndeterminateImplicit' }
-  | { type: 'UnknownOrigin' };
+  | { type: 'UnknownOrigin' }
+  | { type: 'Module'; value: SpRuntimeModuleInvalidity };
+
+export type SpRuntimeModuleInvalidity = { index: number; error: number };
 
 export type SpRuntimeTransactionValidityUnknownTransaction =
   | { type: 'CannotLookup' }

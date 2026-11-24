@@ -46,11 +46,6 @@ import type {
   AssetsCommonLocalAndForeignAssetsForeignAssetReserveData,
   PalletPsmCircuitBreakerLevel,
   AssetHubWestendRuntimeOriginCaller,
-  SpPriceOraclePairId,
-  PalletPriceOracleParameters,
-  PalletPriceOraclePause,
-  SpPriceOracleMarketVenueId,
-  SpPriceOracleMarketMarketId,
   PalletStateTrieMigrationMigrationCompute,
   PalletStateTrieMigrationError,
   PalletStakingAsyncRewardDestination,
@@ -3819,74 +3814,6 @@ export interface ChainEvents extends GenericChainEvents {
         newAdmin: AssetHubWestendRuntimeOriginCaller;
       }
     >;
-
-    /**
-     * Generic pallet event
-     **/
-    [prop: string]: GenericPalletEvent;
-  };
-  /**
-   * Pallet `PriceOracle`'s events
-   **/
-  priceOracle: {
-    /**
-     * The price of a pair changed.
-     **/
-    PriceUpdated: GenericPalletEvent<
-      'PriceOracle',
-      'PriceUpdated',
-      { pair: SpPriceOraclePairId; price: FixedU128; signers: number }
-    >;
-
-    /**
-     * The reports of a block were processed.
-     **/
-    ReportsProcessed: GenericPalletEvent<'PriceOracle', 'ReportsProcessed', { accepted: number; rejected: number }>;
-
-    /**
-     * The parameters were set.
-     **/
-    ParametersSet: GenericPalletEvent<'PriceOracle', 'ParametersSet', { params: PalletPriceOracleParameters }>;
-
-    /**
-     * The pause was set, or lifted if `None`.
-     **/
-    PauseSet: GenericPalletEvent<'PriceOracle', 'PauseSet', { pause?: PalletPriceOraclePause | undefined }>;
-
-    /**
-     * A venue was added or updated.
-     **/
-    VenueSet: GenericPalletEvent<'PriceOracle', 'VenueSet', { id: SpPriceOracleMarketVenueId }>;
-
-    /**
-     * A venue was removed.
-     **/
-    VenueRemoved: GenericPalletEvent<'PriceOracle', 'VenueRemoved', { id: SpPriceOracleMarketVenueId }>;
-
-    /**
-     * A market was added or updated.
-     **/
-    MarketSet: GenericPalletEvent<'PriceOracle', 'MarketSet', { id: SpPriceOracleMarketMarketId }>;
-
-    /**
-     * A market was removed.
-     **/
-    MarketRemoved: GenericPalletEvent<'PriceOracle', 'MarketRemoved', { id: SpPriceOracleMarketMarketId }>;
-
-    /**
-     * A pair was added or updated.
-     **/
-    PairSet: GenericPalletEvent<'PriceOracle', 'PairSet', { pair: SpPriceOraclePairId }>;
-
-    /**
-     * The cross rates of a pair were set.
-     **/
-    CrossRatesSet: GenericPalletEvent<'PriceOracle', 'CrossRatesSet', { pair: SpPriceOraclePairId }>;
-
-    /**
-     * A pair was removed.
-     **/
-    PairRemoved: GenericPalletEvent<'PriceOracle', 'PairRemoved', { pair: SpPriceOraclePairId }>;
 
     /**
      * Generic pallet event

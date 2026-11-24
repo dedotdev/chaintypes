@@ -1350,25 +1350,6 @@ export interface ChainConsts extends GenericChainConsts {
     [name: string]: any;
   };
   /**
-   * Pallet `PriceOracle`'s constants
-   **/
-  priceOracle: {
-    /**
-     * Upper bound on the size of the signer set.
-     **/
-    maxSigners: number;
-
-    /**
-     * Maximum number of cross rates of a pair.
-     **/
-    maxCrossRates: number;
-
-    /**
-     * Generic pallet constant
-     **/
-    [name: string]: any;
-  };
-  /**
    * Pallet `StateTrieMigration`'s constants
    **/
   stateTrieMigration: {

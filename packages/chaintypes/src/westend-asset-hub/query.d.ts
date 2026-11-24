@@ -124,16 +124,6 @@ import type {
   PalletPsmPsmInfo,
   PalletPsmPsmAdminInfo,
   PalletPsmExternalAssetInfo,
-  PalletPriceOracleVote,
-  SpPriceOraclePairId,
-  FrameSupportPricePricePoint,
-  PalletPriceOracleParameters,
-  PalletPriceOraclePause,
-  PalletPriceOraclePairConfig,
-  PalletPriceOracleRegistryVenue,
-  SpPriceOracleMarketVenueId,
-  PalletPriceOracleRegistryStoredMarket,
-  SpPriceOracleMarketMarketId,
   PalletStateTrieMigrationMigrationTask,
   PalletStateTrieMigrationMigrationLimits,
   PalletStakingAsyncLedgerStakingLedger,
@@ -2860,105 +2850,6 @@ export interface ChainStorage extends GenericChainStorage {
       (arg: [StagingXcmV5Location, StagingXcmV5Location]) => PalletPsmExternalAssetInfo | undefined,
       [StagingXcmV5Location, StagingXcmV5Location]
     >;
-
-    /**
-     * Generic pallet storage query
-     **/
-    [storage: string]: GenericStorageQuery;
-  };
-  /**
-   * Pallet `PriceOracle`'s storage queries
-   **/
-  priceOracle: {
-    /**
-     * Latest vote of every signer, per pair. Sorted by signer.
-     *
-     * @param {SpPriceOraclePairId} arg
-     * @param {Callback<Array<PalletPriceOracleVote>> =} callback
-     **/
-    votes: GenericStorageQuery<(arg: SpPriceOraclePairId) => Array<PalletPriceOracleVote>, SpPriceOraclePairId>;
-
-    /**
-     * Current price per pair, stamped with the block number of [`Config::BlockNumberProvider`].
-     *
-     * @param {SpPriceOraclePairId} arg
-     * @param {Callback<FrameSupportPricePricePoint | undefined> =} callback
-     **/
-    prices: GenericStorageQuery<
-      (arg: SpPriceOraclePairId) => FrameSupportPricePricePoint | undefined,
-      SpPriceOraclePairId
-    >;
-
-    /**
-     * Tunable parameters, set by [`Config::AdminOrigin`].
-     *
-     * While unset, no reports are accepted and no prices are published.
-     *
-     * @param {Callback<PalletPriceOracleParameters | undefined> =} callback
-     **/
-    params: GenericStorageQuery<() => PalletPriceOracleParameters | undefined>;
-
-    /**
-     * What is paused, set by [`Config::AdminOrigin`]. Nothing is paused while unset.
-     *
-     * @param {Callback<PalletPriceOraclePause | undefined> =} callback
-     **/
-    paused: GenericStorageQuery<() => PalletPriceOraclePause | undefined>;
-
-    /**
-     * Registered pairs and their settings.
-     *
-     * @param {SpPriceOraclePairId} arg
-     * @param {Callback<PalletPriceOraclePairConfig | undefined> =} callback
-     **/
-    pairs: GenericStorageQuery<
-      (arg: SpPriceOraclePairId) => PalletPriceOraclePairConfig | undefined,
-      SpPriceOraclePairId
-    >;
-
-    /**
-     * Other ways to price a pair, as `(source, rate)` such that `pair = source * rate`.
-     *
-     * E.g. DOT/USD => [(DOT/USDT, USDT/USD), (DOT/USDC, USDC/USD)].
-     *
-     * Read by the oracle nodes; not used by the on-chain vote.
-     *
-     * @param {SpPriceOraclePairId} arg
-     * @param {Callback<Array<[SpPriceOraclePairId, SpPriceOraclePairId]>> =} callback
-     **/
-    crossRates: GenericStorageQuery<
-      (arg: SpPriceOraclePairId) => Array<[SpPriceOraclePairId, SpPriceOraclePairId]>,
-      SpPriceOraclePairId
-    >;
-
-    /**
-     * Registered venues. Read by the oracle nodes; not used by the on-chain vote.
-     *
-     * @param {SpPriceOracleMarketVenueId} arg
-     * @param {Callback<PalletPriceOracleRegistryVenue | undefined> =} callback
-     **/
-    venues: GenericStorageQuery<
-      (arg: SpPriceOracleMarketVenueId) => PalletPriceOracleRegistryVenue | undefined,
-      SpPriceOracleMarketVenueId
-    >;
-
-    /**
-     * Registered markets. Read by the oracle nodes; not used by the on-chain vote.
-     *
-     * @param {SpPriceOracleMarketMarketId} arg
-     * @param {Callback<PalletPriceOracleRegistryStoredMarket | undefined> =} callback
-     **/
-    markets: GenericStorageQuery<
-      (arg: SpPriceOracleMarketMarketId) => PalletPriceOracleRegistryStoredMarket | undefined,
-      SpPriceOracleMarketMarketId
-    >;
-
-    /**
-     * Whether the inherent has been processed in the current block.
-     *
-     * @param {Callback<boolean> =} callback
-     **/
-    didProcess: GenericStorageQuery<() => boolean>;
 
     /**
      * Generic pallet storage query

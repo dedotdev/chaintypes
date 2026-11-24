@@ -6,10 +6,10 @@ import type {
   BytesLike,
   Header,
   MultiAddress,
+  FixedBytes,
   AccountId32,
   MultiAddressLike,
   AccountId32Like,
-  FixedBytes,
   FixedArray,
   Era,
   Data,
@@ -402,9 +402,21 @@ export type PalletBalancesCall =
   /**
    * Unreserve some balance from a user by force.
    *
+   * Only acts on the part of the reserved balance that does not back a hold or a named
+   * reserve.
+   *
    * Can only be called by ROOT.
    **/
   | { name: 'ForceUnreserve'; params: { who: MultiAddress; amount: bigint } }
+  /**
+   * Unreserve some balance of the named reserve `id` from a user by force.
+   *
+   * Only acts on that named reserve, and never on the part of the reserved balance that
+   * backs a hold.
+   *
+   * Can only be called by ROOT.
+   **/
+  | { name: 'ForceUnreserveNamed'; params: { id: FixedBytes<8>; who: MultiAddress; amount: bigint } }
   /**
    * Upgrade a specified account.
    *
@@ -487,9 +499,21 @@ export type PalletBalancesCallLike =
   /**
    * Unreserve some balance from a user by force.
    *
+   * Only acts on the part of the reserved balance that does not back a hold or a named
+   * reserve.
+   *
    * Can only be called by ROOT.
    **/
   | { name: 'ForceUnreserve'; params: { who: MultiAddressLike; amount: bigint } }
+  /**
+   * Unreserve some balance of the named reserve `id` from a user by force.
+   *
+   * Only acts on that named reserve, and never on the part of the reserved balance that
+   * backs a hold.
+   *
+   * Can only be called by ROOT.
+   **/
+  | { name: 'ForceUnreserveNamed'; params: { id: FixedBytes<8>; who: MultiAddressLike; amount: bigint } }
   /**
    * Upgrade a specified account.
    *
@@ -779,10 +803,9 @@ export type PalletValidatorCollatorsCall =
    * Set the maximum number of validators returned as collators.
    *
    * With a stored set, the change forces two rotations and the first draws
-   * [`DrawnCollators`] again, so the drawn validators can change. `None` returns the whole
-   * stored set from then on.
+   * [`DrawnCollators`] again, so the drawn validators can change.
    **/
-  | { name: 'SetMaxCollators'; params: { max?: number | undefined } }
+  | { name: 'SetMaxCollators'; params: { max: PalletValidatorCollatorsCollatorDraw } }
   /**
    * Set the number of blocks between two reports of the authored blocks.
    *
@@ -813,10 +836,9 @@ export type PalletValidatorCollatorsCallLike =
    * Set the maximum number of validators returned as collators.
    *
    * With a stored set, the change forces two rotations and the first draws
-   * [`DrawnCollators`] again, so the drawn validators can change. `None` returns the whole
-   * stored set from then on.
+   * [`DrawnCollators`] again, so the drawn validators can change.
    **/
-  | { name: 'SetMaxCollators'; params: { max?: number | undefined } }
+  | { name: 'SetMaxCollators'; params: { max: PalletValidatorCollatorsCollatorDraw } }
   /**
    * Set the number of blocks between two reports of the authored blocks.
    *
@@ -837,6 +859,8 @@ export type PalletValidatorCollatorsCallLike =
    * It applies to the stored set too, whose arrival time is kept.
    **/
   | { name: 'SetReportMargin'; params: { margin: bigint } };
+
+export type PalletValidatorCollatorsCollatorDraw = { type: 'All' } | { type: 'UpTo'; value: number } | { type: 'None' };
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -3427,7 +3451,8 @@ export type PeopleWestendRuntimeProxyType =
   | 'CancelProxy'
   | 'Identity'
   | 'IdentityJudgement'
-  | 'Collator';
+  | 'Collator'
+  | 'StakingOperator';
 
 /**
  * Contains a variant per dispatchable extrinsic that this pallet has.
@@ -4589,7 +4614,7 @@ export type PalletValidatorCollatorsEvent =
   /**
    * The maximum number of validator collators was changed.
    **/
-  | { name: 'MaxCollatorsSet'; data: { max?: number | undefined } }
+  | { name: 'MaxCollatorsSet'; data: { max: PalletValidatorCollatorsCollatorDraw } }
   /**
    * No external set is stored, so no validators were returned for the session, with or
    * without a cap. This happens in the sessions after this pallet is added to a runtime and
@@ -4600,7 +4625,7 @@ export type PalletValidatorCollatorsEvent =
    * `drawn_len` of the `external_len` validators of the set of `era`, all with registered
    * keys, were returned for a session and recorded in [`DrawnCollators`]. `new_external` is
    * `true` at the first rotation after a set arrives or the cap changes, and `false` at the
-   * later ones, which under a cap return the previous draw again.
+   * later ones, which return the previous draw again.
    **/
   | { name: 'CollatorsDrawn'; data: { era: number; externalLen: number; drawnLen: number; newExternal: boolean } }
   /**

@@ -155,11 +155,6 @@ export interface ChainConsts extends GenericChainConsts {
     maxReserves: number;
 
     /**
-     * The maximum number of individual freeze locks that can exist on an account at any time.
-     **/
-    maxFreezes: number;
-
-    /**
      * Generic pallet constant
      **/
     [name: string]: any;

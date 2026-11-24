@@ -2789,50 +2789,6 @@ export interface ChainErrors extends GenericChainErrors {
     [error: string]: GenericPalletError;
   };
   /**
-   * Pallet `PriceOracle`'s errors
-   **/
-  priceOracle: {
-    /**
-     * A parameter is out of its valid range.
-     **/
-    InvalidParameters: GenericPalletError;
-
-    /**
-     * The venue is not registered.
-     **/
-    UnknownVenue: GenericPalletError;
-
-    /**
-     * The market is not registered.
-     **/
-    UnknownMarket: GenericPalletError;
-
-    /**
-     * The pair is not registered.
-     **/
-    UnknownPair: GenericPalletError;
-
-    /**
-     * The venue still has markets.
-     **/
-    VenueInUse: GenericPalletError;
-
-    /**
-     * More reports than signers in one block.
-     **/
-    TooManyReports: GenericPalletError;
-
-    /**
-     * Reports were already processed in this block.
-     **/
-    AlreadyProcessed: GenericPalletError;
-
-    /**
-     * Generic pallet error
-     **/
-    [error: string]: GenericPalletError;
-  };
-  /**
    * Pallet `StateTrieMigration`'s errors
    **/
   stateTrieMigration: {

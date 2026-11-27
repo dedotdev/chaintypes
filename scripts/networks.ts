@@ -1,6 +1,6 @@
 import { rpc } from '@polkadot/types-support/metadata/static-substrate';
 import staticSubstrate from '@polkadot/types-support/metadata/v15/substrate-hex';
-import { unwrapOpaqueMetadata } from 'dedot/codecs'
+import { unwrapOpaqueMetadata } from 'dedot/codecs';
 
 type NetworkInfo = {
   chain: string;
@@ -69,15 +69,20 @@ export const networks: NetworkInfo[] = [
   },
   {
     chain: 'paseo',
-    endpoint: ['wss://pas-rpc.stakeworld.io'],
+    endpoint: ['wss://rpc-paseo.stakeworld.io', 'wss://paseo-rpc.n.dwellir.com', 'wss://paseo-v2.rpc.turboflakes.io'],
   },
   {
     chain: 'paseoAssetHub',
-    endpoint: ['wss://pas-rpc.stakeworld.io/assethub'],
+    // NOTE: wss://pas-rpc.stakeworld.io/assethub serves *Polkadot* Asset Hub, do not use
+    endpoint: ['wss://asset-hub-paseo-rpc.n.dwellir.com', 'wss://sys.turboflakes.io/asset-hub-paseo'],
   },
   {
     chain: 'paseoPeople',
-    endpoint: ['wss://sys.ibp.network/people-paseo'],
+    endpoint: [
+      'wss://people-paseo.rotko.net',
+      'wss://people-paseo.gatotech.network',
+      'wss://rpc.interweb-it.com/people-paseo',
+    ],
   },
   {
     chain: 'hydration',
@@ -89,7 +94,7 @@ export const networks: NetworkInfo[] = [
   },
   {
     chain: 'basilisk',
-    endpoint: ['wss://basilisk-rpc.n.dwellir.com'],
+    endpoint: ['wss://rpc.basilisk.cloud'],
   },
   {
     chain: 'vara',

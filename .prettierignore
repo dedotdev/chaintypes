@@ -24,3 +24,5 @@ package-lock.json
 .vscode
 yarn.lock
 LICENSE
+
+/.nx/workspace-data

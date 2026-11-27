@@ -8,25 +8,26 @@ on:
 jobs:
   regen-chaintypes:
     runs-on: ubuntu-latest
-    env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    strategy:
-      matrix:
-        node-version: [18.x]
+    # npm Trusted Publishing (OIDC): no NPM_TOKEN needed.
+    # @dedot/chaintypes must list dedotdev/chaintypes + regen-chaintypes.yml as a trusted publisher on npmjs.com.
+    permissions:
+      contents: read # git pushes use GH_PAT_CHAINTYPES below, not GITHUB_TOKEN
+      id-token: write # lets GitHub issue the OIDC token that npm exchanges for a short-lived publish token
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           token: ${{secrets.GH_PAT_CHAINTYPES}}
       - name: Setup GH user
         run: |
           git config --global user.email "hi@coongcrafts.io"
           git config --global user.name "debot"
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v5
         with:
-          node-version: ${{ matrix.node-version }}
+          # Trusted Publishing needs Node >= 22.14 and npm >= 11.5.1; lerna 10 needs Node ^22.22.2 || ^24.15.0
+          node-version: 24.x
           cache: 'yarn'
-          registry-url: 'https://registry.npmjs.org'
+          # no registry-url on purpose: it writes an .npmrc with a placeholder NODE_AUTH_TOKEN
       - run: yarn install --immutable
       - name: Generate chaintypes
         run: yarn gen && yarn build
